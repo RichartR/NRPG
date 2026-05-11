@@ -1,0 +1,66 @@
+import { createClient } from '@/utils/supabase/server';
+import { redirect } from 'next/navigation';
+import Link from 'next/link';
+import { LayoutDashboard, FileText, Settings, LogOut, ShieldCheck } from 'lucide-react';
+
+export default async function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const supabase = await createClient();
+
+  // 1. Verificar sesión
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/');
+
+  // 2. Verificar rol de administrador
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (profile?.role !== 'admin') {
+    redirect('/'); // Si no es admin, fuera
+  }
+
+  return (
+    <div className="flex min-h-screen bg-zinc-950 text-zinc-300">
+      {/* Sidebar Admin */}
+      <aside className="w-64 bg-zinc-900 border-r border-zinc-800 p-6 flex flex-col gap-8">
+        <div className="flex items-center gap-3 px-2">
+          <div className="bg-orange-500 p-2 rounded-lg">
+            <ShieldCheck className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-white font-black tracking-tighter leading-none">NRPG</h1>
+            <span className="text-[10px] uppercase tracking-widest font-bold text-orange-500">Admin Panel</span>
+          </div>
+        </div>
+
+        <nav className="flex-1 space-y-2">
+          <Link href="/admin" className="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-800 hover:text-white transition-all font-bold text-sm group">
+            <LayoutDashboard className="w-5 h-5 text-zinc-500 group-hover:text-orange-500 transition-colors" />
+            Dashboard
+          </Link>
+          <Link href="/admin/documentos" className="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-800 hover:text-white transition-all font-bold text-sm group">
+            <FileText className="w-5 h-5 text-zinc-500 group-hover:text-orange-500 transition-colors" />
+            Documentos
+          </Link>
+          <div className="pt-4 mt-4 border-t border-zinc-800">
+            <Link href="/" className="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-800 hover:text-white transition-all font-bold text-sm group">
+              <LogOut className="w-5 h-5 text-zinc-500" />
+              Salir a la Web
+            </Link>
+          </div>
+        </nav>
+      </aside>
+
+      {/* Contenido Principal */}
+      <main className="flex-1 p-8 overflow-y-auto">
+        {children}
+      </main>
+    </div>
+  );
+}
