@@ -15,6 +15,7 @@ export default async function AdminSistemas() {
     supabase
       .from('categorias_documentos')
       .select('*')
+      .in('slug', ['sistemas', 'bienvenida'])
       .order('nombre', { ascending: true })
   ]);
 
@@ -36,6 +37,7 @@ export default async function AdminSistemas() {
         initialDocs={docs || []} 
         categories={categories || []} 
         defaultCategory="sistemas"
+        showSubcategory={false}
       />
     </div>
   );

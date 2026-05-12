@@ -1,186 +1,162 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Edit2, Save, X, Eye, EyeOff, GitBranch, MapPin } from 'lucide-react';
+import { Edit2, Eye, EyeOff, GitBranch, MapPin, Search, PlusCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import RamaEditForm from './RamaEditForm';
 
 export default function RamaList({ initialRamas, aldeas }: { initialRamas: any[], aldeas: any[] }) {
-  const [ramas, setRamas] = useState(initialRamas);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editForm, setEditForm] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const [editingRama, setEditingRama] = useState<any>(null);
+  const [isAdding, setIsAdding] = useState(false);
+  const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
+  const [search, setSearch] = useState('');
+  
   const supabase = createClient();
   const router = useRouter();
 
-  const startEditing = (rama: any) => {
-    setEditingId(rama.id);
-    setEditForm({ ...rama });
-  };
-
-  const cancelEditing = () => {
-    setEditingId(null);
-    setEditForm(null);
-  };
-
-  const handleSave = async () => {
-    if (!editForm) return;
-    setLoading(true);
-
+  const toggleActive = async (id: number, currentStatus: boolean) => {
     const { error } = await supabase
       .from('ramas_clanes')
-      .update({
-        nombre: editForm.nombre,
-        nombre_en_español: editForm.nombre_en_español,
-        tipo: editForm.tipo,
-        descripcion: editForm.descripcion,
-        url_icono: editForm.url_icono,
-        aldea_id: editForm.tipo === 'rama' ? null : editForm.aldea_id,
-        activo: editForm.activo
-      })
-      .eq('id', editForm.id);
+      .update({ activo: !currentStatus })
+      .eq('id', id);
 
     if (!error) {
-      // Recargar datos para ver la relación actualizada
-      const { data: updatedRama } = await supabase
-        .from('ramas_clanes')
-        .select('*, aldeas(id, nombre_jap, abreviatura)')
-        .eq('id', editForm.id)
-        .single();
-        
-      setRamas(ramas.map(r => r.id === editForm.id ? updatedRama : r));
-      setEditingId(null);
-      setEditForm(null);
       router.refresh();
     }
-    setLoading(false);
   };
 
+  const filteredRamas = useMemo(() => {
+    return initialRamas.filter(rama => {
+      const matchesTab = activeTab === 'active' ? rama.activo : !rama.activo;
+      const matchesSearch = 
+        rama.nombre.toLowerCase().includes(search.toLowerCase()) || 
+        (rama.nombre_español && rama.nombre_español.toLowerCase().includes(search.toLowerCase())) ||
+        rama.tipo.toLowerCase().includes(search.toLowerCase());
+      return matchesTab && matchesSearch;
+    });
+  }, [initialRamas, activeTab, search]);
+
   return (
-    <div className="space-y-4">
-      {ramas.map((rama) => (
-        <div 
-          key={rama.id} 
-          className={`bg-zinc-900/50 border rounded-3xl p-6 transition-all ${
-            editingId === rama.id ? 'border-amber-500 ring-1 ring-amber-500/20' : 'border-zinc-800'
-          } ${!rama.activo && editingId !== rama.id ? 'opacity-50' : ''}`}
-        >
-          {editingId === rama.id ? (
-            /* MODO EDICIÓN */
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div>
-                  <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-1.5">Nombre Original</label>
-                  <input 
-                    type="text" 
-                    value={editForm.nombre} 
-                    onChange={(e) => setEditForm({...editForm, nombre: e.target.value})}
-                    className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-white focus:border-amber-500 outline-none transition-colors"
-                  />
+    <div className="space-y-6">
+      {/* Controles Superiores */}
+      <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-zinc-900/50 p-6 rounded-3xl border border-zinc-800">
+        <div className="flex gap-2 p-1 bg-zinc-950 border border-zinc-800 rounded-2xl">
+          <button 
+            onClick={() => setActiveTab('active')}
+            className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${activeTab === 'active' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'text-zinc-500 hover:text-white'}`}
+          >
+            ACTIVOS ({initialRamas.filter(r => r.activo).length})
+          </button>
+          <button 
+            onClick={() => setActiveTab('inactive')}
+            className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${activeTab === 'inactive' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-white'}`}
+          >
+            ARCHIVADOS ({initialRamas.filter(r => !r.activo).length})
+          </button>
+        </div>
+
+        <div className="flex w-full md:w-auto gap-3">
+          <div className="relative flex-1 md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
+            <input 
+              type="text" 
+              placeholder="Buscar rama o clan..." 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl py-2.5 pl-10 pr-4 text-sm text-white focus:border-amber-500 outline-none transition-all"
+            />
+          </div>
+          
+          <button 
+            onClick={() => setIsAdding(true)}
+            className="flex items-center gap-2 px-6 py-2.5 bg-amber-600 hover:bg-amber-500 text-black rounded-2xl font-bold text-sm transition-all shadow-lg shadow-amber-500/20"
+          >
+            <PlusCircle className="w-5 h-5" />
+            NUEVO
+          </button>
+        </div>
+      </div>
+
+      {/* Listado de Ramas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredRamas.map((rama) => (
+          <div 
+            key={rama.id} 
+            className="group bg-zinc-900 border border-zinc-800 rounded-3xl p-5 hover:border-amber-500/50 transition-all relative overflow-hidden"
+          >
+            <div className="relative z-10 flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${
+                  rama.tipo === 'rama' ? 'bg-blue-500/10 border-blue-500/20' : 'bg-amber-500/10 border-amber-500/20'
+                }`}>
+                  <GitBranch className={`w-5 h-5 ${rama.tipo === 'rama' ? 'text-blue-500' : 'text-amber-500'}`} />
                 </div>
-                <div>
-                  <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-1.5">Tipo</label>
-                  <select 
-                    value={editForm.tipo} 
-                    onChange={(e) => setEditForm({...editForm, tipo: e.target.value})}
-                    className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-white focus:border-amber-500 outline-none transition-colors appearance-none"
+                
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => toggleActive(rama.id, rama.activo)}
+                    className={`p-2 rounded-lg border transition-all ${
+                      rama.activo 
+                        ? 'bg-amber-500/10 border-amber-500/20 text-amber-500 hover:bg-amber-500 hover:text-black' 
+                        : 'bg-zinc-800 border-zinc-700 text-zinc-500 hover:bg-zinc-700 hover:text-white'
+                    }`}
                   >
-                    <option value="rama">Rama (Global)</option>
-                    <option value="clan">Clan (Aldea)</option>
-                  </select>
+                    {rama.activo ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  </button>
+                  <button 
+                    onClick={() => setEditingRama(rama)}
+                    className="p-2 bg-zinc-800 border border-zinc-700 text-white rounded-lg hover:bg-zinc-700 transition-all shadow-sm"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
                 </div>
-                {editForm.tipo === 'clan' && (
-                  <div>
-                    <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-1.5">Aldea Vinculada</label>
-                    <select 
-                      value={editForm.aldea_id || ''} 
-                      onChange={(e) => setEditForm({...editForm, aldea_id: e.target.value ? parseInt(e.target.value) : null})}
-                      className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-white focus:border-amber-500 outline-none transition-colors appearance-none"
-                    >
-                      <option value="">Seleccionar Aldea...</option>
-                      {aldeas.map(a => (
-                        <option key={a.id} value={a.id}>{a.abreviatura || a.nombre_jap}</option>
-                      ))}
-                    </select>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <h3 className="text-lg font-black text-white uppercase tracking-tight italic">{rama.nombre}</h3>
+                  <span className={`px-2 py-0.5 text-[8px] font-black rounded border uppercase tracking-widest ${
+                    rama.tipo === 'rama' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                  }`}>
+                    {rama.tipo}
+                  </span>
+                </div>
+                <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-3">
+                  {rama.nombre_español || '---'}
+                </p>
+
+                {rama.aldeas ? (
+                  <div className="flex items-center gap-1.5 text-[10px] text-emerald-500 font-black bg-emerald-500/5 border border-emerald-500/10 px-3 py-1.5 rounded-xl w-fit">
+                    <MapPin className="w-3.5 h-3.5" /> {rama.aldeas.nombre_jap}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 text-[10px] text-zinc-600 font-black bg-zinc-800/50 border border-zinc-800 px-3 py-1.5 rounded-xl w-fit">
+                    <MapPin className="w-3.5 h-3.5 opacity-50" /> RAMA GLOBAL
                   </div>
                 )}
               </div>
-
-              <div>
-                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-1.5">Nombre en Español</label>
-                <input 
-                  type="text" 
-                  value={editForm.nombre_en_español} 
-                  onChange={(e) => setEditForm({...editForm, nombre_en_español: e.target.value})}
-                  className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-white focus:border-amber-500 outline-none transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-1.5">Descripción</label>
-                <textarea 
-                  value={editForm.descripcion} 
-                  onChange={(e) => setEditForm({...editForm, descripcion: e.target.value})}
-                  rows={2}
-                  className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-white focus:border-amber-500 outline-none transition-colors resize-none"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800/50">
-                <button 
-                  onClick={cancelEditing}
-                  className="px-6 py-2 rounded-xl text-zinc-500 hover:text-white transition-colors text-xs font-black uppercase tracking-widest"
-                >
-                  Cancelar
-                </button>
-                <button 
-                  onClick={handleSave}
-                  disabled={loading}
-                  className="px-8 py-2 bg-amber-500 text-black rounded-xl font-black text-xs uppercase tracking-widest hover:bg-amber-400 transition-colors flex items-center gap-2"
-                >
-                  {loading ? 'Guardando...' : <><Save className="w-4 h-4" /> Guardar Cambios</>}
-                </button>
-              </div>
             </div>
-          ) : (
-            /* MODO VISTA */
-            <div className="flex items-center justify-between gap-6">
-              <div className="flex items-center gap-6">
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border ${
-                  rama.tipo === 'rama' ? 'bg-blue-500/10 border-blue-500/20' : 'bg-amber-500/10 border-amber-500/20'
-                }`}>
-                  <GitBranch className={`w-6 h-6 ${rama.tipo === 'rama' ? 'text-blue-500' : 'text-amber-500'}`} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-3 mb-1">
-                    <h3 className="text-xl font-bold text-white uppercase tracking-tight">{rama.nombre}</h3>
-                    <span className={`px-2 py-0.5 text-[9px] font-black rounded border uppercase tracking-widest ${
-                      rama.tipo === 'rama' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
-                    }`}>
-                      {rama.tipo}
-                    </span>
-                    {rama.aldeas && (
-                      <span className="flex items-center gap-1 text-[10px] text-zinc-500 font-bold bg-zinc-800 px-2 py-0.5 rounded">
-                        <MapPin className="w-3 h-3" /> {rama.aldeas.abreviatura}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-zinc-500 text-xs italic line-clamp-1">{rama.descripcion}</p>
-                </div>
-              </div>
+          </div>
+        ))}
 
-              <div className="flex items-center gap-2 text-zinc-600">
-                <button 
-                  onClick={() => startEditing(rama)}
-                  className="p-3 bg-zinc-800 border border-zinc-700 text-white rounded-xl hover:bg-zinc-700 transition-all"
-                >
-                  <Edit2 className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      ))}
+        {filteredRamas.length === 0 && (
+          <div className="col-span-full py-16 text-center bg-zinc-900/30 rounded-[2rem] border border-dashed border-zinc-800">
+            <p className="text-zinc-600 font-bold italic text-sm text-zinc-500">No se han encontrado ramas o clanes con estos filtros.</p>
+          </div>
+        )}
+      </div>
+
+      {(editingRama || isAdding) && (
+        <RamaEditForm 
+          rama={editingRama} 
+          aldeas={aldeas}
+          onCancel={() => {
+            setEditingRama(null);
+            setIsAdding(false);
+          }} 
+        />
+      )}
     </div>
   );
 }

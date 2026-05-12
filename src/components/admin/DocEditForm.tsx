@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/client';
 import { Save, X, Image as ImageIcon, Link as LinkIcon, Type, AlignLeft, PlusCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-export default function DocEditForm({ doc, categories, onCancel, defaultCategory }: { doc?: any, categories: any[], onCancel: () => void, defaultCategory?: string }) {
+export default function DocEditForm({ doc, categories, onCancel, defaultCategory, showSubcategory = true }: { doc?: any, categories: any[], onCancel: () => void, defaultCategory?: string, showSubcategory?: boolean }) {
   const isCreate = !doc;
   const [formData, setFormData] = useState(doc || {
     titulo: '',
@@ -114,18 +114,20 @@ export default function DocEditForm({ doc, categories, onCancel, defaultCategory
             </div>
 
             {/* Subcategoría */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-                Subcategoría (Opcional)
-              </label>
-              <input 
-                type="text" 
-                placeholder="Ej: Konoha, Bukijutsu..."
-                value={formData.subcategoria} 
-                onChange={(e) => setFormData({...formData, subcategoria: e.target.value})}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-orange-500 outline-none transition-all"
-              />
-            </div>
+            {showSubcategory && (
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                  Subcategoría (Opcional)
+                </label>
+                <input 
+                  type="text" 
+                  placeholder="Ej: Konoha, Bukijutsu..."
+                  value={formData.subcategoria} 
+                  onChange={(e) => setFormData({...formData, subcategoria: e.target.value})}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-orange-500 outline-none transition-all"
+                />
+              </div>
+            )}
           </div>
 
           {/* Drive URL */}

@@ -46,7 +46,7 @@ export default async function RamasPage() {
                 
                 <div className="mb-6">
                   <h2 className="text-3xl font-black text-white tracking-tighter uppercase mb-1">{rama.nombre}</h2>
-                  <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">{rama.nombre_en_español}</span>
+                  <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">{rama.nombre_español}</span>
                 </div>
 
                 <p className="text-zinc-500 text-sm leading-relaxed mb-10 line-clamp-3 italic">

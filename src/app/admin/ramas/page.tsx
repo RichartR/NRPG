@@ -36,7 +36,7 @@ export default async function AdminRamasPage() {
           </Link>
           <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase flex items-center gap-4">
             <GitBranch className="w-10 h-10 text-amber-500" />
-            ESPECIALIDADES Y CLANES
+            RAMAS Y CLANES
           </h1>
         </header>
 

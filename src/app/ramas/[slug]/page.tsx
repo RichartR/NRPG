@@ -73,7 +73,7 @@ export default async function RamaDetailPage({ params }: { params: Promise<{ slu
                   <Shield className="w-32 h-32 text-blue-500" />
                 </div>
                 <h3 className="text-3xl font-black text-white mb-2 uppercase tracking-tighter relative z-10">{sub.nombre}</h3>
-                <p className="text-zinc-500 text-xs line-clamp-2 mb-6 relative z-10">{sub.nombre_en_español || sub.descripcion}</p>
+                <p className="text-zinc-500 text-xs line-clamp-2 mb-6 relative z-10">{sub.nombre_español || sub.descripcion}</p>
                 <div className="flex items-center gap-2 text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] relative z-10">
                   Explorar especialidad <ChevronRight className="w-4 h-4" />
                 </div>

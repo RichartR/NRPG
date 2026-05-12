@@ -6,7 +6,7 @@ import DocEditForm from './DocEditForm';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 
-export default function DocList({ initialDocs, categories, defaultCategory }: { initialDocs: any[], categories: any[], defaultCategory?: string }) {
+export default function DocList({ initialDocs, categories, defaultCategory, showSubcategory = true }: { initialDocs: any[], categories: any[], defaultCategory?: string, showSubcategory?: boolean }) {
   const [editingDoc, setEditingDoc] = useState<any>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
@@ -132,7 +132,7 @@ export default function DocList({ initialDocs, categories, defaultCategory }: { 
                     <span className="px-4 py-1.5 bg-zinc-950 border border-zinc-800 rounded-xl text-[10px] font-black uppercase tracking-widest text-zinc-400">
                       {doc.categoria}
                     </span>
-                    {doc.subcategoria && (
+                    {showSubcategory && doc.subcategoria && (
                       <span className="text-[9px] text-orange-500/70 font-bold uppercase tracking-tighter">
                         {doc.subcategoria}
                       </span>
@@ -188,6 +188,7 @@ export default function DocList({ initialDocs, categories, defaultCategory }: { 
             setEditingDoc(null);
             setIsAdding(false);
           }} 
+          showSubcategory={showSubcategory}
         />
       )}
     </div>
