@@ -13,7 +13,7 @@ export default function RamaEditForm({ rama, aldeas, onCancel }: { rama?: any, a
     slug: '',
     tipo: 'rama',
     descripcion: '',
-    url_icono: '',
+    url_imagen: '',
     aldea_id: null,
     activo: true
   });
@@ -28,10 +28,10 @@ export default function RamaEditForm({ rama, aldeas, onCancel }: { rama?: any, a
     const payload = {
       nombre: formData.nombre,
       nombre_español: formData.nombre_español,
-      slug: formData.slug || formData.nombre.toLowerCase().replace(/\s+/g, '-'),
+      slug: formData.slug || formData.nombre.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, ''),
       tipo: formData.tipo,
       descripcion: formData.descripcion,
-      url_icono: formData.url_icono,
+      url_imagen: formData.url_imagen,
       aldea_id: formData.tipo === 'rama' ? null : formData.aldea_id,
       activo: formData.activo
     };
@@ -87,13 +87,13 @@ export default function RamaEditForm({ rama, aldeas, onCancel }: { rama?: any, a
               </label>
               <input 
                 type="text" 
-                value={formData.nombre} 
+                value={formData.nombre || ''} 
                 onChange={(e) => {
                   const val = e.target.value;
                   setFormData({
                     ...formData, 
                     nombre: val,
-                    slug: isCreate ? val.toLowerCase().replace(/\s+/g, '-') : formData.slug
+                    slug: val.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '')
                   });
                 }}
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-amber-500 outline-none transition-all"
@@ -123,7 +123,7 @@ export default function RamaEditForm({ rama, aldeas, onCancel }: { rama?: any, a
               <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Nombre en Español</label>
               <input 
                 type="text" 
-                value={formData.nombre_español} 
+                value={formData.nombre_español || ''} 
                 onChange={(e) => setFormData({...formData, nombre_español: e.target.value})}
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-amber-500 outline-none transition-all"
                 placeholder="Ej: Ojo Copiador"
@@ -135,7 +135,7 @@ export default function RamaEditForm({ rama, aldeas, onCancel }: { rama?: any, a
               <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Slug (URL)</label>
               <input 
                 type="text" 
-                value={formData.slug} 
+                value={formData.slug || ''} 
                 onChange={(e) => setFormData({...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-')})}
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-amber-500 outline-none transition-all font-mono text-sm"
                 required
@@ -162,6 +162,39 @@ export default function RamaEditForm({ rama, aldeas, onCancel }: { rama?: any, a
             <p className="text-[10px] text-zinc-600 italic">Los clanes suelen estar asociados a una aldea, las ramas suelen ser globales.</p>
           </div>
 
+          {/* Imagen de Portada */}
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                <Shield className="w-4 h-4" /> URL Imagen Portada (Imgur)
+              </label>
+              <input 
+                type="text" 
+                placeholder="https://i.imgur.com/..."
+                value={formData.url_imagen || ''} 
+                onChange={(e) => setFormData({...formData, url_imagen: e.target.value})}
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-amber-500 outline-none transition-all font-mono text-sm"
+              />
+            </div>
+
+            {/* Previsualización de Imagen */}
+            {formData.url_imagen && (
+              <div className="relative w-full h-32 rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 group">
+                <img 
+                  src={formData.url_imagen} 
+                  alt="Preview" 
+                  className="w-full h-full object-cover opacity-50 group-hover:opacity-80 transition-opacity"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 bg-zinc-950/80 px-3 py-1 rounded-full border border-zinc-800">
+                    Previsualización
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Descripción */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
@@ -169,7 +202,7 @@ export default function RamaEditForm({ rama, aldeas, onCancel }: { rama?: any, a
             </label>
             <textarea 
               rows={3}
-              value={formData.descripcion} 
+              value={formData.descripcion || ''} 
               onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
               className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-amber-500 outline-none transition-all resize-none"
             />

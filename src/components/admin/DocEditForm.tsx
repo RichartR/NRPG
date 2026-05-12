@@ -9,9 +9,9 @@ export default function DocEditForm({ doc, categories, onCancel, defaultCategory
   const isCreate = !doc;
   const [formData, setFormData] = useState(doc || {
     titulo: '',
+    clave: '',
     url_drive: '',
     descripcion: '',
-    icono: 'ScrollText',
     categoria: defaultCategory || categories[0]?.slug || 'sistemas',
     subcategoria: doc?.subcategoria || '',
     url_imagen: '',
@@ -25,19 +25,15 @@ export default function DocEditForm({ doc, categories, onCancel, defaultCategory
     e.preventDefault();
     setLoading(true);
 
-    // Generar clave slug si es nuevo
-    const clave = isCreate ? formData.titulo.toLowerCase().replace(/ /g, '-').normalize("NFD").replace(/[\u0300-\u036f]/g, "") : doc.clave;
-
     const payload = {
       titulo: formData.titulo,
+      clave: formData.clave,
       url_drive: formData.url_drive,
       descripcion: formData.descripcion,
-      icono: formData.icono,
       categoria: formData.categoria,
       subcategoria: formData.subcategoria,
       url_imagen: formData.url_imagen,
-      activo: formData.activo,
-      clave: clave
+      activo: formData.activo
     };
 
     const { error } = isCreate 
@@ -92,8 +88,15 @@ export default function DocEditForm({ doc, categories, onCancel, defaultCategory
               </label>
               <input 
                 type="text" 
-                value={formData.titulo} 
-                onChange={(e) => setFormData({...formData, titulo: e.target.value})}
+                value={formData.titulo || ''} 
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData({
+                    ...formData, 
+                    titulo: val,
+                    clave: val.toLowerCase().trim().replace(/\s+/g, '-').normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w-]/g, '')
+                  });
+                }}
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-orange-500 outline-none transition-all"
                 required
               />
@@ -113,6 +116,20 @@ export default function DocEditForm({ doc, categories, onCancel, defaultCategory
               </select>
             </div>
 
+            {/* Clave (Slug) */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                Clave (Slug URL)
+              </label>
+              <input 
+                type="text" 
+                value={formData.clave || ''} 
+                onChange={(e) => setFormData({...formData, clave: e.target.value.toLowerCase().replace(/\s+/g, '-')})}
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-orange-500 outline-none transition-all font-mono text-sm"
+                required
+              />
+            </div>
+
             {/* Subcategoría */}
             {showSubcategory && (
               <div className="space-y-2">
@@ -122,7 +139,7 @@ export default function DocEditForm({ doc, categories, onCancel, defaultCategory
                 <input 
                   type="text" 
                   placeholder="Ej: Konoha, Bukijutsu..."
-                  value={formData.subcategoria} 
+                  value={formData.subcategoria || ''} 
                   onChange={(e) => setFormData({...formData, subcategoria: e.target.value})}
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-orange-500 outline-none transition-all"
                 />
@@ -137,7 +154,7 @@ export default function DocEditForm({ doc, categories, onCancel, defaultCategory
             </label>
             <input 
               type="url" 
-              value={formData.url_drive} 
+              value={formData.url_drive || ''} 
               onChange={(e) => setFormData({...formData, url_drive: e.target.value})}
               className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-orange-500 outline-none transition-all font-mono text-sm"
               required

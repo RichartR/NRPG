@@ -118,7 +118,19 @@ export default function CombateList({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-1.5">Título</label>
-              <input type="text" value={editForm.titulo} onChange={e => setEditForm({...editForm, titulo: e.target.value})} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-white focus:border-red-500 outline-none transition-colors" />
+              <input 
+                type="text" 
+                value={editForm.titulo} 
+                onChange={e => {
+                  const val = e.target.value;
+                  setEditForm({
+                    ...editForm, 
+                    titulo: val,
+                    clave: val.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '')
+                  });
+                }} 
+                className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-white focus:border-red-500 outline-none transition-colors" 
+              />
             </div>
             <div>
               <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-1.5">Clave (Slug)</label>
@@ -171,7 +183,20 @@ export default function CombateList({
                 <div className="flex items-center gap-2 mb-1">
                   <h4 className="text-white font-bold uppercase tracking-tight">{doc.titulo}</h4>
                   <span className="text-[9px] font-black bg-zinc-800 px-2 py-0.5 rounded text-zinc-500 uppercase tracking-tighter">
-                    {doc.ramas_clanes?.nombre} {doc.sub_especialidades ? `> ${doc.sub_especialidades.nombre}` : ''}
+                    {(() => {
+                      const rama = Array.isArray(doc.ramas_clanes) ? doc.ramas_clanes[0] : doc.ramas_clanes;
+                      const sub = Array.isArray(doc.sub_especialidades) ? doc.sub_especialidades[0] : doc.sub_especialidades;
+                      
+                      const ramaName = rama?.nombre || 'General';
+                      const subName = sub?.nombre;
+                      
+                      return (
+                        <>
+                          {ramaName}
+                          {subName && <span className="text-zinc-600 mx-1"> {'>'} {subName}</span>}
+                        </>
+                      );
+                    })()}
                   </span>
                 </div>
                 <p className="text-zinc-500 text-xs line-clamp-1 italic">{doc.descripcion}</p>

@@ -51,14 +51,6 @@ export default async function AldeasPage() {
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 to-transparent" />
                 
-                {/* Icono de la aldea flotante */}
-                <div className="absolute -bottom-6 left-8 w-16 h-16 rounded-2xl bg-zinc-900 border border-zinc-800 p-3 flex items-center justify-center shadow-2xl group-hover:border-emerald-500/50 transition-colors">
-                  {aldea.url_icono ? (
-                    <img src={aldea.url_icono} alt="" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
-                  ) : (
-                    <Map className="w-6 h-6 text-zinc-600" />
-                  )}
-                </div>
               </div>
 
               <div className="p-8 pt-10 flex flex-col flex-1">
