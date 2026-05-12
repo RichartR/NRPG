@@ -108,7 +108,7 @@ export default async function Home() {
           </Link>
 
           {/* Mundo Ninja */}
-          <Link href="/documentos" className="group relative overflow-hidden bg-zinc-900 border border-zinc-800 hover:border-emerald-500/50 p-6 rounded-3xl transition-all hover:shadow-[0_0_30px_-5px_rgba(16,185,129,0.3)]">
+          <Link href="/mundo-ninja" className="group relative overflow-hidden bg-zinc-900 border border-zinc-800 hover:border-emerald-500/50 p-6 rounded-3xl transition-all hover:shadow-[0_0_30px_-5px_rgba(16,185,129,0.3)]">
             <div className="absolute -bottom-4 -right-4 opacity-10 group-hover:scale-110 transition-transform">
               <Globe className="w-24 h-24 text-emerald-500" />
             </div>

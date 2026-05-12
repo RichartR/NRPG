@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Settings, BookOpen, Map, GitBranch, Sword, LayoutDashboard, ChevronRight } from 'lucide-react';
+import { Settings, BookOpen, Map, GitBranch, Sword, LayoutDashboard, ChevronRight, Globe } from 'lucide-react';
 
 export default function AdminPage() {
   const modules = [
@@ -38,6 +38,15 @@ export default function AdminPage() {
       color: 'text-red-500',
       bgColor: 'bg-red-500/10',
       borderColor: 'hover:border-red-500/50'
+    },
+    {
+      title: 'Mundo Ninja',
+      desc: 'Directorio de shinobis agrupados por aldeas y naciones.',
+      icon: Globe,
+      href: '/admin/mundo-ninja',
+      color: 'text-purple-500',
+      bgColor: 'bg-purple-500/10',
+      borderColor: 'hover:border-purple-500/50'
     }
   ];
 
