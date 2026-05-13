@@ -42,23 +42,18 @@ export function useCharacter(characterId: string) {
       }
       setCanEdit(!!(isAdmin || (user && char.user_id === user.id)));
 
-      // Discord data fetch
-      let aparienciaTexto = '';
-      let historiaTexto = '';
-      if (char.apariencia_msg_id) {
-        try {
-          const res = await fetch(`/api/discord/messages?messageId=${char.apariencia_msg_id}`);
-          const dMsg = await res.json();
-          if (dMsg.content) aparienciaTexto = dMsg.content.split('\n').slice(1).join('\n');
-        } catch (e) {}
-      }
-      if (char.historia_msg_id) {
-        try {
-          const res = await fetch(`/api/discord/messages?messageId=${char.historia_msg_id}`);
-          const dMsg = await res.json();
-          if (dMsg.content) historiaTexto = dMsg.content.split('\n').slice(1).join('\n');
-        } catch (e) {}
-      }
+      // Parallel Discord data fetch
+      const [aparienciaMsg, historiaMsg] = await Promise.all([
+        char.apariencia_msg_id 
+          ? fetch(`/api/discord/messages?messageId=${char.apariencia_msg_id}`).then(r => r.json()).catch(() => ({}))
+          : Promise.resolve({}),
+        char.historia_msg_id 
+          ? fetch(`/api/discord/messages?messageId=${char.historia_msg_id}`).then(r => r.json()).catch(() => ({}))
+          : Promise.resolve({})
+      ]);
+
+      const aparienciaTexto = aparienciaMsg?.content ? aparienciaMsg.content.split('\n').slice(1).join('\n') : '';
+      const historiaTexto = historiaMsg?.content ? historiaMsg.content.split('\n').slice(1).join('\n') : '';
 
       const fullChar = { ...char, apariencia: aparienciaTexto, historia: historiaTexto };
       setCharacter(fullChar);

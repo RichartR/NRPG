@@ -66,7 +66,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'discord',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`
+        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/auth/callback`
       }
     })
     
@@ -171,7 +171,7 @@ export default function LoginPage() {
             <input
               type="password"
               required
-              minLength={6}
+              minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full bg-zinc-950 border border-zinc-800 text-white rounded-lg py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500"

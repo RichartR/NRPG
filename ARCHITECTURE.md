@@ -62,11 +62,20 @@ Si necesitas crear, por ejemplo, un **Sistema de Misiones**, sigue este orden:
 
 ## Estándares de Código y UX
 
-* **Manejo de Errores y Feedback**: **NO utilices `alert()`**. Utiliza el sistema global de notificaciones:
+* **Manejo de Errores y Feedback**: **PROHIBIDO el uso de `alert()`**. Utiliza el sistema global de notificaciones:
   ```typescript
   import { useToastStore } from '@/components/ui/Toast';
   const addToast = useToastStore(state => state.addToast);
   addToast("Operación exitosa", "success"); // o "error", "info"
   ```
+* **Seguridad y Variables de Entorno**:
+  * Nunca utilices `window.location.origin` para callbacks de OAuth o redirecciones críticas. Usa `process.env.NEXT_PUBLIC_APP_URL`.
+  * La validación de contraseñas debe ser de al menos **8 caracteres**.
+* **Optimización de Base de Datos**:
+  * **Conteo Eficiente**: Para contar registros, usa `.select('*', { count: 'exact', head: true })`. Nunca traigas todos los registros solo para obtener el `.length`.
+  * **Peticiones en Paralelo**: Si una página requiere múltiples consultas independientes, envuélvelas en un `Promise.all()` para evitar tiempos de carga lentos.
+* **Validación de Entradas**:
+  * Los campos de texto críticos (nombres, usuarios) deben validarse tanto en cliente como en servidor. No basta con `.trim()`; verifica longitudes mínimas y formatos permitidos.
 * **Estética (Premium UI)**: Mantén el tema oscuro y moderno. Usa clases de Tailwind preestablecidas (bordes difuminados, transparencias `backdrop-blur`, fondos oscuros `bg-zinc-950`, e iconos de `lucide-react`).
 * **TypeScript Estricto**: Evita el uso de `any`. Si una respuesta viene de un Service, tipifícala correctamente usando las interfaces del Domain.
+

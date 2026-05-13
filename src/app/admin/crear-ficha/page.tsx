@@ -6,6 +6,7 @@ import {
   User, Shield, Briefcase, Zap, Save, RefreshCw, ArrowLeft, UserPlus
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useToastStore } from '@/components/ui/Toast';
 
 export default function CrearFichaPage() {
   const router = useRouter();
@@ -31,6 +32,7 @@ export default function CrearFichaPage() {
   });
 
   const [aldeas, setAldeas] = useState<any[]>([]);
+  const addToast = useToastStore(state => state.addToast);
 
   useEffect(() => {
     supabase.from('aldeas').select('*').eq('activo', true).then(({ data }) => {
@@ -39,13 +41,22 @@ export default function CrearFichaPage() {
   }, []);
 
   const handleCreate = async () => {
-    if (!character.nombre_ninja || !character.hobba_name) return alert('Nombre y Hobba Name son obligatorios');
+    // Validaciones robustas
+    if (!character.nombre_ninja?.trim()) {
+      return addToast('El nombre del personaje es obligatorio', 'error');
+    }
+    if (character.nombre_ninja.trim().length < 3) {
+      return addToast('El nombre es demasiado corto', 'error');
+    }
+    if (!character.hobba_name?.trim()) {
+      return addToast('El nombre de usuario Hobba es obligatorio', 'error');
+    }
     
     setLoading(true);
     try {
       const { data, error } = await supabase.from('characters').insert({
-        hobba_name: character.hobba_name,
-        nombre_ninja: character.nombre_ninja,
+        hobba_name: character.hobba_name.trim(),
+        nombre_ninja: character.nombre_ninja.trim(),
         aldea_id: character.aldea_id || null,
         rango: character.rango,
         rango_jerarquico: character.rango_jerarquico,
@@ -58,12 +69,11 @@ export default function CrearFichaPage() {
 
       if (error) throw error;
 
-      // Al crear, la API de Supabase Triggers o nuestro flow ya debería inicializar Discord
-      // Pero por ahora, redirigimos a la ficha recién creada
+      addToast('¡Personaje inicializado con éxito!', 'success');
       router.push(`/ficha/${data.id}`);
     } catch (err) {
       console.error(err);
-      alert('Error al crear el personaje');
+      addToast('Error al crear el personaje', 'error');
     } finally {
       setLoading(false);
     }
