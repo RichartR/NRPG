@@ -47,6 +47,24 @@ export default function AdminPage() {
       color: 'text-purple-500',
       bgColor: 'bg-purple-500/10',
       borderColor: 'hover:border-purple-500/50'
+    },
+    {
+      title: 'Registro Maestro',
+      desc: 'Control central de técnicas, objetos y pasivas del juego.',
+      icon: BookOpen,
+      href: '/admin/glosario',
+      color: 'text-teal-400',
+      bgColor: 'bg-teal-400/10',
+      borderColor: 'hover:border-teal-400/50'
+    },
+    {
+      title: 'Variables de Sistema',
+      desc: 'Configurar escalados, reglas de rango y constantes globales.',
+      icon: Settings,
+      href: '/admin/config',
+      color: 'text-emerald-500',
+      bgColor: 'bg-emerald-500/10',
+      borderColor: 'hover:border-emerald-500/50'
     }
   ];
 
