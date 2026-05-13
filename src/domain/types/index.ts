@@ -12,6 +12,7 @@ export interface Aldea {
   slug: string;
   abreviatura?: string;
   url_imagen?: string;
+  url_icono?: string;
   descripcion?: string;
   activo: boolean;
 }
@@ -64,19 +65,14 @@ export interface RangoRules {
     vit_base: number;
     ch_base: number;
     vel_base: number;
-    res_base: number;
-    rea_base: number;
-    det_base: number;
+    min: number; // Para el cálculo de auto-rango
   };
 }
 
 export interface StatsEscaladoConfig {
-  vit_factor: number;
-  ch_factor: number;
-  vel_factor: number;
-  res_factor: number;
-  rea_factor: number;
-  det_factor: number;
+  fue_a_vit: number;
+  est_a_ch: number;
+  agi_a_vel_factor: number;
 }
 
 export interface CharacterStats {

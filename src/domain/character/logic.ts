@@ -7,21 +7,28 @@ export const StatsLogic = {
     escalado: StatsEscaladoConfig
   ): AtributosDerivados {
     return {
-      VIT: bases.vit_base + (stats.EST * (escalado.vit_factor || 50)),
-      CH: bases.ch_base + (stats.NIN * (escalado.ch_factor || 20)),
-      VEL: bases.vel_base + (stats.AGI * (escalado.vel_factor || 2)),
-      RES: bases.res_base + (stats.FUE * (escalado.res_factor || 1)),
-      VR: bases.rea_base + Math.floor(stats.AGI / (escalado.rea_factor || 2)),
-      DET: bases.det_base + Math.floor(stats.INT / (escalado.det_factor || 2)),
+      VIT: (Number(bases.vit_base) || 0) + (Number(stats.FUE) * (Number(escalado.fue_a_vit) || 0)),
+      CH: (Number(bases.ch_base) || 0) + (Number(stats.EST) * (Number(escalado.est_a_ch) || 0)),
+      VEL: (Number(bases.vel_base) || 0) + Math.floor(Number(stats.AGI) / (Number(escalado.agi_a_vel_factor) || 10)),
+      RES: Math.floor(Number(stats.EST) / 5),
+      VR: 1 + Math.floor(Number(stats.EST) / 20),
+      DET: 1 + Math.floor(Number(stats.INT) / 20)
     };
   },
 
   calculateAutoRank(puntos_stats: number, rules: RangoRules): string {
-    const sortedRanks = Object.entries(rules).sort((a, b) => b[1].puntos_totales - a[1].puntos_totales);
-    for (const [rank, data] of sortedRanks) {
-      if (puntos_stats >= data.puntos_totales) return rank;
-    }
-    return 'D';
+    const rulesEntries = Object.entries(rules);
+    let newRango = 'D';
+    let maxThresholdFound = -1;
+
+    rulesEntries.forEach(([r, rule]: any) => {
+      const threshold = Number(rule.min) || 0;
+      if (puntos_stats >= threshold && threshold >= maxThresholdFound) {
+        maxThresholdFound = threshold;
+        newRango = r;
+      }
+    });
+    return newRango;
   },
 
   validateStatChange(

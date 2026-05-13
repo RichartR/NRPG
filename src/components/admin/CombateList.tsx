@@ -50,8 +50,9 @@ export default function CombateList({
     setLoading(true);
 
     try {
+      const { ramas_clanes, sub_especialidades, ...cleanForm } = editForm;
       const payload = {
-        ...editForm,
+        ...cleanForm,
         rama_id: editForm.rama_id || null,
         sub_especialidad_id: editForm.sub_especialidad_id || null
       };

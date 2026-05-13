@@ -16,6 +16,21 @@ export const CharacterServerService = {
     return data as Character;
   },
 
+  async hasReachedCharacterLimit(supabase: SupabaseClient, userId: string): Promise<boolean> {
+    // Obtener el límite configurado (por defecto 1 si no existe la clave)
+    const { MasterServerService } = await import('./master.server.service');
+    const limitRaw = await MasterServerService.getConfiguracion(supabase, 'characters_per_player');
+    const limit = limitRaw ? parseInt(limitRaw, 10) : 1;
+
+    const { count } = await supabase
+      .from('characters')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('activo', true);
+
+    return (count ?? 0) >= limit;
+  },
+
   async createCharacter(supabase: SupabaseClient, payload: Record<string, unknown>): Promise<Character> {
     const { data, error } = await supabase
       .from('characters')

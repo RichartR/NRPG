@@ -20,6 +20,13 @@ export function useCharacter(characterId: string) {
   const masters = useMasterStore();
   const addToast = useToastStore(state => state.addToast);
 
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get('edit') === 'true') {
+      setIsEditing(true);
+    }
+  }, []);
+
   const loadData = async () => {
     try {
       setLoading(true);

@@ -60,19 +60,16 @@ export const useMasterStore = create<MasterState>((set, get) => ({
         items,
         tecnicas,
         rangoRules: rangoRules || {
-          "D": { stat_max: 25, puntos_totales: 10, vit_base: 600, ch_base: 200, vel_base: 5, res_base: 0, rea_base: 1, det_base: 1 },
-          "C": { stat_max: 45, puntos_totales: 25, vit_base: 1200, ch_base: 500, vel_base: 8, res_base: 5, rea_base: 2, det_base: 2 },
-          "B": { stat_max: 70, puntos_totales: 50, vit_base: 2500, ch_base: 1200, vel_base: 12, res_base: 15, rea_base: 3, det_base: 3 },
-          "A": { stat_max: 100, puntos_totales: 85, vit_base: 5000, ch_base: 3000, vel_base: 18, res_base: 30, rea_base: 5, det_base: 5 },
-          "S": { stat_max: 150, puntos_totales: 150, vit_base: 10000, ch_base: 7000, vel_base: 25, res_base: 50, rea_base: 8, det_base: 8 }
+          "D": { stat_max: 25, puntos_totales: 16, vit_base: 600, ch_base: 200, vel_base: 5, min: 0 },
+          "C": { stat_max: 45, puntos_totales: 40, vit_base: 1200, ch_base: 500, vel_base: 8, min: 25 },
+          "B": { stat_max: 70, puntos_totales: 75, vit_base: 2500, ch_base: 1200, vel_base: 12, min: 50 },
+          "A": { stat_max: 100, puntos_totales: 120, vit_base: 5000, ch_base: 3000, vel_base: 18, min: 85 },
+          "S": { stat_max: 150, puntos_totales: 200, vit_base: 10000, ch_base: 7000, vel_base: 25, min: 150 }
         },
         escaladoRules: escaladoRules || {
-          vit_factor: 50,
-          ch_factor: 20,
-          vel_factor: 2,
-          res_factor: 1,
-          rea_factor: 2,
-          det_factor: 2
+          fue_a_vit: 50,
+          est_a_ch: 20,
+          agi_a_vel_factor: 10
         },
         initialized: true,
         loading: false
