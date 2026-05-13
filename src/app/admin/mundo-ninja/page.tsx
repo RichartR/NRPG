@@ -12,13 +12,32 @@ export default async function MundoNinjaSelectionPage() {
     .eq('activo', true)
     .order('nombre_completo');
 
-  // 2. Contar ninjas por aldea para mostrar estadísticas
-  const { data: ninjaCounts } = await supabase
-    .from('characters')
-    .select('aldea_id');
+  // 2. Contar ninjas por aldea de forma eficiente (en paralelo)
+  const countsMap: Record<string, number> = {};
+  
+  if (aldeas) {
+    const countPromises = [
+      ...aldeas.map(async (aldea) => {
+        const { count } = await supabase
+          .from('characters')
+          .select('*', { count: 'exact', head: true })
+          .eq('aldea_id', aldea.id);
+        countsMap[aldea.id] = count || 0;
+      }),
+      (async () => {
+        const { count } = await supabase
+          .from('characters')
+          .select('*', { count: 'exact', head: true })
+          .is('aldea_id', null);
+        countsMap['renegados'] = count || 0;
+      })()
+    ];
+    
+    await Promise.all(countPromises);
+  }
 
   const getCount = (id: number | null) => {
-    return (ninjaCounts || []).filter(n => n.aldea_id === id).length;
+    return id ? (countsMap[id] || 0) : (countsMap['renegados'] || 0);
   };
 
   return (
