@@ -68,7 +68,7 @@ export default async function SistemasPage() {
 
               <div className="relative z-10">
                 <div className="mb-6 bg-zinc-950 w-16 h-16 rounded-2xl flex items-center justify-center border border-zinc-800 group-hover:border-zinc-700 transition-colors">
-                  <DynamicIcon name={doc.icono} className={`w-8 h-8 ${theme.iconColor}`} />
+                  <Zap className={`w-8 h-8 ${theme.iconColor}`} />
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-3 tracking-tight">{doc.titulo}</h2>
                 <p className="text-zinc-400 leading-relaxed">{doc.descripcion}</p>

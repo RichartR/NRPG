@@ -14,7 +14,6 @@ export default function AldeaEditForm({ aldea, onCancel }: { aldea?: any, onCanc
     nombre_español: '',
     nombre_completo: '',
     descripcion: '',
-    url_icono: '',
     url_imagen: '',
     activo: true
   });
@@ -33,7 +32,6 @@ export default function AldeaEditForm({ aldea, onCancel }: { aldea?: any, onCanc
       nombre_español: formData.nombre_español,
       nombre_completo: formData.nombre_completo,
       descripcion: formData.descripcion,
-      url_icono: formData.url_icono,
       url_imagen: formData.url_imagen,
       activo: formData.activo
     };
@@ -108,7 +106,7 @@ export default function AldeaEditForm({ aldea, onCancel }: { aldea?: any, onCanc
                   setFormData({
                     ...formData, 
                     abreviatura: val,
-                    slug: isCreate ? val.toLowerCase().replace(/\s+/g, '-') : formData.slug
+                    slug: val.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '')
                   });
                 }}
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-emerald-500 outline-none transition-all"
@@ -137,7 +135,7 @@ export default function AldeaEditForm({ aldea, onCancel }: { aldea?: any, onCanc
               <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Nombre en Español</label>
               <input 
                 type="text" 
-                value={formData.nombre_español} 
+                value={formData.nombre_español || ''} 
                 onChange={(e) => setFormData({...formData, nombre_español: e.target.value})}
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-emerald-500 outline-none transition-all"
                 required
@@ -150,7 +148,7 @@ export default function AldeaEditForm({ aldea, onCancel }: { aldea?: any, onCanc
               <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Nombre Completo</label>
               <input 
                 type="text" 
-                value={formData.nombre_completo} 
+                value={formData.nombre_completo || ''} 
                 onChange={(e) => setFormData({...formData, nombre_completo: e.target.value})}
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-emerald-500 outline-none transition-all"
                 required
@@ -163,22 +161,11 @@ export default function AldeaEditForm({ aldea, onCancel }: { aldea?: any, onCanc
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-                <ImageIcon className="w-4 h-4" /> URL Icono (Logo)
-              </label>
-              <input 
-                type="text" 
-                value={formData.url_icono} 
-                onChange={(e) => setFormData({...formData, url_icono: e.target.value})}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-emerald-500 outline-none transition-all font-mono text-sm"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
                 <ImageIcon className="w-4 h-4" /> URL Banner / Imagen
               </label>
               <input 
                 type="text" 
-                value={formData.url_imagen} 
+                value={formData.url_imagen || ''} 
                 onChange={(e) => setFormData({...formData, url_imagen: e.target.value})}
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-emerald-500 outline-none transition-all font-mono text-sm"
               />
@@ -192,7 +179,7 @@ export default function AldeaEditForm({ aldea, onCancel }: { aldea?: any, onCanc
             </label>
             <textarea 
               rows={3}
-              value={formData.descripcion} 
+              value={formData.descripcion || ''} 
               onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
               className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-emerald-500 outline-none transition-all"
             />

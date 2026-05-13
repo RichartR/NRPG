@@ -87,10 +87,14 @@ export default function RamaList({ initialRamas, aldeas }: { initialRamas: any[]
           >
             <div className="relative z-10 flex flex-col gap-4">
               <div className="flex items-center justify-between">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center border overflow-hidden ${
                   rama.tipo === 'rama' ? 'bg-blue-500/10 border-blue-500/20' : 'bg-amber-500/10 border-amber-500/20'
                 }`}>
-                  <GitBranch className={`w-5 h-5 ${rama.tipo === 'rama' ? 'text-blue-500' : 'text-amber-500'}`} />
+                  {rama.url_imagen ? (
+                    <img src={rama.url_imagen} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  ) : (
+                    <GitBranch className={`w-5 h-5 ${rama.tipo === 'rama' ? 'text-blue-500' : 'text-amber-500'}`} />
+                  )}
                 </div>
                 
                 <div className="flex items-center gap-2">

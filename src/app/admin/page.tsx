@@ -14,7 +14,7 @@ export default function AdminPage() {
     },
     {
       title: 'Aldeas y Lore',
-      desc: 'Gestionar las 5 grandes naciones, sus iconos y banners.',
+      desc: 'Gestionar las 5 grandes naciones, sus banners e imágenes.',
       icon: Map,
       href: '/admin/aldeas',
       color: 'text-emerald-500',

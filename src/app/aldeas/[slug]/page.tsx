@@ -45,9 +45,6 @@ export default async function AldeaDetailPage({ params }: { params: Promise<{ sl
           </Link>
           
           <div className="flex items-center gap-6 mb-4">
-            {aldea.url_icono && (
-              <img src={aldea.url_icono} alt="" className="w-20 h-20 object-contain drop-shadow-[0_0_20px_rgba(16,185,129,0.5)]" referrerPolicy="no-referrer" />
-            )}
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter uppercase">{aldea.abreviatura || aldea.nombre_jap}</h1>

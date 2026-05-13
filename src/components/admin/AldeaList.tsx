@@ -94,9 +94,9 @@ export default function AldeaList({ initialAldeas }: { initialAldeas: any[] }) {
 
             <div className="relative z-10 flex items-center justify-between">
               <div className="flex items-center gap-5">
-                <div className="w-14 h-14 rounded-2xl bg-zinc-800 border border-zinc-700 p-3 flex items-center justify-center shrink-0">
-                  {aldea.url_icono ? (
-                    <img src={aldea.url_icono} alt="" className="w-full h-full object-contain" />
+                <div className="w-14 h-14 rounded-2xl bg-zinc-800 border border-zinc-700 overflow-hidden flex items-center justify-center shrink-0">
+                  {aldea.url_imagen ? (
+                    <img src={aldea.url_imagen} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   ) : (
                     <MapPin className="w-6 h-6 text-zinc-600" />
                   )}
