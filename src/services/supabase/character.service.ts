@@ -5,14 +5,14 @@ export const CharacterService = {
   async getCharacterById(id: string): Promise<Character> {
     const supabase = createClient();
     const { data, error } = await supabase
-      .from('characters')
+      .from('reg_characters')
       .select(`
         *, 
         profiles!user_id(username),
-        aldeas(*), 
-        personajes_inventario(*, items_catalog(*)), 
-        personajes_tecnicas(*, tecnicas_glosario(*)), 
-        personajes_ramas(*, ramas_clanes(*), sub_especialidades(*))
+        info_aldeas(*), 
+        reg_personajes_inventario!personaje_id(*, info_glosario(*)), 
+        reg_personajes_tecnicas!personaje_id(*, info_glosario(*)), 
+        reg_personajes_ramas!personaje_id(*, info_ramas_clanes(*), info_sub_especialidades(*))
       `)
       .eq('id', id)
       .single();
@@ -23,7 +23,7 @@ export const CharacterService = {
 
   async createCharacter(character: Partial<Character>): Promise<Character> {
     const supabase = createClient();
-    const { data, error } = await supabase.from('characters').insert({
+    const { data, error } = await supabase.from('reg_characters').insert({
       hobba_name: character.hobba_name?.trim(),
       nombre_ninja: character.nombre_ninja?.trim(),
       aldea_id: character.aldea_id || null,
@@ -44,7 +44,7 @@ export const CharacterService = {
   async updateCharacter(id: string, updates: Partial<Character>) {
     const supabase = createClient();
     const { error } = await supabase
-      .from('characters')
+      .from('reg_characters')
       .update({
         nombre_ninja: updates.nombre_ninja,
         hobba_name: updates.hobba_name,
@@ -68,9 +68,9 @@ export const CharacterService = {
 
   async updateCharacterRamas(id: string, ramas: PersonajeRama[]) {
     const supabase = createClient();
-    await supabase.from('personajes_ramas').delete().eq('personaje_id', id);
+    await supabase.from('reg_personajes_ramas').delete().eq('personaje_id', id);
     if (ramas.length > 0) {
-      const { error } = await supabase.from('personajes_ramas').insert(
+      const { error } = await supabase.from('reg_personajes_ramas').insert(
         ramas.map(r => ({
           personaje_id: id,
           rama_id: r.rama_id,
@@ -84,9 +84,9 @@ export const CharacterService = {
 
   async updateCharacterInventory(id: string, items: PersonajeItem[]) {
     const supabase = createClient();
-    await supabase.from('personajes_inventario').delete().eq('personaje_id', id);
+    await supabase.from('reg_personajes_inventario').delete().eq('personaje_id', id);
     if (items.length > 0) {
-      const { error } = await supabase.from('personajes_inventario').insert(
+      const { error } = await supabase.from('reg_personajes_inventario').insert(
         items.map(i => ({ 
           personaje_id: id, 
           item_id: i.item_id, 
@@ -99,9 +99,9 @@ export const CharacterService = {
 
   async updateCharacterTecnicas(id: string, tecnicas: PersonajeTecnica[]) {
     const supabase = createClient();
-    await supabase.from('personajes_tecnicas').delete().eq('personaje_id', id);
+    await supabase.from('reg_personajes_tecnicas').delete().eq('personaje_id', id);
     if (tecnicas.length > 0) {
-      const { error } = await supabase.from('personajes_tecnicas').insert(
+      const { error } = await supabase.from('reg_personajes_tecnicas').insert(
         tecnicas.map(t => ({ 
           personaje_id: id, 
           tecnica_id: t.tecnica_id 

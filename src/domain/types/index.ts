@@ -38,24 +38,34 @@ export interface SubEspecialidad {
   activo: boolean;
 }
 
-export interface ItemCatalog {
+export interface GlosarioCategoria {
   id: number;
   nombre: string;
-  descripcion?: string;
-  categoria: string;
-  precio: number;
-  url_imagen?: string;
+  slug: string;
   activo: boolean;
 }
 
-export interface TecnicaGlosario {
+export interface GlosarioSubcategoria {
   id: number;
+  categoria_id: number;
   nombre: string;
-  descripcion?: string;
-  rango: string;
-  subcategoria: string;
-  url_imagen?: string;
+  slug: string;
   activo: boolean;
+}
+
+export interface Glosario {
+  id: number;
+  categoria_id: number;
+  subcategoria_id?: number;
+  nombre_es: string;
+  nombre_jp?: string;
+  requisitos: any;
+  coste_exp: number;
+  coste_ryo: number;
+  activo: boolean;
+  // Joins opcionales
+  info_glosario_categorias?: GlosarioCategoria;
+  info_glosario_subcategorias?: GlosarioSubcategoria;
 }
 
 export interface RangoRules {
@@ -131,13 +141,13 @@ export interface PersonajeItem {
   personaje_id: string;
   item_id: number;
   cantidad: number;
-  items_catalog?: ItemCatalog;
+  info_glosario?: Glosario;
 }
 
 export interface PersonajeTecnica {
   personaje_id: string;
   tecnica_id: number;
-  tecnicas_glosario?: TecnicaGlosario;
+  info_glosario?: Glosario;
 }
 
 export interface PersonajeRama {
@@ -172,4 +182,13 @@ export interface DocumentoCombate {
   activo: boolean;
   ramas_clanes?: RamaClan;
   sub_especialidades?: SubEspecialidad;
+}
+
+export interface ConfiguracionSistema {
+  id: number;
+  clave: string;
+  titulo: string;
+  valor: any;
+  descripcion?: string;
+  created_at?: string;
 }
