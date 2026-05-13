@@ -1,26 +1,15 @@
 import { createClient } from '@/utils/supabase/server';
 import DocList from '@/components/admin/DocList';
 import { Zap } from 'lucide-react';
+import { MasterServerService } from '@/services/supabase/master.server.service';
 
 export default async function AdminSistemas() {
   const supabase = await createClient();
 
-  // Obtener solo documentos de la categoría 'sistemas'
-  const [docsResponse, categoriesResponse] = await Promise.all([
-    supabase
-      .from('documentos_sistemas')
-      .select('*')
-      .in('categoria', ['sistemas', 'bienvenida'])
-      .order('titulo', { ascending: true }),
-    supabase
-      .from('categorias_documentos')
-      .select('*')
-      .in('slug', ['sistemas', 'bienvenida'])
-      .order('nombre', { ascending: true })
+  const [docs, categories] = await Promise.all([
+    MasterServerService.getAdminDocumentosSistemasByCategories(supabase, ['sistemas', 'bienvenida']),
+    MasterServerService.getCategoriaDocumentos(supabase, ['sistemas', 'bienvenida'])
   ]);
-
-  const docs = docsResponse.data;
-  const categories = categoriesResponse.data;
 
   return (
     <div className="max-w-5xl">
@@ -34,8 +23,8 @@ export default async function AdminSistemas() {
       </header>
 
       <DocList 
-        initialDocs={docs || []} 
-        categories={categories || []} 
+        initialDocs={docs} 
+        categories={categories} 
         defaultCategory="sistemas"
         showSubcategory={false}
       />

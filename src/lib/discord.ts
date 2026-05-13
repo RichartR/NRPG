@@ -35,6 +35,8 @@ export async function editDiscordMessage(channelId: string, messageId: string, c
 
   if (!response.ok) {
     const error = await response.json();
+    // Mensaje eliminado en Discord — ignorar silenciosamente
+    if (error?.code === 10008) return null;
     throw new Error(`Error de Discord (PATCH): ${JSON.stringify(error)}`);
   }
 
@@ -53,16 +55,14 @@ export async function getDiscordMessage(channelId: string, messageId: string) {
 
   if (!response.ok) {
     const error = await response.json();
+    // Mensaje eliminado o no encontrado — devolver null en lugar de lanzar error
+    if (error?.code === 10008) return null;
     throw new Error(`Error de Discord (GET): ${JSON.stringify(error)}`);
   }
 
   return response.json();
 }
-export async function getDiscordChannel(supabase: any) {
-  const { data: config } = await supabase
-    .from('configuracion_sistema')
-    .select('valor')
-    .eq('clave', 'discord_history_appearance_channel_id')
-    .single();
-  return config?.valor as string;
+export async function getDiscordChannel(supabase: any): Promise<string | null> {
+  const { MasterServerService } = await import('@/services/supabase/master.server.service');
+  return MasterServerService.getConfiguracion(supabase, 'discord_history_appearance_channel_id');
 }

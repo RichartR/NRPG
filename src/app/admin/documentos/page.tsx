@@ -1,26 +1,15 @@
 import { createClient } from '@/utils/supabase/server';
 import DocList from '@/components/admin/DocList';
 import { Plus } from 'lucide-react';
+import { MasterServerService } from '@/services/supabase/master.server.service';
 
 export default async function AdminDocumentos() {
   const supabase = await createClient();
   
-  // Obtener documentos (excepto sistemas) y categorías en paralelo
-  const [docsResponse, categoriesResponse] = await Promise.all([
-    supabase
-      .from('documentos_sistemas')
-      .select('*')
-      .neq('categoria', 'sistemas')
-      .order('categoria', { ascending: true })
-      .order('titulo', { ascending: true }),
-    supabase
-      .from('categorias_documentos')
-      .select('*')
-      .order('nombre', { ascending: true })
+  const [docs, categories] = await Promise.all([
+    MasterServerService.getAdminDocumentosSistemasExcludingCategory(supabase, 'sistemas'),
+    MasterServerService.getCategoriaDocumentos(supabase)
   ]);
-
-  const docs = docsResponse.data;
-  const categories = categoriesResponse.data;
 
   return (
     <div className="max-w-5xl">
@@ -30,8 +19,8 @@ export default async function AdminDocumentos() {
       </header>
 
       <DocList 
-        initialDocs={docs || []} 
-        categories={categories || []} 
+        initialDocs={docs} 
+        categories={categories} 
         defaultCategory="sistemas"
       />
     </div>

@@ -1,16 +1,12 @@
 import { createClient } from '@/utils/supabase/server';
 import Link from 'next/link';
 import { Map, ChevronRight, ChevronLeft } from 'lucide-react';
+import { MasterServerService } from '@/services/supabase/master.server.service';
 
 export default async function AldeasPage() {
   const supabase = await createClient();
 
-  // Obtener solo las aldeas activas
-  const { data: aldeas } = await supabase
-    .from('aldeas')
-    .select('*')
-    .eq('activo', true)
-    .order('nombre_jap', { ascending: true });
+  const aldeas = await MasterServerService.getAldeasActivas(supabase);
 
   return (
     <div className="min-h-screen bg-black pt-24 pb-20 px-4">
@@ -31,7 +27,7 @@ export default async function AldeasPage() {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {aldeas?.map((aldea) => (
+          {aldeas.map((aldea) => (
             <Link 
               key={aldea.id} 
               href={`/aldeas/${aldea.slug}`}

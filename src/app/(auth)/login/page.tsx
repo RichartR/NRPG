@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/utils/supabase/client'
+import { AuthService } from '@/services/supabase/auth.service'
 import { LogIn, Mail, UserPlus, User } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
@@ -14,7 +14,6 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   
-  const supabase = createClient()
   const router = useRouter()
 
   const handleEmailAuth = async (e: React.FormEvent) => {
@@ -24,10 +23,7 @@ export default function LoginPage() {
     setSuccess(null)
     
     if (isLogin) {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
+      const { error } = await AuthService.signIn(email, password)
 
       if (error) {
         setError(error.message)
@@ -41,15 +37,7 @@ export default function LoginPage() {
         return
       }
 
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            username: username.trim()
-          }
-        }
-      })
+      const { error } = await AuthService.signUp(email, password, username)
 
       if (error) {
         setError(error.message)
@@ -63,12 +51,9 @@ export default function LoginPage() {
 
   const handleDiscordLogin = async () => {
     setLoading(true)
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'discord',
-      options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/auth/callback`
-      }
-    })
+    const { error } = await AuthService.signInWithDiscord(
+      `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/auth/callback`
+    )
     
     if (error) setError(error.message)
     setLoading(false)

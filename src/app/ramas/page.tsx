@@ -1,18 +1,12 @@
 import { createClient } from '@/utils/supabase/server';
 import Link from 'next/link';
 import { GitBranch, ChevronRight, ChevronLeft } from 'lucide-react';
+import { MasterServerService } from '@/services/supabase/master.server.service';
 
 export default async function RamasPage() {
   const supabase = await createClient();
 
-  // Obtener solo las ramas (especialidades) globales
-  const { data: ramas } = await supabase
-    .from('ramas_clanes')
-    .select('*')
-    .eq('tipo', 'rama')
-    .eq('activo', true)
-    .is('aldea_id', null)
-    .order('nombre', { ascending: true });
+  const ramas = await MasterServerService.getRamasGlobales(supabase);
 
   return (
     <div className="min-h-screen bg-black pt-24 pb-20 px-4">

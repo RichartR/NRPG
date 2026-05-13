@@ -2,37 +2,19 @@ import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronLeft, Sword, ChevronRight } from 'lucide-react';
+import { MasterServerService } from '@/services/supabase/master.server.service';
 
 export default async function GroupingDetailPage({ params }: { params: Promise<{ slug: string, grouping: string }> }) {
   const { slug, grouping } = await params;
   const supabase = await createClient();
 
-  // 1. Obtener datos de la rama
-  const { data: rama } = await supabase
-    .from('ramas_clanes')
-    .select('*')
-    .eq('slug', slug)
-    .single();
-
+  const rama = await MasterServerService.getRamaBySlug(supabase, slug);
   if (!rama) return notFound();
 
-  // 2. Obtener los datos de la SUB-ESPECIALIDAD (grouping)
-  const { data: sub } = await supabase
-    .from('sub_especialidades')
-    .select('*')
-    .eq('rama_id', rama.id)
-    .eq('slug', grouping)
-    .single();
-
+  const sub = await MasterServerService.getSubEspecialidadBySlug(supabase, rama.id, grouping);
   if (!sub) return notFound();
 
-  // 3. Obtener documentos vinculados a esta sub-especialidad
-  const { data: documentos } = await supabase
-    .from('documentos_combate')
-    .select('*')
-    .eq('sub_especialidad_id', sub.id)
-    .eq('activo', true)
-    .order('titulo', { ascending: true });
+  const documentos = await MasterServerService.getDocumentosCombateBySubEspecialidad(supabase, sub.id);
 
   return (
     <div className="min-h-screen bg-black pt-24 pb-20 px-4">
@@ -46,14 +28,14 @@ export default async function GroupingDetailPage({ params }: { params: Promise<{
         <header className="mb-16 border-l-4 border-blue-500 pl-8">
           <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em] mb-2">{rama.nombre}</p>
           <h1 className="text-6xl font-black text-white tracking-tighter uppercase">{sub.nombre}</h1>
-          <p className="text-zinc-500 mt-4 italic">"{sub.descripcion}"</p>
+          <p className="text-zinc-500 mt-4 italic">&quot;{sub.descripcion}&quot;</p>
         </header>
 
         {/* Listado de Documentos */}
         <div className="grid grid-cols-1 gap-4">
-          {documentos && documentos.length > 0 ? (
+          {documentos.length > 0 ? (
             documentos.map((doc) => (
-              <Link 
+              <Link
                 key={doc.id}
                 href={`/docs/${doc.clave}`}
                 className="group flex items-center justify-between p-6 bg-zinc-900/50 border border-zinc-800 rounded-[2rem] hover:border-blue-500/50 transition-all shadow-xl"

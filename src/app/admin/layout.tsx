@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { LayoutDashboard, FileText, Settings, LogOut, ShieldCheck, Map, GitBranch, Sword } from 'lucide-react';
+import { ProfileService } from '@/services/supabase/profile.service';
 
 export default async function AdminLayout({
   children,
@@ -14,12 +15,7 @@ export default async function AdminLayout({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/');
 
-  // 2. Verificar rol de administrador
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
+  const profile = await ProfileService.getProfile(user.id);
 
   if (profile?.role !== 'admin') {
     redirect('/'); // Si no es admin, fuera

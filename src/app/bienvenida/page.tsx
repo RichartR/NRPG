@@ -1,16 +1,12 @@
 import Link from 'next/link';
 import { ArrowLeft, BookOpen } from 'lucide-react';
 import { createClient } from '@/utils/supabase/server';
+import { MasterServerService } from '@/services/supabase/master.server.service';
 
 export default async function BienvenidaPage() {
   const supabase = await createClient();
 
-  const { data: docs, error } = await supabase
-    .from('documentos_sistemas')
-    .select('*')
-    .eq('categoria', 'bienvenida')
-    .eq('activo', true)
-    .order('titulo', { ascending: true });
+  const docs = await MasterServerService.getDocumentosByCategoria(supabase, 'bienvenida');
 
   const getCategoryTheme = (slug: string) => {
     if (slug.includes('guia')) return { color: "from-orange-500/20 to-orange-500/5", borderColor: "group-hover:border-orange-500/50", iconColor: "text-orange-500" };
@@ -33,10 +29,9 @@ export default async function BienvenidaPage() {
           <p className="text-zinc-400 text-lg">Selecciona una sección para obtener más información sobre el mundo ninja.</p>
         </div>
 
-        {error && <div className="text-red-500 p-4 bg-red-500/10 rounded-xl border border-red-500/20">Error al cargar documentos.</div>}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {docs?.map((doc: any) => {
+          {docs.map((doc) => {
             const theme = getCategoryTheme(doc.clave);
             return (
               <Link 

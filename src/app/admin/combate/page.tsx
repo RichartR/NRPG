@@ -2,29 +2,16 @@ import { createClient } from '@/utils/supabase/server';
 import { Sword, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import CombateList from '@/components/admin/CombateList';
+import { MasterServerService } from '@/services/supabase/master.server.service';
 
 export default async function AdminCombatePage() {
   const supabase = await createClient();
   
-  // 1. Obtener todos los documentos de combate
-  const { data: docs } = await supabase
-    .from('documentos_combate')
-    .select('*, ramas_clanes(id, nombre, tipo), sub_especialidades(id, nombre)')
-    .order('created_at', { ascending: false });
-
-  // 2. Obtener lista de ramas/clanes
-  const { data: ramas } = await supabase
-    .from('ramas_clanes')
-    .select('id, nombre, tipo')
-    .eq('activo', true)
-    .order('nombre', { ascending: true });
-
-  // 3. Obtener lista de sub-especialidades
-  const { data: subEspecialidades } = await supabase
-    .from('sub_especialidades')
-    .select('id, nombre, rama_id')
-    .eq('activo', true)
-    .order('nombre', { ascending: true });
+  const [docs, ramas, subEspecialidades] = await Promise.all([
+    MasterServerService.getAdminDocumentosCombate(supabase),
+    MasterServerService.getAdminRamasActivas(supabase),
+    MasterServerService.getAdminSubEspecialidadesActivas(supabase)
+  ]);
 
   return (
     <div className="min-h-screen bg-black pt-24 pb-20 px-4">
@@ -42,9 +29,9 @@ export default async function AdminCombatePage() {
         </header>
 
         <CombateList 
-          initialDocs={docs || []} 
-          ramas={ramas || []} 
-          subEspecialidades={subEspecialidades || []} 
+          initialDocs={docs} 
+          ramas={ramas} 
+          subEspecialidades={subEspecialidades} 
         />
       </div>
     </div>
