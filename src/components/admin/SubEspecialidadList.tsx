@@ -1,91 +1,86 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { createClient } from '@/utils/supabase/client';
-import { Plus, Eye, EyeOff, Shield, Search, Edit2, Save, X } from 'lucide-react';
+import { Plus, Eye, EyeOff, Shield, Search, Edit2, Save, X, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { AdminService } from '@/services/supabase/admin.service';
+import { useToastStore } from '@/components/ui/Toast';
+import { DataField, SelectField } from '@/components/ui/Fields';
+import { SubEspecialidad, RamaClan } from '@/domain/types';
 
-export default function SubEspecialidadList({ initialSubs, ramas }: { initialSubs: any[], ramas: any[] }) {
-  const [subs, setSubs] = useState(initialSubs);
+export default function SubEspecialidadList({ initialSubs, ramas }: { initialSubs: SubEspecialidad[], ramas: RamaClan[] }) {
+  const [subs, setSubs] = useState<SubEspecialidad[]>(initialSubs);
   const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
   const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editForm, setEditForm] = useState<any>(null);
+  const [editForm, setEditForm] = useState<Partial<SubEspecialidad> | null>(null);
   const [isAdding, setIsAdding] = useState(false);
-  const [newSub, setNewSub] = useState({ 
+  const [newSub, setNewSub] = useState<Partial<SubEspecialidad>>({ 
     nombre: '', 
-    nombre_español: '',
     slug: '', 
-    rama_id: '', 
+    rama_id: undefined, 
     descripcion: '',
-    url_imagen: '',
     activo: true 
   });
   const [loading, setLoading] = useState(false);
   
-  const supabase = createClient();
   const router = useRouter();
+  const addToast = useToastStore(state => state.addToast);
 
   const handleAdd = async () => {
     if (!newSub.nombre || !newSub.rama_id) return;
     setLoading(true);
 
-    const payload = {
-      ...newSub,
-      slug: newSub.slug || newSub.nombre.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '')
-    };
+    try {
+      const payload = {
+        ...newSub,
+        slug: newSub.slug || newSub.nombre.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '')
+      };
 
-    const { data, error } = await supabase
-      .from('sub_especialidades')
-      .insert([payload])
-      .select();
-
-    if (!error && data) {
-      setSubs([data[0], ...subs]);
-      setNewSub({ nombre: '', nombre_español: '', slug: '', rama_id: '', descripcion: '', url_imagen: '', activo: true });
+      const data = await AdminService.saveSubEspecialidad(payload);
+      setSubs([data as SubEspecialidad, ...subs]);
+      setNewSub({ nombre: '', slug: '', rama_id: undefined, descripcion: '', activo: true });
       setIsAdding(false);
+      addToast("Sub-especialidad creada con éxito", "success");
       router.refresh();
-    } else if (error) {
-      alert("Error: " + error.message);
+    } catch (error: any) {
+      addToast(error.message, "error");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleUpdate = async () => {
     if (!editForm) return;
     setLoading(true);
 
-    const { error } = await supabase
-      .from('sub_especialidades')
-      .update({
-        nombre: editForm.nombre,
-        nombre_español: editForm.nombre_español,
-        slug: editForm.slug || editForm.nombre.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, ''),
-        rama_id: editForm.rama_id,
-        descripcion: editForm.descripcion,
-        url_imagen: editForm.url_imagen,
-        activo: editForm.activo
-      })
-      .eq('id', editForm.id);
+    try {
+      const payload = {
+        ...editForm,
+        slug: editForm.slug || editForm.nombre?.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '')
+      };
 
-    if (!error) {
-      setSubs(subs.map(s => s.id === editForm.id ? editForm : s));
+      const data = await AdminService.saveSubEspecialidad(payload);
+      setSubs(subs.map(s => s.id === (data as SubEspecialidad).id ? (data as SubEspecialidad) : s));
       setEditingId(null);
       setEditForm(null);
+      addToast("Sub-especialidad actualizada", "success");
       router.refresh();
+    } catch (error: any) {
+      addToast(error.message, "error");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const toggleActive = async (id: number, currentStatus: boolean) => {
-    const { error } = await supabase
-      .from('sub_especialidades')
-      .update({ activo: !currentStatus })
-      .eq('id', id);
-
-    if (!error) {
+    try {
+      await AdminService.saveSubEspecialidad({ id, activo: !currentStatus });
       setSubs(subs.map(s => s.id === id ? { ...s, activo: !currentStatus } : s));
+      addToast(`Registro ${!currentStatus ? 'activado' : 'archivado'}`, "success");
       router.refresh();
+    } catch (err: any) {
+      addToast(err.message, "error");
     }
   };
 
@@ -98,28 +93,31 @@ export default function SubEspecialidadList({ initialSubs, ramas }: { initialSub
   }, [subs, activeTab, search]);
 
   return (
-    <div className="mt-20 space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <h2 className="text-2xl font-black text-white uppercase tracking-tight flex items-center gap-3">
-          <Shield className="w-6 h-6 text-blue-500" />
-          Sub-Categorías Técnicas
-        </h2>
+    <div className="mt-24 space-y-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 bg-zinc-900/30 p-8 rounded-[3rem] border border-zinc-800/50 backdrop-blur-md">
+        <div>
+           <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter flex items-center gap-4">
+            <Shield className="w-8 h-8 text-blue-500" />
+            Sub-Categorías Técnicas
+          </h2>
+          <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mt-2 ml-12">Desglose de especialidades por rama</p>
+        </div>
         
-        <div className="flex gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
+        <div className="flex gap-4">
+          <div className="relative md:w-80">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
             <input 
               type="text" 
-              placeholder="Buscar sub-categoría..." 
+              placeholder="BUSCAR SUB-CATEGORÍA..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="bg-zinc-900 border border-zinc-800 rounded-xl py-2 pl-10 pr-4 text-sm text-white focus:border-blue-500 outline-none transition-all w-64"
+              className="w-full bg-black border border-zinc-800 rounded-2xl py-4 pl-12 pr-6 text-xs font-bold text-white focus:border-blue-500 outline-none transition-all placeholder:text-zinc-700"
             />
           </div>
           <button 
             onClick={() => setIsAdding(!isAdding)}
-            className={`flex items-center gap-2 px-6 py-2 rounded-xl font-bold text-sm transition-all ${
-              isAdding ? 'bg-zinc-800 text-white' : 'bg-blue-600 text-black hover:bg-blue-500'
+            className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 border ${
+              isAdding ? 'bg-zinc-900 text-zinc-400 border-zinc-800' : 'bg-blue-600 text-black border-blue-600 shadow-xl shadow-blue-500/10'
             }`}
           >
             {isAdding ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
@@ -128,102 +126,64 @@ export default function SubEspecialidadList({ initialSubs, ramas }: { initialSub
         </div>
       </div>
 
-      <div className="flex gap-2 p-1 bg-zinc-900/50 border border-zinc-800 rounded-2xl w-fit">
-        <button 
-          onClick={() => setActiveTab('active')}
-          className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${activeTab === 'active' ? 'bg-blue-500 text-black shadow-lg shadow-blue-500/20' : 'text-zinc-500 hover:text-white'}`}
-        >
-          ACTIVOS ({subs.filter(s => s.activo).length})
-        </button>
-        <button 
-          onClick={() => setActiveTab('inactive')}
-          className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${activeTab === 'inactive' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-white'}`}
-        >
-          ARCHIVADOS ({subs.filter(s => !s.activo).length})
-        </button>
+      <div className="flex gap-3 p-1.5 bg-zinc-950 border border-zinc-900 rounded-[1.5rem] w-fit">
+        {['active', 'inactive'].map((tab) => (
+          <button 
+            key={tab}
+            onClick={() => setActiveTab(tab as any)}
+            className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
+              activeTab === tab 
+              ? 'bg-blue-600 text-black shadow-xl shadow-blue-500/20' 
+              : 'text-zinc-500 hover:text-white'
+            }`}
+          >
+            {tab === 'active' ? 'Activos' : 'Archivados'} 
+            <span className="ml-2 opacity-40">({subs.filter(s => tab === 'active' ? s.activo : !s.activo).length})</span>
+          </button>
+        ))}
       </div>
 
       {/* Formulario de Creación */}
       {isAdding && (
-        <div className="bg-zinc-900 border border-blue-500/30 rounded-[2.5rem] p-8 animate-in fade-in slide-in-from-top-4 duration-300 space-y-6 shadow-2xl">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">Nombre</label>
-              <input 
-                placeholder="Ej: Bujutsu" 
-                value={newSub.nombre || ''} 
-                onChange={e => {
-                  const val = e.target.value;
-                  setNewSub({
-                    ...newSub, 
-                    nombre: val, 
-                    slug: val.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '')
-                  });
-                }}
-                className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-blue-500 transition-all"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">En Español</label>
-              <input 
-                placeholder="Ej: Arte de la Guerra" 
-                value={newSub.nombre_español || ''} 
-                onChange={e => setNewSub({...newSub, nombre_español: e.target.value})}
-                className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-blue-500 transition-all"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">Imagen de Portada (URL)</label>
-              <input 
-                placeholder="https://i.imgur.com/..." 
-                value={newSub.url_imagen || ''} 
-                onChange={e => setNewSub({...newSub, url_imagen: e.target.value})}
-                className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-blue-500 transition-all"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">Slug (URL)</label>
-              <input 
-                placeholder="ej-bujutsu" 
-                value={newSub.slug || ''} 
-                onChange={e => setNewSub({...newSub, slug: e.target.value.toLowerCase().replace(/\s+/g, '-')})}
-                className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-blue-500 transition-all font-mono"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">Rama / Clan Padre</label>
-              <select 
-                value={newSub.rama_id} 
-                onChange={e => setNewSub({...newSub, rama_id: e.target.value})}
-                className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-blue-500 transition-all appearance-none"
-              >
-                <option value="">Seleccionar...</option>
-                {ramas.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
-              </select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">Descripción / Lore</label>
-            <textarea 
-              placeholder="Explica de qué trata esta sub-categoría..." 
-              value={newSub.descripcion || ''} 
-              onChange={e => setNewSub({...newSub, descripcion: e.target.value})}
-              rows={3}
-              className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-blue-500 transition-all resize-none"
+        <div className="bg-zinc-950 border border-blue-500/20 rounded-[3rem] p-10 animate-in slide-in-from-top-4 duration-300 space-y-8 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <DataField 
+              label="Nombre" 
+              value={newSub.nombre || ''} 
+              onChange={v => {
+                setNewSub({ ...newSub, nombre: v, slug: v.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '') });
+              }} 
+            />
+            <DataField label="Slug (URL)" value={newSub.slug || ''} onChange={v => setNewSub({ ...newSub, slug: v.toLowerCase().replace(/\s+/g, '-') })} />
+            <SelectField 
+              label="Rama / Clan Padre" 
+              value={newSub.rama_id} 
+              options={ramas.map(r => ({ label: r.nombre, value: r.id }))} 
+              onChange={v => setNewSub({ ...newSub, rama_id: Number(v) })} 
             />
           </div>
 
-          <div className="flex justify-end pt-4">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">Descripción / Lore</label>
+            <textarea 
+              rows={4}
+              value={newSub.descripcion || ''} 
+              onChange={e => setNewSub({ ...newSub, descripcion: e.target.value })}
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-white font-bold outline-none focus:border-blue-500 transition-all placeholder:text-zinc-700"
+              placeholder="Explica de qué trata esta sub-categoría..."
+            />
+          </div>
+
+          <div className="flex justify-end pt-6 border-t border-zinc-900">
             <button 
               onClick={handleAdd}
               disabled={loading || !newSub.nombre || !newSub.rama_id}
-              className="bg-blue-600 text-black font-black uppercase text-xs tracking-widest px-12 py-4 rounded-xl hover:bg-blue-500 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              className="bg-blue-600 text-black px-12 py-4 rounded-full font-black text-xs uppercase tracking-widest flex items-center gap-3 transition-all shadow-xl shadow-blue-500/20 active:scale-95 disabled:opacity-50"
             >
-              {loading ? 'Creando...' : <><Plus className="w-4 h-4" /> Crear Sub-Categoría</>}
+              {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              Crear Sub-Categoría
             </button>
           </div>
         </div>
@@ -234,114 +194,57 @@ export default function SubEspecialidadList({ initialSubs, ramas }: { initialSub
         {filteredSubs.map(sub => (
           <div 
             key={sub.id} 
-            className={`group p-8 bg-zinc-900 border transition-all rounded-[2rem] flex flex-col justify-between ${
-              editingId === sub.id ? 'border-blue-500 ring-2 ring-blue-500/10' : 'border-zinc-800 hover:border-zinc-700'
+            className={`group p-8 bg-zinc-950 border transition-all rounded-[2.5rem] flex flex-col justify-between relative overflow-hidden ${
+              editingId === sub.id ? 'border-blue-500 ring-4 ring-blue-500/5' : 'border-zinc-900 hover:border-blue-500/30'
             }`}
           >
-            {editingId === sub.id ? (
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Nombre y Español</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input 
-                      value={editForm.nombre || ''} 
-                      onChange={e => {
-                        const val = e.target.value;
-                        setEditForm({
-                          ...editForm, 
-                          nombre: val,
-                          slug: val.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '')
-                        });
-                      }}
-                      className="bg-black border border-zinc-800 rounded-xl px-4 py-2 text-white text-xs outline-none focus:border-blue-500"
-                      placeholder="Nombre"
-                    />
-                    <input 
-                      value={editForm.nombre_español || ''} 
-                      onChange={e => setEditForm({...editForm, nombre_español: e.target.value})}
-                      className="bg-black border border-zinc-800 rounded-xl px-4 py-2 text-white text-xs outline-none focus:border-blue-500"
-                      placeholder="Español"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Imagen y Rama</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input 
-                      value={editForm.url_imagen || ''} 
-                      onChange={e => setEditForm({...editForm, url_imagen: e.target.value})}
-                      className="bg-black border border-zinc-800 rounded-xl px-4 py-2 text-white text-xs outline-none focus:border-blue-500"
-                      placeholder="Imagen"
-                    />
-                    <select 
-                      value={editForm.rama_id} 
-                      onChange={e => setEditForm({...editForm, rama_id: e.target.value})}
-                      className="bg-black border border-zinc-800 rounded-xl px-4 py-2 text-white text-xs outline-none focus:border-blue-500"
-                    >
-                      {ramas.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Descripción</label>
-                  <textarea 
-                    value={editForm.descripcion || ''} 
-                    onChange={e => setEditForm({...editForm, descripcion: e.target.value})}
-                    className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2 text-white text-xs outline-none focus:border-blue-500 resize-none"
-                    rows={2}
-                    placeholder="Descripción"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2 pt-2">
-                  <button onClick={() => setEditingId(null)} className="text-zinc-500 hover:text-white text-[10px] font-black uppercase tracking-widest px-3">Cancelar</button>
-                  <button onClick={handleUpdate} className="bg-blue-500 text-black px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest">Guardar</button>
+            {editingId === sub.id && editForm ? (
+              <div className="space-y-6">
+                <DataField label="Nombre" value={editForm.nombre || ''} onChange={v => setEditForm({ ...editForm, nombre: v })} />
+                <SelectField label="Rama" value={editForm.rama_id} options={ramas.map(r => ({ label: r.nombre, value: r.id }))} onChange={v => setEditForm({ ...editForm, rama_id: Number(v) })} />
+                <textarea 
+                  value={editForm.descripcion || ''} 
+                  onChange={e => setEditForm({ ...editForm, descripcion: e.target.value })}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-white text-xs outline-none focus:border-blue-500"
+                  rows={3}
+                />
+                <div className="flex justify-end gap-4 pt-4">
+                  <button onClick={() => setEditingId(null)} className="text-zinc-600 font-black uppercase text-[10px] tracking-widest px-4">Cancelar</button>
+                  <button onClick={handleUpdate} className="bg-white text-black px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95">Guardar</button>
                 </div>
               </div>
             ) : (
               <>
                 <div>
                   <div className="flex justify-between items-start mb-6">
-                    <div className="w-12 h-12 rounded-2xl bg-zinc-800 border border-zinc-700 overflow-hidden flex items-center justify-center group-hover:bg-blue-500/10 group-hover:border-blue-500/50 transition-all">
-                      {sub.url_imagen ? (
-                        <img src={sub.url_imagen} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                      ) : (
-                        <Shield className="w-6 h-6 text-zinc-600 group-hover:text-blue-500" />
-                      )}
+                    <div className="w-16 h-16 rounded-2xl bg-zinc-900 border border-zinc-800 overflow-hidden flex items-center justify-center group-hover:border-blue-500/50 transition-all">
+                      <Shield className="w-6 h-6 text-zinc-700 group-hover:text-blue-500" />
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <button 
                         onClick={() => toggleActive(sub.id, sub.activo)}
-                        className={`p-2 rounded-xl transition-all ${sub.activo ? 'text-zinc-500 hover:text-blue-500 hover:bg-blue-500/10' : 'text-zinc-700 hover:text-white hover:bg-zinc-800'}`}
+                        className={`p-3 rounded-xl transition-all ${sub.activo ? 'text-blue-500 bg-blue-500/5 border border-blue-500/20 hover:bg-blue-600 hover:text-white' : 'text-zinc-700 bg-zinc-900 border border-zinc-800 hover:text-white'}`}
                       >
                         {sub.activo ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
                       </button>
                       <button 
-                        onClick={() => {
-                          setEditingId(sub.id);
-                          setEditForm({ ...sub });
-                        }}
-                        className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-xl transition-all"
+                        onClick={() => { setEditingId(sub.id); setEditForm({ ...sub }); }}
+                        className="p-3 bg-white text-black rounded-xl hover:bg-zinc-200 transition-all active:scale-95 shadow-lg shadow-white/5"
                       >
                         <Edit2 className="w-5 h-5" />
                       </button>
                     </div>
                   </div>
 
-                  <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-1">{sub.nombre}</h3>
-                  {sub.nombre_español && (
-                    <p className="text-blue-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4">{sub.nombre_español}</p>
-                  )}
-                  <p className="text-zinc-500 text-xs line-clamp-2 italic mb-6 leading-relaxed">
+                  <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter mb-1">{sub.nombre}</h3>
+                  <p className="text-zinc-500 text-xs italic mb-8 leading-relaxed line-clamp-3">
                     {sub.descripcion || 'Sin descripción técnica disponible.'}
                   </p>
                 </div>
                 
-                <div className="flex items-center justify-between pt-6 border-t border-zinc-800/50">
-                  <span className="text-[10px] font-black text-zinc-600 font-mono uppercase">/{sub.slug}</span>
-                  <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest bg-zinc-800 px-3 py-1 rounded-lg">
+                <div className="flex items-center justify-between pt-6 border-t border-zinc-900">
+                  <span className="text-[9px] font-black text-zinc-700 font-mono italic">/{sub.slug}</span>
+                  <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest bg-zinc-900 px-4 py-1.5 rounded-full border border-zinc-800">
                     {ramas.find(r => r.id === sub.rama_id)?.nombre || 'General'}
                   </span>
                 </div>

@@ -1,97 +1,48 @@
+'use client';
+
 import { create } from 'zustand';
 import { createClient } from '@/utils/supabase/client';
-
-export type Rango = 'D' | 'C' | 'B' | 'A' | 'S';
-
-export interface StatsBase {
-  NIN: number;
-  TAI: number;
-  GEN: number;
-  INT: number;
-  FUE: number;
-  AGI: number;
-  EST: number;
-  SM: number;
-}
-
-export interface AtributosDerivados {
-  VIT: number;
-  CH: number;
-  VEL: number;
-  RES: number;
-  REA: number;
-  DET: number;
-}
-
-export interface Character {
-  id: string;
-  nombre_ninja: string;
-  rango: Rango;
-  xp: number;
-  ryos: number;
-  stats_base: StatsBase;
-  atributos_derivados: AtributosDerivados;
-}
+import { Character, CharacterStats } from '@/domain/types';
+import { StatsLogic } from '@/domain/character/logic';
+import { useMasterStore } from '@/store/useMasterStore';
 
 interface CharacterState {
   activeCharacter: Character | null;
   loading: boolean;
   error: string | null;
   fetchActiveCharacter: () => Promise<void>;
-  calculateDerivados: (rango: Rango, stats: StatsBase) => AtributosDerivados;
 }
 
-const RANGO_BASE = {
-  D: { vit: 600, ch: 0, res: 0, rea: 1, det: 0 },
-  C: { vit: 900, ch: 50, res: 0, rea: 1, det: 1 },
-  B: { vit: 1100, ch: 100, res: 15, rea: 1, det: 2 },
-  A: { vit: 1200, ch: 150, res: 20, rea: 2, det: 3 },
-  S: { vit: 1300, ch: 200, res: 25, rea: 2, det: 4 },
-};
-
-export const useCharacterStore = create<CharacterState>((set, get) => ({
+export const useCharacterStore = create<CharacterState>((set) => ({
   activeCharacter: null,
   loading: false,
   error: null,
 
-  calculateDerivados: (rango, stats) => {
-    const base = RANGO_BASE[rango] || RANGO_BASE['D'];
-    
-    // Fórmulas base (el administrador puede ajustar esto luego)
-    // VIT Base + EST * 50
-    const VIT = base.vit + (stats.EST * 50);
-    // CH Base + NIN * 20
-    const CH = base.ch + (stats.NIN * 20);
-    // VEL basada en AGI
-    const VEL = stats.AGI * 2;
-    // RES Base + FUE
-    const RES = base.res + stats.FUE;
-    // REA Base + AGI/2
-    const REA = base.rea + Math.floor(stats.AGI / 2);
-    // DET Base + INT/2
-    const DET = base.det + Math.floor(stats.INT / 2);
-
-    return { VIT, CH, VEL, RES, REA, DET };
-  },
-
   fetchActiveCharacter: async () => {
     set({ loading: true, error: null });
     const supabase = createClient();
+    const masters = useMasterStore.getState();
     
     try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
+      if (!user) throw new Error("No hay usuario autenticado");
       
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('active_char_id')
-        .eq('id', userData.user.id)
+        .eq('id', user.id)
         .single();
         
       if (profileError) throw profileError;
       if (!profile?.active_char_id) {
         set({ activeCharacter: null, loading: false });
         return;
+      }
+
+      // Ensure masters are loaded
+      if (!masters.initialized) {
+        await masters.initialize();
       }
 
       const { data: charData, error: charError } = await supabase
@@ -102,17 +53,24 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
 
       if (charError) throw charError;
 
-      // Calcular derivados actualizados en base a los stats
-      const derivados = get().calculateDerivados(charData.rango as Rango, charData.stats_base);
+      // Calcular derivados usando la lógica centralizada de dominio y los datos del store
+      const rules = useMasterStore.getState();
+      const bases = rules.rangoRules?.[charData.rango];
+      const derivados = bases && rules.escaladoRules ? StatsLogic.calculateDerivedStats(
+        charData.stats_base as CharacterStats,
+        bases,
+        rules.escaladoRules
+      ) : charData.atributos_derivados;
 
       set({ 
         activeCharacter: {
           ...charData,
           atributos_derivados: derivados
-        }, 
+        } as Character, 
         loading: false 
       });
     } catch (err: any) {
+      console.error("Error in useCharacterStore:", err);
       set({ error: err.message, loading: false });
     }
   }

@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { createClient } from '@/utils/supabase/client';
-import { Edit2, Save, X, Eye, EyeOff, Sword, Plus, Trash2 } from 'lucide-react';
+import { Edit2, Save, X, Eye, EyeOff, Sword, Plus, Trash2, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { AdminService } from '@/services/supabase/admin.service';
+import { useToastStore } from '@/components/ui/Toast';
+import { DataField, SelectField } from '@/components/ui/Fields';
 
 export default function CombateList({ 
   initialDocs, 
@@ -19,8 +21,9 @@ export default function CombateList({
   const [editForm, setEditForm] = useState<any>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [loading, setLoading] = useState(false);
-  const supabase = createClient();
+  
   const router = useRouter();
+  const addToast = useToastStore(state => state.addToast);
 
   const startAdding = () => {
     setEditForm({
@@ -33,6 +36,7 @@ export default function CombateList({
       activo: true
     });
     setIsAdding(true);
+    setEditingId(null);
   };
 
   const startEditing = (doc: any) => {
@@ -45,169 +49,175 @@ export default function CombateList({
     if (!editForm) return;
     setLoading(true);
 
-    const payload = {
-      titulo: editForm.titulo,
-      clave: editForm.clave,
-      descripcion: editForm.descripcion,
-      url_drive: editForm.url_drive,
-      rama_id: editForm.rama_id || null,
-      sub_especialidad_id: editForm.sub_especialidad_id || null,
-      activo: editForm.activo
-    };
+    try {
+      const payload = {
+        ...editForm,
+        rama_id: editForm.rama_id || null,
+        sub_especialidad_id: editForm.sub_especialidad_id || null
+      };
 
-    let error;
-    if (isAdding) {
-      const { data, error: err } = await supabase
-        .from('documentos_combate')
-        .insert([payload])
-        .select('*, ramas_clanes(id, nombre), sub_especialidades(id, nombre)');
-      error = err;
-      if (!error && data) setDocs([data[0], ...docs]);
-    } else {
-      const { error: err } = await supabase
-        .from('documentos_combate')
-        .update(payload)
-        .eq('id', editForm.id);
-      error = err;
-      if (!error) {
-        const { data: updatedDoc } = await supabase
-          .from('documentos_combate')
-          .select('*, ramas_clanes(id, nombre), sub_especialidades(id, nombre)')
-          .eq('id', editForm.id)
-          .single();
-        setDocs(docs.map(d => d.id === editForm.id ? updatedDoc : d));
+      const data = await AdminService.saveCombatDoc(payload);
+      
+      if (isAdding) {
+        setDocs([data, ...docs]);
+      } else {
+        setDocs(docs.map(d => d.id === data.id ? data : d));
       }
-    }
 
-    if (!error) {
+      addToast("Registro de combate guardado", "success");
       setEditingId(null);
       setEditForm(null);
       setIsAdding(false);
       router.refresh();
+    } catch (err: any) {
+      addToast(err.message, "error");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const deleteDoc = async (id: number) => {
-    if (!confirm('¿Seguro que quieres borrar esta técnica?')) return;
-    const { error } = await supabase.from('documentos_combate').delete().eq('id', id);
-    if (!error) {
+    if (!confirm('¿Seguro que quieres borrar este registro?')) return;
+    try {
+      await AdminService.deleteCombatDoc(id);
       setDocs(docs.filter(d => d.id !== id));
+      addToast("Registro eliminado", "success");
       router.refresh();
+    } catch (err: any) {
+      addToast(err.message, "error");
     }
   };
 
   const subFiltradas = subEspecialidades.filter(s => s.rama_id === parseInt(editForm?.rama_id));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       <button 
         onClick={startAdding}
-        className="w-full py-4 border-2 border-dashed border-zinc-800 rounded-[2rem] text-zinc-500 hover:text-red-500 hover:border-red-500/50 hover:bg-red-500/5 transition-all font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2"
+        className="w-full py-8 border-2 border-dashed border-zinc-900 rounded-[3rem] text-zinc-600 hover:text-red-500 hover:border-red-500/50 hover:bg-red-500/5 transition-all font-black uppercase tracking-[0.4em] text-xs flex items-center justify-center gap-4 group"
       >
-        <Plus className="w-4 h-4" /> Añadir Nueva Técnica / Documento
+        <Plus className="w-5 h-5 group-hover:scale-125 transition-transform" /> 
+        Añadir Protocolo de Combate
       </button>
 
       {(isAdding || editingId) && (
-        <div className="bg-zinc-900 border-2 border-red-500/50 rounded-[2.5rem] p-8 shadow-2xl space-y-6 animate-in fade-in slide-in-from-top-4">
-          <h3 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-            <Sword className="w-5 h-5 text-red-500" />
-            {isAdding ? 'Nueva Técnica' : 'Editando Técnica'}
-          </h3>
+        <div className="bg-zinc-950 border border-red-900/30 rounded-[3rem] p-10 shadow-2xl space-y-10 animate-in slide-in-from-top-4 duration-500 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-1.5">Título</label>
-              <input 
-                type="text" 
-                value={editForm.titulo} 
-                onChange={e => {
-                  const val = e.target.value;
-                  setEditForm({
-                    ...editForm, 
-                    titulo: val,
-                    clave: val.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '')
-                  });
-                }} 
-                className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-white focus:border-red-500 outline-none transition-colors" 
-              />
-            </div>
-            <div>
-              <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-1.5">Clave (Slug)</label>
-              <input type="text" value={editForm.clave} onChange={e => setEditForm({...editForm, clave: e.target.value})} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-white focus:border-red-500 outline-none transition-colors" />
-            </div>
+          <div className="flex items-center justify-between border-b border-zinc-900 pb-8">
+            <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter flex items-center gap-4">
+              <Sword className="w-8 h-8 text-red-500" />
+              {isAdding ? 'Nueva Configuración de Combate' : 'Modificar Registro'}
+            </h3>
+            <button onClick={() => {setEditingId(null); setIsAdding(false);}} className="text-zinc-600 hover:text-white transition-colors">
+              <X className="w-8 h-8" />
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <DataField 
+              label="Título de la Técnica" 
+              value={editForm.titulo} 
+              onChange={v => {
+                setEditForm({
+                  ...editForm, 
+                  titulo: v,
+                  clave: v.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '')
+                });
+              }} 
+            />
+            <DataField label="Clave Operativa" value={editForm.clave} onChange={v => setEditForm({...editForm, clave: v})} />
+            
+            <SelectField 
+              label="Rama de Origen" 
+              value={editForm.rama_id} 
+              options={ramas.map(r => ({ label: r.nombre, value: r.id }))} 
+              onChange={v => setEditForm({...editForm, rama_id: v, sub_especialidad_id: ''})} 
+            />
+            <SelectField 
+              label="Sub-Especialidad Táctica" 
+              value={editForm.sub_especialidad_id} 
+              options={subFiltradas.map(s => ({ label: s.nombre, value: s.id }))} 
+              onChange={v => setEditForm({...editForm, sub_especialidad_id: v})} 
+            />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-1.5">Rama Principal</label>
-              <select value={editForm.rama_id || ''} onChange={e => setEditForm({...editForm, rama_id: e.target.value, sub_especialidad_id: ''})} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-white focus:border-red-500 outline-none transition-colors appearance-none">
-                <option value="">Seleccionar Rama...</option>
-                {ramas.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-1.5">Sub-Especialidad</label>
-              <select value={editForm.sub_especialidad_id || ''} onChange={e => setEditForm({...editForm, sub_especialidad_id: e.target.value})} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-white focus:border-red-500 outline-none transition-colors appearance-none">
-                <option value="">Ninguna / General</option>
-                {subFiltradas.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
-              </select>
-            </div>
+          <DataField label="URL del Manual (Drive)" value={editForm.url_drive} onChange={v => setEditForm({...editForm, url_drive: v})} />
+
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">Descripción Técnica</label>
+            <textarea 
+              value={editForm.descripcion} 
+              onChange={e => setEditForm({...editForm, descripcion: e.target.value})} 
+              rows={3} 
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-[2rem] p-8 text-white font-bold outline-none focus:border-red-500 transition-all resize-none placeholder:text-zinc-800" 
+              placeholder="Detalla los efectos y condiciones de la técnica..."
+            />
           </div>
 
-          <div>
-            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-1.5">URL de Google Drive</label>
-            <input type="text" value={editForm.url_drive} onChange={e => setEditForm({...editForm, url_drive: e.target.value})} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-white focus:border-red-500 outline-none transition-colors" />
-          </div>
-
-          <div>
-            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-1.5">Descripción Corta</label>
-            <textarea value={editForm.descripcion} onChange={e => setEditForm({...editForm, descripcion: e.target.value})} rows={2} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-white focus:border-red-500 outline-none transition-colors resize-none" />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800/50">
-            <button onClick={() => {setEditingId(null); setIsAdding(false);}} className="px-6 py-2 text-zinc-500 font-black uppercase text-[10px] tracking-widest">Cancelar</button>
-            <button onClick={handleSave} disabled={loading} className="px-8 py-2 bg-red-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-red-400 transition-colors">{loading ? 'Procesando...' : 'Guardar Técnica'}</button>
+          <div className="flex justify-end gap-6 pt-10 border-t border-zinc-900">
+            <button onClick={() => {setEditingId(null); setIsAdding(false);}} className="text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:text-white">Cancelar Operación</button>
+            <button 
+              onClick={handleSave} 
+              disabled={loading} 
+              className="px-12 py-5 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-4 transition-all shadow-2xl shadow-white/5 active:scale-95 disabled:opacity-50"
+            >
+              {loading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+              Finalizar Registro
+            </button>
           </div>
         </div>
       )}
 
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-4">
         {docs.map((doc) => (
-          <div key={doc.id} className="group flex items-center justify-between p-5 bg-zinc-900/50 border border-zinc-800 rounded-3xl hover:border-zinc-700 transition-all">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-zinc-800 flex items-center justify-center shrink-0 group-hover:bg-red-500/10 transition-colors">
-                <Sword className="w-5 h-5 text-zinc-600 group-hover:text-red-500" />
+          <div key={doc.id} className="group flex items-center justify-between p-8 bg-zinc-950 border border-zinc-900 rounded-[2.5rem] hover:border-red-500/30 transition-all relative overflow-hidden">
+            <div className="absolute inset-0 bg-red-500/0 group-hover:bg-red-500/[0.02] transition-colors" />
+            
+            <div className="flex items-center gap-8 relative z-10">
+              <div className="w-16 h-16 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center shrink-0 group-hover:bg-red-500/10 group-hover:border-red-500/20 transition-all">
+                <Sword className="w-6 h-6 text-zinc-700 group-hover:text-red-500 group-hover:scale-110 transition-all" />
               </div>
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <h4 className="text-white font-bold uppercase tracking-tight">{doc.titulo}</h4>
-                  <span className="text-[9px] font-black bg-zinc-800 px-2 py-0.5 rounded text-zinc-500 uppercase tracking-tighter">
-                    {(() => {
-                      const rama = Array.isArray(doc.ramas_clanes) ? doc.ramas_clanes[0] : doc.ramas_clanes;
-                      const sub = Array.isArray(doc.sub_especialidades) ? doc.sub_especialidades[0] : doc.sub_especialidades;
-                      
-                      const ramaName = rama?.nombre || 'General';
-                      const subName = sub?.nombre;
-                      
-                      return (
-                        <>
-                          {ramaName}
-                          {subName && <span className="text-zinc-600 mx-1"> {'>'} {subName}</span>}
-                        </>
-                      );
-                    })()}
-                  </span>
+                <div className="flex items-center gap-4 mb-2">
+                  <h4 className="text-xl font-black text-white uppercase italic tracking-tighter">{doc.titulo}</h4>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[8px] font-black bg-zinc-900 border border-zinc-800 px-3 py-1 rounded-full text-zinc-500 uppercase tracking-widest">
+                      {doc.ramas_clanes?.nombre || 'General'}
+                    </span>
+                    {doc.sub_especialidades?.nombre && (
+                      <span className="text-[8px] font-black bg-red-500/5 border border-red-500/10 px-3 py-1 rounded-full text-red-500/70 uppercase tracking-widest">
+                        {doc.sub_especialidades.nombre}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <p className="text-zinc-500 text-xs line-clamp-1 italic">{doc.descripcion}</p>
+                <p className="text-zinc-500 text-xs italic line-clamp-1">{doc.descripcion || 'Sin descripción táctica registrada.'}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button onClick={() => startEditing(doc)} className="p-2 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition-colors"><Edit2 className="w-4 h-4" /></button>
-              <button onClick={() => deleteDoc(doc.id)} className="p-2 bg-zinc-800 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-colors"><Trash2 className="w-4 h-4" /></button>
+            
+            <div className="flex items-center gap-4 relative z-10">
+              <button 
+                onClick={() => startEditing(doc)} 
+                className="p-4 bg-zinc-900 text-white rounded-2xl hover:bg-white hover:text-black transition-all active:scale-90"
+              >
+                <Edit2 className="w-5 h-5" />
+              </button>
+              <button 
+                onClick={() => deleteDoc(doc.id)} 
+                className="p-4 bg-red-600/10 text-red-500 rounded-2xl hover:bg-red-600 hover:text-white transition-all active:scale-90 border border-red-600/20"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
             </div>
           </div>
         ))}
+
+        {docs.length === 0 && (
+          <div className="py-24 text-center bg-zinc-950/50 rounded-[3rem] border-2 border-dashed border-zinc-900">
+            <p className="text-zinc-700 font-black uppercase italic tracking-[0.3em] text-sm">Arsenal vacío</p>
+          </div>
+        )}
       </div>
     </div>
   );

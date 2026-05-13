@@ -15,7 +15,7 @@ export default function CharacterSheet() {
   if (error) return <div className="text-red-500 bg-red-500/10 p-4 rounded-xl border border-red-500/20">Error: {error}</div>;
   if (!activeCharacter) return <div className="text-zinc-400 bg-zinc-900/50 p-6 rounded-2xl border border-zinc-800/50 backdrop-blur-md">No tienes un personaje activo.</div>;
 
-  const { stats_base, atributos_derivados, nombre_ninja, rango, xp, ryos } = activeCharacter;
+  const { stats_base, atributos_derivados, nombre_ninja, rango, xp, ryous } = activeCharacter;
 
   return (
     <div className="relative overflow-hidden rounded-3xl bg-zinc-950/80 border border-zinc-800/50 backdrop-blur-xl shadow-2xl p-8">
@@ -33,7 +33,7 @@ export default function CharacterSheet() {
                 Rango {rango}
               </span>
               <span className="text-zinc-400 text-sm font-medium">{xp} XP</span>
-              <span className="text-zinc-400 text-sm font-medium">{ryos} Ryos</span>
+              <span className="text-zinc-400 text-sm font-medium">{ryous} Ryos</span>
             </div>
           </div>
         </div>

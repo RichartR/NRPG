@@ -2,28 +2,16 @@ import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronLeft, Shield, Users } from 'lucide-react';
+import { MasterServerService } from '@/services/supabase/master.server.service';
 
 export default async function AldeaDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const supabase = await createClient();
 
-  // 1. Obtener datos de la aldea
-  const { data: aldea } = await supabase
-    .from('aldeas')
-    .select('*')
-    .eq('slug', slug)
-    .single();
-
+  const aldea = await MasterServerService.getAldeaBySlug(supabase, slug);
   if (!aldea) return notFound();
 
-  // 2. Obtener los clanes vinculados a esta aldea
-  const { data: clanes } = await supabase
-    .from('ramas_clanes')
-    .select('*')
-    .eq('aldea_id', aldea.id)
-    .eq('tipo', 'clan')
-    .eq('activo', true)
-    .order('nombre', { ascending: true });
+  const clanes = await MasterServerService.getClanesByAldeaId(supabase, aldea.id);
 
   return (
     <div className="min-h-screen bg-black">

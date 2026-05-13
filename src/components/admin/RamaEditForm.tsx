@@ -1,227 +1,162 @@
 'use client';
 
 import { useState } from 'react';
-import { createClient } from '@/utils/supabase/client';
-import { Save, X, GitBranch, MapPin, Type, AlignLeft, Shield } from 'lucide-react';
+import { Save, X, GitBranch, Type, AlignLeft, MapPin, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { AdminService } from '@/services/supabase/admin.service';
+import { useToastStore } from '@/components/ui/Toast';
+import { DataField, SelectField } from '@/components/ui/Fields';
+import { RamaClan, Aldea } from '@/domain/types';
 
-export default function RamaEditForm({ rama, aldeas, onCancel }: { rama?: any, aldeas: any[], onCancel: () => void }) {
+interface RamaEditFormProps {
+  rama?: RamaClan;
+  aldeas: Aldea[];
+  onCancel: () => void;
+}
+
+export default function RamaEditForm({ rama, aldeas, onCancel }: RamaEditFormProps) {
   const isCreate = !rama;
-  const [formData, setFormData] = useState(rama || {
+  const [formData, setFormData] = useState<Partial<RamaClan>>(rama || {
     nombre: '',
-    nombre_español: '',
     slug: '',
-    tipo: 'rama',
     descripcion: '',
-    url_imagen: '',
-    aldea_id: null,
+    tipo: 'rama',
+    aldea_id: undefined,
     activo: true
   });
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
+  const addToast = useToastStore(state => state.addToast);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const payload = {
-      nombre: formData.nombre,
-      nombre_español: formData.nombre_español,
-      slug: formData.slug || formData.nombre.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, ''),
-      tipo: formData.tipo,
-      descripcion: formData.descripcion,
-      url_imagen: formData.url_imagen,
-      aldea_id: formData.tipo === 'rama' ? null : formData.aldea_id,
-      activo: formData.activo
-    };
+    try {
+      const payload = {
+        ...formData,
+        slug: formData.slug || formData.nombre?.toLowerCase().replace(/\s+/g, '-')
+      };
 
-    const { error } = isCreate 
-      ? await supabase.from('ramas_clanes').insert([payload])
-      : await supabase.from('ramas_clanes').update(payload).eq('id', rama.id);
-
-    if (!error) {
+      await AdminService.saveRamaClan(payload);
+      addToast(`${formData.tipo === 'rama' ? 'Rama' : 'Clan'} ${isCreate ? 'creada' : 'actualizada'} con éxito`, 'success');
       router.refresh();
       onCancel();
-    } else {
-      alert("Error al guardar: " + error.message);
+    } catch (error: any) {
+      addToast(error.message, 'error');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  };
+
+  const updateField = (field: keyof RamaClan, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-zinc-900 border border-zinc-800 w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl">
-        <header className="bg-zinc-800/50 p-6 flex justify-between items-center border-b border-zinc-800">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <GitBranch className="w-5 h-5 text-amber-500" />
-            {isCreate ? 'Nueva Rama o Clan' : 'Editar Rama/Clan'}
-          </h2>
-          <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 cursor-pointer group">
-              <span className={`text-[10px] font-black uppercase tracking-widest ${formData.activo ? 'text-amber-500' : 'text-zinc-500'}`}>
-                {formData.activo ? 'ACTIVO' : 'INACTIVO'}
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div className="bg-zinc-950 border border-zinc-800 w-full max-w-3xl rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+        <header className="bg-zinc-900/50 p-8 flex justify-between items-center border-b border-zinc-800">
+          <div>
+            <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter flex items-center gap-3">
+              <GitBranch className="w-6 h-6 text-purple-500" />
+              {isCreate ? `Añadir Nueva ${formData.tipo === 'rama' ? 'Rama' : 'Clan'}` : `Editar ${formData.tipo === 'rama' ? 'Rama' : 'Clan'}`}
+            </h2>
+            <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mt-1">Configuración de especialidades ninja</p>
+          </div>
+          
+          <div className="flex items-center gap-6">
+            <div className="flex bg-zinc-900 p-1 rounded-2xl border border-zinc-800">
+              <button 
+                type="button"
+                onClick={() => updateField('tipo', 'rama')}
+                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${formData.tipo === 'rama' ? 'bg-white text-black' : 'text-zinc-500 hover:text-white'}`}
+              >
+                Rama
+              </button>
+              <button 
+                type="button"
+                onClick={() => updateField('tipo', 'clan')}
+                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${formData.tipo === 'clan' ? 'bg-white text-black' : 'text-zinc-500 hover:text-white'}`}
+              >
+                Clan
+              </button>
+            </div>
+            
+            <label className="flex items-center gap-3 cursor-pointer group bg-zinc-900 px-4 py-2 rounded-full border border-zinc-800">
+              <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${formData.activo ? 'text-emerald-500' : 'text-zinc-500'}`}>
+                {formData.activo ? 'ACTIVA' : 'INACTIVA'}
               </span>
               <input 
                 type="checkbox" 
                 checked={formData.activo} 
-                onChange={(e) => setFormData({...formData, activo: e.target.checked})}
+                onChange={(e) => updateField('activo', e.target.checked)}
                 className="hidden"
               />
-              <div className={`w-10 h-5 rounded-full transition-colors relative ${formData.activo ? 'bg-amber-500/20 border-amber-500/50' : 'bg-zinc-800 border-zinc-700'} border`}>
-                <div className={`absolute top-1 w-2.5 h-2.5 rounded-full transition-all ${formData.activo ? 'right-1 bg-amber-500' : 'left-1 bg-zinc-500'}`} />
+              <div className={`w-10 h-5 rounded-full transition-all relative ${formData.activo ? 'bg-emerald-500/20 border-emerald-500/50' : 'bg-zinc-800 border-zinc-700'} border`}>
+                <div className={`absolute top-1 w-2.5 h-2.5 rounded-full transition-all ${formData.activo ? 'right-1 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'left-1 bg-zinc-500'}`} />
               </div>
             </label>
-            <button onClick={onCancel} className="text-zinc-500 hover:text-white transition-colors">
-              <X className="w-6 h-6" />
+            <button onClick={onCancel} className="p-2 hover:bg-white/5 rounded-xl transition-all">
+              <X className="w-6 h-6 text-zinc-500" />
             </button>
           </div>
         </header>
 
-        <form onSubmit={handleSave} className="p-8 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Nombre */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-                <Type className="w-4 h-4" /> Nombre Original
-              </label>
-              <input 
-                type="text" 
-                value={formData.nombre || ''} 
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setFormData({
-                    ...formData, 
-                    nombre: val,
-                    slug: val.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '')
-                  });
-                }}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-amber-500 outline-none transition-all"
-                required
-                placeholder="Ej: Sharingan"
-              />
-            </div>
-
-            {/* Tipo */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Tipo de Categoría</label>
-              <select 
-                value={formData.tipo} 
-                onChange={(e) => setFormData({...formData, tipo: e.target.value})}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-amber-500 outline-none transition-all appearance-none"
-              >
-                <option value="rama">Rama (Habilidades Globales)</option>
-                <option value="clan">Clan (Específico de Aldea)</option>
-                <option value="especialidad">Especialidad</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Nombre Español */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Nombre en Español</label>
-              <input 
-                type="text" 
-                value={formData.nombre_español || ''} 
-                onChange={(e) => setFormData({...formData, nombre_español: e.target.value})}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-amber-500 outline-none transition-all"
-                placeholder="Ej: Ojo Copiador"
-              />
-            </div>
-
-            {/* Slug */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Slug (URL)</label>
-              <input 
-                type="text" 
-                value={formData.slug || ''} 
-                onChange={(e) => setFormData({...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-')})}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-amber-500 outline-none transition-all font-mono text-sm"
-                required
-                placeholder="sharingan"
-              />
-            </div>
-          </div>
-
-          {/* Aldea Vinculada (Opcional) */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-              <MapPin className="w-4 h-4" /> Aldea de Origen (Opcional)
-            </label>
-            <select 
-              value={formData.aldea_id || ''} 
-              onChange={(e) => setFormData({...formData, aldea_id: e.target.value ? parseInt(e.target.value) : null})}
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-amber-500 outline-none transition-all appearance-none"
-            >
-              <option value="">Ninguna (Rama Global / Sin Aldea)</option>
-              {aldeas.map(a => (
-                <option key={a.id} value={a.id}>{a.nombre_jap} ({a.abreviatura})</option>
-              ))}
-            </select>
-            <p className="text-[10px] text-zinc-600 italic">Los clanes suelen estar asociados a una aldea, las ramas suelen ser globales.</p>
-          </div>
-
-          {/* Imagen de Portada */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-                <Shield className="w-4 h-4" /> URL Imagen Portada (Imgur)
-              </label>
-              <input 
-                type="text" 
-                placeholder="https://i.imgur.com/..."
-                value={formData.url_imagen || ''} 
-                onChange={(e) => setFormData({...formData, url_imagen: e.target.value})}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-amber-500 outline-none transition-all font-mono text-sm"
-              />
-            </div>
-
-            {/* Previsualización de Imagen */}
-            {formData.url_imagen && (
-              <div className="relative w-full h-32 rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 group">
-                <img 
-                  src={formData.url_imagen} 
-                  alt="Preview" 
-                  className="w-full h-full object-cover opacity-50 group-hover:opacity-80 transition-opacity"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 bg-zinc-950/80 px-3 py-1 rounded-full border border-zinc-800">
-                    Previsualización
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Descripción */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-              <AlignLeft className="w-4 h-4" /> Descripción / Lore
-            </label>
-            <textarea 
-              rows={3}
-              value={formData.descripcion || ''} 
-              onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white focus:border-amber-500 outline-none transition-all resize-none"
+        <form onSubmit={handleSave} className="p-10 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <DataField 
+              label="Nombre" 
+              value={formData.nombre} 
+              onChange={(v) => {
+                updateField('nombre', v);
+                if (!formData.slug) updateField('slug', v.toLowerCase().trim().replace(/\s+/g, '-'));
+              }} 
+              placeholder="Ej: Clan Uchiha"
+            />
+            <DataField 
+              label="Slug (URL)" 
+              value={formData.slug} 
+              onChange={(v) => updateField('slug', v.toLowerCase().replace(/\s+/g, '-'))} 
+              placeholder="clan-uchiha"
+            />
+            <SelectField 
+              label="Aldea Asociada" 
+              value={formData.aldea_id} 
+              options={aldeas.map(a => ({ label: a.nombre_completo, value: a.id }))} 
+              onChange={(v) => updateField('aldea_id', v ? Number(v) : null)}
+              placeholder="Cualquier Aldea / Ronin"
             />
           </div>
 
-          <div className="flex justify-end gap-4 pt-4">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1 flex items-center gap-2">
+              <AlignLeft className="w-4 h-4" /> Descripción / Lore
+            </label>
+            <textarea 
+              rows={4}
+              value={formData.descripcion || ''} 
+              onChange={(e) => updateField('descripcion', e.target.value)}
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-white font-bold outline-none focus:border-purple-500 transition-all placeholder:text-zinc-700"
+              placeholder="Describe las habilidades únicas o historia..."
+            />
+          </div>
+
+          <div className="flex justify-end gap-6 pt-6 border-t border-zinc-900">
             <button 
               type="button" 
               onClick={onCancel}
-              className="px-6 py-3 text-sm font-bold text-zinc-500 hover:text-white transition-colors"
+              className="px-8 py-4 text-xs font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-colors"
             >
               Cancelar
             </button>
             <button 
               type="submit" 
               disabled={loading}
-              className="bg-amber-600 hover:bg-amber-500 text-black px-8 py-3 rounded-xl font-bold flex items-center gap-2 transition-all disabled:opacity-50"
+              className="bg-purple-600 hover:bg-purple-500 text-white px-10 py-4 rounded-full font-black text-xs uppercase tracking-widest flex items-center gap-3 transition-all shadow-xl shadow-purple-900/20 active:scale-95 disabled:opacity-50"
             >
-              {loading ? 'Guardando...' : <><Save className="w-5 h-5" /> Guardar Cambios</>}
+              {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Guardar {formData.tipo === 'rama' ? 'Rama' : 'Clan'}
             </button>
           </div>
         </form>
