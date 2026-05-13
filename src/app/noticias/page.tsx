@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { fetchDiscordMessage } from '@/lib/discord/fetchMessage';
 import { Megaphone, CalendarRange, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { MasterServerService } from '@/services/supabase/master.server.service';
 
 // Helper para obtener estilos de categoría de forma limpia
 const getCategoryStyles = (categoria: string) => {
@@ -18,14 +19,10 @@ const getCategoryStyles = (categoria: string) => {
 export default async function NoticiasPage() {
   const supabase = await createClient();
   
-  // Fetch the index from Supabase
-  const { data: indexList, error } = await supabase
-    .from('noticias_index')
-    .select('*')
-    .order('id', { ascending: false })
-    .limit(10);
-
-  if (error) {
+  let indexList: any[] = [];
+  try {
+    indexList = await MasterServerService.getNoticiasIndex(supabase, 10);
+  } catch {
     return <div className="p-8 text-red-500">Error cargando el índice de noticias.</div>;
   }
 

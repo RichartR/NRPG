@@ -1,27 +1,19 @@
 import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import DocViewer from '@/components/ui/DocViewer';
+import { MasterServerService } from '@/services/supabase/master.server.service';
 
 export default async function DocumentPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const supabase = await createClient();
 
-  // 1. Buscar en documentos_sistemas
-  let { data: doc } = await supabase
-    .from('documentos_sistemas')
-    .select('*')
-    .eq('clave', slug)
-    .single();
+  let doc: any = await MasterServerService.getDocumentoSistemaByClave(supabase, slug);
 
   let backUrl = '/bienvenida';
 
   // 2. Si no está en sistemas, buscar en documentos_combate
   if (!doc) {
-    const { data: combatDoc } = await supabase
-      .from('documentos_combate')
-      .select('*, ramas_clanes(slug), sub_especialidades(slug, ramas_clanes(slug))')
-      .eq('clave', slug)
-      .single();
+    const combatDoc = await MasterServerService.getDocumentoCombateByClave(supabase, slug);
     
     if (combatDoc) {
       doc = combatDoc;

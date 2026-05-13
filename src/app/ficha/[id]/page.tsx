@@ -282,10 +282,10 @@ export default function FichaPublicPage() {
                 <DataField label="Edad" value={character.edad} disabled={!isEditing} onChange={(v)=>updateField('edad', Number(v))} />
                 <SelectField label="Sexo" value={character.sexo} options={['Masculino', 'Femenino', 'Otro']} disabled={!isEditing} onChange={(v)=>updateField('sexo', v)} />
              </div>
-            <SectionCard title="Apariencia" icon={Sword} color="emerald" headerAction={canEdit && <button onClick={()=>save('apariencia')} className="px-8 py-3 bg-emerald-600 text-black text-[10px] font-black rounded-2xl uppercase tracking-widest active:scale-95 shadow-xl shadow-emerald-500/20">Sincronizar Discord</button>}>
+            <SectionCard title="Apariencia" icon={Sword} color="emerald" headerAction={canEdit && isEditing && <button onClick={()=>save('apariencia')} className="px-8 py-3 bg-emerald-600 text-black text-[10px] font-black rounded-2xl uppercase tracking-widest active:scale-95 shadow-xl shadow-emerald-500/20">Sincronizar Discord</button>}>
               <textarea value={character.apariencia} disabled={!isEditing} onChange={(e)=>updateField('apariencia', e.target.value)} className="w-full h-64 bg-zinc-900/50 border border-zinc-800 rounded-[2rem] p-8 text-zinc-300 italic text-lg leading-relaxed outline-none focus:border-emerald-500 transition-all disabled:opacity-80" placeholder="Describe a tu shinobi..." />
             </SectionCard>
-            <SectionCard title="Historia" icon={ScrollText} color="purple" headerAction={canEdit && <button onClick={()=>save('historia')} className="px-8 py-3 bg-purple-600 text-white text-[10px] font-black rounded-2xl uppercase tracking-widest active:scale-95 shadow-xl shadow-purple-900/20">Sincronizar Discord</button>}>
+            <SectionCard title="Historia" icon={ScrollText} color="purple" headerAction={canEdit && isEditing && <button onClick={()=>save('historia')} className="px-8 py-3 bg-purple-600 text-white text-[10px] font-black rounded-2xl uppercase tracking-widest active:scale-95 shadow-xl shadow-purple-900/20">Sincronizar Discord</button>}>
               <textarea value={character.historia} disabled={!isEditing} onChange={(e)=>updateField('historia', e.target.value)} className="w-full h-96 bg-zinc-900/50 border border-zinc-800 rounded-[2rem] p-8 text-zinc-300 text-lg leading-relaxed outline-none focus:border-purple-500 transition-all disabled:opacity-80" placeholder="Cuenta tu historia..." />
             </SectionCard>
           </div>

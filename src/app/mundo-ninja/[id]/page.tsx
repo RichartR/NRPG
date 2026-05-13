@@ -1,32 +1,17 @@
 import { createClient } from '@/utils/supabase/server';
 import { MapPin, ChevronLeft, User } from 'lucide-react';
 import Link from 'next/link';
+import { MasterServerService } from '@/services/supabase/master.server.service';
 
 export default async function MundoNinjaPublicVillagePage({ params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient();
   const { id } = await params;
   const isRenegado = id === 'renegados';
 
-  // 1. Obtener datos de la aldea
-  const { data: aldea } = !isRenegado ? await supabase
-    .from('aldeas')
-    .select('*')
-    .eq('id', Number(id))
-    .single() : { data: null };
-
-  // 2. Obtener ninjas
-  let query = supabase
-    .from('characters')
-    .select('*, aldeas(nombre_completo)')
-    .order('nombre_ninja');
-
-  if (isRenegado) {
-    query = query.is('aldea_id', null);
-  } else {
-    query = query.eq('aldea_id', Number(id));
-  }
-
-  const { data: ninjas } = await query;
+  const [aldea, ninjas] = await Promise.all([
+    isRenegado ? Promise.resolve(null) : MasterServerService.getAldeaById(supabase, Number(id)),
+    MasterServerService.getNinjasByAldea(supabase, isRenegado ? null : Number(id))
+  ]);
 
   return (
     <div className="min-h-screen bg-black pt-24 pb-20 px-4">
@@ -49,14 +34,14 @@ export default async function MundoNinjaPublicVillagePage({ params }: { params: 
                 {isRenegado ? 'SIN ALDEA / RENEGADOS' : aldea?.nombre_completo}
               </h1>
               <p className="text-zinc-500 text-sm font-medium uppercase tracking-widest">
-                Shinobis Registrados • {ninjas?.length || 0}
+                Shinobis Registrados • {ninjas.length}
               </p>
             </div>
           </div>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {ninjas && ninjas.length > 0 ? (
+          {ninjas.length > 0 ? (
             ninjas.map((ninja) => (
               <NinjaPublicCard key={ninja.id} ninja={ninja} variant={isRenegado ? 'renegado' : 'default'} />
             ))
@@ -101,7 +86,6 @@ function NinjaPublicCard({ ninja, variant = 'default' }: { ninja: any, variant?:
         </div>
       </div>
 
-      {/* Decoración de fondo */}
       <div className={`absolute -right-6 -bottom-6 opacity-[0.02] group-hover:opacity-[0.06] transition-opacity ${variant === 'renegado' ? 'text-red-500' : 'text-emerald-500'}`}>
         <User className="w-32 h-32 rotate-12" />
       </div>

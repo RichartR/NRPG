@@ -1,17 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/utils/supabase/client';
 import { 
   User, Shield, Briefcase, Zap, Save, RefreshCw, ArrowLeft, UserPlus
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToastStore } from '@/components/ui/Toast';
+import { CharacterService } from '@/services/supabase/character.service';
+import { useMasterStore } from '@/store/useMasterStore';
 
 export default function CrearFichaPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = createClient();
+  const masters = useMasterStore();
 
   const [loading, setLoading] = useState(false);
   const [character, setCharacter] = useState<any>({
@@ -31,13 +32,11 @@ export default function CrearFichaPage() {
     personajes_ramas: []
   });
 
-  const [aldeas, setAldeas] = useState<any[]>([]);
+  const aldeas = masters.aldeas || [];
   const addToast = useToastStore(state => state.addToast);
 
   useEffect(() => {
-    supabase.from('aldeas').select('*').eq('activo', true).then(({ data }) => {
-      if (data) setAldeas(data);
-    });
+    if (!masters.initialized) masters.initialize();
   }, []);
 
   const handleCreate = async () => {
@@ -54,21 +53,7 @@ export default function CrearFichaPage() {
     
     setLoading(true);
     try {
-      const { data, error } = await supabase.from('characters').insert({
-        hobba_name: character.hobba_name.trim(),
-        nombre_ninja: character.nombre_ninja.trim(),
-        aldea_id: character.aldea_id || null,
-        rango: character.rango,
-        rango_jerarquico: character.rango_jerarquico,
-        stats_base: character.stats_base,
-        atributos_derivados: character.atributos_derivados,
-        puntos_stats: character.puntos_stats,
-        sexo: character.sexo,
-        edad: character.edad
-      }).select().single();
-
-      if (error) throw error;
-
+      const data = await CharacterService.createCharacter(character);
       addToast('¡Personaje inicializado con éxito!', 'success');
       router.push(`/ficha/${data.id}`);
     } catch (err) {

@@ -21,6 +21,26 @@ export const CharacterService = {
     return data as Character;
   },
 
+  async createCharacter(character: Partial<Character>): Promise<Character> {
+    const supabase = createClient();
+    const { data, error } = await supabase.from('characters').insert({
+      hobba_name: character.hobba_name?.trim(),
+      nombre_ninja: character.nombre_ninja?.trim(),
+      aldea_id: character.aldea_id || null,
+      rango: character.rango,
+      rango_jerarquico: character.rango_jerarquico,
+      stats_base: character.stats_base,
+      atributos_derivados: character.atributos_derivados,
+      puntos_stats: character.puntos_stats,
+      sexo: character.sexo,
+      edad: character.edad,
+      activo: true
+    }).select().single();
+
+    if (error) throw error;
+    return data as Character;
+  },
+
   async updateCharacter(id: string, updates: Partial<Character>) {
     const supabase = createClient();
     const { error } = await supabase
@@ -38,7 +58,8 @@ export const CharacterService = {
         ryous: updates.ryous,
         tiempo_rpg: updates.tiempo_rpg,
         edad: updates.edad,
-        sexo: updates.sexo
+        sexo: updates.sexo,
+        activo: updates.activo
       })
       .eq('id', id);
 

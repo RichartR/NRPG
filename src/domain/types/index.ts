@@ -115,6 +115,7 @@ export interface Character {
   tiempo_rpg: string;
   edad: number;
   sexo: string;
+  activo: boolean;
   apariencia_msg_id?: string;
   historia_msg_id?: string;
   

@@ -5,6 +5,9 @@ import { createClient } from '@/utils/supabase/client';
 import { Character, CharacterStats } from '@/domain/types';
 import { StatsLogic } from '@/domain/character/logic';
 import { useMasterStore } from '@/store/useMasterStore';
+import { AuthService } from '@/services/supabase/auth.service';
+import { ProfileService } from '@/services/supabase/profile.service';
+import { CharacterService } from '@/services/supabase/character.service';
 
 interface CharacterState {
   activeCharacter: Character | null;
@@ -20,22 +23,17 @@ export const useCharacterStore = create<CharacterState>((set) => ({
 
   fetchActiveCharacter: async () => {
     set({ loading: true, error: null });
-    const supabase = createClient();
     const masters = useMasterStore.getState();
     
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-      if (!user) throw new Error("No hay usuario autenticado");
+      const { data: { user } } = await AuthService.getUser();
+      if (!user) {
+        set({ activeCharacter: null, loading: false });
+        return;
+      }
       
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('active_char_id')
-        .eq('id', user.id)
-        .single();
-        
-      if (profileError) throw profileError;
-      if (!profile?.active_char_id) {
+      const activeCharId = await ProfileService.getActiveCharacterId(user.id);
+      if (!activeCharId) {
         set({ activeCharacter: null, loading: false });
         return;
       }
@@ -45,13 +43,7 @@ export const useCharacterStore = create<CharacterState>((set) => ({
         await masters.initialize();
       }
 
-      const { data: charData, error: charError } = await supabase
-        .from('characters')
-        .select('*')
-        .eq('id', profile.active_char_id)
-        .single();
-
-      if (charError) throw charError;
+      const charData = await CharacterService.getCharacterById(activeCharId);
 
       // Calcular derivados usando la lógica centralizada de dominio y los datos del store
       const rules = useMasterStore.getState();

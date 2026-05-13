@@ -15,13 +15,8 @@ export async function fetchDiscordMessage(messageId: string): Promise<DiscordMes
   
   try {
     const supabase = await createClient();
-    const { data: config } = await supabase
-      .from('configuracion_sistema')
-      .select('valor')
-      .eq('clave', 'discord_history_appearance_channel_id')
-      .single();
-
-    const channelId = config?.valor as string;
+    const { MasterServerService } = await import('@/services/supabase/master.server.service');
+    const channelId = await MasterServerService.getConfiguracion(supabase, 'discord_history_appearance_channel_id');
 
     if (!token || !channelId) {
       console.warn("DISCORD_BOT_TOKEN or channel config missing, returning mock data.");

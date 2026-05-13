@@ -2,46 +2,30 @@ import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronLeft, Zap, Shield, Sword, ChevronRight } from 'lucide-react';
+import { MasterServerService } from '@/services/supabase/master.server.service';
 
 export default async function RamaDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const supabase = await createClient();
 
-  // 1. Obtener datos de la rama e incluir el slug de la aldea si es un clan
-  const { data: rama } = await supabase
-    .from('ramas_clanes')
-    .select('*, aldeas(slug, abreviatura)')
-    .eq('slug', slug)
-    .single();
-
+  const rama = await MasterServerService.getRamaBySlug(supabase, slug);
   if (!rama) return notFound();
 
   // Determinar URL de retorno dinámica
-  const backUrl = rama.tipo === 'clan' && rama.aldeas?.slug 
-    ? `/aldeas/${rama.aldeas.slug}` 
+  const backUrl = rama.tipo === 'clan' && rama.aldeas?.slug
+    ? `/aldeas/${rama.aldeas.slug}`
     : '/ramas';
-  
+
   const backText = rama.tipo === 'clan' && rama.aldeas?.abreviatura
     ? `Volver a ${rama.aldeas.abreviatura}`
     : 'Volver a ramas';
 
-  // 2. Obtener SUB-ESPECIALIDADES
-  const { data: subEspecialidades } = await supabase
-    .from('sub_especialidades')
-    .select('*')
-    .eq('rama_id', rama.id)
-    .eq('activo', true)
-    .order('nombre', { ascending: true });
+  const [subEspecialidades, documentos] = await Promise.all([
+    MasterServerService.getSubEspecialidadesByRama(supabase, rama.id),
+    MasterServerService.getDocumentosCombateByRama(supabase, rama.id),
+  ]);
 
-  const tieneSubEspecialidades = subEspecialidades && subEspecialidades.length > 0;
-
-  // 3. Obtener documentos directos
-  let { data: documentos } = await supabase
-    .from('documentos_combate')
-    .select('*')
-    .eq('rama_id', rama.id)
-    .is('sub_especialidad_id', null)
-    .eq('activo', true);
+  const tieneSubEspecialidades = subEspecialidades.length > 0;
 
   return (
     <div className="min-h-screen bg-black pt-24 pb-20 px-4">
@@ -57,14 +41,14 @@ export default async function RamaDetailPage({ params }: { params: Promise<{ slu
           </div>
           <h1 className="text-6xl md:text-7xl font-black text-white tracking-tighter uppercase mb-4">{rama.nombre}</h1>
           <p className="text-zinc-500 text-xl max-w-2xl italic leading-relaxed">
-            "{rama.descripcion}"
+            &quot;{rama.descripcion}&quot;
           </p>
         </header>
 
         {tieneSubEspecialidades && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
             {subEspecialidades.map((sub) => (
-              <Link 
+              <Link
                 key={sub.id}
                 href={`/ramas/${slug}/${sub.slug}`}
                 className="group relative p-8 bg-zinc-900 border border-zinc-800 rounded-[2.5rem] hover:border-blue-500/50 transition-all overflow-hidden"
@@ -82,14 +66,14 @@ export default async function RamaDetailPage({ params }: { params: Promise<{ slu
           </div>
         )}
 
-        {documentos && documentos.length > 0 && (
+        {documentos.length > 0 && (
           <div className="space-y-4">
             {tieneSubEspecialidades && (
               <h3 className="text-sm font-black text-zinc-700 uppercase tracking-[0.3em] mb-6">Documentos Generales</h3>
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {documentos.map((doc) => (
-                <Link 
+                <Link
                   key={doc.id}
                   href={`/docs/${doc.clave}`}
                   className="group flex items-center justify-between p-6 bg-zinc-900/50 border border-zinc-800 rounded-3xl hover:border-blue-500/50 transition-all shadow-xl"

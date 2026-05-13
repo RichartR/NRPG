@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { CharacterService } from '@/services/supabase/character.service';
 import { StatsLogic } from '@/domain/character/logic';
 import { Character, CharacterStats } from '@/domain/types';
-import { createClient } from '@/utils/supabase/client';
 import { useMasterStore } from '@/store/useMasterStore';
+import { AuthService } from '@/services/supabase/auth.service';
+import { ProfileService } from '@/services/supabase/profile.service';
 import { useToastStore } from '@/components/ui/Toast';
 
 export function useCharacter(characterId: string) {
@@ -22,22 +23,20 @@ export function useCharacter(characterId: string) {
   const loadData = async () => {
     try {
       setLoading(true);
-      const supabase = createClient();
       
       // Ensure master data is loaded
       if (!masters.initialized) {
         await masters.initialize();
       }
       
-      const [char, { data: { user } }] = await Promise.all([
-        CharacterService.getCharacterById(characterId),
-        supabase.auth.getUser()
-      ]);
+      const { data: { user } } = await AuthService.getUser();
+      
+      const char = await CharacterService.getCharacterById(characterId);
 
       // Permission check
       let isAdmin = false;
       if (user) {
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+        const profile = await ProfileService.getProfile(user.id);
         isAdmin = profile?.role === 'admin';
       }
       setCanEdit(!!(isAdmin || (user && char.user_id === user.id)));
@@ -128,17 +127,19 @@ export function useCharacter(characterId: string) {
     setSaving(true);
     try {
       if (section) {
-        const msgId = section === 'apariencia' ? character.apariencia_msg_id : character.historia_msg_id;
+        // Llamar al endpoint de personaje con la sección específica
+        // Este endpoint tiene lógica de auto-heal: crea el mensaje si fue borrado
         const content = section === 'apariencia' ? character.apariencia : character.historia;
-        const res = await fetch('/api/discord/messages', {
+        const res = await fetch(`/api/characters/${characterId}`, {
           method: 'PATCH',
-          body: JSON.stringify({ 
-            messageId: msgId, 
-            content: `**${section.toUpperCase()} DE ${character.nombre_ninja.toUpperCase()}**\n${content}` 
-          })
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ section, data: { [section]: content } })
         });
-        if (!res.ok) throw new Error("Fallo en sincronización con Discord");
-        addToast(`${section === 'apariencia' ? 'Apariencia' : 'Historia'} actualizada`, 'success');
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Fallo en sincronización con Discord');
+        }
+        addToast(`${section === 'apariencia' ? 'Apariencia' : 'Historia'} sincronizada con Discord`, 'success');
       } else {
         await CharacterService.updateCharacter(characterId, character);
         await Promise.all([

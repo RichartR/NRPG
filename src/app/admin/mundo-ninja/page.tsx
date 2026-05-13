@@ -1,40 +1,14 @@
 import { createClient } from '@/utils/supabase/server';
+import { MasterServerService } from '@/services/supabase/master.server.service';
 import { MapPin, ChevronLeft, Globe, UserPlus, Users } from 'lucide-react';
 import Link from 'next/link';
 
 export default async function MundoNinjaSelectionPage() {
   const supabase = await createClient();
   
-  // 1. Obtener aldeas activas
-  const { data: aldeas } = await supabase
-    .from('aldeas')
-    .select('*')
-    .eq('activo', true)
-    .order('nombre_completo');
-
-  // 2. Contar ninjas por aldea de forma eficiente (en paralelo)
-  const countsMap: Record<string, number> = {};
-  
-  if (aldeas) {
-    const countPromises = [
-      ...aldeas.map(async (aldea) => {
-        const { count } = await supabase
-          .from('characters')
-          .select('*', { count: 'exact', head: true })
-          .eq('aldea_id', aldea.id);
-        countsMap[aldea.id] = count || 0;
-      }),
-      (async () => {
-        const { count } = await supabase
-          .from('characters')
-          .select('*', { count: 'exact', head: true })
-          .is('aldea_id', null);
-        countsMap['renegados'] = count || 0;
-      })()
-    ];
-    
-    await Promise.all(countPromises);
-  }
+  // 1. Obtener aldeas activas y conteos
+  const aldeas = await MasterServerService.getAldeasActivas(supabase);
+  const countsMap = await MasterServerService.getCharacterCountsByAldea(supabase, aldeas.map(a => a.id));
 
   const getCount = (id: number | null) => {
     return id ? (countsMap[id] || 0) : (countsMap['renegados'] || 0);

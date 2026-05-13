@@ -2,16 +2,12 @@ import Link from 'next/link';
 import { ArrowLeft, Zap } from 'lucide-react';
 import { createClient } from '@/utils/supabase/server';
 import DynamicIcon from '@/components/ui/DynamicIcon';
+import { MasterServerService } from '@/services/supabase/master.server.service';
 
 export default async function SistemasPage() {
   const supabase = await createClient();
 
-  const { data: docs, error } = await supabase
-    .from('documentos_sistemas')
-    .select('*')
-    .eq('categoria', 'sistemas')
-    .eq('activo', true)
-    .order('titulo', { ascending: true });
+  const docs = await MasterServerService.getDocumentosSistemas(supabase);
 
   const theme = { 
     color: "from-yellow-500/20 to-yellow-500/5", 
@@ -38,16 +34,15 @@ export default async function SistemasPage() {
           <p className="text-zinc-400 text-lg">Consulta las mecánicas detalladas, tablas de escalado y reglas de combate.</p>
         </div>
 
-        {error && <div className="text-red-500 p-4 bg-red-500/10 rounded-xl border border-red-500/20">Error al cargar sistemas.</div>}
 
-        {docs?.length === 0 && (
+        {docs.length === 0 && (
           <div className="text-center py-20 border-2 border-dashed border-zinc-900 rounded-3xl">
             <p className="text-zinc-600 font-medium">No hay sistemas registrados todavía.</p>
           </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {docs?.map((doc: any) => (
+          {docs.map((doc) => (
             <Link 
               key={doc.id} 
               href={`/docs/${doc.clave}`}

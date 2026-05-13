@@ -3,17 +3,13 @@ import LogoutButton from "@/components/auth/LogoutButton";
 import { BookOpen, Megaphone, ScrollText, Globe, Zap, User, ShieldAlert, Map, GitBranch } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
+import { ProfileService } from '@/services/supabase/profile.service';
 
 export default async function Home() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Obtener perfil para el nombre y el rol
-  const { data: profile } = user ? await supabase
-    .from('profiles')
-    .select('username, role')
-    .eq('id', user.id)
-    .single() : { data: null };
+  const profile = user ? await ProfileService.getProfile(user.id) : null;
 
   return (
     <div className="min-h-screen bg-zinc-950 p-4 md:p-8">
@@ -43,7 +39,16 @@ export default async function Home() {
               ADMIN PANEL
             </Link>
           )}
-          <LogoutButton />
+          {user ? (
+            <LogoutButton />
+          ) : (
+            <Link 
+              href="/login" 
+              className="px-6 py-2 bg-white text-black rounded-xl text-xs font-black uppercase tracking-widest hover:bg-orange-500 transition-all shadow-lg shadow-white/5"
+            >
+              Iniciar Sesión
+            </Link>
+          )}
         </nav>
       </header>
 

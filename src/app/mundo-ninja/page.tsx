@@ -1,24 +1,16 @@
 import { createClient } from '@/utils/supabase/server';
 import { MapPin, ChevronLeft, Globe, Users } from 'lucide-react';
 import Link from 'next/link';
+import { MasterServerService } from '@/services/supabase/master.server.service';
 
 export default async function MundoNinjaSelectionPage() {
   const supabase = await createClient();
   
-  // 1. Obtener aldeas activas
-  const { data: aldeas } = await supabase
-    .from('aldeas')
-    .select('*')
-    .eq('activo', true)
-    .order('nombre_completo');
-
-  // 2. Contar ninjas por aldea
-  const { data: ninjaCounts } = await supabase
-    .from('characters')
-    .select('aldea_id');
+  const aldeas = await MasterServerService.getAldeasActivas(supabase);
+  const countsMap = await MasterServerService.getCharacterCountsByAldea(supabase, aldeas.map(a => a.id));
 
   const getCount = (id: number | null) => {
-    return (ninjaCounts || []).filter(n => n.aldea_id === id).length;
+    return id ? (countsMap[id] || 0) : (countsMap['renegados'] || 0);
   };
 
   return (

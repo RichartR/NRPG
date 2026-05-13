@@ -1,6 +1,9 @@
 import { createClient } from '@/utils/supabase/server';
-import { sendDiscordMessage, editDiscordMessage, getDiscordMessage } from '@/lib/discord';
+import { sendDiscordMessage, editDiscordMessage, getDiscordMessage, getDiscordChannel } from '@/lib/discord';
 import { NextResponse } from 'next/server';
+import { MasterServerService } from '@/services/supabase/master.server.service';
+import { CharacterServerService } from '@/services/supabase/character.server.service';
+
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -12,21 +15,19 @@ export async function GET(request: Request) {
 
   try {
     const supabase = await createClient();
-    
-    // Obtener el canal de la configuración
-    const { data: config } = await supabase
-      .from('configuracion_sistema')
-      .select('valor')
-      .eq('clave', 'discord_history_appearance_channel_id')
-      .single();
-
-    const channelId = config?.valor as string;
+    const channelId = await MasterServerService.getConfiguracion(supabase, 'discord_history_appearance_channel_id');
 
     if (!channelId) {
       throw new Error('Canal de Discord no configurado en el sistema');
     }
 
     const discordMsg = await getDiscordMessage(channelId, messageId);
+
+    // Mensaje no encontrado en Discord (eliminado o canal incorrecto)
+    if (!discordMsg) {
+      return NextResponse.json({ content: null, deleted: true }, { status: 200 });
+    }
+
     return NextResponse.json(discordMsg);
   } catch (error: any) {
     console.error('API Error (GET):', error);
@@ -44,32 +45,14 @@ export async function POST(request: Request) {
 
     const supabase = await createClient();
 
-    // 1. Obtener canal de Discord
-    const { data: config } = await supabase
-      .from('configuracion_sistema')
-      .select('valor')
-      .eq('clave', 'discord_history_appearance_channel_id')
-      .single();
-
-    const channelId = config?.valor as string;
-
+    const channelId = await getDiscordChannel(supabase);
     if (!channelId) {
       throw new Error('Canal de Discord no configurado en el sistema');
     }
 
-    // 2. Enviar a Discord
     const discordMsg = await sendDiscordMessage(channelId, content);
 
-    // 3. Guardar en Supabase
-    const { error: dbError } = await supabase
-      .from('personajes_mensajes')
-      .insert({
-        personaje_id,
-        discord_message_id: discordMsg.id,
-        tipo,
-      });
-
-    if (dbError) throw dbError;
+    await CharacterServerService.insertPersonajeMensaje(supabase, personaje_id, discordMsg.id, tipo);
 
     return NextResponse.json({ success: true, messageId: discordMsg.id });
   } catch (error: any) {
@@ -87,21 +70,12 @@ export async function PATCH(request: Request) {
     }
 
     const supabase = await createClient();
-
-    // 1. Obtener canal de Discord
-    const { data: config } = await supabase
-      .from('configuracion_sistema')
-      .select('valor')
-      .eq('clave', 'discord_history_appearance_channel_id')
-      .single();
-
-    const channelId = config?.valor as string;
+    const channelId = await getDiscordChannel(supabase);
 
     if (!channelId) {
       throw new Error('Canal de Discord no configurado en el sistema');
     }
 
-    // 2. Editar en Discord
     await editDiscordMessage(channelId, messageId, content);
 
     return NextResponse.json({ success: true });

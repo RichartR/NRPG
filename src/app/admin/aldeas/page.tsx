@@ -2,14 +2,12 @@ import { createClient } from '@/utils/supabase/server';
 import { Map, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import AldeaList from '@/components/admin/AldeaList';
+import { MasterServerService } from '@/services/supabase/master.server.service';
 
 export default async function AdminAldeasPage() {
   const supabase = await createClient();
   
-  const { data: aldeas } = await supabase
-    .from('aldeas')
-    .select('*')
-    .order('id', { ascending: true });
+  const aldeas = await MasterServerService.getAdminAldeas(supabase);
 
   return (
     <div className="min-h-screen bg-black pt-24 pb-20 px-4">
@@ -26,7 +24,7 @@ export default async function AdminAldeasPage() {
           </div>
         </div>
 
-        <AldeaList initialAldeas={aldeas || []} />
+        <AldeaList initialAldeas={aldeas} />
       </div>
     </div>
   );
