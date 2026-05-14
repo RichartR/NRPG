@@ -74,7 +74,7 @@ export interface Glosario {
   nombre_jp?: string;
   requisitos: any;
   coste_exp: number;
-  coste_ryo: number;
+  coste_ryous: number;
   activo: boolean;
   inicial?: boolean;
   // Joins opcionales
@@ -120,7 +120,7 @@ export interface AtributosDerivados {
 }
 
 export interface Character {
-  id: string;
+  id: number;
   user_id: string;
   nombre_ninja: string;
   hobba_name: string;
@@ -145,21 +145,61 @@ export interface Character {
   personajes_inventario?: PersonajeItem[];
   personajes_tecnicas?: PersonajeTecnica[];
   personajes_ramas?: PersonajeRama[];
+  registros_autor?: Registro[];
+  registros_participante?: RegistroParticipante[];
   
   // UI helper fields
   apariencia?: string;
   historia?: string;
 }
 
+export interface MisionMaster {
+  id: number;
+  codigo_mision: string;
+  rango: string;
+  exp: number;
+  ryous: number;
+}
+
+export interface Registro {
+  id: number;
+  tipo: 'mision' | 'accion' | 'combate';
+  subtipo?: string;
+  data: {
+    titulo: string;
+    codigo_mision?: string;
+    recompensa_xp?: number;
+    recompensa_ryous?: number;
+    urls_imagenes?: string[];
+    [key: string]: any;
+  };
+  autor_id: number;
+  fecha: string;
+  // Joins
+  autor?: { nombre_ninja: string };
+  participantes?: RegistroParticipante[];
+}
+
+export interface RegistroParticipante {
+  registro_id: number;
+  personaje_id: number;
+  estado: 'pendiente' | 'aceptado';
+  // Joins
+  personaje?: { nombre_ninja: string };
+  registro?: Registro;
+}
+
 export interface PersonajeItem {
-  personaje_id: string;
+  id?: number;
+  personaje_id: number;
   item_id: number;
   cantidad: number;
   info_glosario?: Glosario;
 }
 
 export interface PersonajeTecnica {
-  personaje_id: string;
+  id?: number;
+  personaje_id: number;
   tecnica_id: number;
   info_glosario?: Glosario;
 }

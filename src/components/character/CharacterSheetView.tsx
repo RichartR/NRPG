@@ -1,13 +1,16 @@
 'use client';
 
 import { 
-  User, Shield, Briefcase, Zap, Save, RefreshCw, ArrowLeft, 
-  Activity, Sword, ScrollText, GitBranch, UserCircle, X, Heart, Trash2, Edit3
+  User, Briefcase, Zap, Save, ArrowLeft, 
+  Activity, Sword, Swords, ScrollText, GitBranch, UserCircle, X, Heart, Trash2, Edit3
 } from 'lucide-react';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { DataField, SelectField, SearchableSelect } from '@/components/ui/Fields';
-import { Character, CharacterStats, Glosario, PersonajeItem, PersonajeTecnica } from '@/domain/types';
+import { Character, CharacterStats, Glosario, PersonajeItem, PersonajeTecnica, Registro } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
+import RegistroCard from '@/components/registros/RegistroCard';
+import RegistroForm from '@/components/registros/RegistroForm';
+import { useState } from 'react';
 
 interface CharacterSheetViewProps {
   character: Character;
@@ -54,6 +57,8 @@ export function CharacterSheetView({
   const currentRankValue = masters.rankOrder[character.rango || 'D'] || 0;
   const requiredRankValue = masters.rankOrder[masters.requiredTrainingRank] || 0;
   const canAccessTraining = currentRankValue >= requiredRankValue;
+
+  const [editingRegistro, setEditingRegistro] = useState<Registro | null>(null);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-200 font-sans selection:bg-orange-500/30">
@@ -105,7 +110,7 @@ export function CharacterSheetView({
 
       <main className="max-w-7xl mx-auto p-6 md:p-10">
         <div className="flex gap-3 mb-12 overflow-x-auto pb-4 scrollbar-hide">
-          {['general', 'ninja', 'inventario', 'tecnicas', 'onrol'].map((tab) => (
+          {['general', 'ninja', 'inventario', 'tecnicas', 'onrol', 'registros'].map((tab) => (
             <button 
               key={tab} 
               onClick={() => onSetActiveTab(tab)} 
@@ -161,7 +166,10 @@ export function CharacterSheetView({
                           <SelectField 
                             label="Rama / Clan" 
                             value={pr?.rama_id} 
-                            options={masters.ramas.map((r:any)=>({label:r.nombre, value:r.id}))} 
+                            options={masters.ramas
+                               .filter((r: any) => !r.aldea_id || Number(r.aldea_id) === Number(character.aldea_id))
+                               .map((r:any)=>({label:r.nombre, value:r.id}))
+                             } 
                             disabled={!isEditing && !isNew} 
                             onChange={(v)=>{
                               const newRamas = [...(character.personajes_ramas?.filter((r:any)=>Number(r.slot) !== slot) || []), { slot, rama_id: Number(v), sub_especialidad_id: null, id_entrenamiento: null }];
@@ -327,7 +335,7 @@ export function CharacterSheetView({
                                      const isNewlyAdded = !pi.id;
                                      if (isNewlyAdded) {
                                        if (pi.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pi.info_glosario.coste_exp);
-                                       if (pi.info_glosario?.coste_ryo) onUpdateField('ryous', (character.ryous || 0) + pi.info_glosario.coste_ryo);
+                                       if (pi.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pi.info_glosario.coste_ryous);
                                      }
                                      onUpdateField('personajes_inventario', character.personajes_inventario?.filter((i: PersonajeItem)=>i.item_id !== pi.item_id));
                                    }} 
@@ -423,7 +431,7 @@ export function CharacterSheetView({
                                      const isNewlyAdded = !pt.id;
                                      if (isNewlyAdded) {
                                        if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
-                                       if (pt.info_glosario?.coste_ryo) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryo);
+                                       if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
                                      }
                                      onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica)=>t.tecnica_id !== pt.tecnica_id));
                                    }} 
@@ -491,6 +499,66 @@ export function CharacterSheetView({
             <SectionCard title="Historia" icon={ScrollText} color="purple" headerAction={!isNew && canEdit && isEditing && <button onClick={()=>onSave('historia')} className="px-8 py-3 bg-purple-600 text-white text-[10px] font-black rounded-2xl uppercase tracking-widest active:scale-95 shadow-xl shadow-purple-900/20">Sincronizar Discord</button>}>
               <textarea value={character.historia} disabled={!isEditing && !isNew} onChange={(e)=>onUpdateField('historia', e.target.value)} className="w-full h-96 bg-zinc-900/50 border border-zinc-800 rounded-[2rem] p-8 text-zinc-300 text-lg leading-relaxed outline-none focus:border-purple-500 transition-all disabled:opacity-80" placeholder="Cuenta tu historia..." />
             </SectionCard>
+          </div>
+        )}
+        {activeTab === 'registros' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {(['mision', 'accion', 'combate'] as const).map((cat) => {
+              const allRegistrosMap = new Map<number, Registro>();
+              [
+                ...(character.registros_autor || []),
+                ...(character.registros_participante?.map((p: any) => p.registro).filter(Boolean) || [])
+              ].forEach((r: Registro) => allRegistrosMap.set(r.id, r));
+              
+              const allRegistros = Array.from(allRegistrosMap.values());
+              
+              const filtered = allRegistros
+                .filter(r => r.tipo === cat)
+                .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+
+              const Icon = cat === 'mision' ? ScrollText : cat === 'combate' ? Swords : Zap;
+              const color = cat === 'mision' ? 'orange' : cat === 'combate' ? 'red' : 'emerald';
+
+              return (
+                <div key={cat} className="space-y-6">
+                  <SectionCard title={`${cat}es`} icon={Icon} color={color}>
+                    <div className="space-y-4">
+                      {filtered.length > 0 ? (
+                        filtered.map((log) => (
+                          <RegistroCard 
+                            key={log.id} 
+                            registro={log} 
+                            onRefresh={() => onSave()} 
+                            isAdmin={isAdmin}
+                            onEdit={(r) => setEditingRegistro(r)}
+                          />
+                        ))
+                      ) : (
+                        <div className="py-12 text-center border-2 border-dashed border-zinc-800/50 rounded-3xl">
+                          <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest italic">No hay {cat}es registrados</p>
+                        </div>
+                      )}
+                    </div>
+                  </SectionCard>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Modal de Edición */}
+        {editingRegistro && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-zinc-950 border border-zinc-800 rounded-[3rem] p-8">
+              <div className="flex justify-between items-center mb-8">
+                <h2 className="text-2xl font-black uppercase italic text-white">Editar Registro</h2>
+                <button onClick={() => setEditingRegistro(null)} className="p-3 bg-zinc-900 border border-zinc-800 rounded-2xl text-zinc-500 hover:text-white transition-all"><X className="w-6 h-6" /></button>
+              </div>
+              <RegistroForm 
+                initialData={editingRegistro} 
+                onCreated={() => { setEditingRegistro(null); onSave(); }} 
+              />
+            </div>
           </div>
         )}
       </main>

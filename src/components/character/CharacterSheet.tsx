@@ -2,7 +2,8 @@
 
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { useEffect } from 'react';
-import { Shield, Zap, Activity, Sword, Brain, Flame, Wind, Droplets } from 'lucide-react';
+import { Shield, Zap, Activity, Sword, Brain, Flame, Wind, Droplets, Eye, Search } from 'lucide-react';
+import Link from 'next/link';
 
 export default function CharacterSheet() {
   const { activeCharacter, loading, error, fetchActiveCharacter } = useCharacterStore();
@@ -23,7 +24,7 @@ export default function CharacterSheet() {
       <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -ml-32 -mb-32 pointer-events-none"></div>
 
       <div className="relative z-10">
-        <div className="flex justify-between items-start mb-8">
+        <div className="flex justify-between items-center mb-8">
           <div>
             <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-500 tracking-tight">
               {nombre_ninja}
@@ -36,6 +37,14 @@ export default function CharacterSheet() {
               <span className="text-zinc-400 text-sm font-medium">{ryous} Ryos</span>
             </div>
           </div>
+          
+          <Link 
+            href={`/ficha/${activeCharacter.id}`}
+            className="flex items-center gap-3 px-6 py-4 bg-orange-600/10 border border-orange-500/20 text-orange-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 hover:text-black transition-all active:scale-95 shadow-xl shadow-orange-500/5 group"
+          >
+            <Search className="w-4 h-4 group-hover:scale-110 transition-transform" />
+            Ver Ficha
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

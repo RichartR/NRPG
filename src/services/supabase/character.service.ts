@@ -1,8 +1,8 @@
 import { createClient } from '@/utils/supabase/client';
-import { Character, PersonajeRama, PersonajeItem, PersonajeTecnica } from '@/domain/types';
+import { Character, PersonajeRama, PersonajeItem, PersonajeTecnica, Registro } from '@/domain/types';
 
 export const CharacterService = {
-  async getCharacterById(id: string): Promise<Character> {
+  async getCharacterById(id: number): Promise<Character> {
     const supabase = createClient();
     const { data, error } = await supabase
       .from('reg_characters')
@@ -12,7 +12,9 @@ export const CharacterService = {
         info_aldeas(*), 
         reg_personajes_inventario!reg_personajes_inventario_personaje_id_fkey(*, info_glosario(*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre))), 
         reg_personajes_tecnicas!reg_personajes_tecnicas_personaje_id_fkey(*, info_glosario(*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre))), 
-        reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(*, info_ramas_clanes(*), info_sub_especialidades(*), info_entrenamientos(*))
+        reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(*, info_ramas_clanes(*), info_sub_especialidades(*), info_entrenamientos(*)),
+        registros_autor: reg_registros!reg_registros_autor_id_fkey(*, autor: reg_characters!reg_registros_autor_id_fkey(nombre_ninja), participantes: reg_registros_participantes!reg_registros_participantes_registro_id_fkey(*, personaje: reg_characters!reg_registros_participantes_personaje_id_fkey(nombre_ninja))),
+        registros_participante: reg_registros_participantes!reg_registros_participantes_personaje_id_fkey(*, registro: reg_registros!reg_registros_participantes_registro_id_fkey(*, autor: reg_characters!reg_registros_autor_id_fkey(nombre_ninja), participantes: reg_registros_participantes!reg_registros_participantes_registro_id_fkey(*, personaje: reg_characters!reg_registros_participantes_personaje_id_fkey(nombre_ninja))))
       `)
       .eq('id', id)
       .single();
@@ -25,7 +27,9 @@ export const CharacterService = {
       aldeas: data.info_aldeas || data.aldeas,
       personajes_ramas: data.reg_personajes_ramas || data.personajes_ramas || data.ramas || [],
       personajes_inventario: data.reg_personajes_inventario || data.personajes_inventario || data.inventario || [],
-      personajes_tecnicas: data.reg_personajes_tecnicas || data.personajes_tecnicas || data.tecnicas || []
+      personajes_tecnicas: data.reg_personajes_tecnicas || data.personajes_tecnicas || data.tecnicas || [],
+      registros_autor: data.registros_autor || [],
+      registros_participante: data.registros_participante || []
     } as Character;
   },
 
@@ -77,7 +81,7 @@ export const CharacterService = {
     return newChar as Character;
   },
 
-  async updateCharacter(id: string, updates: Partial<Character>) {
+  async updateCharacter(id: number, updates: Partial<Character>) {
     const supabase = createClient();
     const { error } = await supabase
       .from('reg_characters')
@@ -148,7 +152,7 @@ export const CharacterService = {
     }
   },
 
-  async deleteCharacter(id: string) {
+  async deleteCharacter(id: number) {
     const supabase = createClient();
     const { error } = await supabase
       .from('reg_characters')
