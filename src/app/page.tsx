@@ -4,6 +4,9 @@ import { BookOpen, Megaphone, ScrollText, Globe, Zap, User, ShieldAlert, Map, Gi
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import { ProfileService } from '@/services/supabase/profile.service';
+import NotificationBell from '@/components/layout/NotificationBell';
+
+import AdminNotificationBadge from '@/components/admin/AdminNotificationBadge';
 
 export default async function Home() {
   const supabase = await createClient();
@@ -13,31 +16,36 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen bg-zinc-950 p-4 md:p-8">
-      <header className="max-w-7xl mx-auto flex justify-between items-center mb-8 bg-zinc-900/50 p-4 rounded-2xl border border-zinc-800/50 backdrop-blur-md">
+      <header className="max-w-7xl mx-auto flex justify-between items-center mb-8 bg-zinc-900/50 p-4 rounded-2xl border border-zinc-800/50 backdrop-blur-md relative z-50">
         <div className="flex items-center gap-6">
           <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500 tracking-tighter">
             NRPG Engine
           </h1>
           
           {user && (
-            <div className="hidden md:flex items-center gap-2 px-4 py-1.5 bg-zinc-950 border border-zinc-800 rounded-full">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
-                {profile?.username || user.email?.split('@')[0]}
-              </span>
+            <div className="flex items-center gap-4">
+              <div className="hidden md:flex items-center gap-3 px-4 py-1.5 bg-zinc-950 border border-zinc-800 rounded-full">
+                {profile?.url_avatar ? (
+                  <img 
+                    src={profile.url_avatar} 
+                    alt="Avatar" 
+                    className="w-5 h-5 rounded-full object-cover border border-zinc-800"
+                  />
+                ) : (
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                )}
+                <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
+                  {profile?.username || user.email?.split('@')[0]}
+                </span>
+              </div>
+              <NotificationBell />
             </div>
           )}
         </div>
 
         <nav className="flex gap-4 items-center">
           {profile?.role === 'admin' && (
-            <Link 
-              href="/admin" 
-              className="flex items-center gap-2 px-4 py-2 bg-orange-500/10 text-orange-500 border border-orange-500/20 rounded-xl text-xs font-black hover:bg-orange-500 hover:text-white transition-all group"
-            >
-              <ShieldAlert className="w-4 h-4" />
-              ADMIN PANEL
-            </Link>
+            <AdminNotificationBadge />
           )}
           {user ? (
             <LogoutButton />

@@ -10,7 +10,8 @@ import {
   SubEspecialidad, 
   StatsEscaladoConfig,
   Glosario,
-  Entrenamiento
+  Entrenamiento,
+  RangoRules
 } from '@/domain/types';
 
 interface MasterState {
@@ -24,6 +25,7 @@ interface MasterState {
   rankOrder: Record<string, number>;
   requiredTrainingRank: string;
   recursosPJInicio: { ryous_iniciales: number; xp_inicial: number };
+  rangosJerarquicos: string[];
   loading: boolean;
   initialized: boolean;
   error: string | null;
@@ -43,6 +45,7 @@ export const useMasterStore = create<MasterState>((set, get) => ({
   rankOrder: {},
   requiredTrainingRank: 'B',
   recursosPJInicio: { ryous_iniciales: 0, xp_inicial: 0 },
+  rangosJerarquicos: [],
   loading: false,
   initialized: false,
   error: null,
@@ -66,7 +69,8 @@ export const useMasterStore = create<MasterState>((set, get) => ({
         escaladoRulesRes,
         rankOrderRes,
         requiredTrainingRankRes,
-        recursosPJInicioRes
+        recursosPJInicioRes,
+        rangosJerarquicosRes
       ] = await Promise.allSettled([
         MasterService.getAldeas(),
         MasterService.getRamas(),
@@ -77,7 +81,8 @@ export const useMasterStore = create<MasterState>((set, get) => ({
         MasterService.getSystemConfig('stats_escalado_config'),
         MasterService.getSystemConfig('orden-rangos'),
         MasterService.getSystemConfig('rango-acceso-entrenamiento'),
-        MasterService.getSystemConfig('recursos_pj_inicio')
+        MasterService.getSystemConfig('recursos_pj_inicio'),
+        MasterService.getSystemConfig('rangos_jerarquicos')
       ]);
 
       const getVal = (res: any, fallback: any) => res.status === 'fulfilled' ? res.value : fallback;
@@ -109,6 +114,7 @@ export const useMasterStore = create<MasterState>((set, get) => ({
         rankOrder: numericRankOrder,
         requiredTrainingRank: getVal(requiredTrainingRankRes, 'B'),
         recursosPJInicio: getVal(recursosPJInicioRes, { ryous_iniciales: 0, xp_inicial: 0 }),
+        rangosJerarquicos: getVal(rangosJerarquicosRes, ["Estudiante", "Genin", "Chunin", "Jonin"]),
         initialized: true,
         loading: false
       });

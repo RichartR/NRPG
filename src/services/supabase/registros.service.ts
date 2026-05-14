@@ -1,8 +1,9 @@
 import { createClient } from '@/utils/supabase/client';
 import { Registro, MisionMaster } from '@/domain/types';
+import { RewardLogic } from '@/domain/character/logic';
 
 export const RegistrosService = {
-  async getRegistros(page = 1, limit = 15, filters: { tipo?: string; personaje_id?: number } = {}) {
+  async getRegistros(page = 1, limit = 15, filters: { tipo?: string; personaje_id?: number; startDate?: string; endDate?: string } = {}) {
     const supabase = createClient();
     const from = (page - 1) * limit;
     const to = from + limit - 1;
@@ -24,11 +25,12 @@ export const RegistrosService = {
       query = query.eq('tipo', filters.tipo);
     }
 
-    if (filters.personaje_id) {
-      // Para filtrar por personaje_id, necesitamos buscar si es autor O participante
-      // Esto es complejo con una sola query en Supabase si no es una RPC, 
-      // pero para el feed global no solemos filtrar por personaje_id.
-      // Si se necesita para la ficha, usaremos la relación cargada en CharacterService.
+    if (filters.startDate) {
+      query = query.gte('fecha', `${filters.startDate}T00:00:00Z`);
+    }
+
+    if (filters.endDate) {
+      query = query.lte('fecha', `${filters.endDate}T23:59:59Z`);
     }
 
     const { data, error, count } = await query;
@@ -89,8 +91,10 @@ export const RegistrosService = {
       if (partError) throw partError;
     }
 
-    // 3. Aplicar recompensas instantáneas al autor si es misión
-    if (payload.tipo === 'mision' && payload.data.recompensa_xp || payload.data.recompensa_ryous) {
+    // 3. Aplicar recompensas instantáneas al autor
+    const { xp, ryous } = RewardLogic.calculateReward(registro, payload.autor_id);
+    
+    if (xp > 0 || ryous > 0) {
       const { data: char } = await supabase
         .from('reg_characters')
         .select('xp, ryous')
@@ -101,8 +105,8 @@ export const RegistrosService = {
         await supabase
           .from('reg_characters')
           .update({
-            xp: (char.xp || 0) + (payload.data.recompensa_xp || 0),
-            ryous: (char.ryous || 0) + (payload.data.recompensa_ryous || 0)
+            xp: (char.xp || 0) + xp,
+            ryous: (char.ryous || 0) + ryous
           })
           .eq('id', payload.autor_id);
       }
@@ -139,9 +143,28 @@ export const RegistrosService = {
   async deleteRegistro(id: number) {
     const supabase = createClient();
     
-    // First delete participants due to potential FK constraints (though CASCADE is better)
-    await supabase.from('reg_registros_participantes').delete().eq('registro_id', id);
+    // 1. Obtener participantes y registro para revertir recompensas
+    const { data: registro } = await supabase.from('reg_registros').select('*').eq('id', id).single();
+    const { data: participantes } = await supabase.from('reg_registros_participantes').select('*').eq('registro_id', id);
     
+    if (registro && participantes) {
+      for (const p of participantes) {
+        if (p.estado === 'aceptado') {
+          const { xp, ryous } = RewardLogic.calculateReward(registro, p.personaje_id);
+          
+          const { data: char } = await supabase.from('reg_characters').select('xp, ryous').eq('id', p.personaje_id).single();
+          if (char) {
+            await supabase.from('reg_characters').update({
+              xp: (char.xp || 0) - xp,
+              ryous: (char.ryous || 0) - ryous
+            }).eq('id', p.personaje_id);
+          }
+        }
+      }
+    }
+
+    // 2. Eliminar (CASCADE debería encargarse de los participantes si está configurado, si no lo hacemos manual)
+    await supabase.from('reg_registros_participantes').delete().eq('registro_id', id);
     const { error } = await supabase
       .from('reg_registros')
       .delete()

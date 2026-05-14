@@ -48,6 +48,18 @@ export const MasterService = {
   },
 
 
+  async getEstadosCombate(): Promise<{ id: number; nombre: string; activo: boolean }[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('info_estados_combate')
+      .select('*')
+      .eq('activo', true)
+      .order('nombre', { ascending: true });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
   async getSystemConfig(key: string): Promise<any> {
     const supabase = createClient();
     const { data, error } = await supabase

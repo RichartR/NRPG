@@ -6,11 +6,11 @@ import { Registro, MisionMaster } from '@/domain/types';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { useToastStore } from '@/components/ui/Toast';
 import { DataField, SelectField } from '@/components/ui/Fields';
-import { ScrollText, Plus, X, Link as LinkIcon, Search, UserPlus, User, Zap, Swords, Info } from 'lucide-react';
+import { ScrollText, Plus, X, Link as LinkIcon, Search, UserPlus, User, Zap } from 'lucide-react';
 
-type FormType = 'mision' | 'combate';
+type FormType = 'mision' | 'accion';
 
-export default function RegistroForm({ 
+export default function MissionForm({ 
   onCreated, 
   initialType = 'mision',
   initialData = null 
@@ -24,12 +24,11 @@ export default function RegistroForm({
 
   useEffect(() => {
     if (!activeCharacter) {
-      console.log('No active character found in store, fetching...');
       fetchActiveCharacter();
     }
   }, []);
 
-  const [formType, setFormType] = useState<FormType>(initialData?.tipo as FormType || initialType);
+  const [formType] = useState<FormType>(initialData?.tipo as FormType || initialType);
   const [loading, setLoading] = useState(false);
   
   // Misiones
@@ -40,7 +39,6 @@ export default function RegistroForm({
   // General
   const [titulo, setTitulo] = useState(initialData?.data?.titulo || '');
   const [images, setImages] = useState<string[]>(initialData?.data?.urls_imagenes || ['']);
-  const [result, setResult] = useState(initialData?.data?.resultado || 'victoria');
   
   // Participantes
   const [participantSearch, setParticipantSearch] = useState('');
@@ -91,10 +89,8 @@ export default function RegistroForm({
   };
 
   const handleSubmit = async () => {
-    console.log('Submitting form...', { formType, activeCharacter });
-    
     if (!activeCharacter) {
-      addToast('No se ha detectado un personaje activo. Recarga la página.', 'error');
+      addToast('No se ha detectado un personaje activo.', 'error');
       return;
     }
 
@@ -125,17 +121,15 @@ export default function RegistroForm({
       payload.data.codigo_mision = mision.codigo_mision;
       payload.data.recompensa_xp = mision.exp;
       payload.data.recompensa_ryous = mision.ryous;
-    } else if (formType === 'combate') {
+    } else {
       if (!titulo) {
-        addToast('Indica un título para el combate', 'error');
+        addToast('Indica un título para el registro', 'error');
         return;
       }
       payload.data.titulo = titulo;
-      payload.data.resultado = result;
     }
 
     setLoading(true);
-    console.log('Sending payload:', payload);
     try {
       if (initialData) {
         await RegistrosService.updateRegistro(initialData.id, payload);
@@ -143,62 +137,79 @@ export default function RegistroForm({
       } else {
         await RegistrosService.createRegistro(payload);
         addToast('Registro publicado correctamente', 'success');
+        fetchActiveCharacter(); // Sincronizar stats locales
       }
-      
-      if (!initialData) {
-        // Reset only if creating new
-        setTitulo('');
-        setSelectedMision('');
-        setParticipants([]);
-        setImages(['']);
-      }
-      
       onCreated();
     } catch (err: any) {
-      console.error('Submission error:', err);
       addToast(err.message || 'Error al procesar el registro', 'error');
     } finally {
       setLoading(false);
     }
   };
 
+  const iconColor = formType === 'mision' ? 'bg-orange-500/10 border-orange-500/20 text-orange-500' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500';
+  const buttonColor = formType === 'mision' ? 'bg-orange-600 hover:bg-orange-500 shadow-orange-500/20' : 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/20';
+
   return (
     <div className="bg-zinc-900/50 border border-zinc-800 rounded-[2.5rem] p-8 space-y-8 backdrop-blur-xl">
       <div className="flex items-center gap-4 mb-2">
-        <div className={`p-3 rounded-2xl border ${formType === 'mision' ? 'bg-orange-500/10 border-orange-500/20 text-orange-500' : formType === 'combate' ? 'bg-red-500/10 border-red-500/20 text-red-500' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'}`}>
-          {formType === 'mision' ? <ScrollText className="w-6 h-6" /> : formType === 'combate' ? <Swords className="w-6 h-6" /> : <Zap className="w-6 h-6" />}
+        <div className={`p-3 rounded-2xl border ${iconColor}`}>
+          {formType === 'mision' ? <ScrollText className="w-6 h-6" /> : <Zap className="w-6 h-6" />}
         </div>
         <div>
           <h3 className="text-xl font-black text-white uppercase italic tracking-tighter leading-none">
-            {formType === 'mision' ? 'Nueva Misión' : formType === 'combate' ? 'Nuevo Combate' : 'Nueva Acción'}
+            {formType === 'mision' ? 'Nueva Misión' : 'Nueva Acción'}
           </h3>
           <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-1">Registra tu actividad shinobi</p>
         </div>
       </div>
 
       {formType === 'mision' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <SelectField label="Rango" value={rango} options={['D', 'C', 'B', 'A', 'S']} onChange={setRango} />
-          <SelectField 
-            label="Misión" 
-            value={selectedMision} 
-            options={misiones.map(m => ({ label: `${m.codigo_mision} (+${m.exp} XP)`, value: m.codigo_mision }))} 
-            onChange={setSelectedMision}
-            placeholder="Seleccionar..."
-            disabled={misiones.length === 0}
-          />
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <SelectField label="Rango" value={rango} options={['D', 'C', 'B', 'A', 'S']} onChange={setRango} />
+            <SelectField 
+              label="Misión" 
+              value={selectedMision} 
+              options={misiones.map(m => ({ label: `${m.codigo_mision} (+${m.exp} XP)`, value: m.codigo_mision }))} 
+              onChange={setSelectedMision}
+              placeholder="Seleccionar..."
+              disabled={misiones.length === 0}
+            />
+          </div>
+
+          {selectedMision && misiones.find(m => m.codigo_mision === selectedMision) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in zoom-in duration-300">
+              {misiones.find(m => m.codigo_mision === selectedMision)?.imagen_frontal && (
+                <div className="space-y-2">
+                  <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest ml-2">Vista Frontal</span>
+                  <div className="aspect-video rounded-3xl overflow-hidden border border-zinc-800 bg-zinc-950">
+                    <img 
+                      src={misiones.find(m => m.codigo_mision === selectedMision)?.imagen_frontal} 
+                      alt="Frontal" 
+                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-500" 
+                    />
+                  </div>
+                </div>
+              )}
+              {misiones.find(m => m.codigo_mision === selectedMision)?.imagen_trasera && (
+                <div className="space-y-2">
+                  <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest ml-2">Vista Trasera</span>
+                  <div className="aspect-video rounded-3xl overflow-hidden border border-zinc-800 bg-zinc-950">
+                    <img 
+                      src={misiones.find(m => m.codigo_mision === selectedMision)?.imagen_trasera} 
+                      alt="Trasera" 
+                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-500" 
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       ) : (
         <div className="space-y-6">
           <DataField label="Título del Registro" value={titulo} onChange={setTitulo} placeholder="Ej: Entrenamiento con mi equipo..." />
-          {formType === 'combate' && (
-            <SelectField 
-              label="Resultado" 
-              value={result} 
-              options={[{label: 'Victoria', value: 'victoria'}, {label: 'Derrota', value: 'derrota'}, {label: 'Empate', value: 'empate'}]} 
-              onChange={setResult} 
-            />
-          )}
         </div>
       )}
 
@@ -278,7 +289,7 @@ export default function RegistroForm({
       <button 
         onClick={handleSubmit}
         disabled={loading}
-        className={`w-full py-5 text-black font-black uppercase tracking-[0.2em] rounded-[2rem] transition-all active:scale-95 disabled:opacity-50 shadow-xl ${formType === 'mision' ? 'bg-orange-600 hover:bg-orange-500 shadow-orange-500/20' : formType === 'combate' ? 'bg-red-600 hover:bg-red-500 shadow-red-500/20' : 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/20'}`}
+        className={`w-full py-5 text-black font-black uppercase tracking-[0.2em] rounded-[2rem] transition-all active:scale-95 disabled:opacity-50 shadow-xl ${buttonColor}`}
       >
         {loading ? 'Procesando...' : 'Publicar Registro'}
       </button>

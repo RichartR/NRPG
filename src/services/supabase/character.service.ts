@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/client';
 import { Character, PersonajeRama, PersonajeItem, PersonajeTecnica, Registro } from '@/domain/types';
+import { RewardLogic } from '@/domain/character/logic';
 
 export const CharacterService = {
   async getCharacterById(id: number): Promise<Character> {
@@ -63,7 +64,7 @@ export const CharacterService = {
     if (initialItems && initialItems.length > 0) {
       const inventoryPack = initialItems
         .filter(i => i.categoria_id === 2) // Solo Objetos
-        .map(i => ({ personaje_id: newChar.id, item_id: i.id, cantidad: 1 }));
+        .map(i => ({ personaje_id: newChar.id, item_id: i.id }));
 
       const techniquesPack = initialItems
         .filter(i => i.categoria_id !== 2) // Todo lo que no sea objeto (Técnicas, Pasivas, etc)
@@ -130,8 +131,7 @@ export const CharacterService = {
       const { error } = await supabase.from('reg_personajes_inventario').insert(
         items.map(i => ({ 
           personaje_id: id, 
-          item_id: i.item_id, 
-          cantidad: i.cantidad 
+          item_id: i.item_id
         }))
       );
       if (error) throw error;
@@ -160,5 +160,85 @@ export const CharacterService = {
       .eq('id', id);
 
     if (error) throw error;
+  },
+
+  async getNotifications(personajeId: number) {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('reg_registros_participantes')
+      .select(`
+        *,
+        registro:reg_registros(
+          *,
+          autor:reg_characters!reg_registros_autor_id_fkey(nombre_ninja)
+        )
+      `)
+      .eq('personaje_id', personajeId)
+      .eq('estado', 'pendiente');
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  async respondToRecord(personajeId: number, registroId: number, respuesta: 'aceptar' | 'rechazar', comentario?: string) {
+    const supabase = createClient();
+    
+    const { data: registro, error: regError } = await supabase
+      .from('reg_registros')
+      .select('*')
+      .eq('id', registroId)
+      .single();
+    
+    if (regError) throw regError;
+
+    if (respuesta === 'aceptar') {
+      const { xp, ryous } = RewardLogic.calculateReward(registro, personajeId);
+      
+      const { data: char, error: charError } = await supabase
+        .from('reg_characters')
+        .select('xp, ryous')
+        .eq('id', personajeId)
+        .single();
+      
+      if (charError) throw charError;
+
+      const { error: updError } = await supabase
+        .from('reg_characters')
+        .update({
+          xp: (char.xp || 0) + xp,
+          ryous: (char.ryous || 0) + ryous
+        })
+        .eq('id', personajeId);
+      
+      if (updError) throw updError;
+
+      await supabase
+        .from('reg_registros_participantes')
+        .update({ estado: 'aceptado' })
+        .match({ registro_id: registroId, personaje_id: personajeId });
+
+    } else {
+      await supabase
+        .from('reg_registros_participantes')
+        .update({ 
+          estado: 'rechazado',
+          comentario_rechazo: comentario 
+        })
+        .match({ registro_id: registroId, personaje_id: personajeId });
+
+      const { error: notifError } = await supabase
+        .from('sys_notificaciones_admin')
+        .insert({
+          registro_id: registroId,
+          personaje_id: personajeId,
+          mensaje: comentario || 'Sin motivo especificado',
+          estado: 'pendiente'
+        });
+
+      if (notifError) {
+        console.error('Error creating admin notification:', notifError);
+        throw notifError;
+      }
+    }
   }
 };

@@ -22,18 +22,18 @@ export default function CrearFichaPage() {
     nombre_ninja: '',
     hobba_name: '',
     aldea_id: searchParams.get('aldea_id') ? Number(searchParams.get('aldea_id')) : null,
-    rango: 'D',
-    rango_jerarquico: 'Estudiante',
-    puntos_stats: 16,
+    rango: '',
+    rango_jerarquico: '',
+    puntos_stats: 0,
     xp: 0,
     ryous: 0,
-    edad: 18,
+    edad: 12,
     sexo: 'Masculino',
     tiempo_rpg: '',
     apariencia: '',
     historia: '',
-    stats_base: { NIN: 1, TAI: 1, GEN: 1, INT: 1, FUE: 1, AGI: 1, EST: 1, SM: 1 },
-    atributos_derivados: { VIT: 600, CH: 0, VEL: 5, RES: 0, VR: 1, DET: 1 },
+    stats_base: { NIN: 0, TAI: 0, GEN: 0, INT: 0, FUE: 0, AGI: 0, EST: 0, SM: 0 },
+    atributos_derivados: { VIT: 0, CH: 0, VEL: 0, RES: 0, VR: 0, DET: 0 },
     personajes_inventario: [],
     personajes_tecnicas: [],
     personajes_ramas: [
@@ -47,7 +47,7 @@ export default function CrearFichaPage() {
     if (!masters.initialized) masters.initialize();
     
     // Cargar perfil del usuario logueado para mostrar su Discord
-    const loadProfile = async () => {
+    const loadData = async () => {
       const { data: { user } } = await (await import('@/services/supabase/auth.service')).AuthService.getUser();
       if (user) {
         const profile = await (await import('@/services/supabase/profile.service')).ProfileService.getProfile(user.id);
@@ -55,13 +55,30 @@ export default function CrearFichaPage() {
           setForm((prev: any) => ({ ...prev, profiles: { username: profile.username } }));
         }
       }
+
+      // Cargar configuración inicial del sistema
+      try {
+        const { AdminService } = await import('@/services/supabase/admin.service');
+        const config = await AdminService.getConfigByClave('datos_inicio_ficha');
+        if (config && config.valor) {
+          setForm((prev: any) => ({
+            ...prev,
+            ...config.valor,
+            stats_base: config.valor.stats_base || prev.stats_base,
+            atributos_derivados: config.valor.atributos_derivados || prev.atributos_derivados
+          }));
+        }
+      } catch (err) {
+        console.error('Error loading initial config:', err);
+      } finally {
+        setInitialDataLoaded(true);
+      }
     };
-    loadProfile();
+    loadData();
   }, []);
 
-  // Cargar elementos iniciales cuando los masters estén listos (solo una vez)
   useEffect(() => {
-    if (masters.initialized && !initialDataLoaded && masters.glosario) {
+    if (masters.initialized && masters.glosario) {
       const initialItems = masters.glosario
         .filter((i: any) => i.inicial && i.categoria_id === 2)
         .map((i: any) => ({ item_id: i.id, cantidad: 1, info_glosario: i }));
@@ -73,14 +90,10 @@ export default function CrearFichaPage() {
       setForm((prev: any) => ({
         ...prev,
         personajes_inventario: initialItems,
-        personajes_tecnicas: initialTecs,
-        ryous: masters.recursosPJInicio?.ryous_iniciales ?? 0,
-        xp: masters.recursosPJInicio?.xp_inicial ?? 0
+        personajes_tecnicas: initialTecs
       }));
-      
-      setInitialDataLoaded(true);
     }
-  }, [masters.initialized, masters.glosario, masters.recursosPJInicio, initialDataLoaded]);
+  }, [masters.initialized, masters.glosario]);
 
   // Recalcular atributos derivados cuando cambian los stats
   useEffect(() => {
@@ -152,6 +165,17 @@ export default function CrearFichaPage() {
       setLoading(false);
     }
   };
+
+  if (!initialDataLoaded) {
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
+        <div className="w-16 h-16 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin mb-6" />
+        <h2 className="text-white font-black uppercase tracking-[0.3em] text-sm animate-pulse text-center">
+          Invocando Datos del <span className="text-orange-500">Sistema</span>...
+        </h2>
+      </div>
+    );
+  }
 
   return (
     <CharacterSheetView 

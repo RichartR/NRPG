@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, FileText, Settings, LogOut, ShieldCheck, Map, GitBranch, Sword } from 'lucide-react';
+import { LayoutDashboard, FileText, Settings, LogOut, ShieldCheck, Map, GitBranch, Sword, ScrollText } from 'lucide-react';
 import { ProfileService } from '@/services/supabase/profile.service';
 
 export default async function AdminLayout({
@@ -55,6 +55,11 @@ export default async function AdminLayout({
           <Link href="/admin/aldeas" className="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-800 hover:text-white transition-all font-bold text-sm group">
             <Map className="w-5 h-5 text-zinc-500 group-hover:text-orange-500 transition-colors" />
             Aldeas
+          </Link>
+
+          <Link href="/admin/misiones" className="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-800 hover:text-white transition-all font-bold text-sm group">
+            <ScrollText className="w-5 h-5 text-zinc-500 group-hover:text-orange-500 transition-colors" />
+            Misiones
           </Link>
 
           <Link href="/admin/ramas" className="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-800 hover:text-white transition-all font-bold text-sm group">

@@ -2,6 +2,7 @@ export interface Profile {
   id: string;
   username: string;
   role: 'admin' | 'user';
+  url_avatar?: string;
 }
 
 export interface Aldea {
@@ -159,9 +160,12 @@ export interface MisionMaster {
   rango: string;
   exp: number;
   ryous: number;
+  imagen_frontal?: string;
+  imagen_trasera?: string;
 }
 
 export interface Registro {
+  recompensa_xp: number;
   id: number;
   tipo: 'mision' | 'accion' | 'combate';
   subtipo?: string;
@@ -183,17 +187,30 @@ export interface Registro {
 export interface RegistroParticipante {
   registro_id: number;
   personaje_id: number;
-  estado: 'pendiente' | 'aceptado';
+  estado: 'pendiente' | 'aceptado' | 'rechazado' | 'disputa_admin' | 'finalizado_admin';
+  comentario_rechazo?: string;
   // Joins
   personaje?: { nombre_ninja: string };
   registro?: Registro;
+}
+
+export interface NotificacionAdmin {
+  id: string;
+  registro_id: number;
+  personaje_id: number;
+  mensaje: string;
+  estado: 'pendiente' | 'resuelto';
+  resolucion?: 'aceptada' | 'rechazada';
+  created_at: string;
+  // Joins
+  registro?: Registro;
+  personaje?: { nombre_ninja: string };
 }
 
 export interface PersonajeItem {
   id?: number;
   personaje_id: number;
   item_id: number;
-  cantidad: number;
   info_glosario?: Glosario;
 }
 
@@ -247,4 +264,10 @@ export interface ConfiguracionSistema {
   valor: any;
   descripcion?: string;
   created_at?: string;
+}
+
+export interface EstadoCombate {
+  id: number;
+  nombre: string;
+  activo: boolean;
 }

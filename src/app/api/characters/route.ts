@@ -58,6 +58,27 @@ export async function POST(request: Request) {
     // 5. Guardar Técnicas
     await CharacterServerService.replaceTecnicas(supabase, characterId, data.personajes_tecnicas || []);
 
+    // 6. Registro de Acción inicial
+    const { data: aldea } = await supabase.from('info_aldeas').select('nombre_completo').eq('id', data.aldea_id).single();
+    const tituloAccion = `${data.nombre_ninja} inicia su aventura en ${aldea?.nombre_completo || 'el Mundo Ninja'}`;
+    
+    const { data: registro } = await supabase.from('reg_registros').insert({
+      tipo: 'accion',
+      autor_id: characterId,
+      data: {
+        titulo: tituloAccion,
+        tipo_accion: 'inicio_aventura'
+      }
+    }).select().single();
+
+    if (registro) {
+      await supabase.from('reg_registros_participantes').insert({
+        registro_id: registro.id,
+        personaje_id: characterId,
+        estado: 'aceptado'
+      });
+    }
+
     return NextResponse.json({ success: true, id: characterId });
   } catch (error: any) {
     console.error('Create Error:', error);

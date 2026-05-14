@@ -66,7 +66,7 @@ export const CharacterServerService = {
     await supabase.from('reg_personajes_inventario').delete().eq('personaje_id', characterId);
     if (items.length > 0) {
       const { error } = await supabase.from('reg_personajes_inventario').insert(
-        items.map(i => ({ personaje_id: characterId, item_id: i.item_id, cantidad: i.cantidad }))
+        items.map(i => ({ personaje_id: characterId, item_id: i.item_id }))
       );
       if (error) throw error;
     }

@@ -25,7 +25,10 @@ export default function FichaPublicPage() {
     updateStat,
     save,
     cancel,
-    remove
+    remove,
+    refresh,
+    quickRemoveItem,
+    quickRemoveTechnique
   } = useCharacter(id);
 
   if (loading || !character) {
@@ -50,9 +53,12 @@ export default function FichaPublicPage() {
       onSave={save}
       onCancel={cancel}
       onDelete={remove}
+      onRefresh={refresh}
       onSetActiveTab={setActiveTab}
       onBack={() => router.back()}
       setIsEditing={setIsEditing}
+      onQuickRemoveItem={quickRemoveItem}
+      onQuickRemoveTechnique={quickRemoveTechnique}
     />
   );
 }
