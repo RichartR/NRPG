@@ -1,17 +1,17 @@
 import { createClient } from '@/utils/supabase/server';
 import { GitBranch, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
-import RamaList from '@/components/admin/RamaList';
-import SubEspecialidadList from '@/components/admin/SubEspecialidadList';
+import RamaManager from '@/components/admin/RamaManager';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 
 export default async function AdminRamasPage() {
   const supabase = await createClient();
   
-  const [ramas, aldeas, subEspecialidades] = await Promise.all([
+  const [ramas, aldeas, subEspecialidades, entrenamientos] = await Promise.all([
     MasterServerService.getAdminRamas(supabase),
     MasterServerService.getAldeasActivas(supabase),
-    MasterServerService.getAdminSubEspecialidades(supabase)
+    MasterServerService.getAdminSubEspecialidades(supabase),
+    MasterServerService.getAdminEntrenamientos(supabase)
   ]);
 
   return (
@@ -23,16 +23,15 @@ export default async function AdminRamasPage() {
           </Link>
           <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase flex items-center gap-4">
             <GitBranch className="w-10 h-10 text-amber-500" />
-            RAMAS Y CLANES
+            ADMINISTRACIÓN TÁCTICA
           </h1>
         </header>
 
-        <RamaList initialRamas={ramas} aldeas={aldeas} />
-
-        {/* Nuevo gestor de sub-categorías (Bujutsu, Shurikenjutsu, Katon, etc.) */}
-        <SubEspecialidadList 
-          initialSubs={subEspecialidades} 
-          ramas={ramas} 
+        <RamaManager 
+          initialRamas={ramas} 
+          aldeas={aldeas} 
+          initialSubs={subEspecialidades}
+          initialEntrenamientos={entrenamientos}
         />
       </div>
     </div>

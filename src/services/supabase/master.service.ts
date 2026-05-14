@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client';
-import { Aldea, RamaClan, SubEspecialidad } from '@/domain/types';
+import { Aldea, RamaClan, SubEspecialidad, Entrenamiento } from '@/domain/types';
 
 export const MasterService = {
   async getAldeas(): Promise<Aldea[]> {
@@ -30,6 +30,18 @@ export const MasterService = {
       .from('info_sub_especialidades')
       .select('*')
       .order('nombre', { ascending: true });
+    
+    if (error) throw error;
+    return data || [];
+  },
+  
+  async getEntrenamientos(): Promise<Entrenamiento[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('info_entrenamientos')
+      .select('*')
+      .eq('activo', true)
+      .order('nombre_esp', { ascending: true });
     
     if (error) throw error;
     return data || [];

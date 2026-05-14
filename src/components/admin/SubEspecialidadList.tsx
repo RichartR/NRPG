@@ -5,7 +5,7 @@ import { Plus, Eye, EyeOff, Shield, Search, Edit2, Save, X, RefreshCw } from 'lu
 import { useRouter } from 'next/navigation';
 import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
-import { DataField, SelectField } from '@/components/ui/Fields';
+import { DataField, SelectField, SearchableSelect } from '@/components/ui/Fields';
 import { SubEspecialidad, RamaClan } from '@/domain/types';
 
 export default function SubEspecialidadList({ initialSubs, ramas }: { initialSubs: SubEspecialidad[], ramas: RamaClan[] }) {
@@ -157,7 +157,7 @@ export default function SubEspecialidadList({ initialSubs, ramas }: { initialSub
               }} 
             />
             <DataField label="Slug (URL)" value={newSub.slug || ''} onChange={v => setNewSub({ ...newSub, slug: v.toLowerCase().replace(/\s+/g, '-') })} />
-            <SelectField 
+            <SearchableSelect 
               label="Rama / Clan Padre" 
               value={newSub.rama_id} 
               options={ramas.map(r => ({ label: r.nombre, value: r.id }))} 
@@ -201,7 +201,7 @@ export default function SubEspecialidadList({ initialSubs, ramas }: { initialSub
             {editingId === sub.id && editForm ? (
               <div className="space-y-6">
                 <DataField label="Nombre" value={editForm.nombre || ''} onChange={v => setEditForm({ ...editForm, nombre: v })} />
-                <SelectField label="Rama" value={editForm.rama_id} options={ramas.map(r => ({ label: r.nombre, value: r.id }))} onChange={v => setEditForm({ ...editForm, rama_id: Number(v) })} />
+                <SearchableSelect label="Rama" value={editForm.rama_id} options={ramas.map(r => ({ label: r.nombre, value: r.id }))} onChange={v => setEditForm({ ...editForm, rama_id: Number(v) })} />
                 <textarea 
                   value={editForm.descripcion || ''} 
                   onChange={e => setEditForm({ ...editForm, descripcion: e.target.value })}

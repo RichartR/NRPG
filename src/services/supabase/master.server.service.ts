@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { Aldea, RamaClan, SubEspecialidad, DocumentoSistema, DocumentoCombate, ConfiguracionSistema, Glosario, GlosarioCategoria, GlosarioSubcategoria } from '@/domain/types';
+import { Aldea, RamaClan, SubEspecialidad, DocumentoSistema, DocumentoCombate, ConfiguracionSistema, Glosario, GlosarioCategoria, GlosarioSubcategoria, Entrenamiento } from '@/domain/types';
 
 // Extended RamaClan with joined aldea for slug/abreviatura navigation
 export interface RamaConAldea extends RamaClan {
@@ -351,6 +351,15 @@ export const MasterServerService = {
     }
 
     const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getAdminEntrenamientos(supabase: SupabaseClient): Promise<Entrenamiento[]> {
+    const { data, error } = await supabase
+      .from('info_entrenamientos')
+      .select('*, info_ramas_clanes(id, nombre), info_sub_especialidades(id, nombre)')
+      .order('created_at', { ascending: false });
     if (error) throw error;
     return data || [];
   }

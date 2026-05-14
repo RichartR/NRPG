@@ -44,7 +44,7 @@ export async function PATCH(
           const newRamas = data.personajes_ramas;
           for (const slot of [0, 1]) {
             if (newRamas[slot]?.rama_id) {
-              await CharacterServerService.upsertRama(supabase, characterId, slot + 1, newRamas[slot].rama_id, newRamas[slot].sub_especialidad_id);
+              await CharacterServerService.upsertRama(supabase, characterId, slot + 1, newRamas[slot].rama_id, newRamas[slot].sub_especialidad_id, newRamas[slot].id_entrenamiento);
             } else {
               await CharacterServerService.deleteRamaSlot(supabase, characterId, slot + 1);
             }
