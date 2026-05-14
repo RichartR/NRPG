@@ -49,7 +49,7 @@ export default function AdminPage() {
       borderColor: 'hover:border-purple-500/50'
     },
     {
-      title: 'Registro Maestro',
+      title: 'Glosario',
       desc: 'Control central de técnicas, objetos y pasivas del juego.',
       icon: BookOpen,
       href: '/admin/glosario',

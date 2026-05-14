@@ -19,7 +19,7 @@ export function SectionCard({ title, icon: Icon, children, className = '', heade
   };
 
   return (
-    <div className={`relative overflow-hidden bg-zinc-950/80 border border-zinc-800/50 backdrop-blur-xl rounded-[2.5rem] p-8 shadow-2xl ${className}`}>
+    <div className={`relative bg-zinc-950/80 border border-zinc-800/50 backdrop-blur-xl rounded-[2.5rem] p-8 shadow-2xl ${className}`}>
       <div className="flex items-center justify-between mb-8 relative z-10">
         <div className="flex items-center gap-4">
           <div className={`p-3 rounded-2xl border ${colorMap[color]}`}>

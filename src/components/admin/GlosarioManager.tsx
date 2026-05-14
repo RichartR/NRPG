@@ -20,14 +20,16 @@ import { MasterServerService } from '@/services/supabase/master.server.service';
 type Section = 'hub' | 'elementos' | 'categorias' | 'subcategorias';
 type ViewStatus = 'active' | 'archived';
 
-const RANCOS = ['D', 'C', 'B', 'A', 'S'];
+const RANGOS = ['D', 'C', 'B', 'A', 'S'];
 const STATS_LIST = [
-  { key: 'fuerza', label: 'Fuerza' },
-  { key: 'agilidad', label: 'Agilidad' },
-  { key: 'destreza', label: 'Destreza' },
-  { key: 'resistencia', label: 'Resistencia' },
-  { key: 'chakra', label: 'Chakra' },
-  { key: 'control', label: 'Control' }
+  { key: 'fue', label: 'FUE' },
+  { key: 'agi', label: 'AGI' },
+  { key: 'int', label: 'INT' },
+  { key: 'res', label: 'RES' },
+  { key: 'nin', label: 'NIN' },
+  { key: 'gen', label: 'GEN' },
+  { key: 'tai', label: 'TAI' },
+  { key: 'sm', label: 'SM' }
 ];
 
 const toSlug = (text: string) => {
@@ -118,7 +120,7 @@ export default function GlosarioManager() {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
         <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
-        <span className="text-zinc-500 font-bold uppercase tracking-widest text-[10px]">Sincronizando Registro Maestro...</span>
+        <span className="text-zinc-500 font-bold uppercase tracking-widest text-[10px]">Sincronizando Glosario...</span>
       </div>
     );
   }
@@ -245,7 +247,11 @@ function ElementoCard({ elemento, categorias, subcategorias, onEdit, onDelete }:
     <div className={`group border rounded-[2.5rem] p-8 flex flex-col md:flex-row items-center gap-8 transition-all ${elemento.activo ? 'bg-zinc-900/30 border-zinc-800/50 hover:border-emerald-500/30 hover:bg-zinc-900/50' : 'bg-zinc-950 border-zinc-900/50 opacity-60'}`}>
       <div className="flex flex-col items-center gap-2"><div className={`w-3 h-3 rounded-full ${elemento.activo ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-zinc-800'}`} /><span className="text-zinc-800 font-black text-[10px] uppercase">ID: {elemento.id}</span></div>
       <div className="flex-1 text-center md:text-left space-y-1">
-        <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-2"><span className="bg-zinc-800 text-zinc-400 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter">{cat?.nombre || 'Sin Cat'}</span>{sub && <span className="bg-emerald-500/10 text-emerald-500/70 border border-emerald-500/10 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter">{sub.nombre}</span>}</div>
+        <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-2">
+          <span className="bg-zinc-800 text-zinc-400 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter">{cat?.nombre || 'Sin Cat'}</span>
+          {sub && <span className="bg-emerald-500/10 text-emerald-500/70 border border-emerald-500/10 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter">{sub.nombre}</span>}
+          {elemento.inicial && <span className="bg-amber-500/10 text-amber-500 border border-amber-500/20 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter flex items-center gap-1"><Star size={10} className="fill-amber-500" /> Inicial</span>}
+        </div>
         <h3 className="text-white font-black text-xl uppercase tracking-tight group-hover:text-emerald-400 transition-colors">{elemento.nombre_es}</h3><p className="text-zinc-600 font-medium italic text-sm">{elemento.nombre_jp || '-'}</p>
       </div>
       <div className="flex gap-4">
@@ -259,7 +265,7 @@ function ElementoCard({ elemento, categorias, subcategorias, onEdit, onDelete }:
 
 function ElementoForm({ initialData, categorias, subcategorias, ramas, personajes, onClose, onSave, loading }: any) {
   const defaultRequisitos = {
-    stats: { fuerza: 0, agilidad: 0, destreza: 0, resistencia: 0, chakra: 0, control: 0 },
+    stats: { fue: 0, agi: 0, int: 0, res: 0, nin: 0, gen: 0, tai: 0, sm: 0 },
     rango: null,
     misiones: { D: 0, C: 0, B: 0, A: 0, S: 0 },
     combates: 0,
@@ -277,11 +283,13 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, personaje
         coste_exp: 0, 
         coste_ryo: 0, 
         activo: true, 
+        inicial: false,
         requisitos: defaultRequisitos
       };
     }
     return {
       ...initialData,
+      inicial: initialData.inicial || false,
       requisitos: { ...defaultRequisitos, ...initialData.requisitos }
     };
   });
@@ -364,10 +372,16 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, personaje
                     <input type="number" min="0" value={formData.coste_ryo} onChange={(e) => setFormData({ ...formData, coste_ryo: Math.max(0, Number(e.target.value)) })} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-emerald-500" />
                   </div>
                 </div>
-                <button onClick={() => setFormData({ ...formData, activo: !formData.activo })} className={`w-full flex items-center justify-between p-5 rounded-2xl border transition-all ${formData.activo ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 shadow-lg' : 'bg-zinc-950 border-zinc-800 text-zinc-500'}`}>
-                  <span className="font-black text-xs uppercase tracking-widest ml-2">{formData.activo ? 'Elemento Activo' : 'Elemento Archivado'}</span>
-                  {formData.activo ? <Check size={20} /> : <Archive size={20} />}
-                </button>
+                <div className="grid grid-cols-2 gap-4">
+                  <button onClick={() => setFormData({ ...formData, activo: !formData.activo })} className={`w-full flex items-center justify-between p-5 rounded-2xl border transition-all ${formData.activo ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 shadow-lg' : 'bg-zinc-950 border-zinc-800 text-zinc-500'}`}>
+                    <span className="font-black text-xs uppercase tracking-widest ml-2">{formData.activo ? 'Activo' : 'Archivado'}</span>
+                    {formData.activo ? <Check size={20} /> : <Archive size={20} />}
+                  </button>
+                  <button onClick={() => setFormData({ ...formData, inicial: !formData.inicial })} className={`w-full flex items-center justify-between p-5 rounded-2xl border transition-all ${formData.inicial ? 'bg-amber-500/10 border-amber-500/20 text-amber-500 shadow-lg' : 'bg-zinc-950 border-zinc-800 text-zinc-500'}`}>
+                    <span className="font-black text-xs uppercase tracking-widest ml-2">{formData.inicial ? 'Inicial (Nuevo PJ)' : 'No Inicial'}</span>
+                    {formData.inicial ? <Star size={20} className="fill-amber-500" /> : <Plus size={20} />}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -390,7 +404,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, personaje
                     <div className="space-y-4">
                       <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1"><Star size={12}/> Rango Mínimo</label>
                       <div className="flex gap-1 bg-zinc-950 p-1 rounded-xl border border-zinc-900">
-                        {RANCOS.map(r => (
+                        {RANGOS.map(r => (
                           <button key={r} onClick={() => updateReq('rango', formData.requisitos?.rango === r ? null : r)} className={`flex-1 py-3 rounded-lg font-black text-xs transition-all ${formData.requisitos?.rango === r ? 'bg-emerald-500 text-emerald-950' : 'text-zinc-600 hover:bg-zinc-900'}`}>{r}</button>
                         ))}
                       </div>
@@ -398,7 +412,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, personaje
                     <div className="space-y-4">
                       <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1"><Trophy size={12}/> Misiones por Rango</label>
                       <div className="grid grid-cols-5 gap-2">
-                        {RANCOS.map(r => (
+                        {RANGOS.map(r => (
                           <div key={`mis-${r}`} className="space-y-1">
                             <span className="block text-center text-[9px] font-black text-zinc-700">{r}</span>
                             <input type="number" min="0" value={formData.requisitos?.misiones?.[r] ?? 0} onChange={(e) => updateNestedReq('misiones', r, e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg py-2 text-center text-amber-500 font-black text-xs outline-none focus:border-amber-500 transition-all" />

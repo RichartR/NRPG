@@ -46,9 +46,13 @@ export const CharacterServerService = {
     if (error) throw error;
   },
 
-  async upsertRama(supabase: SupabaseClient, characterId: string, slot: number, ramaId: number, subEspecialidadId: number | null) {
+  async upsertRama(supabase: SupabaseClient, characterId: string, slot: number, ramaId: number, subEspecialidadId: number | null, entrenamientoId: number | null) {
     const { error } = await supabase.from('reg_personajes_ramas').upsert({
-      personaje_id: characterId, slot, rama_id: ramaId, sub_especialidad_id: subEspecialidadId || null
+      personaje_id: characterId, 
+      slot, 
+      rama_id: ramaId, 
+      sub_especialidad_id: subEspecialidadId || null,
+      id_entrenamiento: entrenamientoId || null
     }, { onConflict: 'personaje_id, slot' });
     if (error) throw error;
   },
@@ -78,10 +82,16 @@ export const CharacterServerService = {
     }
   },
 
-  async insertRamas(supabase: SupabaseClient, characterId: string, ramas: { rama_id: number; sub_especialidad_id?: number }[]) {
+  async insertRamas(supabase: SupabaseClient, characterId: string, ramas: { rama_id: number; sub_especialidad_id?: number; id_entrenamiento?: number }[]) {
     if (ramas.length === 0) return;
     const { error } = await supabase.from('reg_personajes_ramas').insert(
-      ramas.map((r, idx) => ({ personaje_id: characterId, rama_id: r.rama_id, sub_especialidad_id: r.sub_especialidad_id || null, slot: idx + 1 }))
+      ramas.map((r, idx) => ({ 
+        personaje_id: characterId, 
+        rama_id: r.rama_id, 
+        sub_especialidad_id: r.sub_especialidad_id || null, 
+        id_entrenamiento: r.id_entrenamiento || null,
+        slot: idx + 1 
+      }))
     );
     if (error) throw error;
   },

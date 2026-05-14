@@ -53,6 +53,19 @@ export interface GlosarioSubcategoria {
   activo: boolean;
 }
 
+export interface Entrenamiento {
+  id: number;
+  id_ramaclan: number;
+  id_subespecialidad: number | null;
+  nombre_esp: string;
+  nombre_jp: string;
+  activo: boolean;
+  created_at?: string;
+  // Joins
+  info_ramas_clanes?: RamaClan;
+  info_sub_especialidades?: SubEspecialidad;
+}
+
 export interface Glosario {
   id: number;
   categoria_id: number;
@@ -63,6 +76,7 @@ export interface Glosario {
   coste_exp: number;
   coste_ryo: number;
   activo: boolean;
+  inicial?: boolean;
   // Joins opcionales
   info_glosario_categorias?: GlosarioCategoria;
   info_glosario_subcategorias?: GlosarioSubcategoria;
@@ -154,9 +168,11 @@ export interface PersonajeRama {
   personaje_id: string;
   rama_id: number;
   sub_especialidad_id: number | null;
+  id_entrenamiento: number | null;
   slot: number;
-  ramas_clanes?: RamaClan;
-  sub_especialidades?: SubEspecialidad;
+  info_ramas_clanes?: RamaClan;
+  info_sub_especialidades?: SubEspecialidad;
+  info_entrenamientos?: Entrenamiento;
 }
 
 export interface DocumentoSistema {

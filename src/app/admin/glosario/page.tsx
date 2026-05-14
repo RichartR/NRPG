@@ -14,7 +14,7 @@ export default function AdminGlosarioPage() {
             <span className="text-[10px] font-black uppercase tracking-[0.3em]">Administración</span>
           </div>
           <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter leading-none">
-            Registro <span className="text-zinc-800">Maestro</span>
+            Glosario
           </h1>
           <p className="text-zinc-500 text-lg font-medium max-w-2xl">
             Control total de los elementos del juego. Gestiona técnicas, objetos, pasivas y requisitos desde un solo lugar.

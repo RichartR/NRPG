@@ -13,6 +13,7 @@ export function useCharacter(characterId: string) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [canEdit, setCanEdit] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
 
@@ -41,12 +42,13 @@ export function useCharacter(characterId: string) {
       const char = await CharacterService.getCharacterById(characterId);
 
       // Permission check
-      let isAdmin = false;
+      let isAdm = false;
       if (user) {
         const profile = await ProfileService.getProfile(user.id);
-        isAdmin = profile?.role === 'admin';
+        isAdm = profile?.role === 'admin';
       }
-      setCanEdit(!!(isAdmin || (user && char.user_id === user.id)));
+      setIsAdmin(isAdm);
+      setCanEdit(!!(isAdm || (user && char.user_id === user.id)));
 
       // Parallel Discord data fetch
       const [aparienciaMsg, historiaMsg] = await Promise.all([
@@ -134,8 +136,6 @@ export function useCharacter(characterId: string) {
     setSaving(true);
     try {
       if (section) {
-        // Llamar al endpoint de personaje con la sección específica
-        // Este endpoint tiene lógica de auto-heal: crea el mensaje si fue borrado
         const content = section === 'apariencia' ? character.apariencia : character.historia;
         const res = await fetch(`/api/characters/${characterId}`, {
           method: 'PATCH',
@@ -171,11 +171,29 @@ export function useCharacter(characterId: string) {
     addToast("Cambios descartados", "info");
   };
 
+  const remove = async () => {
+    if (!character || !isAdmin) return;
+    if (!confirm('¿ESTÁS SEGURO? Esta acción es irreversible y borrará TODO el historial del personaje.')) return;
+
+    setSaving(true);
+    try {
+      const villageId = character.aldea_id;
+      await CharacterService.deleteCharacter(characterId);
+      addToast("Personaje eliminado permanentemente", "success");
+      window.location.href = villageId ? `/mundo-ninja/${villageId}` : '/';
+    } catch (err: any) {
+      addToast(err.message || "Error al eliminar", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return {
     character,
     loading,
     saving,
     canEdit,
+    isAdmin,
     isEditing,
     setIsEditing,
     activeTab,
@@ -184,6 +202,7 @@ export function useCharacter(characterId: string) {
     updateField,
     updateStat,
     save,
-    cancel
+    cancel,
+    remove
   };
 }

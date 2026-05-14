@@ -16,6 +16,7 @@ export default function CrearFichaPage() {
 
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
+  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
   
   const [form, setForm] = useState<any>({
     nombre_ninja: '',
@@ -25,7 +26,7 @@ export default function CrearFichaPage() {
     rango_jerarquico: 'Estudiante',
     puntos_stats: 16,
     xp: 0,
-    ryous: 1000,
+    ryous: 0,
     edad: 18,
     sexo: 'Masculino',
     tiempo_rpg: '',
@@ -57,6 +58,29 @@ export default function CrearFichaPage() {
     };
     loadProfile();
   }, []);
+
+  // Cargar elementos iniciales cuando los masters estén listos (solo una vez)
+  useEffect(() => {
+    if (masters.initialized && !initialDataLoaded && masters.glosario) {
+      const initialItems = masters.glosario
+        .filter((i: any) => i.inicial && i.categoria_id === 2)
+        .map((i: any) => ({ item_id: i.id, cantidad: 1, info_glosario: i }));
+      
+      const initialTecs = masters.glosario
+        .filter((t: any) => t.inicial && t.categoria_id !== 2)
+        .map((t: any) => ({ tecnica_id: t.id, info_glosario: t }));
+
+      setForm((prev: any) => ({
+        ...prev,
+        personajes_inventario: initialItems,
+        personajes_tecnicas: initialTecs,
+        ryous: masters.recursosPJInicio?.ryous_iniciales ?? 0,
+        xp: masters.recursosPJInicio?.xp_inicial ?? 0
+      }));
+      
+      setInitialDataLoaded(true);
+    }
+  }, [masters.initialized, masters.glosario, masters.recursosPJInicio, initialDataLoaded]);
 
   // Recalcular atributos derivados cuando cambian los stats
   useEffect(() => {

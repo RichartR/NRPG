@@ -2,24 +2,27 @@
 
 import { 
   User, Shield, Briefcase, Zap, Save, RefreshCw, ArrowLeft, 
-  Activity, Sword, ScrollText, GitBranch, UserCircle, X, Heart, Trash2
+  Activity, Sword, ScrollText, GitBranch, UserCircle, X, Heart, Trash2, Edit3
 } from 'lucide-react';
 import { SectionCard } from '@/components/ui/SectionCard';
-import { DataField, SelectField } from '@/components/ui/Fields';
-import { CharacterStats } from '@/domain/types';
+import { DataField, SelectField, SearchableSelect } from '@/components/ui/Fields';
+import { Character, CharacterStats, Glosario, PersonajeItem, PersonajeTecnica } from '@/domain/types';
+import { useToastStore } from '@/components/ui/Toast';
 
 interface CharacterSheetViewProps {
-  character: any;
-  masters: any;
+  character: Character;
+  masters: any; // Masters still contains mixed data, but we'll tipify its usage
   isEditing: boolean;
   canEdit: boolean;
   activeTab: string;
   saving: boolean;
+  isAdmin?: boolean;
   isNew?: boolean;
-  onUpdateField: (field: string, value: any) => void;
+  onUpdateField: (field: keyof Character, value: any) => void;
   onUpdateStat: (stat: keyof CharacterStats, value: number) => void;
   onSave: (section?: string) => void;
   onCancel: () => void;
+  onDelete?: () => void;
   onSetActiveTab: (tab: string) => void;
   onBack: () => void;
   setIsEditing?: (val: boolean) => void;
@@ -33,18 +36,24 @@ export function CharacterSheetView({
   activeTab,
   saving,
   isNew = false,
+  isAdmin = false,
   onUpdateField,
   onUpdateStat,
   onSave,
   onCancel,
+  onDelete,
   onSetActiveTab,
   onBack,
   setIsEditing
 }: CharacterSheetViewProps) {
-  
+  const addToast = useToastStore(state => state.addToast);
   const puntosGastados = Object.values(character.stats_base || {}).reduce((acc: number, val: any) => acc + (Number(val) || 0), 0);
   const puntosLibres = (Number(character.puntos_stats) || 0) - puntosGastados;
-  const aldeaObj = masters.aldeas.find((a: any) => a.id === character.aldea_id);
+  const aldeaObj = masters.aldeas.find((a: any) => a.id == character.aldea_id);
+  
+  const currentRankValue = masters.rankOrder[character.rango || 'D'] || 0;
+  const requiredRankValue = masters.rankOrder[masters.requiredTrainingRank] || 0;
+  const canAccessTraining = currentRankValue >= requiredRankValue;
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-200 font-sans selection:bg-orange-500/30">
@@ -66,12 +75,21 @@ export function CharacterSheetView({
             </div>
           </div>
           <div className="flex items-center gap-4">
+            {!isNew && isAdmin && onDelete && (
+              <button 
+                onClick={onDelete}
+                className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl hover:bg-red-500 hover:text-black transition-all active:scale-95 group"
+                title="Borrar Personaje"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+            )}
             {!isNew && canEdit && (
               <button 
                 onClick={() => isEditing ? onCancel() : setIsEditing?.(true)} 
                 className={`flex items-center gap-3 px-6 py-4 rounded-[2rem] font-black text-xs uppercase tracking-widest transition-all active:scale-95 border ${isEditing ? 'bg-zinc-100 text-black border-white' : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-600'}`}
               >
-                {isEditing ? <X className="w-4 h-4" /> : <Edit3Icon className="w-4 h-4" />}
+                {isEditing ? <X className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
                 {isEditing ? 'Cancelar' : 'Editar Ficha'}
               </button>
             )}
@@ -136,18 +154,50 @@ export function CharacterSheetView({
               <SectionCard title="Ramas y Especialidades" icon={GitBranch} color="purple">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                    {[1, 2].map(slot => {
-                     const pr = character.personajes_ramas?.find((r: any) => r.slot === slot);
+                     const pr = character.personajes_ramas?.find((r: any) => Number(r.slot) === slot);
                      return (
                        <div key={slot} className="space-y-4 p-6 bg-zinc-900/50 border border-zinc-800 rounded-3xl">
                           <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Especialidad Slot {slot}</h4>
-                          <SelectField label="Rama / Clan" value={pr?.rama_id} options={masters.ramas.map((r:any)=>({label:r.nombre, value:r.id}))} disabled={!isEditing && !isNew} onChange={(v)=>{
-                            const newRamas = [...(character.personajes_ramas?.filter((r:any)=>r.slot !== slot) || []), { slot, rama_id: Number(v), sub_especialidad_id: null }];
-                            onUpdateField('personajes_ramas', newRamas);
-                          }} />
-                          <SelectField label="Sub-Especialidad" value={pr?.sub_especialidad_id} options={masters.subEspecialidades.filter((s:any)=>s.rama_id === pr?.rama_id).map((s:any)=>({label:s.nombre, value:s.id}))} disabled={!isEditing && !isNew} onChange={(v)=>{
-                            const newRamas = [...(character.personajes_ramas?.filter((r:any)=>r.slot !== slot) || []), { slot, rama_id: pr?.rama_id, sub_especialidad_id: Number(v) }];
-                            onUpdateField('personajes_ramas', newRamas);
-                          }} />
+                          <SelectField 
+                            label="Rama / Clan" 
+                            value={pr?.rama_id} 
+                            options={masters.ramas.map((r:any)=>({label:r.nombre, value:r.id}))} 
+                            disabled={!isEditing && !isNew} 
+                            onChange={(v)=>{
+                              const newRamas = [...(character.personajes_ramas?.filter((r:any)=>Number(r.slot) !== slot) || []), { slot, rama_id: Number(v), sub_especialidad_id: null, id_entrenamiento: null }];
+                              onUpdateField('personajes_ramas', newRamas);
+                            }} 
+                          />
+                          {masters.subEspecialidades.some((s: any) => s.rama_id === pr?.rama_id) && (
+                            <SelectField 
+                              label="Sub-Especialidad" 
+                              value={pr?.sub_especialidad_id} 
+                              options={masters.subEspecialidades.filter((s:any)=>s.rama_id === pr?.rama_id).map((s:any)=>({label:s.nombre, value:s.id}))} 
+                              disabled={!isEditing && !isNew} 
+                              onChange={(v)=>{
+                                const newRamas = [...(character.personajes_ramas?.filter((r:any)=>Number(r.slot) !== slot) || []), { ...pr, slot, rama_id: pr?.rama_id, sub_especialidad_id: v ? Number(v) : null, id_entrenamiento: null }];
+                                onUpdateField('personajes_ramas', newRamas);
+                              }} 
+                            />
+                          )}
+                          {canAccessTraining && (
+                            <SelectField 
+                              label="Entrenamiento" 
+                              value={pr?.id_entrenamiento} 
+                              options={masters.entrenamientos
+                                .filter((e: any) => 
+                                  e.id_ramaclan === pr?.rama_id && 
+                                  (!pr?.sub_especialidad_id ? !e.id_subespecialidad : (e.id_subespecialidad === pr?.sub_especialidad_id || !e.id_subespecialidad))
+                                )
+                                .map((e: any) => ({ label: e.nombre_esp, value: e.id }))
+                              } 
+                              disabled={!isEditing && !isNew} 
+                              onChange={(v) => {
+                                const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { ...pr, slot, id_entrenamiento: v ? Number(v) : null }];
+                                onUpdateField('personajes_ramas', newRamas);
+                              }} 
+                            />
+                          )}
                        </div>
                      );
                    })}
@@ -160,23 +210,15 @@ export function CharacterSheetView({
                   <div className="grid gap-6">
                     <div className="bg-zinc-900/50 border border-emerald-500/20 p-8 rounded-[2.5rem] text-center group hover:border-emerald-500/40 transition-all">
                       <p className="text-[10px] font-black text-emerald-500/50 uppercase tracking-[0.2em] mb-2">Ryous</p>
-                      {isNew ? (
-                         <input type="number" value={character.ryous} onChange={(e)=>onUpdateField('ryous', Number(e.target.value))} className="bg-transparent text-4xl font-black text-emerald-400 italic text-center w-full outline-none" />
-                      ) : (
-                        <p className="text-4xl font-black text-emerald-400 italic">
-                          {new Intl.NumberFormat('es-ES').format(character.ryous || 0)} <span className="text-sm">¥</span>
-                        </p>
-                      )}
+                      <p className="text-4xl font-black text-emerald-400 italic">
+                        {new Intl.NumberFormat('es-ES').format(character.ryous || 0)} <span className="text-sm">¥</span>
+                      </p>
                     </div>
                     <div className="bg-zinc-900/50 border border-blue-500/20 p-8 rounded-[2.5rem] text-center group hover:border-blue-500/40 transition-all">
                       <p className="text-[10px] font-black text-blue-500/50 uppercase tracking-[0.2em] mb-2">Experiencia</p>
-                      {isNew ? (
-                         <input type="number" value={character.xp} onChange={(e)=>onUpdateField('xp', Number(e.target.value))} className="bg-transparent text-4xl font-black text-blue-400 italic text-center w-full outline-none" />
-                      ) : (
-                        <p className="text-4xl font-black text-blue-400 italic">
-                          {new Intl.NumberFormat('es-ES').format(character.xp || 0)} <span className="text-sm text-zinc-600 italic font-medium ml-1">XP</span>
-                        </p>
-                      )}
+                      <p className="text-4xl font-black text-blue-400 italic">
+                        {new Intl.NumberFormat('es-ES').format(character.xp || 0)} <span className="text-sm text-zinc-600 italic font-medium ml-1">XP</span>
+                      </p>
                     </div>
                   </div>
                </SectionCard>
@@ -249,26 +291,94 @@ export function CharacterSheetView({
 
         {activeTab === 'inventario' && (
           <SectionCard title="Mochila y Equipo" icon={Briefcase} color="blue">
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {character.personajes_inventario?.map((pi: any) => (
-                  <div key={pi.item_id} className="bg-zinc-900 p-6 border border-zinc-800 rounded-3xl flex justify-between items-center group">
-                    <div>
-                      <p className="font-bold text-white uppercase italic">{pi.items_catalog?.nombre}</p>
-                      <p className="text-[9px] text-zinc-600 uppercase">{pi.items_catalog?.categoria}</p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <span className="text-2xl font-black text-blue-500">x{pi.cantidad}</span>
-                      {(canEdit || isNew) && <button onClick={()=>onUpdateField('personajes_inventario', character.personajes_inventario?.filter((i:any)=>i.item_id !== pi.item_id))} className="text-red-500 p-2 hover:bg-red-500/10 rounded-xl transition-all"><Trash2 className="w-4 h-4" /></button>}
-                    </div>
+            <div className="space-y-12">
+              {Object.entries(
+                (character.personajes_inventario || []).reduce((acc: Record<string, Record<string, PersonajeItem[]>>, pi: PersonajeItem) => {
+                  const cat = pi.info_glosario?.info_glosario_categorias?.nombre || 'General';
+                  const sub = pi.info_glosario?.info_glosario_subcategorias?.nombre || 'Otros';
+                  if (!acc[cat]) acc[cat] = {};
+                  if (!acc[cat][sub]) acc[cat][sub] = [];
+                  acc[cat][sub].push(pi);
+                  return acc;
+                }, {})
+              ).map(([catName, subs]: [string, any]) => (
+                <div key={catName} className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    <h3 className="text-xl font-black text-white uppercase italic tracking-tighter">{catName}</h3>
+                    <div className="flex-1 h-px bg-zinc-800" />
                   </div>
-                ))}
-             </div>
+                  
+                  <div className="space-y-8">
+                    {Object.entries(subs).map(([subName, items]: [string, any]) => (
+                      <div key={subName} className="space-y-4">
+                        <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] ml-2">{subName}</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {items.map((pi: PersonajeItem, idx: number) => (
+                            <div key={`${pi.item_id}-${idx}`} className="bg-zinc-900/50 p-6 border border-zinc-800/50 rounded-3xl flex justify-between items-center group hover:border-blue-500/30 transition-all">
+                              <div>
+                                <p className="font-bold text-white uppercase italic text-sm">{pi.info_glosario?.nombre_es}</p>
+                                <p className="text-[9px] text-zinc-600 uppercase font-bold">{pi.info_glosario?.nombre_jp || '---'}</p>
+                              </div>
+                              <div className="flex items-center gap-4">
+                                <span className="text-xl font-black text-blue-500">x{pi.cantidad}</span>
+                                {(canEdit || isNew) && (
+                                 <button 
+                                   onClick={()=>{
+                                     const isNewlyAdded = !pi.id;
+                                     if (isNewlyAdded) {
+                                       if (pi.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pi.info_glosario.coste_exp);
+                                       if (pi.info_glosario?.coste_ryo) onUpdateField('ryous', (character.ryous || 0) + pi.info_glosario.coste_ryo);
+                                     }
+                                     onUpdateField('personajes_inventario', character.personajes_inventario?.filter((i: PersonajeItem)=>i.item_id !== pi.item_id));
+                                   }} 
+                                   className="text-red-500/50 p-2 hover:bg-red-500/10 hover:text-red-500 rounded-xl transition-all"
+                                 >
+                                   <Trash2 className="w-4 h-4" />
+                                 </button>
+                               )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
              {(canEdit || isNew) && (isEditing || isNew) && (
                <div className="mt-12 pt-10 border-t border-zinc-800">
-                  <SelectField label="Añadir Objeto" options={masters.items.map((i:any)=>({label:`${i.nombre} (${i.categoria})`, value:i.id}))} onChange={(v)=>{
-                    const it = masters.items.find((i:any)=>i.id === Number(v));
-                    if (it) onUpdateField('personajes_inventario', [...(character.personajes_inventario || []), { item_id: it.id, cantidad: 1, items_catalog: it }]);
-                  }} />
+                  <SearchableSelect 
+                    label="Añadir Objeto" 
+                    placeholder="Buscar objeto en el glosario..."
+                    options={(masters.glosario || [])
+                      .filter((i: Glosario) => i.categoria_id === 2 && !(character.personajes_inventario || []).some((pi: PersonajeItem) => pi.item_id === i.id))
+                      .map((i: any) => ({ 
+                        label: `${i.nombre_es} (${i.info_glosario_subcategorias?.nombre || 'General'}) — ${i.coste_exp} EXP / ${i.coste_ryo} Ryous`, 
+                        value: i.id 
+                      }))
+                    } 
+                    onChange={(v) => {
+                      const it = (masters.glosario || []).find((i: any) => i.id === Number(v));
+                      const current = character.personajes_inventario || [];
+                      
+                      if (it && !current.some((i: any) => i.item_id === it.id)) {
+                        const costExp = it.coste_exp || 0;
+                        const costRyo = it.coste_ryo || 0;
+                        const currentExp = character.xp || 0;
+                        const currentRyo = character.ryous || 0;
+
+                        if (currentExp < costExp || currentRyo < costRyo) {
+                          addToast(`No tienes recursos suficientes. Necesitas ${costExp} EXP y ${costRyo} Ryous.`, "error");
+                          return;
+                        }
+
+                        onUpdateField('personajes_inventario', [...current, { item_id: it.id, cantidad: 1, info_glosario: it }]);
+                        if (costExp > 0) onUpdateField('xp', currentExp - costExp);
+                        if (costRyo > 0) onUpdateField('ryous', currentRyo - costRyo);
+                      }
+                    }} 
+                  />
                </div>
              )}
           </SectionCard>
@@ -276,26 +386,94 @@ export function CharacterSheetView({
 
         {activeTab === 'tecnicas' && (
           <SectionCard title="Artes Ninja" icon={Zap} color="orange">
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {character.personajes_tecnicas?.map((pt: any) => (
-                  <div key={pt.tecnica_id} className="bg-zinc-900 p-6 border border-zinc-800 rounded-3xl flex justify-between items-center">
-                    <div className="flex items-center gap-4">
-                       <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-[10px] font-black text-orange-500 border border-orange-500/20">{pt.tecnicas_glosario?.rango}</div>
-                       <div>
-                          <p className="font-bold text-white uppercase italic">{pt.tecnicas_glosario?.nombre}</p>
-                          <p className="text-[9px] text-zinc-600 uppercase">{pt.tecnicas_glosario?.subcategoria}</p>
-                       </div>
-                    </div>
-                    {(canEdit || isNew) && <button onClick={()=>onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t:any)=>t.tecnica_id !== pt.tecnica_id))} className="text-red-500 p-2 hover:bg-red-500/10 rounded-xl transition-all"><Trash2 className="w-4 h-4" /></button>}
+            <div className="space-y-12">
+              {Object.entries(
+                (character.personajes_tecnicas || []).reduce((acc: Record<string, Record<string, PersonajeTecnica[]>>, pt: PersonajeTecnica) => {
+                  const cat = pt.info_glosario?.info_glosario_categorias?.nombre || 'General';
+                  const sub = pt.info_glosario?.info_glosario_subcategorias?.nombre || 'Otros';
+                  if (!acc[cat]) acc[cat] = {};
+                  if (!acc[cat][sub]) acc[cat][sub] = [];
+                  acc[cat][sub].push(pt);
+                  return acc;
+                }, {})
+              ).map(([catName, subs]: [string, any]) => (
+                <div key={catName} className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    <h3 className="text-xl font-black text-white uppercase italic tracking-tighter">{catName}</h3>
+                    <div className="flex-1 h-px bg-zinc-800" />
                   </div>
-                ))}
-             </div>
+                  
+                  <div className="space-y-8">
+                    {Object.entries(subs).map(([subName, items]: [string, any]) => (
+                      <div key={subName} className="space-y-4">
+                        <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] ml-2">{subName}</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {items.map((pt: PersonajeTecnica, idx: number) => (
+                            <div key={`${pt.tecnica_id}-${idx}`} className="bg-zinc-900/50 p-6 border border-zinc-800/50 rounded-3xl flex justify-between items-center group hover:border-orange-500/30 transition-all">
+                              <div className="flex items-center gap-4">
+                                 <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-[10px] font-black text-orange-500 border border-orange-500/20">{pt.info_glosario?.requisitos?.rango || 'D'}</div>
+                                 <div>
+                                    <p className="font-bold text-white uppercase italic text-sm">{pt.info_glosario?.nombre_es}</p>
+                                    <p className="text-[9px] text-zinc-600 uppercase font-bold">{pt.info_glosario?.nombre_jp || '---'}</p>
+                                 </div>
+                              </div>
+                              {(canEdit || isNew) && (
+                                 <button 
+                                   onClick={()=>{
+                                     const isNewlyAdded = !pt.id;
+                                     if (isNewlyAdded) {
+                                       if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
+                                       if (pt.info_glosario?.coste_ryo) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryo);
+                                     }
+                                     onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica)=>t.tecnica_id !== pt.tecnica_id));
+                                   }} 
+                                   className="text-red-500/50 p-2 hover:bg-red-500/10 hover:text-red-500 rounded-xl transition-all"
+                                 >
+                                   <Trash2 className="w-4 h-4" />
+                                 </button>
+                               )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
              {(canEdit || isNew) && (isEditing || isNew) && (
                <div className="mt-12 pt-10 border-t border-zinc-800">
-                  <SelectField label="Aprender Técnica" options={masters.tecnicas.map((t:any)=>({label:`${t.nombre} (Rango ${t.rango})`, value:t.id}))} onChange={(v)=>{
-                    const tec = masters.tecnicas.find((t:any)=>t.id === Number(v));
-                    if (tec) onUpdateField('personajes_tecnicas', [...(character.personajes_tecnicas || []), { tecnica_id: tec.id, tecnicas_glosario: tec }]);
-                  }} />
+                  <SearchableSelect 
+                    label="Aprender Técnica" 
+                    placeholder="Buscar técnica en el glosario..."
+                    options={(masters.glosario || [])
+                      .filter((i: Glosario) => i.categoria_id !== 2 && !(character.personajes_tecnicas || []).some((pt: PersonajeTecnica) => pt.tecnica_id === i.id))
+                      .map((t: any) => ({ 
+                        label: `${t.nombre_es} (Rango ${t.requisitos?.rango || 'D'}) — ${t.coste_exp} EXP / ${t.coste_ryo} Ryous`, 
+                        value: t.id 
+                      }))
+                    } 
+                    onChange={(v) => {
+                      const tec = (masters.glosario || []).find((t: any) => t.id === Number(v));
+                      const current = character.personajes_tecnicas || [];
+                      
+                      if (tec && !current.some((t: any) => t.tecnica_id === tec.id)) {
+                        const costExp = tec.coste_exp || 0;
+                        const costRyo = tec.coste_ryo || 0;
+                        const currentExp = character.xp || 0;
+                        const currentRyo = character.ryous || 0;
+
+                        if (currentExp < costExp || currentRyo < costRyo) {
+                          addToast(`No tienes recursos suficientes. Necesitas ${costExp} EXP y ${costRyo} Ryous.`, "error");
+                          return;
+                        }
+
+                        onUpdateField('personajes_tecnicas', [...current, { tecnica_id: tec.id, info_glosario: tec }]);
+                        if (costExp > 0) onUpdateField('xp', currentExp - costExp);
+                        if (costRyo > 0) onUpdateField('ryous', currentRyo - costRyo);
+                      }
+                    }} 
+                  />
                </div>
              )}
           </SectionCard>
@@ -320,10 +498,3 @@ export function CharacterSheetView({
   );
 }
 
-function Edit3Icon({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-    </svg>
-  );
-}

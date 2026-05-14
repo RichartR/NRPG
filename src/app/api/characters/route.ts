@@ -23,6 +23,8 @@ export async function POST(request: Request) {
       stats_base: data.stats_base,
       atributos_derivados: data.atributos_derivados,
       puntos_stats: data.puntos_stats,
+      xp: data.xp,
+      ryous: data.ryous,
       edad: data.edad,
       sexo: data.sexo,
       rasgos: data.rasgos

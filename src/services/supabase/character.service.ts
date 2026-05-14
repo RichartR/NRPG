@@ -10,24 +10,34 @@ export const CharacterService = {
         *, 
         profiles!user_id(username),
         info_aldeas(*), 
-        reg_personajes_inventario!personaje_id(*, info_glosario(*)), 
-        reg_personajes_tecnicas!personaje_id(*, info_glosario(*)), 
-        reg_personajes_ramas!personaje_id(*, info_ramas_clanes(*), info_sub_especialidades(*))
+        reg_personajes_inventario!reg_personajes_inventario_personaje_id_fkey(*, info_glosario(*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre))), 
+        reg_personajes_tecnicas!reg_personajes_tecnicas_personaje_id_fkey(*, info_glosario(*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre))), 
+        reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(*, info_ramas_clanes(*), info_sub_especialidades(*), info_entrenamientos(*))
       `)
       .eq('id', id)
       .single();
 
     if (error) throw error;
-    return data as Character;
+    
+    // Normalización ultra-segura de propiedades
+    return {
+      ...data,
+      aldeas: data.info_aldeas || data.aldeas,
+      personajes_ramas: data.reg_personajes_ramas || data.personajes_ramas || data.ramas || [],
+      personajes_inventario: data.reg_personajes_inventario || data.personajes_inventario || data.inventario || [],
+      personajes_tecnicas: data.reg_personajes_tecnicas || data.personajes_tecnicas || data.tecnicas || []
+    } as Character;
   },
 
   async createCharacter(character: Partial<Character>): Promise<Character> {
     const supabase = createClient();
-    const { data, error } = await supabase.from('reg_characters').insert({
+    
+    // 1. Crear el personaje base
+    const { data: newChar, error: charError } = await supabase.from('reg_characters').insert({
       hobba_name: character.hobba_name?.trim(),
       nombre_ninja: character.nombre_ninja?.trim(),
       aldea_id: character.aldea_id || null,
-      rango: character.rango,
+      rango: character.rango || 'D',
       rango_jerarquico: character.rango_jerarquico,
       stats_base: character.stats_base,
       atributos_derivados: character.atributos_derivados,
@@ -37,8 +47,34 @@ export const CharacterService = {
       activo: true
     }).select().single();
 
-    if (error) throw error;
-    return data as Character;
+    if (charError) throw charError;
+
+    // 2. Obtener elementos iniciales del glosario
+    const { data: initialItems } = await supabase
+      .from('info_glosario')
+      .select('id, categoria_id')
+      .eq('inicial', true)
+      .eq('activo', true);
+
+    if (initialItems && initialItems.length > 0) {
+      const inventoryPack = initialItems
+        .filter(i => i.categoria_id === 2) // Solo Objetos
+        .map(i => ({ personaje_id: newChar.id, item_id: i.id, cantidad: 1 }));
+
+      const techniquesPack = initialItems
+        .filter(i => i.categoria_id !== 2) // Todo lo que no sea objeto (Técnicas, Pasivas, etc)
+        .map(i => ({ personaje_id: newChar.id, tecnica_id: i.id }));
+
+      // 3. Insertar packs (si existen)
+      if (inventoryPack.length > 0) {
+        await supabase.from('reg_personajes_inventario').insert(inventoryPack);
+      }
+      if (techniquesPack.length > 0) {
+        await supabase.from('reg_personajes_tecnicas').insert(techniquesPack);
+      }
+    }
+
+    return newChar as Character;
   },
 
   async updateCharacter(id: string, updates: Partial<Character>) {
@@ -75,6 +111,7 @@ export const CharacterService = {
           personaje_id: id,
           rama_id: r.rama_id,
           sub_especialidad_id: r.sub_especialidad_id,
+          id_entrenamiento: r.id_entrenamiento || null,
           slot: r.slot || 1
         }))
       );
@@ -109,5 +146,15 @@ export const CharacterService = {
       );
       if (error) throw error;
     }
+  },
+
+  async deleteCharacter(id: string) {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('reg_characters')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
   }
 };

@@ -5,7 +5,7 @@ import { Save, X, GitBranch, Type, AlignLeft, MapPin, RefreshCw } from 'lucide-r
 import { useRouter } from 'next/navigation';
 import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
-import { DataField, SelectField } from '@/components/ui/Fields';
+import { DataField, SelectField, SearchableSelect } from '@/components/ui/Fields';
 import { RamaClan, Aldea } from '@/domain/types';
 
 interface RamaEditFormProps {
@@ -60,29 +60,12 @@ export default function RamaEditForm({ rama, aldeas, onCancel }: RamaEditFormPro
           <div>
             <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter flex items-center gap-3">
               <GitBranch className="w-6 h-6 text-purple-500" />
-              {isCreate ? `Añadir Nueva ${formData.tipo === 'rama' ? 'Rama' : 'Clan'}` : `Editar ${formData.tipo === 'rama' ? 'Rama' : 'Clan'}`}
+              {isCreate ? 'Crear Nuevo Registro' : 'Editar Registro'}
             </h2>
             <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mt-1">Configuración de especialidades ninja</p>
           </div>
           
           <div className="flex items-center gap-6">
-            <div className="flex bg-zinc-900 p-1 rounded-2xl border border-zinc-800">
-              <button 
-                type="button"
-                onClick={() => updateField('tipo', 'rama')}
-                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${formData.tipo === 'rama' ? 'bg-white text-black' : 'text-zinc-500 hover:text-white'}`}
-              >
-                Rama
-              </button>
-              <button 
-                type="button"
-                onClick={() => updateField('tipo', 'clan')}
-                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${formData.tipo === 'clan' ? 'bg-white text-black' : 'text-zinc-500 hover:text-white'}`}
-              >
-                Clan
-              </button>
-            </div>
-            
             <label className="flex items-center gap-3 cursor-pointer group bg-zinc-900 px-4 py-2 rounded-full border border-zinc-800">
               <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${formData.activo ? 'text-emerald-500' : 'text-zinc-500'}`}>
                 {formData.activo ? 'ACTIVA' : 'INACTIVA'}
@@ -120,13 +103,32 @@ export default function RamaEditForm({ rama, aldeas, onCancel }: RamaEditFormPro
               onChange={(v) => updateField('slug', v.toLowerCase().replace(/\s+/g, '-'))} 
               placeholder="clan-uchiha"
             />
-            <SelectField 
+            <SearchableSelect 
               label="Aldea Asociada" 
               value={formData.aldea_id} 
               options={aldeas.map(a => ({ label: a.nombre_completo, value: a.id }))} 
               onChange={(v) => updateField('aldea_id', v ? Number(v) : null)}
               placeholder="Cualquier Aldea / Ronin"
             />
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">Tipo de Registro</label>
+              <div className="flex bg-zinc-900 p-1 rounded-2xl border border-zinc-800 h-[58px]">
+                <button 
+                  type="button"
+                  onClick={() => updateField('tipo', 'rama')}
+                  className={`flex-1 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${formData.tipo === 'rama' ? 'bg-white text-black shadow-lg' : 'text-zinc-500 hover:text-white'}`}
+                >
+                  Rama
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => updateField('tipo', 'clan')}
+                  className={`flex-1 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${formData.tipo === 'clan' ? 'bg-white text-black shadow-lg' : 'text-zinc-500 hover:text-white'}`}
+                >
+                  Clan
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-2">

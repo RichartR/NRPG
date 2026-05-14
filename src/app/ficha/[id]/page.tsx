@@ -15,6 +15,7 @@ export default function FichaPublicPage() {
     loading,
     saving,
     canEdit,
+    isAdmin,
     isEditing,
     setIsEditing,
     activeTab,
@@ -23,7 +24,8 @@ export default function FichaPublicPage() {
     updateField,
     updateStat,
     save,
-    cancel
+    cancel,
+    remove
   } = useCharacter(id);
 
   if (loading || !character) {
@@ -40,12 +42,14 @@ export default function FichaPublicPage() {
       masters={masters}
       isEditing={isEditing}
       canEdit={canEdit}
+      isAdmin={isAdmin}
       activeTab={activeTab}
       saving={saving}
       onUpdateField={updateField}
       onUpdateStat={updateStat}
       onSave={save}
       onCancel={cancel}
+      onDelete={remove}
       onSetActiveTab={setActiveTab}
       onBack={() => router.back()}
       setIsEditing={setIsEditing}

@@ -1,16 +1,18 @@
 import { createClient } from '@/utils/supabase/client';
-import { Aldea, RamaClan, SubEspecialidad, DocumentoSistema, DocumentoCombate, ConfiguracionSistema, Glosario, GlosarioCategoria, GlosarioSubcategoria } from '@/domain/types';
+import { Aldea, RamaClan, SubEspecialidad, DocumentoSistema, DocumentoCombate, ConfiguracionSistema, Glosario, GlosarioCategoria, GlosarioSubcategoria, Entrenamiento } from '@/domain/types';
 
 export const AdminService = {
   // Aldeas
   async saveAldea(aldea: Partial<Aldea>) {
     const supabase = createClient();
-    if (aldea.id) {
-      const { data, error } = await supabase.from('info_aldeas').update(aldea).eq('id', aldea.id).select().single();
+    const { url_icono, id, ...cleanData } = aldea;
+    
+    if (id) {
+      const { data, error } = await supabase.from('info_aldeas').update(cleanData).eq('id', id).select().single();
       if (error) throw error;
       return data;
     } else {
-      const { data, error } = await supabase.from('info_aldeas').insert([aldea]).select().single();
+      const { data, error } = await supabase.from('info_aldeas').insert([cleanData]).select().single();
       if (error) throw error;
       return data;
     }
@@ -25,12 +27,15 @@ export const AdminService = {
   // Ramas y Clanes
   async saveRamaClan(rama: Partial<RamaClan>) {
     const supabase = createClient();
-    if (rama.id) {
-      const { data, error } = await supabase.from('info_ramas_clanes').update(rama).eq('id', rama.id).select().single();
+    // @ts-ignore - info_aldeas comes from join
+    const { info_aldeas, id, ...cleanData } = rama;
+
+    if (id) {
+      const { data, error } = await supabase.from('info_ramas_clanes').update(cleanData).eq('id', id).select().single();
       if (error) throw error;
       return data;
     } else {
-      const { data, error } = await supabase.from('info_ramas_clanes').insert([rama]).select().single();
+      const { data, error } = await supabase.from('info_ramas_clanes').insert([cleanData]).select().single();
       if (error) throw error;
       return data;
     }
@@ -73,12 +78,15 @@ export const AdminService = {
   // Documentos de Combate
   async saveCombatDoc(doc: Partial<DocumentoCombate>) {
     const supabase = createClient();
-    if (doc.id) {
-      const { data, error } = await supabase.from('info_documentos_combate').update(doc).eq('id', doc.id).select('*, info_ramas_clanes(id, nombre), info_sub_especialidades(id, nombre)').single();
+    // @ts-ignore - joined objects
+    const { info_ramas_clanes, info_sub_especialidades, id, ...cleanData } = doc;
+
+    if (id) {
+      const { data, error } = await supabase.from('info_documentos_combate').update(cleanData).eq('id', id).select('*, info_ramas_clanes(id, nombre), info_sub_especialidades(id, nombre)').single();
       if (error) throw error;
       return data;
     } else {
-      const { data, error } = await supabase.from('info_documentos_combate').insert([doc]).select('*, info_ramas_clanes(id, nombre), info_sub_especialidades(id, nombre)').single();
+      const { data, error } = await supabase.from('info_documentos_combate').insert([cleanData]).select('*, info_ramas_clanes(id, nombre), info_sub_especialidades(id, nombre)').single();
       if (error) throw error;
       return data;
     }
@@ -172,12 +180,14 @@ export const AdminService = {
 
   async saveGlosario(el: Partial<Glosario>) {
     const supabase = createClient();
-    if (el.id) {
-      const { data, error } = await supabase.from('info_glosario').update(el).eq('id', el.id).select().single();
+    const { info_glosario_categorias, info_glosario_subcategorias, id, ...cleanData } = el;
+
+    if (id) {
+      const { data, error } = await supabase.from('info_glosario').update(cleanData).eq('id', id).select().single();
       if (error) throw error;
       return data;
     } else {
-      const { data, error } = await supabase.from('info_glosario').insert([el]).select().single();
+      const { data, error } = await supabase.from('info_glosario').insert([cleanData]).select().single();
       if (error) throw error;
       return data;
     }
@@ -186,6 +196,29 @@ export const AdminService = {
   async deleteGlosario(id: number) {
     const supabase = createClient();
     const { error } = await supabase.from('info_glosario').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // Entrenamientos
+  async saveEntrenamiento(ent: Partial<Entrenamiento>) {
+    const supabase = createClient();
+    // @ts-ignore - joined objects
+    const { info_ramas_clanes, info_sub_especialidades, id, ...cleanData } = ent;
+
+    if (id) {
+      const { data, error } = await supabase.from('info_entrenamientos').update(cleanData).eq('id', id).select('*, info_ramas_clanes(id, nombre), info_sub_especialidades(id, nombre)').single();
+      if (error) throw error;
+      return data;
+    } else {
+      const { data, error } = await supabase.from('info_entrenamientos').insert([cleanData]).select('*, info_ramas_clanes(id, nombre), info_sub_especialidades(id, nombre)').single();
+      if (error) throw error;
+      return data;
+    }
+  },
+
+  async deleteEntrenamiento(id: number) {
+    const supabase = createClient();
+    const { error } = await supabase.from('info_entrenamientos').delete().eq('id', id);
     if (error) throw error;
   }
 };
