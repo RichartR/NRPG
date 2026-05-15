@@ -19,6 +19,7 @@ export interface Aldea {
 }
 
 export interface RamaClan {
+  nombre_español: string;
   id: number;
   nombre: string;
   slug: string;
@@ -121,6 +122,9 @@ export interface AtributosDerivados {
 }
 
 export interface Character {
+  personajes_acciones: any;
+  personajes_combates: any;
+  personajes_misiones: any;
   id: number;
   user_id: string;
   nombre_ninja: string;
