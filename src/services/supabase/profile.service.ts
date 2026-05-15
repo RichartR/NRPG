@@ -12,7 +12,7 @@ export const ProfileService = {
     return data;
   },
 
-  async getActiveCharacterId(userId: string): Promise<string | null> {
+  async getActiveCharacterId(userId: string): Promise<number | null> {
     const supabase = createClient();
     const { data, error } = await supabase
       .from('profiles')

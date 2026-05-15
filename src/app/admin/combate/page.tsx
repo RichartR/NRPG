@@ -23,7 +23,7 @@ export default async function AdminCombatePage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase flex items-center gap-4">
               <Sword className="w-10 h-10 text-red-500" />
-              BIBLIOTECA DE COMBATE
+              Documentos
             </h1>
           </div>
         </header>

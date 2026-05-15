@@ -6,14 +6,14 @@ import { Character } from '@/domain/types';
  * Receives the SupabaseClient instance created from '@/utils/supabase/server'.
  */
 export const CharacterServerService = {
-  async getCharacterById(supabase: SupabaseClient, id: string): Promise<Character | null> {
+  async getCharacterById(supabase: SupabaseClient, id: string | number): Promise<Character | null> {
     const { data, error } = await supabase
       .from('reg_characters')
-      .select('*')
+      .select('*, personajes_ramas:reg_personajes_ramas(*, rama:info_ramas_clanes(nombre), sub_especialidad:info_sub_especialidades(nombre))')
       .eq('id', id)
       .single();
     if (error) return null;
-    return data as Character;
+    return data as any; // Cast as any since we added joins not in basic Character type
   },
 
   async hasReachedCharacterLimit(supabase: SupabaseClient, userId: string): Promise<boolean> {
@@ -41,12 +41,12 @@ export const CharacterServerService = {
     return data as Character;
   },
 
-  async updateCharacterFields(supabase: SupabaseClient, id: string, fields: Record<string, unknown>) {
+  async updateCharacterFields(supabase: SupabaseClient, id: string | number, fields: Record<string, unknown>) {
     const { error } = await supabase.from('reg_characters').update(fields).eq('id', id);
     if (error) throw error;
   },
 
-  async upsertRama(supabase: SupabaseClient, characterId: string, slot: number, ramaId: number, subEspecialidadId: number | null, entrenamientoId: number | null) {
+  async upsertRama(supabase: SupabaseClient, characterId: string | number, slot: number, ramaId: number, subEspecialidadId: number | null, entrenamientoId: number | null) {
     const { error } = await supabase.from('reg_personajes_ramas').upsert({
       personaje_id: characterId, 
       slot, 
@@ -57,22 +57,52 @@ export const CharacterServerService = {
     if (error) throw error;
   },
 
-  async deleteRamaSlot(supabase: SupabaseClient, characterId: string, slot: number) {
+  async deleteRamaSlot(supabase: SupabaseClient, characterId: string | number, slot: number) {
     const { error } = await supabase.from('reg_personajes_ramas').delete().eq('personaje_id', characterId).eq('slot', slot);
     if (error) throw error;
   },
 
-  async replaceInventario(supabase: SupabaseClient, characterId: string, items: { item_id: number; cantidad: number }[]) {
-    await supabase.from('reg_personajes_inventario').delete().eq('personaje_id', characterId);
-    if (items.length > 0) {
-      const { error } = await supabase.from('reg_personajes_inventario').insert(
-        items.map(i => ({ personaje_id: characterId, item_id: i.item_id, cantidad: i.cantidad }))
+  async bulkUpdateRamas(supabase: SupabaseClient, characterId: string | number, ramas: any[]) {
+    // 1. Identificar slots a eliminar (los que no vienen en el nuevo array)
+    const activeSlots = ramas.map(r => r.slot).filter(Boolean);
+    if (activeSlots.length < 2) {
+      // Si solo tenemos 1 o 0 ramas, borramos los slots que ya no existan
+      // (asumiendo que hay un máximo de 2 slots)
+      const slotsToDelete = [1, 2].filter(s => !activeSlots.includes(s));
+      for (const slot of slotsToDelete) {
+        await this.deleteRamaSlot(supabase, characterId, slot);
+      }
+    }
+
+    // 2. Realizar un UPSERT masivo (una sola petición)
+    // Esto permite que Postgres valide la restricción de unicidad al final de la operación,
+    // permitiendo "intercambios" de ramas entre slots sin dar error de duplicado.
+    if (ramas.length > 0) {
+      const { error } = await supabase.from('reg_personajes_ramas').upsert(
+        ramas.map((r, idx) => ({
+          personaje_id: characterId,
+          slot: r.slot || idx + 1,
+          rama_id: r.rama_id,
+          sub_especialidad_id: r.sub_especialidad_id || null,
+          id_entrenamiento: r.id_entrenamiento || null
+        })), 
+        { onConflict: 'personaje_id, slot' }
       );
       if (error) throw error;
     }
   },
 
-  async replaceTecnicas(supabase: SupabaseClient, characterId: string, tecnicas: { tecnica_id: number }[]) {
+  async replaceInventario(supabase: SupabaseClient, characterId: string | number, items: { item_id: number; cantidad: number }[]) {
+    await supabase.from('reg_personajes_inventario').delete().eq('personaje_id', characterId);
+    if (items.length > 0) {
+      const { error } = await supabase.from('reg_personajes_inventario').insert(
+        items.map(i => ({ personaje_id: characterId, item_id: i.item_id }))
+      );
+      if (error) throw error;
+    }
+  },
+
+  async replaceTecnicas(supabase: SupabaseClient, characterId: string | number, tecnicas: { tecnica_id: number }[]) {
     await supabase.from('reg_personajes_tecnicas').delete().eq('personaje_id', characterId);
     if (tecnicas.length > 0) {
       const { error } = await supabase.from('reg_personajes_tecnicas').insert(
@@ -82,7 +112,7 @@ export const CharacterServerService = {
     }
   },
 
-  async insertRamas(supabase: SupabaseClient, characterId: string, ramas: { rama_id: number; sub_especialidad_id?: number; id_entrenamiento?: number }[]) {
+  async insertRamas(supabase: SupabaseClient, characterId: string | number, ramas: { rama_id: number; sub_especialidad_id?: number; id_entrenamiento?: number }[]) {
     if (ramas.length === 0) return;
     const { error } = await supabase.from('reg_personajes_ramas').insert(
       ramas.map((r, idx) => ({ 
@@ -96,7 +126,7 @@ export const CharacterServerService = {
     if (error) throw error;
   },
 
-  async insertPersonajeMensaje(supabase: SupabaseClient, personajeId: string, discordMessageId: string, tipo: string) {
+  async insertPersonajeMensaje(supabase: SupabaseClient, personajeId: string | number, discordMessageId: string, tipo: string) {
     const { error } = await supabase
       .from('reg_personajes_mensajes')
       .insert({ personaje_id: personajeId, discord_message_id: discordMessageId, tipo });

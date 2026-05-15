@@ -48,6 +48,18 @@ export const MasterService = {
   },
 
 
+  async getEstadosCombate(): Promise<{ id: number; nombre: string; activo: boolean }[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('info_estados_combate')
+      .select('*')
+      .eq('activo', true)
+      .order('nombre', { ascending: true });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
   async getSystemConfig(key: string): Promise<any> {
     const supabase = createClient();
     const { data, error } = await supabase
@@ -61,5 +73,24 @@ export const MasterService = {
        return null;
     }
     return data?.valor;
+  },
+
+  async getSystemConfigs(keys: string[]): Promise<Record<string, any>> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('sys_configuracion_sistema')
+      .select('clave, valor')
+      .in('clave', keys);
+    
+    if (error) {
+      console.error(`Configs fetch error:`, error);
+      return {};
+    }
+
+    const configs: Record<string, any> = {};
+    data?.forEach(row => {
+      configs[row.clave] = row.valor;
+    });
+    return configs;
   }
 };

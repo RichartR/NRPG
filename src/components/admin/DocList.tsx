@@ -6,6 +6,7 @@ import DocEditForm from './DocEditForm';
 import { useRouter } from 'next/navigation';
 import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
+import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 
 export default function DocList({ initialDocs, categories, defaultCategory, showSubcategory = true }: { initialDocs: any[], categories: any[], defaultCategory?: string, showSubcategory?: boolean }) {
   const [editingDoc, setEditingDoc] = useState<any>(null);
@@ -17,6 +18,7 @@ export default function DocList({ initialDocs, categories, defaultCategory, show
   
   const router = useRouter();
   const addToast = useToastStore(state => state.addToast);
+  const { confirm: confirmAction } = useConfirmStore();
 
   const toggleStatus = async (id: string, currentStatus: boolean) => {
     setLoadingId(id);
@@ -32,7 +34,13 @@ export default function DocList({ initialDocs, categories, defaultCategory, show
   };
 
   const handleDelete = async (id: string, titulo: string) => {
-    if (!confirm(`¿Estás seguro de que quieres eliminar "${titulo}"?`)) return;
+    const ok = await confirmAction({
+      title: 'Eliminar Documento',
+      message: `¿Estás seguro de que quieres eliminar "${titulo}"?`,
+      variant: 'danger',
+      requireValidation: true
+    });
+    if (!ok) return;
     try {
       await AdminService.deleteDocument(id);
       addToast("Documento eliminado permanentemente", "success");

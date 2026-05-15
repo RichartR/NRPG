@@ -1,5 +1,7 @@
 import { createClient } from '@/utils/supabase/client';
-import { Aldea, RamaClan, SubEspecialidad, DocumentoSistema, DocumentoCombate, ConfiguracionSistema, Glosario, GlosarioCategoria, GlosarioSubcategoria, Entrenamiento } from '@/domain/types';
+import { Aldea, RamaClan, SubEspecialidad, DocumentoSistema, DocumentoCombate, ConfiguracionSistema, Glosario, GlosarioCategoria, GlosarioSubcategoria, Entrenamiento, MisionMaster } from '@/domain/types';
+import { RewardLogic } from '@/domain/character/logic';
+import { RegistrosService } from './registros.service';
 
 export const AdminService = {
   // Aldeas
@@ -107,6 +109,17 @@ export const AdminService = {
       .order('titulo', { ascending: true });
     if (error) throw error;
     return data || [];
+  },
+
+  async getConfigByClave(clave: string): Promise<ConfiguracionSistema | null> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('sys_configuracion_sistema')
+      .select('*')
+      .eq('clave', clave)
+      .single();
+    if (error) return null;
+    return data;
   },
 
   async updateConfig(id: number, valor: any) {
@@ -220,5 +233,126 @@ export const AdminService = {
     const supabase = createClient();
     const { error } = await supabase.from('info_entrenamientos').delete().eq('id', id);
     if (error) throw error;
+  },
+
+  // Misiones
+  async getMisiones(): Promise<MisionMaster[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('info_misiones')
+      .select('*')
+      .order('rango', { ascending: true })
+      .order('codigo_mision', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async saveMision(mision: Partial<MisionMaster>) {
+    const supabase = createClient();
+    const { id, ...cleanData } = mision;
+
+    if (id) {
+      const { data, error } = await supabase.from('info_misiones').update(cleanData).eq('id', id).select().single();
+      if (error) throw error;
+      return data;
+    } else {
+      const { data, error } = await supabase.from('info_misiones').insert([cleanData]).select().single();
+      if (error) throw error;
+      return data;
+    }
+  },
+
+  async deleteMision(id: number) {
+    const supabase = createClient();
+    const { error } = await supabase.from('info_misiones').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // Estados de Combate
+  async saveEstadoCombate(estado: any) {
+    const supabase = createClient();
+    const { id, ...cleanData } = estado;
+    if (id) {
+      const { data, error } = await supabase.from('info_estados_combate').update(cleanData).eq('id', id).select().single();
+      if (error) throw error;
+      return data;
+    } else {
+      const { data, error } = await supabase.from('info_estados_combate').insert([cleanData]).select().single();
+      if (error) throw error;
+      return data;
+    }
+  },
+
+  async deleteEstadoCombate(id: number) {
+    const supabase = createClient();
+    const { error } = await supabase.from('info_estados_combate').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  async getEstadosCombate() {
+    const supabase = createClient();
+    const { data, error } = await supabase.from('info_estados_combate').select('*').order('nombre', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getDisputes() {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('sys_notificaciones_admin')
+      .select(`
+        *,
+        personaje:reg_characters(nombre_ninja),
+        registro:reg_registros(*)
+      `)
+      .eq('estado', 'pendiente')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  async resolveDispute(notificacionId: string, resolucion: 'aceptada' | 'rechazada') {
+    const supabase = createClient();
+    
+    const { data: notif, error: notifError } = await supabase
+      .from('sys_notificaciones_admin')
+      .select('*, registro:reg_registros(*)')
+      .eq('id', notificacionId)
+      .single();
+    
+    if (notifError) throw notifError;
+    if (notif.estado === 'resuelto') {
+      throw new Error('Esta disputa ya ha sido resuelta por otro administrador.');
+    }
+
+    if (resolucion === 'aceptada') {
+      const { xp, ryous } = RewardLogic.calculateReward(notif.registro, notif.personaje_id);
+      const { data: char, error: charError } = await supabase
+        .from('reg_characters')
+        .select('xp, ryous')
+        .eq('id', notif.personaje_id)
+        .single();
+      
+      if (charError) throw charError;
+
+      await supabase.from('reg_characters').update({
+        xp: (char.xp || 0) + xp,
+        ryous: (char.ryous || 0) + ryous
+      }).eq('id', notif.personaje_id);
+
+      await supabase.from('reg_registros_participantes').update({ estado: 'finalizado_admin' })
+        .match({ registro_id: notif.registro_id, personaje_id: notif.personaje_id });
+
+    } else {
+      // El admin RECHAZA la disputa (el registro era inválido) -> Borrar registro completo
+      // RegistrosService.deleteRegistro ya se encarga de restar XP/Ryous a todos los aceptados
+      await RegistrosService.deleteRegistro(notif.registro_id);
+    }
+
+    await supabase.from('sys_notificaciones_admin').update({ 
+      estado: 'resuelto',
+      resolucion 
+    }).eq('id', notificacionId);
   }
 };
