@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { 
   User, Shield, Briefcase, Zap, Save, RefreshCw, ArrowLeft, UserPlus
 } from 'lucide-react';
@@ -9,7 +9,7 @@ import { useToastStore } from '@/components/ui/Toast';
 import { CharacterService } from '@/services/supabase/character.service';
 import { useMasterStore } from '@/store/useMasterStore';
 
-export default function CrearFichaPage() {
+function CrearFichaAdminContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const masters = useMasterStore();
@@ -130,5 +130,13 @@ export default function CrearFichaPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CrearFichaPage() {
+  return (
+    <Suspense>
+      <CrearFichaAdminContent />
+    </Suspense>
   );
 }

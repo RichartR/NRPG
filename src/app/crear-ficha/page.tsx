@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToastStore } from '@/components/ui/Toast';
 import { useMasterStore } from '@/store/useMasterStore';
@@ -8,7 +8,7 @@ import { CharacterSheetView } from '@/components/character/CharacterSheetView';
 import { CharacterStats } from '@/domain/types';
 import { StatsLogic } from '@/domain/character/logic';
 
-export default function CrearFichaPage() {
+function CrearFichaContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const masters = useMasterStore();
@@ -194,5 +194,13 @@ export default function CrearFichaPage() {
       onSetActiveTab={setActiveTab}
       onBack={() => router.back()}
     />
+  );
+}
+
+export default function CrearFichaPage() {
+  return (
+    <Suspense>
+      <CrearFichaContent />
+    </Suspense>
   );
 }
