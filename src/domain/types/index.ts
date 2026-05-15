@@ -20,7 +20,7 @@ export interface Aldea {
 }
 
 export interface RamaClan {
-  nombre_español: string;
+  nombre_español?: string;
   id: number;
   nombre: string;
   slug: string;
