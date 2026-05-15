@@ -50,7 +50,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     if (!activeCharacter || !localState) return;
 
     const channel = supabase.channel(`room_${roomId}`, {
-      config: { presence: { key: activeCharacter.id } },
+      config: { presence: { key: String(activeCharacter.id) } },
     });
 
     channel
@@ -73,7 +73,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           const participant: Participant = {
-            user_id: activeCharacter.id,
+            user_id: String(activeCharacter.id),
             nombre: activeCharacter.nombre_ninja,
             estado: localState
           };
@@ -91,7 +91,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     if (activeCharacter && localState) {
       const channel = supabase.channel(`room_${roomId}`);
       channel.track({
-        user_id: activeCharacter.id,
+        user_id: String(activeCharacter.id),
         nombre: activeCharacter.nombre_ninja,
         estado: localState
       });
@@ -216,7 +216,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
             <h3 className="font-bold text-zinc-300 mb-4">Adversarios / Aliados</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {Object.values(participants).filter(p => p.user_id !== activeCharacter.id).map(p => (
+              {Object.values(participants).filter(p => p.user_id !== String(activeCharacter.id)).map(p => (
                 <div key={p.user_id} className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
                   <div className="font-bold text-white mb-2">{p.nombre}</div>
                   <div className="flex gap-4 text-sm">
