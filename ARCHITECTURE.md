@@ -68,6 +68,24 @@ Si necesitas crear, por ejemplo, un **Sistema de Misiones**, sigue este orden:
   const addToast = useToastStore(state => state.addToast);
   addToast("Operación exitosa", "success"); // o "error", "info"
   ```
+* **Diálogos de Confirmación**: **PROHIBIDO el uso de `confirm()` nativo del navegador**. Utiliza el sistema global `ConfirmDialog` para una experiencia premium y coherente:
+  ```typescript
+  import { useConfirmStore } from '@/components/ui/ConfirmDialog';
+  const { confirm: confirmAction } = useConfirmStore();
+  
+  const ok = await confirmAction({
+    title: '¿Confirmar Acción?',
+    message: 'Esta acción es irreversible y afectará los datos del juego.',
+    variant: 'danger', // Use 'danger' for deletions, 'primary' for others
+    confirmLabel: 'Confirmar', // Opcional, por defecto 'Confirmar'
+    cancelLabel: 'Cancelar',    // Opcional, por defecto 'Cancelar'
+    requireValidation: true   // Obliga a escribir "borrar" para habilitar el botón
+  });
+  
+  if (ok) {
+    // Ejecutar lógica destructiva o de guardado
+  }
+  ```
 * **Seguridad y Variables de Entorno**:
   * Nunca utilices `window.location.origin` para callbacks de OAuth o redirecciones críticas. Usa `process.env.NEXT_PUBLIC_APP_URL`.
   * La validación de contraseñas debe ser de al menos **8 caracteres**.

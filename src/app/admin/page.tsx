@@ -1,10 +1,10 @@
 import Link from 'next/link';
-import { Settings, BookOpen, Map, GitBranch, Sword, LayoutDashboard, ChevronRight, Globe } from 'lucide-react';
+import { Settings, BookOpen, Map, GitBranch, Sword, LayoutDashboard, ChevronRight, Globe, ScrollText, ShieldAlert } from 'lucide-react';
 
 export default function AdminPage() {
   const modules = [
     {
-      title: 'Sistemas Técnicos',
+      title: 'Sistemas',
       desc: 'Manuales, reglas base y sistemas generales del RPG.',
       icon: Settings,
       href: '/admin/sistemas',
@@ -13,13 +13,22 @@ export default function AdminPage() {
       borderColor: 'hover:border-blue-500/50'
     },
     {
-      title: 'Aldeas y Lore',
+      title: 'Aldeas',
       desc: 'Gestionar las 5 grandes naciones, sus banners e imágenes.',
       icon: Map,
       href: '/admin/aldeas',
       color: 'text-emerald-500',
       bgColor: 'bg-emerald-500/10',
       borderColor: 'hover:border-emerald-500/50'
+    },
+    {
+      title: 'Misiones',
+      desc: 'Gestionar las misiones maestras, sus rangos y recompensas.',
+      icon: ScrollText,
+      href: '/admin/misiones',
+      color: 'text-orange-500',
+      bgColor: 'bg-orange-500/10',
+      borderColor: 'hover:border-orange-500/50'
     },
     {
       title: 'Ramas y Clanes',
@@ -31,22 +40,13 @@ export default function AdminPage() {
       borderColor: 'hover:border-amber-500/50'
     },
     {
-      title: 'Biblioteca de Combate',
+      title: 'Documentos',
       desc: 'Gestionar técnicas, jutsus y habilidades de combate.',
       icon: Sword,
       href: '/admin/combate',
       color: 'text-red-500',
       bgColor: 'bg-red-500/10',
       borderColor: 'hover:border-red-500/50'
-    },
-    {
-      title: 'Mundo Ninja',
-      desc: 'Directorio de shinobis agrupados por aldeas y naciones.',
-      icon: Globe,
-      href: '/admin/mundo-ninja',
-      color: 'text-purple-500',
-      bgColor: 'bg-purple-500/10',
-      borderColor: 'hover:border-purple-500/50'
     },
     {
       title: 'Glosario',
@@ -56,6 +56,24 @@ export default function AdminPage() {
       color: 'text-teal-400',
       bgColor: 'bg-teal-400/10',
       borderColor: 'hover:border-teal-400/50'
+    },
+    {
+      title: 'Estados de Combate',
+      desc: 'Configurar estados post-combate (Herido, Muerto, etc.).',
+      icon: Sword,
+      href: '/admin/combate-estados',
+      color: 'text-red-500',
+      bgColor: 'bg-red-500/10',
+      borderColor: 'hover:border-red-500/50'
+    },
+    {
+      title: 'Disputas',
+      desc: 'Atiende rechazos y validación de recompensas.',
+      icon: ShieldAlert,
+      href: '/admin/disputas',
+      color: 'text-orange-500',
+      bgColor: 'bg-orange-500/10',
+      borderColor: 'hover:border-orange-500/50'
     },
     {
       title: 'Variables de Sistema',

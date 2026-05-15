@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CharacterService } from '@/services/supabase/character.service';
+import { RegistrosService } from '@/services/supabase/registros.service';
+import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { StatsLogic } from '@/domain/character/logic';
 import { Character, CharacterStats } from '@/domain/types';
 import { useMasterStore } from '@/store/useMasterStore';
@@ -8,7 +10,9 @@ import { ProfileService } from '@/services/supabase/profile.service';
 import { useToastStore } from '@/components/ui/Toast';
 
 export function useCharacter(characterId: string) {
+  const { confirm: confirmAction } = useConfirmStore();
   const [character, setCharacter] = useState<Character | null>(null);
+  const [glosarioFiltrado, setGlosarioFiltrado] = useState<any[]>([]);
   const [originalCharacter, setOriginalCharacter] = useState<Character | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -32,26 +36,18 @@ export function useCharacter(characterId: string) {
     try {
       setLoading(true);
       
-      // Ensure master data is loaded
-      if (!masters.initialized) {
-        await masters.initialize();
-      }
-      
-      const { data: { user } } = await AuthService.getUser();
-      
-      const char = await CharacterService.getCharacterById(characterId);
+      // 1. Carga inicial en paralelo (User, Character, Master Store)
+      const [userRes, char] = await Promise.all([
+        AuthService.getUser(),
+        CharacterService.getCharacterById(Number(characterId)),
+        masters.initialized ? Promise.resolve() : masters.initialize()
+      ]);
 
-      // Permission check
-      let isAdm = false;
-      if (user) {
-        const profile = await ProfileService.getProfile(user.id);
-        isAdm = profile?.role === 'admin';
-      }
-      setIsAdmin(isAdm);
-      setCanEdit(!!(isAdm || (user && char.user_id === user.id)));
+      const user = userRes.data.user;
 
-      // Parallel Discord data fetch
-      const [aparienciaMsg, historiaMsg] = await Promise.all([
+      // 2. Cargas secundarias en paralelo (Profile para Admin, y Discord para contenido)
+      const [profile, aparienciaMsg, historiaMsg] = await Promise.all([
+        user ? ProfileService.getProfile(user.id) : Promise.resolve(null),
         char.apariencia_msg_id 
           ? fetch(`/api/discord/messages?messageId=${char.apariencia_msg_id}`).then(r => r.json()).catch(() => ({}))
           : Promise.resolve({}),
@@ -59,6 +55,10 @@ export function useCharacter(characterId: string) {
           ? fetch(`/api/discord/messages?messageId=${char.historia_msg_id}`).then(r => r.json()).catch(() => ({}))
           : Promise.resolve({})
       ]);
+
+      const isAdm = profile?.role === 'admin';
+      setIsAdmin(isAdm);
+      setCanEdit(!!(isAdm || (user && char.user_id === user.id)));
 
       const aparienciaTexto = aparienciaMsg?.content ? aparienciaMsg.content.split('\n').slice(1).join('\n') : '';
       const historiaTexto = historiaMsg?.content ? historiaMsg.content.split('\n').slice(1).join('\n') : '';
@@ -76,6 +76,21 @@ export function useCharacter(characterId: string) {
   useEffect(() => {
     loadData();
   }, [characterId]);
+
+  // CARGA DE GLOSARIO BAJO DEMANDA (Solo al editar)
+  useEffect(() => {
+    const loadGlosario = async () => {
+      if (isEditing && glosarioFiltrado.length === 0) {
+        try {
+          const items = await CharacterService.getValidItems(Number(characterId));
+          setGlosarioFiltrado(items);
+        } catch (err) {
+          console.error("Error loading glosario on edit:", err);
+        }
+      }
+    };
+    loadGlosario();
+  }, [isEditing, characterId]);
 
   // Derived Stats Effect
   useEffect(() => {
@@ -148,15 +163,162 @@ export function useCharacter(characterId: string) {
         }
         addToast(`${section === 'apariencia' ? 'Apariencia' : 'Historia'} sincronizada con Discord`, 'success');
       } else {
-        await CharacterService.updateCharacter(characterId, character);
-        await Promise.all([
-          CharacterService.updateCharacterRamas(characterId, character.personajes_ramas || []),
-          CharacterService.updateCharacterInventory(characterId, character.personajes_inventario || []),
-          CharacterService.updateCharacterTecnicas(characterId, character.personajes_tecnicas || [])
-        ]);
-        setOriginalCharacter(JSON.parse(JSON.stringify(character)));
-        setIsEditing(false);
+        // Check village change
+        if (character.aldea_id !== originalCharacter?.aldea_id) {
+          const oldAldea = masters.aldeas.find(a => a.id === originalCharacter?.aldea_id)?.nombre_completo || 'Ninguna';
+          const newAldea = masters.aldeas.find(a => a.id === character.aldea_id)?.nombre_completo || 'Ninguna';
+
+          // Obtener información de ramas y clanes
+          const ramasInfo = (character.personajes_ramas || []).map(r => {
+            const rama = masters.ramas.find(rm => rm.id === r.rama_id);
+            if (!rama) return null;
+            const sub = r.sub_especialidad_id ? masters.subEspecialidades.find(s => s.id === r.sub_especialidad_id) : null;
+            const articulo = rama.tipo === 'clan' ? 'el' : 'la';
+            const subText = sub ? ` (${sub.nombre})` : '';
+            return `${articulo} ${rama.tipo} ${rama.nombre}${subText}`;
+          }).filter(Boolean);
+
+          let tituloAccion = `${character.nombre_ninja} abandona ${oldAldea} y se une a ${newAldea}`;
+          if (ramasInfo.length > 0) {
+            tituloAccion += `. Con ${ramasInfo.join(' y ')}.`;
+          }
+
+          await RegistrosService.createRegistro({
+            tipo: 'accion',
+            autor_id: Number(characterId),
+            participantes_ids: [Number(characterId)],
+            data: {
+              titulo: tituloAccion,
+              tipo_accion: 'cambio_aldea',
+              aldea_anterior: oldAldea,
+              aldea_nueva: newAldea
+            }
+          });
+        }
+
+        // Check rank change
+        if (character.rango !== originalCharacter?.rango) {
+          const oldRank = originalCharacter?.rango || 'D';
+          const newRank = character.rango;
+          
+          const oldIdx = masters.rankOrder[oldRank] || 0;
+          const newIdx = masters.rankOrder[newRank] || 0;
+          const verb = newIdx > oldIdx ? 'asciende a' : 'desciende a';
+          
+          await RegistrosService.createRegistro({
+            tipo: 'accion',
+            autor_id: Number(characterId),
+            participantes_ids: [Number(characterId)],
+            data: {
+              titulo: `${character.nombre_ninja} ${verb} rango ${newRank}`,
+              tipo_accion: 'cambio_rango',
+              rango_anterior: oldRank,
+              rango_nuevo: newRank
+            }
+          });
+        }
+        
+        
+        // Check new items
+        const currentInv = character.personajes_inventario || [];
+        const oldInv = originalCharacter?.personajes_inventario || [];
+        const newItems = currentInv.filter(ci => !oldInv.some(oi => oi.item_id === ci.item_id));
+
+        if (newItems.length > 0) {
+          const itemNames = newItems.map(ni => ni.info_glosario?.nombre_es).join(', ');
+          const totalExp = newItems.reduce((sum, ni) => sum + (ni.info_glosario?.coste_exp || 0), 0);
+          const totalRyous = newItems.reduce((sum, ni) => sum + (ni.info_glosario?.coste_ryous || 0), 0);
+          
+          await RegistrosService.createRegistro({
+            tipo: 'accion',
+            autor_id: Number(characterId),
+            participantes_ids: [Number(characterId)],
+            data: {
+              titulo: `${character.nombre_ninja} obtiene: ${itemNames}`,
+              subtitulo: `Gasto: ${totalExp} EXP y ${totalRyous} Ryous`,
+              tipo_accion: 'compra_objetos',
+              items: newItems.map(ni => ({ id: ni.item_id, nombre: ni.info_glosario?.nombre_es })),
+              gasto_xp: totalExp,
+              gasto_ryous: totalRyous
+            }
+          });
+        }
+
+        // Check new techniques
+        const currentTecs = character.personajes_tecnicas || [];
+        const oldTecs = originalCharacter?.personajes_tecnicas || [];
+        const newTecs = currentTecs.filter(ct => !oldTecs.some(ot => ot.tecnica_id === ct.tecnica_id));
+
+        if (newTecs.length > 0) {
+          const tecNames = newTecs.map(nt => nt.info_glosario?.nombre_es).join(', ');
+          const totalExp = newTecs.reduce((sum, nt) => sum + (nt.info_glosario?.coste_exp || 0), 0);
+          const totalRyous = newTecs.reduce((sum, nt) => sum + (nt.info_glosario?.coste_ryous || 0), 0);
+
+          await RegistrosService.createRegistro({
+            tipo: 'accion',
+            autor_id: Number(characterId),
+            participantes_ids: [Number(characterId)],
+            data: {
+              titulo: `${character.nombre_ninja} aprende: ${tecNames}`,
+              subtitulo: `Gasto: ${totalExp} EXP y ${totalRyous} Ryous`,
+              tipo_accion: 'aprendizaje_tecnicas',
+              tecnicas: newTecs.map(nt => ({ id: nt.tecnica_id, nombre: nt.info_glosario?.nombre_es })),
+              gasto_xp: totalExp,
+              gasto_ryous: totalRyous
+            }
+          });
+        }
+
+        // Check deleted items
+        const deletedItems = oldInv.filter(oi => !currentInv.some(ci => ci.item_id === oi.item_id));
+        if (deletedItems.length > 0) {
+          const itemNames = deletedItems.map(di => di.info_glosario?.nombre_es).join(', ');
+          await RegistrosService.createRegistro({
+            tipo: 'accion',
+            autor_id: Number(characterId),
+            participantes_ids: [Number(characterId)],
+            data: {
+              titulo: `${character.nombre_ninja} pierde/elimina: ${itemNames}`,
+              tipo_accion: 'eliminacion_objetos',
+              items: deletedItems.map(di => ({ id: di.item_id, nombre: di.info_glosario?.nombre_es }))
+            }
+          });
+        }
+
+        // Check deleted techniques
+        const deletedTecs = oldTecs.filter(ot => !currentTecs.some(ct => ct.tecnica_id === ot.tecnica_id));
+        if (deletedTecs.length > 0) {
+          const tecNames = deletedTecs.map(dt => dt.info_glosario?.nombre_es).join(', ');
+          await RegistrosService.createRegistro({
+            tipo: 'accion',
+            autor_id: Number(characterId),
+            participantes_ids: [Number(characterId)],
+            data: {
+              titulo: `${character.nombre_ninja} olvida/elimina: ${tecNames}`,
+              tipo_accion: 'eliminacion_tecnicas',
+              tecnicas: deletedTecs.map(dt => ({ id: dt.tecnica_id, nombre: dt.info_glosario?.nombre_es }))
+            }
+          });
+        }
+
+        // 4. Guardar datos principales y relaciones a través de la API (para bypass de RLS)
+        const saveRes = await fetch(`/api/characters/${characterId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            section: 'all', 
+            data: character 
+          })
+        });
+
+        if (!saveRes.ok) {
+          const err = await saveRes.json();
+          throw new Error(err.error || 'Error al guardar los datos del personaje');
+        }
+
         addToast("Ficha guardada con éxito", "success");
+        setIsEditing(false);
+        await loadData();
       }
     } catch (err: any) {
       addToast(err.message || "Error al guardar", "error");
@@ -172,15 +334,122 @@ export function useCharacter(characterId: string) {
   };
 
   const remove = async () => {
-    if (!character || !isAdmin) return;
-    if (!confirm('¿ESTÁS SEGURO? Esta acción es irreversible y borrará TODO el historial del personaje.')) return;
+    if (!character || !canEdit) return;
+    
+    const ok = await confirmAction({
+      title: 'Eliminar Personaje',
+      message: '¿ESTÁS SEGURO? Esta acción es irreversible y borrará TODO el historial del personaje.',
+      variant: 'danger',
+      confirmLabel: 'Eliminar para siempre',
+      requireValidation: true
+    });
+
+    if (!ok) return;
 
     setSaving(true);
     try {
       const villageId = character.aldea_id;
-      await CharacterService.deleteCharacter(characterId);
-      addToast("Personaje eliminado permanentemente", "success");
+      const res = await fetch(`/api/characters/${characterId}`, { method: 'DELETE' });
+      
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Error al eliminar el personaje');
+      }
+
+      addToast("Personaje y mensajes de Discord eliminados", "success");
       window.location.href = villageId ? `/mundo-ninja/${villageId}` : '/';
+    } catch (err: any) {
+      addToast(err.message || "Error al eliminar", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const quickRemoveItem = async (item: any) => {
+    if (!character) return;
+    
+    const ok = await confirmAction({
+      title: 'Eliminar Objeto',
+      message: `¿Seguro que quieres eliminar ${item.info_glosario?.nombre_es}?`,
+      variant: 'danger'
+    });
+
+    if (!ok) return;
+    
+    setSaving(true);
+    try {
+      const newInventory = (character.personajes_inventario || []).filter(i => i.item_id !== item.item_id);
+      
+      const res = await fetch(`/api/characters/${characterId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          section: 'inventario', 
+          data: { personajes_inventario: newInventory } 
+        })
+      });
+
+      if (!res.ok) throw new Error('Error al actualizar inventario');
+
+      await RegistrosService.createRegistro({
+        tipo: 'accion',
+        autor_id: Number(characterId),
+        participantes_ids: [Number(characterId)],
+        data: {
+          titulo: `${character.nombre_ninja} pierde/elimina: ${item.info_glosario?.nombre_es}`,
+          tipo_accion: 'eliminacion_objetos',
+          items: [{ id: item.item_id, nombre: item.info_glosario?.nombre_es }]
+        }
+      });
+      
+      await loadData();
+      addToast("Objeto eliminado con éxito", "success");
+    } catch (err: any) {
+      addToast(err.message || "Error al eliminar", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const quickRemoveTechnique = async (tec: any) => {
+    if (!character) return;
+    
+    const ok = await confirmAction({
+      title: 'Olvidar Técnica',
+      message: `¿Seguro que quieres olvidar ${tec.info_glosario?.nombre_es}?`,
+      variant: 'danger'
+    });
+
+    if (!ok) return;
+    
+    setSaving(true);
+    try {
+      const newTecs = (character.personajes_tecnicas || []).filter(t => t.tecnica_id !== tec.tecnica_id);
+      
+      const res = await fetch(`/api/characters/${characterId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          section: 'tecnicas', 
+          data: { personajes_tecnicas: newTecs } 
+        })
+      });
+
+      if (!res.ok) throw new Error('Error al actualizar técnicas');
+
+      await RegistrosService.createRegistro({
+        tipo: 'accion',
+        autor_id: Number(characterId),
+        participantes_ids: [Number(characterId)],
+        data: {
+          titulo: `${character.nombre_ninja} olvida/elimina: ${tec.info_glosario?.nombre_es}`,
+          tipo_accion: 'eliminacion_tecnicas',
+          tecnicas: [{ id: tec.tecnica_id, nombre: tec.info_glosario?.nombre_es }]
+        }
+      });
+      
+      await loadData();
+      addToast("Técnica olvidada con éxito", "success");
     } catch (err: any) {
       addToast(err.message || "Error al eliminar", "error");
     } finally {
@@ -199,10 +468,14 @@ export function useCharacter(characterId: string) {
     activeTab,
     setActiveTab,
     masters,
+    glosarioFiltrado,
     updateField,
     updateStat,
     save,
     cancel,
-    remove
+    remove,
+    refresh: loadData,
+    quickRemoveItem,
+    quickRemoveTechnique
   };
 }

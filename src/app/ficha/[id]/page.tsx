@@ -25,7 +25,11 @@ export default function FichaPublicPage() {
     updateStat,
     save,
     cancel,
-    remove
+    remove,
+    refresh,
+    glosarioFiltrado,
+    quickRemoveItem,
+    quickRemoveTechnique
   } = useCharacter(id);
 
   if (loading || !character) {
@@ -40,6 +44,7 @@ export default function FichaPublicPage() {
     <CharacterSheetView 
       character={character}
       masters={masters}
+      glosarioFiltrado={glosarioFiltrado}
       isEditing={isEditing}
       canEdit={canEdit}
       isAdmin={isAdmin}
@@ -50,9 +55,12 @@ export default function FichaPublicPage() {
       onSave={save}
       onCancel={cancel}
       onDelete={remove}
+      onRefresh={refresh}
       onSetActiveTab={setActiveTab}
       onBack={() => router.back()}
       setIsEditing={setIsEditing}
+      onQuickRemoveItem={quickRemoveItem}
+      onQuickRemoveTechnique={quickRemoveTechnique}
     />
   );
 }

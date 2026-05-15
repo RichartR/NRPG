@@ -62,6 +62,26 @@ export async function getDiscordMessage(channelId: string, messageId: string) {
 
   return response.json();
 }
+
+export async function deleteDiscordMessage(channelId: string, messageId: string) {
+  if (!BOT_TOKEN) throw new Error('DISCORD_BOT_TOKEN no configurado');
+
+  const response = await fetch(`${DISCORD_API_URL}/channels/${channelId}/messages/${messageId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bot ${BOT_TOKEN}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    // Mensaje ya eliminado — ignorar
+    if (error?.code === 10008) return true;
+    throw new Error(`Error de Discord (DELETE): ${JSON.stringify(error)}`);
+  }
+
+  return true;
+}
 export async function getDiscordChannel(supabase: any): Promise<string | null> {
   const { MasterServerService } = await import('@/services/supabase/master.server.service');
   return MasterServerService.getConfiguracion(supabase, 'discord_history_appearance_channel_id');

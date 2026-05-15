@@ -340,14 +340,19 @@ export const MasterServerService = {
     return data || [];
   },
 
-  async getGlosarios(supabase: SupabaseClient, categoriaId?: number): Promise<Glosario[]> {
+  async getGlosarios(supabase: SupabaseClient, options?: { categoriaId?: number, onlyInitial?: boolean }): Promise<Glosario[]> {
     let query = supabase
       .from('info_glosario')
       .select('*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre)')
+      .eq('activo', true)
       .order('nombre_es', { ascending: true });
     
-    if (categoriaId) {
-      query = query.eq('categoria_id', categoriaId);
+    if (options?.categoriaId) {
+      query = query.eq('categoria_id', options.categoriaId);
+    }
+    
+    if (options?.onlyInitial) {
+      query = query.eq('inicial', true);
     }
 
     const { data, error } = await query;

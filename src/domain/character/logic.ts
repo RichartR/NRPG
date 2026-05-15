@@ -42,6 +42,10 @@ export const StatsLogic = {
     const rulesForRank = rules[rango];
     if (!rulesForRank) return { valid: false, message: "Rango no válido" };
 
+    if (newValue < 1) {
+      return { valid: false, message: "El valor mínimo para cualquier estadística es 1" };
+    }
+
     if (newValue > rulesForRank.stat_max) {
       return { valid: false, message: `El máximo para tu rango es ${rulesForRank.stat_max}` };
     }
@@ -55,5 +59,35 @@ export const StatsLogic = {
     }
 
     return { valid: true };
+  }
+};
+
+export const RewardLogic = {
+  calculateReward(registro: any, personajeId: number): { xp: number; ryous: number } {
+    const { tipo, data } = registro;
+    
+    if (tipo === 'combate') {
+      const isTeamA = data.equipo_a?.some((p: any) => p.id === personajeId);
+      const isTeamB = data.equipo_b?.some((p: any) => p.id === personajeId);
+      const participant = [...(data.equipo_a || []), ...(data.equipo_b || [])].find((p: any) => p.id === personajeId);
+      
+      if (!participant || participant.huye) return { xp: 0, ryous: 0 };
+      
+      const config = data.config_xp;
+      if (!config) return { xp: 0, ryous: 0 };
+      
+      let xp = 0;
+      if (data.ganador === 'Empate') xp = Number(config.retirarse) || 0;
+      else if (data.ganador === (isTeamA ? 'A' : 'B')) xp = Number(config.ganar) || 0;
+      else xp = Number(config.perder) || 0;
+      
+      return { xp, ryous: 0 }; // Combates no suelen dar ryous directos según lo visto
+    }
+    
+    // Misiones o Acciones
+    return {
+      xp: Number(data.recompensa_xp) || 0,
+      ryous: Number(data.recompensa_ryous) || 0
+    };
   }
 };

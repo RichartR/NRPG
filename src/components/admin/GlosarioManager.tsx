@@ -14,6 +14,7 @@ import {
   RamaClan
 } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
+import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { createClient } from '@/utils/supabase/client';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 
@@ -25,7 +26,7 @@ const STATS_LIST = [
   { key: 'fue', label: 'FUE' },
   { key: 'agi', label: 'AGI' },
   { key: 'int', label: 'INT' },
-  { key: 'res', label: 'RES' },
+  { key: 'est', label: 'EST' },
   { key: 'nin', label: 'NIN' },
   { key: 'gen', label: 'GEN' },
   { key: 'tai', label: 'TAI' },
@@ -56,6 +57,7 @@ export default function GlosarioManager() {
   const [editingSub, setEditingSub] = useState<GlosarioSubcategoria | null>(null);
   
   const addToast = useToastStore(state => state.addToast);
+  const { confirm: confirmAction } = useConfirmStore();
   const supabase = createClient();
 
   useEffect(() => {
@@ -171,9 +173,24 @@ export default function GlosarioManager() {
       </div>
 
       <div className="grid gap-4">
-        {activeSection === 'elementos' ? (
+         {activeSection === 'elementos' ? (
           filteredData().map((el: any) => (
-            <ElementoCard key={el.id} elemento={el} categorias={categorias} subcategorias={subcategorias} onEdit={() => setEditingId(el.id)} onDelete={() => AdminService.deleteGlosario(el.id).then(fetchData)} />
+            <ElementoCard 
+              key={el.id} 
+              elemento={el} 
+              categorias={categorias} 
+              subcategorias={subcategorias} 
+              onEdit={() => setEditingId(el.id)} 
+              onDelete={async () => {
+                const ok = await confirmAction({
+                  title: 'Eliminar Elemento',
+                  message: '¿Estás seguro de que deseas eliminar este elemento permanentemente?',
+                  variant: 'danger',
+                  requireValidation: true
+                });
+                if (ok) AdminService.deleteGlosario(el.id).then(fetchData);
+              }} 
+            />
           ))
         ) : activeSection === 'categorias' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -181,9 +198,17 @@ export default function GlosarioManager() {
               <div key={c.id} className="group p-8 bg-zinc-900/30 border border-zinc-800 rounded-[2.5rem] hover:bg-zinc-900/50 transition-all">
                 <div className="flex justify-between items-start mb-6">
                   <div className={`p-3 rounded-xl ${c.activo ? 'bg-blue-500/10 text-blue-500' : 'bg-zinc-800 text-zinc-500'}`}><Tag size={20} /></div>
-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => { setEditingCat(c); setShowNewForm(true); }} className="p-2 text-zinc-500 hover:text-white transition-colors"><Save size={18}/></button>
-                    <button onClick={() => AdminService.deleteGlosarioCategoria(c.id).then(fetchData)} className="p-2 text-zinc-500 hover:text-red-500 transition-colors"><Trash2 size={18}/></button>
+                    <button onClick={async () => {
+                      const ok = await confirmAction({
+                        title: 'Eliminar Categoría',
+                        message: '¿Borrar esta categoría? Podría haber elementos que dependan de ella.',
+                        variant: 'danger',
+                        requireValidation: true
+                      });
+                      if (ok) AdminService.deleteGlosarioCategoria(c.id).then(fetchData);
+                    }} className="p-2 text-zinc-500 hover:text-red-500 transition-colors"><Trash2 size={18}/></button>
                   </div>
                 </div>
                 <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">{c.nombre}</h3>
@@ -197,9 +222,17 @@ export default function GlosarioManager() {
               <div key={s.id} className="group p-8 bg-zinc-900/30 border border-zinc-800 rounded-[2.5rem] hover:bg-zinc-900/50 transition-all">
                 <div className="flex justify-between items-start mb-6">
                   <div className={`p-3 rounded-xl ${s.activo ? 'bg-amber-500/10 text-amber-500' : 'bg-zinc-800 text-zinc-500'}`}><Layers size={20} /></div>
-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => { setEditingSub(s); setShowNewForm(true); }} className="p-2 text-zinc-500 hover:text-white transition-colors"><Save size={18}/></button>
-                    <button onClick={() => AdminService.deleteGlosarioSubcategoria(s.id).then(fetchData)} className="p-2 text-zinc-500 hover:text-red-500 transition-colors"><Trash2 size={18}/></button>
+                    <button onClick={async () => {
+                      const ok = await confirmAction({
+                        title: 'Eliminar Subcategoría',
+                        message: '¿Borrar esta subcategoría? Podría haber elementos vinculados.',
+                        variant: 'danger',
+                        requireValidation: true
+                      });
+                      if (ok) AdminService.deleteGlosarioSubcategoria(s.id).then(fetchData);
+                    }} className="p-2 text-zinc-500 hover:text-red-500 transition-colors"><Trash2 size={18}/></button>
                   </div>
                 </div>
                 <div className="space-y-1 mb-4"><span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">{categorias.find(c => c.id === s.categoria_id)?.nombre || 'Sin Padre'}</span><h3 className="text-xl font-black text-white uppercase tracking-tight">{s.nombre}</h3></div>
@@ -256,16 +289,23 @@ function ElementoCard({ elemento, categorias, subcategorias, onEdit, onDelete }:
       </div>
       <div className="flex gap-4">
         <div className="bg-zinc-950/50 px-6 py-4 rounded-[1.5rem] border border-zinc-900 text-center min-w-[100px]"><p className="text-[10px] font-black text-zinc-700 uppercase tracking-widest mb-1">Coste EXP</p><p className="text-emerald-500 font-black text-lg">{elemento.coste_exp}</p></div>
-        <div className="bg-zinc-950/50 px-6 py-4 rounded-[1.5rem] border border-zinc-900 text-center min-w-[100px]"><p className="text-[10px] font-black text-zinc-700 uppercase tracking-widest mb-1">Coste Ryo</p><p className="text-amber-500 font-black text-lg">{elemento.coste_ryo}</p></div>
+        <div className="bg-zinc-950/50 px-6 py-4 rounded-[1.5rem] border border-zinc-900 text-center min-w-[100px]"><p className="text-[10px] font-black text-zinc-700 uppercase tracking-widest mb-1">Coste Ryo</p><p className="text-amber-500 font-black text-lg">{elemento.coste_ryous}</p></div>
       </div>
-      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all"><button onClick={onEdit} className="p-4 bg-zinc-800 hover:bg-emerald-500 hover:text-emerald-950 rounded-2xl transition-all"><Save size={18} /></button><button onClick={() => { if(confirm('¿Eliminar permanentemente?')) onDelete(); }} className="p-4 bg-zinc-800 hover:bg-red-500/20 hover:text-red-500 rounded-2xl transition-all"><Trash2 size={18} /></button></div>
+      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
+        <button onClick={onEdit} className="p-4 bg-zinc-800 hover:bg-emerald-500 hover:text-emerald-950 rounded-2xl transition-all">
+          <Save size={18} />
+        </button>
+        <button onClick={onDelete} className="p-4 bg-zinc-800 hover:bg-red-500/20 hover:text-red-500 rounded-2xl transition-all">
+          <Trash2 size={18} />
+        </button>
+      </div>
     </div>
   );
 }
 
 function ElementoForm({ initialData, categorias, subcategorias, ramas, personajes, onClose, onSave, loading }: any) {
   const defaultRequisitos = {
-    stats: { fue: 0, agi: 0, int: 0, res: 0, nin: 0, gen: 0, tai: 0, sm: 0 },
+    stats: { fue: 0, agi: 0, int: 0, est: 0, nin: 0, gen: 0, tai: 0, sm: 0 },
     rango: null,
     misiones: { D: 0, C: 0, B: 0, A: 0, S: 0 },
     combates: 0,
@@ -281,7 +321,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, personaje
         categoria_id: 0, 
         subcategoria_id: undefined,
         coste_exp: 0, 
-        coste_ryo: 0, 
+        coste_ryous: 0, 
         activo: true, 
         inicial: false,
         requisitos: defaultRequisitos
@@ -289,6 +329,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, personaje
     }
     return {
       ...initialData,
+      coste_ryous: initialData.coste_ryous || 0,
       inicial: initialData.inicial || false,
       requisitos: { ...defaultRequisitos, ...initialData.requisitos }
     };
@@ -367,9 +408,9 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, personaje
                     <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">Coste EXP</label>
                     <input type="number" min="0" value={formData.coste_exp} onChange={(e) => setFormData({ ...formData, coste_exp: Math.max(0, Number(e.target.value)) })} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-emerald-500" />
                   </div>
-                  <div className="space-y-2">
+                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">Coste Ryo</label>
-                    <input type="number" min="0" value={formData.coste_ryo} onChange={(e) => setFormData({ ...formData, coste_ryo: Math.max(0, Number(e.target.value)) })} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-emerald-500" />
+                    <input type="number" min="0" value={formData.coste_ryous} onChange={(e) => setFormData({ ...formData, coste_ryous: Math.max(0, Number(e.target.value)) })} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-emerald-500" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
