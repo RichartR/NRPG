@@ -1,3 +1,4 @@
+// Vercel Trigger: Force new deployment with type fixes
 export interface Profile {
   id: string;
   username: string;
