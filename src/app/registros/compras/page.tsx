@@ -138,6 +138,7 @@ export default function ComprasPage() {
                       registro={reg} 
                       onRefresh={() => fetchData(data.page)} 
                       isAdmin={isAdmin} 
+                      isGlobalView={true}
                     />
                   ))}
                 </div>

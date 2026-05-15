@@ -35,11 +35,11 @@ export default async function AdminLayout({
 
         <nav className="flex-1 space-y-2 overflow-y-auto pr-4 scrollbar-hide">
           <div className="pb-6">
-            <p className="px-5 text-[10px] font-black text-oro/20 uppercase tracking-[0.4em] mb-6 flex items-center gap-4">
+            <div className="px-5 text-[10px] font-black text-oro/20 uppercase tracking-[0.4em] mb-6 flex items-center gap-4">
               <div className="flex-1 h-px bg-oro/5" />
               PRINCIPAL
               <div className="flex-1 h-px bg-oro/5" />
-            </p>
+            </div>
             
             <Link href="/admin" className="flex items-center gap-4 p-4 hover:bg-oro/5 transition-all font-black text-xs xl:text-sm group relative overflow-hidden" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}>
               <LayoutDashboard className="w-5 h-5 text-oro/40 group-hover:text-oro transition-colors" />
@@ -49,11 +49,11 @@ export default async function AdminLayout({
           </div>
 
           <div>
-            <p className="px-5 text-[10px] font-black text-oro/20 uppercase tracking-[0.4em] mb-6 flex items-center gap-4">
+            <div className="px-5 text-[10px] font-black text-oro/20 uppercase tracking-[0.4em] mb-6 flex items-center gap-4">
               <div className="flex-1 h-px bg-oro/5" />
               MÓDULOS
               <div className="flex-1 h-px bg-oro/5" />
-            </p>
+            </div>
             <div className="space-y-1">
               {[
                 { href: '/admin/sistemas', icon: Settings, label: 'Sistemas' },

@@ -54,6 +54,7 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto">
       <div className="relative w-full max-w-3xl ninja-card-oro p-6 sm:p-10 xl:p-12 my-auto animate-in fade-in zoom-in duration-300">
         <header className="flex justify-between items-center mb-10">

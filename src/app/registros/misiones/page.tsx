@@ -153,6 +153,7 @@ export default function MisionesPage() {
                         registro={reg} 
                         onRefresh={() => fetchData(data.page)} 
                         isAdmin={isAdmin} 
+                        isGlobalView={true}
                         onEdit={(r) => { setEditingRegistro(r); setShowForm(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                       />
                     ))}

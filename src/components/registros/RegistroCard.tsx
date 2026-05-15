@@ -14,9 +14,10 @@ interface RegistroCardProps {
   onEdit?: (reg: Registro) => void;
   isAdmin?: boolean;
   subjectId?: number;
+  isGlobalView?: boolean;
 }
 
-export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, subjectId }: RegistroCardProps) {
+export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, subjectId, isGlobalView }: RegistroCardProps) {
   const { activeCharacter } = useCharacterStore();
   const addToast = useToastStore(state => state.addToast);
   const { confirm: confirmAction } = useConfirmStore();
@@ -97,12 +98,12 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
   const isCombate = registro.tipo === 'combate';
 
   return (
-    <div className={`ninja-card-oro group hover-ninja transition-all relative overflow-hidden ${isCombate ? 'p-8 xl:p-12' : 'p-6 sm:p-8 xl:p-10'}`}>
+    <div className={`ninja-card-oro group hover-ninja transition-all relative overflow-hidden ${isCombate ? (isGlobalView ? 'p-6 sm:p-8 xl:p-8' : 'p-8 xl:p-12') : 'p-6 sm:p-8 xl:p-10'}`}>
       <div className="absolute top-0 right-0 p-8 opacity-[0.02] pointer-events-none">
         <Icon className={`${isCombate ? 'w-32 h-32' : 'w-24 h-24'} rotate-12`} />
       </div>
 
-      <div className="flex justify-between items-center mb-8 relative z-10">
+      <div className={`flex justify-between items-center ${isGlobalView ? 'mb-6' : 'mb-8'} relative z-10`}>
         <div className="flex items-center gap-4">
           <div className="p-2.5 bg-oro/10 border border-oro/20 ninja-clip-xs shrink-0">
             <User className="w-6 h-6 text-oro/60" />
@@ -234,7 +235,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
           </div>
         ) : (
           <div className="space-y-8">
-            {!showFullDetails ? (
+            {!showFullDetails && !isGlobalView ? (
               <div className="p-6 sm:p-8 bg-black/40 border border-oro/5 ninja-clip-sm flex flex-col md:flex-row justify-between items-center gap-6">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-4">
@@ -290,15 +291,17 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
               </div>
             ) : (
               <div className="animate-in fade-in slide-in-from-top-2 duration-500 outline-none ring-0 border-none">
-                <div className="flex justify-between items-center mb-8 border-b border-oro/10 pb-4">
-                  <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Informe Detallado</span>
-                  <button 
-                    onClick={() => setShowFullDetails(false)}
-                    className="text-[10px] font-black text-oro/40 hover:text-oro uppercase tracking-widest border-b border-oro/20 focus:outline-none focus:ring-0"
-                  >
-                    Contraer resumen
-                  </button>
-                </div>
+                {!isGlobalView && (
+                  <div className="flex justify-between items-center mb-8 border-b border-oro/10 pb-4">
+                    <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Informe Detallado</span>
+                    <button 
+                      onClick={() => setShowFullDetails(false)}
+                      className="text-[10px] font-black text-oro/40 hover:text-oro uppercase tracking-widest border-b border-oro/20 focus:outline-none focus:ring-0"
+                    >
+                      Contraer resumen
+                    </button>
+                  </div>
+                )}
                 
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-10 lg:gap-16 items-start">
                    <div className="space-y-6">

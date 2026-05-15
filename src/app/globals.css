@@ -73,15 +73,43 @@ body {
   }
   
   .ninja-card-oro {
-    @apply bg-black/80 backdrop-blur-xl relative border border-oro/30 shadow-[0_0_30px_rgba(255,230,159,0.1)];
+    @apply bg-black/80 backdrop-blur-xl relative shadow-[0_0_30px_rgba(255,230,159,0.1)];
     clip-path: var(--clip-lg);
     background-image: radial-gradient(circle at center, rgba(255, 230, 159, 0.05) 0%, transparent 70%);
   }
 
+  .ninja-card-oro::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    background: linear-gradient(to bottom right, var(--oro-gradiente-top), var(--oro-principal), var(--oro-sombra));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    clip-path: var(--clip-lg);
+    pointer-events: none;
+    opacity: 0.9;
+  }
+
   .ninja-card-rojo {
-    @apply bg-black/80 backdrop-blur-xl relative border border-rojo-sangre/40 shadow-[0_0_30px_rgba(103,9,9,0.2)];
+    @apply bg-black/80 backdrop-blur-xl relative shadow-[0_0_30px_rgba(103,9,9,0.2)];
     clip-path: var(--clip-lg);
     background-image: radial-gradient(circle at center, rgba(103, 9, 9, 0.1) 0%, transparent 70%);
+  }
+
+  .ninja-card-rojo::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    background: linear-gradient(to bottom right, var(--rojo-sangre), var(--rojo-oscuro));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    clip-path: var(--clip-lg);
+    pointer-events: none;
+    opacity: 0.6;
   }
 
   /* Buttons & Inputs */

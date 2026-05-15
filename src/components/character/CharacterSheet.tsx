@@ -11,9 +11,35 @@ export default function CharacterSheet() {
     fetchActiveCharacter();
   }, [fetchActiveCharacter]);
 
-  if (loading) return <div className="animate-pulse bg-black/60 p-8 ninja-box ninja-border flex justify-center items-center h-64 text-oro font-black uppercase tracking-widest">Cargando datos ninja...</div>;
-  if (error) return <div className="text-rojo-sangre bg-rojo-sangre/10 p-6 ninja-box ninja-border border-rojo-sangre/40">Error: {error}</div>;
-  if (!activeCharacter) return <div className="text-oro/60 bg-black/60 p-8 ninja-box ninja-border">No tienes un personaje activo.</div>;
+  if (loading) return (
+    <div className="ninja-card-oro p-6 sm:p-10 xl:p-12 h-full min-h-[750px] xl:min-h-[850px] flex flex-col justify-center animate-pulse">
+      <div className="space-y-10">
+        <div className="flex flex-col gap-6 items-center sm:items-start">
+          <div className="h-14 w-64 bg-oro/10 ninja-clip-sm" />
+          <div className="flex gap-4">
+            <div className="h-8 w-24 bg-rojo-sangre/20" />
+            <div className="h-8 w-20 bg-oro/5" />
+            <div className="h-8 w-20 bg-oro/5" />
+          </div>
+        </div>
+        <div className="space-y-12">
+          <div className="space-y-6">
+            <div className="h-6 w-40 bg-oro/10" />
+            <div className="h-20 w-full bg-black/40 border border-oro/10" />
+            <div className="h-20 w-full bg-black/40 border border-oro/10" />
+          </div>
+          <div className="grid grid-cols-4 gap-4">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="h-12 bg-black/40 border border-oro/10" />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (error) return <div className="text-rojo-sangre bg-rojo-sangre/10 p-6 ninja-box ninja-border border-rojo-sangre/40 h-full flex items-center justify-center">Error: {error}</div>;
+  if (!activeCharacter) return <div className="text-oro/60 bg-black/60 p-8 ninja-box ninja-border h-full flex items-center justify-center">No tienes un personaje activo.</div>;
 
   const { stats_base, atributos_derivados, nombre_ninja, rango, xp, ryous } = activeCharacter;
 
