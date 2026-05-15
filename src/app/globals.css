@@ -1,42 +1,173 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #050309;
+  --foreground: #d4d4d4;
+  
+  /* Naruto Mobile Tokens */
+  --oro-principal: #ffe69f;
+  --oro-gradiente-top: #ffefd3;
+  --oro-sombra: #a5570b;
+  --oro-suave: #ffe6ba;
+  
+  --rojo-sangre: #670909;
+  --rojo-oscuro: #320d04;
+  
+  --negro-primario: #050309;
+  --negro-overlay: rgba(0, 0, 0, 0.7);
+  
+  --gris-texto: #d4d4d4;
+  --gris-borde: #d2d2d2;
+  --sombra-skill: #2b1002;
+
+  /* Clip-path Patterns */
+  --clip-xs: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+  --clip-sm: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  --clip-md: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  --clip-lg: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  
+  --color-oro: var(--oro-principal);
+  --color-oro-soft: var(--oro-suave);
+  --color-rojo-sangre: var(--rojo-sangre);
+  --color-rojo-oscuro: var(--rojo-oscuro);
+  --color-negro-p: var(--negro-primario);
+  
+  --font-ninja: "Shojumaru", system-ui;
+  --font-body: "Noto Sans JP", sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--negro-primario);
+  background-image: url('https://game.gtimg.cn/images/hyrz/web202003/bg-list.jpg');
+  background-attachment: fixed;
+  background-size: cover;
+  background-position: center;
+  color: var(--gris-texto);
+  font-family: var(--font-body);
 }
 
 @layer utilities {
+  .ninja-title {
+    background: linear-gradient(to bottom, var(--oro-gradiente-top), var(--oro-principal));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transform: scaleY(1.4);
+    display: inline-block;
+    font-family: var(--font-ninja);
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  }
+
+  .ninja-clip-xs { clip-path: var(--clip-xs); }
+  .ninja-clip-sm { clip-path: var(--clip-sm); }
+  .ninja-clip-md { clip-path: var(--clip-md); }
+  .ninja-clip-lg { clip-path: var(--clip-lg); }
+
+  /* Combined Card Patterns */
+  .ninja-card {
+    @apply bg-black/60 backdrop-blur-md relative;
+  }
+  
+  .ninja-card-oro {
+    @apply bg-black/80 backdrop-blur-xl relative shadow-[0_0_30px_rgba(255,230,159,0.1)];
+    clip-path: var(--clip-lg);
+    background-image: radial-gradient(circle at center, rgba(255, 230, 159, 0.05) 0%, transparent 70%);
+  }
+
+  .ninja-card-oro::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    background: linear-gradient(to bottom right, var(--oro-gradiente-top), var(--oro-principal), var(--oro-sombra));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    clip-path: var(--clip-lg);
+    pointer-events: none;
+    opacity: 0.9;
+  }
+
+  .ninja-card-rojo {
+    @apply bg-black/80 backdrop-blur-xl relative shadow-[0_0_30px_rgba(103,9,9,0.2)];
+    clip-path: var(--clip-lg);
+    background-image: radial-gradient(circle at center, rgba(103, 9, 9, 0.1) 0%, transparent 70%);
+  }
+
+  .ninja-card-rojo::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    background: linear-gradient(to bottom right, var(--rojo-sangre), var(--rojo-oscuro));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    clip-path: var(--clip-lg);
+    pointer-events: none;
+    opacity: 0.6;
+  }
+
+  /* Buttons & Inputs */
+  .ninja-btn {
+    @apply font-black uppercase tracking-[0.2em] transition-all active:scale-95 disabled:opacity-30 hover:brightness-110;
+  }
+
+  .ninja-btn-oro {
+    @apply font-black uppercase tracking-[0.2em] transition-all active:scale-95 disabled:opacity-30 hover:brightness-110 bg-oro text-rojo-sangre shadow-[0_0_15px_rgba(255,230,159,0.2)];
+    clip-path: var(--clip-md);
+  }
+
+  .ninja-btn-rojo {
+    @apply font-black uppercase tracking-[0.2em] transition-all active:scale-95 disabled:opacity-30 hover:brightness-110 bg-rojo-sangre text-oro shadow-[0_0_15px_rgba(103,9,9,0.2)];
+    clip-path: var(--clip-md);
+  }
+
+  .ninja-btn-ghost {
+    @apply font-black uppercase tracking-[0.2em] transition-all active:scale-95 disabled:opacity-30 hover:brightness-110 bg-black/40 text-oro/60 border border-oro/10 hover:border-oro/40 hover:text-oro;
+    clip-path: var(--clip-md);
+  }
+
+  .ninja-input {
+    @apply bg-black/80 border border-oro/20 px-6 py-4 text-oro font-black focus:border-oro/60 focus:bg-black/90 focus:shadow-[0_0_20px_rgba(255,230,159,0.1)] outline-none transition-all uppercase placeholder:text-oro/20;
+    clip-path: var(--clip-xs);
+    &:hover {
+      @apply border-oro/40 bg-black/70;
+    }
+  }
+
+  select.ninja-input {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23ffe69f'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1.5rem center;
+    background-size: 1.2rem;
+    padding-right: 3.5rem;
+  }
+
   .custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
+    width: 6px;
   }
   .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
+    background: var(--negro-primario);
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #27272a;
-    border-radius: 10px;
+    background: var(--rojo-sangre);
+    border-radius: 0;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #3f3f46;
+    background: #800c0c;
+  }
+
+  .hover-ninja {
+    transition: all 0.3s ease-in-out;
+  }
+  .hover-ninja:hover {
+    transform: scale(1.02);
+    filter: brightness(1.1);
   }
 }
+

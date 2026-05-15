@@ -5,100 +5,86 @@ import { ScrollText, Swords, Zap, ArrowLeft, ChevronRight, ShoppingBag } from 'l
 
 export default function RegistrosLandingPage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-4 md:p-10">
-      <div className="max-w-7xl mx-auto">
-        <header className="mb-16 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <h1 className="text-6xl font-black italic uppercase tracking-tighter flex items-center gap-4 mb-4">
-              <Zap className="w-14 h-14 text-orange-500 fill-orange-500/20" />
-              Registros <span className="text-zinc-800">Mundiales</span>
-            </h1>
-            <p className="text-zinc-500 font-bold uppercase tracking-[0.4em] text-xs">Selecciona la bitácora que deseas consultar</p>
-          </div>
-          <Link 
-            href="/" 
-            className="flex items-center gap-3 px-8 py-4 bg-zinc-900 border border-zinc-800 rounded-2xl text-xs font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-white hover:border-zinc-700 transition-all group"
-          >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            Volver al Dashboard
-          </Link>
-        </header>
+    <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col">
+      <header className="w-full max-w-[1750px] mx-auto flex flex-col md:flex-row justify-between items-center gap-10 mb-10 ninja-card-oro p-8 xl:p-10 z-50">
+        <Link href="/" className="flex items-center gap-4 text-oro hover:brightness-125 transition-all group font-black uppercase tracking-widest text-sm xl:text-lg">
+          <div className="w-2 xl:w-3 h-2 xl:h-3 bg-rojo-sangre rotate-45 group-hover:bg-oro transition-colors" />
+          Volver al Dashboard
+        </Link>
+        <div className="flex items-center gap-4">
+          <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-4 xl:w-6 h-auto" alt="icon" />
+          <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
+            Registros <span className="text-oro/40">Mundiales</span>
+          </h1>
+        </div>
+      </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <main className="w-full max-w-[1750px] mx-auto flex-1">
+        <div className="mb-20 ninja-card-oro p-12 xl:p-16">
+          <div className="flex items-center gap-6 mb-6">
+            {/* <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-5 xl:w-8 h-auto" alt="icon" /> */}
+            <h1 className="ninja-title text-5xl xl:text-8xl">REGISTROS NINJA</h1>
+          </div>
+          <p className="text-gris-texto text-lg xl:text-2xl max-w-4xl leading-relaxed">Consulta el historial de misiones, registros de combate y transacciones económicas de todo el mundo ninja.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10 xl:gap-16">
           {/* Tarjeta Misiones */}
-          <Link href="/registros/misiones" className="group relative overflow-hidden bg-zinc-900/40 border border-zinc-800 hover:border-orange-500/50 p-12 rounded-[3rem] transition-all hover:shadow-[0_0_50px_-10px_rgba(249,115,22,0.2)] backdrop-blur-xl">
-            <div className="absolute top-0 right-0 p-12 opacity-5 transform translate-x-4 -translate-y-4 group-hover:scale-110 group-hover:opacity-10 transition-all duration-500">
-              <ScrollText className="w-64 h-64 text-orange-500" />
+          <Link href="/registros/misiones" className="group relative overflow-hidden ninja-card-oro p-10 xl:p-16 hover-ninja flex flex-col justify-between min-h-[400px]">
+            <div className="relative z-10">
+              <div className="flex items-center gap-4 mb-8">
+                {/* <div className="w-3 h-3 bg-rojo-sangre rotate-45" /> */}
+                <h3 className="text-3xl xl:text-5xl font-black text-oro uppercase tracking-widest">Misiones</h3>
+              </div>
+              <p className="text-gris-texto/80 text-lg xl:text-2xl leading-relaxed max-w-sm mb-12">
+                Historial de encargos completados, rangos ninja y recompensas obtenidas por la aldea.
+              </p>
             </div>
             
-            <div className="relative z-10 flex flex-col h-full justify-between">
-              <div>
-                <div className="w-16 h-16 bg-orange-500/10 border border-orange-500/20 rounded-3xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500">
-                  <ScrollText className="w-8 h-8 text-orange-500" />
-                </div>
-                <h3 className="text-4xl font-black text-white mb-4 italic uppercase tracking-tighter">Misiones</h3>
-                <p className="text-zinc-500 text-lg leading-relaxed max-w-sm">
-                  Historial de encargos completados, rangos ninja y recompensas obtenidas por la aldea.
-                </p>
-              </div>
-              
-              <div className="mt-12 flex items-center gap-3 text-orange-500 font-black uppercase tracking-[0.2em] text-xs">
-                Explorar Registros
-                <ChevronRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" />
-              </div>
+            <div className="flex items-center gap-4 text-oro font-black uppercase tracking-[0.2em] text-xs xl:text-base group-hover:brightness-125 transition-all relative z-10">
+              <span>Explorar Registros</span>
+              <div className="w-1.5 h-1.5 bg-oro rotate-45 group-hover:translate-x-2 transition-transform" />
             </div>
           </Link>
 
           {/* Tarjeta Combates */}
-          <Link href="/registros/combates" className="group relative overflow-hidden bg-zinc-900/40 border border-zinc-800 hover:border-red-500/50 p-12 rounded-[3rem] transition-all hover:shadow-[0_0_50px_-10px_rgba(239,68,68,0.2)] backdrop-blur-xl">
-            <div className="absolute top-0 right-0 p-12 opacity-5 transform translate-x-4 -translate-y-4 group-hover:scale-110 group-hover:opacity-10 transition-all duration-500">
-              <Swords className="w-64 h-64 text-red-500" />
+          <Link href="/registros/combates" className="group relative overflow-hidden ninja-card-oro p-10 xl:p-16 hover-ninja flex flex-col justify-between min-h-[400px]">
+            <div className="relative z-10">
+              <div className="flex items-center gap-4 mb-8">
+                {/* <div className="w-3 h-3 bg-rojo-sangre rotate-45" /> */}
+                <h3 className="text-3xl xl:text-5xl font-black text-oro uppercase tracking-widest">Combates</h3>
+              </div>
+              <p className="text-gris-texto/80 text-lg xl:text-2xl leading-relaxed max-w-sm mb-12">
+                Crónicas de enfrentamientos, duelos por el honor y batallas a gran escala.
+              </p>
             </div>
             
-            <div className="relative z-10 flex flex-col h-full justify-between">
-              <div>
-                <div className="w-16 h-16 bg-red-500/10 border border-red-500/20 rounded-3xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500">
-                  <Swords className="w-8 h-8 text-red-500" />
-                </div>
-                <h3 className="text-4xl font-black text-white mb-4 italic uppercase tracking-tighter">Combates</h3>
-                <p className="text-zinc-500 text-lg leading-relaxed max-w-sm">
-                  Crónicas de enfrentamientos, duelos por el honor y batallas a gran escala.
-                </p>
-              </div>
-              
-              <div className="mt-12 flex items-center gap-3 text-red-500 font-black uppercase tracking-[0.2em] text-xs">
-                Ver Resultados
-                <ChevronRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" />
-              </div>
+            <div className="flex items-center gap-4 text-oro font-black uppercase tracking-[0.2em] text-xs xl:text-base group-hover:brightness-125 transition-all relative z-10">
+              <span>Ver Resultados</span>
+              <div className="w-1.5 h-1.5 bg-oro rotate-45 group-hover:translate-x-2 transition-transform" />
             </div>
           </Link>
 
           {/* Tarjeta Compras */}
-          <Link href="/registros/compras" className="group relative overflow-hidden bg-zinc-900/40 border border-zinc-800 hover:border-amber-500/50 p-12 rounded-[3rem] transition-all hover:shadow-[0_0_50px_-10px_rgba(245,158,11,0.2)] backdrop-blur-xl">
-            <div className="absolute top-0 right-0 p-12 opacity-5 transform translate-x-4 -translate-y-4 group-hover:scale-110 group-hover:opacity-10 transition-all duration-500">
-              <ShoppingBag className="w-64 h-64 text-amber-500" />
+          <Link href="/registros/compras" className="group relative overflow-hidden ninja-card-oro p-10 xl:p-16 hover-ninja flex flex-col justify-between min-h-[400px]">
+            <div className="relative z-10">
+              <div className="flex items-center gap-4 mb-8">
+                {/* <div className="w-3 h-3 bg-rojo-sangre rotate-45" /> */}
+                <h3 className="text-3xl xl:text-5xl font-black text-oro uppercase tracking-widest">Compras</h3>
+              </div>
+              <p className="text-gris-texto/80 text-lg xl:text-2xl leading-relaxed max-w-sm mb-12">
+                Registro de transacciones, adquisición de armamento y equipo shinobi.
+              </p>
             </div>
             
-            <div className="relative z-10 flex flex-col h-full justify-between">
-              <div>
-                <div className="w-16 h-16 bg-amber-500/10 border border-amber-500/20 rounded-3xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500">
-                  <ShoppingBag className="w-8 h-8 text-amber-500" />
-                </div>
-                <h3 className="text-4xl font-black text-white mb-4 italic uppercase tracking-tighter">Compras</h3>
-                <p className="text-zinc-500 text-lg leading-relaxed max-w-sm">
-                  Registro de transacciones, adquisición de armamento y equipo shinobi.
-                </p>
-              </div>
-              
-              <div className="mt-12 flex items-center gap-3 text-amber-500 font-black uppercase tracking-[0.2em] text-xs">
-                Revisar Gastos
-                <ChevronRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" />
-              </div>
+            <div className="flex items-center gap-4 text-oro font-black uppercase tracking-[0.2em] text-xs xl:text-base group-hover:brightness-125 transition-all relative z-10">
+              <span>Revisar Gastos</span>
+              <div className="w-1.5 h-1.5 bg-oro rotate-45 group-hover:translate-x-2 transition-transform" />
             </div>
           </Link>
 
         </div>
-      </div>
+      </main>
     </div>
   );
 }

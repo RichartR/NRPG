@@ -60,42 +60,46 @@ export default function DocList({ initialDocs, categories, defaultCategory, show
     });
   }, [initialDocs, activeTab, search, categoryFilter]);
 
-  return (
-    <div className="space-y-10">
-      <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center bg-zinc-900/30 p-8 rounded-[2.5rem] border border-zinc-800/50 backdrop-blur-md">
-        <div className="flex gap-3 p-1.5 bg-black border border-zinc-800 rounded-[1.5rem]">
+  return (    <div className="space-y-12">
+      <div className="flex flex-col md:flex-row gap-8 justify-between items-start md:items-center bg-black/60 p-10 xl:p-12 ninja-box ninja-border backdrop-blur-md relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-oro/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
+        
+        <div className="flex gap-4 p-2 bg-black/40 border border-oro/10 ninja-box">
           {['active', 'inactive'].map((tab) => (
             <button 
               key={tab}
               onClick={() => setActiveTab(tab as any)}
-              className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
+              className={`px-10 py-4 font-black uppercase tracking-[0.2em] transition-all text-[10px] xl:text-xs ${
                 activeTab === tab 
-                ? 'bg-orange-600 text-white shadow-xl shadow-orange-900/20' 
-                : 'text-zinc-500 hover:text-white'
+                ? 'bg-oro text-rojo-sangre shadow-lg' 
+                : 'text-oro/40 hover:text-oro hover:bg-oro/5'
               }`}
+              style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
             >
-              {tab === 'active' ? 'Activos' : 'Archivados'} 
-              <span className="ml-2 opacity-40">({initialDocs.filter(d => tab === 'active' ? d.activo : !d.activo).length})</span>
+              {tab === 'active' ? 'ACTIVOS' : 'ARCHIVADOS'} 
+              <span className={`ml-3 opacity-40 ${activeTab === tab ? 'text-rojo-sangre/60' : ''}`}>({initialDocs.filter(d => tab === 'active' ? d.activo : !d.activo).length})</span>
             </button>
           ))}
         </div>
 
-        <div className="flex w-full md:w-auto gap-4">
-          <div className="relative flex-1 md:w-64">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
+        <div className="flex w-full md:w-auto gap-6 items-center">
+          <div className="relative flex-1 md:w-80">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-oro/40" />
             <input 
               type="text" 
-              placeholder="BUSCAR DOCUMENTO..." 
+              placeholder="BUSCAR EXPEDIENTE..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-black border border-zinc-800 rounded-2xl py-4 pl-12 pr-6 text-xs font-bold text-white focus:border-orange-500 outline-none transition-all placeholder:text-zinc-700"
+              className="w-full bg-black/60 border border-oro/20 py-4 pl-14 pr-8 text-[10px] xl:text-xs font-black text-oro focus:border-oro outline-none transition-all placeholder:text-oro/20 uppercase tracking-widest"
+              style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
             />
           </div>
           
           <select 
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="bg-black border border-zinc-800 rounded-2xl px-6 py-4 text-xs font-bold text-white outline-none focus:border-orange-500 transition-all appearance-none pr-12 cursor-pointer"
+            className="bg-black/60 border border-oro/20 px-8 py-4 text-[10px] xl:text-xs font-black text-oro outline-none focus:border-oro transition-all appearance-none pr-14 cursor-pointer uppercase tracking-widest"
+            style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
           >
             <option value="all">TODAS LAS CATEGORÍAS</option>
             {categories.map(cat => (
@@ -105,73 +109,80 @@ export default function DocList({ initialDocs, categories, defaultCategory, show
 
           <button 
             onClick={() => setIsAdding(true)}
-            className="flex items-center gap-3 px-8 py-4 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-orange-500/20 active:scale-95"
+            className="flex items-center gap-4 px-10 py-4 bg-rojo-sangre hover:brightness-125 text-oro font-black text-[10px] xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-rojo-sangre/20 active:scale-95"
+            style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
           >
             <PlusCircle className="w-5 h-5" />
-            NUEVO
+            CREAR NUEVO
           </button>
         </div>
       </div>
 
-      <div className="bg-zinc-950 border border-zinc-900 rounded-[3rem] overflow-hidden shadow-2xl">
+      <div className="bg-black/60 ninja-box ninja-border overflow-hidden backdrop-blur-md">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-black border-b border-zinc-900">
-              <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Documento</th>
-              <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 text-center">Clasificación</th>
-              <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 text-right">Protocolos</th>
+            <tr className="bg-black/40 border-b border-oro/10">
+              <th className="p-10 text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] text-oro/40">IDENTIFICADOR Y TÍTULO</th>
+              <th className="p-10 text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] text-oro/40 text-center">CLASIFICACIÓN</th>
+              <th className="p-10 text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] text-oro/40 text-right">PROTOCOLOS DE MANDO</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-900">
+          <tbody className="divide-y divide-oro/5">
             {filteredDocs.map((doc) => (
-              <tr key={doc.id} className="hover:bg-zinc-900/40 transition-colors group">
-                <td className="p-8">
-                  <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center overflow-hidden">
+              <tr key={doc.id} className="hover:bg-oro/5 transition-all group">
+                <td className="p-10">
+                  <div className="flex items-center gap-8">
+                    <div className="w-20 h-20 bg-black/40 border border-oro/10 flex items-center justify-center overflow-hidden" style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}>
                       {doc.url_imagen ? (
-                        <img src={doc.url_imagen} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
+                        <img src={doc.url_imagen} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" referrerPolicy="no-referrer" />
                       ) : (
-                        <FileText className="w-6 h-6 text-zinc-700 group-hover:text-orange-500 transition-colors" />
+                        <FileText className="w-8 h-8 text-oro/20 group-hover:text-oro transition-colors" />
                       )}
                     </div>
                     <div>
-                      <p className="text-lg font-black text-white uppercase italic tracking-tighter group-hover:text-orange-500 transition-colors">{doc.titulo}</p>
-                      <p className="text-[10px] text-zinc-600 font-mono font-bold mt-1 uppercase">CLAVE: {doc.clave}</p>
+                      <p className="text-xl xl:text-2xl font-black text-oro uppercase tracking-tight group-hover:text-oro transition-colors italic leading-none">{doc.titulo}</p>
+                      <div className="flex items-center gap-3 mt-3">
+                         <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
+                         <p className="text-[10px] text-oro/30 font-black uppercase tracking-[0.2em]">CÓDICE: {doc.clave}</p>
+                      </div>
                     </div>
                   </div>
                 </td>
-                <td className="p-8">
-                  <div className="flex flex-col items-center gap-2">
-                    <span className="px-5 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-[9px] font-black uppercase tracking-widest text-zinc-400">
+                <td className="p-10">
+                  <div className="flex flex-col items-center gap-4">
+                    <span className="px-6 py-2 bg-oro/5 border border-oro/10 text-[10px] font-black uppercase tracking-[0.2em] text-oro/60" style={{ clipPath: 'polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px)' }}>
                       {doc.categoria}
                     </span>
                     {showSubcategory && doc.subcategoria && (
-                      <span className="text-[8px] text-orange-500/50 font-black uppercase tracking-widest bg-orange-500/5 px-3 py-1 rounded-full border border-orange-500/10">
+                      <span className="text-[8px] text-oro font-black uppercase tracking-[0.3em] bg-oro/10 px-4 py-1.5 border border-oro/20" style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}>
                         {doc.subcategoria}
                       </span>
                     )}
                   </div>
                 </td>
-                <td className="p-8">
-                  <div className="flex justify-end gap-3">
+                <td className="p-10 text-right">
+                  <div className="flex justify-end gap-4">
                     <button 
                       onClick={() => toggleStatus(doc.id, doc.activo)}
                       disabled={loadingId === doc.id}
-                      className={`p-3.5 rounded-xl border transition-all ${doc.activo ? 'bg-orange-500/10 border-orange-500/20 text-orange-500 hover:bg-orange-600 hover:text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-600 hover:bg-zinc-800 hover:text-white'}`}
+                      className={`p-4 transition-all border ${doc.activo ? 'bg-oro/10 border-oro/20 text-oro hover:bg-oro hover:text-rojo-sangre' : 'bg-black/40 border-oro/5 text-oro/20 hover:border-oro/40 hover:text-oro'}`}
+                      style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                     >
                       {loadingId === doc.id ? <RefreshCw className="w-5 h-5 animate-spin" /> : (doc.activo ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />)}
                     </button>
                     
                     <button 
                       onClick={() => setEditingDoc(doc)}
-                      className="p-3.5 bg-white text-black rounded-xl hover:bg-zinc-200 transition-all active:scale-95 shadow-lg shadow-white/5"
+                      className="p-4 bg-oro text-rojo-sangre hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-oro/10"
+                      style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                     >
                       <Edit2 className="w-5 h-5" />
                     </button>
 
                     <button 
                       onClick={() => handleDelete(doc.id, doc.titulo)}
-                      className="p-3.5 bg-red-600/10 border border-red-600/20 text-red-500 rounded-xl hover:bg-red-600 hover:text-white transition-all active:scale-95"
+                      className="p-4 bg-rojo-sangre/10 border border-rojo-sangre/20 text-rojo-sangre hover:bg-rojo-sangre hover:text-oro transition-all active:scale-95"
+                      style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
@@ -181,8 +192,8 @@ export default function DocList({ initialDocs, categories, defaultCategory, show
             ))}
             {filteredDocs.length === 0 && (
               <tr>
-                <td colSpan={3} className="p-32 text-center">
-                   <p className="text-zinc-700 font-black uppercase italic tracking-[0.3em] text-sm">Base de datos sin registros filtrados</p>
+                <td colSpan={3} className="p-40 text-center">
+                   <p className="text-oro/10 font-black uppercase tracking-[0.5em] text-sm italic">SISTEMA SIN REGISTROS COMPATIBLES</p>
                 </td>
               </tr>
             )}

@@ -14,86 +14,97 @@ export default async function MundoNinjaSelectionPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black pt-24 pb-20 px-4">
-      <div className="max-w-6xl mx-auto">
-        <header className="mb-16 text-center">
-          <Link href="/" className="inline-flex items-center gap-2 text-zinc-500 hover:text-white transition-colors mb-6 text-xs font-black uppercase tracking-widest group">
-            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Volver al inicio
-          </Link>
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-20 h-20 bg-emerald-500/10 border border-emerald-500/20 rounded-[2.5rem] flex items-center justify-center mb-2 shadow-2xl shadow-emerald-500/10">
-              <Globe className="w-10 h-10 text-emerald-500" />
-            </div>
-            <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter uppercase italic">MUNDO NINJA</h1>
-            <p className="text-zinc-500 text-lg font-medium max-w-2xl mx-auto leading-relaxed">
-              Descubre a los shinobis que forjan la historia de las grandes naciones.
-            </p>
-          </div>
-        </header>
+    <div className="min-h-screen pt-24 pb-20 px-4 flex flex-col">
+      <header className="w-full max-w-[1750px] mx-auto flex flex-col md:flex-row justify-between items-center gap-10 mb-16 ninja-card-oro p-8 xl:p-12 z-50">
+        <Link href="/" className="flex items-center gap-4 text-oro hover:brightness-125 transition-all group font-black uppercase tracking-widest text-sm xl:text-lg">
+          <div className="w-2 xl:w-3 h-2 xl:h-3 bg-rojo-sangre rotate-45 group-hover:bg-oro transition-colors" />
+          Volver al Dashboard
+        </Link>
+        <div className="flex items-center gap-4">
+          <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-4 xl:w-6 h-auto" alt="icon" />
+          <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
+            REGISTROS <span className="text-oro/40">MUNDIALES</span>
+          </h1>
+        </div>
+      </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <main className="w-full max-w-[1750px] mx-auto flex-1">
+        <div className="mb-20 ninja-card-oro p-12 xl:p-16 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-12 opacity-[0.02] pointer-events-none group-hover:opacity-[0.05] transition-opacity">
+             <Globe className="w-64 h-64 rotate-12" />
+          </div>
+          <div className="flex items-center gap-6 mb-8 relative z-10">
+            <h1 className="ninja-title text-5xl xl:text-8xl">Shinobis de las Naciones</h1>
+          </div>
+          <p className="text-gris-texto text-lg xl:text-2xl max-w-4xl leading-relaxed relative z-10">
+            Explora el censo oficial de las Grandes Naciones Shinobi. Descubre a los guerreros que forjan la historia y el destino de cada aldea oculta.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 xl:gap-16">
           {aldeas?.map((aldea) => (
             <Link 
               key={aldea.id}
               href={`/mundo-ninja/${aldea.id}`}
-              className="group relative bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-8 hover:border-emerald-500/50 transition-all overflow-hidden"
+              className="group relative ninja-card-oro p-10 xl:p-16 hover-ninja transition-all overflow-hidden flex items-center justify-between"
             >
-              {aldea.url_imagen && (
-                <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity">
-                  <img src={aldea.url_imagen} alt="" className="w-full h-full object-cover scale-110 group-hover:scale-100 transition-transform duration-700" />
+              <div className="relative z-10 flex items-center gap-10">
+                <div className="w-24 xl:w-32 h-24 xl:h-32 bg-black/40 border border-oro/10 p-6 flex items-center justify-center shrink-0 shadow-2xl group-hover:scale-110 transition-transform duration-500">
+                  {aldea.url_icono ? (
+                    <img src={aldea.url_icono} alt="" className="w-full h-full object-contain filter drop-shadow-[0_0_10px_rgba(255,215,0,0.3)]" />
+                  ) : (
+                    <div className="w-4 h-4 bg-oro/20 rotate-45" />
+                  )}
                 </div>
-              )}
-
-              <div className="relative z-10 flex items-center justify-between">
-                <div className="flex items-center gap-6">
-                  <div className="w-20 h-20 rounded-3xl bg-zinc-800 border border-zinc-700 p-4 flex items-center justify-center shrink-0 shadow-xl group-hover:scale-110 transition-transform">
-                    {aldea.url_icono ? (
-                      <img src={aldea.url_icono} alt="" className="w-full h-full object-contain" />
-                    ) : (
-                      <MapPin className="w-8 h-8 text-zinc-600" />
-                    )}
+                <div>
+                  <div className="flex items-center gap-6 mb-3">
+                    <h3 className="text-4xl xl:text-6xl font-black text-oro uppercase tracking-tight group-hover:text-white transition-colors">{aldea.nombre_jap}</h3>
+                    <span className="px-4 py-1.5 bg-rojo-sangre text-oro text-[10px] xl:text-xs font-black border border-oro/20 uppercase tracking-widest ninja-clip-xs">{aldea.abreviatura}</span>
                   </div>
-                  <div>
-                    <div className="flex items-center gap-3 mb-1">
-                      <h3 className="text-3xl font-black text-white uppercase tracking-tight italic group-hover:text-emerald-500 transition-colors">{aldea.nombre_jap}</h3>
-                      <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-black rounded border border-emerald-500/20 uppercase tracking-widest">{aldea.abreviatura}</span>
-                    </div>
-                    <p className="text-zinc-500 text-sm font-bold uppercase tracking-widest">{aldea.nombre_español}</p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col items-end gap-1">
-                  <span className="text-3xl font-black text-white/20 group-hover:text-emerald-500/40 transition-colors leading-none">{getCount(aldea.id)}</span>
-                  <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Shinobis</span>
+                  <p className="text-oro/40 text-sm xl:text-xl font-black uppercase tracking-[0.3em] group-hover:text-oro/60 transition-colors">{aldea.nombre_español}</p>
                 </div>
               </div>
+
+              <div className="relative z-10 flex flex-col items-end">
+                <span className="text-5xl xl:text-7xl font-black text-oro group-hover:scale-110 transition-transform duration-500 leading-none mb-2">{getCount(aldea.id)}</span>
+                <span className="text-[10px] xl:text-xs font-black text-oro/20 uppercase tracking-[0.4em] group-hover:text-oro/40 transition-colors">SHINOBIS</span>
+              </div>
+
+              {aldea.url_imagen && (
+                <div className="absolute inset-0 z-0 opacity-[0.05] group-hover:opacity-[0.15] transition-all duration-700 pointer-events-none scale-100 group-hover:scale-110">
+                  <img src={aldea.url_imagen} alt="" className="w-full h-full object-cover grayscale brightness-50" />
+                </div>
+              )}
             </Link>
           ))}
 
           {/* Sin Aldea / Renegados */}
           <Link 
             href="/mundo-ninja/renegados"
-            className="group relative bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-8 hover:border-red-500/50 transition-all overflow-hidden md:col-span-2"
+            className="group relative ninja-card-rojo p-10 xl:p-16 hover-ninja transition-all overflow-hidden md:col-span-2 flex items-center justify-between"
           >
-            <div className="relative z-10 flex items-center justify-between">
-              <div className="flex items-center gap-6">
-                <div className="w-20 h-20 rounded-3xl bg-red-500/5 border border-red-500/10 p-4 flex items-center justify-center shrink-0 shadow-xl group-hover:scale-110 transition-transform">
-                  <Users className="w-10 h-10 text-red-500/40 group-hover:text-red-500 transition-colors" />
-                </div>
-                <div>
-                  <h3 className="text-3xl font-black text-white uppercase tracking-tight italic group-hover:text-red-500 transition-colors">SIN ALDEA / RENEGADOS</h3>
-                  <p className="text-zinc-500 text-sm font-bold uppercase tracking-widest">Shinobis sin afiliación o exiliados.</p>
-                </div>
+            <div className="relative z-10 flex items-center gap-10">
+              <div className="w-24 xl:w-32 h-24 xl:h-32 bg-rojo-sangre/10 border border-rojo-sangre/20 p-8 flex items-center justify-center shrink-0 shadow-2xl group-hover:scale-110 transition-transform duration-500">
+                <div className="w-10 xl:w-12 h-10 xl:h-12 bg-rojo-sangre rotate-45 shadow-[0_0_20px_rgba(103,9,9,0.5)]" />
               </div>
+              <div>
+                <h3 className="text-4xl xl:text-6xl font-black text-oro uppercase tracking-tight group-hover:text-rojo-sangre transition-colors mb-2">RENEGADOS</h3>
+                <p className="text-oro/40 text-sm xl:text-xl font-black uppercase tracking-[0.3em] group-hover:text-oro/60 transition-colors">Shinobis sin afiliación o exiliados.</p>
+              </div>
+            </div>
 
-              <div className="flex flex-col items-end gap-1">
-                <span className="text-3xl font-black text-white/20 group-hover:text-red-500/40 transition-colors leading-none">{getCount(null)}</span>
-                <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Shinobis</span>
-              </div>
+            <div className="relative z-10 flex flex-col items-end">
+              <span className="text-5xl xl:text-7xl font-black text-rojo-sangre group-hover:scale-110 transition-transform duration-500 leading-none mb-2">{getCount(null)}</span>
+              <span className="text-[10px] xl:text-xs font-black text-oro/20 uppercase tracking-[0.4em] group-hover:text-oro/40 transition-colors">SHINOBIS</span>
+            </div>
+            
+            <div className="absolute -right-20 -bottom-20 opacity-[0.02] group-hover:opacity-[0.08] transition-all duration-700 pointer-events-none">
+               <Users className="w-96 h-96 rotate-12 text-rojo-sangre" />
             </div>
           </Link>
         </div>
-      </div>
+      </main>
     </div>
+
   );
 }

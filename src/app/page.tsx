@@ -1,11 +1,9 @@
 import CharacterSheet from "@/components/character/CharacterSheet";
 import LogoutButton from "@/components/auth/LogoutButton";
-import { BookOpen, Megaphone, ScrollText, Globe, Zap, User, ShieldAlert, Map, GitBranch } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import { ProfileService } from '@/services/supabase/profile.service';
 import NotificationBell from '@/components/layout/NotificationBell';
-
 import AdminNotificationBadge from '@/components/admin/AdminNotificationBadge';
 
 export default async function Home() {
@@ -15,134 +13,128 @@ export default async function Home() {
   const profile = user ? await ProfileService.getProfile(user.id) : null;
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-4 md:p-8">
-      <header className="max-w-7xl mx-auto flex justify-between items-center mb-8 bg-zinc-900/50 p-4 rounded-2xl border border-zinc-800/50 backdrop-blur-md relative z-50">
-        <div className="flex items-center gap-6">
-          <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500 tracking-tighter">
-            NRPG Engine
-          </h1>
-          
-          {user && (
-            <div className="flex items-center gap-4">
-              <div className="hidden md:flex items-center gap-3 px-4 py-1.5 bg-zinc-950 border border-zinc-800 rounded-full">
-                {profile?.url_avatar ? (
-                  <img 
-                    src={profile.url_avatar} 
-                    alt="Avatar" 
-                    className="w-5 h-5 rounded-full object-cover border border-zinc-800"
-                  />
-                ) : (
-                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                )}
-                <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
-                  {profile?.username || user.email?.split('@')[0]}
-                </span>
+    <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col">
+      <header className="w-full max-w-[1800px] mx-auto mb-10 sm:mb-10 ninja-card-oro p-4 sm:p-8 xl:p-10 z-50">
+        <div className="flex flex-col lg:flex-row justify-between items-center gap-6 lg:gap-10">
+          <div className="flex items-center justify-between w-full lg:w-auto gap-6">
+            <div className="flex items-center gap-4 md:gap-10">
+              <img 
+                src="/assets/ui/logo.png" 
+                alt="Naruto Logo" 
+                className="h-14 sm:h-20 md:h-28 w-auto object-contain drop-shadow-[0_0_20px_rgba(255,230,159,0.3)]"
+              />
+              <div className="hidden xl:block">
+                <h1 className="ninja-title text-4xl 2xl:text-7xl">NRPG</h1>
               </div>
-              <NotificationBell />
             </div>
-          )}
-        </div>
+            
+            {user && (
+              <div className="flex items-center gap-4 sm:gap-6">
+                <div className="hidden sm:flex lg:hidden 2xl:flex items-center gap-4 px-6 xl:px-10 py-4 bg-rojo-sangre/20 border border-oro/20 ninja-clip-xs">
+                  {profile?.url_avatar ? (
+                    <img 
+                      src={profile.url_avatar} 
+                      alt="Avatar" 
+                      className="w-10 xl:w-12 h-10 xl:h-12 rounded-none object-cover border border-oro/40"
+                    />
+                  ) : (
+                    <div className="w-4 h-4 bg-oro animate-pulse" />
+                  )}
+                  <span className="text-sm xl:text-lg 2xl:text-xl font-black text-oro uppercase tracking-widest">
+                    {profile?.username || user.email?.split('@')[0]}
+                  </span>
+                </div>
+                <NotificationBell />
+              </div>
+            )}
+          </div>
 
-        <nav className="flex gap-4 items-center">
-          {profile?.role === 'admin' && (
-            <AdminNotificationBadge />
-          )}
-          {user ? (
-            <LogoutButton />
-          ) : (
-            <Link 
-              href="/login" 
-              className="px-6 py-2 bg-white text-black rounded-xl text-xs font-black uppercase tracking-widest hover:bg-orange-500 transition-all shadow-lg shadow-white/5"
-            >
-              Iniciar Sesión
-            </Link>
-          )}
-        </nav>
+          <nav className="flex flex-wrap justify-center gap-4 xl:gap-6 2xl:gap-10 items-center w-full lg:w-auto border-t lg:border-t-0 border-oro/5 pt-4 lg:pt-0">
+            {profile?.role === 'admin' && (
+              <AdminNotificationBadge />
+            )}
+            {user ? (
+              <LogoutButton />
+            ) : (
+              <Link 
+                href="/login" 
+                className="px-8 sm:px-16 py-3 sm:py-6 ninja-btn-oro text-sm sm:text-2xl w-full sm:w-auto text-center"
+              >
+                INICIAR SESIÓN
+              </Link>
+            )}
+          </nav>
+        </div>
       </header>
 
-      <main className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <main className="w-full max-w-[1800px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 xl:gap-12">
         
-        {/* Columna Izquierda: Personaje (Ocupa 5 columnas) */}
-        <div className="lg:col-span-5 space-y-6">
+        {/* Columna Izquierda: Personaje */}
+        <div className="lg:col-span-5 h-full">
           <CharacterSheet />
         </div>
 
-        {/* Columna Derecha: Bento Grid de Categorías (Ocupa 7 columnas) */}
-        <div className="lg:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Columna Derecha: Bento Grid de Categorías */}
+        <div className="lg:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-3 xl:gap-4">
           
           {/* Bienvenida */}
-          <Link href="/bienvenida" className="group relative overflow-hidden bg-gradient-to-br from-zinc-900 to-zinc-950 border border-zinc-800 hover:border-orange-500/50 p-6 rounded-3xl transition-all hover:shadow-[0_0_30px_-5px_rgba(249,115,22,0.3)] md:col-span-2">
-            <div className="absolute top-0 right-0 p-8 opacity-10 transform translate-x-4 -translate-y-4 group-hover:scale-110 transition-transform">
-              <BookOpen className="w-32 h-32 text-orange-500" />
-            </div>
+          <Link href="/bienvenida" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja md:col-span-2 flex flex-col justify-center min-h-[140px]">
             <div className="relative z-10">
-              <h3 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
-                <BookOpen className="w-6 h-6 text-orange-500" />
+              <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
+                <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
                 Bienvenida
               </h3>
-              <p className="text-zinc-400 max-w-sm">Información general, reglas del juego y primeros pasos en el rol.</p>
+              <p className="text-gris-texto leading-relaxed text-sm xl:text-base max-w-2xl">Información general, reglas y primeros pasos.</p>
             </div>
           </Link>
 
-          {/* Noticias y Eventos */}
-          <Link href="/noticias" className="group relative overflow-hidden bg-zinc-900 border border-zinc-800 hover:border-blue-500/50 p-6 rounded-3xl transition-all hover:shadow-[0_0_30px_-5px_rgba(59,130,246,0.3)]">
-            <div className="absolute -bottom-4 -right-4 opacity-10 group-hover:scale-110 transition-transform">
-              <Megaphone className="w-24 h-24 text-blue-500" />
-            </div>
-            <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-              <Megaphone className="w-5 h-5 text-blue-500" />
-              Noticias y Eventos
+          {/* Noticias */}
+          <Link href="/noticias" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja flex flex-col justify-center min-h-[140px]">
+            <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
+              <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
+              Noticias
             </h3>
-            <p className="text-zinc-400 text-sm">Actualizaciones, parches y anuncios de la administración.</p>
+            <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Anuncios oficiales y parches.</p>
           </Link>
 
           {/* Sistemas */}
-          <Link href="/sistemas" className="group relative overflow-hidden bg-zinc-900 border border-zinc-800 hover:border-red-500/50 p-6 rounded-3xl transition-all hover:shadow-[0_0_30px_-5px_rgba(239,68,68,0.3)]">
-            <div className="absolute -bottom-4 -right-4 opacity-10 group-hover:scale-110 transition-transform">
-              <Zap className="w-24 h-24 text-red-500" />
-            </div>
-            <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-red-500" />
+          <Link href="/sistemas" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja flex flex-col justify-center min-h-[140px]">
+            <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
+              <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
               Sistemas
             </h3>
-            <p className="text-zinc-400 text-sm">Glosario de técnicas, calculadora de combate y mecánicas.</p>
+            <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Mecánicas y glosario técnico.</p>
           </Link>
 
           {/* Registros */}
-          <Link href="/registros" className="group relative overflow-hidden bg-zinc-900 border border-zinc-800 hover:border-purple-500/50 p-6 rounded-3xl transition-all hover:shadow-[0_0_30px_-5px_rgba(168,85,247,0.3)]">
-            <div className="absolute -bottom-4 -right-4 opacity-10 group-hover:scale-110 transition-transform">
-              <ScrollText className="w-24 h-24 text-purple-500" />
-            </div>
-            <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-              <ScrollText className="w-5 h-5 text-purple-500" />
+          <Link href="/registros" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja flex flex-col justify-center min-h-[140px]">
+            <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
+              <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
               Registros
             </h3>
-            <p className="text-zinc-400 text-sm">Feed de misiones, combates y validación de recompensas.</p>
+            <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Historial de misiones y combates.</p>
           </Link>
 
           {/* Mundo Ninja */}
-          <Link href="/mundo-ninja" className="group relative overflow-hidden bg-zinc-900 border border-zinc-800 hover:border-emerald-500/50 p-6 rounded-3xl transition-all hover:shadow-[0_0_30px_-5px_rgba(16,185,129,0.3)]">
-            <div className="absolute -bottom-4 -right-4 opacity-10 group-hover:scale-110 transition-transform">
-              <Globe className="w-24 h-24 text-emerald-500" />
-            </div>
-            <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-              <Globe className="w-5 h-5 text-emerald-500" />
+          <Link href="/mundo-ninja" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja flex flex-col justify-center min-h-[140px]">
+            <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
+              <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
               Mundo Ninja
             </h3>
-            <p className="text-zinc-400 text-sm">Lore, mapa, jerarquía de aldeas e información del entorno.</p>
+            <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Lore, mapa y jerarquía.</p>
           </Link>
 
           {/* Documentos */}
-          <Link href="/documentos" className="group relative overflow-hidden bg-zinc-900 border border-zinc-800 hover:border-amber-500/50 p-6 rounded-3xl transition-all hover:shadow-[0_0_30px_-5px_rgba(245,158,11,0.3)]">
-            <div className="absolute -bottom-4 -right-4 opacity-10 group-hover:scale-110 transition-transform">
-              <ScrollText className="w-24 h-24 text-amber-500" />
+          <Link href="/documentos" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja md:col-span-2 flex flex-col justify-center min-h-[140px]">
+            <div className="relative z-10">
+              <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4 uppercase tracking-widest">
+                <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
+                Documentos
+              </h3>
+              <p className="text-gris-texto leading-relaxed text-sm xl:text-base max-w-2xl">Manuales y normativa oficial del juego.</p>
             </div>
-            <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-              <ScrollText className="w-5 h-5 text-amber-500" />
-              Documentos
-            </h3>
-            <p className="text-zinc-400 text-sm">Normativas de combate, tablas de balanceo y manuales.</p>
           </Link>
+
         </div>
       </main>
     </div>

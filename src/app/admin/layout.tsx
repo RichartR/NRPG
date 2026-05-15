@@ -22,72 +22,73 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-zinc-950 text-zinc-300">
+    <div className="flex min-h-screen bg-black text-oro/80">
       {/* Sidebar Admin */}
-      <aside className="w-64 bg-zinc-900 border-r border-zinc-800 p-6 flex flex-col gap-8 sticky top-0 h-screen">
-        <div className="flex items-center gap-3 px-2">
-          <div className="bg-orange-500 p-2 rounded-lg">
-            <ShieldCheck className="w-6 h-6 text-white" />
+      <aside className="w-80 bg-black border-r border-oro/10 p-8 flex flex-col gap-10 sticky top-0 h-screen z-[100] backdrop-blur-xl">
+        <div className="flex flex-col gap-2 px-2">
+          <div className="flex items-center gap-4">
+             <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45" />
+             <h1 className="ninja-title text-4xl leading-none">NRPG</h1>
           </div>
-          <div>
-            <h1 className="text-white font-black tracking-tighter leading-none">NRPG</h1>
-            <span className="text-[10px] uppercase tracking-widest font-bold text-orange-500">Admin Panel</span>
-          </div>
+          <span className="text-[10px] uppercase tracking-[0.4em] font-black text-oro/40 ml-5">SISTEMA ADMINISTRATIVO</span>
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto pr-2 custom-scrollbar">
-          <p className="px-3 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] mb-4">Principal</p>
-          
-          <Link href="/admin" className="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-800 hover:text-white transition-all font-bold text-sm group">
-            <LayoutDashboard className="w-5 h-5 text-zinc-500 group-hover:text-orange-500 transition-colors" />
-            Dashboard
-          </Link>
-
-          <div className="pt-6 pb-2">
-            <p className="px-3 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] mb-4">Módulos</p>
+        <nav className="flex-1 space-y-2 overflow-y-auto pr-4 scrollbar-hide">
+          <div className="pb-6">
+            <div className="px-5 text-[10px] font-black text-oro/20 uppercase tracking-[0.4em] mb-6 flex items-center gap-4">
+              <div className="flex-1 h-px bg-oro/5" />
+              PRINCIPAL
+              <div className="flex-1 h-px bg-oro/5" />
+            </div>
+            
+            <Link href="/admin" className="flex items-center gap-4 p-4 hover:bg-oro/5 transition-all font-black text-xs xl:text-sm group relative overflow-hidden" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}>
+              <LayoutDashboard className="w-5 h-5 text-oro/40 group-hover:text-oro transition-colors" />
+              <span className="group-hover:translate-x-1 transition-transform uppercase tracking-widest">Dashboard</span>
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-oro opacity-0 group-hover:opacity-100 transition-opacity" />
+            </Link>
           </div>
 
-          <Link href="/admin/sistemas" className="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-800 hover:text-white transition-all font-bold text-sm group">
-            <Settings className="w-5 h-5 text-zinc-500 group-hover:text-orange-500 transition-colors" />
-            Sistemas
-          </Link>
+          <div>
+            <div className="px-5 text-[10px] font-black text-oro/20 uppercase tracking-[0.4em] mb-6 flex items-center gap-4">
+              <div className="flex-1 h-px bg-oro/5" />
+              MÓDULOS
+              <div className="flex-1 h-px bg-oro/5" />
+            </div>
+            <div className="space-y-1">
+              {[
+                { href: '/admin/sistemas', icon: Settings, label: 'Sistemas' },
+                { href: '/admin/aldeas', icon: Map, label: 'Aldeas' },
+                { href: '/admin/misiones', icon: ScrollText, label: 'Misiones' },
+                { href: '/admin/ramas', icon: GitBranch, label: 'Ramas' },
+                { href: '/admin/combate', icon: Sword, label: 'Biblioteca' },
+                { href: '/admin/documentos', icon: FileText, label: 'Documentos' },
+              ].map((item) => (
+                <Link 
+                  key={item.href}
+                  href={item.href} 
+                  className="flex items-center gap-4 p-4 hover:bg-oro/5 transition-all font-black text-xs xl:text-sm group relative overflow-hidden" 
+                  style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                >
+                  <item.icon className="w-5 h-5 text-oro/40 group-hover:text-oro transition-colors" />
+                  <span className="group-hover:translate-x-1 transition-transform uppercase tracking-widest">{item.label}</span>
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-oro opacity-0 group-hover:opacity-100 transition-opacity" />
+                </Link>
+              ))}
+            </div>
+          </div>
 
-          <Link href="/admin/aldeas" className="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-800 hover:text-white transition-all font-bold text-sm group">
-            <Map className="w-5 h-5 text-zinc-500 group-hover:text-orange-500 transition-colors" />
-            Aldeas
-          </Link>
-
-          <Link href="/admin/misiones" className="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-800 hover:text-white transition-all font-bold text-sm group">
-            <ScrollText className="w-5 h-5 text-zinc-500 group-hover:text-orange-500 transition-colors" />
-            Misiones
-          </Link>
-
-          <Link href="/admin/ramas" className="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-800 hover:text-white transition-all font-bold text-sm group">
-            <GitBranch className="w-5 h-5 text-zinc-500 group-hover:text-orange-500 transition-colors" />
-            Ramas
-          </Link>
-
-          <Link href="/admin/combate" className="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-800 hover:text-white transition-all font-bold text-sm group">
-            <Sword className="w-5 h-5 text-zinc-500 group-hover:text-orange-500 transition-colors" />
-            Biblioteca
-          </Link>
-
-          <Link href="/admin/documentos" className="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-800 hover:text-white transition-all font-bold text-sm group">
-            <FileText className="w-5 h-5 text-zinc-500 group-hover:text-orange-500 transition-colors" />
-            Documentos
-          </Link>
-
-          <div className="pt-8 mt-8 border-t border-zinc-800">
-            <Link href="/" className="flex items-center gap-3 p-3 rounded-xl hover:bg-red-500/10 hover:text-red-500 transition-all font-bold text-sm group">
-              <LogOut className="w-5 h-5 text-zinc-500 group-hover:text-red-500" />
-              Salir a la Web
+          <div className="pt-10 mt-10 border-t border-oro/5">
+            <Link href="/" className="flex items-center gap-4 p-4 text-rojo-sangre/60 hover:text-rojo-sangre hover:bg-rojo-sangre/5 transition-all font-black text-xs xl:text-sm group" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+              <LogOut className="w-5 h-5" />
+              <span className="uppercase tracking-widest">Regresar al Mundo</span>
             </Link>
           </div>
         </nav>
       </aside>
 
       {/* Contenido Principal */}
-      <main className="flex-1 p-8 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto relative">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,230,159,0.03),transparent)] pointer-events-none" />
         {children}
       </main>
     </div>

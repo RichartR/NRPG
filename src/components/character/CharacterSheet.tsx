@@ -2,7 +2,6 @@
 
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { useEffect } from 'react';
-import { Shield, Zap, Activity, Sword, Brain, Flame, Wind, Droplets, Eye, Search } from 'lucide-react';
 import Link from 'next/link';
 
 export default function CharacterSheet() {
@@ -12,108 +11,133 @@ export default function CharacterSheet() {
     fetchActiveCharacter();
   }, [fetchActiveCharacter]);
 
-  if (loading) return <div className="animate-pulse flex space-x-4 bg-zinc-900/50 p-6 rounded-2xl border border-zinc-800/50 backdrop-blur-md h-64 justify-center items-center">Cargando datos ninja...</div>;
-  if (error) return <div className="text-red-500 bg-red-500/10 p-4 rounded-xl border border-red-500/20">Error: {error}</div>;
-  if (!activeCharacter) return <div className="text-zinc-400 bg-zinc-900/50 p-6 rounded-2xl border border-zinc-800/50 backdrop-blur-md">No tienes un personaje activo.</div>;
+  if (loading) return (
+    <div className="ninja-card-oro p-6 sm:p-10 xl:p-12 h-full min-h-[750px] xl:min-h-[850px] flex flex-col justify-center animate-pulse">
+      <div className="space-y-10">
+        <div className="flex flex-col gap-6 items-center sm:items-start">
+          <div className="h-14 w-64 bg-oro/10 ninja-clip-sm" />
+          <div className="flex gap-4">
+            <div className="h-8 w-24 bg-rojo-sangre/20" />
+            <div className="h-8 w-20 bg-oro/5" />
+            <div className="h-8 w-20 bg-oro/5" />
+          </div>
+        </div>
+        <div className="space-y-12">
+          <div className="space-y-6">
+            <div className="h-6 w-40 bg-oro/10" />
+            <div className="h-20 w-full bg-black/40 border border-oro/10" />
+            <div className="h-20 w-full bg-black/40 border border-oro/10" />
+          </div>
+          <div className="grid grid-cols-4 gap-4">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="h-12 bg-black/40 border border-oro/10" />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (error) return <div className="text-rojo-sangre bg-rojo-sangre/10 p-6 ninja-box ninja-border border-rojo-sangre/40 h-full flex items-center justify-center">Error: {error}</div>;
+  if (!activeCharacter) return <div className="text-oro/60 bg-black/60 p-8 ninja-box ninja-border h-full flex items-center justify-center">No tienes un personaje activo.</div>;
 
   const { stats_base, atributos_derivados, nombre_ninja, rango, xp, ryous } = activeCharacter;
 
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-zinc-950/80 border border-zinc-800/50 backdrop-blur-xl shadow-2xl p-8">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none"></div>
-      <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -ml-32 -mb-32 pointer-events-none"></div>
+    <div className="relative ninja-card-oro p-6 sm:p-10 xl:p-12 shadow-2xl h-full flex flex-col justify-center">
+      <div className="absolute top-0 right-0 w-80 h-80 bg-oro/5 rounded-full blur-3xl -mr-40 -mt-40 pointer-events-none"></div>
 
       <div className="relative z-10">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-500 tracking-tight">
+        <div className="flex flex-col 2xl:flex-row justify-between items-center 2xl:items-start gap-6 2xl:gap-10 mb-10">
+          <div className="text-center 2xl:text-left min-w-0 w-full 2xl:w-auto">
+            <h2 className="ninja-title text-4xl sm:text-5xl mb-2 break-words">
               {nombre_ninja}
             </h2>
-            <div className="flex items-center gap-3 mt-2">
-              <span className="px-3 py-1 text-sm font-bold bg-orange-500/20 text-orange-400 rounded-full border border-orange-500/30">
+            <div className="flex flex-wrap items-center justify-center 2xl:justify-start gap-3 sm:gap-4 mt-4">
+              <span className="px-4 sm:px-5 py-1.5 text-[10px] sm:text-xs xl:text-sm font-black bg-rojo-sangre text-oro uppercase tracking-[0.2em]">
                 Rango {rango}
               </span>
-              <span className="text-zinc-400 text-sm font-medium">{xp} XP</span>
-              <span className="text-zinc-400 text-sm font-medium">{ryous} Ryos</span>
+              <span className="text-oro/80 text-[10px] sm:text-xs xl:text-base font-bold uppercase tracking-widest">{xp} XP</span>
+              <span className="text-oro/80 text-[10px] sm:text-xs xl:text-base font-bold uppercase tracking-widest">{ryous} Ryos</span>
             </div>
           </div>
           
           <Link 
             href={`/ficha/${activeCharacter.id}`}
-            className="flex items-center gap-3 px-6 py-4 bg-orange-600/10 border border-orange-500/20 text-orange-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 hover:text-black transition-all active:scale-95 shadow-xl shadow-orange-500/5 group"
+            className="ninja-btn-oro px-8 py-4 text-xs xl:text-sm w-full 2xl:w-auto text-center shrink-0"
           >
-            <Search className="w-4 h-4 group-hover:scale-110 transition-transform" />
             Ver Ficha
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 gap-10 xl:gap-12">
           {/* Atributos Derivados */}
-          <div className="space-y-6">
-            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Activity className="w-5 h-5 text-red-400" />
+          <div className="space-y-8">
+            <h3 className="text-xs sm:text-base xl:text-xl font-black text-oro mb-6 flex items-center justify-center sm:justify-start gap-3 uppercase tracking-[0.3em]">
+              <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-4 xl:w-6 h-auto object-contain" alt="icon" />
               Estado Vital
             </h3>
             
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm font-medium">
-                  <span className="text-red-400 flex items-center gap-1"><Activity className="w-4 h-4"/> VIT (Vitalidad)</span>
-                  <span className="text-white">{atributos_derivados.VIT} / {atributos_derivados.VIT}</span>
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <div className="flex justify-between text-[10px] xl:text-sm font-black uppercase tracking-widest">
+                  <span className="text-rojo-sangre flex items-center gap-3">VIT (Vitalidad)</span>
+                  <span className="text-oro">{atributos_derivados.VIT} / {atributos_derivados.VIT}</span>
                 </div>
-                <div className="h-3 w-full bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
-                  <div className="h-full bg-gradient-to-r from-red-600 to-red-400 rounded-full" style={{ width: '100%' }}></div>
+                <div className="h-2 w-full bg-black/40 border border-oro/10 p-[1px]">
+                  <div className="h-full bg-rojo-sangre shadow-[0_0_12px_rgba(103,9,9,0.5)]" style={{ width: '100%' }}></div>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm font-medium">
-                  <span className="text-blue-400 flex items-center gap-1"><Droplets className="w-4 h-4"/> CH (Chakra)</span>
-                  <span className="text-white">{atributos_derivados.CH} / {atributos_derivados.CH}</span>
+              <div className="space-y-3">
+                <div className="flex justify-between text-[10px] xl:text-sm font-black uppercase tracking-widest">
+                  <span className="text-blue-500 flex items-center gap-3">CH (Chakra)</span>
+                  <span className="text-oro">{atributos_derivados.CH} / {atributos_derivados.CH}</span>
                 </div>
-                <div className="h-3 w-full bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
-                  <div className="h-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full" style={{ width: '100%' }}></div>
+                <div className="h-2 w-full bg-black/40 border border-oro/10 p-[1px]">
+                  <div className="h-full bg-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.5)]" style={{ width: '100%' }}></div>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mt-6">
-              <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 flex flex-col justify-center items-center">
-                <Shield className="w-6 h-6 text-zinc-400 mb-2" />
-                <span className="text-zinc-500 text-xs font-semibold uppercase tracking-wider">Resistencia</span>
-                <span className="text-2xl font-bold text-white">{atributos_derivados.RES}%</span>
+            <div className="grid grid-cols-2 gap-4 mt-8">
+              <div className="bg-rojo-sangre/10 border border-oro/20 p-4 sm:p-6 flex flex-col justify-center items-center group hover:bg-rojo-sangre/20 transition-all ninja-clip-xs">
+                <div className="w-1.5 h-1.5 bg-oro/20 rotate-45 mb-3 group-hover:bg-oro transition-colors" />
+                <span className="text-oro/40 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em]">Resistencia</span>
+                <span className="text-xl sm:text-2xl font-black text-oro">{atributos_derivados.RES}%</span>
               </div>
-              <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 flex flex-col justify-center items-center">
-                <Zap className="w-6 h-6 text-yellow-400 mb-2" />
-                <span className="text-zinc-500 text-xs font-semibold uppercase tracking-wider">Velocidad</span>
-                <span className="text-2xl font-bold text-white">{atributos_derivados.VEL}</span>
+              <div className="bg-rojo-sangre/10 border border-oro/20 p-4 sm:p-6 flex flex-col justify-center items-center group hover:bg-rojo-sangre/20 transition-all ninja-clip-xs">
+                <div className="w-1.5 h-1.5 bg-oro/20 rotate-45 mb-3 group-hover:bg-oro transition-colors" />
+                <span className="text-oro/40 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em]">Velocidad</span>
+                <span className="text-xl sm:text-2xl font-black text-oro">{atributos_derivados.VEL}</span>
               </div>
             </div>
           </div>
 
           {/* Stats Base */}
           <div>
-            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Sword className="w-5 h-5 text-zinc-400" />
+            <h3 className="text-xs sm:text-base xl:text-xl font-black text-oro mb-6 flex items-center justify-center sm:justify-start gap-3 uppercase tracking-[0.3em]">
+              <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-4 xl:w-6 h-auto object-contain" alt="icon" />
               Atributos Base
             </h3>
-            <div className="grid grid-cols-2 gap-3">
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
-                { label: 'NIN (Ninjutsu)', value: stats_base.NIN, icon: Flame, color: 'text-orange-400' },
-                { label: 'TAI (Taijutsu)', value: stats_base.TAI, icon: Sword, color: 'text-zinc-400' },
-                { label: 'GEN (Genjutsu)', value: stats_base.GEN, icon: Brain, color: 'text-purple-400' },
-                { label: 'INT (Inteligencia)', value: stats_base.INT, icon: Brain, color: 'text-blue-400' },
-                { label: 'FUE (Fuerza)', value: stats_base.FUE, icon: Activity, color: 'text-red-400' },
-                { label: 'AGI (Agilidad)', value: stats_base.AGI, icon: Wind, color: 'text-green-400' },
-                { label: 'EST (Estamina)', value: stats_base.EST, icon: Shield, color: 'text-yellow-400' },
-                { label: 'SM (Sellos)', value: stats_base.SM, icon: Droplets, color: 'text-cyan-400' },
+                { label: 'NIN', value: stats_base.NIN },
+                { label: 'TAI', value: stats_base.TAI },
+                { label: 'GEN', value: stats_base.GEN },
+                { label: 'INT', value: stats_base.INT },
+                { label: 'FUE', value: stats_base.FUE },
+                { label: 'AGI', value: stats_base.AGI },
+                { label: 'EST', value: stats_base.EST },
+                { label: 'SM', value: stats_base.SM },
               ].map((stat) => (
-                <div key={stat.label} className="bg-zinc-900/50 border border-zinc-800/50 rounded-lg p-3 flex justify-between items-center group hover:bg-zinc-800/50 transition-colors">
-                  <div className="flex items-center gap-2">
-                    <stat.icon className={`w-4 h-4 ${stat.color} opacity-70 group-hover:opacity-100 transition-opacity`} />
-                    <span className="text-zinc-400 text-sm font-medium">{stat.label.split(' ')[0]}</span>
+                <div key={stat.label} className="bg-black/40 border border-oro/10 p-3 sm:p-4 flex justify-between items-center group hover:border-oro/40 transition-all ninja-clip-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-1 h-1 bg-oro/20 group-hover:bg-oro transition-colors rotate-45" />
+                    <span className="text-oro/60 text-[9px] sm:text-[10px] font-black uppercase tracking-widest">{stat.label}</span>
                   </div>
-                  <span className="text-white font-bold">{stat.value}</span>
+                  <span className="text-base sm:text-lg font-black text-oro">{stat.value}</span>
                 </div>
               ))}
             </div>
@@ -121,5 +145,9 @@ export default function CharacterSheet() {
         </div>
       </div>
     </div>
+
   );
 }
+
+
+

@@ -102,77 +102,78 @@ export default function NotificationBell() {
     <div className="relative" ref={dropdownRef}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-3 bg-zinc-900 border border-zinc-800 rounded-xl hover:bg-zinc-800 transition-all group"
+        className="relative p-3 bg-rojo-sangre/10 border border-oro/20 hover:bg-rojo-sangre/20 transition-all group flex items-center justify-center"
+        style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
       >
-        <Bell className={`w-5 h-5 transition-transform ${notifications.length > 0 ? 'text-orange-500 animate-bounce' : 'text-zinc-500 group-hover:text-white'}`} />
+        <Bell className={`w-5 h-5 transition-all ${notifications.length > 0 ? 'text-oro animate-bounce' : 'text-oro/40 group-hover:text-oro'}`} />
         {notifications.length > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white text-[10px] font-black flex items-center justify-center rounded-full border-2 border-black animate-in zoom-in">
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-rojo-sangre text-oro text-[10px] font-black flex items-center justify-center border border-oro/40 animate-in zoom-in">
             {notifications.length}
           </span>
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-4 w-80 md:w-96 bg-zinc-950 border border-zinc-800 rounded-[2rem] shadow-2xl z-[100] overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="p-6 bg-zinc-900/50 border-b border-zinc-800 flex justify-between items-center">
-            <h3 className="text-xs font-black uppercase tracking-widest text-white flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-orange-500" /> Notificaciones
+        <div className="absolute right-0 mt-6 w-80 md:w-96 bg-black/90 ninja-box ninja-border shadow-2xl z-[100] overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="p-6 bg-rojo-sangre/20 border-b border-oro/10 flex justify-between items-center">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-oro flex items-center gap-3">
+              <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45" /> Notificaciones
             </h3>
-            <span className="text-[10px] font-bold text-zinc-500">{notifications.length} Pendientes</span>
+            <span className="text-[9px] font-black text-oro/40 uppercase tracking-widest">{notifications.length} Pendientes</span>
           </div>
 
           <div className="max-h-[400px] overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="p-12 text-center">
-                <Bell className="w-12 h-12 text-zinc-800 mx-auto mb-4 opacity-20" />
-                <p className="text-zinc-600 text-xs font-bold uppercase tracking-widest italic">Todo en orden, ninja</p>
+                <Bell className="w-12 h-12 text-oro/10 mx-auto mb-4" />
+                <p className="text-oro/40 text-[10px] font-black uppercase tracking-[0.2em] italic">Todo en orden, ninja</p>
               </div>
             ) : (
-              <div className="divide-y divide-zinc-900">
+              <div className="divide-y divide-oro/5">
                 {notifications.map((n) => {
                   const rewards = RewardLogic.calculateReward(n.registro, activeCharacter.id);
                   return (
-                    <div key={n.registro_id} className="p-4 hover:bg-white/5 transition-colors group">
-                      <div className="flex flex-col gap-3">
+                    <div key={n.registro_id} className="p-5 hover:bg-rojo-sangre/5 transition-colors group">
+                      <div className="flex flex-col gap-4">
                         <div className="flex justify-between items-start">
                           <div>
-                            <span className="text-[8px] font-black uppercase px-2 py-0.5 bg-zinc-800 text-zinc-400 rounded-md mb-1 inline-block tracking-tighter">
+                            <span className="text-[8px] font-black uppercase px-2 py-0.5 bg-rojo-sangre text-oro/80 mb-1 inline-block tracking-widest">
                               {n.registro.tipo}
                             </span>
-                            <h4 className="text-xs font-bold text-white line-clamp-1">
+                            <h4 className="text-xs font-bold text-oro line-clamp-1">
                               {n.registro.autor?.nombre_ninja} puso un registro
                             </h4>
                             {n.registro.tipo !== 'combate' && (
-                              <span className="text-[10px] text-zinc-500 font-medium line-clamp-1 italic">
+                              <span className="text-[10px] text-oro/40 font-medium line-clamp-1 italic">
                                 "{n.registro.data?.titulo || 'Sin título'}"
                               </span>
                             )}
                           </div>
                           <div className="text-right">
-                            {rewards.xp > 0 && <span className="text-[10px] font-black text-emerald-500 block">+{rewards.xp} EXP</span>}
-                            {rewards.ryous > 0 && <span className="text-[10px] font-black text-amber-500 block">+{rewards.ryous} Ryos</span>}
+                            {rewards.xp > 0 && <span className="text-[10px] font-black text-oro block">+{rewards.xp} EXP</span>}
+                            {rewards.ryous > 0 && <span className="text-[10px] font-black text-oro/60 block">+{rewards.ryous} Ryos</span>}
                           </div>
                         </div>
 
                         {rejectingId === n.registro_id ? (
                           <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2">
                             <textarea 
-                              placeholder="¿Por qué rechazas este registro? (Obligatorio)"
+                              placeholder="¿Por qué rechazas este registro?"
                               value={comment}
                               onChange={(e) => setComment(e.target.value)}
-                              className="w-full bg-black border border-zinc-800 rounded-xl p-3 text-[10px] text-white focus:border-red-500 outline-none min-h-[60px] placeholder:text-zinc-700"
+                              className="w-full bg-black border border-oro/10 p-3 text-[10px] text-oro focus:border-rojo-sangre outline-none min-h-[60px] placeholder:text-oro/20"
                             />
                             <div className="flex gap-2">
                               <button 
                                 onClick={() => handleAction(n.registro_id, 'rechazar')}
                                 disabled={!comment.trim() || loading}
-                                className="flex-1 py-2 bg-red-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-500 transition-all disabled:opacity-50"
+                                className="flex-1 py-2 bg-rojo-sangre text-oro text-[10px] font-black uppercase tracking-widest hover:brightness-125 transition-all disabled:opacity-50"
                               >
                                 Enviar Disputa
                               </button>
                               <button 
                                 onClick={() => setRejectingId(null)}
-                                className="p-2 bg-zinc-800 text-zinc-400 rounded-lg hover:text-white"
+                                className="p-2 bg-oro/10 text-oro/40 hover:text-oro"
                               >
                                 <X className="w-4 h-4" />
                               </button>
@@ -183,19 +184,19 @@ export default function NotificationBell() {
                             <button 
                               onClick={() => handleAction(n.registro_id, 'aceptar')}
                               disabled={loading}
-                              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-emerald-600/10 text-emerald-500 border border-emerald-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all active:scale-95"
+                              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-oro text-rojo-sangre text-[10px] font-black uppercase tracking-widest hover:brightness-125 transition-all active:scale-95 shadow-[0_0_10px_rgba(255,230,159,0.1)]"
                             >
                               <Check className="w-3 h-3" /> Aceptar
                             </button>
                             <button 
                               onClick={() => setRejectingId(n.registro_id)}
-                              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-red-600/10 text-red-500 border border-red-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all active:scale-95"
+                              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-rojo-sangre/20 text-rojo-sangre border border-rojo-sangre/20 text-[10px] font-black uppercase tracking-widest hover:bg-rojo-sangre hover:text-oro transition-all active:scale-95"
                             >
                               <X className="w-3 h-3" /> Rechazar
                             </button>
                             <button 
                               onClick={() => setSelectedRegistro(n.registro)}
-                              className="p-2.5 bg-zinc-800 text-zinc-400 rounded-xl hover:text-white transition-all border border-zinc-800 hover:border-zinc-700"
+                              className="p-2.5 bg-oro/5 text-oro/40 hover:text-oro transition-all border border-oro/10 hover:border-oro/30"
                               title="Ver Registro Completo"
                             >
                               <Eye className="w-4 h-4" />
@@ -210,10 +211,10 @@ export default function NotificationBell() {
             )}
           </div>
           
-          <div className="p-4 bg-zinc-900/30 border-t border-zinc-800 text-center">
+          <div className="p-4 bg-black/60 border-t border-oro/10 text-center">
             <button 
               onClick={() => setIsOpen(false)}
-              className="text-[10px] font-black text-zinc-500 hover:text-white uppercase tracking-[0.2em]"
+              className="text-[9px] font-black text-oro/40 hover:text-oro uppercase tracking-[0.3em]"
             >
               Cerrar Panel
             </button>
@@ -228,15 +229,15 @@ export default function NotificationBell() {
             className="fixed inset-0 bg-black/90 backdrop-blur-xl transition-all duration-500" 
             onClick={() => setSelectedRegistro(null)} 
           />
-          <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col bg-zinc-950 border border-zinc-800 rounded-[3rem] shadow-[0_0_80px_-15px_rgba(0,0,0,0.8)] animate-in zoom-in slide-in-from-bottom-8 duration-500 overflow-hidden">
-            <div className="flex-none p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-950/50 backdrop-blur-md">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                <h3 className="text-white font-black uppercase tracking-[0.3em] text-[10px]">Detalle de Inspección</h3>
+          <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col bg-black/90 ninja-box ninja-border shadow-[0_0_80px_rgba(0,0,0,0.8)] animate-in zoom-in slide-in-from-bottom-8 duration-500 overflow-hidden">
+            <div className="flex-none p-6 border-b border-oro/10 flex justify-between items-center bg-rojo-sangre/10 backdrop-blur-md">
+              <div className="flex items-center gap-4">
+                <div className="w-2 h-2 bg-rojo-sangre rotate-45" />
+                <h3 className="text-oro font-black uppercase tracking-[0.3em] text-[11px]">Inspección Ninja</h3>
               </div>
               <button 
                 onClick={() => setSelectedRegistro(null)}
-                className="p-3 bg-zinc-900 text-zinc-500 rounded-2xl hover:text-white hover:bg-zinc-800 transition-all active:scale-90"
+                className="p-3 bg-oro/5 text-oro/40 hover:text-oro hover:bg-oro/10 transition-all active:scale-90"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -248,29 +249,29 @@ export default function NotificationBell() {
             </div>
 
             {/* Acciones en el Modal */}
-            <div className="flex-none p-6 bg-zinc-900/50 border-t border-zinc-800 backdrop-blur-md">
+            <div className="flex-none p-6 bg-rojo-sangre/5 border-t border-oro/10 backdrop-blur-md">
               {rejectingId === selectedRegistro.id ? (
                 <div className="space-y-4 animate-in slide-in-from-bottom-4">
                   <textarea 
-                    placeholder="¿Por qué rechazas este registro? (Motivo obligatorio para administración)"
+                    placeholder="Motivo del rechazo..."
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                    className="w-full bg-black border border-zinc-800 rounded-2xl p-4 text-xs text-white focus:border-red-500 outline-none min-h-[100px] placeholder:text-zinc-700 transition-all shadow-inner"
+                    className="w-full bg-black border border-oro/10 p-5 text-xs text-oro focus:border-rojo-sangre outline-none min-h-[120px] placeholder:text-oro/20 transition-all"
                   />
-                  <div className="flex gap-3">
+                  <div className="flex gap-4">
                     <button 
                       onClick={async () => {
                         await handleAction(selectedRegistro.id, 'rechazar');
                         setSelectedRegistro(null);
                       }}
                       disabled={!comment.trim() || loading}
-                      className="flex-1 py-4 bg-red-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-red-500 transition-all disabled:opacity-50 shadow-xl shadow-red-900/20"
+                      className="flex-1 py-4 bg-rojo-sangre text-oro font-black uppercase tracking-widest hover:brightness-125 transition-all disabled:opacity-50"
                     >
-                      Confirmar Rechazo y Enviar a Admin
+                      Confirmar Rechazo
                     </button>
                     <button 
                       onClick={() => setRejectingId(null)}
-                      className="px-6 py-4 bg-zinc-800 text-zinc-400 rounded-2xl hover:text-white transition-all font-bold text-xs uppercase"
+                      className="px-8 py-4 bg-oro/5 text-oro/40 hover:text-oro transition-all font-black text-[10px] uppercase tracking-widest"
                     >
                       Cancelar
                     </button>
@@ -284,15 +285,15 @@ export default function NotificationBell() {
                       setSelectedRegistro(null);
                     }}
                     disabled={loading}
-                    className="flex-1 flex items-center justify-center gap-3 py-5 bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:bg-emerald-500 transition-all active:scale-95 shadow-xl shadow-emerald-900/20"
+                    className="flex-1 flex items-center justify-center gap-4 py-5 bg-oro text-rojo-sangre text-xs font-black uppercase tracking-[0.2em] hover:brightness-110 transition-all active:scale-95 shadow-xl shadow-oro/5"
                   >
-                    <Check className="w-5 h-5" /> Aceptar Registro y Recompensas
+                    <Check className="w-5 h-5" /> Aceptar Registro
                   </button>
                   <button 
                     onClick={() => setRejectingId(selectedRegistro.id)}
-                    className="flex-1 flex items-center justify-center gap-3 py-5 bg-red-600/10 text-red-500 border border-red-500/20 rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:bg-red-600 hover:text-white transition-all active:scale-95 shadow-xl shadow-red-900/10"
+                    className="flex-1 flex items-center justify-center gap-4 py-5 bg-rojo-sangre/20 text-rojo-sangre border border-rojo-sangre/20 text-xs font-black uppercase tracking-[0.2em] hover:bg-rojo-sangre hover:text-oro transition-all active:scale-95"
                   >
-                    <X className="w-5 h-5" /> Rechazar / Disputa
+                    <X className="w-5 h-5" /> Iniciar Disputa
                   </button>
                 </div>
               )}

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AdminNotificationBadge() {
@@ -47,15 +46,18 @@ export default function AdminNotificationBadge() {
   return (
     <Link 
       href="/admin" 
-      className="relative flex items-center gap-2 px-4 py-2 bg-orange-500/10 text-orange-500 border border-orange-500/20 rounded-xl text-xs font-black hover:bg-orange-500 hover:text-white transition-all group"
+      className="relative flex items-center gap-3 px-6 py-2.5 bg-rojo-sangre/20 text-oro border border-oro/20 hover:bg-rojo-sangre hover:border-oro/40 transition-all group font-black text-[10px] uppercase tracking-widest"
+      style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
     >
-      <ShieldAlert className="w-4 h-4" />
+      <div className="w-1.5 h-1.5 bg-oro rotate-45 group-hover:scale-125 transition-transform" />
       ADMIN PANEL
       {count > 0 && (
-        <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-600 text-white text-[10px] font-black flex items-center justify-center rounded-full border-2 border-zinc-950 animate-bounce shadow-lg shadow-red-900/40">
+        <span className="absolute -top-2 -right-2 w-5 h-5 bg-rojo-sangre text-oro text-[10px] font-black flex items-center justify-center border border-oro/40 animate-bounce">
           {count}
         </span>
       )}
     </Link>
   );
 }
+
+

@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronLeft, Zap, Shield, Sword, ChevronRight } from 'lucide-react';
+import { GitBranch, ScrollText, Swords, ChevronRight } from 'lucide-react';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 
 export default async function RamaDetailPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -11,89 +11,96 @@ export default async function RamaDetailPage({ params }: { params: Promise<{ slu
   const rama = await MasterServerService.getRamaBySlug(supabase, slug);
   if (!rama) return notFound();
 
-  // Determinar URL de retorno dinámica
   const backUrl = rama.tipo === 'clan' && rama.aldeas?.slug
     ? `/aldeas/${rama.aldeas.slug}`
     : '/ramas';
 
   const backText = rama.tipo === 'clan' && rama.aldeas?.abreviatura
     ? `Volver a ${rama.aldeas.abreviatura}`
-    : 'Volver a ramas';
+    : 'Volver a Ramas';
 
   const [subEspecialidades, documentos] = await Promise.all([
     MasterServerService.getSubEspecialidadesByRama(supabase, rama.id),
     MasterServerService.getDocumentosCombateByRama(supabase, rama.id),
   ]);
 
-  const tieneSubEspecialidades = subEspecialidades.length > 0;
-
   return (
-    <div className="min-h-screen bg-black pt-24 pb-20 px-4">
-      <div className="max-w-6xl mx-auto">
-        <Link href={backUrl} className="inline-flex items-center gap-2 text-zinc-500 hover:text-white transition-colors mb-12 text-xs font-black uppercase tracking-widest group">
-          <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> {backText}
+    <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col">
+      <header className="w-full max-w-[1750px] mx-auto flex flex-col md:flex-row justify-between items-center gap-10 mb-10 ninja-card-oro p-8 xl:p-10 z-50">
+        <Link href={backUrl} className="flex items-center gap-4 text-oro hover:brightness-125 transition-all group font-black uppercase tracking-widest text-sm xl:text-lg">
+          <div className="w-2 xl:w-3 h-2 xl:h-3 bg-rojo-sangre rotate-45 group-hover:bg-oro transition-colors" />
+          {backText}
         </Link>
+        <div className="flex items-center gap-4">
+          <GitBranch className="w-5 xl:w-7 h-auto text-oro" />
+          <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
+            Archivo de <span className="text-oro/40">Especialidad</span>
+          </h1>
+        </div>
+      </header>
 
-        <header className="mb-16">
-          <div className="flex items-center gap-4 mb-6 text-blue-500">
-            <Zap className="w-8 h-8" />
-            <div className="h-[1px] w-20 bg-blue-500/30" />
-          </div>
-          <h1 className="text-6xl md:text-7xl font-black text-white tracking-tighter uppercase mb-4">{rama.nombre}</h1>
-          <p className="text-zinc-500 text-xl max-w-2xl italic leading-relaxed">
-            &quot;{rama.descripcion}&quot;
+      <main className="w-full max-w-[1750px] mx-auto flex-1">
+        <div className="mb-16 ninja-card-oro p-12 xl:p-16">
+          <h1 className="ninja-title text-6xl xl:text-9xl mb-6">{rama.nombre}</h1>
+          <p className="text-gris-texto text-xl xl:text-3xl italic leading-relaxed">
+            "{rama.descripcion}"
           </p>
-        </header>
+        </div>
 
-        {tieneSubEspecialidades && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-            {subEspecialidades.map((sub) => (
-              <Link
-                key={sub.id}
-                href={`/ramas/${slug}/${sub.slug}`}
-                className="group relative p-8 bg-zinc-900 border border-zinc-800 rounded-[2.5rem] hover:border-blue-500/50 transition-all overflow-hidden"
-              >
-                <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform">
-                  <Shield className="w-32 h-32 text-blue-500" />
-                </div>
-                <h3 className="text-3xl font-black text-white mb-2 uppercase tracking-tighter relative z-10">{sub.nombre}</h3>
-                <p className="text-zinc-500 text-xs line-clamp-2 mb-6 relative z-10">{sub.nombre_español || sub.descripcion}</p>
-                <div className="flex items-center gap-2 text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] relative z-10">
-                  Explorar especialidad <ChevronRight className="w-4 h-4" />
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-
-        {documentos.length > 0 && (
-          <div className="space-y-4">
-            {tieneSubEspecialidades && (
-              <h3 className="text-sm font-black text-zinc-700 uppercase tracking-[0.3em] mb-6">Documentos Generales</h3>
-            )}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {documentos.map((doc) => (
+        {subEspecialidades.length > 0 && (
+          <div className="mb-20">
+            <h2 className="ninja-title text-4xl xl:text-6xl mb-10">Sub-Especialidades</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 xl:gap-16">
+              {subEspecialidades.map((sub) => (
                 <Link
-                  key={doc.id}
-                  href={`/docs/${doc.clave}`}
-                  className="group flex items-center justify-between p-6 bg-zinc-900/50 border border-zinc-800 rounded-3xl hover:border-blue-500/50 transition-all shadow-xl"
+                  key={sub.id}
+                  href={`/ramas/${slug}/${sub.slug}`}
+                  className="group relative overflow-hidden ninja-card-oro p-10 xl:p-16 hover-ninja flex flex-col justify-between min-h-[350px]"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 group-hover:bg-blue-500 transition-colors">
-                      <Sword className="w-5 h-5 text-blue-500 group-hover:text-white" />
-                    </div>
-                    <div>
-                      <h4 className="text-white font-bold uppercase tracking-tight group-hover:text-blue-500 transition-colors">{doc.titulo}</h4>
-                      <p className="text-zinc-500 text-xs line-clamp-1">{doc.descripcion}</p>
-                    </div>
+                  <div className="relative z-10">
+                    <h3 className="ninja-title text-3xl xl:text-5xl group-hover:text-oro transition-all mb-6">{sub.nombre}</h3>
+                    <p className="text-gris-texto/80 text-lg xl:text-xl italic leading-relaxed line-clamp-4">
+                      {sub.nombre_español || sub.descripcion}
+                    </p>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-zinc-700 group-hover:text-blue-500 transition-colors" />
+                  <div className="flex items-center gap-4 text-oro font-black uppercase tracking-[0.2em] text-xs xl:text-base group-hover:brightness-125 transition-all relative z-10">
+                    <span>Ver Doctrina</span>
+                    <div className="w-1.5 h-1.5 bg-oro rotate-45 group-hover:translate-x-2 transition-transform" />
+                  </div>
                 </Link>
               ))}
             </div>
           </div>
         )}
-      </div>
+
+        {documentos.length > 0 && (
+          <div className="mb-16">
+            <h2 className="ninja-title text-4xl xl:text-6xl mb-10">Archivos Doctrinales</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 xl:gap-12">
+              {documentos.map((doc) => (
+                <Link
+                  key={doc.id}
+                  href={`/docs/${doc.clave}`}
+                  className="group flex items-center justify-between p-10 ninja-card-oro hover-ninja transition-all relative overflow-hidden"
+                >
+                  <div className="flex items-center gap-8 relative z-10">
+                    <div className="w-16 h-16 bg-oro/5 border border-oro/10 flex items-center justify-center group-hover:bg-oro transition-all duration-500 ninja-clip-md">
+                      <ScrollText className="w-8 h-8 text-oro group-hover:text-rojo-sangre" />
+                    </div>
+                    <div>
+                      <h4 className="ninja-title text-3xl xl:text-4xl group-hover:text-oro transition-colors italic leading-none mb-2">{doc.titulo}</h4>
+                      <p className="text-oro/40 text-[10px] uppercase font-black tracking-widest">{doc.descripcion || 'Pergamino Técnico'}</p>
+                    </div>
+                  </div>
+                  <div className="w-10 h-10 flex items-center justify-center border border-oro/20 text-oro group-hover:bg-oro group-hover:text-rojo-sangre transition-all">
+                     <ChevronRight className="w-6 h-6" />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 }

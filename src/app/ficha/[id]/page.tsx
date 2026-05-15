@@ -34,8 +34,11 @@ export default function FichaPublicPage() {
 
   if (loading || !character) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <RefreshCw className="w-12 h-12 text-orange-500 animate-spin" />
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-8">
+        <div className="w-16 h-16 border-4 border-oro/10 border-t-oro rounded-full animate-spin mb-8" />
+        <h2 className="text-oro font-black uppercase tracking-[0.4em] text-xs xl:text-sm animate-pulse text-center">
+          INVOCANDO EXPEDIENTE <span className="text-oro/40 italic">NINJA</span>...
+        </h2>
       </div>
     );
   }

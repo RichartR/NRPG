@@ -28,41 +28,45 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida" }: DocVi
   const topOffset = 20;
 
   return (
-    <div className="min-h-screen flex flex-col overflow-hidden bg-[#050505]">
-      <header className="h-20 flex items-center justify-between px-8 shrink-0 z-50 bg-[#0a0a0a] border-b border-white/5 shadow-2xl">
-        <div className="flex items-center gap-6">
+    <div className="min-h-screen flex flex-col overflow-hidden">
+      <header className="h-24 xl:h-32 flex items-center justify-between px-8 xl:px-16 shrink-0 z-50 bg-black/60 border-b border-oro/10 backdrop-blur-md">
+        <div className="flex items-center gap-8 xl:gap-12">
           <Link 
             href={backUrl}
-            className="flex items-center gap-3 px-5 py-2.5 rounded-xl font-bold text-[11px] uppercase tracking-[0.15em] transition-all active:scale-95 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white"
+            className="flex items-center gap-4 px-6 py-3 font-black text-xs xl:text-base uppercase tracking-[0.2em] transition-all active:scale-95 text-oro hover:brightness-125 group"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <div className="w-2 xl:w-3 h-2 xl:h-3 bg-rojo-sangre rotate-45 group-hover:bg-oro transition-colors" />
             <span>VOLVER</span>
           </Link>
-          <div className="h-8 w-px bg-white/10 mx-2 hidden md:block" />
-          <h1 className="text-xl font-black tracking-tighter uppercase text-white">
+          <div className="h-10 w-px bg-oro/10 mx-2 hidden md:block" />
+          <h1 className="text-xl xl:text-3xl font-black tracking-widest uppercase text-oro font-ninja">
             {title}
           </h1>
         </div>
 
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-1 p-1 rounded-2xl border bg-black/40 border-white/10 shadow-inner">
-            <button onClick={handleZoomOut} className="p-2 hover:bg-white/10 rounded-xl transition-all text-zinc-500 hover:text-white">
-              <ZoomOut className="w-4 h-4" />
+        <div className="flex items-center gap-8 xl:gap-12">
+          <div className="flex items-center gap-3 p-2 bg-black/40 border border-oro/10 ninja-box shadow-inner">
+            <button onClick={handleZoomOut} className="p-3 hover:bg-rojo-sangre/20 transition-all text-oro/60 hover:text-oro">
+              <div className="w-3 h-0.5 bg-current" />
             </button>
-            <div className="text-[10px] font-black w-12 text-center select-none text-zinc-400">
+            <div className="text-[10px] xl:text-xs font-black w-14 text-center select-none text-oro">
               {Math.round(zoom * 100)}%
             </div>
-            <button onClick={handleZoomIn} className="text-zinc-500 hover:text-white transition-all">
-              <ZoomIn className="w-4 h-4" />
+            <button onClick={handleZoomIn} className="p-3 hover:bg-rojo-sangre/20 transition-all text-oro/60 hover:text-oro">
+              <div className="relative w-3 h-3 flex items-center justify-center">
+                <div className="absolute w-3 h-0.5 bg-current" />
+                <div className="absolute w-0.5 h-3 bg-current" />
+              </div>
             </button>
           </div>
 
           <a 
             href={downloadUrl} 
             download 
-            className="flex items-center gap-3 px-8 py-3.5 bg-[#f34e07] hover:bg-[#ff6221] text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-lg shadow-orange-950/20 active:scale-95"
+            className="flex items-center gap-4 px-10 py-4 bg-oro text-rojo-sangre font-black text-xs xl:text-sm uppercase tracking-[0.2em] transition-all shadow-[0_0_20px_rgba(255,230,159,0.2)] active:scale-95 hover:brightness-110"
+            style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
           >
-            <Download className="w-4 h-4" /> DESCARGAR PDF
+            DESCARGAR PDF
           </a>
         </div>
       </header>
@@ -70,7 +74,7 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida" }: DocVi
       {/* Visor de Documento - Zoom por Escala (Magnificación Real) */}
       <main className="flex-1 overflow-auto custom-scrollbar bg-transparent">
         <div 
-          className="py-12 flex flex-col items-center min-h-full"
+          className="py-12 xl:py-20 flex flex-col items-center min-h-full"
           style={{ 
             width: '100%',
             transform: `scale(${zoom})`,
@@ -78,12 +82,11 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida" }: DocVi
           }}
         >
           <div 
-            className="bg-white shadow-[0_0_100px_rgba(0,0,0,0.6)] overflow-hidden relative"
+            className="bg-white shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden relative"
             style={{ 
               width: `${baseWidth}px`, 
               height: `${baseHeight}px`,
               maxWidth: '98vw',
-              // Propiedades para mantener nitidez
               backfaceVisibility: 'hidden',
               transform: 'translateZ(0)',
               WebkitFontSmoothing: 'antialiased'
@@ -108,13 +111,13 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida" }: DocVi
               </div>
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center py-60">
-                <Loader2 className="w-12 h-12 animate-spin text-[#f34e07]" />
+                <div className="w-12 h-12 border-4 border-oro border-t-transparent animate-spin" />
               </div>
             )}
             
             {loading && (
                <div className="absolute inset-0 bg-[#050505] flex items-center justify-center z-10">
-                  <Loader2 className="w-12 h-12 animate-spin text-[#f34e07]" />
+                  <div className="w-12 h-12 border-4 border-oro border-t-transparent animate-spin" />
                </div>
             )}
           </div>
@@ -123,20 +126,20 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida" }: DocVi
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {
-          width: 10px;
+          width: 12px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
+          background: rgba(0,0,0,0.2);
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #333;
-          border-radius: 10px;
-          border: 2px solid #050505;
+          background: #CBA24B;
+          border: 4px solid #000;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #444;
+          background: #EED195;
         }
       `}</style>
     </div>
+
   );
 }

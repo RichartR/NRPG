@@ -5,8 +5,7 @@ import { RegistrosService } from '@/services/supabase/registros.service';
 import { Registro, MisionMaster } from '@/domain/types';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { useToastStore } from '@/components/ui/Toast';
-import { DataField, SelectField } from '@/components/ui/Fields';
-import { ScrollText, Plus, X, Link as LinkIcon, Search, UserPlus, User, Zap } from 'lucide-react';
+import { Plus, X, Link as LinkIcon, Search, UserPlus, User } from 'lucide-react';
 
 type FormType = 'mision' | 'accion';
 
@@ -105,7 +104,11 @@ export default function MissionForm({
       autor_id: activeCharacter.id,
       participantes_ids: [activeCharacter.id, ...participants.map(p => p.id)],
       data: {
-        urls_imagenes: validImages
+        urls_imagenes: validImages,
+        participantes_historicos: [
+          { id: activeCharacter.id, nombre_ninja: activeCharacter.nombre_ninja },
+          ...participants.map(p => ({ id: p.id, nombre_ninja: p.nombre_ninja }))
+        ]
       }
     };
 
@@ -147,152 +150,176 @@ export default function MissionForm({
     }
   };
 
-  const iconColor = formType === 'mision' ? 'bg-orange-500/10 border-orange-500/20 text-orange-500' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500';
-  const buttonColor = formType === 'mision' ? 'bg-orange-600 hover:bg-orange-500 shadow-orange-500/20' : 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/20';
-
   return (
-    <div className="bg-zinc-900/50 border border-zinc-800 rounded-[2.5rem] p-8 space-y-8 backdrop-blur-xl">
-      <div className="flex items-center gap-4 mb-2">
-        <div className={`p-3 rounded-2xl border ${iconColor}`}>
-          {formType === 'mision' ? <ScrollText className="w-6 h-6" /> : <Zap className="w-6 h-6" />}
+    <div className="w-full animate-in fade-in slide-in-from-top-4 duration-700">
+      <div className="ninja-card-oro p-8 sm:p-12 xl:p-20 relative overflow-hidden">
+        {/* Background Decorative Element */}
+        <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none">
+          <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-64 h-64 rotate-12" alt="bg" />
         </div>
-        <div>
-          <h3 className="text-xl font-black text-white uppercase italic tracking-tighter leading-none">
-            {formType === 'mision' ? 'Nueva Misión' : 'Nueva Acción'}
-          </h3>
-          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-1">Registra tu actividad shinobi</p>
-        </div>
-      </div>
 
-      {formType === 'mision' ? (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <SelectField label="Rango" value={rango} options={['D', 'C', 'B', 'A', 'S']} onChange={setRango} />
-            <SelectField 
-              label="Misión" 
-              value={selectedMision} 
-              options={misiones.map(m => ({ label: `${m.codigo_mision} (+${m.exp} XP)`, value: m.codigo_mision }))} 
-              onChange={setSelectedMision}
-              placeholder="Seleccionar..."
-              disabled={misiones.length === 0}
-            />
+        <div className="relative z-10 space-y-12 sm:space-y-16">
+          {/* Header del Formulario (Ahora integrado) */}
+          <div className="flex justify-between items-start border-b border-oro/10 pb-10">
+            <div className="space-y-2">
+              <h3 className="ninja-title text-4xl sm:text-6xl text-oro">
+                {initialData ? 'EDITAR REGISTRO' : (formType === 'mision' ? 'REGISTRAR MISIÓN' : 'REGISTRAR ACCIÓN')}
+              </h3>
+              <p className="text-xs sm:text-sm font-black text-oro/40 uppercase tracking-[0.4em]">Sincronizando con el archivo histórico shinobi</p>
+            </div>
+            <button 
+              onClick={() => onCreated()} 
+              className="group p-4 bg-black/40 border border-oro/10 hover:border-oro/40 transition-all ninja-clip-xs"
+            >
+              <X className="w-8 h-8 text-oro/40 group-hover:text-oro" />
+            </button>
           </div>
 
-          {selectedMision && misiones.find(m => m.codigo_mision === selectedMision) && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in zoom-in duration-300">
-              {misiones.find(m => m.codigo_mision === selectedMision)?.imagen_frontal && (
-                <div className="space-y-2">
-                  <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest ml-2">Vista Frontal</span>
-                  <div className="aspect-video rounded-3xl overflow-hidden border border-zinc-800 bg-zinc-950">
-                    <img 
-                      src={misiones.find(m => m.codigo_mision === selectedMision)?.imagen_frontal} 
-                      alt="Frontal" 
-                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-500" 
-                    />
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-12 sm:gap-20">
+            <div className="space-y-10 sm:space-y-14">
+              {formType === 'mision' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12">
+                  <div className="space-y-4">
+                    <label className="text-xs font-black uppercase tracking-[0.3em] text-oro/40 ml-2">Rango del Pergamino</label>
+                    <select 
+                      value={rango} 
+                      onChange={(e) => setRango(e.target.value)}
+                      className="w-full ninja-input py-5"
+                    >
+                      {['D', 'C', 'B', 'A', 'S'].map(r => (
+                        <option key={r} value={r} className="bg-zinc-950 text-oro">RANGO {r}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-4">
+                    <label className="text-xs font-black uppercase tracking-[0.3em] text-oro/40 ml-2">Misión Seleccionada</label>
+                    <select 
+                      value={selectedMision} 
+                      onChange={(e) => setSelectedMision(e.target.value)}
+                      className="w-full ninja-input py-5"
+                      disabled={misiones.length === 0}
+                    >
+                      <option value="" className="bg-zinc-950 text-oro/40">SELECCIONAR...</option>
+                      {misiones.map(m => (
+                        <option key={m.codigo_mision} value={m.codigo_mision} className="bg-zinc-950 text-oro">
+                          {m.codigo_mision} (+{m.exp} XP)
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
-              )}
-              {misiones.find(m => m.codigo_mision === selectedMision)?.imagen_trasera && (
-                <div className="space-y-2">
-                  <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest ml-2">Vista Trasera</span>
-                  <div className="aspect-video rounded-3xl overflow-hidden border border-zinc-800 bg-zinc-950">
-                    <img 
-                      src={misiones.find(m => m.codigo_mision === selectedMision)?.imagen_trasera} 
-                      alt="Trasera" 
-                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-500" 
-                    />
-                  </div>
+              ) : (
+                <div className="space-y-4">
+                  <label className="text-xs font-black uppercase tracking-[0.3em] text-oro/40 ml-2">Título de la Crónica</label>
+                  <input 
+                    type="text"
+                    value={titulo} 
+                    onChange={(e) => setTitulo(e.target.value)} 
+                    placeholder="Describe tu acción..." 
+                    className="w-full ninja-input py-5"
+                  />
                 </div>
               )}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-6">
-          <DataField label="Título del Registro" value={titulo} onChange={setTitulo} placeholder="Ej: Entrenamiento con mi equipo..." />
-        </div>
-      )}
 
-      {/* Participantes */}
-      <div className="space-y-4">
-        <div className="relative">
-          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1 block mb-2">Participantes</label>
-          <div className="relative">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
-            <input 
-              type="text"
-              value={participantSearch}
-              onChange={(e) => handleSearchParticipants(e.target.value)}
-              placeholder="Buscar ninja..."
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-14 pr-6 py-4 text-white font-bold outline-none focus:border-zinc-700 transition-all placeholder:text-zinc-800"
-            />
-          </div>
-          
-          {searchResults.length > 0 && (
-            <div className="absolute z-10 w-full mt-2 bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
-              {searchResults.map(p => (
-                <button key={p.id} onClick={() => addParticipant(p)} className="w-full px-6 py-4 text-left text-sm text-zinc-400 hover:bg-zinc-800 hover:text-white flex items-center gap-3 transition-all border-b border-zinc-800/50 last:border-0">
-                  <UserPlus className="w-4 h-4" /> {p.nombre_ninja}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+              {/* Participantes */}
+              <div className="space-y-8">
+                <div className="space-y-4">
+                  <label className="text-xs font-black uppercase tracking-[0.3em] text-oro/40 ml-2">Participantes Involucrados</label>
+                  <div className="relative">
+                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-oro/20" />
+                    <input 
+                      type="text"
+                      value={participantSearch}
+                      onChange={(e) => handleSearchParticipants(e.target.value)}
+                      placeholder="BUSCAR NINJA POR NOMBRE..."
+                      className="w-full ninja-input pl-16 py-5"
+                    />
+                  </div>
+                  
+                  {searchResults.length > 0 && (
+                    <div className="absolute z-50 w-full mt-2 bg-black border border-oro/20 shadow-[0_10px_30px_rgba(0,0,0,0.8)] animate-in fade-in zoom-in duration-200">
+                      {searchResults.map(p => (
+                        <button 
+                          key={p.id} 
+                          onClick={() => addParticipant(p)} 
+                          className="w-full px-8 py-6 text-left text-xs font-black text-oro/60 hover:bg-oro/10 hover:text-oro flex items-center gap-4 transition-all border-b border-oro/5 last:border-0 uppercase tracking-widest"
+                        >
+                          <UserPlus className="w-5 h-5" /> {p.nombre_ninja}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-        <div className="flex flex-wrap gap-2">
-          <div className="px-4 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-xl text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
-            <User className="w-3 h-3" /> {activeCharacter?.nombre_ninja} (Tú)
-          </div>
-          {participants.map(p => (
-            <div key={p.id} className="px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-xl text-[10px] font-black text-zinc-300 uppercase tracking-widest flex items-center gap-2 group">
-              <User className="w-3 h-3" /> {p.nombre_ninja}
-              <button onClick={() => removeParticipant(p.id)} className="hover:text-red-500 transition-colors">
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Imágenes */}
-      <div className="space-y-4">
-        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1 block mb-2">Pruebas (Imgur)</label>
-        <div className="space-y-3">
-          {images.map((img, i) => (
-            <div key={i} className="flex gap-2">
-              <div className="relative flex-1">
-                <LinkIcon className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-800" />
-                <input 
-                  value={img}
-                  onChange={(e) => {
-                    const newImgs = [...images];
-                    newImgs[i] = e.target.value;
-                    setImages(newImgs);
-                  }}
-                  placeholder="https://imgur.com/..."
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-14 pr-6 py-4 text-white text-xs outline-none focus:border-zinc-700 transition-all placeholder:text-zinc-800"
-                />
+                <div className="flex flex-wrap gap-4">
+                  <div className="px-6 py-4 bg-oro/10 border border-oro/20 text-xs font-black text-oro/60 uppercase tracking-widest flex items-center gap-4 ninja-clip-xs">
+                    <User className="w-4 h-4" /> {activeCharacter?.nombre_ninja} (AUTOR)
+                  </div>
+                  {participants.map(p => (
+                    <div key={p.id} className="px-6 py-4 bg-black/60 border border-oro/10 text-xs font-black text-oro uppercase tracking-widest flex items-center gap-4 ninja-clip-xs group animate-in fade-in slide-in-from-left-2">
+                      <User className="w-4 h-4" /> {p.nombre_ninja}
+                      <button onClick={() => removeParticipant(p.id)} className="text-rojo-sangre/40 hover:text-rojo-sangre transition-all">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
-              {images.length > 1 && (
-                <button onClick={() => setImages(images.filter((_, idx) => idx !== i))} className="p-4 text-zinc-600 hover:text-red-500 transition-colors">
-                  <X className="w-5 h-5" />
-                </button>
-              )}
             </div>
-          ))}
-          <button onClick={() => setImages([...images, ''])} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:text-white transition-colors ml-1">
-            <Plus className="w-3 h-3" /> Añadir otro link
-          </button>
+
+            <div className="space-y-10 sm:space-y-14">
+              {/* Imágenes */}
+              <div className="space-y-8">
+                <label className="text-xs font-black uppercase tracking-[0.3em] text-oro/40 ml-2">Pruebas del Pergamino (URLs)</label>
+                <div className="space-y-6">
+                  {images.map((img, i) => (
+                    <div key={i} className="flex gap-4 group">
+                      <div className="relative flex-1">
+                        <LinkIcon className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-oro/20" />
+                        <input 
+                          value={img}
+                          onChange={(e) => {
+                            const newImgs = [...images];
+                            newImgs[i] = e.target.value;
+                            setImages(newImgs);
+                          }}
+                          placeholder="HTTPS://..."
+                          className="w-full ninja-input pl-16 py-5 text-xs font-bold"
+                        />
+                      </div>
+                      {images.length > 1 && (
+                        <button 
+                          onClick={() => setImages(images.filter((_, idx) => idx !== i))} 
+                          className="p-4 text-oro/20 hover:text-rojo-sangre transition-all"
+                        >
+                          <X className="w-6 h-6" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button 
+                    onClick={() => setImages([...images, ''])} 
+                    className="flex items-center gap-4 text-xs font-black uppercase tracking-[0.3em] text-oro/40 hover:text-oro transition-all ml-2 group"
+                  >
+                    <div className="w-6 h-[1px] bg-oro/20 group-hover:bg-oro transition-all" />
+                    AÑADIR OTRO REGISTRO VISUAL
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-10">
+                <button 
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className={`w-full py-8 sm:py-10 ninja-btn-oro text-xl sm:text-2xl ${loading ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                >
+                  {loading ? 'SELLANDO PERGAMINO...' : initialData ? 'ACTUALIZAR REGISTRO' : 'PUBLICAR EN EL ARCHIVO'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
-      <button 
-        onClick={handleSubmit}
-        disabled={loading}
-        className={`w-full py-5 text-black font-black uppercase tracking-[0.2em] rounded-[2rem] transition-all active:scale-95 disabled:opacity-50 shadow-xl ${buttonColor}`}
-      >
-        {loading ? 'Procesando...' : 'Publicar Registro'}
-      </button>
     </div>
   );
 }

@@ -25,71 +25,84 @@ export default async function MundoNinjaPublicVillagePage({ params }: { params: 
   const aldeaParam = !isRenegado ? `?aldea_id=${id}` : '';
 
   return (
-    <div className="min-h-screen bg-black pt-24 pb-20 px-4">
-      <div className="max-w-7xl mx-auto">
-        <header className="mb-12">
-          <Link href="/mundo-ninja" className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors mb-4 text-xs font-black uppercase tracking-widest group">
-            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Volver al Mundo Ninja
+    <div className="min-h-screen pt-24 pb-20 px-4">
+      <div className="max-w-[1750px] mx-auto w-full">
+        <header className={`mb-12 ${isRenegado ? 'ninja-card-rojo' : 'ninja-card-oro'} p-8 xl:p-12 relative overflow-hidden`}>
+          <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none">
+             <MapPin className="w-64 h-64 rotate-12" />
+          </div>
+
+          <Link href="/mundo-ninja" className="flex items-center gap-3 text-oro hover:brightness-125 transition-all group font-black uppercase tracking-widest text-[10px] sm:text-xs xl:text-sm mb-10 relative z-10">
+            <div className={`w-2 h-2 ${isRenegado ? 'bg-rojo-sangre' : 'bg-oro'} rotate-45 group-hover:bg-oro transition-colors`} />
+            <span>Volver al Mundo Ninja</span>
           </Link>
 
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="flex items-center gap-6">
-              <div className="w-20 h-20 rounded-3xl bg-zinc-900 border border-zinc-800 p-4 flex items-center justify-center shadow-xl">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10 relative z-10">
+            <div className="flex items-center gap-8">
+              <div className={`w-24 h-24 xl:w-32 xl:h-32 bg-black/40 border ${isRenegado ? 'border-rojo-sangre/20' : 'border-oro/20'} ninja-clip-md p-6 flex items-center justify-center shadow-2xl backdrop-blur-sm`}>
                 {!isRenegado && aldea?.url_icono ? (
-                  <img src={aldea.url_icono} alt="" className="w-full h-full object-contain" />
+                  <img src={aldea.url_icono} alt="" className="w-full h-full object-contain filter drop-shadow-[0_0_10px_rgba(255,215,0,0.3)]" />
                 ) : (
-                  <MapPin className={`w-8 h-8 ${isRenegado ? 'text-red-500' : 'text-emerald-500'}`} />
+                  <MapPin className={`w-12 h-12 ${isRenegado ? 'text-rojo-sangre' : 'text-oro'} drop-shadow-[0_0_15px_rgba(0,0,0,0.5)]`} />
                 )}
               </div>
               <div>
-                <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase italic">
-                  {isRenegado ? 'SIN ALDEA / RENEGADOS' : aldea?.nombre_completo}
+                <h1 className="ninja-title text-4xl xl:text-7xl mb-2">
+                  {isRenegado ? 'RENEGADOS' : aldea?.nombre_completo}
                 </h1>
-                <p className="text-zinc-500 text-sm font-medium uppercase tracking-widest">
-                  Shinobis Registrados • {ninjas.length}
-                </p>
+                <div className="flex items-center gap-4">
+                  <span className={`text-[10px] xl:text-xs font-black ${isRenegado ? 'text-rojo-sangre/60' : 'text-oro/60'} uppercase tracking-[0.3em]`}>
+                    SHINOBIS REGISTRADOS
+                  </span>
+                  <div className={`w-1 h-1 ${isRenegado ? 'bg-rojo-sangre/20' : 'bg-oro/20'} rotate-45`} />
+                  <span className="text-xl xl:text-2xl font-black text-oro italic leading-none">{ninjas.length}</span>
+                </div>
               </div>
             </div>
 
             {/* CTA de creación de ficha */}
-            {puedeCrearFicha ? (
-              <Link
-                href={`/crear-ficha${aldeaParam}`}
-                className="flex items-center justify-center gap-3 px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-black rounded-[2rem] font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-emerald-500/20 active:scale-95"
-              >
-                <UserPlus className="w-5 h-5" /> Crear mi Ficha
-              </Link>
-            ) : !user ? (
-              <Link
-                href="/login"
-                className="flex items-center justify-center gap-3 px-8 py-4 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700 hover:border-zinc-500 rounded-[2rem] font-black text-xs uppercase tracking-widest transition-all active:scale-95"
-              >
-                <LogIn className="w-5 h-5" /> Iniciar Sesión para unirte
-              </Link>
-            ) : (
-              // Tiene personaje activo — mostrar enlace a su ficha
-              <div className="flex items-center gap-3 px-8 py-4 bg-zinc-900/50 border border-zinc-800 rounded-[2rem] text-xs font-black uppercase tracking-widest text-zinc-500">
-                <User className="w-5 h-5" /> Ya tienes un personaje activo
-              </div>
-            )}
+            <div className="shrink-0">
+              {puedeCrearFicha ? (
+                <Link
+                  href={`/crear-ficha${aldeaParam}`}
+                  className={`flex items-center justify-center gap-4 px-10 py-5 ${isRenegado ? 'ninja-btn-rojo' : 'ninja-btn-oro'} text-xs xl:text-sm`}
+                >
+                  <UserPlus className="w-5 h-5" /> UNIRSE A ESTA SENDA
+                </Link>
+              ) : !user ? (
+                <Link
+                  href="/login"
+                  className="flex items-center justify-center gap-4 px-10 py-5 ninja-btn-ghost text-xs xl:text-sm"
+                >
+                  <LogIn className="w-5 h-5" /> INICIAR SESIÓN
+                </Link>
+              ) : (
+                <div className="flex items-center gap-4 px-10 py-5 bg-black/20 border border-oro/10 ninja-clip-sm text-[10px] xl:text-xs font-black uppercase tracking-widest text-oro/40 italic backdrop-blur-sm">
+                  <User className="w-5 h-5 opacity-20" /> Ya posees un personaje activo
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {ninjas.length > 0 ? (
             ninjas.map((ninja) => (
               <NinjaPublicCard key={ninja.id} ninja={ninja} variant={isRenegado ? 'renegado' : 'default'} />
             ))
           ) : (
-            <div className="col-span-full py-32 text-center bg-zinc-900/20 rounded-[3rem] border border-dashed border-zinc-800">
-              <User className="w-12 h-12 text-zinc-800 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-zinc-500 uppercase italic">Aún no hay ninjas registrados</h3>
+            <div className="col-span-full py-48 text-center ninja-card-oro opacity-50 flex flex-col items-center gap-8">
+              <User className="w-24 h-24 text-oro/10" />
+              <div className="space-y-2">
+                 <h3 className="text-xl xl:text-2xl font-black text-oro/40 uppercase tracking-[0.4em] italic leading-none">AÚN NO HAY SHINOBIS EN ESTA REGIÓN</h3>
+                 <p className="text-[10px] xl:text-xs font-black text-oro/20 uppercase tracking-[0.6em]">EL DESTINO AGUARDA A SU PRIMER HÉROE</p>
+              </div>
               {puedeCrearFicha && (
                 <Link
                   href={`/crear-ficha${aldeaParam}`}
-                  className="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-black rounded-2xl font-black text-xs uppercase tracking-widest transition-all"
+                  className="mt-6 px-10 py-5 ninja-btn-oro"
                 >
-                  <UserPlus className="w-4 h-4" /> Sé el primero
+                  <UserPlus className="w-5 h-5" /> INICIAR MI CAMINO
                 </Link>
               )}
             </div>
@@ -101,36 +114,45 @@ export default async function MundoNinjaPublicVillagePage({ params }: { params: 
 }
 
 function NinjaPublicCard({ ninja, variant = 'default' }: { ninja: any, variant?: 'default' | 'renegado' }) {
+  const isRenegado = variant === 'renegado';
   return (
     <Link
       href={`/ficha/${ninja.id}`}
-      className={`group relative bg-zinc-900/40 border ${variant === 'renegado' ? 'border-red-900/20 hover:border-red-500/30' : 'border-zinc-800 hover:border-emerald-500/30'} rounded-[2.5rem] p-6 transition-all hover:-translate-y-1 overflow-hidden shadow-lg hover:shadow-2xl`}
+      className={`group relative transition-all duration-500 hover:-translate-y-2 ${isRenegado ? 'ninja-card-rojo' : 'ninja-card-oro'} p-8 xl:p-10 overflow-hidden hover-ninja`}
     >
-      <div className="relative z-10 flex flex-col h-full justify-between">
-        <div className="flex items-center justify-between mb-4">
-          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${variant === 'renegado' ? 'bg-red-500/10' : 'bg-emerald-500/10'}`}>
-            <User className={`w-6 h-6 ${variant === 'renegado' ? 'text-red-500' : 'text-emerald-500'}`} />
+      <div className="relative z-10 flex flex-col h-full">
+        <div className="flex items-center justify-between mb-8">
+          <div className={`w-14 h-14 bg-black/40 border ${isRenegado ? 'border-rojo-sangre/20' : 'border-oro/20'} ninja-clip-xs flex items-center justify-center backdrop-blur-sm`}>
+            <User className={`w-6 h-6 ${isRenegado ? 'text-rojo-sangre' : 'text-oro'} opacity-60`} />
           </div>
-          <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">{ninja.rango}</span>
+          <div className="flex flex-col items-end">
+            <span className="text-[9px] font-black text-oro/20 uppercase tracking-widest mb-1">RANGO</span>
+            <span className={`text-sm font-black ${isRenegado ? 'text-rojo-sangre' : 'text-oro'} uppercase tracking-widest`}>{ninja.rango}</span>
+          </div>
         </div>
 
-        <div className="mb-6">
-          <h4 className="text-2xl font-black text-white tracking-tight leading-none mb-1 uppercase italic">{ninja.nombre_ninja}</h4>
-          <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-[0.2em]">{ninja.hobba_name}</p>
+        <div className="mb-10">
+          <h4 className="ninja-title text-2xl xl:text-4xl mb-1 group-hover:text-white transition-colors">
+            {ninja.nombre_ninja}
+          </h4>
+          <div className="flex items-center gap-3">
+             <div className="w-4 h-px bg-oro/20" />
+             <p className="text-oro/40 text-[9px] font-black uppercase tracking-[0.3em] italic">{ninja.hobba_name}</p>
+          </div>
         </div>
 
-        <div className="pt-4 border-t border-zinc-800/50 flex flex-wrap gap-2">
+        <div className="pt-6 border-t border-oro/10 grid grid-cols-4 gap-4">
           {Object.entries(ninja.stats_base || {}).slice(0, 4).map(([stat, val]: any) => (
             <div key={stat} className="flex flex-col">
-              <span className="text-[7px] text-zinc-600 font-black uppercase tracking-tighter">{stat}</span>
-              <span className="text-[10px] text-zinc-300 font-mono font-bold">{val}</span>
+              <span className="text-[8px] text-oro/20 font-black uppercase tracking-widest mb-1">{stat}</span>
+              <span className="text-xs text-oro/60 font-black italic">{val}</span>
             </div>
           ))}
         </div>
       </div>
 
-      <div className={`absolute -right-6 -bottom-6 opacity-[0.02] group-hover:opacity-[0.06] transition-opacity ${variant === 'renegado' ? 'text-red-500' : 'text-emerald-500'}`}>
-        <User className="w-32 h-32 rotate-12" />
+      <div className={`absolute -right-8 -bottom-8 opacity-[0.02] group-hover:opacity-[0.08] transition-all duration-700 pointer-events-none`}>
+        <User className={`w-40 h-40 rotate-12 ${isRenegado ? 'text-rojo-sangre' : 'text-oro'}`} />
       </div>
     </Link>
   );
