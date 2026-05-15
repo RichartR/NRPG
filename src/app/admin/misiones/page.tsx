@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { AdminService } from '@/services/supabase/admin.service';
 import { MisionMaster } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
+import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { DataField, SelectField } from '@/components/ui/Fields';
 import { ScrollText, Plus, Edit3, Trash2, X, Save, Image as ImageIcon, ChevronLeft, Search, Filter } from 'lucide-react';
 import Link from 'next/link';
@@ -16,6 +17,7 @@ export default function AdminMisionesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRango, setFilterRango] = useState('ALL');
   const addToast = useToastStore(state => state.addToast);
+  const { confirm: confirmAction } = useConfirmStore();
 
   useEffect(() => {
     fetchMisiones();
@@ -55,7 +57,13 @@ export default function AdminMisionesPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar esta misión?')) return;
+    const ok = await confirmAction({
+      title: 'Eliminar Misión',
+      message: '¿Estás seguro de que quieres eliminar esta misión maestra?',
+      variant: 'danger',
+      requireValidation: true
+    });
+    if (!ok) return;
 
     try {
       await AdminService.deleteMision(id);

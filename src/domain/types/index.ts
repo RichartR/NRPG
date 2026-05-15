@@ -167,7 +167,7 @@ export interface MisionMaster {
 export interface Registro {
   recompensa_xp: number;
   id: number;
-  tipo: 'mision' | 'accion' | 'combate';
+  tipo: 'mision' | 'accion' | 'combate' | 'compra';
   subtipo?: string;
   data: {
     titulo: string;

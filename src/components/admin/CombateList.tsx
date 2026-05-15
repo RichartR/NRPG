@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Edit2, Save, X, Eye, EyeOff, Sword, Plus, Trash2, RefreshCw } from 'lucide-react';
+import { Edit2, Save, X, Sword, Plus, Trash2, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
+import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { DataField, SelectField } from '@/components/ui/Fields';
 
 export default function CombateList({ 
@@ -24,6 +25,7 @@ export default function CombateList({
   
   const router = useRouter();
   const addToast = useToastStore(state => state.addToast);
+  const { confirm: confirmAction } = useConfirmStore();
 
   const startAdding = () => {
     setEditForm({
@@ -78,7 +80,13 @@ export default function CombateList({
   };
 
   const deleteDoc = async (id: number) => {
-    if (!confirm('¿Seguro que quieres borrar este registro?')) return;
+    const ok = await confirmAction({
+      title: 'Eliminar Protocolo',
+      message: '¿Seguro que quieres borrar este registro?',
+      variant: 'danger',
+      requireValidation: true
+    });
+    if (!ok) return;
     try {
       await AdminService.deleteCombatDoc(id);
       setDocs(docs.filter(d => d.id !== id));

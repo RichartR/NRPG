@@ -1,10 +1,11 @@
 'use client';
 
 import { Registro } from '@/domain/types';
-import { Zap, ScrollText, Swords, User, Image as ImageIcon, Link as LinkIcon, Trash2, Edit3, Loader2, ShieldAlert, Trophy } from 'lucide-react';
+import { Zap, ScrollText, Swords, User, Image as ImageIcon, Link as LinkIcon, Trash2, Edit3, Loader2, ShieldAlert, Trophy, ShoppingBag } from 'lucide-react';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { RegistrosService } from '@/services/supabase/registros.service';
 import { useToastStore } from '@/components/ui/Toast';
+import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { useState } from 'react';
 
 interface RegistroCardProps {
@@ -17,13 +18,20 @@ interface RegistroCardProps {
 export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin }: RegistroCardProps) {
   const { activeCharacter } = useCharacterStore();
   const addToast = useToastStore(state => state.addToast);
+  const { confirm: confirmAction } = useConfirmStore();
   const [loading, setLoading] = useState(false);
 
   const isOwner = activeCharacter?.id === registro.autor_id;
   const canManage = isOwner || isAdmin;
 
   const handleDelete = async () => {
-    if (!window.confirm('¿Estás seguro de que deseas eliminar este registro?')) return;
+    const ok = await confirmAction({
+      title: 'Eliminar Registro',
+      message: '¿Estás seguro de que quieres eliminar este registro permanentemente?',
+      variant: 'danger',
+      requireValidation: true
+    });
+    if (!ok) return;
     
     setLoading(true);
     try {
@@ -40,6 +48,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin }: R
     switch (registro.tipo) {
       case 'mision': return ScrollText;
       case 'combate': return Swords;
+      case 'compra': return ShoppingBag;
       default: return Zap;
     }
   };
@@ -48,6 +57,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin }: R
     switch (registro.tipo) {
       case 'mision': return 'text-orange-500 bg-orange-500/10 border-orange-500/20';
       case 'combate': return 'text-red-500 bg-red-500/10 border-red-500/20';
+      case 'compra': return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
       default: return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
     }
   };
@@ -96,6 +106,10 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin }: R
           <>
             Misión <span className="text-white font-bold">{registro.data.codigo_mision}</span> de rango <span className="text-white font-bold">{registro.subtipo}</span> ha sido completada por <span className="text-white font-bold">{participants}</span>. 
             Obtienen <span className="text-blue-400 font-bold">{(registro.data.recompensa_xp ?? 0)} EXP</span> y <span className="text-emerald-400 font-bold">{(registro.data.recompensa_ryous ?? 0)} Ryous</span>.
+          </>
+        ) : registro.tipo === 'compra' ? (
+          <>
+            <span className="text-white font-bold">{participants}</span> ha adquirido <span className="text-white font-bold">{registro.data.objeto || 'un artículo'}</span> por <span className="text-amber-400 font-bold">{registro.data.coste_ryous || 0} Ryous</span>.
           </>
         ) : (
           <div className="space-y-3">

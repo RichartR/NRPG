@@ -2,7 +2,7 @@
 
 import { 
   User, Briefcase, Zap, Save, ArrowLeft, 
-  Activity, Sword, Swords, ScrollText, GitBranch, UserCircle, X, Heart, Trash2, Edit3
+  Sword, Swords, ScrollText, GitBranch, UserCircle, X, Heart, Trash2, Edit3, ShoppingBag
 } from 'lucide-react';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { DataField, SelectField, SearchableSelect } from '@/components/ui/Fields';
@@ -11,7 +11,7 @@ import { useToastStore } from '@/components/ui/Toast';
 import RegistroCard from '@/components/registros/RegistroCard';
 import MissionForm from '@/components/registros/MissionForm';
 import CombatForm from '@/components/registros/CombatForm';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 interface CharacterSheetViewProps {
   character: Character;
@@ -57,13 +57,74 @@ export function CharacterSheetView({
   onQuickRemoveTechnique
 }: CharacterSheetViewProps) {
   const addToast = useToastStore(state => state.addToast);
-  const puntosGastados = Object.values(character.stats_base || {}).reduce((acc: number, val: any) => acc + (Number(val) || 0), 0);
-  const puntosLibres = (Number(character.puntos_stats) || 0) - puntosGastados;
-  const aldeaObj = masters.aldeas.find((a: any) => a.id == character.aldea_id);
+
+  // Cálculos Memoizados para evitar trabajo redundante en cada render
+  const { allRegistros, totalExp, totalRyous, missionCounts } = useMemo(() => {
+    const allRegistrosMap = new Map<number, Registro>();
+    [
+      ...(character.registros_autor || []),
+      ...(character.registros_participante?.map((p: any) => p.registro).filter(Boolean) || [])
+    ].forEach((r: Registro) => allRegistrosMap.set(r.id, r));
+    
+    const allRegs = Array.from(allRegistrosMap.values());
+    const missions = allRegs.filter(r => r.tipo === 'mision');
+
+    const totalExpSpent = allRegs.reduce((sum, r) => sum + (r.data?.gasto_xp || 0), 0);
+    const totalRyousSpent = allRegs.reduce((sum, r) => sum + (r.data?.gasto_ryous || 0), 0);
+
+    return {
+      allRegistros: allRegs,
+      totalExp: (character.xp || 0) + totalExpSpent,
+      totalRyous: (character.ryous || 0) + totalRyousSpent,
+      missionCounts: {
+        D: missions.filter(m => m.subtipo === 'D').length,
+        C: missions.filter(m => m.subtipo === 'C').length,
+        B: missions.filter(m => m.subtipo === 'B').length,
+        A: missions.filter(m => m.subtipo === 'A').length,
+        S: missions.filter(m => m.subtipo === 'S').length,
+      }
+    };
+  }, [character.xp, character.ryous, character.registros_autor, character.registros_participante]);
+
+  const { puntosGastados, puntosLibres } = useMemo(() => {
+    const pg = Object.values(character.stats_base || {}).reduce((acc: number, val: any) => acc + (Number(val) || 0), 0);
+    return {
+      puntosGastados: pg,
+      puntosLibres: (Number(character.puntos_stats) || 0) - pg
+    };
+  }, [character.stats_base, character.puntos_stats]);
+
+  const aldeaObj = useMemo(() => masters.aldeas.find((a: any) => a.id == character.aldea_id), [masters.aldeas, character.aldea_id]);
   
-  const currentRankValue = masters.rankOrder[character.rango || 'D'] || 0;
-  const requiredRankValue = masters.rankOrder[masters.requiredTrainingRank] || 0;
-  const canAccessTraining = currentRankValue >= requiredRankValue;
+  const canAccessTraining = useMemo(() => {
+    const currentRankValue = masters.rankOrder[character.rango || 'D'] || 0;
+    const requiredRankValue = masters.rankOrder[masters.requiredTrainingRank] || 0;
+    return currentRankValue >= requiredRankValue;
+  }, [character.rango, masters.rankOrder, masters.requiredTrainingRank]);
+
+  // Memoizar el inventario agrupado
+  const groupedInventory = useMemo(() => {
+    return (character.personajes_inventario || []).reduce((acc: Record<string, Record<string, PersonajeItem[]>>, pi: PersonajeItem) => {
+      const cat = pi.info_glosario?.info_glosario_categorias?.nombre || 'General';
+      const sub = pi.info_glosario?.info_glosario_subcategorias?.nombre || 'Otros';
+      if (!acc[cat]) acc[cat] = {};
+      if (!acc[cat][sub]) acc[cat][sub] = [];
+      acc[cat][sub].push(pi);
+      return acc;
+    }, {});
+  }, [character.personajes_inventario]);
+
+  // Memoizar las técnicas agrupadas
+  const groupedTecnicas = useMemo(() => {
+    return (character.personajes_tecnicas || []).reduce((acc: Record<string, Record<string, PersonajeTecnica[]>>, pt: PersonajeTecnica) => {
+      const cat = pt.info_glosario?.info_glosario_categorias?.nombre || 'General';
+      const sub = pt.info_glosario?.info_glosario_subcategorias?.nombre || 'Otros';
+      if (!acc[cat]) acc[cat] = {};
+      if (!acc[cat][sub]) acc[cat][sub] = [];
+      acc[cat][sub].push(pt);
+      return acc;
+    }, {});
+  }, [character.personajes_tecnicas]);
 
   const [editingRegistro, setEditingRegistro] = useState<Registro | null>(null);
   const [registroTab, setRegistroTab] = useState<'mision' | 'accion' | 'combate'>('mision');
@@ -72,82 +133,47 @@ export function CharacterSheetView({
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
 
-  const ResourceDisplay = () => {
-    const allRegistrosMap = new Map<number, Registro>();
-    [
-      ...(character.registros_autor || []),
-      ...(character.registros_participante?.map((p: any) => p.registro).filter(Boolean) || [])
-    ].forEach((r: Registro) => allRegistrosMap.set(r.id, r));
-    
-    const allRegistros = Array.from(allRegistrosMap.values());
-    
-    // Total = Actual + Todo lo gastado en registros
-    const totalExpSpent = allRegistros.reduce((sum, r) => sum + (r.data?.gasto_xp || 0), 0);
-    const totalRyousSpent = allRegistros.reduce((sum, r) => sum + (r.data?.gasto_ryous || 0), 0);
-    
-    const totalExp = (character.xp || 0) + totalExpSpent;
-    const totalRyous = (character.ryous || 0) + totalRyousSpent;
-
-    return (
-      <div className="flex flex-wrap items-center gap-4 mb-8">
-        <div className="flex items-center gap-4 px-6 py-4 bg-zinc-900/50 border border-emerald-500/20 rounded-[1.5rem] group hover:border-emerald-500/40 transition-all">
-          <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500 font-bold">¥</div>
-          <div>
-            <p className="text-[8px] font-black text-emerald-500/50 uppercase tracking-[0.2em] leading-none mb-1">Ryous (Disp. / Total)</p>
-            <p className="text-xl font-black text-emerald-400 italic leading-none">
-              {new Intl.NumberFormat('es-ES').format(character.ryous || 0)}
-              <span className="text-emerald-900 mx-2">/</span>
-              <span className="text-emerald-700 text-sm">{new Intl.NumberFormat('es-ES').format(totalRyous)}</span>
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-4 px-6 py-4 bg-zinc-900/50 border border-blue-500/20 rounded-[1.5rem] group hover:border-blue-500/40 transition-all">
-          <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-500 font-bold text-xs">XP</div>
-          <div>
-            <p className="text-[8px] font-black text-blue-500/50 uppercase tracking-[0.2em] leading-none mb-1">Experiencia (Disp. / Total)</p>
-            <p className="text-xl font-black text-blue-400 italic leading-none">
-              {new Intl.NumberFormat('es-ES').format(character.xp || 0)}
-              <span className="text-blue-900 mx-2">/</span>
-              <span className="text-blue-700 text-sm">{new Intl.NumberFormat('es-ES').format(totalExp)}</span>
-            </p>
-          </div>
-        </div>
+// Componentes Helper fuera del render principal para evitar re-montajes
+const ResourceDisplay = ({ character, totalExp, totalRyous }: { character: Character, totalExp: number, totalRyous: number }) => (
+  <div className="flex flex-wrap items-center gap-4 mb-8">
+    <div className="flex items-center gap-4 px-6 py-4 bg-zinc-900/50 border border-emerald-500/20 rounded-[1.5rem] group hover:border-emerald-500/40 transition-all">
+      <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500 font-bold">¥</div>
+      <div>
+        <p className="text-[8px] font-black text-emerald-500/50 uppercase tracking-[0.2em] leading-none mb-1">Ryous (Disp. / Total)</p>
+        <p className="text-xl font-black text-emerald-400 italic leading-none">
+          {new Intl.NumberFormat('es-ES').format(character.ryous || 0)}
+          <span className="text-emerald-900 mx-2">/</span>
+          <span className="text-emerald-700 text-sm">{new Intl.NumberFormat('es-ES').format(totalRyous)}</span>
+        </p>
       </div>
-    );
-  };
-
-  const MissionCounter = () => {
-    const allRegistrosMap = new Map<number, Registro>();
-    [
-      ...(character.registros_autor || []),
-      ...(character.registros_participante?.map((p: any) => p.registro).filter(Boolean) || [])
-    ].forEach((r: Registro) => allRegistrosMap.set(r.id, r));
-    
-    const allRegistros = Array.from(allRegistrosMap.values());
-    const missions = allRegistros.filter(r => r.tipo === 'mision');
-    
-    const counts = {
-      D: missions.filter(m => m.subtipo === 'D').length,
-      C: missions.filter(m => m.subtipo === 'C').length,
-      B: missions.filter(m => m.subtipo === 'B').length,
-      A: missions.filter(m => m.subtipo === 'A').length,
-      S: missions.filter(m => m.subtipo === 'S').length,
-    };
-
-    return (
-      <div className="space-y-4 mb-10">
-        <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] ml-2">Historial de Misiones</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          {Object.entries(counts).map(([rank, count]) => (
-            <div key={rank} className="bg-zinc-900/50 border border-zinc-800/50 p-5 rounded-[1.5rem] text-center group hover:border-orange-500/30 transition-all">
-              <p className="text-[8px] font-black text-orange-500/50 uppercase tracking-widest mb-1">Rango {rank}</p>
-              <p className="text-2xl font-black text-white italic leading-none">{count}</p>
-            </div>
-          ))}
-        </div>
+    </div>
+    <div className="flex items-center gap-4 px-6 py-4 bg-zinc-900/50 border border-blue-500/20 rounded-[1.5rem] group hover:border-blue-500/40 transition-all">
+      <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-500 font-bold text-xs">XP</div>
+      <div>
+        <p className="text-[8px] font-black text-blue-500/50 uppercase tracking-[0.2em] leading-none mb-1">Experiencia (Disp. / Total)</p>
+        <p className="text-xl font-black text-blue-400 italic leading-none">
+          {new Intl.NumberFormat('es-ES').format(character.xp || 0)}
+          <span className="text-blue-900 mx-2">/</span>
+          <span className="text-blue-700 text-sm">{new Intl.NumberFormat('es-ES').format(totalExp)}</span>
+        </p>
       </div>
-    );
-  };
+    </div>
+  </div>
+);
+
+const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
+  <div className="space-y-4 mb-10">
+    <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] ml-2">Historial de Misiones</h3>
+    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      {Object.entries(counts).map(([rank, count]) => (
+        <div key={rank} className="bg-zinc-900/50 border border-zinc-800/50 p-5 rounded-[1.5rem] text-center group hover:border-orange-500/30 transition-all">
+          <p className="text-[8px] font-black text-orange-500/50 uppercase tracking-widest mb-1">Rango {rank}</p>
+          <p className="text-2xl font-black text-white italic leading-none">{count}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-200 font-sans selection:bg-orange-500/30">
@@ -170,7 +196,7 @@ export function CharacterSheetView({
             </div>
           </div>
           <div className="flex items-center gap-4">
-            {!isNew && isAdmin && onDelete && (
+            {!isNew && canEdit && onDelete && (
               <button 
                 onClick={onDelete}
                 className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl hover:bg-red-500 hover:text-black transition-all active:scale-95 group"
@@ -389,19 +415,10 @@ export function CharacterSheetView({
 
         {activeTab === 'inventario' && (
           <div className="space-y-8">
-            <ResourceDisplay />
+            <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} />
             <SectionCard title="Mochila y Equipo" icon={Briefcase} color="blue">
             <div className="space-y-12">
-              {Object.entries(
-                (character.personajes_inventario || []).reduce((acc: Record<string, Record<string, PersonajeItem[]>>, pi: PersonajeItem) => {
-                  const cat = pi.info_glosario?.info_glosario_categorias?.nombre || 'General';
-                  const sub = pi.info_glosario?.info_glosario_subcategorias?.nombre || 'Otros';
-                  if (!acc[cat]) acc[cat] = {};
-                  if (!acc[cat][sub]) acc[cat][sub] = [];
-                  acc[cat][sub].push(pi);
-                  return acc;
-                }, {})
-              ).map(([catName, subs]: [string, any]) => (
+              {Object.entries(groupedInventory).map(([catName, subs]: [string, any]) => (
                 <div key={catName} className="space-y-6">
                   <div className="flex items-center gap-4">
                     <h3 className="text-xl font-black text-white uppercase italic tracking-tighter">{catName}</h3>
@@ -499,19 +516,10 @@ export function CharacterSheetView({
 
         {activeTab === 'tecnicas' && (
           <div className="space-y-8">
-            <ResourceDisplay />
+            <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} />
             <SectionCard title="Artes Ninja" icon={Zap} color="orange">
             <div className="space-y-12">
-              {Object.entries(
-                (character.personajes_tecnicas || []).reduce((acc: Record<string, Record<string, PersonajeTecnica[]>>, pt: PersonajeTecnica) => {
-                  const cat = pt.info_glosario?.info_glosario_categorias?.nombre || 'General';
-                  const sub = pt.info_glosario?.info_glosario_subcategorias?.nombre || 'Otros';
-                  if (!acc[cat]) acc[cat] = {};
-                  if (!acc[cat][sub]) acc[cat][sub] = [];
-                  acc[cat][sub].push(pt);
-                  return acc;
-                }, {})
-              ).map(([catName, subs]: [string, any]) => (
+              {Object.entries(groupedTecnicas).map(([catName, subs]: [string, any]) => (
                 <div key={catName} className="space-y-6">
                   <div className="flex items-center gap-4">
                     <h3 className="text-xl font-black text-white uppercase italic tracking-tighter">{catName}</h3>
@@ -625,8 +633,8 @@ export function CharacterSheetView({
         )}
         {activeTab === 'registros' && (
           <div className="space-y-10">
-            <ResourceDisplay />
-            <MissionCounter />
+            <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} />
+            <MissionCounter counts={missionCounts} />
             <div className="flex flex-wrap gap-2 p-2 bg-zinc-900/50 border border-zinc-800/50 rounded-[2rem] w-fit mx-auto lg:mx-0">
                {(['mision', 'accion', 'combate'] as const).map(tab => {
                  const Icon = tab === 'mision' ? ScrollText : tab === 'combate' ? Swords : Zap;
@@ -696,17 +704,12 @@ export function CharacterSheetView({
               {(() => {
                 const cat = registroTab;
                 const recordsPerPage = 5;
-                const allRegistrosMap = new Map<number, Registro>();
-                [
-                  ...(character.registros_autor || []),
-                  ...(character.registros_participante?.map((p: any) => p.registro).filter(Boolean) || [])
-                ].forEach((r: Registro) => allRegistrosMap.set(r.id, r));
-                
-                const allRegistros = Array.from(allRegistrosMap.values());
                 
                 const filtered = allRegistros
                   .filter(r => {
-                    const isType = r.tipo === cat;
+                    const isType = cat === 'accion' 
+                      ? (r.tipo === 'accion' || r.tipo === 'compra')
+                      : r.tipo === cat;
                     const recordDate = new Date(r.fecha).toISOString().split('T')[0];
                     const isAfterStart = !startDate || recordDate >= startDate;
                     const isBeforeEnd = !endDate || recordDate <= endDate;
@@ -785,43 +788,9 @@ export function CharacterSheetView({
                 <button onClick={() => setEditingRegistro(null)} className="p-3 bg-zinc-900 border border-zinc-800 rounded-2xl text-zinc-500 hover:text-white transition-all"><X className="w-6 h-6" /></button>
               </div>
              
-             <div className="flex flex-wrap items-center gap-6 p-6 bg-zinc-900/30 border border-zinc-800/50 rounded-3xl">
-                <div className="flex items-center gap-3">
-                  <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Desde</span>
-                  <input 
-                    type="date" 
-                    value={startDate}
-                    onChange={(e) => {
-                      setStartDate(e.target.value);
-                      setRecordPage(1);
-                    }}
-                    className="bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-xs text-white focus:border-orange-500/50 outline-none transition-all"
-                  />
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Hasta</span>
-                  <input 
-                    type="date" 
-                    value={endDate}
-                    onChange={(e) => {
-                      setEndDate(e.target.value);
-                      setRecordPage(1);
-                    }}
-                    className="bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-xs text-white focus:border-orange-500/50 outline-none transition-all"
-                  />
-                </div>
-                {(startDate || endDate) && (
-                  <button 
-                    onClick={() => {
-                      setStartDate('');
-                      setEndDate('');
-                      setRecordPage(1);
-                    }}
-                    className="text-[10px] font-black text-red-500 uppercase tracking-widest hover:text-red-400 transition-all"
-                  >
-                    Limpiar Filtros
-                  </button>
-                )}
+             <div className="bg-zinc-900/20 border border-zinc-800/50 rounded-3xl p-6 mb-8">
+               <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Tipo de Registro</p>
+               <p className="text-xl font-black text-white uppercase italic">{editingRegistro.tipo}</p>
              </div>
               {editingRegistro.tipo === 'combate' ? (
                 <CombatForm 

@@ -73,5 +73,24 @@ export const MasterService = {
        return null;
     }
     return data?.valor;
+  },
+
+  async getSystemConfigs(keys: string[]): Promise<Record<string, any>> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('sys_configuracion_sistema')
+      .select('clave, valor')
+      .in('clave', keys);
+    
+    if (error) {
+      console.error(`Configs fetch error:`, error);
+      return {};
+    }
+
+    const configs: Record<string, any> = {};
+    data?.forEach(row => {
+      configs[row.clave] = row.valor;
+    });
+    return configs;
   }
 };

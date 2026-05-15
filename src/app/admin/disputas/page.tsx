@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { AdminService } from '@/services/supabase/admin.service';
 import { NotificacionAdmin } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
+import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { Check, X, ShieldAlert, ChevronLeft, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -18,6 +19,7 @@ export default function AdminDisputePage() {
   const [loading, setLoading] = useState(true);
   const [selectedRegistro, setSelectedRegistro] = useState<any>(null);
   const addToast = useToastStore(state => state.addToast);
+  const { confirm: confirmAction } = useConfirmStore();
   const router = useRouter();
 
   const fetchDisputes = async () => {
@@ -57,7 +59,15 @@ export default function AdminDisputePage() {
   }, []);
 
   const handleResolve = async (id: string, action: 'aceptada' | 'rechazada') => {
-    if (!confirm(`¿Estás seguro de que quieres ${action === 'aceptada' ? 'aceptar la disputa (dar recompensa al jugador)' : 'rechazar la disputa (quitar recompensas a todos los implicados)'}?`)) return;
+    const ok = await confirmAction({
+      title: action === 'aceptada' ? 'Aceptar Disputa' : 'Invalidar Registro',
+      message: action === 'aceptada' 
+        ? '¿Estás seguro de que quieres aceptar la disputa? Se darán las recompensas correspondientes al jugador.'
+        : '¿Estás seguro de que quieres invalidar el registro? Se retirarán las recompensas de todos los implicados.',
+      variant: action === 'aceptada' ? 'primary' : 'danger'
+    });
+
+    if (!ok) return;
     
     try {
       await AdminService.resolveDispute(id, action);

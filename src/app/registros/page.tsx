@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ScrollText, Swords, Zap, ArrowLeft, ChevronRight } from 'lucide-react';
+import { ScrollText, Swords, Zap, ArrowLeft, ChevronRight, ShoppingBag } from 'lucide-react';
 
 export default function RegistrosLandingPage() {
   return (
@@ -72,6 +72,31 @@ export default function RegistrosLandingPage() {
               </div>
             </div>
           </Link>
+
+          {/* Tarjeta Compras */}
+          <Link href="/registros/compras" className="group relative overflow-hidden bg-zinc-900/40 border border-zinc-800 hover:border-amber-500/50 p-12 rounded-[3rem] transition-all hover:shadow-[0_0_50px_-10px_rgba(245,158,11,0.2)] backdrop-blur-xl">
+            <div className="absolute top-0 right-0 p-12 opacity-5 transform translate-x-4 -translate-y-4 group-hover:scale-110 group-hover:opacity-10 transition-all duration-500">
+              <ShoppingBag className="w-64 h-64 text-amber-500" />
+            </div>
+            
+            <div className="relative z-10 flex flex-col h-full justify-between">
+              <div>
+                <div className="w-16 h-16 bg-amber-500/10 border border-amber-500/20 rounded-3xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500">
+                  <ShoppingBag className="w-8 h-8 text-amber-500" />
+                </div>
+                <h3 className="text-4xl font-black text-white mb-4 italic uppercase tracking-tighter">Compras</h3>
+                <p className="text-zinc-500 text-lg leading-relaxed max-w-sm">
+                  Registro de transacciones, adquisición de armamento y equipo shinobi.
+                </p>
+              </div>
+              
+              <div className="mt-12 flex items-center gap-3 text-amber-500 font-black uppercase tracking-[0.2em] text-xs">
+                Revisar Gastos
+                <ChevronRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" />
+              </div>
+            </div>
+          </Link>
+
         </div>
       </div>
     </div>

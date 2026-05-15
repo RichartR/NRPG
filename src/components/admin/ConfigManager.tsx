@@ -5,6 +5,7 @@ import { Settings, RefreshCw, ChevronDown, ChevronRight, Plus, Trash2, Save } fr
 import { AdminService } from '@/services/supabase/admin.service';
 import { ConfiguracionSistema } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
+import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { DataField } from '@/components/ui/Fields';
 
 function KeyEditor({ initialKey, onRename }: { initialKey: string, onRename: (newKey: string) => void }) {
@@ -171,6 +172,7 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
     valor: '' 
   });
   const addToast = useToastStore(state => state.addToast);
+  const { confirm: confirmAction } = useConfirmStore();
 
   const toggleExpand = (id: number) => {
     const config = configs.find(c => c.id === id);
@@ -326,7 +328,13 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
   };
 
   const handleDeleteConfig = async (id: number) => {
-    if (!confirm('¿Estás seguro de eliminar este parámetro?')) return;
+    const ok = await confirmAction({
+      title: 'Eliminar Parámetro',
+      message: '¿Estás seguro de eliminar este parámetro?',
+      variant: 'danger',
+      requireValidation: true
+    });
+    if (!ok) return;
     try {
       await AdminService.deleteConfig(id);
       setConfigs(configs.filter(c => c.id !== id));

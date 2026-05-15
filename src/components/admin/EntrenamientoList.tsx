@@ -5,6 +5,7 @@ import { Search, PlusCircle, Edit2, Eye, EyeOff, Trash2, Dumbbell, GitBranch, La
 import { Entrenamiento, RamaClan, SubEspecialidad } from '@/domain/types';
 import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
+import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { useRouter } from 'next/navigation';
 import EntrenamientoEditForm from './EntrenamientoEditForm';
 
@@ -23,6 +24,7 @@ export default function EntrenamientoList({ initialEntrenamientos, ramas, subEsp
 
   const addToast = useToastStore(state => state.addToast);
   const router = useRouter();
+  const { confirm: confirmAction } = useConfirmStore();
 
   const filteredData = useMemo(() => {
     return initialEntrenamientos.filter(ent => {
@@ -48,7 +50,13 @@ export default function EntrenamientoList({ initialEntrenamientos, ramas, subEsp
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('¿Estás seguro de eliminar este entrenamiento?')) return;
+    const ok = await confirmAction({
+      title: 'Eliminar Entrenamiento',
+      message: '¿Estás seguro de eliminar este entrenamiento?',
+      variant: 'danger',
+      requireValidation: true
+    });
+    if (!ok) return;
     try {
       await AdminService.deleteEntrenamiento(id);
       addToast('Entrenamiento eliminado', 'success');

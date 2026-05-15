@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { AdminService } from '@/services/supabase/admin.service';
 import { EstadoCombate } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
+import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { DataField } from '@/components/ui/Fields';
 import { Swords, Plus, Edit3, Trash2, X, Save, ChevronLeft, Search, Filter, CheckCircle2, Archive } from 'lucide-react';
 import Link from 'next/link';
@@ -16,6 +17,7 @@ export default function AdminEstadosCombatePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
   const addToast = useToastStore(state => state.addToast);
+  const { confirm: confirmAction } = useConfirmStore();
 
   useEffect(() => {
     fetchEstados();
@@ -55,7 +57,13 @@ export default function AdminEstadosCombatePage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este estado definitivamente?')) return;
+    const ok = await confirmAction({
+      title: 'Eliminar Estado',
+      message: '¿Estás seguro de que quieres eliminar este estado definitivamente?',
+      variant: 'danger',
+      requireValidation: true
+    });
+    if (!ok) return;
 
     try {
       await AdminService.deleteEstadoCombate(id);
