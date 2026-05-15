@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client';
-import { Character, PersonajeRama, PersonajeItem, PersonajeTecnica, Registro } from '@/domain/types';
+import { Character, PersonajeRama, PersonajeItem, PersonajeTecnica, Registro, Glosario } from '@/domain/types';
 import { RewardLogic } from '@/domain/character/logic';
 
 export const CharacterService = {
