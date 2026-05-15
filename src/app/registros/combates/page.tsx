@@ -55,83 +55,98 @@ export default function CombatesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-4 md:p-10">
-      <div className="max-w-5xl mx-auto">
-        <header className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <Link 
-              href="/registros" 
-              className="p-3 bg-zinc-900 border border-zinc-800 rounded-xl text-zinc-500 hover:text-white transition-all group"
-            >
-              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-            </Link>
-            <div>
-              <h1 className="text-4xl font-black italic uppercase tracking-tighter flex items-center gap-3">
-                <Swords className="w-10 h-10 text-red-500" />
-                Bitácora de <span className="text-red-500">Combates</span>
-              </h1>
-              <p className="text-zinc-500 font-bold uppercase tracking-widest text-[10px] mt-1">Crónicas de batalla y duelos</p>
+    <div className="min-h-screen p-4 sm:p-8 xl:p-20 flex flex-col">
+      <div className="max-w-[1750px] mx-auto w-full flex-1">
+        <header className="w-full mb-6 sm:mb-8 ninja-card-rojo p-4 sm:p-8 xl:p-12 z-50">
+          <div className="flex flex-col lg:flex-row justify-between items-center gap-6 lg:gap-10">
+            
+            {/* Top Row: Back Button & Title (Mobile) / Left Side (Desktop) */}
+            <div className="flex items-center justify-between w-full lg:w-auto gap-6">
+              <Link 
+                href="/registros" 
+                className="flex items-center gap-3 text-oro hover:brightness-125 transition-all group font-black uppercase tracking-widest text-[10px] sm:text-xs xl:text-base shrink-0"
+              >
+                <div className="w-2 xl:w-3 h-2 xl:h-3 bg-rojo-sangre rotate-45 group-hover:bg-oro transition-colors" />
+                <span>VOLVER</span>
+              </Link>
+
+              {/* Title (Mobile) */}
+              <div className="lg:hidden text-center flex-1 min-w-0">
+                <h1 className="ninja-title text-xl sm:text-3xl truncate uppercase tracking-widest">
+                  <span className="text-rojo-sangre">COMBATES</span>
+                </h1>
+              </div>
+
+              {/* Spacer for centering title on mobile */}
+              <div className="lg:hidden w-10 sm:w-12" />
             </div>
+
+            {/* Title & Icon (Desktop) */}
+            <div className="hidden lg:flex items-center gap-10 flex-1 justify-center">
+              <div className="h-10 w-px bg-oro/10" />
+              <div className="flex items-center gap-6">
+                {/* <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-6 xl:w-8 h-auto" alt="icon" /> */}
+                <h1 className="ninja-title text-4xl xl:text-7xl uppercase tracking-[0.3em] leading-none break-words">
+                  <span className="text-rojo-sangre">COMBATES</span>
+                </h1>
+              </div>
+              <div className="h-10 w-px bg-oro/10" />
+            </div>
+            
+            <button 
+              onClick={() => setShowForm(true)}
+              className="flex items-center gap-4 sm:gap-6 px-8 sm:px-10 py-3 sm:py-5 ninja-btn-rojo w-full lg:w-auto justify-center text-xs sm:text-base"
+            >
+              <Plus className="w-5 h-5" /> NUEVO COMBATE
+            </button>
           </div>
-          
-          <button 
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-8 py-4 bg-red-600 text-black rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-red-500 transition-all shadow-xl shadow-red-500/20"
-          >
-            <Plus className="w-4 h-4" /> Nuevo Combate
-          </button>
         </header>
 
         {(showForm || editingRegistro) ? (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 mb-12">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-black uppercase italic text-white">{editingRegistro ? 'Editar Registro' : 'Registrar Combate'}</h2>
-              <button onClick={() => { setShowForm(false); setEditingRegistro(null); }} className="p-2 text-zinc-500 hover:text-white transition-all"><X className="w-6 h-6" /></button>
-            </div>
-            <CombatForm 
-              onCreated={() => { setShowForm(false); setEditingRegistro(null); fetchData(data.page); }} 
-              initialData={editingRegistro}
-            />
-          </div>
+          <CombatForm 
+            onCreated={() => { setShowForm(false); setEditingRegistro(null); fetchData(data.page); }} 
+            initialData={editingRegistro}
+          />
         ) : (
           <div className="space-y-6">
-            <div className="flex flex-wrap items-center gap-6 p-6 bg-zinc-900/30 border border-zinc-800/50 rounded-3xl animate-in fade-in slide-in-from-top-2 duration-500">
-              <div className="flex items-center gap-3">
-                <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Desde</span>
+            <div className="flex flex-wrap items-center gap-6 sm:gap-10 p-6 sm:p-10 ninja-card-rojo animate-in fade-in slide-in-from-top-2 duration-500">
+              <div className="flex items-center gap-6">
+                <span className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.3em]">DESDE</span>
                 <input 
                   type="date" 
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-xs text-white focus:border-red-500/50 outline-none transition-all"
+                  className="ninja-input py-2"
                 />
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Hasta</span>
+              <div className="flex items-center gap-6">
+                <span className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.3em]">HASTA</span>
                 <input 
                   type="date" 
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-xs text-white focus:border-red-500/50 outline-none transition-all"
+                  className="ninja-input py-2"
                 />
               </div>
               {(startDate || endDate) && (
                 <button 
                   onClick={() => { setStartDate(''); setEndDate(''); }}
-                  className="text-[10px] font-black text-red-500 uppercase tracking-widest hover:text-red-400 transition-all active:scale-95"
+                  className="text-[10px] xl:text-xs font-black text-rojo-sangre uppercase tracking-[0.3em] hover:brightness-125 transition-all border-b border-rojo-sangre/30 pb-1 italic"
                 >
-                  Limpiar Filtros
+                  LIMPIAR FILTROS
                 </button>
               )}
             </div>
 
-            <div className="bg-zinc-900/30 border border-zinc-800/50 rounded-[2.5rem] p-8 backdrop-blur-xl">
+            <div className="bg-transparent space-y-6">
               {loading ? (
-                <div className="py-32 flex justify-center">
-                  <Loader2 className="w-10 h-10 animate-spin text-red-500/20" />
+                <div className="py-60 flex flex-col items-center gap-10">
+                  <div className="w-16 h-16 border-4 border-rojo-sangre border-t-transparent animate-spin ninja-clip-md" />
+                  <p className="text-rojo-sangre font-black uppercase tracking-[0.6em] text-sm animate-pulse">Analizando Campo de Batalla...</p>
                 </div>
               ) : data.list.length > 0 ? (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-10">
+                  <div className="flex flex-col gap-6 xl:gap-8">
                     {data.list.map(reg => (
                       <RegistroCard 
                         key={reg.id} 
@@ -143,28 +158,37 @@ export default function CombatesPage() {
                     ))}
                   </div>
                   
-                  <div className="flex justify-between items-center pt-8 border-t border-zinc-800/50">
-                    <button 
-                      disabled={data.page === 1}
-                      onClick={() => fetchData(data.page - 1)}
-                      className="flex items-center gap-2 px-6 py-3 text-zinc-500 hover:text-white disabled:opacity-20 transition-all text-[10px] font-black uppercase tracking-widest"
-                    >
-                      <ChevronLeft className="w-4 h-4" /> Anterior
-                    </button>
-                    <span className="text-[10px] font-black text-zinc-400 bg-zinc-950 px-6 py-3 rounded-xl border border-zinc-800/50 uppercase tracking-widest">PÁGINA {data.page} de {Math.ceil(data.count / 15)}</span>
-                    <button 
-                      disabled={data.list.length < 15 || data.page * 15 >= data.count}
-                      onClick={() => fetchData(data.page + 1)}
-                      className="flex items-center gap-2 px-6 py-3 text-zinc-500 hover:text-white disabled:opacity-20 transition-all text-[10px] font-black uppercase tracking-widest"
-                    >
-                      Siguiente <ChevronRight className="w-4 h-4" />
-                    </button>
+                  <div className="flex justify-center items-center pt-20">
+                    <div className="flex items-center gap-12 px-10 py-6 bg-black/60 border border-oro/20 ninja-clip-md backdrop-blur-md shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
+                      <button 
+                        disabled={data.page === 1}
+                        onClick={() => fetchData(data.page - 1)}
+                        className="w-14 h-14 flex items-center justify-center bg-oro/20 border-2 border-oro/40 hover:border-oro hover:bg-oro/30 text-white transition-all ninja-clip-xs disabled:opacity-30 disabled:border-oro/10 disabled:bg-black/40 disabled:cursor-not-allowed shadow-xl"
+                      >
+                        <ChevronLeft className="w-8 h-8 drop-shadow-[0_0_8px_rgba(255,215,0,0.5)]" />
+                      </button>
+
+                      <div className="flex flex-col items-center">
+                        <span className="text-[10px] font-black text-oro/40 uppercase tracking-[0.4em] mb-1">REGISTROS DE GUERRA</span>
+                        <div className="text-sm xl:text-lg font-black text-oro uppercase tracking-[0.2em] italic">
+                          PÁGINA <span className="text-white drop-shadow-md">{data.page}</span> / <span className="text-oro/40">{Math.ceil(data.count / 15)}</span>
+                        </div>
+                      </div>
+
+                      <button 
+                        disabled={data.list.length < 15 || data.page * 15 >= data.count}
+                        onClick={() => fetchData(data.page + 1)}
+                        className="w-14 h-14 flex items-center justify-center bg-oro/20 border-2 border-oro/40 hover:border-oro hover:bg-oro/30 text-white transition-all ninja-clip-xs disabled:opacity-30 disabled:border-oro/10 disabled:bg-black/40 disabled:cursor-not-allowed shadow-xl"
+                      >
+                        <ChevronRight className="w-8 h-8 drop-shadow-[0_0_8px_rgba(255,215,0,0.5)]" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ) : (
-                <div className="py-40 text-center border-2 border-dashed border-zinc-800/50 rounded-[3rem]">
-                  <Swords className="w-16 h-16 text-zinc-800 mx-auto mb-4" />
-                  <p className="text-xs font-bold text-zinc-600 uppercase tracking-widest italic">No hay combates registrados todavía</p>
+                <div className="py-60 text-center ninja-card-rojo opacity-50">
+                  <Swords className="w-24 h-24 text-rojo-sangre/10 mx-auto mb-8" />
+                  <p className="text-sm xl:text-lg font-black text-rojo-sangre/20 uppercase tracking-[0.6em] italic">NO HAY COMBATES REGISTRADOS TODAVÍA</p>
                 </div>
               )}
             </div>

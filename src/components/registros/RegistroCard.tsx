@@ -1,7 +1,7 @@
 'use client';
 
 import { Registro } from '@/domain/types';
-import { Zap, ScrollText, Swords, User, Image as ImageIcon, Link as LinkIcon, Trash2, Edit3, Loader2, ShieldAlert, Trophy, ShoppingBag } from 'lucide-react';
+import { Zap, ScrollText, Swords, User, Image as ImageIcon, Link as LinkIcon, Trash2, Edit3, Loader2, ShieldAlert, Trophy, ShoppingBag, Sparkles, Ghost, Swords as VS, Users, Coins, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { RegistrosService } from '@/services/supabase/registros.service';
 import { useToastStore } from '@/components/ui/Toast';
@@ -13,13 +13,15 @@ interface RegistroCardProps {
   onRefresh?: () => void;
   onEdit?: (reg: Registro) => void;
   isAdmin?: boolean;
+  subjectId?: number;
 }
 
-export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin }: RegistroCardProps) {
+export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, subjectId }: RegistroCardProps) {
   const { activeCharacter } = useCharacterStore();
   const addToast = useToastStore(state => state.addToast);
   const { confirm: confirmAction } = useConfirmStore();
   const [loading, setLoading] = useState(false);
+  const [showFullDetails, setShowFullDetails] = useState(false);
 
   const isOwner = activeCharacter?.id === registro.autor_id;
   const canManage = isOwner || isAdmin;
@@ -44,6 +46,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin }: R
       setLoading(false);
     }
   };
+
   const getIcon = () => {
     switch (registro.tipo) {
       case 'mision': return ScrollText;
@@ -53,265 +56,345 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin }: R
     }
   };
 
-  const getColorClass = () => {
-    switch (registro.tipo) {
-      case 'mision': return 'text-orange-500 bg-orange-500/10 border-orange-500/20';
-      case 'combate': return 'text-red-500 bg-red-500/10 border-red-500/20';
-      case 'compra': return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
-      default: return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
-    }
+  const calculateParticipantXP = (team: 'A' | 'B', huye?: boolean) => {
+    const config = registro.data.config_xp;
+    if (!config) return 0;
+    if (huye) return 0;
+    if (registro.data.ganador === 'Empate') return Number(config.retirarse) || 0;
+    if (registro.data.ganador === 'A') return team === 'A' ? (Number(config.ganar) || 0) : (Number(config.perder) || 0);
+    if (registro.data.ganador === 'B') return team === 'B' ? (Number(config.ganar) || 0) : (Number(config.perder) || 0);
+    return 0;
+  };
+
+  const formatNinjaList = (names: string[]) => {
+    if (names.length === 0) return '';
+    if (names.length === 1) return names[0];
+    const last = names[names.length - 1];
+    const rest = names.slice(0, -1);
+    return `${rest.join(', ')} y ${last}`;
   };
 
   const Icon = getIcon();
-  const colorClass = getColorClass();
 
-  const participantNames = registro.participantes?.map(p => p.personaje?.nombre_ninja).filter(Boolean) || [];
-  const participants = participantNames.length > 1
-    ? `${participantNames.slice(0, -1).join(', ')} y ${participantNames[participantNames.length - 1]}`
-    : participantNames[0] || registro.autor?.nombre_ninja;
+  const getParticipants = () => {
+    if (registro.data.participantes_historicos && Array.isArray(registro.data.participantes_historicos)) {
+      return registro.data.participantes_historicos;
+    }
+    if (registro.participantes && registro.participantes.length > 0) {
+      return registro.participantes.map(p => ({
+        id: p.personaje_id,
+        nombre_ninja: p.personaje?.nombre_ninja || 'Ninja Desaparecido'
+      }));
+    }
+    return [{ id: registro.autor_id, nombre_ninja: registro.autor?.nombre_ninja || 'Autor Desconocido' }];
+  };
+
+  const participants = getParticipants();
+  const authorName = registro.autor?.nombre_ninja || 
+                    registro.data.participantes_historicos?.find((p: any) => p.id === registro.autor_id)?.nombre_ninja || 
+                    'Ninja Desaparecido';
+
+  const isCombate = registro.tipo === 'combate';
 
   return (
-    <div className="bg-zinc-900/30 border border-zinc-800/50 rounded-2xl p-6 hover:border-zinc-700 transition-all group">
-      <div className="flex justify-between items-start mb-4">
-        <div className={`p-2 rounded-xl border ${colorClass}`}>
-          <Icon className="w-4 h-4" />
+    <div className={`ninja-card-oro group hover-ninja transition-all relative overflow-hidden ${isCombate ? 'p-8 xl:p-12' : 'p-6 sm:p-8 xl:p-10'}`}>
+      <div className="absolute top-0 right-0 p-8 opacity-[0.02] pointer-events-none">
+        <Icon className={`${isCombate ? 'w-32 h-32' : 'w-24 h-24'} rotate-12`} />
+      </div>
+
+      <div className="flex justify-between items-center mb-8 relative z-10">
+        <div className="flex items-center gap-4">
+          <div className="p-2.5 bg-oro/10 border border-oro/20 ninja-clip-xs shrink-0">
+            <User className="w-6 h-6 text-oro/60" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm xl:text-lg font-black uppercase tracking-[0.2em] text-oro leading-none mb-1">
+              {authorName}
+            </span>
+            <span className="text-[10px] font-bold text-oro/40 uppercase tracking-[0.2em] flex items-center gap-2">
+              {new Date(registro.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+              <span className="w-1 h-1 bg-oro/20 rotate-45" />
+              {new Date(registro.fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">
-            {new Date(registro.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-          </span>
+
+        <div className="flex items-center gap-4">
           {canManage && (
-            <div className="flex items-center gap-1 ml-4 pl-4 border-l border-zinc-800/50">
+            <div className="flex items-center gap-3">
               <button 
                 onClick={() => onEdit?.(registro)}
-                className="p-2 text-zinc-600 hover:text-orange-500 transition-all rounded-lg hover:bg-orange-500/10"
+                className="w-11 h-11 flex items-center justify-center bg-oro/10 border border-oro/30 hover:border-oro hover:bg-oro/20 text-oro/80 hover:text-oro transition-all ninja-clip-xs shadow-lg shadow-black/20"
                 title="Editar Registro"
               >
-                <Edit3 className="w-4 h-4" />
+                <Edit3 className="w-5 h-5" />
               </button>
               <button 
                 onClick={handleDelete}
                 disabled={loading}
-                className="p-2 text-zinc-600 hover:text-red-500 transition-all rounded-lg hover:bg-red-500/10"
+                className="w-11 h-11 flex items-center justify-center bg-red-600/10 border border-red-600/40 hover:border-red-500 hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs shadow-lg shadow-black/20"
                 title="Eliminar Registro"
               >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                {loading ? <Loader2 className="w-5 h-5 animate-spin text-oro" /> : <Trash2 className="w-5 h-5" />}
               </button>
             </div>
           )}
         </div>
       </div>
-      <div className="text-sm text-zinc-300 leading-relaxed mb-4">
+
+      <div className="relative z-10">
         {registro.tipo === 'mision' ? (
-          <>
-            Misión <span className="text-white font-bold">{registro.data.codigo_mision}</span> de rango <span className="text-white font-bold">{registro.subtipo}</span> ha sido completada por <span className="text-white font-bold">{participants}</span>. 
-            Obtienen <span className="text-blue-400 font-bold">{(registro.data.recompensa_xp ?? 0)} EXP</span> y <span className="text-emerald-400 font-bold">{(registro.data.recompensa_ryous ?? 0)} Ryous</span>.
-          </>
-        ) : registro.tipo === 'compra' ? (
-          <>
-            <span className="text-white font-bold">{participants}</span> ha adquirido <span className="text-white font-bold">{registro.data.objeto || 'un artículo'}</span> por <span className="text-amber-400 font-bold">{registro.data.coste_ryous || 0} Ryous</span>.
-          </>
-        ) : (
-          <div className="space-y-3">
-            {registro.data.equipo_a && registro.data.equipo_b ? (
-              <div className="space-y-6">
-                {/* Cabecera del Enfrentamiento */}
-                <div className="relative flex items-stretch gap-4 min-h-[100px]">
-                  {/* Bando A */}
-                  <div className="flex-1 bg-blue-500/5 border border-blue-500/10 rounded-2xl p-4 relative overflow-hidden group">
-                    <div className="absolute -top-2 -left-2 w-12 h-12 bg-blue-500/10 rounded-full blur-xl group-hover:bg-blue-500/20 transition-all" />
-                    <span className="relative z-10 text-[8px] font-black uppercase text-blue-500 tracking-[0.2em] mb-3 block">Bando A</span>
-                    <div className="relative z-10 space-y-3">
-                      {registro.data.equipo_a.map((p: any) => {
-                        const getXP = () => {
-                          if (p.huye) return 0;
-                          const config = registro.data.config_xp;
-                          if (!config) return 0;
-                          if (registro.data.ganador === 'Empate') return config.retirarse || 0;
-                          if (registro.data.ganador === 'A') return config.ganar || 0;
-                          return config.perder || 0;
-                        };
-                        const xp = getXP();
-
-                        return (
-                          <div key={p.id} className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-white font-bold text-xs tracking-tight">{p.nombre_ninja}</span>
-                              <div className="flex items-center gap-1">
-                                {p.estado_nombre && (
-                                  <span className="text-[7px] px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-400 font-black uppercase border border-zinc-800">
-                                    {p.estado_nombre}
-                                  </span>
-                                )}
-                                {p.huye && (
-                                  <span className="text-[7px] px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-500 font-black uppercase border border-orange-500/20">
-                                    Huyó
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            {p.has_estado_alterado && p.descripcion_estado && (
-                              <p className="text-[9px] text-zinc-500 italic leading-tight border-l border-zinc-800 pl-2 py-0.5">
-                                {p.descripcion_estado}
-                              </p>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 p-6 sm:p-8 bg-black/40 border border-oro/5 ninja-clip-sm">
+            <div className="flex-1 space-y-4">
+               <div className="flex items-center gap-3">
+                  <ScrollText className="w-5 h-5 text-oro/40" />
+                  <span className="text-xs font-black text-oro/40 uppercase tracking-[0.3em]">Misión</span>
+                  <span className="text-lg sm:text-2xl font-black text-oro uppercase tracking-widest">{registro.data.codigo_mision}</span>
+               </div>
+               <div className="flex flex-wrap gap-3 items-center">
+                  <div className="flex items-center gap-2 text-oro/30 text-[10px] font-black uppercase tracking-widest mr-2">
+                     <Users className="w-4 h-4" /> PARTICIPANTES:
                   </div>
-
-                  {/* VS Separator */}
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <div className="w-px h-full bg-gradient-to-b from-transparent via-zinc-800 to-transparent" />
-                    <div className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center shadow-2xl relative z-10">
-                      <span className="text-[9px] font-black text-zinc-500 italic">VS</span>
-                    </div>
-                    <div className="w-px h-full bg-gradient-to-b from-transparent via-zinc-800 to-transparent" />
-                  </div>
-
-                  {/* Bando B */}
-                  <div className="flex-1 bg-red-500/5 border border-red-500/10 rounded-2xl p-4 text-right relative overflow-hidden group">
-                    <div className="absolute -top-2 -right-2 w-12 h-12 bg-red-500/10 rounded-full blur-xl group-hover:bg-red-500/20 transition-all" />
-                    <span className="relative z-10 text-[8px] font-black uppercase text-red-500 tracking-[0.2em] mb-3 block">Bando B</span>
-                    <div className="relative z-10 space-y-3">
-                      {registro.data.equipo_b.map((p: any) => {
-                        const getXP = () => {
-                          if (p.huye) return 0;
-                          const config = registro.data.config_xp;
-                          if (!config) return 0;
-                          if (registro.data.ganador === 'Empate') return config.retirarse || 0;
-                          if (registro.data.ganador === 'B') return config.ganar || 0;
-                          return config.perder || 0;
-                        };
-                        const xp = getXP();
-
-                        return (
-                          <div key={p.id} className="flex flex-col items-end gap-1">
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1">
-                                {p.huye && (
-                                  <span className="text-[7px] px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-500 font-black uppercase border border-orange-500/20">
-                                    Huyó
-                                  </span>
-                                )}
-                                {p.estado_nombre && (
-                                  <span className="text-[7px] px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-400 font-black uppercase border border-zinc-800">
-                                    {p.estado_nombre}
-                                  </span>
-                                )}
-                              </div>
-                              <span className="text-white font-bold text-xs tracking-tight">{p.nombre_ninja}</span>
-                            </div>
-                            {p.has_estado_alterado && p.descripcion_estado && (
-                              <p className="text-[9px] text-zinc-500 italic leading-tight border-r border-zinc-800 pr-2 py-0.5 text-right">
-                                {p.descripcion_estado}
-                              </p>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Resultado Final */}
-                <div className="pt-2">
-                  {registro.data.ganador === 'Empate' ? (
-                    <div className="flex items-center justify-center gap-3 px-4 py-3 bg-zinc-900/50 border border-zinc-800 rounded-2xl">
-                      <ShieldAlert className="w-4 h-4 text-zinc-500" />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Combate Retirado / Empate</span>
-                    </div>
-                  ) : (
-                    <div className={`flex items-center justify-between px-5 py-3 rounded-2xl border ${
-                      registro.data.ganador === 'A' 
-                      ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' 
-                      : 'bg-red-500/10 border-red-500/20 text-red-400'
-                    }`}>
-                      <div className="flex items-center gap-3">
-                        <Trophy className="w-4 h-4" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Victoria: Bando {registro.data.ganador}</span>
-                      </div>
-                      <span className="text-[9px] font-bold uppercase italic opacity-60">Fin del Combate</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-            <div className="flex flex-col gap-1">
-              <span className="text-white font-bold">{registro.data.titulo || 'Registro Shinobi'}</span>
-              {registro.data.subtitulo && (
-                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{registro.data.subtitulo}</span>
-              )}
-            </div>
-          )}
-            
-            {registro.tipo === 'combate' && registro.data.equipo_a && registro.data.equipo_b ? (
-              <div className="pt-4 border-t border-zinc-800/50 space-y-2">
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                  <div className="flex items-center gap-2">
-                    <User className="w-3 h-3 text-zinc-600" />
-                    <span className="text-[10px] text-zinc-500 font-bold">
-                      Registrado por <span className="text-zinc-300">{registro.autor?.nombre_ninja}</span>
+                  {participants.map((p, i) => (
+                    <span key={i} className="text-[11px] font-black text-oro/60 uppercase tracking-widest px-4 py-1.5 bg-oro/5 border border-oro/10 ninja-clip-xs">
+                       {p.nombre_ninja}
                     </span>
+                  ))}
+               </div>
+            </div>
+            <div className="flex items-center gap-8 sm:gap-12 shrink-0">
+               <div className="flex flex-col items-center">
+                  <span className="text-[10px] font-black text-oro/30 uppercase tracking-widest mb-2">RECOMPENSA</span>
+                  <div className="flex items-center gap-6">
+                     <div className="flex items-center gap-2 text-oro font-black text-base sm:text-xl tracking-widest">
+                        <Sparkles className="w-4 h-4" /> +{registro.data.recompensa_xp || 0}
+                     </div>
+                     <div className="w-px h-6 bg-oro/10" />
+                     <div className="flex items-center gap-2 text-oro font-black text-base sm:text-xl tracking-widest">
+                        <Coins className="w-4 h-4" /> +{registro.data.recompensa_ryous || 0}
+                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {[...registro.data.equipo_a, ...registro.data.equipo_b].map((p: any) => {
-                      const isTeamA = registro.data.equipo_a.some((a: any) => a.id === p.id);
-                      const getXP = () => {
-                        if (p.huye) return 0;
-                        const config = registro.data.config_xp;
-                        if (!config) return 0;
-                        if (registro.data.ganador === 'Empate') return config.retirarse || 0;
-                        if (registro.data.ganador === (isTeamA ? 'A' : 'B')) return config.ganar || 0;
-                        return config.perder || 0;
-                      };
-                      const xp = getXP();
-                      return (
-                        <div key={p.id} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border shadow-sm transition-all ${
-                          xp > 0 
-                          ? 'bg-blue-500/10 border-blue-500/30' 
-                          : 'bg-zinc-800/50 border-zinc-700/50'
-                        }`}>
-                          <span className={`text-[9px] font-black uppercase tracking-tight ${xp > 0 ? 'text-zinc-200' : 'text-zinc-400'}`}>
-                            {p.nombre_ninja}
-                          </span>
-                          <span className={`text-[10px] font-black ${xp > 0 ? 'text-blue-400' : 'text-zinc-500'}`}>
-                            {xp > 0 ? `+${xp} EXP` : '+0 EXP'}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
+               </div>
+            </div>
+          </div>
+        ) : registro.tipo === 'compra' ? (
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 p-6 sm:p-8 bg-black/40 border border-oro/5 ninja-clip-sm">
+             <div className="flex-1 space-y-2">
+                <div className="flex items-center gap-3">
+                   <ShoppingBag className="w-5 h-5 text-oro/40" />
+                   <span className="text-xs font-black text-oro/40 uppercase tracking-[0.3em]">ADQUISICIÓN</span>
                 </div>
+                <h4 className="text-lg sm:text-2xl font-black text-oro uppercase tracking-widest">
+                   {registro.data.objeto || 'Equipo Ninja'}
+                </h4>
+             </div>
+             <div className="flex flex-col items-center shrink-0">
+                <span className="text-[10px] font-black text-oro/30 uppercase tracking-widest mb-2">INVERSIÓN</span>
+                <div className="flex items-center gap-2 text-oro font-black text-base sm:text-xl tracking-widest">
+                   <Coins className="w-4 h-4" /> {registro.data.coste_ryous || 0} R
+                </div>
+             </div>
+          </div>
+        ) : registro.tipo === 'accion' ? (
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 p-6 sm:p-2 bg-black/40 border border-oro/5 ninja-clip-sm">
+             <div className="flex-1 space-y-4">
+                <div>
+                   <h4 className="text-lg sm:text-2xl font-black text-oro uppercase tracking-widest mb-1">
+                      {registro.data.titulo || 'Acción General'}
+                   </h4>
+                </div>
+                {participants.filter((p: any) => p.id !== registro.autor_id).length > 0 && (
+                  <div className="flex flex-wrap gap-3 items-center">
+                    <span className="text-[9px] font-black text-oro/20 uppercase tracking-widest mr-2">Participantes:</span>
+                    {participants.filter((p: any) => p.id !== registro.autor_id).map((p: any, i: number) => (
+                      <span key={i} className="text-[10px] font-black text-oro/40 uppercase tracking-widest px-3 py-1 bg-oro/5 border border-oro/10 ninja-clip-xs">
+                         {p.nombre_ninja}
+                      </span>
+                    ))}
+                  </div>
+                )}
+             </div>
+             {(registro.data.gasto_xp !== undefined || registro.data.gasto_ryous !== undefined) && (
+               <div className="flex flex-col items-center shrink-0 p-4 border-l border-oro/10 min-w-[120px]">
+                  <span className="text-[10px] font-black text-oro/30 uppercase tracking-widest mb-2">Coste</span>
+                  <div className="flex flex-col gap-2 items-end w-full">
+                     {registro.data.gasto_xp !== undefined && (
+                       <div className="flex items-center gap-2 text-oro font-black text-sm tracking-widest">
+                          {registro.data.gasto_xp} EXP
+                       </div>
+                     )}
+                     {registro.data.gasto_ryous !== undefined && (
+                       <div className="flex items-center gap-2 text-oro font-black text-sm tracking-widest">
+                          {registro.data.gasto_ryous} RYOUS
+                       </div>
+                     )}
+                  </div>
+               </div>
+             )}
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {!showFullDetails ? (
+              <div className="p-6 sm:p-8 bg-black/40 border border-oro/5 ninja-clip-sm flex flex-col md:flex-row justify-between items-center gap-6">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-4">
+                    <VS className="w-5 h-5 text-oro/40" />
+                    <span className="text-xs font-black text-oro/40 uppercase tracking-[0.3em]">Resumen de Combate</span>
+                    {registro.data.ganador === 'Empate' ? (
+                      <span className="text-[10px] font-black text-oro/60 border border-oro/20 px-2 py-0.5">EMPATE</span>
+                    ) : (
+                      <span className={`text-[10px] font-black px-2 py-0.5 border ${
+                        (registro.data.ganador === 'A' && registro.data.equipo_a?.some((p: any) => p.id === (subjectId || registro.autor_id))) ||
+                        (registro.data.ganador === 'B' && registro.data.equipo_b?.some((p: any) => p.id === (subjectId || registro.autor_id)))
+                        ? 'text-green-500 border-green-500/30 bg-green-500/5' 
+                        : 'text-red-500 border-red-500/30 bg-red-500/5'
+                      }`}>
+                        { (registro.data.ganador === 'A' && registro.data.equipo_a?.some((p: any) => p.id === (subjectId || registro.autor_id))) ||
+                          (registro.data.ganador === 'B' && registro.data.equipo_b?.some((p: any) => p.id === (subjectId || registro.autor_id)))
+                          ? 'VICTORIA' : 'DERROTA' }
+                      </span>
+                    )}
+                  </div>
+                  
+                  <p className="text-lg xl:text-xl font-medium text-oro/80 leading-relaxed italic">
+                    {(() => {
+                      const sid = subjectId || registro.autor_id;
+                      const sName = authorName;
+                      const teamA = registro.data.equipo_a || [];
+                      const teamB = registro.data.equipo_b || [];
+                      const isA = teamA.some((p: any) => p.id === sid);
+                      
+                      const allies = (isA ? teamA : teamB).filter((p: any) => p.id !== sid).map((p: any) => p.nombre_ninja);
+                      const enemies = (isA ? teamB : teamA).map((p: any) => p.nombre_ninja);
+                      const xpGained = calculateParticipantXP(isA ? 'A' : 'B', (isA ? teamA : teamB).find((p: any) => p.id === sid)?.huye);
+
+                      return (
+                        <>
+                          <span className="font-black text-oro not-italic">{sName}</span> combati{allies.length > 0 ? 'ó junto a ' : 'ó '}
+                          {allies.length > 0 && <span className="text-oro">{formatNinjaList(allies)}</span>}
+                          {allies.length > 0 ? ' contra ' : ' contra '}
+                          <span className="text-oro">{formatNinjaList(enemies)}</span>. 
+                          Obtiene <span className="font-black text-oro not-italic">{xpGained} EXP</span>.
+                        </>
+                      );
+                    })()}
+                  </p>
+                </div>
+                
+                <button 
+                  onClick={() => setShowFullDetails(true)}
+                  className="ninja-btn-ghost px-6 py-3 text-[10px] focus:outline-none focus:ring-0"
+                >
+                  Ver registro completo
+                </button>
               </div>
             ) : (
-              <p className="text-[10px] text-zinc-500 font-bold">
-                Registrado por <span className="text-zinc-300">{registro.autor?.nombre_ninja}</span>.
-                {(registro.data.recompensa_xp ?? 0) > 0 && (
-                  <> Obtiene <span className="text-blue-400">+{(registro.data.recompensa_xp ?? 0)} EXP</span>.</>
-                )}
-              </p>
+              <div className="animate-in fade-in slide-in-from-top-2 duration-500 outline-none ring-0 border-none">
+                <div className="flex justify-between items-center mb-8 border-b border-oro/10 pb-4">
+                  <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Informe Detallado</span>
+                  <button 
+                    onClick={() => setShowFullDetails(false)}
+                    className="text-[10px] font-black text-oro/40 hover:text-oro uppercase tracking-widest border-b border-oro/20 focus:outline-none focus:ring-0"
+                  >
+                    Contraer resumen
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-10 lg:gap-16 items-start">
+                   <div className="space-y-6">
+                      <div className="flex items-center gap-3 border-b border-oro/10 pb-4">
+                         <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Bando A</span>
+                         {registro.data.ganador === 'A' && <span className="text-[9px] font-black text-oro bg-oro/10 px-2 py-0.5 ninja-clip-xs border border-oro/20">GANADOR</span>}
+                      </div>
+                      <div className="space-y-4">
+                        {registro.data.equipo_a?.map((p: any) => (
+                          <div key={p.id} className="p-4 bg-black/40 border border-oro/5 ninja-clip-xs space-y-3">
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-3">
+                                 <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
+                                 <span className="text-[10px] font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">+{calculateParticipantXP('A', p.huye)} XP</span>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                {p.has_estado_alterado && <span className="px-2 py-0.5 bg-oro/20 text-oro text-[9px] font-black uppercase ninja-clip-xs border border-oro/40">ESTADO ALTERADO</span>}
+                                {p.huye && <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[9px] font-black uppercase ninja-clip-xs border border-orange-500/40">HUYE</span>}
+                                <span className="text-[10px] font-black text-oro/70 uppercase">{p.estado_nombre || 'SIN ESTADO'}</span>
+                              </div>
+                            </div>
+                            {p.has_estado_alterado && p.descripcion_estado && (
+                              <div className="p-3 bg-oro/5 border-l-2 border-oro/20 italic text-[11px] text-oro/60">
+                                 "{p.descripcion_estado}"
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                   </div>
+
+                   <div className="flex lg:flex-col items-center justify-center gap-6 lg:self-center">
+                      <div className="h-px lg:w-px lg:h-12 bg-oro/40 w-full opacity-20" />
+                      <div className="flex flex-col items-center gap-2">
+                        {registro.data.ganador === 'Empate' ? (
+                          <span className="font-black text-oro text-2xl xl:text-4xl uppercase tracking-[0.2em]">RETIRADO</span>
+                        ) : (
+                          <span className="font-ninja text-3xl xl:text-5xl text-oro italic opacity-20">VS</span>
+                        )}
+                      </div>
+                      <div className="h-px lg:w-px lg:h-12 bg-oro/40 w-full opacity-20" />
+                   </div>
+
+                   <div className="space-y-6 lg:text-right">
+                      <div className="flex items-center lg:flex-row-reverse gap-3 border-b border-oro/10 pb-4">
+                        <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Bando B</span>
+                        {registro.data.ganador === 'B' && <span className="text-[9px] font-black text-oro bg-oro/10 px-2 py-0.5 ninja-clip-xs border border-oro/20">GANADOR</span>}
+                      </div>
+                      <div className="space-y-4">
+                        {registro.data.equipo_b?.map((p: any) => (
+                          <div key={p.id} className="p-4 bg-black/40 border border-oro/5 ninja-clip-xs space-y-3">
+                            <div className="flex justify-between items-center lg:flex-row-reverse">
+                              <div className="flex items-center gap-3 lg:flex-row-reverse">
+                                 <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
+                                 <span className="text-[10px] font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">+{calculateParticipantXP('B', p.huye)} XP</span>
+                              </div>
+                              <div className="flex items-center gap-3 lg:flex-row-reverse">
+                                {p.has_estado_alterado && <span className="px-2 py-0.5 bg-oro/20 text-oro text-[9px] font-black uppercase ninja-clip-xs border border-oro/40">ESTADO ALTERADO</span>}
+                                {p.huye && <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[9px] font-black uppercase ninja-clip-xs border border-orange-500/40">HUYE</span>}
+                                <span className="text-[10px] font-black text-oro/70 uppercase">{p.estado_nombre || 'SIN ESTADO'}</span>
+                              </div>
+                            </div>
+                            {p.has_estado_alterado && p.descripcion_estado && (
+                              <div className="p-3 bg-oro/5 border-r-2 border-oro/20 italic text-[11px] text-oro/60 lg:text-right">
+                                 "{p.descripcion_estado}"
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                   </div>
+                </div>
+              </div>
             )}
           </div>
         )}
-      </div>
 
-      {registro.data.urls_imagenes && registro.data.urls_imagenes.length > 0 && (
-        <div className="flex flex-wrap gap-2 pt-4 border-t border-zinc-800/50">
-          {registro.data.urls_imagenes.map((url, i) => (
-            <a 
-              key={i} 
-              href={url} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="flex items-center gap-2 px-3 py-1.5 bg-zinc-950 border border-zinc-800 rounded-lg text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white hover:border-zinc-600 transition-all"
-            >
-              <LinkIcon className="w-3 h-3" /> Prueba {i + 1}
-            </a>
-          ))}
-        </div>
-      )}
+        {registro.data.urls_imagenes && registro.data.urls_imagenes.length > 0 && (
+          <div className="mt-4 flex flex-wrap items-center gap-4 relative z-10">
+            <span className="text-[9px] font-black text-oro/20 uppercase tracking-widest mr-2">PRUEBAS VISUALES:</span>
+            <div className="flex flex-wrap gap-3">
+              {registro.data.urls_imagenes.map((url: string, i: number) => (
+                <a 
+                  key={i} 
+                  href={url} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="flex items-center gap-2 px-3 py-1.5 bg-oro/5 border border-oro/10 hover:border-oro/40 hover:bg-oro/10 text-[9px] font-black text-oro/40 hover:text-oro uppercase tracking-widest transition-all ninja-clip-xs"
+                >
+                  <LinkIcon className="w-3 h-3" /> PRUEBA {i + 1}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

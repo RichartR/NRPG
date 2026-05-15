@@ -6,8 +6,7 @@ import { MasterService } from '@/services/supabase/master.service';
 import { Registro } from '@/domain/types';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { useToastStore } from '@/components/ui/Toast';
-import { DataField, SelectField } from '@/components/ui/Fields';
-import { Plus, X, Link as LinkIcon, Search, UserPlus, User, Swords, Info, Trophy, Users } from 'lucide-react';
+import { X, Search, UserPlus, User, Trophy, Info, Users, Sparkles } from 'lucide-react';
 
 export default function CombatForm({ 
   onCreated, 
@@ -26,7 +25,7 @@ export default function CombatForm({
   }, []);
 
   const [loading, setLoading] = useState(false);
-  const [images, setImages] = useState<string[]>(initialData?.data?.urls_imagenes || ['']);
+  const [images, setImages] = useState(initialData?.data?.urls_imagenes || ['']);
   const [winner, setWinner] = useState<'A' | 'B' | 'Empate'>(initialData?.data?.ganador || 'Empate');
   const [combatConfig, setCombatConfig] = useState<Record<string, number> | null>(null);
   const [estados, setEstados] = useState<{ id: number; nombre: string }[]>([]);
@@ -112,6 +111,15 @@ export default function CombatForm({
     else setTeamB(teamB.filter(p => p.id !== id));
   };
 
+  const calculateXP = (team: 'A' | 'B', huye?: boolean) => {
+    if (!combatConfig) return 0;
+    if (huye) return 0;
+    if (winner === 'Empate') return combatConfig.retirarse || 0;
+    if (winner === 'A') return team === 'A' ? combatConfig.ganar : combatConfig.perder;
+    if (winner === 'B') return team === 'B' ? combatConfig.ganar : combatConfig.perder;
+    return 0;
+  };
+
   const handleSubmit = async () => {
     if (!activeCharacter) {
       addToast('No se ha detectado un personaje activo.', 'error');
@@ -123,22 +131,15 @@ export default function CombatForm({
       return;
     }
 
-    // Calcular resultado para el autor
     const authorInA = teamA.find(p => Number(p.id) === Number(activeCharacter.id));
     const authorInB = teamB.find(p => Number(p.id) === Number(activeCharacter.id));
+    const authorTeam = authorInA ? 'A' : 'B';
     const authorParticipant = authorInA || authorInB;
     
+    const finalXP = calculateXP(authorTeam, authorParticipant?.huye);
     let finalResult = 'retirarse';
-    if (winner === 'A') {
-      finalResult = authorInA ? 'ganar' : 'perder';
-    } else if (winner === 'B') {
-      finalResult = authorInB ? 'ganar' : 'perder';
-    } else {
-      finalResult = 'retirarse';
-    }
-
-    // Si el autor huye, no recibe XP
-    const finalXP = authorParticipant?.huye ? 0 : (combatConfig ? (combatConfig[finalResult] || 0) : 0);
+    if (winner === 'A') finalResult = authorInA ? 'ganar' : 'perder';
+    else if (winner === 'B') finalResult = authorInB ? 'ganar' : 'perder';
 
     const payload: any = {
       tipo: 'combate',
@@ -150,11 +151,12 @@ export default function CombatForm({
         equipo_b: teamB,
         resultado: finalResult,
         recompensa_xp: finalXP,
-        config_xp: {
-          ganar: combatConfig?.ganar || 0,
-          perder: combatConfig?.perder || 0,
-          retirarse: combatConfig?.retirarse || 0
-        }
+        config_xp: combatConfig,
+        participantes_historicos: [
+          { id: activeCharacter.id, nombre_ninja: activeCharacter.nombre_ninja },
+          ...teamA.map(p => ({ id: p.id, nombre_ninja: p.nombre_ninja })),
+          ...teamB.map(p => ({ id: p.id, nombre_ninja: p.nombre_ninja }))
+        ]
       }
     };
 
@@ -176,328 +178,276 @@ export default function CombatForm({
   };
 
   return (
-    <div className="bg-zinc-900/50 border border-zinc-800 rounded-[2.5rem] p-8 space-y-8 backdrop-blur-xl">
-      <div className="flex items-center gap-4 mb-2">
-        <div className="p-3 rounded-2xl border bg-red-500/10 border-red-500/20 text-red-500">
-          <Swords className="w-6 h-6" />
+    <div className="w-full animate-in fade-in slide-in-from-top-4 duration-700">
+      <div className="ninja-card-oro p-8 sm:p-12 xl:p-20 relative overflow-hidden">
+        {/* Background Decorative Element */}
+        <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none">
+          <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-64 h-64 rotate-12" alt="bg" />
         </div>
-        <div>
-          <h3 className="text-xl font-black text-white uppercase italic tracking-tighter leading-none">Registro de Combate</h3>
-          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-1">Define los bandos y el resultado</p>
-        </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Bando A */}
-        <div className="space-y-4 p-6 bg-zinc-950/50 border border-zinc-800 rounded-3xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-            <Users className="w-20 h-20" />
-          </div>
-          <div className="flex items-center justify-between relative z-10">
-            <h4 className="text-sm font-black uppercase italic tracking-widest text-blue-500">Bando A</h4>
-            <span className="text-[10px] font-bold text-zinc-600 uppercase">{teamA.length} Combatientes</span>
-          </div>
-          
-          <div className="relative z-10">
-            <div className="relative mb-4">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-600" />
-              <input 
-                type="text"
-                placeholder="Añadir al Bando A..."
-                value={searchTargetTeam === 'A' ? participantSearch : ''}
-                onChange={(e) => handleSearchParticipants(e.target.value, 'A')}
-                className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl pl-10 pr-4 py-3 text-xs text-white font-bold outline-none focus:border-blue-500/50 transition-all placeholder:text-zinc-700"
-              />
-              {searchResults.length > 0 && searchTargetTeam === 'A' && (
-                <div className="absolute z-20 w-full mt-2 bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-2xl">
-                  {searchResults.map(p => (
-                    <button key={p.id} onClick={() => addParticipant(p)} className="w-full px-4 py-3 text-left text-xs text-zinc-400 hover:bg-zinc-800 hover:text-white flex items-center gap-2 transition-all">
-                      <UserPlus className="w-3 h-3" /> {p.nombre_ninja}
-                    </button>
-                  ))}
-                </div>
-              )}
+        <div className="relative z-10 space-y-12 sm:space-y-16">
+          <div className="flex justify-between items-start border-b border-oro/10 pb-10">
+            <div className="space-y-2">
+              <h3 className="ninja-title text-4xl sm:text-6xl text-oro">
+                {initialData ? 'EDITAR CRÓNICA' : 'CRÓNICA DE GUERRA'}
+              </h3>
+              <p className="text-xs sm:text-sm font-black text-oro/40 uppercase tracking-[0.4em]">Sincronizando con el archivo histórico de combate</p>
             </div>
-
-            <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-              {teamA.map(p => (
-                <div key={p.id} className="p-4 bg-zinc-900/80 border border-zinc-800 rounded-2xl group/item space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                        <User className="w-3 h-3 text-blue-500" />
-                      </div>
-                      <span className="text-xs font-bold text-zinc-300">
-                        {p.nombre_ninja} {Number(p.id) === Number(activeCharacter?.id) && <span className="text-[9px] text-zinc-500 ml-1">(Tú)</span>}
-                      </span>
-                    </div>
-                    <button onClick={() => removeParticipant(p.id, 'A')} className="opacity-0 group-hover/item:opacity-100 p-1 text-zinc-600 hover:text-red-500 transition-all">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                  
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-center gap-2">
-                      <select 
-                        value={p.estado_nombre || ''}
-                        onChange={(e) => updateParticipantState(p.id, 'A', { estado_nombre: e.target.value })}
-                        className="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-[10px] font-bold text-zinc-400 outline-none focus:border-blue-500/30 transition-all"
-                      >
-                        <option value="">Sin estado</option>
-                        {estados.map(est => (
-                          <option key={est.id} value={est.nombre}>{est.nombre}</option>
-                        ))}
-                      </select>
-                      
-                      <div className="flex items-center gap-1">
-                        <label className="flex items-center gap-2 px-2 py-1.5 cursor-pointer group/toggle bg-zinc-950 border border-zinc-800 rounded-xl hover:border-zinc-700 transition-all">
-                          <input 
-                            type="checkbox"
-                            checked={!!p.has_estado_alterado}
-                            onChange={(e) => updateParticipantState(p.id, 'A', { has_estado_alterado: e.target.checked })}
-                            className="sr-only peer"
-                          />
-                          <div className="w-3 h-3 rounded-sm border border-zinc-800 peer-checked:bg-blue-500 peer-checked:border-blue-500 transition-all flex items-center justify-center">
-                            <Plus className={`w-2 h-2 text-white transition-transform ${p.has_estado_alterado ? 'rotate-45' : ''}`} />
-                          </div>
-                          <span className="text-[8px] font-black uppercase text-zinc-600 group-hover/toggle:text-zinc-400 transition-colors">Estado Alterado</span>
-                        </label>
-
-                        <label className="flex items-center gap-2 px-2 py-1.5 cursor-pointer group/toggle bg-zinc-950 border border-zinc-800 rounded-xl hover:border-zinc-700 transition-all">
-                          <input 
-                            type="checkbox"
-                            checked={!!p.huye}
-                            onChange={(e) => updateParticipantState(p.id, 'A', { huye: e.target.checked })}
-                            className="sr-only peer"
-                          />
-                          <div className="w-3 h-3 rounded-sm border border-zinc-800 peer-checked:bg-orange-500 peer-checked:border-orange-500 transition-all flex items-center justify-center">
-                            <X className="w-2 h-2 text-white" />
-                          </div>
-                          <span className="text-[8px] font-black uppercase text-zinc-600 group-hover/toggle:text-zinc-400 transition-colors">Huye</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    {p.has_estado_alterado && (
-                      <textarea
-                        value={p.descripcion_estado || ''}
-                        onChange={(e) => updateParticipantState(p.id, 'A', { descripcion_estado: e.target.value })}
-                        placeholder="Describe el estado alterado..."
-                        className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-[10px] font-bold text-zinc-400 outline-none focus:border-blue-500/30 transition-all min-h-[60px] resize-none animate-in slide-in-from-top-2 duration-300"
-                      />
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Bando B */}
-        <div className="space-y-4 p-6 bg-zinc-950/50 border border-zinc-800 rounded-3xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-            <Users className="w-20 h-20" />
-          </div>
-          <div className="flex items-center justify-between relative z-10">
-            <h4 className="text-sm font-black uppercase italic tracking-widest text-red-500">Bando B</h4>
-            <span className="text-[10px] font-bold text-zinc-600 uppercase">{teamB.length} Combatientes</span>
-          </div>
-
-          <div className="relative z-10">
-            <div className="relative mb-4">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-600" />
-              <input 
-                type="text"
-                placeholder="Añadir al Bando B..."
-                value={searchTargetTeam === 'B' ? participantSearch : ''}
-                onChange={(e) => handleSearchParticipants(e.target.value, 'B')}
-                className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl pl-10 pr-4 py-3 text-xs text-white font-bold outline-none focus:border-red-500/50 transition-all placeholder:text-zinc-700"
-              />
-              {searchResults.length > 0 && searchTargetTeam === 'B' && (
-                <div className="absolute z-20 w-full mt-2 bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-2xl">
-                  {searchResults.map(p => (
-                    <button key={p.id} onClick={() => addParticipant(p)} className="w-full px-4 py-3 text-left text-xs text-zinc-400 hover:bg-zinc-800 hover:text-white flex items-center gap-2 transition-all">
-                      <UserPlus className="w-3 h-3" /> {p.nombre_ninja}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-              {teamB.map(p => (
-                <div key={p.id} className="p-4 bg-zinc-900/80 border border-zinc-800 rounded-2xl group/item space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 rounded-lg bg-red-500/10 flex items-center justify-center">
-                        <User className="w-3 h-3 text-red-500" />
-                      </div>
-                      <span className="text-xs font-bold text-zinc-300">
-                        {p.nombre_ninja} {Number(p.id) === Number(activeCharacter?.id) && <span className="text-[9px] text-zinc-500 ml-1">(Tú)</span>}
-                      </span>
-                    </div>
-                    <button onClick={() => removeParticipant(p.id, 'B')} className="opacity-0 group-hover/item:opacity-100 p-1 text-zinc-600 hover:text-red-500 transition-all">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-center gap-2">
-                      <select 
-                        value={p.estado_nombre || ''}
-                        onChange={(e) => updateParticipantState(p.id, 'B', { estado_nombre: e.target.value })}
-                        className="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-[10px] font-bold text-zinc-400 outline-none focus:border-red-500/30 transition-all"
-                      >
-                        <option value="">Sin estado</option>
-                        {estados.map(est => (
-                          <option key={est.id} value={est.nombre}>{est.nombre}</option>
-                        ))}
-                      </select>
-
-                      <div className="flex items-center gap-1">
-                        <label className="flex items-center gap-2 px-2 py-1.5 cursor-pointer group/toggle bg-zinc-950 border border-zinc-800 rounded-xl hover:border-zinc-700 transition-all">
-                          <input 
-                            type="checkbox"
-                            checked={!!p.has_estado_alterado}
-                            onChange={(e) => updateParticipantState(p.id, 'B', { has_estado_alterado: e.target.checked })}
-                            className="sr-only peer"
-                          />
-                          <div className="w-3 h-3 rounded-sm border border-zinc-800 peer-checked:bg-red-500 peer-checked:border-red-500 transition-all flex items-center justify-center">
-                            <Plus className={`w-2 h-2 text-white transition-transform ${p.has_estado_alterado ? 'rotate-45' : ''}`} />
-                          </div>
-                          <span className="text-[8px] font-black uppercase text-zinc-600 group-hover/toggle:text-zinc-400 transition-colors">Estado Alterado</span>
-                        </label>
-
-                        <label className="flex items-center gap-2 px-2 py-1.5 cursor-pointer group/toggle bg-zinc-950 border border-zinc-800 rounded-xl hover:border-zinc-700 transition-all">
-                          <input 
-                            type="checkbox"
-                            checked={!!p.huye}
-                            onChange={(e) => updateParticipantState(p.id, 'B', { huye: e.target.checked })}
-                            className="sr-only peer"
-                          />
-                          <div className="w-3 h-3 rounded-sm border border-zinc-800 peer-checked:bg-orange-500 peer-checked:border-orange-500 transition-all flex items-center justify-center">
-                            <X className="w-2 h-2 text-white" />
-                          </div>
-                          <span className="text-[8px] font-black uppercase text-zinc-600 group-hover/toggle:text-zinc-400 transition-colors">Huye</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    {p.has_estado_alterado && (
-                      <textarea
-                        value={p.descripcion_estado || ''}
-                        onChange={(e) => updateParticipantState(p.id, 'B', { descripcion_estado: e.target.value })}
-                        placeholder="Describe el estado alterado..."
-                        className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-[10px] font-bold text-zinc-400 outline-none focus:border-red-500/30 transition-all min-h-[60px] resize-none animate-in slide-in-from-top-2 duration-300"
-                      />
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Resultado */}
-      <div className="space-y-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Trophy className="w-4 h-4 text-orange-500" />
-          <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Resultado Final</h4>
-        </div>
-        
-        <div className="grid grid-cols-3 gap-4">
-          {[
-            { id: 'A', label: 'Ganador Bando A', color: 'border-blue-500/50 text-blue-500 bg-blue-500/5' },
-            { id: 'Empate', label: 'Empate / Retirada', color: 'border-zinc-700 text-zinc-500 bg-zinc-900/50' },
-            { id: 'B', label: 'Ganador Bando B', color: 'border-red-500/50 text-red-500 bg-red-500/5' }
-          ].map((opt) => (
-            <button
-              key={opt.id}
-              onClick={() => setWinner(opt.id as any)}
-              className={`p-4 rounded-2xl border-2 transition-all font-black text-[10px] uppercase tracking-widest ${
-                winner === opt.id ? opt.color : 'border-zinc-800 text-zinc-600 hover:border-zinc-700'
-              }`}
+            <button 
+              onClick={() => onCreated()} 
+              className="group p-4 bg-black/40 border border-oro/10 hover:border-oro/40 transition-all ninja-clip-xs"
             >
-              {opt.label}
+              <X className="w-8 h-8 text-oro/40 group-hover:text-oro" />
             </button>
-          ))}
-        </div>
+          </div>
 
-        {combatConfig && (() => {
-          const calculateParticipantXP = (p: any, team: 'A' | 'B') => {
-            if (p.huye) return 0;
-            if (winner === 'Empate') return combatConfig.retirarse || 0;
-            if (winner === team) return combatConfig.ganar || 0;
-            return combatConfig.perder || 0;
-          };
-
-          return (
-            <div className="flex flex-col gap-4 px-6 py-6 bg-orange-500/5 border border-orange-500/10 rounded-3xl animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="flex items-center gap-2 border-b border-orange-500/10 pb-4">
-                <Info className="w-4 h-4 text-orange-500" />
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-orange-500">Desglose de Recompensas</h4>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 sm:gap-16">
+            {/* Bando A */}
+            <div className="space-y-8 p-8 bg-black/40 border border-oro/20 ninja-clip-md">
+              <div className="flex items-center justify-between border-b border-oro/10 pb-4">
+                <h4 className="text-lg font-black uppercase tracking-[0.3em] text-oro">BANDO A</h4>
+                <span className="text-xs font-bold text-oro/40 uppercase">{teamA.length} NINJAS</span>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Desglose Bando A */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-black uppercase text-blue-500 tracking-tighter">Bando A</span>
-                    <span className="text-[9px] font-bold text-zinc-600 uppercase italic">
-                      {winner === 'A' ? 'Ganadores' : winner === 'Empate' ? 'Empate' : 'Perdedores'}
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    {teamA.map(p => (
-                      <div key={p.id} className="flex items-center justify-between bg-zinc-950/50 p-2 rounded-xl border border-zinc-800/50">
-                        <span className="text-[10px] font-bold text-zinc-400">{p.nombre_ninja}</span>
-                        <span className={`text-[10px] font-black ${calculateParticipantXP(p, 'A') > 0 ? 'text-green-500' : 'text-zinc-600'}`}>
-                          +{calculateParticipantXP(p, 'A')} EXP
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+              
+              <div className="space-y-6">
+                <div className="relative">
+                  <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-oro/20" />
+                  <input 
+                    type="text"
+                    placeholder="AÑADIR NINJA..."
+                    value={searchTargetTeam === 'A' ? participantSearch : ''}
+                    onChange={(e) => handleSearchParticipants(e.target.value, 'A')}
+                    className="w-full ninja-input pl-14 py-4 text-xs"
+                  />
+                  {searchResults.length > 0 && searchTargetTeam === 'A' && (
+                    <div className="absolute z-50 w-full mt-2 bg-black border border-oro/20 shadow-2xl animate-in fade-in zoom-in duration-200">
+                      {searchResults.map(p => (
+                        <button key={p.id} onClick={() => addParticipant(p)} className="w-full px-6 py-5 text-left text-[10px] font-black text-oro/60 hover:bg-oro/10 hover:text-oro flex items-center gap-3 transition-all border-b border-oro/5 last:border-0 uppercase tracking-widest">
+                          <UserPlus className="w-4 h-4" /> {p.nombre_ninja}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {/* Desglose Bando B */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-black uppercase text-red-500 tracking-tighter">Bando B</span>
-                    <span className="text-[9px] font-bold text-zinc-600 uppercase italic">
-                      {winner === 'B' ? 'Ganadores' : winner === 'Empate' ? 'Empate' : 'Perdedores'}
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    {teamB.map(p => (
-                      <div key={p.id} className="flex items-center justify-between bg-zinc-950/50 p-2 rounded-xl border border-zinc-800/50">
-                        <span className="text-[10px] font-bold text-zinc-400">{p.nombre_ninja}</span>
-                        <span className={`text-[10px] font-black ${calculateParticipantXP(p, 'B') > 0 ? 'text-green-500' : 'text-zinc-600'}`}>
-                          +{calculateParticipantXP(p, 'B')} EXP
-                        </span>
+                <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                  {teamA.map(p => (
+                    <div key={p.id} className="p-5 bg-black/40 border border-oro/10 ninja-clip-xs group/item space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <User className="w-4 h-4 text-oro/40" />
+                          <span className="text-xs font-black text-oro uppercase tracking-widest">
+                            {p.nombre_ninja} {Number(p.id) === Number(activeCharacter?.id) && <span className="text-oro/40 ml-1">(TÚ)</span>}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                           <div className="flex items-center gap-2 px-3 py-1 bg-oro/10 border border-oro/20 ninja-clip-xs">
+                              <Sparkles className="w-3 h-3 text-oro" />
+                              <span className="text-[10px] font-black text-oro">+{calculateXP('A', p.huye)} XP</span>
+                           </div>
+                           <button onClick={() => removeParticipant(p.id, 'A')} className="opacity-0 group-hover/item:opacity-100 p-2 text-oro/20 hover:text-rojo-sangre transition-all">
+                             <X className="w-4 h-4" />
+                           </button>
+                        </div>
                       </div>
-                    ))}
-                  </div>
+                      
+                      <div className="grid grid-cols-1 gap-4">
+                        <select 
+                          value={p.estado_nombre || ''}
+                          onChange={(e) => updateParticipantState(p.id, 'A', { estado_nombre: e.target.value })}
+                          className="w-full ninja-input py-3 text-xs"
+                        >
+                          <option value="" className="bg-zinc-950 text-oro/40">SIN ESTADO</option>
+                          {estados.map(est => (
+                            <option key={est.id} value={est.nombre} className="bg-zinc-950 text-oro">{est.nombre}</option>
+                          ))}
+                        </select>
+                        
+                        <div className="flex flex-wrap gap-3">
+                          <button 
+                            onClick={() => updateParticipantState(p.id, 'A', { has_estado_alterado: !p.has_estado_alterado })}
+                            className={`px-4 py-2 border text-[10px] font-black uppercase tracking-widest transition-all ${p.has_estado_alterado ? 'bg-oro/20 border-oro/40 text-oro' : 'bg-black/20 border-oro/5 text-oro/20'}`}
+                          >
+                            ESTADO ALTERADO
+                          </button>
+                          <button 
+                            onClick={() => updateParticipantState(p.id, 'A', { huye: !p.huye })}
+                            className={`px-4 py-2 border text-[10px] font-black uppercase tracking-widest transition-all ${p.huye ? 'bg-rojo-sangre/20 border-rojo-sangre/40 text-rojo-sangre' : 'bg-black/20 border-oro/5 text-oro/20'}`}
+                          >
+                            HUYE
+                          </button>
+                        </div>
+
+                        {p.has_estado_alterado && (
+                          <textarea
+                            value={p.descripcion_estado || ''}
+                            onChange={(e) => updateParticipantState(p.id, 'A', { descripcion_estado: e.target.value })}
+                            placeholder="Describe el estado..."
+                            className="w-full ninja-input p-4 text-xs min-h-[80px] resize-none animate-in slide-in-from-top-2"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-
-              <p className="text-[9px] text-orange-500/50 italic text-center pt-2">
-                * Las recompensas se aplicarán individualmente al validar el registro.
-              </p>
             </div>
-          );
-        })()}
-      </div>
 
-      <button 
-        onClick={handleSubmit}
-        disabled={loading}
-        className="w-full bg-white hover:bg-zinc-200 disabled:bg-zinc-800 disabled:text-zinc-600 text-black font-black py-4 rounded-2xl flex items-center justify-center gap-3 transition-all transform active:scale-[0.98] shadow-[0_0_20px_rgba(255,255,255,0.1)]"
-      >
-        {loading ? <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" /> : <Swords className="w-5 h-5" />}
-        {loading ? 'Procesando...' : 'Publicar Crónica de Combate'}
-      </button>
+            {/* Bando B */}
+            <div className="space-y-8 p-8 bg-black/40 border border-oro/20 ninja-clip-md">
+              <div className="flex items-center justify-between border-b border-oro/10 pb-4">
+                <h4 className="text-lg font-black uppercase tracking-[0.3em] text-oro">BANDO B</h4>
+                <span className="text-xs font-bold text-oro/40 uppercase">{teamB.length} NINJAS</span>
+              </div>
+
+              <div className="space-y-6">
+                <div className="relative">
+                  <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-oro/20" />
+                  <input 
+                    type="text"
+                    placeholder="AÑADIR NINJA..."
+                    value={searchTargetTeam === 'B' ? participantSearch : ''}
+                    onChange={(e) => handleSearchParticipants(e.target.value, 'B')}
+                    className="w-full ninja-input pl-14 py-4 text-xs"
+                  />
+                  {searchResults.length > 0 && searchTargetTeam === 'B' && (
+                    <div className="absolute z-50 w-full mt-2 bg-black border border-oro/20 shadow-2xl animate-in fade-in zoom-in duration-200">
+                      {searchResults.map(p => (
+                        <button key={p.id} onClick={() => addParticipant(p)} className="w-full px-6 py-5 text-left text-[10px] font-black text-oro/60 hover:bg-oro/10 hover:text-oro flex items-center gap-3 transition-all border-b border-oro/5 last:border-0 uppercase tracking-widest">
+                          <UserPlus className="w-4 h-4" /> {p.nombre_ninja}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                  {teamB.map(p => (
+                    <div key={p.id} className="p-5 bg-black/40 border border-oro/10 ninja-clip-xs group/item space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <User className="w-4 h-4 text-oro/40" />
+                          <span className="text-xs font-black text-oro uppercase tracking-widest">
+                            {p.nombre_ninja} {Number(p.id) === Number(activeCharacter?.id) && <span className="text-oro/40 ml-1">(TÚ)</span>}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                           <div className="flex items-center gap-2 px-3 py-1 bg-oro/10 border border-oro/20 ninja-clip-xs">
+                              <Sparkles className="w-3 h-3 text-oro" />
+                              <span className="text-[10px] font-black text-oro">+{calculateXP('B', p.huye)} XP</span>
+                           </div>
+                           <button onClick={() => removeParticipant(p.id, 'B')} className="opacity-0 group-hover/item:opacity-100 p-2 text-oro/20 hover:text-rojo-sangre transition-all">
+                             <X className="w-4 h-4" />
+                           </button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-4">
+                        <select 
+                          value={p.estado_nombre || ''}
+                          onChange={(e) => updateParticipantState(p.id, 'B', { estado_nombre: e.target.value })}
+                          className="w-full ninja-input py-3 text-xs"
+                        >
+                          <option value="" className="bg-zinc-950 text-oro/40">SIN ESTADO</option>
+                          {estados.map(est => (
+                            <option key={est.id} value={est.nombre} className="bg-zinc-950 text-oro">{est.nombre}</option>
+                          ))}
+                        </select>
+
+                        <div className="flex flex-wrap gap-3">
+                          <button 
+                            onClick={() => updateParticipantState(p.id, 'B', { has_estado_alterado: !p.has_estado_alterado })}
+                            className={`px-4 py-2 border text-[10px] font-black uppercase tracking-widest transition-all ${p.has_estado_alterado ? 'bg-oro/20 border-oro/40 text-oro' : 'bg-black/20 border-oro/5 text-oro/20'}`}
+                          >
+                            ESTADO ALTERADO
+                          </button>
+                          <button 
+                            onClick={() => updateParticipantState(p.id, 'B', { huye: !p.huye })}
+                            className={`px-4 py-2 border text-[10px] font-black uppercase tracking-widest transition-all ${p.huye ? 'bg-rojo-sangre/20 border-rojo-sangre/40 text-rojo-sangre' : 'bg-black/20 border-oro/5 text-oro/20'}`}
+                          >
+                            HUYE
+                          </button>
+                        </div>
+
+                        {p.has_estado_alterado && (
+                          <textarea
+                            value={p.descripcion_estado || ''}
+                            onChange={(e) => updateParticipantState(p.id, 'B', { descripcion_estado: e.target.value })}
+                            placeholder="Describe el estado..."
+                            className="w-full ninja-input p-4 text-xs min-h-[80px] resize-none animate-in slide-in-from-top-2"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Resultado y Recompensas */}
+          <div className="space-y-12 pt-12 border-t border-oro/10">
+            <div className="flex flex-col md:flex-row gap-12 items-center">
+              <div className="flex-1 w-full space-y-6">
+                <div className="flex items-center gap-4">
+                  <Trophy className="w-5 h-5 text-oro/40" />
+                  <h4 className="text-xs font-black uppercase tracking-[0.4em] text-oro/40">RESULTADO FINAL</h4>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                  {[
+                    { id: 'A', label: 'VICTORIA A', color: 'bg-oro text-rojo-sangre border-oro' },
+                    { id: 'Empate', label: 'EMPATE', color: 'bg-white/10 text-white/60 border-white/20' },
+                    { id: 'B', label: 'VICTORIA B', color: 'bg-oro text-rojo-sangre border-oro' }
+                  ].map((opt) => (
+                    <button
+                      key={opt.id}
+                      onClick={() => setWinner(opt.id as any)}
+                      className={`py-6 ninja-clip-sm border transition-all font-black text-xs uppercase tracking-[0.2em] ${
+                        winner === opt.id ? opt.color : 'bg-black/40 border-oro/10 text-oro/40 hover:border-oro/30'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {combatConfig && (
+                <div className="w-full md:w-[400px] p-8 bg-black/40 border border-oro/10 ninja-clip-md">
+                   <div className="flex items-center gap-4 mb-6 opacity-40">
+                      <Info className="w-5 h-5" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">CÁLCULO DE MÉRITOS</span>
+                   </div>
+                   <div className="space-y-3">
+                      <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest">
+                        <span className="text-oro/40">POR VICTORIA</span>
+                        <span className="text-oro">+{combatConfig.ganar} XP</span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest">
+                        <span className="text-oro/40">POR DERROTA</span>
+                        <span className="text-oro">+{combatConfig.perder} XP</span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest">
+                        <span className="text-oro/40">POR EMPATE</span>
+                        <span className="text-oro">+{combatConfig.retirarse} XP</span>
+                      </div>
+                   </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="pt-10">
+            <button 
+              onClick={handleSubmit}
+              disabled={loading}
+              className={`w-full py-8 sm:py-10 ninja-btn-oro text-xl sm:text-2xl ${loading ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+            >
+              {loading ? 'SELLANDO ARCHIVO DE GUERRA...' : initialData ? 'ACTUALIZAR CRÓNICA' : 'PUBLICAR CRÓNICA'}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
-

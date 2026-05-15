@@ -43,19 +43,26 @@ export default function DocEditForm({ doc, categories, onCancel, defaultCategory
   };
 
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-6 overflow-y-auto">
-      <div className="bg-zinc-950 border border-zinc-900 w-full max-w-3xl rounded-[3rem] overflow-hidden shadow-2xl my-auto">
-        <header className="bg-zinc-900/50 p-10 flex justify-between items-center border-b border-zinc-900">
-          <div>
-            <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter flex items-center gap-4">
-              <PlusCircle className="w-6 h-6 text-orange-500" />
-              {isCreate ? 'Registro Táctico' : 'Actualizar Registro'}
-            </h2>
-            <p className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em] mt-2 ml-10">Módulo de gestión de archivos</p>
+    <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-center justify-center p-6 xl:p-12 overflow-y-auto">
+      <div className="bg-black/60 ninja-box ninja-border w-full max-w-4xl shadow-[0_0_100px_rgba(0,0,0,0.8)] relative overflow-hidden my-auto backdrop-blur-md">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-oro/5 rounded-full blur-[100px] -mr-48 -mt-48 pointer-events-none" />
+        
+        <header className="bg-black/40 p-10 xl:p-12 flex justify-between items-center border-b border-oro/10">
+          <div className="flex items-center gap-8">
+            <div className="w-20 h-20 bg-rojo-sangre/10 border border-rojo-sangre/20 flex items-center justify-center" style={{ clipPath: 'polygon(20% 0, 80% 0, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0 80%, 0 20%)' }}>
+               <PlusCircle className="w-10 h-10 text-rojo-sangre" />
+            </div>
+            <div>
+              <h2 className="ninja-title text-3xl xl:text-5xl leading-none">
+                {isCreate ? 'REGISTRO TÁCTICO' : 'ACTUALIZAR REGISTRO'}
+              </h2>
+              <p className="text-[10px] xl:text-xs font-black text-oro/30 uppercase tracking-[0.4em] mt-3 italic">MÓDULO DE GESTIÓN DE ARCHIVOS SHINOBI</p>
+            </div>
           </div>
-          <div className="flex items-center gap-6">
-            <label className="flex items-center gap-3 cursor-pointer group bg-black/50 px-6 py-3 rounded-2xl border border-zinc-900">
-              <span className={`text-[10px] font-black uppercase tracking-widest ${formData.activo ? 'text-orange-500' : 'text-zinc-700'}`}>
+          
+          <div className="flex items-center gap-8">
+            <label className="flex items-center gap-4 cursor-pointer group bg-black/40 px-6 py-3 border border-oro/10" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+              <span className={`text-[10px] font-black uppercase tracking-widest ${formData.activo ? 'text-oro' : 'text-oro/20'}`}>
                 {formData.activo ? 'DESPLEGADO' : 'ENCRIPTADO'}
               </span>
               <input 
@@ -64,20 +71,20 @@ export default function DocEditForm({ doc, categories, onCancel, defaultCategory
                 checked={formData.activo} 
                 onChange={e => setFormData({...formData, activo: e.target.checked})} 
               />
-              <div className={`w-10 h-5 rounded-full transition-all relative ${formData.activo ? 'bg-orange-600/20 border-orange-600/50' : 'bg-zinc-900 border-zinc-800'} border`}>
-                <div className={`absolute top-1 w-2.5 h-2.5 rounded-full transition-all ${formData.activo ? 'right-1.5 bg-orange-500' : 'left-1.5 bg-zinc-700'}`} />
+              <div className={`w-12 h-6 transition-all relative ${formData.activo ? 'bg-oro/10 border-oro/30' : 'bg-black/60 border-oro/5'} border`} style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                <div className={`absolute top-1 w-3 h-3 transition-all ${formData.activo ? 'right-1.5 bg-oro shadow-[0_0_10px_#CBA24B]' : 'left-1.5 bg-oro/10'}`} style={{ clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' }} />
               </div>
             </label>
-            <button onClick={onCancel} className="p-2 text-zinc-600 hover:text-white transition-colors">
-              <X className="w-8 h-8" />
+            <button onClick={onCancel} className="p-3 text-oro/30 hover:text-oro transition-all hover:rotate-90">
+              <X className="w-10 h-10" />
             </button>
           </div>
         </header>
 
-        <form onSubmit={handleSave} className="p-10 space-y-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <form onSubmit={handleSave} className="p-12 xl:p-16 space-y-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             <DataField 
-              label="Título del Documento" 
+              label="TÍTULO DEL DOCUMENTO" 
               value={formData.titulo} 
               onChange={v => {
                 setFormData({
@@ -88,46 +95,48 @@ export default function DocEditForm({ doc, categories, onCancel, defaultCategory
               }} 
             />
             <SelectField 
-              label="Categoría" 
+              label="CATEGORÍA DE ACCESO" 
               value={formData.categoria} 
-              options={categories.map(c => ({ label: c.nombre, value: c.slug }))} 
+              options={categories.map(c => ({ label: c.nombre.toUpperCase(), value: c.slug }))} 
               onChange={v => setFormData({ ...formData, categoria: v })} 
             />
             <DataField 
-              label="Clave (ID de Sistema)" 
+              label="CLAVE (ID DE SISTEMA)" 
               value={formData.clave} 
               onChange={v => setFormData({ ...formData, clave: v.toLowerCase().replace(/\s+/g, '-') })} 
             />
             {showSubcategory && (
-              <DataField label="Subcategoría / Etiqueta" value={formData.subcategoria} onChange={v => setFormData({ ...formData, subcategoria: v })} />
+              <DataField label="SUBCATEGORÍA / PROTOCOLO" value={formData.subcategoria} onChange={v => setFormData({ ...formData, subcategoria: v })} />
             )}
           </div>
 
-          <div className="grid grid-cols-1 gap-8">
-            <DataField label="Enlace de Google Drive (Acceso Directo)" value={formData.url_drive} onChange={v => setFormData({ ...formData, url_drive: v })} placeholder="https://drive.google.com/..." />
-            <DataField label="URL Imagen de Cabecera" value={formData.url_imagen} onChange={v => setFormData({ ...formData, url_imagen: v })} placeholder="https://i.imgur.com/..." />
+          <div className="grid grid-cols-1 gap-10">
+            <DataField label="ENLACE DE GOOGLE DRIVE (NUBE)" value={formData.url_drive} onChange={v => setFormData({ ...formData, url_drive: v })} placeholder="https://drive.google.com/..." />
+            <DataField label="URL IMAGEN DE CABECERA (VISUAL)" value={formData.url_imagen} onChange={v => setFormData({ ...formData, url_imagen: v })} placeholder="https://i.imgur.com/..." />
           </div>
 
-          <div className="space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">Resumen Ejecutivo</label>
+          <div className="space-y-4">
+            <label className="text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] text-oro/30 ml-2">RESUMEN EJECUTIVO / NOTAS DE CAMPO</label>
             <textarea 
-              rows={4}
+              rows={5}
               value={formData.descripcion || ''} 
               onChange={e => setFormData({ ...formData, descripcion: e.target.value })}
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-[2rem] p-8 text-white font-bold outline-none focus:border-orange-500 transition-all placeholder:text-zinc-800"
-              placeholder="Escribe una breve descripción del propósito de este documento..."
+              className="w-full bg-black/40 border border-oro/10 p-10 text-oro font-black outline-none focus:border-oro transition-all placeholder:text-oro/10 text-lg xl:text-xl italic uppercase tracking-tight"
+              placeholder="ESCRIBE EL PROPÓSITO TÁCTICO DE ESTE ARCHIVO..."
+              style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}
             />
           </div>
 
-          <footer className="flex justify-end items-center gap-8 pt-10 border-t border-zinc-900">
-            <button type="button" onClick={onCancel} className="text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:text-white transition-colors">Abortar Operación</button>
+          <footer className="flex justify-end items-center gap-12 pt-12 border-t border-oro/10">
+            <button type="button" onClick={onCancel} className="text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] text-oro/20 hover:text-rojo-sangre transition-colors italic">ABORTAR OPERACIÓN</button>
             <button 
               type="submit" 
               disabled={loading}
-              className="bg-white text-black px-12 py-5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-4 transition-all shadow-2xl shadow-white/5 active:scale-95 disabled:opacity-50"
+              className="bg-oro text-rojo-sangre px-16 py-6 font-black text-xs xl:text-sm uppercase tracking-[0.3em] flex items-center gap-6 transition-all shadow-2xl shadow-oro/10 active:scale-95 disabled:opacity-50 hover:brightness-110"
+              style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
             >
-              {loading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-              {isCreate ? 'Finalizar Registro' : 'Confirmar Cambios'}
+              {loading ? <RefreshCw className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
+              {isCreate ? 'FINALIZAR REGISTRO' : 'CONFIRMAR CAMBIOS'}
             </button>
           </footer>
         </form>

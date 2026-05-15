@@ -16,78 +16,77 @@ export default async function AldeaDetailPage({ params }: { params: Promise<{ sl
   return (
     <div className="min-h-screen bg-black">
       {/* Hero Banner de la Aldea */}
-      <div className="relative h-[50vh] min-h-[400px] overflow-hidden">
+      <div className="relative h-[60vh] min-h-[500px] overflow-hidden">
         {aldea.url_imagen && (
           <img 
             src={aldea.url_imagen} 
             alt={aldea.nombre_jap}
-            className="w-full h-full object-cover opacity-50"
+            className="w-full h-full object-cover opacity-40 grayscale group-hover:grayscale-0 transition-all duration-1000"
             referrerPolicy="no-referrer"
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
         
-        <div className="absolute inset-0 flex flex-col justify-end p-8 md:p-20 max-w-7xl mx-auto">
-          <Link href="/aldeas" className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors mb-8 text-xs font-black uppercase tracking-widest group">
-            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Volver a aldeas
+        <div className="absolute inset-0 flex flex-col justify-end p-12 md:p-20 max-w-[1750px] mx-auto">
+          <Link href="/aldeas" className="flex items-center gap-4 text-oro/60 hover:text-oro transition-all mb-12 text-xs xl:text-sm font-black uppercase tracking-[0.4em] group">
+            <div className="w-2 h-2 bg-rojo-sangre rotate-45 group-hover:bg-oro transition-colors" /> 
+            VOLVER A LAS NACIONES
           </Link>
           
-          <div className="flex items-center gap-6 mb-4">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter uppercase">{aldea.abreviatura || aldea.nombre_jap}</h1>
-                <div className="px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[10px] font-black uppercase tracking-widest">
-                  {aldea.nombre_español}
-                </div>
-              </div>
-              <p className="text-zinc-400 text-lg md:text-xl font-medium tracking-tight max-w-2xl italic">
-                "{aldea.nombre_completo || aldea.nombre_jap}"
-              </p>
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center gap-6">
+               <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-5 xl:w-8 h-auto" alt="icon" />
+               <div className="px-6 py-2 bg-oro/10 border border-oro/20 text-oro text-[10px] xl:text-xs font-black uppercase tracking-[0.4em]" style={{ clipPath: 'polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px)' }}>
+                 {aldea.nombre_español}
+               </div>
             </div>
+            <h1 className="ninja-title text-7xl xl:text-9xl leading-none">{aldea.abreviatura || aldea.nombre_jap}</h1>
+            <p className="text-oro/40 text-xl xl:text-3xl font-black tracking-widest max-w-4xl italic uppercase opacity-80">
+              "{aldea.nombre_completo || aldea.nombre_jap}"
+            </p>
           </div>
         </div>
       </div>
 
       {/* Contenido: Listado de Clanes */}
-      <div className="max-w-7xl mx-auto px-8 py-20">
-        <div className="flex items-center gap-4 mb-12">
-          <div className="bg-emerald-500/10 p-3 rounded-2xl border border-emerald-500/20">
-            <Users className="w-6 h-6 text-emerald-500" />
-          </div>
-          <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Clanes y Especialidades</h2>
-          <div className="h-[1px] flex-1 bg-gradient-to-r from-zinc-800 to-transparent" />
+      <div className="max-w-[1750px] mx-auto px-12 py-32">
+        <div className="flex items-center gap-8 mb-20 bg-black/40 p-8 ninja-box ninja-border backdrop-blur-md">
+          <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-5 xl:w-8 h-auto" alt="icon" />
+          <h2 className="text-4xl xl:text-6xl font-black text-oro uppercase tracking-tight italic">CLANES Y TRADICIONES</h2>
+          <div className="h-px flex-1 bg-oro/10" />
         </div>
 
         {clanes && clanes.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 xl:gap-16">
             {clanes.map((clan) => (
               <Link 
                 key={clan.id} 
                 href={`/ramas/${clan.slug}`}
-                className="group relative bg-zinc-900 border border-zinc-800 p-8 rounded-[2rem] hover:border-emerald-500/50 transition-all flex flex-col justify-between"
+                className="group relative bg-black/60 backdrop-blur-md ninja-box ninja-border p-12 hover-ninja flex flex-col justify-between overflow-hidden transition-all"
               >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-oro/5 rotate-45 -mr-16 -mt-16 pointer-events-none transition-all group-hover:bg-oro/10" />
+                
                 <div>
-                  <div className="flex justify-between items-start mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center group-hover:bg-emerald-500 transition-colors">
-                      <Shield className="w-5 h-5 text-zinc-500 group-hover:text-white" />
-                    </div>
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45" />
+                    <h3 className="text-2xl xl:text-4xl font-black text-oro mb-2 uppercase tracking-tight group-hover:brightness-125 transition-all leading-none">{clan.nombre}</h3>
                   </div>
-                  <h3 className="text-2xl font-bold text-white mb-2 uppercase tracking-tight group-hover:text-emerald-500 transition-colors">{clan.nombre}</h3>
-                  <p className="text-zinc-500 text-sm leading-relaxed line-clamp-3 italic">
+                  
+                  <p className="text-gris-texto/80 text-base xl:text-xl leading-relaxed line-clamp-4 italic mb-10">
                     {clan.descripcion}
                   </p>
                 </div>
                 
-                <div className="mt-8 flex items-center text-[10px] font-black text-emerald-500 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all translate-x-[-10px] group-hover:translate-x-0">
-                  Ver información del clan
+                <div className="mt-auto flex items-center gap-4 text-oro font-black uppercase tracking-[0.2em] text-[10px] xl:text-xs group-hover:brightness-125 transition-all">
+                  <span>Explorar Especialidades</span>
+                  <div className="w-1.5 h-1.5 bg-oro rotate-45 group-hover:translate-x-2 transition-transform" />
                 </div>
               </Link>
             ))}
           </div>
         ) : (
-          <div className="bg-zinc-900/50 border border-zinc-800 border-dashed rounded-[3rem] p-20 text-center">
-            <Users className="w-12 h-12 text-zinc-800 mx-auto mb-4" />
-            <p className="text-zinc-600 font-bold italic">Todavía no hay clanes registrados en esta aldea.</p>
+          <div className="bg-black/20 border border-oro/5 border-dashed ninja-box p-32 text-center">
+             <h3 className="text-oro/10 font-black uppercase tracking-[0.6em] text-xl xl:text-2xl italic">ARCHIVOS CLÁNICOS NO DISPONIBLES</h3>
           </div>
         )}
       </div>

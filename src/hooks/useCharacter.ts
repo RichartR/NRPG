@@ -196,7 +196,51 @@ export function useCharacter(characterId: string) {
           });
         }
 
-        // Check rank change
+        // Check Ninja Name change
+        if (originalCharacter && character.nombre_ninja !== originalCharacter.nombre_ninja) {
+          await RegistrosService.createRegistro({
+            tipo: 'accion',
+            autor_id: Number(characterId),
+            participantes_ids: [Number(characterId)],
+            data: {
+              titulo: `${originalCharacter.nombre_ninja} pasa a llamarse ${character.nombre_ninja}`,
+              tipo_accion: 'cambio_nombre_ninja',
+              anterior: originalCharacter.nombre_ninja,
+              nuevo: character.nombre_ninja
+            }
+          });
+        }
+
+        // Check Hobba Name change
+        if (originalCharacter && character.hobba_name !== originalCharacter.hobba_name) {
+          await RegistrosService.createRegistro({
+            tipo: 'accion',
+            autor_id: Number(characterId),
+            participantes_ids: [Number(characterId)],
+            data: {
+              titulo: `${character.nombre_ninja} cambió su nombre en Hobba: ${originalCharacter.hobba_name} -> ${character.hobba_name}`,
+              tipo_accion: 'cambio_nombre_hobba',
+              anterior: originalCharacter.hobba_name,
+              nuevo: character.hobba_name
+            }
+          });
+        }
+
+        // Check Hierarchical Rank change
+        if (originalCharacter && character.rango_jerarquico !== originalCharacter.rango_jerarquico) {
+          await RegistrosService.createRegistro({
+            tipo: 'accion',
+            autor_id: Number(characterId),
+            participantes_ids: [Number(characterId)],
+            data: {
+              titulo: `${character.nombre_ninja} asciende a ${character.rango_jerarquico}`,
+              tipo_accion: 'ascenso_jerarquico',
+              rango_nuevo: character.rango_jerarquico
+            }
+          });
+        }
+
+        // Check technical rank change (D, C, B, A, S)
         if (character.rango !== originalCharacter?.rango) {
           const oldRank = originalCharacter?.rango || 'D';
           const newRank = character.rango;
@@ -222,12 +266,12 @@ export function useCharacter(characterId: string) {
         // Check new items
         const currentInv = character.personajes_inventario || [];
         const oldInv = originalCharacter?.personajes_inventario || [];
-        const newItems = currentInv.filter(ci => !oldInv.some(oi => oi.item_id === ci.item_id));
+        const newItems = currentInv.filter(ci => !oldInv.some(oi => Number(oi.item_id) === Number(ci.item_id)));
 
         if (newItems.length > 0) {
-          const itemNames = newItems.map(ni => ni.info_glosario?.nombre_es).join(', ');
-          const totalExp = newItems.reduce((sum, ni) => sum + (ni.info_glosario?.coste_exp || 0), 0);
-          const totalRyous = newItems.reduce((sum, ni) => sum + (ni.info_glosario?.coste_ryous || 0), 0);
+          const itemNames = newItems.map(ni => ni.info_glosario?.nombre_es || 'Objeto Desconocido').join(', ');
+          const totalExp = newItems.reduce((sum, ni) => sum + (Number(ni.info_glosario?.coste_exp) || 0), 0);
+          const totalRyous = newItems.reduce((sum, ni) => sum + (Number(ni.info_glosario?.coste_ryous) || 0), 0);
           
           await RegistrosService.createRegistro({
             tipo: 'accion',
@@ -247,12 +291,12 @@ export function useCharacter(characterId: string) {
         // Check new techniques
         const currentTecs = character.personajes_tecnicas || [];
         const oldTecs = originalCharacter?.personajes_tecnicas || [];
-        const newTecs = currentTecs.filter(ct => !oldTecs.some(ot => ot.tecnica_id === ct.tecnica_id));
+        const newTecs = currentTecs.filter(ct => !oldTecs.some(ot => Number(ot.tecnica_id) === Number(ct.tecnica_id)));
 
         if (newTecs.length > 0) {
-          const tecNames = newTecs.map(nt => nt.info_glosario?.nombre_es).join(', ');
-          const totalExp = newTecs.reduce((sum, nt) => sum + (nt.info_glosario?.coste_exp || 0), 0);
-          const totalRyous = newTecs.reduce((sum, nt) => sum + (nt.info_glosario?.coste_ryous || 0), 0);
+          const tecNames = newTecs.map(nt => nt.info_glosario?.nombre_es || 'Técnica Desconocida').join(', ');
+          const totalExp = newTecs.reduce((sum, nt) => sum + (Number(nt.info_glosario?.coste_exp) || 0), 0);
+          const totalRyous = newTecs.reduce((sum, nt) => sum + (Number(nt.info_glosario?.coste_ryous) || 0), 0);
 
           await RegistrosService.createRegistro({
             tipo: 'accion',
@@ -270,9 +314,9 @@ export function useCharacter(characterId: string) {
         }
 
         // Check deleted items
-        const deletedItems = oldInv.filter(oi => !currentInv.some(ci => ci.item_id === oi.item_id));
+        const deletedItems = oldInv.filter(oi => !currentInv.some(ci => Number(ci.item_id) === Number(oi.item_id)));
         if (deletedItems.length > 0) {
-          const itemNames = deletedItems.map(di => di.info_glosario?.nombre_es).join(', ');
+          const itemNames = deletedItems.map(di => di.info_glosario?.nombre_es || 'Objeto').join(', ');
           await RegistrosService.createRegistro({
             tipo: 'accion',
             autor_id: Number(characterId),
@@ -286,9 +330,9 @@ export function useCharacter(characterId: string) {
         }
 
         // Check deleted techniques
-        const deletedTecs = oldTecs.filter(ot => !currentTecs.some(ct => ct.tecnica_id === ot.tecnica_id));
+        const deletedTecs = oldTecs.filter(ot => !currentTecs.some(ct => Number(ct.tecnica_id) === Number(ot.tecnica_id)));
         if (deletedTecs.length > 0) {
-          const tecNames = deletedTecs.map(dt => dt.info_glosario?.nombre_es).join(', ');
+          const tecNames = deletedTecs.map(dt => dt.info_glosario?.nombre_es || 'Técnica').join(', ');
           await RegistrosService.createRegistro({
             tipo: 'accion',
             autor_id: Number(characterId),

@@ -1,22 +1,24 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Noto_Sans_JP, Shojumaru } from "next/font/google";
 import "./globals.css";
 import { ToastContainer } from "@/components/ui/Toast";
 import { ConfirmContainer } from "@/components/ui/ConfirmDialog";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const notoLines = Noto_Sans_JP({
+  variable: "--font-body",
   subsets: ["latin"],
+  weight: ["400", "700", "900"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const shojumaru = Shojumaru({
+  variable: "--font-ninja",
   subsets: ["latin"],
+  weight: ["400"],
 });
 
 export const metadata: Metadata = {
-  title: "Naruto RPG Engine",
-  description: "RPG Engine based on Habbo",
+  title: "NRPG - Naruto RPG Engine",
+  description: "Sistema de rol basado en Naruto Mobile",
   referrer: 'no-referrer',
 };
 
@@ -27,10 +29,10 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      lang="es"
+      className={`${notoLines.variable} ${shojumaru.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-black">
+      <body className="min-h-full flex flex-col selection:bg-rojo-sangre selection:text-oro">
         {children}
         <ToastContainer />
         <ConfirmContainer />
@@ -38,3 +40,4 @@ export default function RootLayout({
     </html>
   );
 }
+

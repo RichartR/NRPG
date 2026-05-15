@@ -2,7 +2,6 @@
 
 import { AuthService } from '@/services/supabase/auth.service';
 import { useRouter } from 'next/navigation';
-import { LogOut } from 'lucide-react';
 
 export default function LogoutButton() {
   const router = useRouter();
@@ -16,10 +15,12 @@ export default function LogoutButton() {
   return (
     <button
       onClick={handleLogout}
-      className="text-zinc-400 hover:text-white transition-colors flex items-center gap-2 bg-zinc-950 px-4 py-2 rounded-xl border border-zinc-800 hover:border-zinc-700"
+      className="text-oro/60 hover:text-oro transition-all flex items-center gap-3 bg-rojo-sangre/10 px-8 py-2.5 border border-oro/20 hover:border-oro/40 hover:bg-rojo-sangre/20 font-black uppercase tracking-widest text-[10px]"
+      style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
     >
-      <LogOut className="w-4 h-4" />
       Salir
     </button>
   );
 }
+
+

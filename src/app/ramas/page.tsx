@@ -9,52 +9,59 @@ export default async function RamasPage() {
   const ramas = await MasterServerService.getRamasGlobales(supabase);
 
   return (
-    <div className="min-h-screen bg-black pt-24 pb-20 px-4">
-      <div className="max-w-6xl mx-auto">
-        <Link href="/documentos" className="inline-flex items-center gap-2 text-zinc-500 hover:text-white transition-colors mb-12 text-xs font-black uppercase tracking-widest group">
-          <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Volver a documentos
+    <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col">
+      <header className="w-full max-w-[1750px] mx-auto flex justify-between items-center mb-10 ninja-card-oro p-8 xl:p-10 relative z-50">
+        <Link href="/" className="flex items-center gap-4 text-oro hover:brightness-125 transition-all group font-black uppercase tracking-widest text-sm xl:text-lg">
+          <div className="w-2 xl:w-3 h-2 xl:h-3 bg-rojo-sangre rotate-45 group-hover:bg-oro transition-colors" />
+          Volver al Dashboard
         </Link>
+        <div className="flex items-center gap-4">
+          <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-4 xl:w-6 h-auto" alt="icon" />
+          <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
+            Especialidades Ninja
+          </h1>
+        </div>
+      </header>
 
-        <header className="mb-20 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 mb-6">
-            <GitBranch className="w-4 h-4 text-blue-500" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">Artes Ninja</span>
+      <main className="w-full max-w-[1750px] mx-auto flex-1">
+        <div className="mb-10 ninja-card-oro p-12 xl:p-16">
+          <div className="flex items-center gap-6 mb-6">
+            <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-5 xl:w-8 h-auto" alt="icon" />
+            <h1 className="ninja-title text-5xl xl:text-8xl">RAMAS PRINCIPALES</h1>
           </div>
-          <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter mb-6 uppercase">RAMAS</h1>
-          <p className="text-zinc-500 max-w-2xl mx-auto text-lg leading-relaxed">
-            Las especialidades básicas que todo ninja puede dominar, independientemente de su origen o aldea.
-          </p>
-        </header>
+          <p className="text-gris-texto text-lg xl:text-2xl max-w-4xl leading-relaxed">Las especialidades fundamentales que definen el camino de cada shinobi en el campo de batalla.</p>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10 xl:gap-16">
           {ramas?.map((rama) => (
             <Link 
               key={rama.id} 
               href={`/ramas/${rama.slug}`}
-              className="group relative bg-zinc-900/50 border border-zinc-800 rounded-[2.5rem] overflow-hidden hover:border-blue-500/50 transition-all flex flex-col h-full"
+              className="group relative bg-black/60 backdrop-blur-md p-10 xl:p-14 ninja-box ninja-border hover-ninja flex flex-col justify-between min-h-[350px]"
             >
-              <div className="p-10 flex flex-col h-full relative z-10">
-                <div className="w-16 h-16 rounded-3xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-8 group-hover:bg-blue-500 group-hover:scale-110 transition-all">
-                  <GitBranch className="w-8 h-8 text-blue-500 group-hover:text-white" />
-                </div>
-                
-                <div className="mb-6">
-                  <h2 className="text-3xl font-black text-white tracking-tighter uppercase mb-1">{rama.nombre}</h2>
-                  <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">{rama.nombre_español}</span>
+              <div className="relative z-10">
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="w-3 h-3 bg-rojo-sangre rotate-45" />
+                  <div>
+                    <h2 className="text-3xl xl:text-4xl font-black text-oro uppercase tracking-tight leading-none mb-2 group-hover:brightness-125 transition-all">{rama.nombre}</h2>
+                    <span className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.3em]">{rama.nombre_español}</span>
+                  </div>
                 </div>
 
-                <p className="text-zinc-500 text-sm leading-relaxed mb-10 line-clamp-3 italic">
+                <p className="text-gris-texto/80 text-base xl:text-xl leading-relaxed mb-10 line-clamp-3 italic">
                   "{rama.descripcion}"
                 </p>
+              </div>
 
-                <div className="mt-auto flex items-center gap-2 text-[10px] font-black text-white uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all translate-x-[-10px] group-hover:translate-x-0">
-                  Ver técnicas <ChevronRight className="w-4 h-4 text-blue-500" />
-                </div>
+              <div className="flex items-center gap-4 text-oro font-black uppercase tracking-[0.2em] text-xs xl:text-base group-hover:brightness-125 transition-all">
+                <span>Dominar Rama</span>
+                <div className="w-1.5 h-1.5 bg-oro rotate-45 group-hover:translate-x-2 transition-transform" />
               </div>
             </Link>
           ))}
         </div>
-      </div>
+      </main>
     </div>
+
   );
 }

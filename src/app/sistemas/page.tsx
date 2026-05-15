@@ -16,67 +16,73 @@ export default async function SistemasPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-4 md:p-8">
-      <header className="max-w-4xl mx-auto flex justify-between items-center mb-12">
-        <Link href="/" className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors group">
-          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+    <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col">
+      <header className="w-full max-w-[1750px] mx-auto flex justify-between items-center mb-10 ninja-card-oro p-8 xl:p-10 z-50">
+        <Link href="/" className="flex items-center gap-4 text-oro hover:brightness-125 transition-all group font-black uppercase tracking-widest text-sm xl:text-lg">
+          <div className="w-2 xl:w-3 h-2 xl:h-3 bg-rojo-sangre rotate-45 group-hover:bg-oro transition-colors" />
           Volver al Dashboard
         </Link>
-        <div className="flex items-center gap-2 text-yellow-500 font-bold uppercase tracking-widest text-xs bg-yellow-500/10 px-4 py-2 rounded-full border border-yellow-500/20">
-          <Zap className="w-4 h-4 fill-current" />
-          Documentación Técnica
+        <div className="flex items-center gap-4">
+          <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-4 xl:w-6 h-auto" alt="icon" />
+          <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
+            Sistemas de NRPG
+          </h1>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto">
-        <div className="mb-12">
-          <h1 className="text-4xl font-black text-white mb-4 tracking-tighter">Sistemas del Juego</h1>
-          <p className="text-zinc-400 text-lg">Consulta las mecánicas detalladas, tablas de escalado y reglas de combate.</p>
+      <main className="w-full max-w-[1750px] mx-auto flex-1">
+        <div className="mb-10 ninja-card-oro p-12 xl:p-16">
+          <div className="flex items-center gap-6 mb-6">
+            {/* <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-5 xl:w-8 h-auto" alt="icon" /> */}
+            <h1 className="ninja-title text-5xl xl:text-8xl">SISTEMAS</h1>
+          </div>
+          <p className="text-gris-texto text-lg xl:text-2xl max-w-4xl leading-relaxed">Consulta las mecánicas detalladas, tablas de escalado y reglas de combate fundamentales para el desarrollo del rol.</p>
         </div>
 
 
         {docs.length === 0 && (
-          <div className="text-center py-20 border-2 border-dashed border-zinc-900 rounded-3xl">
-            <p className="text-zinc-600 font-medium">No hay sistemas registrados todavía.</p>
+          <div className="text-center py-32 ninja-card-oro opacity-50">
+            <p className="text-oro/40 font-black uppercase tracking-[0.3em] text-xl">No hay sistemas registrados todavía.</p>
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10 xl:gap-16">
           {docs.map((doc) => (
             <Link 
               key={doc.id} 
               href={`/docs/${doc.clave}`}
-              className={`group relative p-8 rounded-3xl bg-gradient-to-br ${theme.color} border border-zinc-800 transition-all hover:scale-[1.02] ${theme.borderColor} backdrop-blur-sm overflow-hidden`}
+              className="group relative p-10 xl:p-14 ninja-card-oro hover-ninja flex flex-col justify-between"
             >
-              {/* Imagen de fondo opcional */}
+              <div className="relative z-10">
+                <div className="flex items-center gap-4 mb-8">
+                  {/* <div className="w-3 h-3 bg-rojo-sangre rotate-45" /> */}
+                  <h2 className="text-2xl xl:text-4xl font-black text-oro uppercase tracking-widest leading-tight">{doc.titulo}</h2>
+                </div>
+                
+                <p className="text-gris-texto/80 text-base xl:text-xl leading-relaxed mb-10">{doc.descripcion}</p>
+                
+                <div className="flex items-center gap-4 text-oro font-black uppercase tracking-[0.2em] text-xs xl:text-base group-hover:brightness-125 transition-all">
+                  <span>Ver manual técnico</span>
+                  <div className="w-1.5 h-1.5 bg-oro rotate-45 group-hover:translate-x-2 transition-transform" />
+                </div>
+              </div>
+
+              {/* Imagen de fondo sutil */}
               {doc.url_imagen && (
-                <div className="absolute inset-0 z-0 opacity-10 group-hover:opacity-20 transition-opacity">
+                <div className="absolute inset-0 z-0 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity pointer-events-none">
                   <img 
                     src={doc.url_imagen} 
                     alt="" 
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover grayscale"
                     referrerPolicy="no-referrer"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 to-transparent" />
                 </div>
               )}
-
-              <div className="relative z-10">
-                <div className="mb-6 bg-zinc-950 w-16 h-16 rounded-2xl flex items-center justify-center border border-zinc-800 group-hover:border-zinc-700 transition-colors">
-                  <Zap className={`w-8 h-8 ${theme.iconColor}`} />
-                </div>
-                <h2 className="text-2xl font-bold text-white mb-3 tracking-tight">{doc.titulo}</h2>
-                <p className="text-zinc-400 leading-relaxed">{doc.descripcion}</p>
-                
-                <div className="mt-8 flex items-center text-sm font-bold text-zinc-500 group-hover:text-white transition-colors">
-                  Ver manual técnico 
-                  <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
-                </div>
-              </div>
             </Link>
           ))}
         </div>
       </main>
     </div>
+
   );
 }

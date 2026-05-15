@@ -11,15 +11,15 @@ interface DataFieldProps {
 
 export function DataField({ label, value, onChange, disabled, type = "text", placeholder }: DataFieldProps) {
   return (
-    <div className="space-y-2">
-      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">{label}</label>
+    <div className="space-y-3">
+      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-oro/60 ml-1">{label}</label>
       <input 
         type={type} 
         value={value || ''} 
         disabled={disabled} 
         placeholder={placeholder}
         onChange={(e) => onChange?.(e.target.value)} 
-        className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-emerald-500 transition-all disabled:opacity-50 placeholder:text-zinc-700" 
+        className="w-full bg-black/40 border border-oro/10 px-6 py-4 text-oro font-black outline-none focus:border-oro/40 transition-all disabled:opacity-30 placeholder:text-oro/20 text-sm xl:text-base ninja-clip-sm" 
       />
     </div>
   );
@@ -36,29 +36,30 @@ interface SelectFieldProps {
 
 export function SelectField({ label, value, options, onChange, disabled, placeholder = "Seleccionar..." }: SelectFieldProps) {
   return (
-    <div className="space-y-2">
-      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">{label}</label>
+    <div className="space-y-3">
+      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-oro/60 ml-1">{label}</label>
       <div className="relative">
         <select 
           value={value || ''} 
           disabled={disabled} 
           onChange={(e) => onChange?.(e.target.value)} 
-          className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-emerald-500 appearance-none disabled:opacity-50"
+          className="w-full bg-black/40 border border-oro/10 px-6 py-4 text-oro font-black outline-none focus:border-oro/40 appearance-none disabled:opacity-30 text-sm xl:text-base ninja-clip-sm"
         >
-          <option value="">{placeholder}</option>
+          <option value="" className="bg-zinc-950 text-oro/40">{placeholder}</option>
           {options.map((o: any) => (
-            <option key={o.value || o} value={o.value || o}>
+            <option key={o.value || o} value={o.value || o} className="bg-zinc-950 text-oro">
               {o.label || o}
             </option>
           ))}
         </select>
-        <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-600">
-          <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+        <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-oro/40">
+          <div className="w-2 h-2 bg-oro/40 rotate-45" />
         </div>
       </div>
     </div>
   );
 }
+
 export function SearchableSelect({ label, value, options, onChange, disabled, placeholder = "Buscar..." }: SelectFieldProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [search, setSearch] = React.useState('');
@@ -88,37 +89,35 @@ export function SearchableSelect({ label, value, options, onChange, disabled, pl
   }, []);
 
   return (
-    <div className="space-y-2 relative" ref={containerRef}>
-      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">{label}</label>
+    <div className="space-y-3 relative" ref={containerRef}>
+      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-oro/60 ml-1">{label}</label>
       <div className="relative">
         <button
           type="button"
           disabled={disabled}
           onClick={() => setIsOpen(!isOpen)}
-          className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-6 py-4 text-left text-white font-bold outline-none focus:border-emerald-500 disabled:opacity-50 flex justify-between items-center transition-all"
+          className="w-full bg-black/40 border border-oro/10 px-6 py-4 text-left text-oro font-black outline-none focus:border-oro/40 disabled:opacity-30 flex justify-between items-center transition-all text-sm xl:text-base ninja-clip-sm"
         >
-          <span className={!selectedOption ? 'text-zinc-700' : ''}>
+          <span className={!selectedOption ? 'text-oro/20' : ''}>
             {selectedOption ? selectedOption.label : placeholder}
           </span>
-          <svg className={`w-4 h-4 transition-transform text-zinc-600 ${isOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
-            <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
-          </svg>
+          <div className={`w-2 h-2 bg-oro/40 rotate-45 transition-transform ${isOpen ? 'scale-125 brightness-125' : ''}`} />
         </button>
 
         {isOpen && (
-          <div className="absolute z-[100] w-full mt-2 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-3 border-b border-zinc-800 bg-zinc-900/50">
+          <div className="relative z-[100] w-full mt-4 bg-black/40 border border-oro/20 shadow-[0_10px_30px_rgba(0,0,0,0.5)] overflow-hidden animate-in fade-in zoom-in duration-200 ninja-clip-sm">
+            <div className="p-4 border-b border-oro/10 bg-black/20">
               <input
                 autoFocus
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Escribe para filtrar..."
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-sm text-white outline-none focus:border-emerald-500 transition-all"
+                placeholder="Filtrar por nombre..."
+                className="w-full bg-black/40 border border-oro/10 px-4 py-3 text-sm text-oro outline-none focus:border-oro/40 transition-all font-black"
                 onClick={(e) => e.stopPropagation()}
               />
             </div>
-            <div className="max-h-60 overflow-y-auto custom-scrollbar">
+            <div className="max-h-80 overflow-y-auto custom-scrollbar bg-black/80 backdrop-blur-md">
               {filteredOptions.length > 0 ? (
                 filteredOptions.map((o) => (
                   <button
@@ -129,13 +128,13 @@ export function SearchableSelect({ label, value, options, onChange, disabled, pl
                       setIsOpen(false);
                       setSearch('');
                     }}
-                    className={`w-full text-left px-6 py-3 text-sm hover:bg-emerald-500/10 hover:text-emerald-500 transition-all ${o.value == value ? 'bg-emerald-500/5 text-emerald-500 font-bold' : 'text-zinc-400'}`}
+                    className={`w-full text-left px-8 py-4 text-xs xl:text-sm font-black uppercase tracking-widest hover:bg-oro/10 hover:text-oro transition-all ${o.value == value ? 'bg-oro/10 text-oro' : 'text-oro/40'}`}
                   >
                     {o.label}
                   </button>
                 ))
               ) : (
-                <div className="px-6 py-8 text-sm text-zinc-600 text-center italic">No se encontraron resultados</div>
+                <div className="px-8 py-10 text-[10px] text-oro/20 font-black uppercase tracking-widest text-center italic">Sin resultados</div>
               )}
             </div>
           </div>
@@ -144,3 +143,4 @@ export function SearchableSelect({ label, value, options, onChange, disabled, pl
     </div>
   );
 }
+

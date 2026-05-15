@@ -22,61 +22,66 @@ export default function CombateMenu() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-8 flex flex-col items-center justify-center">
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-8">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-red-500/5 rounded-full blur-[100px]"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-rojo-sangre/5 rounded-full blur-[120px]"></div>
       </div>
 
-      <div className="w-full max-w-md bg-zinc-900/80 border border-zinc-800 rounded-2xl p-8 backdrop-blur-xl shadow-2xl relative z-10">
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-center mb-4">
-            <Swords className="w-8 h-8 text-red-500" />
+      <div className="w-full max-w-[550px] bg-black/60 backdrop-blur-md ninja-box ninja-border p-12 xl:p-16 shadow-2xl relative z-10 overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-oro/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
+        
+        <div className="flex flex-col items-center mb-12">
+          <div className="w-20 h-20 bg-rojo-sangre/10 border border-rojo-sangre/20 flex items-center justify-center mb-6" style={{ clipPath: 'polygon(20% 0, 80% 0, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0 80%, 0 20%)' }}>
+            <Swords className="w-10 h-10 text-rojo-sangre" />
           </div>
-          <h1 className="text-3xl font-black text-white tracking-tighter">Sala de Combate</h1>
-          <p className="text-zinc-400 text-sm mt-2 text-center">Únete a una sala existente o crea una nueva para iniciar el duelo en tiempo real.</p>
+          <h1 className="ninja-title text-4xl xl:text-6xl text-center">CAMPO DE BATALLA</h1>
+          <p className="text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] mt-4 text-center">FORJA TU SALA O ÚNETE A LA LUCHA</p>
         </div>
 
         <button
           onClick={handleCreate}
-          className="w-full flex items-center justify-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-white py-4 px-4 rounded-xl font-medium transition-colors mb-6 border border-zinc-700"
+          className="w-full flex items-center justify-center gap-4 bg-oro text-rojo-sangre py-5 px-6 font-black uppercase tracking-[0.2em] text-xs xl:text-sm transition-all mb-10 hover:brightness-110 active:scale-95"
+          style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
         >
           <Plus className="w-5 h-5" />
-          Crear Nueva Sala
+          INICIAR NUEVO DUELO
         </button>
 
-        <div className="relative mb-6">
+        <div className="relative mb-10">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-zinc-800"></div>
+            <div className="w-full border-t border-oro/10"></div>
           </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="bg-zinc-900/80 px-4 text-zinc-500">O unirse a una</span>
+          <div className="relative flex justify-center text-[10px] xl:text-xs">
+            <span className="bg-black/80 px-6 text-oro/30 font-black uppercase tracking-[0.3em]">O RECLAMA TU LUGAR</span>
           </div>
         </div>
 
-        <form onSubmit={handleJoin} className="space-y-4">
-          <div>
+        <form onSubmit={handleJoin} className="space-y-6">
+          <div className="relative">
             <input
               type="text"
               required
               value={roomId}
               onChange={(e) => setRoomId(e.target.value.toUpperCase())}
-              className="w-full bg-zinc-950 border border-zinc-800 text-white rounded-xl py-4 px-4 text-center text-xl tracking-[0.2em] font-mono focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 uppercase placeholder:tracking-normal placeholder:text-zinc-600"
-              placeholder="CÓDIGO DE SALA"
+              className="w-full bg-black/40 border border-oro/20 text-oro py-5 px-6 text-center text-2xl xl:text-4xl tracking-[0.4em] font-black outline-none focus:border-oro transition-all uppercase placeholder:tracking-normal placeholder:text-oro/10 selection:bg-oro/20"
+              placeholder="CÓDIGO"
               maxLength={6}
+              style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
             />
           </div>
           <button
             type="submit"
-            className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-4 rounded-xl transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-rojo-sangre text-oro font-black py-5 px-6 transition-all flex items-center justify-center gap-4 uppercase tracking-[0.3em] text-xs xl:text-sm hover:brightness-125 active:scale-95 shadow-lg shadow-rojo-sangre/20"
+            style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
           >
             <LogIn className="w-5 h-5" />
-            Entrar a la Sala
+            ENTRAR A LA SALA
           </button>
         </form>
 
-        <div className="mt-8 text-center">
-          <Link href="/" className="text-sm text-zinc-500 hover:text-white transition-colors">
-            Volver al Inicio
+        <div className="mt-12 text-center">
+          <Link href="/" className="text-[10px] xl:text-xs font-black text-oro/40 hover:text-oro uppercase tracking-[0.4em] transition-all border-b border-oro/10 pb-1">
+            RETROCEDER AL DASHBOARD
           </Link>
         </div>
       </div>
