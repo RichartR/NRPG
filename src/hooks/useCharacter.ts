@@ -12,6 +12,7 @@ import { useToastStore } from '@/components/ui/Toast';
 export function useCharacter(characterId: string) {
   const { confirm: confirmAction } = useConfirmStore();
   const [character, setCharacter] = useState<Character | null>(null);
+  const [glosarioFiltrado, setGlosarioFiltrado] = useState<any[]>([]);
   const [originalCharacter, setOriginalCharacter] = useState<Character | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -75,6 +76,21 @@ export function useCharacter(characterId: string) {
   useEffect(() => {
     loadData();
   }, [characterId]);
+
+  // CARGA DE GLOSARIO BAJO DEMANDA (Solo al editar)
+  useEffect(() => {
+    const loadGlosario = async () => {
+      if (isEditing && glosarioFiltrado.length === 0) {
+        try {
+          const items = await CharacterService.getValidItems(Number(characterId));
+          setGlosarioFiltrado(items);
+        } catch (err) {
+          console.error("Error loading glosario on edit:", err);
+        }
+      }
+    };
+    loadGlosario();
+  }, [isEditing, characterId]);
 
   // Derived Stats Effect
   useEffect(() => {
@@ -202,57 +218,6 @@ export function useCharacter(characterId: string) {
           });
         }
         
-        // Check branch/clan changes and training choices
-        const currentRamas = character.personajes_ramas || [];
-        const oldRamas = originalCharacter?.personajes_ramas || [];
-        const maxSlots = Math.max(
-          currentRamas.length > 0 ? Math.max(...currentRamas.map(r => r.slot)) : 0,
-          oldRamas.length > 0 ? Math.max(...oldRamas.map(r => r.slot)) : 0
-        );
-
-        for (let slot = 1; slot <= maxSlots; slot++) {
-          const current = currentRamas.find(r => r.slot === slot);
-          const old = oldRamas.find(r => r.slot === slot);
-
-          // 1. Cambio de Rama/Clan
-          if (old?.rama_id && current?.rama_id && old.rama_id !== current.rama_id) {
-            const oldRama = masters.ramas.find(r => r.id === old.rama_id);
-            const newRama = masters.ramas.find(r => r.id === current.rama_id);
-            const oldArt = oldRama?.tipo === 'clan' ? 'el' : 'la';
-            const newArt = newRama?.tipo === 'clan' ? 'el' : 'la';
-            
-            await RegistrosService.createRegistro({
-              tipo: 'accion',
-              autor_id: Number(characterId),
-              participantes_ids: [Number(characterId)],
-              data: {
-                titulo: `${character.nombre_ninja} abandona ${oldArt} ${oldRama?.tipo || 'rama'} ${oldRama?.nombre || '?'} y se une a ${newArt} ${newRama?.tipo || 'rama'} ${newRama?.nombre || '?'}`,
-                tipo_accion: 'cambio_rama',
-                rama_anterior: oldRama?.nombre,
-                rama_nueva: newRama?.nombre
-              }
-            });
-          }
-
-          // 2. Elección de Entrenamiento
-          if (current?.id_entrenamiento !== old?.id_entrenamiento && current?.id_entrenamiento) {
-            const training = masters.entrenamientos.find(e => e.id === current.id_entrenamiento);
-            const rama = masters.ramas.find(r => r.id === current.rama_id);
-            const articulo = rama?.tipo === 'clan' ? 'el' : 'la';
-            
-            await RegistrosService.createRegistro({
-              tipo: 'accion',
-              autor_id: Number(characterId),
-              participantes_ids: [Number(characterId)],
-              data: {
-                titulo: `${character.nombre_ninja} ha elegido el ${training?.nombre_esp || '?'} de ${articulo} ${rama?.tipo || 'rama'} ${rama?.nombre || '?'}`,
-                tipo_accion: 'eleccion_entrenamiento',
-                entrenamiento: training?.nombre_esp,
-                rama: rama?.nombre
-              }
-            });
-          }
-        }
         
         // Check new items
         const currentInv = character.personajes_inventario || [];
@@ -503,6 +468,7 @@ export function useCharacter(characterId: string) {
     activeTab,
     setActiveTab,
     masters,
+    glosarioFiltrado,
     updateField,
     updateStat,
     save,

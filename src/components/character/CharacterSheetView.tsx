@@ -16,6 +16,7 @@ import { useState, useMemo } from 'react';
 interface CharacterSheetViewProps {
   character: Character;
   masters: any; // Masters still contains mixed data, but we'll tipify its usage
+  glosarioFiltrado: Glosario[];
   isEditing: boolean;
   canEdit: boolean;
   activeTab: string;
@@ -38,6 +39,7 @@ interface CharacterSheetViewProps {
 export function CharacterSheetView({
   character,
   masters,
+  glosarioFiltrado,
   isEditing,
   canEdit,
   activeTab,
@@ -85,6 +87,85 @@ export function CharacterSheetView({
       }
     };
   }, [character.xp, character.ryous, character.registros_autor, character.registros_participante]);
+
+  const meetsRequirements = (item: Glosario) => {
+    if (!item.requisitos) return true;
+    if (!character) return true;
+
+    let req = item.requisitos;
+    if (typeof req === 'string') {
+      try { req = JSON.parse(req); } catch { return true; }
+    }
+
+    // 1. Rango
+    if (req.rango && typeof req.rango === 'string') {
+      const rankOrder: Record<string, number> = { 'D': 0, 'C': 1, 'B': 2, 'A': 3, 'S': 4 };
+      const charR = (character.rango || 'D').toUpperCase();
+      const reqR = req.rango.toUpperCase();
+      
+      const charRank = rankOrder[charR] ?? 0;
+      const reqRank = rankOrder[reqR] ?? 0;
+      if (charRank < reqRank) return false;
+    }
+
+    // 2. Stats
+    if (req.stats && typeof req.stats === 'object') {
+      for (const [stat, value] of Object.entries(req.stats)) {
+        const reqValue = Number(value);
+        if (isNaN(reqValue) || reqValue <= 0) continue;
+
+        const sKey = stat.toUpperCase();
+        // @ts-ignore
+        const baseVal = Number(character.stats_base?.[sKey] || 0);
+        // @ts-ignore
+        const derivVal = Number(character.atributos_derivados?.[sKey] || 0);
+        const currentVal = Math.max(baseVal, derivVal);
+
+        if (currentVal < reqValue) return false;
+      }
+    }
+
+    // 3. Misiones
+    if (req.misiones && typeof req.misiones === 'object') {
+      const counts = missionCounts || { D: 0, C: 0, B: 0, A: 0, S: 0 };
+      for (const [rank, count] of Object.entries(req.misiones)) {
+        const reqCount = Number(count);
+        if (isNaN(reqCount) || reqCount <= 0) continue;
+        
+        const rKey = rank.toUpperCase() as keyof typeof counts;
+        const charCount = Number(counts[rKey] || 0);
+        if (charCount < reqCount) return false;
+      }
+    }
+
+    // 4. Combates
+    if (req.combates) {
+      const reqCombates = Number(req.combates);
+      if (!isNaN(reqCombates) && reqCombates > 0) {
+        const charCombates = (allRegistros || []).filter(r => r.tipo === 'combate').length;
+        if (charCombates < reqCombates) return false;
+      }
+    }
+
+    // 5. Rama/Clan
+    if (req.rama_id) {
+      const reqRamaId = Number(req.rama_id);
+      if (!isNaN(reqRamaId) && reqRamaId > 0) {
+        const charRamaIds = (character.personajes_ramas || []).map(r => Number(r.rama_id));
+        if (!charRamaIds.includes(reqRamaId)) return false;
+      }
+    }
+
+    // 6. Exclusividad
+    if (req.personaje_id) {
+      const reqPId = Number(req.personaje_id);
+      if (!isNaN(reqPId) && reqPId > 0) {
+        if (Number(character.id) !== reqPId) return false;
+      }
+    }
+
+    return true;
+  };
 
   const { puntosGastados, puntosLibres } = useMemo(() => {
     const pg = Object.values(character.stats_base || {}).reduce((acc: number, val: any) => acc + (Number(val) || 0), 0);
@@ -479,15 +560,15 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                   <SearchableSelect 
                     label="Añadir Objeto" 
                     placeholder="Buscar objeto en el glosario..."
-                    options={(masters.glosario || [])
-                      .filter((i: Glosario) => i.categoria_id === 2 && !(character.personajes_inventario || []).some((pi: PersonajeItem) => pi.item_id === i.id))
+                    options={(glosarioFiltrado || [])
+                      .filter((i: Glosario) => i.categoria_id === 2 && meetsRequirements(i) && !(character.personajes_inventario || []).some((pi: PersonajeItem) => pi.item_id === i.id))
                       .map((i: any) => ({ 
                         label: `${i.nombre_es} (${i.info_glosario_subcategorias?.nombre || 'General'}) — ${i.coste_exp} EXP / ${i.coste_ryous} Ryous`, 
                         value: i.id 
                       }))
                     } 
                     onChange={(v) => {
-                      const it = (masters.glosario || []).find((i: any) => i.id === Number(v));
+                      const it = (glosarioFiltrado || []).find((i: any) => i.id === Number(v));
                       const current = character.personajes_inventario || [];
                       
                       if (it && !current.some((i: any) => i.item_id === it.id)) {
@@ -581,15 +662,15 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                   <SearchableSelect 
                     label="Aprender Técnica" 
                     placeholder="Buscar técnica en el glosario..."
-                    options={(masters.glosario || [])
-                      .filter((i: Glosario) => i.categoria_id !== 2 && !(character.personajes_tecnicas || []).some((pt: PersonajeTecnica) => pt.tecnica_id === i.id))
+                    options={(glosarioFiltrado || [])
+                      .filter((i: Glosario) => i.categoria_id !== 2 && meetsRequirements(i) && !(character.personajes_tecnicas || []).some((pt: PersonajeTecnica) => pt.tecnica_id === i.id))
                       .map((t: any) => ({ 
                         label: `${t.nombre_es} (Rango ${t.requisitos?.rango || 'D'}) — ${t.coste_exp} EXP / ${t.coste_ryous} Ryous`, 
                         value: t.id 
                       }))
                     } 
                     onChange={(v) => {
-                      const tec = (masters.glosario || []).find((t: any) => t.id === Number(v));
+                      const tec = (glosarioFiltrado || []).find((t: any) => t.id === Number(v));
                       const current = character.personajes_tecnicas || [];
                       
                       if (tec && !current.some((t: any) => t.tecnica_id === tec.id)) {

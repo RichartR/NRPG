@@ -27,6 +27,7 @@ export default function FichaPublicPage() {
     cancel,
     remove,
     refresh,
+    glosarioFiltrado,
     quickRemoveItem,
     quickRemoveTechnique
   } = useCharacter(id);
@@ -43,6 +44,7 @@ export default function FichaPublicPage() {
     <CharacterSheetView 
       character={character}
       masters={masters}
+      glosarioFiltrado={glosarioFiltrado}
       isEditing={isEditing}
       canEdit={canEdit}
       isAdmin={isAdmin}

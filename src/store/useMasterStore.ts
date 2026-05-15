@@ -71,7 +71,7 @@ export const useMasterStore = create<MasterState>((set, get) => ({
         MasterService.getRamas(),
         MasterService.getSubEspecialidades(),
         MasterService.getEntrenamientos(),
-        MasterServerService.getGlosarios(supabase),
+        MasterServerService.getGlosarios(supabase, { onlyInitial: true }),
         MasterService.getSystemConfigs([
           'rango_stats_rules',
           'stats_escalado_config',

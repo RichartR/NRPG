@@ -64,9 +64,8 @@ export async function PATCH(
           for (const newR of newRamas) {
             const oldR = oldRamas.find((r: any) => r.slot === newR.slot);
             
-            // Solo logueamos si realmente ha cambiado algo en este slot
+            // 1. Cambio de Rama/Subesp
             if (oldR && (oldR.rama_id !== newR.rama_id || oldR.sub_especialidad_id !== newR.sub_especialidad_id)) {
-              
               const [{ data: ramaInfo }, { data: subInfo }] = await Promise.all([
                 adminClient.from('info_ramas_clanes').select('nombre, tipo').eq('id', newR.rama_id).single(),
                 newR.sub_especialidad_id 
@@ -77,9 +76,21 @@ export async function PATCH(
               if (ramaInfo) {
                 const oldSubText = oldR.sub_especialidad?.nombre ? ` (${oldR.sub_especialidad.nombre})` : '';
                 const newSubText = subInfo?.nombre ? ` (${subInfo.nombre})` : '';
-                
                 const tipoText = ramaInfo.tipo === 'clan' ? 'su clan' : 'su rama';
                 changes.push(`${tipoText} ${oldR.rama?.nombre}${oldSubText} por ${ramaInfo.nombre}${newSubText}`);
+              }
+            }
+
+            // 2. Elección de Entrenamiento
+            if (oldR && newR.id_entrenamiento !== oldR.id_entrenamiento && newR.id_entrenamiento) {
+              const [{ data: trainingInfo }, { data: ramaInfo }] = await Promise.all([
+                adminClient.from('info_entrenamientos').select('nombre_esp').eq('id', newR.id_entrenamiento).single(),
+                adminClient.from('info_ramas_clanes').select('nombre, tipo').eq('id', newR.rama_id).single()
+              ]);
+
+              if (trainingInfo && ramaInfo) {
+                const articulo = ramaInfo.tipo === 'clan' ? 'el' : 'la';
+                changes.push(`ha elegido el ${trainingInfo.nombre_esp} de ${articulo} ${ramaInfo.tipo} ${ramaInfo.nombre}`);
               }
             }
           }

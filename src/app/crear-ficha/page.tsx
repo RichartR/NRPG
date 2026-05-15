@@ -181,6 +181,7 @@ export default function CrearFichaPage() {
     <CharacterSheetView 
       character={form}
       masters={masters}
+      glosarioFiltrado={masters.glosario || []}
       isEditing={false}
       canEdit={true}
       activeTab={activeTab}

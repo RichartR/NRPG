@@ -26,7 +26,7 @@ const STATS_LIST = [
   { key: 'fue', label: 'FUE' },
   { key: 'agi', label: 'AGI' },
   { key: 'int', label: 'INT' },
-  { key: 'res', label: 'RES' },
+  { key: 'est', label: 'EST' },
   { key: 'nin', label: 'NIN' },
   { key: 'gen', label: 'GEN' },
   { key: 'tai', label: 'TAI' },
@@ -305,7 +305,7 @@ function ElementoCard({ elemento, categorias, subcategorias, onEdit, onDelete }:
 
 function ElementoForm({ initialData, categorias, subcategorias, ramas, personajes, onClose, onSave, loading }: any) {
   const defaultRequisitos = {
-    stats: { fue: 0, agi: 0, int: 0, res: 0, nin: 0, gen: 0, tai: 0, sm: 0 },
+    stats: { fue: 0, agi: 0, int: 0, est: 0, nin: 0, gen: 0, tai: 0, sm: 0 },
     rango: null,
     misiones: { D: 0, C: 0, B: 0, A: 0, S: 0 },
     combates: 0,

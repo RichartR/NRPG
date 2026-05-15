@@ -240,5 +240,30 @@ export const CharacterService = {
         throw notifError;
       }
     }
+  },
+
+  async getValidItems(personajeId: number, categoriaId?: number): Promise<Glosario[]> {
+    if (!personajeId || isNaN(personajeId)) return [];
+
+    const supabase = createClient();
+    
+    // Solo enviamos los parámetros que tienen valor real
+    const rpcParams: any = { p_personaje_id: personajeId };
+    if (categoriaId !== undefined && categoriaId !== null) {
+      rpcParams.p_categoria_id = categoriaId;
+    }
+
+    const { data, error } = await supabase.rpc('get_valid_glosario_items', rpcParams);
+
+    if (error) {
+      console.error('Error in get_valid_glosario_items:', error);
+      return [];
+    }
+    
+    return (data || []).map((item: any) => ({
+      ...item,
+      info_glosario_categorias: item.info_glosario_categorias,
+      info_glosario_subcategorias: item.info_glosario_subcategorias
+    })) as Glosario[];
   }
 };
