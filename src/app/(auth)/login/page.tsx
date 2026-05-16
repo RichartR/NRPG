@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { AuthService } from '@/services/supabase/auth.service'
 import { LogIn, Mail, UserPlus, User, ArrowLeft } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { getURL } from '@/lib/utils/url'
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
@@ -16,7 +17,7 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
     const { error } = await AuthService.signInWithDiscord(
-      `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/auth/callback`
+      `${getURL()}auth/callback`
     )
     
     if (error) {
