@@ -85,7 +85,7 @@ export default function CombatesPage() {
             <div className="hidden lg:flex items-center gap-10 flex-1 justify-center">
               <div className="h-10 w-px bg-oro/10" />
               <div className="flex items-center gap-6">
-                {/* <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-6 xl:w-8 h-auto" alt="icon" /> */}
+                {/* <img src="/assets/icons/shuriken.png" className="w-6 xl:w-8 h-auto" alt="icon" /> */}
                 <h1 className="ninja-title text-4xl xl:text-7xl uppercase tracking-[0.3em] leading-none break-words">
                   <span className="text-rojo-sangre">COMBATES</span>
                 </h1>

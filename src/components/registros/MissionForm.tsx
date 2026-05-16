@@ -155,7 +155,7 @@ export default function MissionForm({
       <div className="ninja-card-oro p-8 sm:p-12 xl:p-20 relative overflow-hidden">
         {/* Background Decorative Element */}
         <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none">
-          <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-64 h-64 rotate-12" alt="bg" />
+          <img src="/assets/icons/shuriken.png" className="w-64 h-64 rotate-12" alt="bg" />
         </div>
 
         <div className="relative z-10 space-y-12 sm:space-y-16">

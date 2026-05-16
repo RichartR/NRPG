@@ -12,7 +12,7 @@ export default function RegistrosLandingPage() {
           Volver al Dashboard
         </Link>
         <div className="flex items-center gap-4">
-          <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-4 xl:w-6 h-auto" alt="icon" />
+          <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto" alt="icon" />
           <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
             Registros <span className="text-oro/40">Mundiales</span>
           </h1>
@@ -22,7 +22,7 @@ export default function RegistrosLandingPage() {
       <main className="w-full max-w-[1750px] mx-auto flex-1">
         <div className="mb-20 ninja-card-oro p-12 xl:p-16">
           <div className="flex items-center gap-6 mb-6">
-            {/* <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-5 xl:w-8 h-auto" alt="icon" /> */}
+            {/* <img src="/assets/icons/shuriken.png" className="w-5 xl:w-8 h-auto" alt="icon" /> */}
             <h1 className="ninja-title text-5xl xl:text-8xl">REGISTROS NINJA</h1>
           </div>
           <p className="text-gris-texto text-lg xl:text-2xl max-w-4xl leading-relaxed">Consulta el historial de misiones, registros de combate y transacciones económicas de todo el mundo ninja.</p>

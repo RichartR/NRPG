@@ -21,7 +21,7 @@ export default async function MundoNinjaSelectionPage() {
           Volver al Dashboard
         </Link>
         <div className="flex items-center gap-4">
-          <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-4 xl:w-6 h-auto" alt="icon" />
+          <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto" alt="icon" />
           <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
             REGISTROS <span className="text-oro/40">MUNDIALES</span>
           </h1>
