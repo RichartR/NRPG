@@ -113,13 +113,23 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida" }: DocVi
               </div>
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center py-60">
-                <div className="w-12 h-12 border-4 border-oro border-t-transparent animate-spin" />
+                <div className="relative">
+                  <div className="w-20 h-20 border-4 border-oro/20 border-t-oro rounded-full animate-spin" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                      <img src="/assets/icons/shuriken.png" className="w-6 h-6 object-contain" alt="Logo" />
+                  </div>
+                </div>
               </div>
             )}
             
             {loading && (
                <div className="absolute inset-0 bg-black flex items-center justify-center z-10">
-                  <div className="w-12 h-12 border-4 border-oro border-t-transparent animate-spin" />
+                  <div className="relative">
+                    <div className="w-20 h-20 border-4 border-oro/20 border-t-oro rounded-full animate-spin" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <img src="/assets/icons/shuriken.png" className="w-6 h-6 object-contain" alt="Logo" />
+                    </div>
+                  </div>
                </div>
             )}
           </div>

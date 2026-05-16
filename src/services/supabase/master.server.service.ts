@@ -3,7 +3,7 @@ import { Aldea, RamaClan, SubEspecialidad, DocumentoSistema, DocumentoCombate, C
 
 // Extended RamaClan with joined aldea for slug/abreviatura navigation
 export interface RamaConAldea extends RamaClan {
-  aldeas?: { slug: string; abreviatura: string } | null;
+  info_aldeas?: { slug: string; abreviatura: string } | null;
 }
 
 export const MasterServerService = {
