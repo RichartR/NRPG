@@ -127,7 +127,7 @@ export default async function Home() {
           {/* Documentos */}
           <Link href="/documentos" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja md:col-span-2 flex flex-col justify-center min-h-[140px]">
             <div className="relative z-10">
-              <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4 uppercase tracking-widest">
+              <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4 tracking-widest">
                 <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
                 Documentos
               </h3>

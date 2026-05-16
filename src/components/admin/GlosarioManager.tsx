@@ -47,6 +47,8 @@ export default function GlosarioManager() {
   const [subcategorias, setSubcategorias] = useState<GlosarioSubcategoria[]>([]);
   const [elementos, setElementos] = useState<Glosario[]>([]);
   const [ramas, setRamas] = useState<RamaClan[]>([]);
+  const [aldeas, setAldeas] = useState<any[]>([]);
+  const [subespecialidades, setSubespecialidades] = useState<any[]>([]);
   const [personajes, setPersonajes] = useState<any[]>([]);
   
   const [search, setSearch] = useState('');
@@ -67,11 +69,13 @@ export default function GlosarioManager() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [cats, subs, els, rms] = await Promise.all([
+      const [cats, subs, els, rms, alds, subEsps] = await Promise.all([
         MasterServerService.getGlosarioCategorias(supabase),
         MasterServerService.getGlosarioSubcategorias(supabase),
         MasterServerService.getGlosarios(supabase),
-        MasterServerService.getAdminRamasActivas(supabase)
+        MasterServerService.getAdminRamasActivas(supabase),
+        MasterServerService.getAldeasActivas(supabase),
+        MasterServerService.getSubEspecialidades(supabase)
       ]);
       const { data: pjs } = await supabase.from('reg_characters').select('id, nombre_ninja').eq('activo', true).order('nombre_ninja');
 
@@ -79,6 +83,8 @@ export default function GlosarioManager() {
       setSubcategorias(subs);
       setElementos(els);
       setRamas(rms);
+      setAldeas(alds);
+      setSubespecialidades(subEsps);
       setPersonajes(pjs || []);
     } catch (error) {
       console.error(error);
@@ -244,7 +250,18 @@ export default function GlosarioManager() {
       </div>
 
       {(showNewForm || editingId) && activeSection === 'elementos' && (
-        <ElementoForm initialData={elementos.find(e => e.id === editingId)} categorias={categorias} subcategorias={subcategorias} ramas={ramas} personajes={personajes} onClose={() => { setShowNewForm(false); setEditingId(null); }} onSave={handleSaveElemento} loading={saving} />
+        <ElementoForm 
+          initialData={elementos.find(e => e.id === editingId)} 
+          categorias={categorias} 
+          subcategorias={subcategorias} 
+          ramas={ramas} 
+          aldeas={aldeas}
+          subespecialidades={subespecialidades}
+          personajes={personajes} 
+          onClose={() => { setShowNewForm(false); setEditingId(null); }} 
+          onSave={handleSaveElemento} 
+          loading={saving} 
+        />
       )}
 
       {(showNewForm || editingCat) && activeSection === 'categorias' && (
@@ -303,7 +320,7 @@ function ElementoCard({ elemento, categorias, subcategorias, onEdit, onDelete }:
   );
 }
 
-function ElementoForm({ initialData, categorias, subcategorias, ramas, personajes, onClose, onSave, loading }: any) {
+function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, subespecialidades, personajes, onClose, onSave, loading }: any) {
   const defaultRequisitos = {
     stats: { fue: 0, agi: 0, int: 0, est: 0, nin: 0, gen: 0, tai: 0, sm: 0 },
     rango: null,
@@ -320,6 +337,9 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, personaje
         nombre_jp: '', 
         categoria_id: 0, 
         subcategoria_id: undefined,
+        aldea_id: null,
+        rama_clan_id: null,
+        sub_especialidad_id: null,
         coste_exp: 0, 
         coste_ryous: 0, 
         activo: true, 
@@ -329,6 +349,9 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, personaje
     }
     return {
       ...initialData,
+      aldea_id: initialData.aldea_id ?? null,
+      rama_clan_id: initialData.rama_clan_id ?? null,
+      sub_especialidad_id: initialData.sub_especialidad_id ?? null,
       coste_ryous: initialData.coste_ryous || 0,
       inicial: initialData.inicial || false,
       requisitos: { ...defaultRequisitos, ...initialData.requisitos }
@@ -336,6 +359,14 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, personaje
   });
 
   const filteredSubs = subcategorias.filter((s: any) => s.categoria_id === formData.categoria_id);
+  const filteredRamas = ramas.filter((r: any) => {
+    const rAldea = r.aldea_id === null || r.aldea_id === undefined ? null : Number(r.aldea_id);
+    const fAldea = formData.aldea_id === null || formData.aldea_id === undefined ? null : Number(formData.aldea_id);
+    return rAldea === fAldea;
+  });
+  const filteredSpec = formData.rama_clan_id 
+    ? subespecialidades.filter((s: any) => Number(s.rama_id) === Number(formData.rama_clan_id))
+    : [];
 
   const updateReq = (key: string, value: any) => {
     const newReqs = { ...formData.requisitos };
@@ -396,6 +427,37 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, personaje
                         <option value="">Ninguna</option>
                         {filteredSubs.map((s: any) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
                       </select>
+                    </div>
+                  </div>
+
+                  {/* Nuevas Casillas de Jerarquía */}
+                  <div className="pt-4 border-t border-zinc-800/50 space-y-4">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-emerald-500/60 ml-1">Jerarquía de Visualización</label>
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">Aldea / Nación</label>
+                        <select value={formData.aldea_id || ''} onChange={(e) => setFormData({ ...formData, aldea_id: e.target.value ? Number(e.target.value) : null, rama_clan_id: null, sub_especialidad_id: null })} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none appearance-none cursor-pointer">
+                          <option value="">General</option>
+                          {aldeas.map((a: any) => <option key={a.id} value={a.id}>{a.nombre_completo}</option>)}
+                        </select>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">Rama / Clan</label>
+                          <select value={formData.rama_clan_id || ''} onChange={(e) => setFormData({ ...formData, rama_clan_id: e.target.value ? Number(e.target.value) : null, sub_especialidad_id: null })} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none appearance-none cursor-pointer">
+                            <option value="">Ninguno</option>
+                            {filteredRamas.map((r: any) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">Subespecialidad</label>
+                          <select value={formData.sub_especialidad_id || ''} onChange={(e) => setFormData({ ...formData, sub_especialidad_id: e.target.value ? Number(e.target.value) : null })} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none appearance-none cursor-pointer">
+                            <option value="">Ninguna</option>
+                            {filteredSpec.map((s: any) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                          </select>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

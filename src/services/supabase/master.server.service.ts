@@ -16,6 +16,26 @@ export const MasterServerService = {
     return data || [];
   },
 
+  async getRamas(supabase: SupabaseClient): Promise<RamaClan[]> {
+    const { data, error } = await supabase
+      .from('info_ramas_clanes')
+      .select('*')
+      .eq('activo', true)
+      .order('nombre', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getSubEspecialidades(supabase: SupabaseClient): Promise<SubEspecialidad[]> {
+    const { data, error } = await supabase
+      .from('info_sub_especialidades')
+      .select('*')
+      .eq('activo', true)
+      .order('nombre', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  },
+
   async getAldeaById(supabase: SupabaseClient, id: number): Promise<Aldea | null> {
     const { data, error } = await supabase
       .from('info_aldeas')
@@ -264,7 +284,7 @@ export const MasterServerService = {
   async getAdminRamasActivas(supabase: SupabaseClient): Promise<RamaClan[]> {
     const { data, error } = await supabase
       .from('info_ramas_clanes')
-      .select('id, nombre, tipo, slug, activo')
+      .select('id, nombre, tipo, slug, activo, aldea_id')
       .eq('activo', true)
       .order('nombre', { ascending: true });
     if (error) throw error;
