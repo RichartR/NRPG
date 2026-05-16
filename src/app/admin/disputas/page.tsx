@@ -80,18 +80,24 @@ export default function AdminDisputePage() {
   };
 
   return (
-    <div className="min-h-screen bg-black pt-24 pb-20 px-4 md:px-10">
-      <div className="max-w-6xl mx-auto">
-        <header className="mb-12">
-          <Link href="/admin" className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors mb-4 text-xs font-black uppercase tracking-widest group">
-            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Volver al panel
-          </Link>
-          <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter uppercase italic flex items-center gap-4">
-            <ShieldAlert className="w-10 h-10 text-orange-500" />
-            CENTRO DE <span className="text-orange-500">DISPUTAS</span>
-          </h1>
-          <p className="text-zinc-500 text-sm font-medium mt-2 uppercase tracking-widest">Revisa los rechazos de registros y toma una decisión final.</p>
-        </header>
+    <>
+      <div className="max-w-[1750px]">
+      <header className="mb-16 ninja-card-oro p-8 xl:p-10">
+        <Link href="/admin" className="flex items-center gap-3 text-oro/40 hover:text-oro transition-all mb-8 text-[10px] font-black uppercase tracking-[0.3em] group">
+          <div className="w-1.5 h-1.5 bg-oro/20 group-hover:bg-oro rotate-45 transition-colors" />
+          VOLVER AL PANEL CENTRAL
+        </Link>
+        
+        <div className="flex items-center gap-6">
+          <div className="w-12 h-12 bg-oro/[0.03] border border-oro/10 flex items-center justify-center">
+            <ShieldAlert className="w-6 h-6 text-oro" />
+          </div>
+          <div>
+            <h1 className="ninja-title text-4xl xl:text-5xl italic">CENTRO DE DISPUTAS</h1>
+            <p className="text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] mt-2">REVISIÓN DE RECHAZOS Y RESOLUCIÓN DE CONFLICTOS</p>
+          </div>
+        </div>
+      </header>
 
         {loading ? (
           <div className="py-24 text-center">
@@ -99,14 +105,15 @@ export default function AdminDisputePage() {
             <p className="text-zinc-500 text-xs font-black uppercase tracking-[0.3em]">Cargando casos...</p>
           </div>
         ) : disputes.length === 0 ? (
-          <div className="py-24 text-center bg-zinc-950/50 rounded-[3rem] border-2 border-dashed border-zinc-900">
-            <Check className="w-16 h-16 text-zinc-800 mx-auto mb-4 opacity-20" />
-            <p className="text-zinc-700 font-black uppercase italic tracking-[0.3em] text-sm">Sin disputas pendientes</p>
+          <div className="py-24 text-center ninja-card-oro">
+            <Check className="w-16 h-16 text-oro/20 mx-auto mb-4 opacity-20" />
+            <p className="text-oro/40 font-black uppercase italic tracking-[0.3em] text-sm">SIN DISPUTAS PENDIENTES</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 gap-10">
             {disputes.map((d) => (
-              <div key={d.id} className="bg-zinc-900/50 border border-zinc-800 rounded-[2.5rem] p-8 hover:border-orange-500/30 transition-all animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div key={d.id} className="ninja-card-oro p-10 xl:p-12 hover:scale-[1.01] transition-all animate-in fade-in slide-in-from-bottom-4 duration-500 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-oro/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
                 <div className="flex flex-col md:flex-row justify-between gap-8">
                   <div className="flex-1 space-y-6">
                     <div className="flex items-center gap-4">
@@ -136,24 +143,27 @@ export default function AdminDisputePage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-3 justify-center min-w-[200px]">
+                  <div className="flex flex-col gap-4 justify-center min-w-[240px]">
                     <button 
                       onClick={() => handleResolve(d.id, 'aceptada')}
-                      className="w-full py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-xl shadow-emerald-600/10 flex items-center justify-center gap-2"
+                      className="w-full py-4 bg-emerald-600/10 border border-emerald-600/20 text-emerald-500 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all shadow-xl shadow-emerald-600/10 flex items-center justify-center gap-3"
+                      style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                     >
-                      <Check className="w-4 h-4" /> Aceptar Disputa
+                      <Check className="w-4 h-4" /> ACEPTAR DISPUTA
                     </button>
                     <button 
                       onClick={() => handleResolve(d.id, 'rechazada')}
-                      className="w-full py-4 bg-red-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500 transition-all shadow-xl shadow-red-600/10 flex items-center justify-center gap-2"
+                      className="w-full py-4 bg-rojo-sangre/10 border border-rojo-sangre/20 text-rojo-sangre text-[10px] font-black uppercase tracking-widest hover:bg-rojo-sangre hover:text-oro transition-all shadow-xl shadow-rojo-sangre/10 flex items-center justify-center gap-3"
+                      style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                     >
-                      <X className="w-4 h-4" /> Invalidar Registro
+                      <X className="w-4 h-4" /> INVALIDAR REGISTRO
                     </button>
                     <button 
                       onClick={() => setSelectedRegistro(d.registro)}
-                      className="w-full py-4 bg-zinc-800 text-zinc-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-zinc-700 hover:text-white transition-all flex items-center justify-center gap-2"
+                      className="w-full py-4 bg-oro text-rojo-sangre text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all flex items-center justify-center gap-3"
+                      style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                     >
-                      <Eye className="w-4 h-4" /> Inspeccionar Registro
+                      <Eye className="w-4 h-4" /> INSPECCIONAR
                     </button>
                   </div>
                 </div>
@@ -170,20 +180,21 @@ export default function AdminDisputePage() {
             className="fixed inset-0 bg-black/95 backdrop-blur-xl transition-all duration-500" 
             onClick={() => setSelectedRegistro(null)} 
           />
-          <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col bg-zinc-950 border border-zinc-800 rounded-[3rem] shadow-[0_0_80px_-15px_rgba(0,0,0,0.8)] animate-in zoom-in slide-in-from-bottom-8 duration-500 overflow-hidden">
-            <div className="flex-none p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-950/50 backdrop-blur-md">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                <h3 className="text-white font-black uppercase tracking-[0.3em] text-[10px]">Inspección de Registro en Disputa</h3>
+          <div className="relative w-full max-w-5xl max-h-[90vh] flex flex-col bg-[#080705] border border-oro/20 shadow-[0_0_80px_-15px_rgba(0,0,0,0.8)] animate-in zoom-in slide-in-from-bottom-8 duration-500 overflow-hidden" style={{ clipPath: 'polygon(40px 0, 100% 0, 100% calc(100% - 40px), calc(100% - 40px) 100%, 0 100%, 0 40px)' }}>
+            <div className="flex-none p-10 border-b border-oro/10 flex justify-between items-center bg-black/40 backdrop-blur-md">
+              <div className="flex items-center gap-4">
+                <div className="w-2 h-2 rounded-full bg-oro animate-pulse" />
+                <h3 className="text-oro font-black uppercase tracking-[0.4em] text-[10px]">PROTOCOLO DE INSPECCIÓN DE REGISTRO EN DISPUTA</h3>
               </div>
               <button 
                 onClick={() => setSelectedRegistro(null)}
-                className="p-3 bg-zinc-900 text-zinc-500 rounded-2xl hover:text-white hover:bg-zinc-800 transition-all active:scale-90"
+                className="p-4 bg-rojo-sangre/10 text-rojo-sangre border border-rojo-sangre/20 hover:bg-rojo-sangre hover:text-oro transition-all active:scale-90"
+                style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
               >
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-hide">
+            <div className="flex-1 overflow-y-auto p-6 md:p-12 scrollbar-hide">
               <div className="animate-in fade-in duration-700 delay-300">
                 <RegistroCard registro={selectedRegistro} />
               </div>
@@ -192,6 +203,6 @@ export default function AdminDisputePage() {
         </div>,
         document.body
       )}
-    </div>
+    </>
   );
 }
