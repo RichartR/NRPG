@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { convertDriveUrl, getDownloadUrl } from '@/lib/utils/driveConverter';
 import { ArrowLeft, Download } from 'lucide-react';
 import Link from 'next/link';
@@ -14,23 +14,38 @@ interface DocViewerProps {
 export default function DocViewer({ title, url, backUrl = "/bienvenida" }: DocViewerProps) {
   const [zoom, setZoom] = useState(1);
   const [loading, setLoading] = useState(true);
-  const embedUrl = convertDriveUrl(url);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  const rawProxyUrl = convertDriveUrl(url);
   const downloadUrl = getDownloadUrl(url);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Lógica Híbrida: PDF.js en móvil (auto-load) y Nativo en PC (high-performance)
+  const embedUrl = isMobile 
+    ? `/pdf-viewer.html?file=${encodeURIComponent(rawProxyUrl)}`
+    : rawProxyUrl;
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 2.0));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.6));
 
-  // Medidas de precisión para eliminar bordes grises y barras
-  const baseWidth = 794;           // Ancho estándar de un folio A4
-  const baseHeight = 1100;         // Alto estándar de un folio A4
-  const iframeWidth = 950;         // Hacemos el iframe mucho más ancho para ocultar sus fondos
-  const leftAdjustedOffset = 71;   // Desplazamiento lateral para centrar y ocultar grises
-  const topOffset = 60;            // Oculta la barra nativa
+  // Medidas de precisión (Escritorio)
+  const desktopBaseWidth = 794;
+  const desktopBaseHeight = 1050;
+  const desktopIframeWidth = 950;
+  const desktopLeftOffset = 71;
+  const desktopTopOffset = 60;
 
   return (
     <div className="min-h-screen flex flex-col overflow-hidden">
       <header className={`h-20 xl:h-28 flex items-center justify-between px-6 xl:px-12 shrink-0 z-50 border-b border-oro/10 relative transition-all duration-1000 ${loading ? 'bg-black' : 'bg-black/80 backdrop-blur-xl'}`}>
-        {/* Lado Izquierdo: Volver y Título */}
         <div className="flex items-center gap-6 xl:gap-10 min-w-0 flex-1">
           <Link 
             href={backUrl}
@@ -45,7 +60,6 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida" }: DocVi
           </h1>
         </div>
 
-        {/* Lado Derecho: Zoom y Descarga */}
         <div className="flex items-center gap-6 xl:gap-10 shrink-0">
           <div className="flex items-center gap-2 p-1.5 bg-black/60 border border-oro/10 ninja-box shadow-2xl">
             <button onClick={handleZoomOut} className="p-2.5 hover:bg-rojo-sangre/20 transition-all text-oro/40 hover:text-oro">
@@ -73,7 +87,6 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida" }: DocVi
         </div>
       </header>
 
-      {/* Visor de Documento */}
       <main className={`flex-1 overflow-auto custom-scrollbar transition-colors duration-1000 ${loading ? 'bg-black' : 'bg-transparent'}`}>
         <div 
           className="py-12 xl:py-20 flex flex-col items-center min-h-full"
@@ -84,43 +97,33 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida" }: DocVi
           }}
         >
           <div 
-            className="bg-white shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden relative"
+            className="bg-white shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden relative transition-all duration-500"
             style={{ 
-              width: `${baseWidth}px`, 
-              height: `${baseHeight}px`,
+              width: isMobile ? '95vw' : `${desktopBaseWidth}px`, 
+              height: isMobile ? 'auto' : `${desktopBaseHeight}px`,
+              aspectRatio: isMobile ? '1/1.4' : 'auto',
               maxWidth: '98vw',
               backfaceVisibility: 'hidden',
               transform: 'translateZ(0)',
               WebkitFontSmoothing: 'antialiased'
             }}
           >
-            {embedUrl ? (
-              <div 
-                className="absolute"
-                style={{ 
-                  width: `${iframeWidth}px`,
-                  height: `calc(100% + ${topOffset}px)`,
-                  left: `-${leftAdjustedOffset}px`,
-                  top: `-${topOffset}px`
-                }}
-              >
-                <iframe
-                  src={embedUrl}
-                  onLoad={() => setLoading(false)}
-                  className="w-full h-full border-none"
-                  allow="autoplay"
-                />
-              </div>
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center py-60">
-                <div className="relative">
-                  <div className="w-20 h-20 border-4 border-oro/20 border-t-oro rounded-full animate-spin" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                      <img src="/assets/icons/shuriken.png" className="w-6 h-6 object-contain" alt="Logo" />
-                  </div>
-                </div>
-              </div>
-            )}
+            <div 
+              className="absolute"
+              style={{ 
+                width: isMobile ? '100%' : `${desktopIframeWidth}px`,
+                height: isMobile ? '100%' : `calc(100% + ${desktopTopOffset}px)`,
+                left: isMobile ? '0' : `-${desktopLeftOffset}px`,
+                top: isMobile ? '0' : `-${desktopTopOffset}px`
+              }}
+            >
+              <iframe
+                src={embedUrl}
+                onLoad={() => setLoading(false)}
+                className="w-full h-full border-none"
+                allow="autoplay"
+              />
+            </div>
             
             {loading && (
                <div className="absolute inset-0 bg-black flex items-center justify-center z-10">
