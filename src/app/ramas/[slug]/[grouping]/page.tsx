@@ -29,7 +29,7 @@ export default async function GroupingDetailPage({ params }: { params: Promise<{
         <header className="mb-20 bg-black/60 p-12 xl:p-16 ninja-box ninja-border backdrop-blur-md relative overflow-hidden">
           <div className="absolute top-0 right-0 w-96 h-96 bg-oro/5 rounded-full blur-[100px] -mr-48 -mt-48 pointer-events-none" />
           <div className="flex items-center gap-6 mb-8 text-oro">
-            <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-5 xl:w-8 h-auto" alt="icon" />
+            <img src="../../assets/icons/shuriken.png" className="w-5 xl:w-8 h-auto" alt="icon" />
             <div className="h-px w-24 bg-oro/20" />
             <span className="text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] opacity-40">{rama.nombre}</span>
           </div>

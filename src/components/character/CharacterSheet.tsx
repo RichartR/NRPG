@@ -74,7 +74,7 @@ export default function CharacterSheet() {
           {/* Atributos Derivados */}
           <div className="space-y-8">
             <h3 className="text-xs sm:text-base xl:text-xl font-black text-oro mb-6 flex items-center justify-center sm:justify-start gap-3 uppercase tracking-[0.3em]">
-              <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-4 xl:w-6 h-auto object-contain" alt="icon" />
+              <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto object-contain" alt="icon" />
               Estado Vital
             </h3>
             
@@ -117,7 +117,7 @@ export default function CharacterSheet() {
           {/* Stats Base */}
           <div>
             <h3 className="text-xs sm:text-base xl:text-xl font-black text-oro mb-6 flex items-center justify-center sm:justify-start gap-3 uppercase tracking-[0.3em]">
-              <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-4 xl:w-6 h-auto object-contain" alt="icon" />
+              <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto object-contain" alt="icon" />
               Atributos Base
             </h3>
 

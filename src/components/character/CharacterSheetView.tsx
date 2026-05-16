@@ -263,7 +263,7 @@ const ResourceDisplay = ({ character, totalExp, totalRyous }: { character: Chara
 const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
   <div className="space-y-8 mb-16">
     <div className="flex items-center gap-4">
-      <img src="https://game.gtimg.cn/images/hyrz/web2026/content-news-head.png" className="w-4 h-auto" alt="icon" />
+      <img src="/assets/icons/shuriken.png" className="w-4 h-auto" alt="icon" />
       <h3 className="text-xs xl:text-sm font-black text-oro uppercase tracking-[0.4em]">Historial de Misiones</h3>
     </div>
     <div className="grid grid-cols-2 sm:grid-cols-5 gap-6">
