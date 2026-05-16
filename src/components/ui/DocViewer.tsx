@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { convertDriveUrl, getDownloadUrl } from '@/lib/utils/driveConverter';
-import { Loader2, ArrowLeft, Download, ZoomIn, ZoomOut } from 'lucide-react';
+import { ArrowLeft, Download } from 'lucide-react';
 import Link from 'next/link';
 
 interface DocViewerProps {
@@ -20,12 +20,12 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida" }: DocVi
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 2.0));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.6));
 
-  // Tus medidas "clavadas"
-  const baseWidth = 793;
-  const baseHeight = 1080;
-  const iframeWidth = 880;
-  const leftAdjustedOffset = ((iframeWidth - baseWidth) / 2) - 7;
-  const topOffset = 20;
+  // Medidas de precisión para eliminar bordes grises y barras
+  const baseWidth = 794;           // Ancho estándar de un folio A4
+  const baseHeight = 1100;         // Alto estándar de un folio A4
+  const iframeWidth = 950;         // Hacemos el iframe mucho más ancho para ocultar sus fondos
+  const leftAdjustedOffset = 71;   // Desplazamiento lateral para centrar y ocultar grises
+  const topOffset = 60;            // Oculta la barra nativa
 
   return (
     <div className="min-h-screen flex flex-col overflow-hidden">
@@ -73,7 +73,7 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida" }: DocVi
         </div>
       </header>
 
-      {/* Visor de Documento - Zoom por Escala (Magnificación Real) */}
+      {/* Visor de Documento */}
       <main className={`flex-1 overflow-auto custom-scrollbar transition-colors duration-1000 ${loading ? 'bg-black' : 'bg-transparent'}`}>
         <div 
           className="py-12 xl:py-20 flex flex-col items-center min-h-full"
@@ -152,6 +152,5 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida" }: DocVi
         }
       `}</style>
     </div>
-
   );
 }
