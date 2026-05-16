@@ -29,30 +29,32 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida" }: DocVi
 
   return (
     <div className="min-h-screen flex flex-col overflow-hidden">
-      <header className="h-24 xl:h-32 flex items-center justify-between px-8 xl:px-16 shrink-0 z-50 bg-black/60 border-b border-oro/10 backdrop-blur-md">
-        <div className="flex items-center gap-8 xl:gap-12">
+      <header className={`h-20 xl:h-28 flex items-center justify-between px-6 xl:px-12 shrink-0 z-50 border-b border-oro/10 relative transition-all duration-1000 ${loading ? 'bg-black' : 'bg-black/80 backdrop-blur-xl'}`}>
+        {/* Lado Izquierdo: Volver y Título */}
+        <div className="flex items-center gap-6 xl:gap-10 min-w-0 flex-1">
           <Link 
             href={backUrl}
-            className="flex items-center gap-4 px-6 py-3 font-black text-xs xl:text-base uppercase tracking-[0.2em] transition-all active:scale-95 text-oro hover:brightness-125 group"
+            className="flex items-center gap-3 px-4 py-2 font-black text-[10px] xl:text-sm uppercase tracking-[0.2em] transition-all active:scale-95 text-oro/60 hover:text-oro group shrink-0"
           >
-            <div className="w-2 xl:w-3 h-2 xl:h-3 bg-rojo-sangre rotate-45 group-hover:bg-oro transition-colors" />
+            <div className="w-2 xl:w-2.5 h-2 xl:h-2.5 bg-rojo-sangre rotate-45 group-hover:bg-oro transition-colors" />
             <span>VOLVER</span>
           </Link>
-          <div className="h-10 w-px bg-oro/10 mx-2 hidden md:block" />
-          <h1 className="text-xl xl:text-3xl font-black tracking-widest uppercase text-oro font-ninja">
+          <div className="h-8 w-px bg-oro/10 shrink-0 hidden sm:block" />
+          <h1 className="text-lg xl:text-2xl font-black tracking-[0.1em] uppercase text-oro font-ninja truncate max-w-[40vw] pt-1">
             {title}
           </h1>
         </div>
 
-        <div className="flex items-center gap-8 xl:gap-12">
-          <div className="flex items-center gap-3 p-2 bg-black/40 border border-oro/10 ninja-box shadow-inner">
-            <button onClick={handleZoomOut} className="p-3 hover:bg-rojo-sangre/20 transition-all text-oro/60 hover:text-oro">
+        {/* Lado Derecho: Zoom y Descarga */}
+        <div className="flex items-center gap-6 xl:gap-10 shrink-0">
+          <div className="flex items-center gap-2 p-1.5 bg-black/60 border border-oro/10 ninja-box shadow-2xl">
+            <button onClick={handleZoomOut} className="p-2.5 hover:bg-rojo-sangre/20 transition-all text-oro/40 hover:text-oro">
               <div className="w-3 h-0.5 bg-current" />
             </button>
-            <div className="text-[10px] xl:text-xs font-black w-14 text-center select-none text-oro">
+            <div className="text-[9px] xl:text-xs font-black w-12 text-center select-none text-oro/80 tabular-nums">
               {Math.round(zoom * 100)}%
             </div>
-            <button onClick={handleZoomIn} className="p-3 hover:bg-rojo-sangre/20 transition-all text-oro/60 hover:text-oro">
+            <button onClick={handleZoomIn} className="p-2.5 hover:bg-rojo-sangre/20 transition-all text-oro/40 hover:text-oro">
               <div className="relative w-3 h-3 flex items-center justify-center">
                 <div className="absolute w-3 h-0.5 bg-current" />
                 <div className="absolute w-0.5 h-3 bg-current" />
@@ -63,7 +65,7 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida" }: DocVi
           <a 
             href={downloadUrl} 
             download 
-            className="flex items-center gap-4 px-10 py-4 bg-oro text-rojo-sangre font-black text-xs xl:text-sm uppercase tracking-[0.2em] transition-all shadow-[0_0_20px_rgba(255,230,159,0.2)] active:scale-95 hover:brightness-110"
+            className="hidden md:flex items-center gap-4 px-8 py-3.5 bg-oro text-rojo-sangre font-black text-[10px] xl:text-xs uppercase tracking-[0.2em] transition-all shadow-[0_0_20px_rgba(255,230,159,0.2)] active:scale-95 hover:brightness-110"
             style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
           >
             DESCARGAR PDF
@@ -72,7 +74,7 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida" }: DocVi
       </header>
 
       {/* Visor de Documento - Zoom por Escala (Magnificación Real) */}
-      <main className="flex-1 overflow-auto custom-scrollbar bg-transparent">
+      <main className={`flex-1 overflow-auto custom-scrollbar transition-colors duration-1000 ${loading ? 'bg-black' : 'bg-transparent'}`}>
         <div 
           className="py-12 xl:py-20 flex flex-col items-center min-h-full"
           style={{ 
@@ -116,7 +118,7 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida" }: DocVi
             )}
             
             {loading && (
-               <div className="absolute inset-0 bg-[#050505] flex items-center justify-center z-10">
+               <div className="absolute inset-0 bg-black flex items-center justify-center z-10">
                   <div className="w-12 h-12 border-4 border-oro border-t-transparent animate-spin" />
                </div>
             )}
