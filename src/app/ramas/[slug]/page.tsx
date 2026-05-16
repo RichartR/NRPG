@@ -11,12 +11,12 @@ export default async function RamaDetailPage({ params }: { params: Promise<{ slu
   const rama = await MasterServerService.getRamaBySlug(supabase, slug);
   if (!rama) return notFound();
 
-  const backUrl = rama.tipo === 'clan' && rama.aldeas?.slug
-    ? `/aldeas/${rama.aldeas.slug}`
+  const backUrl = rama.tipo === 'clan' && rama.info_aldeas?.slug
+    ? `/aldeas/${rama.info_aldeas.slug}`
     : '/ramas';
 
-  const backText = rama.tipo === 'clan' && rama.aldeas?.abreviatura
-    ? `Volver a ${rama.aldeas.abreviatura}`
+  const backText = rama.tipo === 'clan' && rama.info_aldeas?.abreviatura
+    ? `Volver a ${rama.info_aldeas.abreviatura}`
     : 'Volver a Ramas';
 
   const [subEspecialidades, documentos] = await Promise.all([

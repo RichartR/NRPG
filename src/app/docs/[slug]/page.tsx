@@ -25,15 +25,15 @@ export default async function DocumentPage({ params }: { params: Promise<{ slug:
       };
 
       // 1. Intentar obtener slug de la rama directa o desde la sub-especialidad
-      let ramaSlug = getSlug((combatDoc as any).ramas_clanes);
-      const subSlug = getSlug((combatDoc as any).sub_especialidades);
+      let ramaSlug = getSlug((combatDoc as any).info_ramas_clanes);
+      const subSlug = getSlug((combatDoc as any).info_sub_especialidades);
 
       // Si no hay rama directa, mirar si la sub-especialidad la tiene (join anidado)
-      if (!ramaSlug && (combatDoc as any).sub_especialidades) {
-        const subData = Array.isArray((combatDoc as any).sub_especialidades) 
-          ? (combatDoc as any).sub_especialidades[0] 
-          : (combatDoc as any).sub_especialidades;
-        ramaSlug = getSlug(subData.ramas_clanes);
+      if (!ramaSlug && (combatDoc as any).info_sub_especialidades) {
+        const subData = Array.isArray((combatDoc as any).info_sub_especialidades) 
+          ? (combatDoc as any).info_sub_especialidades[0] 
+          : (combatDoc as any).info_sub_especialidades;
+        ramaSlug = getSlug(subData.info_ramas_clanes);
       }
 
       if (ramaSlug && subSlug) {

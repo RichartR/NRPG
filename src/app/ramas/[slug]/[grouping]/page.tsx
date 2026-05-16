@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronLeft, Sword, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 
 export default async function GroupingDetailPage({ params }: { params: Promise<{ slug: string, grouping: string }> }) {
@@ -17,56 +17,62 @@ export default async function GroupingDetailPage({ params }: { params: Promise<{
   const documentos = await MasterServerService.getDocumentosCombateBySubEspecialidad(supabase, sub.id);
 
   return (
-    <div className="min-h-screen bg-black pt-32 pb-20 px-8 sm:px-12 xl:px-20">
-      <div className="max-w-[1750px] mx-auto">
-        {/* Navegación */}
-        <Link href={`/ramas/${slug}`} className="inline-flex items-center gap-4 text-oro/60 hover:text-oro transition-all mb-16 text-xs xl:text-sm font-black uppercase tracking-[0.4em] group">
-          <div className="w-2 h-2 bg-rojo-sangre rotate-45 group-hover:bg-oro transition-colors" /> 
+    <div className="min-h-screen pt-24 pb-20 px-4 flex flex-col">
+      <header className="w-full max-w-[1750px] mx-auto flex flex-col md:flex-row justify-between items-center gap-10 mb-16 ninja-card-oro p-8 xl:p-12 z-50">
+        <Link href={`/ramas/${slug}`} className="flex items-center gap-4 text-oro hover:brightness-125 transition-all group font-black uppercase tracking-widest text-sm xl:text-lg">
+          <div className="w-2 xl:w-3 h-2 xl:h-3 bg-rojo-sangre rotate-45 group-hover:bg-oro transition-colors" />
           VOLVER A {rama.nombre}
         </Link>
+        <div className="flex items-center gap-4">
+          <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto" alt="icon" />
+          <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
+             ARCHIVO DE <span className="text-oro/40">DOCTRINA</span>
+          </h1>
+        </div>
+      </header>
 
-        {/* Cabecera */}
-        <header className="mb-20 bg-black/60 p-12 xl:p-16 ninja-box ninja-border backdrop-blur-md relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-oro/5 rounded-full blur-[100px] -mr-48 -mt-48 pointer-events-none" />
-          <div className="flex items-center gap-6 mb-8 text-oro">
-            <img src="../../assets/icons/shuriken.png" className="w-5 xl:w-8 h-auto" alt="icon" />
-            <div className="h-px w-24 bg-oro/20" />
-            <span className="text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] opacity-40">{rama.nombre}</span>
+      <main className="w-full max-w-[1750px] mx-auto flex-1">
+        <div className="mb-16 ninja-card-oro p-12 xl:p-16 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-12 opacity-[0.02] pointer-events-none group-hover:opacity-[0.05] transition-opacity">
+             <img src="/assets/icons/shuriken.png" className="w-64 h-64 rotate-12" alt="bg" />
           </div>
-          <h1 className="ninja-title text-6xl xl:text-8xl leading-none">{sub.nombre}</h1>
-          <p className="text-gris-texto text-xl xl:text-3xl mt-8 max-w-4xl italic leading-relaxed opacity-80">&quot;{sub.descripcion}&quot;</p>
-        </header>
+          <div className="flex items-center gap-6 mb-8 relative z-10">
+            <h1 className="ninja-title text-6xl xl:text-9xl">{sub.nombre}</h1>
+          </div>
+          <p className="text-gris-texto text-xl xl:text-3xl max-w-4xl leading-relaxed italic relative z-10">
+            &quot;{sub.descripcion}&quot;
+          </p>
+        </div>
 
-        {/* Listado de Documentos */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 xl:gap-12">
-          {documentos.length > 0 ? (
-            documentos.map((doc) => (
-              <Link
-                key={doc.id}
-                href={`/docs/${doc.clave}`}
-                className="group flex items-center justify-between p-10 bg-black/60 backdrop-blur-md border border-oro/10 ninja-box hover:border-oro/40 transition-all overflow-hidden"
-              >
-                <div className="flex items-center gap-10">
-                  <div className="w-20 h-20 bg-oro/5 border border-oro/10 flex items-center justify-center group-hover:bg-oro transition-all" style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}>
-                    <Sword className="w-8 h-8 text-oro group-hover:text-rojo-sangre transition-colors" />
-                  </div>
-                  <div>
-                    <h4 className="text-2xl xl:text-4xl font-black text-oro uppercase tracking-tight group-hover:brightness-125 transition-all leading-none mb-3 italic">{doc.titulo}</h4>
-                    <p className="text-oro/30 text-xs xl:text-sm line-clamp-1 uppercase font-black tracking-widest">{doc.descripcion}</p>
-                  </div>
+          {documentos.map((doc) => (
+            <Link
+              key={doc.id}
+              href={`/docs/${doc.clave}`}
+              className="group flex items-center justify-between p-10 ninja-card-oro hover-ninja transition-all relative overflow-hidden"
+            >
+              <div className="flex items-center gap-8 relative z-10">
+                <div className="w-16 h-16 bg-oro/5 border border-oro/10 flex items-center justify-center group-hover:bg-oro transition-all duration-500 ninja-clip-md">
+                   <img src="/assets/icons/shuriken.png" className="w-8 h-8 group-hover:invert transition-all" alt="icon" />
                 </div>
-                <div className="w-12 h-12 flex items-center justify-center bg-oro/5 border border-oro/10 text-oro group-hover:bg-oro group-hover:text-rojo-sangre transition-all" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}>
-                  <ChevronRight className="w-7 h-7" />
+                <div>
+                  <h4 className="ninja-title text-3xl xl:text-4xl group-hover:text-oro transition-colors italic leading-none mb-2">{doc.titulo}</h4>
+                  <p className="text-oro/40 text-[10px] uppercase font-black tracking-widest">{doc.descripcion || 'Pergamino de Combate'}</p>
                 </div>
-              </Link>
-            ))
-          ) : (
-            <div className="col-span-full text-center py-40 bg-black/20 border border-oro/5 border-dashed ninja-box">
-              <p className="text-oro/10 font-black uppercase tracking-[0.6em] text-xl xl:text-2xl italic">ARCHIVOS DOCTRINARIOS NO DISPONIBLES</p>
+              </div>
+              <div className="w-10 h-10 flex items-center justify-center border border-oro/20 text-oro group-hover:bg-oro group-hover:text-rojo-sangre transition-all">
+                 <ChevronRight className="w-6 h-6" />
+              </div>
+            </Link>
+          ))}
+          
+          {documentos.length === 0 && (
+            <div className="col-span-full text-center py-40 ninja-card-oro opacity-40">
+              <p className="text-oro/40 font-black uppercase tracking-[0.6em] text-xl xl:text-2xl italic">ARCHIVOS NO DISPONIBLES</p>
             </div>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }
