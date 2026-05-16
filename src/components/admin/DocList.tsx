@@ -61,7 +61,7 @@ export default function DocList({ initialDocs, categories, defaultCategory, show
   }, [initialDocs, activeTab, search, categoryFilter]);
 
   return (    <div className="space-y-12">
-      <div className="flex flex-col md:flex-row gap-8 justify-between items-start md:items-center bg-black/60 p-10 xl:p-12 ninja-box ninja-border backdrop-blur-md relative overflow-hidden">
+      <div className="flex flex-col md:flex-row gap-8 justify-between items-start md:items-center bg-[#0A0A0A]/40 p-10 xl:p-12 border border-oro/5 backdrop-blur-md relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-oro/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
         
         <div className="flex gap-4 p-2 bg-black/40 border border-oro/10 ninja-box">
@@ -90,7 +90,7 @@ export default function DocList({ initialDocs, categories, defaultCategory, show
               placeholder="BUSCAR EXPEDIENTE..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-black/60 border border-oro/20 py-4 pl-14 pr-8 text-[10px] xl:text-xs font-black text-oro focus:border-oro outline-none transition-all placeholder:text-oro/20 uppercase tracking-widest"
+              className="w-full bg-black/20 border border-oro/10 py-4 pl-14 pr-8 text-[10px] xl:text-xs font-black text-oro focus:border-oro/40 outline-none transition-all placeholder:text-oro/20 uppercase tracking-widest"
               style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
             />
           </div>
@@ -98,7 +98,7 @@ export default function DocList({ initialDocs, categories, defaultCategory, show
           <select 
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="bg-black/60 border border-oro/20 px-8 py-4 text-[10px] xl:text-xs font-black text-oro outline-none focus:border-oro transition-all appearance-none pr-14 cursor-pointer uppercase tracking-widest"
+            className="bg-black/20 border border-oro/10 px-8 py-4 text-[10px] xl:text-xs font-black text-oro outline-none focus:border-oro/40 transition-all appearance-none pr-14 cursor-pointer uppercase tracking-widest"
             style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
           >
             <option value="all">TODAS LAS CATEGORÍAS</option>
@@ -118,10 +118,10 @@ export default function DocList({ initialDocs, categories, defaultCategory, show
         </div>
       </div>
 
-      <div className="bg-black/60 ninja-box ninja-border overflow-hidden backdrop-blur-md">
+      <div className="bg-[#0A0A0A]/40 border border-oro/5 overflow-hidden backdrop-blur-md">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-black/40 border-b border-oro/10">
+            <tr className="bg-black/20 border-b border-oro/5">
               <th className="p-10 text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] text-oro/40">IDENTIFICADOR Y TÍTULO</th>
               <th className="p-10 text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] text-oro/40 text-center">CLASIFICACIÓN</th>
               <th className="p-10 text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] text-oro/40 text-right">PROTOCOLOS DE MANDO</th>

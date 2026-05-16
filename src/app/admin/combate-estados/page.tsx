@@ -93,31 +93,38 @@ export default function AdminEstadosCombatePage() {
   });
 
   return (
-    <div className="min-h-screen bg-black pt-24 pb-20 px-4 md:px-10">
-      <div className="max-w-6xl mx-auto">
-        <header className="mb-12">
-          <Link href="/admin" className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors mb-4 text-xs font-black uppercase tracking-widest group">
-            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Volver al panel
-          </Link>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-              <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter uppercase italic flex items-center gap-4">
-                <Swords className="w-10 h-10 text-red-500" />
-                ESTADOS DE <span className="text-red-500">COMBATE</span>
-              </h1>
-              <p className="text-zinc-500 text-sm font-medium mt-2 uppercase tracking-widest">Gestiona los estados post-combate (Herido, Muerto, etc.).</p>
+    <div className="max-w-[1750px]">
+      <header className="mb-16 ninja-card-oro p-8 xl:p-10">
+        <Link href="/admin" className="flex items-center gap-3 text-oro/40 hover:text-oro transition-all mb-8 text-[10px] font-black uppercase tracking-[0.3em] group">
+          <div className="w-1.5 h-1.5 bg-oro/20 group-hover:bg-oro rotate-45 transition-colors" />
+          VOLVER AL PANEL CENTRAL
+        </Link>
+        
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-10">
+          <div className="flex items-center gap-6">
+            <div className="w-12 h-12 bg-rojo-sangre/[0.03] border border-rojo-sangre/10 flex items-center justify-center">
+              <Swords className="w-6 h-6 text-rojo-sangre" />
             </div>
-            <button 
-              onClick={() => setEditingEstado({ nombre: '', activo: true })}
-              className="flex items-center gap-2 px-8 py-4 bg-red-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-red-500 transition-all shadow-xl shadow-red-500/20"
-            >
-              <Plus className="w-4 h-4" /> Nuevo Estado
-            </button>
+            <div>
+              <h1 className="ninja-title text-4xl xl:text-5xl italic">ESTADOS CRÍTICOS</h1>
+              <p className="text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] mt-2">CONFIGURACIÓN DE CONDICIONES POST-COMBATE</p>
+            </div>
           </div>
-        </header>
+
+          <button 
+            onClick={() => setEditingEstado({ nombre: '', activo: true })}
+            className="flex items-center gap-4 px-10 py-5 bg-rojo-sangre hover:brightness-125 text-oro font-black text-[10px] xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-rojo-sangre/20 active:scale-95"
+            style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
+          >
+            <Plus className="w-4 h-4" />
+            NUEVO ESTADO CRÍTICO
+          </button>
+        </div>
+      </header>
 
         {editingEstado && (
-          <div className="mb-12 p-8 bg-zinc-900 border border-zinc-800 rounded-[2.5rem] animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="mb-12 p-8 xl:p-12 bg-[#0A0A0A]/60 border border-oro/10 backdrop-blur-md relative overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500" style={{ clipPath: 'polygon(30px 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%, 0 30px)' }}>
+            <div className="absolute top-0 right-0 w-64 h-64 bg-oro/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
             <div className="flex justify-between items-center mb-8">
               <h3 className="text-xl font-black uppercase italic text-white">
                 {editingEstado.id ? 'Editar Estado' : 'Nuevo Estado'}
@@ -156,45 +163,48 @@ export default function AdminEstadosCombatePage() {
             <button 
               onClick={handleSave}
               disabled={saving}
-              className="w-full py-5 bg-white text-black font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-red-500 hover:text-white transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 shadow-2xl shadow-white/5"
+              className="w-full py-5 bg-oro text-rojo-sangre font-black uppercase tracking-[0.2em] hover:brightness-110 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-4 shadow-xl shadow-oro/5"
+              style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}
             >
               <Save className="w-4 h-4" />
-              {saving ? 'Guardando...' : 'Guardar Estado'}
+              {saving ? 'PROCESANDO...' : 'GUARDAR CONFIGURACIÓN DE ESTADO'}
             </button>
           </div>
         )}
 
-        <div className="flex flex-col lg:flex-row gap-6 justify-between items-start lg:items-center bg-zinc-900/30 p-8 rounded-[2.5rem] border border-zinc-800/50 backdrop-blur-md mb-8">
-          <div className="flex gap-3 p-1.5 bg-black border border-zinc-800 rounded-[1.5rem]">
+        <div className="flex flex-col lg:flex-row gap-8 justify-between items-start lg:items-center bg-[#0A0A0A]/40 p-10 xl:p-12 border border-oro/5 backdrop-blur-md mb-8">
+          <div className="flex gap-4 p-2 bg-black/40 border border-oro/10">
             {(['active', 'archived'] as const).map((tab) => (
               <button 
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
+                className={`px-10 py-4 font-black uppercase tracking-[0.2em] transition-all text-[10px] xl:text-xs ${
                   activeTab === tab 
-                  ? 'bg-red-600 text-white shadow-xl shadow-red-900/20' 
-                  : 'text-zinc-500 hover:text-white'
+                  ? 'bg-oro text-rojo-sangre shadow-lg' 
+                  : 'text-oro/40 hover:text-oro hover:bg-oro/5'
                 }`}
+                style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
               >
-                {tab === 'active' ? 'Activos' : 'Archivados'} 
-                <span className="ml-2 opacity-40">({estados.filter(e => tab === 'active' ? e.activo : !e.activo).length})</span>
+                {tab === 'active' ? 'ACTIVOS' : 'ARCHIVADOS'} 
+                <span className={`ml-3 opacity-40 ${activeTab === tab ? 'text-rojo-sangre/60' : ''}`}>({estados.filter(e => tab === 'active' ? e.activo : !e.activo).length})</span>
               </button>
             ))}
           </div>
 
           <div className="relative w-full lg:w-80">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-oro/30" />
             <input 
               type="text"
               placeholder="BUSCAR ESTADO..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-black border border-zinc-800 rounded-2xl py-4 pl-12 pr-6 text-xs font-bold text-white focus:border-red-500 outline-none transition-all placeholder:text-zinc-700"
+              className="w-full bg-black/20 border border-oro/10 py-5 pl-16 pr-8 text-[10px] xl:text-xs font-black text-oro outline-none focus:border-oro/40 transition-all placeholder:text-oro/20 uppercase tracking-widest"
+              style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
             />
           </div>
         </div>
 
-        <div className="bg-zinc-900/30 border border-zinc-800/50 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-black/50">
+        <div className="ninja-card-oro overflow-hidden">
           {loading ? (
             <div className="p-20 text-center">
               <div className="w-10 h-10 border-4 border-red-500/20 border-t-red-500 rounded-full animate-spin mx-auto" />
@@ -203,10 +213,10 @@ export default function AdminEstadosCombatePage() {
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-left">
                 <thead>
-                  <tr className="border-b border-zinc-800 bg-zinc-900/50">
-                    <th className="px-8 py-6 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Nombre del Estado</th>
-                    <th className="px-8 py-6 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Estatus</th>
-                    <th className="px-8 py-6 text-right text-[10px] font-black text-zinc-500 uppercase tracking-widest">Acciones</th>
+                  <tr className="bg-black/20 border-b border-oro/5">
+                    <th className="px-10 py-8 text-[10px] font-black text-oro/40 uppercase tracking-[0.4em]">NOMBRE DEL ESTADO CRÍTICO</th>
+                    <th className="px-10 py-8 text-[10px] font-black text-oro/40 uppercase tracking-[0.4em]">ESTATUS</th>
+                    <th className="px-10 py-8 text-right text-[10px] font-black text-oro/40 uppercase tracking-[0.4em]">PROTOCOLOS</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800/50">
@@ -263,7 +273,6 @@ export default function AdminEstadosCombatePage() {
             </div>
           )}
         </div>
-      </div>
     </div>
   );
 }

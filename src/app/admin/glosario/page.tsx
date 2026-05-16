@@ -1,31 +1,31 @@
 import GlosarioManager from '@/components/admin/GlosarioManager';
-import { Settings } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
+import Link from 'next/link';
 
 export default function AdminGlosarioPage() {
   return (
-    <main className="min-h-screen bg-black text-white p-6 md:p-12">
-      <div className="max-w-7xl mx-auto space-y-12">
-        {/* HEADER */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-3 text-emerald-500 mb-2">
-            <div className="p-2 bg-emerald-500/10 rounded-lg">
-              <Settings size={20} />
-            </div>
-            <span className="text-[10px] font-black uppercase tracking-[0.3em]">Administración</span>
+    <div className="max-w-[1750px]">
+      <header className="mb-16 ninja-card-oro p-8 xl:p-10">
+        <Link href="/admin" className="flex items-center gap-3 text-oro/40 hover:text-oro transition-all mb-8 text-[10px] font-black uppercase tracking-[0.3em] group">
+          <div className="w-1.5 h-1.5 bg-oro/20 group-hover:bg-oro rotate-45 transition-colors" />
+          VOLVER AL PANEL CENTRAL
+        </Link>
+        
+        <div className="flex items-center gap-6">
+          <div className="w-12 h-12 bg-oro/[0.03] border border-oro/10 flex items-center justify-center">
+            <BookOpen className="w-6 h-6 text-oro" />
           </div>
-          <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter leading-none">
-            Glosario
-          </h1>
-          <p className="text-zinc-500 text-lg font-medium max-w-2xl">
-            Control total de los elementos del juego. Gestiona técnicas, objetos, pasivas y requisitos desde un solo lugar.
-          </p>
+          <div>
+            <h1 className="ninja-title text-4xl xl:text-5xl italic">GLOSARIO MAESTRO</h1>
+            <p className="text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] mt-2">GESTIÓN CENTRALIZADA DE TÉCNICAS, OBJETOS Y PASIVAS</p>
+          </div>
         </div>
+      </header>
 
         {/* MANAGER */}
-        <div className="bg-zinc-950/50 border border-zinc-900 rounded-[3rem] p-8 md:p-12 shadow-2xl">
+        <div className="ninja-card-oro p-8 md:p-12">
           <GlosarioManager />
         </div>
-      </div>
-    </main>
+    </div>
   );
 }

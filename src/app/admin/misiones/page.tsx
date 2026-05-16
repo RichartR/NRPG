@@ -78,31 +78,38 @@ export default function AdminMisionesPage() {
   const rangos = ['D', 'C', 'B', 'A', 'S'];
 
   return (
-    <div className="min-h-screen bg-black pt-24 pb-20 px-4 md:px-10">
-      <div className="max-w-6xl mx-auto">
-        <header className="mb-12">
-          <Link href="/admin" className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors mb-4 text-xs font-black uppercase tracking-widest group">
-            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Volver al panel
-          </Link>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-              <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter uppercase italic flex items-center gap-4">
-                <ScrollText className="w-10 h-10 text-orange-500" />
-                GESTIÓN DE <span className="text-orange-500">MISIONES</span>
-              </h1>
-              <p className="text-zinc-500 text-sm font-medium mt-2 uppercase tracking-widest">Configura las misiones maestras del sistema.</p>
+    <div className="max-w-[1750px]">
+      <header className="mb-16 ninja-card-oro p-8 xl:p-10">
+        <Link href="/admin" className="flex items-center gap-3 text-oro/40 hover:text-oro transition-all mb-8 text-[10px] font-black uppercase tracking-[0.3em] group">
+          <div className="w-1.5 h-1.5 bg-oro/20 group-hover:bg-oro rotate-45 transition-colors" />
+          VOLVER AL PANEL CENTRAL
+        </Link>
+        
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-10">
+          <div className="flex items-center gap-6">
+            <div className="w-12 h-12 bg-oro/[0.03] border border-oro/10 flex items-center justify-center">
+              <ScrollText className="w-6 h-6 text-oro" />
             </div>
-            <button 
-              onClick={() => setEditingMision({ rango: 'D', exp: 0, ryous: 0 })}
-              className="flex items-center gap-2 px-8 py-4 bg-orange-600 text-black rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-orange-500 transition-all shadow-xl shadow-orange-500/20"
-            >
-              <Plus className="w-4 h-4" /> Nueva Misión
-            </button>
+            <div>
+              <h1 className="ninja-title text-4xl xl:text-5xl italic">TABLÓN DE MISIONES</h1>
+              <p className="text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] mt-2">CONFIGURACIÓN DE ENCARGOS Y RECOMPENSAS</p>
+            </div>
           </div>
-        </header>
+
+          <button 
+            onClick={() => setEditingMision({ rango: 'D', exp: 0, ryous: 0 })}
+            className="flex items-center gap-4 px-10 py-5 bg-rojo-sangre hover:brightness-125 text-oro font-black text-[10px] xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-rojo-sangre/20 active:scale-95"
+            style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
+          >
+            <Plus className="w-4 h-4" />
+            NUEVA MISIÓN MAESTRA
+          </button>
+        </div>
+      </header>
 
         {editingMision && (
-          <div className="mb-12 p-8 bg-zinc-900 border border-zinc-800 rounded-[2.5rem] animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="mb-12 p-8 xl:p-12 bg-[#0A0A0A]/60 border border-oro/10 backdrop-blur-md relative overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500" style={{ clipPath: 'polygon(30px 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%, 0 30px)' }}>
+            <div className="absolute top-0 right-0 w-64 h-64 bg-oro/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
             <div className="flex justify-between items-center mb-8">
               <h3 className="text-xl font-black uppercase italic text-white">
                 {editingMision.id ? 'Editar Misión' : 'Nueva Misión'}
@@ -157,39 +164,41 @@ export default function AdminMisionesPage() {
             <button 
               onClick={handleSave}
               disabled={saving}
-              className="w-full py-5 bg-white text-black font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-orange-500 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full py-5 bg-oro text-rojo-sangre font-black uppercase tracking-[0.2em] hover:brightness-110 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-4 shadow-xl shadow-oro/5"
+              style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}
             >
               <Save className="w-4 h-4" />
-              {saving ? 'Guardando...' : 'Guardar Configuración'}
+              {saving ? 'PROCESANDO...' : 'GUARDAR CONFIGURACIÓN DE MISIÓN'}
             </button>
           </div>
         )}
 
         <div className="flex flex-col md:flex-row gap-4 mb-8">
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-oro/30" />
             <input 
               type="text"
-              placeholder="Buscar por código..."
+              placeholder="FILTRAR POR CÓDIGO DE MISIÓN..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl pl-12 pr-4 py-4 text-sm text-white focus:border-orange-500/50 outline-none transition-all"
+              className="w-full bg-[#0A0A0A]/40 border border-oro/10 py-5 pl-16 pr-8 text-[10px] xl:text-xs font-black text-oro outline-none focus:border-oro/40 transition-all placeholder:text-oro/20 uppercase tracking-widest"
+              style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
             />
           </div>
-          <div className="flex items-center gap-2 px-4 bg-zinc-900 border border-zinc-800 rounded-2xl">
-            <Filter className="w-4 h-4 text-zinc-600" />
+          <div className="flex items-center gap-4 px-8 bg-[#0A0A0A]/40 border border-oro/10" style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}>
+            <Filter className="w-4 h-4 text-oro/30" />
             <select 
               value={filterRango}
               onChange={(e) => setFilterRango(e.target.value)}
-              className="bg-transparent py-4 text-xs font-black uppercase tracking-widest text-zinc-400 outline-none cursor-pointer"
+              className="bg-transparent py-5 text-[10px] xl:text-xs font-black uppercase tracking-widest text-oro/60 outline-none cursor-pointer appearance-none pr-4"
             >
-              <option value="ALL">Todos los Rangos</option>
-              {rangos.map(r => <option key={r} value={r}>Rango {r}</option>)}
+              <option value="ALL">TODOS LOS RANGOS</option>
+              {rangos.map(r => <option key={r} value={r}>RANGO {r}</option>)}
             </select>
           </div>
         </div>
 
-        <div className="bg-zinc-900/30 border border-zinc-800/50 rounded-[2.5rem] overflow-hidden">
+        <div className="ninja-card-oro overflow-hidden">
           {loading ? (
             <div className="p-20 text-center">
               <div className="w-10 h-10 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin mx-auto" />
@@ -202,12 +211,12 @@ export default function AdminMisionesPage() {
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
-                  <tr className="border-b border-zinc-800 bg-zinc-900/50">
-                    <th className="px-8 py-6 text-left text-[10px] font-black text-zinc-500 uppercase tracking-widest">Código</th>
-                    <th className="px-8 py-6 text-left text-[10px] font-black text-zinc-500 uppercase tracking-widest">Rango</th>
-                    <th className="px-8 py-6 text-left text-[10px] font-black text-zinc-500 uppercase tracking-widest">Recompensa</th>
-                    <th className="px-8 py-6 text-left text-[10px] font-black text-zinc-500 uppercase tracking-widest">Imágenes</th>
-                    <th className="px-8 py-6 text-right text-[10px] font-black text-zinc-500 uppercase tracking-widest">Acciones</th>
+                  <tr className="bg-black/20 border-b border-oro/5">
+                    <th className="px-10 py-8 text-left text-[10px] font-black text-oro/40 uppercase tracking-[0.4em]">EXPEDIENTE</th>
+                    <th className="px-10 py-8 text-left text-[10px] font-black text-oro/40 uppercase tracking-[0.4em]">RANGO SOCIAL</th>
+                    <th className="px-10 py-8 text-left text-[10px] font-black text-oro/40 uppercase tracking-[0.4em]">RECOMPENSA ESTIMADA</th>
+                    <th className="px-10 py-8 text-left text-[10px] font-black text-oro/40 uppercase tracking-[0.4em]">ARCHIVOS VISUALES</th>
+                    <th className="px-10 py-8 text-right text-[10px] font-black text-oro/40 uppercase tracking-[0.4em]">PROTOCOLOS</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800/50">
@@ -278,7 +287,6 @@ export default function AdminMisionesPage() {
             </div>
           )}
         </div>
-      </div>
     </div>
   );
 }

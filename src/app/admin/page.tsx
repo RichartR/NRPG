@@ -87,41 +87,46 @@ export default function AdminPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-black pt-32 pb-20 px-8 sm:px-12 xl:px-20">
-      <div className="max-w-[1750px] mx-auto">
-        <header className="mb-20 bg-black/60 p-12 xl:p-16 ninja-box ninja-border backdrop-blur-md relative overflow-hidden">
+    <div className="min-h-screen">
+      <div className="max-w-[1750px]">
+        <header className="mb-16 ninja-card-oro p-10 xl:p-16 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-96 h-96 bg-oro/5 rounded-full blur-[100px] -mr-48 -mt-48 pointer-events-none" />
-          <div className="flex items-center gap-6 mb-8">
-            <img src="/assets/icons/shuriken.png" className="w-5 xl:w-8 h-auto object-contain" alt="icon" />
-            <h1 className="text-oro/40 font-black uppercase tracking-[0.4em] text-xs xl:text-sm">CENTRO DE MANDO SUPREMO</h1>
+          
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-8 h-px bg-oro/30" />
+            <h1 className="text-oro/40 font-black uppercase tracking-[0.5em] text-[10px] xl:text-xs">CENTRO DE MANDO SUPREMO</h1>
           </div>
-          <h2 className="ninja-title text-6xl xl:text-8xl">PANEL DE CONTROL</h2>
-          <p className="text-gris-texto text-lg xl:text-2xl mt-6 max-w-3xl leading-relaxed">Administración central del motor NRPG. Gestiona el equilibrio del mundo, las técnicas sagradas y el destino de los shinobis.</p>
+          <h2 className="ninja-title text-6xl xl:text-8xl mb-8">ADMINISTRACIÓN</h2>
+          <p className="text-gris-texto/60 text-lg xl:text-xl max-w-4xl leading-relaxed italic border-l-2 border-oro/10 pl-10 py-2">
+            Control total del motor NRPG. Gestiona el equilibrio del mundo, las técnicas sagradas y el destino de los shinobis.
+          </p>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 xl:gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 xl:gap-8">
           {modules.map((mod) => (
             <Link 
               key={mod.href}
               href={mod.href}
-              className="group relative p-12 bg-black/60 backdrop-blur-md ninja-box ninja-border hover-ninja flex flex-col justify-between overflow-hidden transition-all"
+              className="group relative p-10 ninja-card-oro hover:scale-[1.02] transition-all duration-500 flex flex-col justify-between"
             >
-              <div className="absolute -bottom-8 -right-8 opacity-5 group-hover:opacity-10 group-hover:scale-110 transition-all text-oro">
-                <mod.icon className="w-48 h-48" />
-              </div>
+              {/* Sutil Glow de fondo */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-oro/[0.02] rounded-full blur-3xl group-hover:bg-oro/[0.05] transition-all" />
               
               <div className="relative z-10">
-                <div className="flex items-center gap-4 mb-10">
-                  <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45" />
-                  <h3 className="text-2xl xl:text-4xl font-black text-oro uppercase tracking-widest">{mod.title}</h3>
+                <div className="flex items-center justify-between mb-12">
+                   <div className="w-10 h-10 bg-oro/[0.03] border border-oro/5 flex items-center justify-center group-hover:bg-oro group-hover:text-black transition-all duration-500">
+                      <mod.icon className="w-5 h-5 text-oro/40 group-hover:text-inherit" />
+                   </div>
+                   <div className="text-[10px] font-black text-oro/20 uppercase tracking-[0.3em] group-hover:text-oro/40 transition-colors">CONFIG</div>
                 </div>
                 
-                <p className="text-gris-texto/80 text-base xl:text-xl leading-relaxed mb-12 max-w-xs">{mod.desc}</p>
-                
-                <div className="mt-auto flex items-center gap-4 text-oro font-black uppercase tracking-[0.2em] text-xs xl:text-sm group-hover:brightness-125 transition-all">
-                  <span>Abrir Configuración</span>
-                  <div className="w-1.5 h-1.5 bg-oro rotate-45 group-hover:translate-x-2 transition-transform" />
-                </div>
+                <h3 className="text-2xl xl:text-3xl font-black text-oro uppercase tracking-widest mb-4 group-hover:translate-x-1 transition-transform">{mod.title}</h3>
+                <p className="text-gris-texto/40 text-sm xl:text-base leading-relaxed mb-10 max-w-[250px]">{mod.desc}</p>
+              </div>
+
+              <div className="flex items-center gap-4 text-[10px] font-black text-oro/20 uppercase tracking-[0.3em] group-hover:text-oro transition-all mt-auto pt-6 border-t border-oro/[0.02]">
+                <span>ACCEDER AL MÓDULO</span>
+                <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
               </div>
             </Link>
           ))}
