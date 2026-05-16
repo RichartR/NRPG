@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NRPG Internal Viewer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        body { margin: 0; padding: 0; background: white; display: flex; flex-direction: column; align-items: center; font-family: sans-serif; }
+        #viewer-container { width: 100%; display: flex; flex-direction: column; align-items: center; padding: 0; }
+        .page-container { margin-bottom: 2px; background: white; line-height: 0; width: 100%; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        canvas { display: block; width: 100% !important; height: auto !important; }
+        #status { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #CBA24B; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: bold; text-align: center; width: 80%; }
+    </style>
+</head>
+<body>
+    <div id="status">Iniciando motor...</div>
+    <div id="viewer-container"></div>
+    <script>
+        const status = document.getElementById('status');
+        const container = document.getElementById('viewer-container');
+        
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const fileParam = urlParams.get('file');
+            
+            if (!fileParam) {
+                status.innerText = 'Error: No se encontró el archivo';
+            } else {
+                // Convertir a URL absoluta para evitar problemas en móviles
+                const pdfUrl = new URL(fileParam, window.location.origin).href;
+                
+                const pdfjsLib = window['pdfjs-dist/build/pdf'];
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                
+                status.innerText = 'Descargando Pergamino...';
+                
+                pdfjsLib.getDocument({
+                    url: pdfUrl,
+                    disableRange: true,
+                    disableStream: false
+                }).promise.then(pdf => {
+                    status.style.display = 'none';
+                    
+                    async function renderPages() {
+                        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                            const page = await pdf.getPage(pageNum);
+                            const viewport = page.getViewport({ scale: 1.5 });
+                            
+                            const pageDiv = document.createElement('div');
+                            pageDiv.className = 'page-container';
+                            
+                            const canvas = document.createElement('canvas');
+                            const context = canvas.getContext('2d');
+                            
+                            canvas.height = viewport.height;
+                            canvas.width = viewport.width;
+                            
+                            pageDiv.appendChild(canvas);
+                            container.appendChild(pageDiv);
+                            
+                            await page.render({ canvasContext: context, viewport: viewport }).promise;
+                        }
+                    }
+                    renderPages().catch(e => {
+                        status.style.display = 'block';
+                        status.innerText = 'Error al renderizar páginas';
+                        console.error(e);
+                    });
+                    
+                }).catch(err => { 
+                    status.innerText = 'Error: El documento no es válido o el servidor no responde'; 
+                    console.error(err);
+                });
+            }
+        } catch (e) {
+            status.innerText = 'Error crítico en el visor';
+            console.error(e);
+        }
+    </script>
+</body>
+</html>
