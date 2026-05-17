@@ -64,7 +64,7 @@ export default async function RamaDetailPage({ params }: { params: Promise<{ slu
                     </p>
                   </div>
                   <div className="flex items-center gap-4 text-oro font-black uppercase tracking-[0.2em] text-xs xl:text-base group-hover:brightness-125 transition-all relative z-10">
-                    <span>Ver Doctrina</span>
+                    <span>Ver Documento</span>
                     <div className="w-1.5 h-1.5 bg-oro rotate-45 group-hover:translate-x-2 transition-transform" />
                   </div>
                 </Link>

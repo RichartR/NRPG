@@ -51,7 +51,7 @@ export default async function AldeaDetailPage({ params }: { params: Promise<{ sl
 
         <div className="mb-16">
           <div className="flex items-center gap-4 mb-10">
-            <h2 className="ninja-title text-4xl xl:text-6xl">Clanes y Tradiciones</h2>
+            <h2 className="ninja-title text-4xl xl:text-6xl">Clanes y Especialidades</h2>
           </div>
           
           {clanes && clanes.length > 0 ? (
@@ -72,7 +72,7 @@ export default async function AldeaDetailPage({ params }: { params: Promise<{ sl
                   </div>
                   
                   <div className="flex items-center gap-4 text-oro font-black uppercase tracking-[0.2em] text-xs xl:text-base group-hover:brightness-125 transition-all relative z-10">
-                    <span>Explorar Doctrina</span>
+                    <span>Explorar Clan</span>
                     <div className="w-1.5 h-1.5 bg-oro rotate-45 group-hover:translate-x-2 transition-transform" />
                   </div>
                 </Link>

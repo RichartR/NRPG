@@ -55,6 +55,15 @@ body {
   font-family: var(--font-body);
 }
 
+select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+}
+select::-ms-expand {
+  display: none !important;
+}
+
 @layer utilities {
   .ninja-title {
     background: linear-gradient(to bottom, var(--oro-gradiente-top), var(--oro-principal));
