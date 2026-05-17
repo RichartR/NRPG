@@ -304,9 +304,10 @@ function ElementoCard({ elemento, categorias, subcategorias, onEdit, onDelete }:
         </div>
         <h3 className="text-white font-black text-xl uppercase tracking-tight group-hover:text-emerald-400 transition-colors">{elemento.nombre_es}</h3><p className="text-zinc-600 font-medium italic text-sm">{elemento.nombre_jp || '-'}</p>
       </div>
-      <div className="flex gap-4">
+      <div className="flex flex-wrap gap-4">
         <div className="bg-zinc-950/50 px-6 py-4 rounded-[1.5rem] border border-zinc-900 text-center min-w-[100px]"><p className="text-[10px] font-black text-zinc-700 uppercase tracking-widest mb-1">Coste EXP</p><p className="text-emerald-500 font-black text-lg">{elemento.coste_exp}</p></div>
         <div className="bg-zinc-950/50 px-6 py-4 rounded-[1.5rem] border border-zinc-900 text-center min-w-[100px]"><p className="text-[10px] font-black text-zinc-700 uppercase tracking-widest mb-1">Coste Ryo</p><p className="text-amber-500 font-black text-lg">{elemento.coste_ryous}</p></div>
+        <div className="bg-zinc-950/50 px-6 py-4 rounded-[1.5rem] border border-zinc-900 text-center min-w-[100px]"><p className="text-[10px] font-black text-zinc-700 uppercase tracking-widest mb-1">Coste P.C.</p><p className="text-blue-500 font-black text-lg">{elemento.requisitos?.combates || 0}</p></div>
       </div>
       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
         <button onClick={onEdit} className="p-4 bg-zinc-800 hover:bg-emerald-500 hover:text-emerald-950 rounded-2xl transition-all">
@@ -465,12 +466,12 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
 
               <div className="bg-zinc-900/50 p-8 rounded-[2.5rem] border border-zinc-900 space-y-6">
                 <h3 className="flex items-center gap-3 text-sm font-black text-zinc-500 uppercase tracking-widest mb-4"><Star size={16}/> Costes y Estado</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">Coste EXP</label>
                     <input type="number" min="0" value={formData.coste_exp} onChange={(e) => setFormData({ ...formData, coste_exp: Math.max(0, Number(e.target.value)) })} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-emerald-500" />
                   </div>
-                   <div className="space-y-2">
+                  <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">Coste Ryo</label>
                     <input type="number" min="0" value={formData.coste_ryous} onChange={(e) => setFormData({ ...formData, coste_ryous: Math.max(0, Number(e.target.value)) })} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-emerald-500" />
                   </div>
@@ -524,7 +525,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1"><Swords size={12}/> Combates Ganados</label>
+                      <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1"><Swords size={12}/>Puntos de Combate</label>
                       <input type="number" min="0" value={formData.requisitos?.combates ?? 0} onChange={(e) => updateReq('combates', Number(e.target.value))} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-emerald-500" placeholder="0" />
                     </div>
                   </div>

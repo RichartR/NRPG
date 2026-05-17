@@ -12,6 +12,7 @@ export default function FichaPublicPage() {
   
   const {
     character,
+    originalCharacter,
     loading,
     saving,
     canEdit,
@@ -46,6 +47,7 @@ export default function FichaPublicPage() {
   return (
     <CharacterSheetView 
       character={character}
+      originalCharacter={originalCharacter}
       masters={masters}
       glosarioFiltrado={glosarioFiltrado}
       isEditing={isEditing}

@@ -22,9 +22,11 @@ import MissionForm from '@/components/registros/MissionForm';
 import CombatForm from '@/components/registros/CombatForm';
 import { CharacterRadarChart } from './CharacterRadarChart';
 import { useState, useMemo, useEffect, Fragment } from 'react';
+import { RewardLogic } from '@/domain/character/logic';
 
 interface CharacterSheetViewProps {
   character: Character;
+  originalCharacter?: Character | null;
   masters: any; // Masters still contains mixed data, but we'll tipify its usage
   glosarioFiltrado: Glosario[];
   isEditing: boolean;
@@ -48,6 +50,7 @@ interface CharacterSheetViewProps {
 
 export function CharacterSheetView({
   character,
+  originalCharacter,
   masters,
   glosarioFiltrado,
   isEditing,
@@ -75,7 +78,7 @@ export function CharacterSheetView({
   }, []);
 
   // Cálculos Memoizados para evitar trabajo redundante en cada render
-  const { allRegistros, totalExp, totalRyous, missionCounts } = useMemo(() => {
+  const { allRegistros, totalExp, totalRyous, missionCounts, totalPuntosCombate } = useMemo(() => {
     const allRegistrosMap = new Map<number, Registro>();
     [
       ...(character.registros_autor || []),
@@ -87,13 +90,37 @@ export function CharacterSheetView({
     );
     const missions = allRegs.filter(r => r.tipo === 'mision');
 
-    const totalExpSpent = allRegs.reduce((sum, r) => sum + (r.data?.gasto_xp || 0), 0);
-    const totalRyousSpent = allRegs.reduce((sum, r) => sum + (r.data?.gasto_ryous || 0), 0);
+    // Filtrar solo los registros que han sido formalmente aceptados para este personaje
+    const acceptedRegs = allRegs.filter(r => {
+      const p = r.participantes?.find(part => Number(part.personaje_id) === Number(character.id));
+      return p?.estado === 'aceptado';
+    });
+
+    const totalExpSpent = acceptedRegs.reduce((sum, r) => sum + (r.data?.gasto_xp || 0), 0);
+    const totalRyousSpent = acceptedRegs.reduce((sum, r) => sum + (r.data?.gasto_ryous || 0), 0);
+    const totalPCSpent = acceptedRegs.reduce((sum, r) => sum + (r.data?.gasto_pc || 0), 0);
+
+    // Calcular recursos no guardados (en edición) para mantener estables los totales
+    const addedItems = (character.personajes_inventario || []).filter(ci => !(originalCharacter?.personajes_inventario || []).some(oi => Number(oi.item_id) === Number(ci.item_id)));
+    const addedTecs = (character.personajes_tecnicas || []).filter(ct => !(originalCharacter?.personajes_tecnicas || []).some(ot => Number(ot.tecnica_id) === Number(ct.tecnica_id)));
+
+    const unsavedExpSpent = 
+      addedItems.reduce((sum, i) => sum + (i.info_glosario?.coste_exp || 0), 0) +
+      addedTecs.reduce((sum, t) => sum + (t.info_glosario?.coste_exp || 0), 0);
+
+    const unsavedRyousSpent = 
+      addedItems.reduce((sum, i) => sum + (i.info_glosario?.coste_ryous || 0), 0) +
+      addedTecs.reduce((sum, t) => sum + (t.info_glosario?.coste_ryous || 0), 0);
+
+    const unsavedPCSpent = 
+      addedItems.reduce((sum, i) => sum + (i.info_glosario?.requisitos?.combates || 0), 0) +
+      addedTecs.reduce((sum, t) => sum + (t.info_glosario?.requisitos?.combates || 0), 0);
 
     return {
       allRegistros: allRegs,
-      totalExp: (character.xp || 0) + totalExpSpent,
-      totalRyous: (character.ryous || 0) + totalRyousSpent,
+      totalExp: (character.xp || 0) + totalExpSpent + unsavedExpSpent,
+      totalRyous: (character.ryous || 0) + totalRyousSpent + unsavedRyousSpent,
+      totalPuntosCombate: (character.puntos_combate || 0) + totalPCSpent + unsavedPCSpent,
       missionCounts: {
         D: missions.filter(m => m.subtipo === 'D').length,
         C: missions.filter(m => m.subtipo === 'C').length,
@@ -102,7 +129,18 @@ export function CharacterSheetView({
         S: missions.filter(m => m.subtipo === 'S').length,
       }
     };
-  }, [character.xp, character.ryous, character.registros_autor, character.registros_participante]);
+  }, [
+    character.id, 
+    character.xp, 
+    character.ryous, 
+    character.puntos_combate, 
+    character.registros_autor, 
+    character.registros_participante,
+    character.personajes_inventario,
+    character.personajes_tecnicas,
+    originalCharacter?.personajes_inventario,
+    originalCharacter?.personajes_tecnicas
+  ]);
 
   const meetsRequirements = (item: Glosario) => {
     if (!item.requisitos) return true;
@@ -154,11 +192,11 @@ export function CharacterSheetView({
       }
     }
 
-    // 4. Combates
+    // 4. Combates (Costo de Puntos de Combate)
     if (req.combates) {
       const reqCombates = Number(req.combates);
       if (!isNaN(reqCombates) && reqCombates > 0) {
-        const charCombates = (allRegistros || []).filter(r => r.tipo === 'combate').length;
+        const charCombates = Number(character.puntos_combate || 0);
         if (charCombates < reqCombates) return false;
       }
     }
@@ -228,6 +266,13 @@ export function CharacterSheetView({
     if (reqs.rama_id) {
       elements.push(<span key="rama" className="text-oro font-black">RAMA/CLAN</span>);
     }
+    if (reqs.combates) {
+      elements.push(
+        <span key="combates" className="text-emerald-500 font-black">
+          P. COMBATE: <span className="text-emerald-400">{reqs.combates}</span>
+        </span>
+      );
+    }
     
     if (reqs.stats && typeof reqs.stats === 'object') {
       Object.entries(reqs.stats).forEach(([stat, val]) => {
@@ -254,7 +299,7 @@ export function CharacterSheetView({
     }
 
     Object.entries(reqs).forEach(([key, value]) => {
-      if (['rango', 'rama_id', 'stats', 'misiones', 'personaje_id'].includes(key)) return;
+      if (['rango', 'rama_id', 'stats', 'misiones', 'personaje_id', 'combates'].includes(key)) return;
       if (value === null || value === undefined || value === 0 || value === false || value === '') return;
       elements.push(
         <span key={key} className="text-oro/50 font-black">
@@ -343,7 +388,7 @@ export function CharacterSheetView({
   }, [editingRegistro, editingImageKey]);
 
 // Componentes Helper fuera del render principal para evitar re-montajes
-const ResourceDisplay = ({ character, totalExp, totalRyous }: { character: Character, totalExp: number, totalRyous: number }) => (
+const ResourceDisplay = ({ character, totalExp, totalRyous, totalPuntosCombate }: { character: Character, totalExp: number, totalRyous: number, totalPuntosCombate: number }) => (
   <div className="flex flex-wrap justify-center items-center gap-6 mb-8">
     <div className="flex items-center gap-4 px-8 py-4 ninja-card-oro group hover-ninja">
       <div className="w-10 h-10 bg-rojo-sangre rotate-45 flex items-center justify-center shadow-[0_0_12px_rgba(103,9,9,0.4)]">
@@ -368,6 +413,19 @@ const ResourceDisplay = ({ character, totalExp, totalRyous }: { character: Chara
           {new Intl.NumberFormat('es-ES').format(character.xp || 0)}
           <span className="text-oro/20 mx-3">/</span>
           <span className="text-oro/60 text-sm xl:text-lg">{new Intl.NumberFormat('es-ES').format(totalExp)}</span>
+        </p>
+      </div>
+    </div>
+    <div className="flex items-center gap-4 px-8 py-4 ninja-card-oro group hover-ninja">
+      <div className="w-10 h-10 bg-emerald-950/80 border border-emerald-500/30 rotate-45 flex items-center justify-center shadow-[0_0_12px_rgba(16,185,129,0.2)]">
+        <Swords className="w-5 h-5 text-emerald-400 -rotate-45" />
+      </div>
+      <div>
+        <p className="text-[9px] font-black text-emerald-500/60 uppercase tracking-[0.3em] mb-1">P. COMBATE (DISPONIBLE / TOTAL)</p>
+        <p className="text-xl xl:text-2xl font-black text-emerald-400 leading-none">
+          {character.puntos_combate || 0}
+          <span className="text-emerald-500/20 mx-3">/</span>
+          <span className="text-emerald-500/60 text-sm xl:text-lg">{totalPuntosCombate}</span>
         </p>
       </div>
     </div>
@@ -815,7 +873,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
         )}
         {activeTab === 'inventario' && (
           <div className="space-y-8 animate-fade-in">
-            <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} />
+            <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} totalPuntosCombate={totalPuntosCombate} />
             <SectionCard title="MOCHILA Y PERTENENCIAS" icon={Briefcase} color="oro">
               <div className="space-y-16">
                 {Object.entries(groupedInventory).map(([catName, subs]: [string, any]) => (
@@ -868,6 +926,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                                               if (isNewlyAdded) {
                                                 if (pi.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pi.info_glosario.coste_exp);
                                                 if (pi.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pi.info_glosario.coste_ryous);
+                                                if (pi.info_glosario?.requisitos?.combates) onUpdateField('puntos_combate', (character.puntos_combate || 0) + pi.info_glosario.requisitos.combates);
                                               }
                                               onUpdateField('personajes_inventario', character.personajes_inventario?.filter((i: PersonajeItem) => i.item_id !== pi.item_id));
                                             } else {
@@ -902,8 +961,9 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                       .map((i: any) => {
                         const subData = i.info_glosario_subcategorias;
                         const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'GENERAL';
+                        const pcCostText = ` / ${i.requisitos?.combates || 0} PC`;
                         return { 
-                          label: `${i.nombre_es} (${subName}) — ${i.coste_exp} EXP / ${i.coste_ryous} RYOUS`, 
+                          label: `${i.nombre_es} (${subName}) — ${i.coste_exp} EXP / ${i.coste_ryous} RYOUS${pcCostText}`, 
                           value: i.id 
                         };
                       })
@@ -915,17 +975,20 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                       if (it && !current.some((i: any) => i.item_id === it.id)) {
                         const costExp = it.coste_exp || 0;
                         const costRyous = it.coste_ryous || 0;
+                        const costPC = it.requisitos?.combates || 0;
                         const currentExp = character.xp || 0;
                         const currentRyous = character.ryous || 0;
+                        const currentPC = character.puntos_combate || 0;
 
-                        if (currentExp < costExp || currentRyous < costRyous) {
-                          addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP Y ${costRyous} RYOUS.`, "error");
+                        if (currentExp < costExp || currentRyous < costRyous || currentPC < costPC) {
+                          addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP, ${costRyous} RYOUS Y ${costPC} P. COMBATE.`, "error");
                           return;
                         }
 
                         onUpdateField('personajes_inventario', [...current, { item_id: it.id, info_glosario: it }]);
                         if (costExp > 0) onUpdateField('xp', currentExp - costExp);
                         if (costRyous > 0) onUpdateField('ryous', currentRyous - costRyous);
+                        if (costPC > 0) onUpdateField('puntos_combate', currentPC - costPC);
                       }
                     }} 
                   />
@@ -937,7 +1000,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
 
         {activeTab === 'tecnicas' && (
           <div className="space-y-8 animate-fade-in">
-            <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} />
+            <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} totalPuntosCombate={totalPuntosCombate} />
 
             {/* SECCIÓN 1: ARTES Y JUTSUS NINJA */}
             <SectionCard title="ARTES Y JUTSUS NINJA" icon={Zap} color="oro">
@@ -995,6 +1058,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                                           if (isNewlyAdded) {
                                             if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
                                             if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
+                                            if (pt.info_glosario?.requisitos?.combates) onUpdateField('puntos_combate', (character.puntos_combate || 0) + pt.info_glosario.requisitos.combates);
                                           }
                                           onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
                                         } else {
@@ -1027,8 +1091,9 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                       .map((t: any) => {
                         const subData = t.info_glosario_subcategorias;
                         const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'TÉCNICA';
+                        const pcCostText = ` / ${t.requisitos?.combates || 0} PC`;
                         return { 
-                          label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS`, 
+                          label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${pcCostText}`, 
                           value: t.id 
                         };
                       })
@@ -1040,17 +1105,20 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                       if (tec && !current.some((t: any) => t.tecnica_id === tec.id)) {
                         const costExp = tec.coste_exp || 0;
                         const costRyous = tec.coste_ryous || 0;
+                        const costPC = tec.requisitos?.combates || 0;
                         const currentExp = character.xp || 0;
                         const currentRyous = character.ryous || 0;
+                        const currentPC = character.puntos_combate || 0;
 
-                        if (currentExp < costExp || currentRyous < costRyous) {
-                          addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP Y ${costRyous} RYOUS.`, "error");
+                        if (currentExp < costExp || currentRyous < costRyous || currentPC < costPC) {
+                          addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP, ${costRyous} RYOUS Y ${costPC} P. COMBATE.`, "error");
                           return;
                         }
 
                         onUpdateField('personajes_tecnicas', [...current, { tecnica_id: tec.id, info_glosario: tec }]);
                         if (costExp > 0) onUpdateField('xp', currentExp - costExp);
                         if (costRyous > 0) onUpdateField('ryous', currentRyous - costRyous);
+                        if (costPC > 0) onUpdateField('puntos_combate', currentPC - costPC);
                       }
                     }} 
                   />
@@ -1114,6 +1182,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                                           if (isNewlyAdded) {
                                             if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
                                             if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
+                                            if (pt.info_glosario?.requisitos?.combates) onUpdateField('puntos_combate', (character.puntos_combate || 0) + pt.info_glosario.requisitos.combates);
                                           }
                                           onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
                                         } else {
@@ -1146,8 +1215,9 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                       .map((t: any) => {
                         const subData = t.info_glosario_subcategorias;
                         const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'PASIVA';
+                        const pcCostText = ` / ${t.requisitos?.combates || 0} PC`;
                         return { 
-                          label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS`, 
+                          label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${pcCostText}`, 
                           value: t.id 
                         };
                       })
@@ -1159,17 +1229,20 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                       if (tec && !current.some((t: any) => t.tecnica_id === tec.id)) {
                         const costExp = tec.coste_exp || 0;
                         const costRyous = tec.coste_ryous || 0;
+                        const costPC = tec.requisitos?.combates || 0;
                         const currentExp = character.xp || 0;
                         const currentRyous = character.ryous || 0;
+                        const currentPC = character.puntos_combate || 0;
 
-                        if (currentExp < costExp || currentRyous < costRyous) {
-                          addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP Y ${costRyous} RYOUS.`, "error");
+                        if (currentExp < costExp || currentRyous < costRyous || currentPC < costPC) {
+                          addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP, ${costRyous} RYOUS Y ${costPC} P. COMBATE.`, "error");
                           return;
                         }
 
                         onUpdateField('personajes_tecnicas', [...current, { tecnica_id: tec.id, info_glosario: tec }]);
                         if (costExp > 0) onUpdateField('xp', currentExp - costExp);
                         if (costRyous > 0) onUpdateField('ryous', currentRyous - costRyous);
+                        if (costPC > 0) onUpdateField('puntos_combate', currentPC - costPC);
                       }
                     }} 
                   />
@@ -1233,6 +1306,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                                           if (isNewlyAdded) {
                                             if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
                                             if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
+                                            if (pt.info_glosario?.requisitos?.combates) onUpdateField('puntos_combate', (character.puntos_combate || 0) + pt.info_glosario.requisitos.combates);
                                           }
                                           onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
                                         } else {
@@ -1265,8 +1339,9 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                       .map((t: any) => {
                         const subData = t.info_glosario_subcategorias;
                         const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'KUCHIYOSE';
+                        const pcCostText = ` / ${t.requisitos?.combates || 0} PC`;
                         return { 
-                          label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS`, 
+                          label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${pcCostText}`, 
                           value: t.id 
                         };
                       })
@@ -1278,17 +1353,20 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                       if (tec && !current.some((t: any) => t.tecnica_id === tec.id)) {
                         const costExp = tec.coste_exp || 0;
                         const costRyous = tec.coste_ryous || 0;
+                        const costPC = tec.requisitos?.combates || 0;
                         const currentExp = character.xp || 0;
                         const currentRyous = character.ryous || 0;
+                        const currentPC = character.puntos_combate || 0;
 
-                        if (currentExp < costExp || currentRyous < costRyous) {
-                          addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP Y ${costRyous} RYOUS.`, "error");
+                        if (currentExp < costExp || currentRyous < costRyous || currentPC < costPC) {
+                          addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP, ${costRyous} RYOUS Y ${costPC} P. COMBATE.`, "error");
                           return;
                         }
 
                         onUpdateField('personajes_tecnicas', [...current, { tecnica_id: tec.id, info_glosario: tec }]);
                         if (costExp > 0) onUpdateField('xp', currentExp - costExp);
                         if (costRyous > 0) onUpdateField('ryous', currentRyous - costRyous);
+                        if (costPC > 0) onUpdateField('puntos_combate', currentPC - costPC);
                       }
                     }} 
                   />
@@ -1332,7 +1410,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
 
         {activeTab === 'registros' && (
           <div className="space-y-8 animate-fade-in">
-            <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} />
+            <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} totalPuntosCombate={totalPuntosCombate} />
             <MissionCounter counts={missionCounts} />
             
             {/* Header Row: Subtabs Buttons & Filters */}

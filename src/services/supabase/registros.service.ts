@@ -93,11 +93,12 @@ export const RegistrosService = {
 
     // 3. Aplicar recompensas instantáneas al autor
     const { xp, ryous } = RewardLogic.calculateReward(registro, payload.autor_id);
+    const combatPts = RewardLogic.calculateCombatPoints(registro, payload.autor_id);
     
-    if (xp > 0 || ryous > 0) {
+    if (xp > 0 || ryous > 0 || combatPts > 0) {
       const { data: char } = await supabase
         .from('reg_characters')
-        .select('xp, ryous')
+        .select('xp, ryous, puntos_combate')
         .eq('id', payload.autor_id)
         .single();
 
@@ -106,7 +107,8 @@ export const RegistrosService = {
           .from('reg_characters')
           .update({
             xp: (char.xp || 0) + xp,
-            ryous: (char.ryous || 0) + ryous
+            ryous: (char.ryous || 0) + ryous,
+            puntos_combate: (char.puntos_combate || 0) + combatPts
           })
           .eq('id', payload.autor_id);
       }
@@ -119,7 +121,7 @@ export const RegistrosService = {
     const supabase = createClient();
     const { data, error } = await supabase
       .from('reg_characters')
-      .select('id, nombre_ninja')
+      .select('id, nombre_ninja, rango')
       .ilike('nombre_ninja', `%${query}%`)
       .limit(5);
     
@@ -165,11 +167,13 @@ export const RegistrosService = {
     for (const p of removedParticipants) {
       if (p.estado === 'aceptado') {
         const { xp, ryous } = RewardLogic.calculateReward(oldRegistro, p.personaje_id);
-        const { data: char } = await supabase.from('reg_characters').select('xp, ryous').eq('id', p.personaje_id).single();
+        const combatPts = RewardLogic.calculateCombatPoints(oldRegistro, p.personaje_id);
+        const { data: char } = await supabase.from('reg_characters').select('xp, ryous, puntos_combate').eq('id', p.personaje_id).single();
         if (char) {
           await supabase.from('reg_characters').update({
             xp: Math.max(0, (char.xp || 0) - xp),
-            ryous: Math.max(0, (char.ryous || 0) - ryous)
+            ryous: Math.max(0, (char.ryous || 0) - ryous),
+            puntos_combate: Math.max(0, (char.puntos_combate || 0) - combatPts)
           }).eq('id', p.personaje_id);
         }
       }
@@ -198,12 +202,14 @@ export const RegistrosService = {
         // Al autor se le entrega la recompensa inmediatamente (basado en el NUEVO registro ya actualizado)
         const newRegistroFull = { ...oldRegistro, subtipo: payload.subtipo, data: payload.data };
         const { xp, ryous } = RewardLogic.calculateReward(newRegistroFull, pid);
+        const combatPts = RewardLogic.calculateCombatPoints(newRegistroFull, pid);
 
-        const { data: char } = await supabase.from('reg_characters').select('xp, ryous').eq('id', pid).single();
+        const { data: char } = await supabase.from('reg_characters').select('xp, ryous, puntos_combate').eq('id', pid).single();
         if (char) {
           await supabase.from('reg_characters').update({
             xp: (char.xp || 0) + xp,
-            ryous: (char.ryous || 0) + ryous
+            ryous: (char.ryous || 0) + ryous,
+            puntos_combate: (char.puntos_combate || 0) + combatPts
           }).eq('id', pid);
         }
       }
@@ -216,16 +222,20 @@ export const RegistrosService = {
       if (p.estado === 'aceptado') {
         const oldRewards = RewardLogic.calculateReward(oldRegistro, p.personaje_id);
         const newRewards = RewardLogic.calculateReward(newRegistroFull, p.personaje_id);
+        const oldCombatPts = RewardLogic.calculateCombatPoints(oldRegistro, p.personaje_id);
+        const newCombatPts = RewardLogic.calculateCombatPoints(newRegistroFull, p.personaje_id);
 
         const diffXp = newRewards.xp - oldRewards.xp;
         const diffRyous = newRewards.ryous - oldRewards.ryous;
+        const diffCombatPts = newCombatPts - oldCombatPts;
 
-        if (diffXp !== 0 || diffRyous !== 0) {
-          const { data: char } = await supabase.from('reg_characters').select('xp, ryous').eq('id', p.personaje_id).single();
+        if (diffXp !== 0 || diffRyous !== 0 || diffCombatPts !== 0) {
+          const { data: char } = await supabase.from('reg_characters').select('xp, ryous, puntos_combate').eq('id', p.personaje_id).single();
           if (char) {
             await supabase.from('reg_characters').update({
               xp: Math.max(0, (char.xp || 0) + diffXp),
-              ryous: Math.max(0, (char.ryous || 0) + diffRyous)
+              ryous: Math.max(0, (char.ryous || 0) + diffRyous),
+              puntos_combate: Math.max(0, (char.puntos_combate || 0) + diffCombatPts)
             }).eq('id', p.personaje_id);
           }
         }
@@ -245,12 +255,14 @@ export const RegistrosService = {
         for (const p of participantes) {
           if (p.estado === 'aceptado') {
             const { xp, ryous } = RewardLogic.calculateReward(registro, p.personaje_id);
+            const combatPts = RewardLogic.calculateCombatPoints(registro, p.personaje_id);
             
-            const { data: char } = await supabase.from('reg_characters').select('xp, ryous').eq('id', p.personaje_id).single();
+            const { data: char } = await supabase.from('reg_characters').select('xp, ryous, puntos_combate').eq('id', p.personaje_id).single();
             if (char) {
               await supabase.from('reg_characters').update({
-                xp: (char.xp || 0) - xp,
-                ryous: (char.ryous || 0) - ryous
+                xp: Math.max(0, (char.xp || 0) - xp),
+                ryous: Math.max(0, (char.ryous || 0) - ryous),
+                puntos_combate: Math.max(0, (char.puntos_combate || 0) - combatPts)
               }).eq('id', p.personaje_id);
             }
           }
@@ -261,13 +273,15 @@ export const RegistrosService = {
       if (registro.tipo === 'accion') {
         const spentXp = Number(registro.data?.gasto_xp) || 0;
         const spentRyous = Number(registro.data?.gasto_ryous) || 0;
+        const spentPC = Number(registro.data?.gasto_pc) || 0;
 
-        if (spentXp > 0 || spentRyous > 0) {
-          const { data: char } = await supabase.from('reg_characters').select('xp, ryous').eq('id', registro.autor_id).single();
+        if (spentXp > 0 || spentRyous > 0 || spentPC > 0) {
+          const { data: char } = await supabase.from('reg_characters').select('xp, ryous, puntos_combate').eq('id', registro.autor_id).single();
           if (char) {
             await supabase.from('reg_characters').update({
               xp: (char.xp || 0) + spentXp,
-              ryous: (char.ryous || 0) + spentRyous
+              ryous: (char.ryous || 0) + spentRyous,
+              puntos_combate: (char.puntos_combate || 0) + spentPC
             }).eq('id', registro.autor_id);
           }
         }

@@ -89,5 +89,36 @@ export const RewardLogic = {
       xp: Number(data.recompensa_xp) || 0,
       ryous: Number(data.recompensa_ryous) || 0
     };
+  },
+
+  calculateCombatPoints(registro: any, personajeId: number): number {
+    const { tipo, data } = registro;
+    if (tipo !== 'combate' || !data || data.ganador === 'Empate') return 0;
+
+    const isTeamA = data.equipo_a?.some((p: any) => Number(p.id) === Number(personajeId));
+    const isTeamB = data.equipo_b?.some((p: any) => Number(p.id) === Number(personajeId));
+    const participant = [...(data.equipo_a || []), ...(data.equipo_b || [])].find((p: any) => Number(p.id) === Number(personajeId));
+
+    // Solo se suma al bando ganador y si no huye
+    if (!participant || participant.huye) return 0;
+    
+    const winningBando = data.ganador; // 'A' o 'B'
+    const playerBando = isTeamA ? 'A' : 'B';
+    if (playerBando !== winningBando) return 0;
+
+    // Calcular el rango máximo del bando oponente
+    const opponentTeam = winningBando === 'A' ? (data.equipo_b || []) : (data.equipo_a || []);
+    const RANK_SCALE: Record<string, number> = { 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5 };
+    
+    const opponentMaxRankVal = opponentTeam.reduce((max: number, p: any) => {
+      const val = RANK_SCALE[(p.rango || 'D').toUpperCase()] || 1;
+      return val > max ? val : max;
+    }, 1);
+
+    const ownRankVal = RANK_SCALE[(participant.rango || 'D').toUpperCase()] || 1;
+
+    // Fórmula: 2 + (Rango enemigo máximo - Rango jugador)
+    const diff = opponentMaxRankVal - ownRankVal;
+    return Math.max(0, 2 + diff);
   }
 };

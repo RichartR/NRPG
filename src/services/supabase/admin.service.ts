@@ -328,9 +328,10 @@ export const AdminService = {
 
     if (resolucion === 'aceptada') {
       const { xp, ryous } = RewardLogic.calculateReward(notif.registro, notif.personaje_id);
+      const combatPts = RewardLogic.calculateCombatPoints(notif.registro, notif.personaje_id);
       const { data: char, error: charError } = await supabase
         .from('reg_characters')
-        .select('xp, ryous')
+        .select('xp, ryous, puntos_combate')
         .eq('id', notif.personaje_id)
         .single();
       
@@ -338,7 +339,8 @@ export const AdminService = {
 
       await supabase.from('reg_characters').update({
         xp: (char.xp || 0) + xp,
-        ryous: (char.ryous || 0) + ryous
+        ryous: (char.ryous || 0) + ryous,
+        puntos_combate: (char.puntos_combate || 0) + combatPts
       }).eq('id', notif.personaje_id);
 
       await supabase.from('reg_registros_participantes').update({ estado: 'finalizado_admin' })

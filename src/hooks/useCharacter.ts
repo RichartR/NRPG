@@ -272,6 +272,13 @@ export function useCharacter(characterId: string) {
           const itemNames = newItems.map(ni => ni.info_glosario?.nombre_es || 'Objeto Desconocido').join(', ');
           const totalExp = newItems.reduce((sum, ni) => sum + (Number(ni.info_glosario?.coste_exp) || 0), 0);
           const totalRyous = newItems.reduce((sum, ni) => sum + (Number(ni.info_glosario?.coste_ryous) || 0), 0);
+          const totalPC = newItems.reduce((sum, ni) => sum + (Number(ni.info_glosario?.requisitos?.combates) || 0), 0);
+          
+          const gastoText = [
+            totalExp > 0 && `${totalExp} EXP`,
+            totalRyous > 0 && `${totalRyous} Ryous`,
+            totalPC > 0 && `${totalPC} PC`
+          ].filter(Boolean).join(', ') || '0 EXP';
           
           await RegistrosService.createRegistro({
             tipo: 'accion',
@@ -279,11 +286,12 @@ export function useCharacter(characterId: string) {
             participantes_ids: [Number(characterId)],
             data: {
               titulo: `${character.nombre_ninja} obtiene: ${itemNames}`,
-              subtitulo: `Gasto: ${totalExp} EXP y ${totalRyous} Ryous`,
+              subtitulo: `Gasto: ${gastoText}`,
               tipo_accion: 'compra_objetos',
               items: newItems.map(ni => ({ id: ni.item_id, nombre: ni.info_glosario?.nombre_es })),
               gasto_xp: totalExp,
-              gasto_ryous: totalRyous
+              gasto_ryous: totalRyous,
+              gasto_pc: totalPC
             }
           });
         }
@@ -297,6 +305,13 @@ export function useCharacter(characterId: string) {
           const tecNames = newTecs.map(nt => nt.info_glosario?.nombre_es || 'Técnica Desconocida').join(', ');
           const totalExp = newTecs.reduce((sum, nt) => sum + (Number(nt.info_glosario?.coste_exp) || 0), 0);
           const totalRyous = newTecs.reduce((sum, nt) => sum + (Number(nt.info_glosario?.coste_ryous) || 0), 0);
+          const totalPC = newTecs.reduce((sum, nt) => sum + (Number(nt.info_glosario?.requisitos?.combates) || 0), 0);
+
+          const gastoText = [
+            totalExp > 0 && `${totalExp} EXP`,
+            totalRyous > 0 && `${totalRyous} Ryous`,
+            totalPC > 0 && `${totalPC} PC`
+          ].filter(Boolean).join(', ') || '0 EXP';
 
           await RegistrosService.createRegistro({
             tipo: 'accion',
@@ -304,11 +319,12 @@ export function useCharacter(characterId: string) {
             participantes_ids: [Number(characterId)],
             data: {
               titulo: `${character.nombre_ninja} aprende: ${tecNames}`,
-              subtitulo: `Gasto: ${totalExp} EXP y ${totalRyous} Ryous`,
+              subtitulo: `Gasto: ${gastoText}`,
               tipo_accion: 'aprendizaje_tecnicas',
               tecnicas: newTecs.map(nt => ({ id: nt.tecnica_id, nombre: nt.info_glosario?.nombre_es })),
               gasto_xp: totalExp,
-              gasto_ryous: totalRyous
+              gasto_ryous: totalRyous,
+              gasto_pc: totalPC
             }
           });
         }
@@ -515,6 +531,7 @@ export function useCharacter(characterId: string) {
 
   return {
     character,
+    originalCharacter: originalCharacter || character,
     loading,
     saving,
     canEdit,

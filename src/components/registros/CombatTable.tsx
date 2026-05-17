@@ -8,6 +8,7 @@ import { useCharacterStore } from '@/store/useCharacterStore';
 import { RegistrosService } from '@/services/supabase/registros.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
+import { RewardLogic } from '@/domain/character/logic';
 
 interface CombatTableProps {
   combates: Registro[];
@@ -93,6 +94,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
               const isEmpate = m.data.ganador === 'Empate';
               const won = (m.data.ganador === 'A' && isA) || (m.data.ganador === 'B' && !isA);
               const xpGained = calculateParticipantXP(m, isA ? 'A' : 'B', (isA ? teamA : teamB).find((p: any) => p.id === sid)?.huye);
+              const pcGained = RewardLogic.calculateCombatPoints(m, sid);
 
               const isOwner = activeCharacter?.id === m.autor_id;
               const canManage = isOwner || isAdmin;
@@ -197,9 +199,16 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
 
                   {/* Recompensa */}
                   <td className="py-6 px-8">
-                    <span className="inline-block text-[10px] xl:text-xs font-black text-emerald-400 tracking-wider bg-emerald-500/5 border border-emerald-500/20 py-1 px-3 ninja-clip-xs shadow-[0_0_10px_rgba(52,211,153,0.05)]">
-                      +{xpGained} XP
-                    </span>
+                    <div className="flex flex-col gap-1 items-start">
+                      <span className="inline-block text-[10px] xl:text-xs font-black text-emerald-400 tracking-wider bg-emerald-500/5 border border-emerald-500/20 py-1 px-3 ninja-clip-xs shadow-[0_0_10px_rgba(52,211,153,0.05)] text-center w-full">
+                        +{xpGained} XP
+                      </span>
+                      {pcGained > 0 && (
+                        <span className="inline-block text-[9px] font-black text-emerald-400/90 tracking-wider bg-emerald-500/5 border border-emerald-500/20 py-0.5 px-2 ninja-clip-xs mt-1 w-full text-center">
+                          +{pcGained} PC
+                        </span>
+                      )}
+                    </div>
                   </td>
 
                   {/* Acciones */}
