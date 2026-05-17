@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Image as ImageIcon
 } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { CharacterService } from '@/services/supabase/character.service';
 import { ProfileService } from '@/services/supabase/profile.service';
 import { SectionCard } from '@/components/ui/SectionCard';
@@ -68,6 +69,10 @@ export function CharacterSheetView({
   onQuickRemoveTechnique
 }: CharacterSheetViewProps) {
   const addToast = useToastStore(state => state.addToast);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Cálculos Memoizados para evitar trabajo redundante en cada render
   const { allRegistros, totalExp, totalRyous, missionCounts } = useMemo(() => {
@@ -1593,7 +1598,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
             </div>
           </div>
         )}
-        {editingRegistro && (
+        {editingRegistro && mounted && createPortal(
           <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md overflow-y-auto p-4 sm:p-6 md:p-8 flex justify-center items-start sm:items-center animate-in fade-in duration-300">
             <div className="w-full max-w-4xl my-auto">
               {editingRegistro.tipo === 'combate' ? (
@@ -1609,9 +1614,10 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                 />
               )}
             </div>
-          </div>
+          </div>,
+          document.body
         )}
-        {editingImageKey && (
+        {editingImageKey && mounted && createPortal(
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
             <div className="w-full max-w-lg ninja-card-oro p-8 space-y-6 relative overflow-hidden" style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' }}>
               {/* Decoración de fondo */}
@@ -1705,7 +1711,8 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                 </button>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </main>
     </div>

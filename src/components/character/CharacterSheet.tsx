@@ -2,6 +2,7 @@
 
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { ImageIcon, Save, X, Loader2, User } from 'lucide-react';
 import { CharacterService } from '@/services/supabase/character.service';
@@ -11,8 +12,10 @@ export default function CharacterSheet() {
   const [isEditingPortrait, setIsEditingPortrait] = useState(false);
   const [newPortraitUrl, setNewPortraitUrl] = useState('');
   const [updating, setUpdating] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     fetchActiveCharacter();
   }, [fetchActiveCharacter]);
 
@@ -196,9 +199,9 @@ export default function CharacterSheet() {
         </div>
       </div>
 
-      {isEditingPortrait && (
+      {isEditingPortrait && mounted && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="w-full max-w-lg ninja-card-oro p-8 space-y-6 relative overflow-hidden">
+          <div className="w-full max-w-lg ninja-card-oro p-8 space-y-6 relative overflow-hidden" style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' }}>
             {/* Background Decor */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-oro/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
             
@@ -254,7 +257,8 @@ export default function CharacterSheet() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
