@@ -38,7 +38,7 @@ export default function DocumentosPage() {
                   <h2 className="ninja-title text-3xl xl:text-5xl group-hover:text-oro transition-all">ALDEAS</h2>
                 </div>
               <p className="text-gris-texto/80 text-lg xl:text-2xl leading-relaxed max-w-sm mb-12">
-                Descubre los secretos de las 5 grandes naciones: su historia, clanes fundadores y geografía sagrada.
+                Descubre los secretos de aldeas y organizaciones: su historia, clanes fundadores y geografía sagrada.
               </p>
             </div>
             

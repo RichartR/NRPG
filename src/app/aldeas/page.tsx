@@ -25,7 +25,7 @@ export default async function AldeasPage() {
       <main className="w-full max-w-[1750px] mx-auto flex-1">
         <div className="mb-20 ninja-card-oro p-12 xl:p-16">
           <div className="flex items-center gap-6 mb-6">
-            <h1 className="ninja-title text-5xl xl:text-8xl uppercase leading-none">Las 5 Grandes</h1>
+            <h1 className="ninja-title text-5xl xl:text-8xl uppercase leading-none">Aldeas y Organizaciones</h1>
           </div>
           <p className="text-gris-texto text-lg xl:text-2xl max-w-4xl leading-relaxed">
             Las grandes potencias que mantienen el equilibrio del poder shinobi. Cada aldea posee su propia historia, clanes legendarios y geografía sagrada.

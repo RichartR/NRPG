@@ -73,11 +73,13 @@ body {
 
   /* Combined Card Patterns */
   .ninja-card {
-    @apply bg-black/60 backdrop-blur-md relative;
+    background-color: color-mix(in oklab, #000000d6 80%, transparent);
+    @apply backdrop-blur-md relative;
   }
   
   .ninja-card-oro {
-    @apply bg-black/80 relative shadow-[0_0_30px_rgba(255,230,159,0.1)];
+    background-color: color-mix(in oklab, #000000d6 80%, transparent);
+    @apply relative shadow-[0_0_30px_rgba(255,230,159,0.1)];
     clip-path: var(--clip-lg);
     background-image: radial-gradient(circle at center, rgba(255, 230, 159, 0.05) 0%, transparent 70%);
   }
@@ -97,7 +99,8 @@ body {
   }
 
   .ninja-card-rojo {
-    @apply bg-black/80 relative shadow-[0_0_30px_rgba(103,9,9,0.2)];
+    background-color: color-mix(in oklab, #000000d6 80%, transparent);
+    @apply relative shadow-[0_0_30px_rgba(103,9,9,0.2)];
     clip-path: var(--clip-lg);
     background-image: radial-gradient(circle at center, rgba(103, 9, 9, 0.1) 0%, transparent 70%);
   }
@@ -114,6 +117,20 @@ body {
     clip-path: var(--clip-lg);
     pointer-events: none;
     opacity: 0.6;
+  }
+
+  /* Premium Table Styling (Sepia Charcoal Theme) */
+  .ninja-table-container {
+    background-color: rgba(255, 230, 159, 0.02);
+    border-color: rgba(255, 230, 159, 0.15);
+  }
+  
+  .ninja-table-header {
+    background-color: rgba(255, 230, 159, 0.06);
+  }
+  
+  .ninja-table-body {
+    background-color: transparent;
   }
 
   /* Buttons & Inputs */

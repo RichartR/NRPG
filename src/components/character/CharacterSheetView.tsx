@@ -827,16 +827,16 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                             <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
                             {subName}
                           </h4>
-                          <div className="overflow-x-auto rounded-[4px] border border-oro/10 bg-black/40 backdrop-blur-md">
+                          <div className="overflow-x-auto rounded-[4px] border border-oro/10 ninja-table-container backdrop-blur-md">
                             <table className="w-full text-left border-collapse table-fixed min-w-[600px]">
                               <thead>
-                                <tr className="bg-black/60 text-[10px] font-black uppercase tracking-[0.2em] text-oro border-b border-oro/15">
+                                <tr className="ninja-table-header text-[10px] font-black uppercase tracking-[0.2em] text-oro border-b border-oro/15">
                                   <th className="py-4 px-6 w-[40%]">Objeto</th>
                                   <th className="py-4 px-6 w-[45%]">Requisitos</th>
                                   <th className="py-4 px-6 w-[15%] text-center">Acciones</th>
                                 </tr>
                               </thead>
-                              <tbody className="divide-y divide-oro/5 bg-black/20">
+                              <tbody className="divide-y divide-oro/5 ninja-table-body">
                                 {items.map((pi: PersonajeItem, idx: number) => (
                                   <tr key={`${pi.item_id}-${idx}`} className="hover:bg-oro/[0.02] transition-colors">
                                     <td className="py-4 px-6">
@@ -948,17 +948,17 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                         <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
                         {subName}
                       </h4>
-                      <div className="overflow-x-auto rounded-[4px] border border-oro/10 bg-black/40 backdrop-blur-md">
+                      <div className="overflow-x-auto rounded-[4px] border border-oro/10 ninja-table-container backdrop-blur-md">
                         <table className="w-full text-left border-collapse table-fixed min-w-[700px]">
                           <thead>
-                            <tr className="bg-black/60 text-[10px] font-black uppercase tracking-[0.2em] text-oro border-b border-oro/15">
+                            <tr className="ninja-table-header text-[10px] font-black uppercase tracking-[0.2em] text-oro border-b border-oro/15">
                               <th className="py-4 px-6 w-[35%]">Técnica</th>
                               <th className="py-4 px-6 w-[15%] text-center">Rango</th>
                               <th className="py-4 px-6 w-[35%]">Requisitos</th>
                               <th className="py-4 px-6 w-[15%] text-center">Acciones</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-oro/5 bg-black/20">
+                          <tbody className="divide-y divide-oro/5 ninja-table-body">
                             {items.map((pt: PersonajeTecnica, idx: number) => (
                               <tr key={`${pt.tecnica_id}-${idx}`} className="hover:bg-oro/[0.02] transition-colors">
                                 <td className="py-4 px-6">
@@ -1067,17 +1067,17 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                         <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
                         {subName}
                       </h4>
-                      <div className="overflow-x-auto rounded-[4px] border border-oro/10 bg-black/40 backdrop-blur-md">
+                      <div className="overflow-x-auto rounded-[4px] border border-oro/10 ninja-table-container backdrop-blur-md">
                         <table className="w-full text-left border-collapse table-fixed min-w-[700px]">
                           <thead>
-                            <tr className="bg-black/60 text-[10px] font-black uppercase tracking-[0.2em] text-oro border-b border-oro/15">
+                            <tr className="ninja-table-header text-[10px] font-black uppercase tracking-[0.2em] text-oro border-b border-oro/15">
                               <th className="py-4 px-6 w-[35%]">Habilidad Pasiva</th>
                               <th className="py-4 px-6 w-[15%] text-center">Rango</th>
                               <th className="py-4 px-6 w-[35%]">Requisitos</th>
                               <th className="py-4 px-6 w-[15%] text-center">Acciones</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-oro/5 bg-black/20">
+                          <tbody className="divide-y divide-oro/5 ninja-table-body">
                             {items.map((pt: PersonajeTecnica, idx: number) => (
                               <tr key={`${pt.tecnica_id}-${idx}`} className="hover:bg-oro/[0.02] transition-colors">
                                 <td className="py-4 px-6">
@@ -1186,17 +1186,17 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                         <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
                         {subName}
                       </h4>
-                      <div className="overflow-x-auto rounded-[4px] border border-oro/10 bg-black/40 backdrop-blur-md">
+                      <div className="overflow-x-auto rounded-[4px] border border-oro/10 ninja-table-container backdrop-blur-md">
                         <table className="w-full text-left border-collapse table-fixed min-w-[700px]">
                           <thead>
-                            <tr className="bg-black/60 text-[10px] font-black uppercase tracking-[0.2em] text-oro border-b border-oro/15">
+                            <tr className="ninja-table-header text-[10px] font-black uppercase tracking-[0.2em] text-oro border-b border-oro/15">
                               <th className="py-4 px-6 w-[35%]">Invocación / Kuchiyose</th>
                               <th className="py-4 px-6 w-[15%] text-center">Rango</th>
                               <th className="py-4 px-6 w-[35%]">Requisitos</th>
                               <th className="py-4 px-6 w-[15%] text-center">Acciones</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-oro/5 bg-black/20">
+                          <tbody className="divide-y divide-oro/5 ninja-table-body">
                             {items.map((pt: PersonajeTecnica, idx: number) => (
                               <tr key={`${pt.tecnica_id}-${idx}`} className="hover:bg-oro/[0.02] transition-colors">
                                 <td className="py-4 px-6">
