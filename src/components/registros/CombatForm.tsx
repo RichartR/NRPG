@@ -35,8 +35,8 @@ export default function CombatForm({
   const [searchResults, setSearchResults] = useState<{ id: number; nombre_ninja: string }[]>([]);
   
   // Equipos
-  const [teamA, setTeamA] = useState<{ id: number; nombre_ninja: string; estado_nombre?: string; has_estado_alterado?: boolean; descripcion_estado?: string; huye?: boolean }[]>([]);
-  const [teamB, setTeamB] = useState<{ id: number; nombre_ninja: string; estado_nombre?: string; has_estado_alterado?: boolean; descripcion_estado?: string; huye?: boolean }[]>([]);
+  const [teamA, setTeamA] = useState<{ id: number; nombre_ninja: string; rango?: string; estado_nombre?: string; has_estado_alterado?: boolean; descripcion_estado?: string; huye?: boolean }[]>([]);
+  const [teamB, setTeamB] = useState<{ id: number; nombre_ninja: string; rango?: string; estado_nombre?: string; has_estado_alterado?: boolean; descripcion_estado?: string; huye?: boolean }[]>([]);
 
   useEffect(() => {
     if (initialData) {
@@ -45,7 +45,7 @@ export default function CombatForm({
       setTeamA(bA);
       setTeamB(bB);
     } else if (activeCharacter) {
-      setTeamA([{ id: Number(activeCharacter.id), nombre_ninja: activeCharacter.nombre_ninja }]);
+      setTeamA([{ id: Number(activeCharacter.id), nombre_ninja: activeCharacter.nombre_ninja, rango: activeCharacter.rango || 'D' }]);
     }
   }, [activeCharacter, initialData]);
 
@@ -90,9 +90,9 @@ export default function CombatForm({
     }
   };
 
-  const addParticipant = (p: { id: number; nombre_ninja: string }) => {
-    if (searchTargetTeam === 'A') setTeamA([...teamA, { ...p, estado_nombre: '' }]);
-    else setTeamB([...teamB, { ...p, estado_nombre: '' }]);
+  const addParticipant = (p: { id: number; nombre_ninja: string; rango?: string }) => {
+    if (searchTargetTeam === 'A') setTeamA([...teamA, { ...p, rango: p.rango || 'D', estado_nombre: '' }]);
+    else setTeamB([...teamB, { ...p, rango: p.rango || 'D', estado_nombre: '' }]);
     
     setParticipantSearch('');
     setSearchResults([]);

@@ -82,6 +82,7 @@ export interface Glosario {
   requisitos: any;
   coste_exp: number;
   coste_ryous: number;
+  coste_puntos_combate: number;
   activo: boolean;
   inicial?: boolean;
   // Joins opcionales
@@ -142,6 +143,7 @@ export interface Character {
   puntos_stats: number;
   xp: number;
   ryous: number;
+  puntos_combate: number;
   tiempo_rpg: string;
   edad: number;
   sexo: string;

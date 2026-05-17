@@ -126,7 +126,12 @@ export default function ComprasPage() {
           <div className="bg-transparent space-y-12">
             {loading ? (
               <div className="py-60 flex flex-col items-center gap-10">
-                <div className="w-16 h-16 border-4 border-oro border-t-transparent animate-spin ninja-clip-md" />
+                <div className="relative">
+                  <div className="w-16 h-16 border-4 border-oro/20 border-t-oro rounded-full animate-spin" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <img src="/assets/icons/shuriken.png" className="w-5 h-5 object-contain" alt="Logo" />
+                  </div>
+                </div>
                 <p className="text-oro font-black uppercase tracking-[0.6em] text-sm animate-pulse">Auditando Tesorería...</p>
               </div>
             ) : data.list.length > 0 ? (

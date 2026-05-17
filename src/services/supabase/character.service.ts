@@ -195,10 +195,11 @@ export const CharacterService = {
 
     if (respuesta === 'aceptar') {
       const { xp, ryous } = RewardLogic.calculateReward(registro, personajeId);
+      const combatPts = RewardLogic.calculateCombatPoints(registro, personajeId);
       
       const { data: char, error: charError } = await supabase
         .from('reg_characters')
-        .select('xp, ryous')
+        .select('xp, ryous, puntos_combate')
         .eq('id', personajeId)
         .single();
       
@@ -208,7 +209,8 @@ export const CharacterService = {
         .from('reg_characters')
         .update({
           xp: (char.xp || 0) + xp,
-          ryous: (char.ryous || 0) + ryous
+          ryous: (char.ryous || 0) + ryous,
+          puntos_combate: (char.puntos_combate || 0) + combatPts
         })
         .eq('id', personajeId);
       

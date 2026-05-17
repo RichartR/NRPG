@@ -165,6 +165,13 @@ export default function GlosarioView({ categorias, subcategorias, glosarios, ram
       const rama = ramas.find(r => r.id === reqs.rama_id);
       elements.push(<span key="rama" className="text-amber-800 font-black">{rama?.nombre || `ID: ${reqs.rama_id}`}</span>);
     }
+    if (reqs.combates) {
+      elements.push(
+        <span key="combates" className="text-emerald-700 font-black">
+          P. COMBATE: <span className="text-emerald-950">{reqs.combates}</span>
+        </span>
+      );
+    }
     
     if (reqs.stats && typeof reqs.stats === 'object') {
       Object.entries(reqs.stats).forEach(([stat, val]) => {
@@ -179,7 +186,7 @@ export default function GlosarioView({ categorias, subcategorias, glosarios, ram
     }
 
     Object.entries(reqs).forEach(([key, value]) => {
-      if (['rango', 'rama_id', 'stats', 'misiones', 'personaje_id'].includes(key)) return;
+      if (['rango', 'rama_id', 'stats', 'misiones', 'personaje_id', 'combates'].includes(key)) return;
       if (value === null || value === undefined || value === 0 || value === false || value === '') return;
       elements.push(<span key={key} className="text-zinc-500 font-black">{key.replace('_', ' ').toUpperCase()}: <span className="text-zinc-900">{String(value)}</span></span>);
     });
