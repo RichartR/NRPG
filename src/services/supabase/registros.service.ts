@@ -12,10 +12,10 @@ export const RegistrosService = {
       .from('reg_registros')
       .select(`
         *,
-        autor: reg_characters!reg_registros_autor_id_fkey(nombre_ninja),
+        autor: reg_characters!reg_registros_autor_id_fkey(nombre_ninja, url_img, profiles!user_id(username, url_avatar, url_img)),
         participantes: reg_registros_participantes!reg_registros_participantes_registro_id_fkey(
           *,
-          personaje: reg_characters!reg_registros_participantes_personaje_id_fkey(nombre_ninja)
+          personaje: reg_characters!reg_registros_participantes_personaje_id_fkey(nombre_ninja, url_img, profiles!user_id(username, url_avatar, url_img))
         )
       `, { count: 'exact' })
       .order('fecha', { ascending: false })

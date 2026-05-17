@@ -93,7 +93,7 @@ export const MasterServerService = {
   async getNinjasByAldea(supabase: SupabaseClient, aldeaId: number | null) {
     let query = supabase
       .from('reg_characters')
-      .select('*, info_aldeas(nombre_completo)')
+      .select('*, info_aldeas(nombre_completo), profiles:user_id(username)')
       .order('nombre_ninja');
 
     if (aldeaId === null) {

@@ -37,12 +37,34 @@ export const CharacterServerService = {
       .insert({ ...payload, activo: true })
       .select()
       .single();
+
+    // Si la columna url_img no existe (error 42703), intentamos insertar sin ella
+    if (error && error.code === '42703' && 'url_img' in payload) {
+      const { url_img, ...rest } = payload;
+      const { data: retryData, error: retryError } = await supabase
+        .from('reg_characters')
+        .insert({ ...rest, activo: true })
+        .select()
+        .single();
+      if (retryError) throw retryError;
+      return retryData as Character;
+    }
+
     if (error) throw error;
     return data as Character;
   },
 
   async updateCharacterFields(supabase: SupabaseClient, id: string | number, fields: Record<string, unknown>) {
     const { error } = await supabase.from('reg_characters').update(fields).eq('id', id);
+    
+    // Si la columna url_img no existe (error 42703), intentamos guardar sin ella
+    if (error && error.code === '42703' && 'url_img' in fields) {
+      const { url_img, ...rest } = fields;
+      const { error: retryError } = await supabase.from('reg_characters').update(rest).eq('id', id);
+      if (retryError) throw retryError;
+      return;
+    }
+
     if (error) throw error;
   },
 

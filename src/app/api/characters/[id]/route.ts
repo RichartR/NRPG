@@ -48,6 +48,7 @@ export async function PATCH(
           tiempo_rpg: data.tiempo_rpg,
           edad: data.edad,
           sexo: data.sexo,
+          url_img: data.url_img,
           stats_updated_at: new Date().toISOString(),
         };
 
@@ -170,7 +171,7 @@ export async function PATCH(
       }
 
       case 'onrol':
-        updateData = { edad: data.edad, sexo: data.sexo };
+        updateData = { edad: data.edad, sexo: data.sexo, url_img: data.url_img };
         break;
       
       case 'inventario':

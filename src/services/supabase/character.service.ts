@@ -9,7 +9,7 @@ export const CharacterService = {
       .from('reg_characters')
       .select(`
         *, 
-        profiles!user_id(username),
+        profiles!user_id(username, url_avatar, url_img),
         info_aldeas(*), 
         reg_personajes_inventario!reg_personajes_inventario_personaje_id_fkey(*, info_glosario(*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre))), 
         reg_personajes_tecnicas!reg_personajes_tecnicas_personaje_id_fkey(*, info_glosario(*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre))), 
@@ -49,6 +49,7 @@ export const CharacterService = {
       puntos_stats: character.puntos_stats,
       sexo: character.sexo,
       edad: character.edad,
+      url_img: character.url_img || null,
       activo: true
     }).select().single();
 
@@ -100,6 +101,7 @@ export const CharacterService = {
         tiempo_rpg: updates.tiempo_rpg,
         edad: updates.edad,
         sexo: updates.sexo,
+        url_img: updates.url_img,
         activo: updates.activo
       })
       .eq('id', id);

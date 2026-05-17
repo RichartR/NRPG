@@ -4,8 +4,11 @@ import {
   User, Briefcase, Zap, Save, ArrowLeft, 
   Sword, Swords, ScrollText, GitBranch, UserCircle, X, Heart, Trash2, Edit3, ShoppingBag,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Image as ImageIcon
 } from 'lucide-react';
+import { CharacterService } from '@/services/supabase/character.service';
+import { ProfileService } from '@/services/supabase/profile.service';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { DataField, SelectField, SearchableSelect } from '@/components/ui/Fields';
 import { Character, CharacterStats, Glosario, PersonajeItem, PersonajeTecnica, Registro } from '@/domain/types';
@@ -227,6 +230,8 @@ export function CharacterSheetView({
   const recordsPerPage = 5;
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  const [editingImageKey, setEditingImageKey] = useState<'character' | 'user' | null>(null);
+  const [imageUrlInput, setImageUrlInput] = useState<string>('');
 
 // Componentes Helper fuera del render principal para evitar re-montajes
 const ResourceDisplay = ({ character, totalExp, totalRyous }: { character: Character, totalExp: number, totalRyous: number }) => (
@@ -310,24 +315,63 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
           {/* Title & Info (Desktop) */}
           <div className="hidden lg:flex items-center gap-10 flex-1 justify-center">
             <div className="h-10 w-px bg-oro/10" />
-            <div className="text-center">
-              <h1 className="ninja-title text-5xl xl:text-7xl break-words">
-                {character.nombre_ninja || (isNew ? 'NUEVO SHINOBI' : '')}
-              </h1>
-              <div className="flex items-center justify-center gap-4 mt-2">
-                <span className="text-[10px] xl:text-xs font-black text-oro/60 uppercase tracking-[0.3em]">{character.rango_jerarquico}</span>
-                <div className="w-1 h-1 bg-rojo-sangre rotate-45 shrink-0" />
-                <span className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.3em]">{aldeaObj?.nombre_completo || character.aldeas?.nombre_completo || 'SIN ALDEA'}</span>
+            <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-10 text-center sm:text-left">
+              <div className="w-24 h-24 sm:w-32 sm:h-32 shrink-0 ninja-card-oro p-1.5 border-oro/20 bg-black/40 shadow-2xl flex items-center justify-center">
+                {character.url_img ? (
+                  <img 
+                    src={character.url_img} 
+                    className="w-full h-full object-cover object-top"
+                    alt="Avatar"
+                  />
+                ) : (
+                  <User className="w-12 h-12 text-oro/20" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-center sm:justify-start gap-4 mb-3">
+                  <div className="w-2 h-2 bg-rojo-sangre rotate-45 hidden sm:block" />
+                  <p className="text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.5em]">EXPEDIENTE NINJA OFICIAL</p>
+                </div>
+                <h1 className="ninja-title text-4xl sm:text-5xl xl:text-7xl italic break-words leading-tight">
+                  {character.nombre_ninja || (isNew ? 'NUEVO SHINOBI' : '')}
+                </h1>
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 sm:gap-6 mt-6">
+                  <div className="px-6 py-2 bg-rojo-sangre text-oro text-xs xl:text-sm font-black uppercase tracking-[0.3em] shadow-lg">
+                    RANGO {character.rango}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-1.5 h-1.5 bg-oro/20 rotate-45" />
+                    <span className="text-oro font-bold text-xs xl:text-base uppercase tracking-widest">{character.rango_jerarquico}</span>
+                  </div>
+                </div>
               </div>
             </div>
             <div className="h-10 w-px bg-oro/10" />
           </div>
 
           {/* Info (Mobile) */}
-          <div className="lg:hidden w-full flex justify-center gap-4 py-2 border-y border-oro/5">
-             <span className="text-[9px] font-black text-oro/60 uppercase tracking-[0.2em]">{character.rango_jerarquico}</span>
-             <div className="w-1 h-1 bg-rojo-sangre rotate-45 self-center" />
-             <span className="text-[9px] font-black text-oro/40 uppercase tracking-[0.2em]">{aldeaObj?.nombre_completo || character.aldeas?.nombre_completo || 'SIN ALDEA'}</span>
+          <div className="lg:hidden w-full flex flex-col items-center gap-6 py-6 border-y border-oro/5">
+              <div className="w-20 h-20 shrink-0 ninja-card-oro p-1 border-oro/20 bg-black/40 shadow-xl flex items-center justify-center">
+                {character.url_img ? (
+                  <img 
+                    src={character.url_img} 
+                    className="w-full h-full object-cover object-top"
+                    alt="Avatar"
+                  />
+                ) : (
+                  <User className="w-10 h-10 text-oro/20" />
+                )}
+              </div>
+             <div className="text-center">
+                <h1 className="ninja-title text-3xl mb-2 italic">
+                  {character.nombre_ninja || (isNew ? 'NUEVO SHINOBI' : '')}
+                </h1>
+                <div className="flex justify-center items-center gap-4">
+                  <span className="text-[9px] font-black text-oro/60 uppercase tracking-[0.2em]">{character.rango_jerarquico}</span>
+                  <div className="w-1 h-1 bg-rojo-sangre rotate-45 self-center" />
+                  <span className="text-[9px] font-black text-oro/40 uppercase tracking-[0.2em]">{aldeaObj?.nombre_completo || character.aldeas?.nombre_completo || 'SIN ALDEA'}</span>
+                </div>
+             </div>
           </div>
 
           {/* Actions Container */}
@@ -390,8 +434,97 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
 
 
         {activeTab === 'general' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              <div className="lg:col-span-12 space-y-12">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+              {/* Columna de Retrato */}
+              <div className="lg:col-span-4 space-y-8 max-w-sm mx-auto lg:max-w-none w-full">
+                <div className="relative group">
+                  <div className="absolute -inset-1 bg-gradient-to-b from-oro/20 to-transparent blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+                  <div 
+                    onClick={() => {
+                      if (isEditing || canEdit) {
+                        setImageUrlInput(character.url_img || '');
+                        setEditingImageKey('character');
+                      }
+                    }}
+                    className={`relative aspect-[3/4] w-full ninja-card-oro overflow-hidden border-oro/20 group flex items-center justify-center bg-black/40 ${isEditing || canEdit ? 'cursor-pointer hover:border-oro/40' : ''}`}
+                  >
+                    {character.url_img ? (
+                      <img 
+                        src={character.url_img} 
+                        className="w-full h-full object-cover object-top hover:scale-110 transition-transform duration-700"
+                        alt={character.nombre_ninja}
+                      />
+                    ) : (
+                      <User className="w-24 h-24 text-oro/10 group-hover:text-oro/20 transition-colors" />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
+                    
+                    {/* Overlay de Edición */}
+                    {(isEditing || canEdit) && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                        <div className="text-center">
+                          <ImageIcon className="w-8 h-8 text-oro mx-auto mb-2" />
+                          <p className="text-[10px] font-black text-oro uppercase tracking-widest">CAMBIAR RETRATO</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="absolute bottom-6 left-6 right-6">
+                      <p className="ninja-title text-2xl mb-1">{character.nombre_ninja}</p>
+                      <p className="text-[10px] font-black text-oro/40 uppercase tracking-[0.3em]">{character.rango_jerarquico}</p>
+                    </div>
+                  </div>
+                </div>
+                  
+                  {/* Si el usuario tiene url_img propia, mostrarla debajo como miniatura opcional o decorativa */}
+                  {(Array.isArray(character.profiles) ? character.profiles[0]?.url_img : character.profiles?.url_img) ? (
+                    <div 
+                      onClick={() => {
+                        if (isAdmin) {
+                          const profileUrl = Array.isArray(character.profiles) ? character.profiles[0]?.url_img : character.profiles?.url_img;
+                          setImageUrlInput(profileUrl || '');
+                          setEditingImageKey('user');
+                        }
+                      }}
+                      className={`ninja-card-oro p-6 flex items-center gap-6 group transition-all ${isAdmin ? 'cursor-pointer hover:border-oro/40' : ''}`}
+                    >
+                      <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-oro/10 group-hover:border-oro/30 transition-all">
+                        <img 
+                          src={(Array.isArray(character.profiles) ? character.profiles[0]?.url_img : character.profiles?.url_img) || undefined} 
+                          className="w-full h-full object-cover"
+                          alt="Usuario"
+                        />
+                        {isAdmin && (
+                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Edit3 className="w-4 h-4 text-oro" />
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-oro/30 uppercase tracking-widest mb-1">IMAGEN DE JUGADOR</p>
+                        <p className="text-xs font-bold text-oro uppercase">
+                          {isAdmin ? 'HAGA CLIC PARA CAMBIAR' : 'SINCRONIZADA'}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    // Si no tiene imagen de jugador, pero es admin, permitir asignarla
+                    isAdmin && (
+                      <div 
+                        onClick={() => {
+                          setImageUrlInput('');
+                          setEditingImageKey('user');
+                        }}
+                        className="ninja-card-oro p-6 flex items-center justify-center gap-4 group cursor-pointer hover:border-oro/40 transition-all"
+                      >
+                        <ImageIcon className="w-5 h-5 text-oro/40 group-hover:text-oro transition-colors" />
+                        <span className="text-[10px] font-black text-oro/60 uppercase tracking-widest">ASIGNAR IMAGEN DE JUGADOR</span>
+                      </div>
+                    )
+                  )}
+                </div>
+
+              <div className="lg:col-span-8 space-y-12">
               <SectionCard title="INFORMACIÓN DEL JUGADOR" icon={User} color="oro">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <DataField 
@@ -964,6 +1097,102 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                   initialType={editingRegistro.tipo as any}
                 />
               )}
+            </div>
+          </div>
+        )}
+        {editingImageKey && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="w-full max-w-lg ninja-card-oro p-8 space-y-6 relative overflow-hidden" style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' }}>
+              {/* Decoración de fondo */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-oro/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+              
+              <div className="flex items-center justify-between relative z-10">
+                <h3 className="text-xl font-black text-oro uppercase tracking-[0.3em] flex items-center gap-4 italic">
+                  <ImageIcon className="w-6 h-6" />
+                  {editingImageKey === 'character' ? 'Retrato del Ninja' : 'Imagen de Jugador'}
+                </h3>
+                <button 
+                  onClick={() => setEditingImageKey(null)}
+                  className="text-oro/40 hover:text-oro transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4 relative z-10">
+                <p className="text-oro/60 text-xs font-bold uppercase tracking-widest leading-relaxed">
+                  {editingImageKey === 'character' 
+                    ? 'Introduce la URL de la imagen para este personaje. Se recomienda una relación de aspecto 3:4.' 
+                    : 'Introduce la URL de la imagen de perfil del jugador.'}
+                </p>
+                <div className="group relative">
+                  <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-oro/20 group-focus-within:text-oro transition-colors">
+                    <ImageIcon className="w-5 h-5" />
+                  </div>
+                  <input 
+                    type="text" 
+                    value={imageUrlInput}
+                    onChange={(e) => setImageUrlInput(e.target.value)}
+                    placeholder="https://ejemplo.com/imagen.jpg"
+                    className="w-full bg-black/60 border border-oro/20 text-oro p-4 pl-12 text-sm focus:outline-none focus:border-oro transition-all selection:bg-oro/20"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-4 pt-4 relative z-10">
+                <button 
+                  onClick={() => setEditingImageKey(null)}
+                  className="flex-1 px-6 py-4 bg-black/40 border border-oro/10 text-oro/60 text-xs font-black uppercase tracking-widest hover:bg-black/60 hover:text-oro transition-all"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={async () => {
+                    const finalVal = imageUrlInput.trim() || null;
+                    if (isEditing) {
+                      if (editingImageKey === 'character') {
+                        onUpdateField('url_img', finalVal);
+                      } else {
+                        const currentProfile = Array.isArray(character.profiles) ? character.profiles[0] : character.profiles;
+                        const updatedProfile = { ...currentProfile, url_img: finalVal };
+                        onUpdateField('profiles', Array.isArray(character.profiles) ? [updatedProfile] : updatedProfile);
+                      }
+                      setEditingImageKey(null);
+                    } else {
+                      try {
+                        if (editingImageKey === 'character') {
+                          await CharacterService.updateCharacter(character.id, { url_img: finalVal });
+                        } else {
+                          const userId = Array.isArray(character.profiles) ? character.profiles[0]?.id : character.profiles?.id;
+                          const finalUserId = userId || character.user_id;
+                          if (finalUserId) {
+                            await ProfileService.updateProfile(finalUserId, { url_img: finalVal });
+                          } else {
+                            throw new Error("No user ID associated with the profile.");
+                          }
+                        }
+                        
+                        addToast("Imagen actualizada correctamente.", "success");
+                        
+                        if (onRefresh) {
+                          onRefresh();
+                        } else {
+                          window.location.reload();
+                        }
+                      } catch (err) {
+                        console.error("Error al actualizar la imagen:", err);
+                        addToast("Hubo un error al guardar la imagen.", "error");
+                      } finally {
+                        setEditingImageKey(null);
+                      }
+                    }
+                  }}
+                  className="flex-1 px-6 py-4 ninja-btn-oro text-xs font-black uppercase tracking-widest flex items-center justify-center gap-3"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Aplicar</span>
+                </button>
+              </div>
             </div>
           </div>
         )}

@@ -5,6 +5,8 @@ import { createClient } from "@/utils/supabase/server";
 import { ProfileService } from '@/services/supabase/profile.service';
 import NotificationBell from '@/components/layout/NotificationBell';
 import AdminNotificationBadge from '@/components/admin/AdminNotificationBadge';
+import ProfileSettings from '@/components/layout/ProfileSettings';
+import { User } from 'lucide-react';
 
 export default async function Home() {
   const supabase = await createClient();
@@ -30,20 +32,7 @@ export default async function Home() {
             
             {user && (
               <div className="flex items-center gap-4 sm:gap-6">
-                <div className="hidden sm:flex lg:hidden 2xl:flex items-center gap-4 px-6 xl:px-10 py-4 bg-rojo-sangre/20 border border-oro/20 ninja-clip-xs">
-                  {profile?.url_avatar ? (
-                    <img 
-                      src={profile.url_avatar} 
-                      alt="Avatar" 
-                      className="w-10 xl:w-12 h-10 xl:h-12 rounded-none object-cover border border-oro/40"
-                    />
-                  ) : (
-                    <div className="w-4 h-4 bg-oro animate-pulse" />
-                  )}
-                  <span className="text-sm xl:text-lg 2xl:text-xl font-black text-oro uppercase tracking-widest">
-                    {profile?.username || user.email?.split('@')[0]}
-                  </span>
-                </div>
+                <ProfileSettings profile={profile} userId={user.id} />
                 <NotificationBell />
               </div>
             )}
