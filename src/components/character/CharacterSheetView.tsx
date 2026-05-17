@@ -19,7 +19,8 @@ import ActionTable from '@/components/registros/ActionTable';
 import CombatTable from '@/components/registros/CombatTable';
 import MissionForm from '@/components/registros/MissionForm';
 import CombatForm from '@/components/registros/CombatForm';
-import { useState, useMemo, useEffect } from 'react';
+import { CharacterRadarChart } from './CharacterRadarChart';
+import { useState, useMemo, useEffect, Fragment } from 'react';
 
 interface CharacterSheetViewProps {
   character: Character;
@@ -210,22 +211,110 @@ export function CharacterSheetView({
     }, {});
   }, [character.personajes_inventario]);
 
-  // Memoizar las técnicas agrupadas
-  const groupedTecnicas = useMemo(() => {
-    return (character.personajes_tecnicas || []).reduce((acc: Record<string, Record<string, PersonajeTecnica[]>>, pt: PersonajeTecnica) => {
-      // Soporte tanto para objeto directo como para array de Supabase
-      const catData = pt.info_glosario?.info_glosario_categorias;
+  const renderRequisitos = (reqs: any) => {
+    if (!reqs) return <span className="text-[10px] text-oro/30 italic">Sin requisitos</span>;
+    if (typeof reqs === 'string') return <span className="text-[10px] text-oro/60 font-bold uppercase">{reqs}</span>;
+    
+    const elements: React.ReactNode[] = [];
+    
+    if (reqs.rango) {
+      elements.push(<span key="rango" className="text-rojo-sangre font-black">{reqs.rango}</span>);
+    }
+    if (reqs.rama_id) {
+      elements.push(<span key="rama" className="text-oro font-black">RAMA/CLAN</span>);
+    }
+    
+    if (reqs.stats && typeof reqs.stats === 'object') {
+      Object.entries(reqs.stats).forEach(([stat, val]) => {
+        if (val && val !== 0) {
+          elements.push(
+            <span key={stat} className="text-oro/50 font-black">
+              {stat.toUpperCase()}: <span className="text-oro">{String(val)}</span>
+            </span>
+          );
+        }
+      });
+    }
+
+    if (reqs.misiones && typeof reqs.misiones === 'object') {
+      Object.entries(reqs.misiones).forEach(([rangoM, cant]) => {
+        if (cant && cant !== 0) {
+          elements.push(
+            <span key={rangoM} className="text-rojo-sangre font-black">
+              M.{rangoM}: <span className="text-oro">{String(cant)}</span>
+            </span>
+          );
+        }
+      });
+    }
+
+    Object.entries(reqs).forEach(([key, value]) => {
+      if (['rango', 'rama_id', 'stats', 'misiones', 'personaje_id'].includes(key)) return;
+      if (value === null || value === undefined || value === 0 || value === false || value === '') return;
+      elements.push(
+        <span key={key} className="text-oro/50 font-black">
+          {key.replace('_', ' ').toUpperCase()}: <span className="text-oro">{String(value)}</span>
+        </span>
+      );
+    });
+
+    if (elements.length === 0) return <span className="text-[10px] text-oro/30 italic">Sin requisitos</span>;
+
+    return (
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] uppercase tracking-tighter leading-tight">
+        {elements.map((el, i) => (
+          <Fragment key={i}>
+            {i > 0 && <span className="text-oro/20">|</span>}
+            {el}
+          </Fragment>
+        ))}
+      </div>
+    );
+  };
+
+  // Memoizar Técnicas agrupadas por subcategoría (categoria_id === 1 o fallbacks)
+  const tecnicasGrouped = useMemo(() => {
+    const list = (character.personajes_tecnicas || []).filter((pt: PersonajeTecnica) => {
+      const catId = pt.info_glosario?.categoria_id;
+      return catId === 1 || (catId !== 2 && catId !== 3 && catId !== 4);
+    });
+    return list.reduce((acc: Record<string, PersonajeTecnica[]>, pt: PersonajeTecnica) => {
       const subData = pt.info_glosario?.info_glosario_subcategorias;
-
-      const cat = (Array.isArray(catData) ? catData[0]?.nombre : catData?.nombre) || 'General';
       const sub = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'Otros';
-
-      if (!acc[cat]) acc[cat] = {};
-      if (!acc[cat][sub]) acc[cat][sub] = [];
-      acc[cat][sub].push(pt);
+      if (!acc[sub]) acc[sub] = [];
+      acc[sub].push(pt);
       return acc;
     }, {});
   }, [character.personajes_tecnicas]);
+
+  // Memoizar Pasivas agrupadas por subcategoría (categoria_id === 4)
+  const pasivasGrouped = useMemo(() => {
+    const list = (character.personajes_tecnicas || []).filter((pt: PersonajeTecnica) => {
+      return pt.info_glosario?.categoria_id === 4;
+    });
+    return list.reduce((acc: Record<string, PersonajeTecnica[]>, pt: PersonajeTecnica) => {
+      const subData = pt.info_glosario?.info_glosario_subcategorias;
+      const sub = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'Otros';
+      if (!acc[sub]) acc[sub] = [];
+      acc[sub].push(pt);
+      return acc;
+    }, {});
+  }, [character.personajes_tecnicas]);
+
+  // Memoizar Kuchiyoses agrupadas por subcategoría (categoria_id === 3)
+  const kuchiyosesGrouped = useMemo(() => {
+    const list = (character.personajes_tecnicas || []).filter((pt: PersonajeTecnica) => {
+      return pt.info_glosario?.categoria_id === 3;
+    });
+    return list.reduce((acc: Record<string, PersonajeTecnica[]>, pt: PersonajeTecnica) => {
+      const subData = pt.info_glosario?.info_glosario_subcategorias;
+      const sub = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'Otros';
+      if (!acc[sub]) acc[sub] = [];
+      acc[sub].push(pt);
+      return acc;
+    }, {});
+  }, [character.personajes_tecnicas]);
+
 
   const [editingRegistro, setEditingRegistro] = useState<Registro | null>(null);
   const [registroTab, setRegistroTab] = useState<'mision' | 'accion' | 'combate'>('mision');
@@ -250,30 +339,30 @@ export function CharacterSheetView({
 
 // Componentes Helper fuera del render principal para evitar re-montajes
 const ResourceDisplay = ({ character, totalExp, totalRyous }: { character: Character, totalExp: number, totalRyous: number }) => (
-  <div className="flex flex-wrap items-center gap-8 mb-12">
-    <div className="flex items-center gap-6 px-10 py-6 ninja-card-oro group hover-ninja">
-      <div className="w-12 h-12 bg-rojo-sangre rotate-45 flex items-center justify-center shadow-[0_0_15px_rgba(103,9,9,0.5)]">
-        <span className="text-oro font-black -rotate-45 text-xl italic">¥</span>
+  <div className="flex flex-wrap justify-center items-center gap-6 mb-8">
+    <div className="flex items-center gap-4 px-8 py-4 ninja-card-oro group hover-ninja">
+      <div className="w-10 h-10 bg-rojo-sangre rotate-45 flex items-center justify-center shadow-[0_0_12px_rgba(103,9,9,0.4)]">
+        <span className="text-oro font-black -rotate-45 text-lg italic">¥</span>
       </div>
       <div>
-        <p className="text-[10px] font-black text-oro/40 uppercase tracking-[0.3em] mb-2">RYOUS (DISPONIBLE / TOTAL)</p>
-        <p className="text-2xl xl:text-4xl font-black text-oro leading-none">
+        <p className="text-[9px] font-black text-oro/40 uppercase tracking-[0.3em] mb-1">RYOUS (DISPONIBLE / TOTAL)</p>
+        <p className="text-xl xl:text-2xl font-black text-oro leading-none">
           {new Intl.NumberFormat('es-ES').format(character.ryous || 0)}
-          <span className="text-oro/20 mx-4">/</span>
-          <span className="text-oro/60 text-lg xl:text-2xl">{new Intl.NumberFormat('es-ES').format(totalRyous)}</span>
+          <span className="text-oro/20 mx-3">/</span>
+          <span className="text-oro/60 text-sm xl:text-lg">{new Intl.NumberFormat('es-ES').format(totalRyous)}</span>
         </p>
       </div>
     </div>
-    <div className="flex items-center gap-6 px-10 py-6 ninja-card-oro group hover-ninja">
-      <div className="w-12 h-12 bg-oro rotate-45 flex items-center justify-center shadow-[0_0_15px_rgba(255,230,159,0.3)]">
-        <span className="text-rojo-sangre font-black -rotate-45 text-sm italic">XP</span>
+    <div className="flex items-center gap-4 px-8 py-4 ninja-card-oro group hover-ninja">
+      <div className="w-10 h-10 bg-oro rotate-45 flex items-center justify-center shadow-[0_0_12px_rgba(255,230,159,0.25)]">
+        <span className="text-rojo-sangre font-black -rotate-45 text-[11px] italic">XP</span>
       </div>
       <div>
-        <p className="text-[10px] font-black text-oro/40 uppercase tracking-[0.3em] mb-2">EXPERIENCIA (DISPONIBLE / TOTAL)</p>
-        <p className="text-2xl xl:text-4xl font-black text-oro leading-none">
+        <p className="text-[9px] font-black text-oro/40 uppercase tracking-[0.3em] mb-1">EXPERIENCIA (DISPONIBLE / TOTAL)</p>
+        <p className="text-xl xl:text-2xl font-black text-oro leading-none">
           {new Intl.NumberFormat('es-ES').format(character.xp || 0)}
-          <span className="text-oro/20 mx-4">/</span>
-          <span className="text-oro/60 text-lg xl:text-2xl">{new Intl.NumberFormat('es-ES').format(totalExp)}</span>
+          <span className="text-oro/20 mx-3">/</span>
+          <span className="text-oro/60 text-sm xl:text-lg">{new Intl.NumberFormat('es-ES').format(totalExp)}</span>
         </p>
       </div>
     </div>
@@ -281,11 +370,7 @@ const ResourceDisplay = ({ character, totalExp, totalRyous }: { character: Chara
 );
 
 const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
-  <div className="space-y-8 mb-16">
-    <div className="flex items-center gap-4">
-      <img src="/assets/icons/shuriken.png" className="w-4 h-auto" alt="icon" />
-      <h3 className="text-xs xl:text-sm font-black text-oro uppercase tracking-[0.4em]">Historial de Misiones</h3>
-    </div>
+  <SectionCard title="HISTORIAL DE MISIONES" icon={ScrollText} color="oro">
     <div className="grid grid-cols-2 sm:grid-cols-5 gap-6">
       {Object.entries(counts).map(([rank, count]) => (
         <div key={rank} className="ninja-card-oro p-6 text-center group hover-ninja transition-all">
@@ -294,13 +379,13 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
         </div>
       ))}
     </div>
-  </div>
+  </SectionCard>
 );
 
 
   return (
     <div className="min-h-screen p-4 sm:p-8 xl:p-20 flex flex-col">
-      <header className="w-full max-w-[1750px] mx-auto mb-10 sm:mb-16 ninja-card-oro p-4 sm:p-8 xl:p-10 z-50">
+      <header className="w-full max-w-[1750px] mx-auto mb-6 sm:mb-8 ninja-card-oro p-4 sm:p-8 xl:p-10 z-50">
         <div className="flex flex-col lg:flex-row justify-between items-center lg:items-center gap-6 lg:gap-10">
           
           {/* Top Row: Back Button & Actions (Mobile) / Left Side (Desktop) */}
@@ -425,7 +510,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
       </header>
 
       <main className="w-full max-w-[1750px] mx-auto flex-1">
-        <div className="flex flex-nowrap gap-4 xl:gap-8 mb-16 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="flex flex-nowrap gap-4 xl:gap-8 mb-4 sm:mb-4 justify-start sm:justify-center overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
           {['general', 'ninja', 'inventario', 'tecnicas', 'onrol', 'registros'].map((tab) => {
             const isActive = activeTab === tab;
             return (
@@ -539,7 +624,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                   )}
                 </div>
 
-              <div className="lg:col-span-8 space-y-12">
+              <div className="lg:col-span-8 space-y-8">
               <SectionCard title="INFORMACIÓN DEL JUGADOR" icon={User} color="oro">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <DataField 
@@ -655,28 +740,40 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
               </div>
             }
           >
+            {/* Gráfico en Radar Dinámico */}
+            <div className="flex justify-center items-center w-full mb-2 border-b border-oro/5 pb-2 -mt-6">
+              <CharacterRadarChart 
+                stats={character.stats_base} 
+                maxVal={10} 
+              />
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 xl:gap-20">
               <div className="lg:col-span-7 space-y-10">
                 <div className="flex items-center gap-4 mb-8">
                   <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45" />
                   <h3 className="text-xs xl:text-sm font-black text-oro/60 uppercase tracking-[0.4em]">Estadísticas Base</h3>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
                   {['NIN', 'GEN', 'TAI', 'SM', 'FUE', 'AGI', 'EST', 'INT'].map((s) => {
                     const val = character.stats_base[s as keyof CharacterStats] || 0;
-                    const max = masters.rangoRules?.[character.rango]?.stat_max || 100;
+                    const max = masters.rangoRules?.[character.rango]?.stat_max || 10;
                     return (
-                      <div key={s} className="bg-black/40 border border-oro/10 p-6 relative group hover:border-oro/40 transition-all text-center overflow-hidden" style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}>
-                        <div className="absolute top-0 right-0 w-16 h-16 bg-oro/5 rotate-45 -mr-8 -mt-8 pointer-events-none" />
-                        <span className="text-[10px] font-black text-oro/40 uppercase tracking-widest block mb-4">{s}</span>
-                        <input 
-                          type="number" 
-                          value={val} 
-                          disabled={!isEditing && !isNew}
-                          onChange={(e) => onUpdateStat(s as keyof CharacterStats, parseInt(e.target.value))}
-                          className="bg-transparent text-3xl xl:text-4xl font-black text-oro w-full text-center outline-none disabled:cursor-default selection:bg-oro/20"
-                        />
-                        <div className="text-[8px] font-black text-oro/20 mt-2 uppercase tracking-tighter">LÍMITE: {max}</div>
+                      <div key={s} className="bg-black/40 border border-oro/10 p-6 flex justify-between items-center relative group hover:border-oro/40 transition-all overflow-hidden" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 0px)' }}>
+                        <div className="absolute top-0 right-0 w-12 h-12 bg-oro/5 rotate-45 -mr-6 -mt-6 pointer-events-none" />
+                        <div className="flex flex-col items-start relative z-10">
+                          <span className="text-xs font-black text-oro/40 uppercase tracking-[0.2em]">{s}</span>
+                          <span className="text-[8px] font-black text-oro/20 mt-1 uppercase tracking-tighter">LÍMITE: {max}</span>
+                        </div>
+                        <div className="flex items-center gap-2 relative z-10">
+                          <input 
+                            type="number" 
+                            value={val} 
+                            disabled={!isEditing && !isNew}
+                            onChange={(e) => onUpdateStat(s as keyof CharacterStats, parseInt(e.target.value))}
+                            className="bg-transparent text-2xl xl:text-3xl font-black text-oro w-16 text-right outline-none disabled:cursor-default selection:bg-oro/20 leading-none py-1"
+                          />
+                        </div>
                       </div>
                     );
                   })}
@@ -688,7 +785,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                   <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45" />
                   <h3 className="text-xs xl:text-sm font-black text-oro/60 uppercase tracking-[0.4em]">Atributos Calculados</h3>
                 </div>
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-2 gap-3">
                   {[
                     { label: 'VIT', val: character.atributos_derivados.VIT, color: 'text-rojo-sangre' },
                     { label: 'CH', val: character.atributos_derivados.CH, color: 'text-blue-500' },
@@ -710,7 +807,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
           </SectionCard>
         )}
         {activeTab === 'inventario' && (
-          <div className="space-y-12">
+          <div className="space-y-8">
             <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} />
             <SectionCard title="MOCHILA Y PERTENENCIAS" icon={Briefcase} color="oro">
               <div className="space-y-16">
@@ -728,38 +825,58 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                             <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
                             {subName}
                           </h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {items.map((pi: PersonajeItem, idx: number) => (
-                              <div key={`${pi.item_id}-${idx}`} className="bg-black/40 p-6 border border-oro/10 relative group hover:border-oro/40 transition-all flex justify-between items-center overflow-hidden" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}>
-                                <div className="absolute top-0 right-0 w-12 h-12 bg-oro/5 rotate-45 -mr-6 -mt-6 pointer-events-none" />
-                                <div className="relative z-10">
-                                  <p className="font-black text-oro uppercase tracking-widest text-sm xl:text-base mb-1">{pi.info_glosario?.nombre_es}</p>
-                                  <p className="text-[10px] text-oro/30 uppercase font-black tracking-tighter">{pi.info_glosario?.nombre_jp || '---'}</p>
-                                </div>
-              
-                                <div className="relative z-10 flex items-center gap-4">
-                                  {(isEditing || isNew) && (
-                                   <button 
-                                     onClick={()=>{
-                                       const isNewlyAdded = !pi.id;
-                                       if (isEditing || isNew) {
-                                         if (isNewlyAdded) {
-                                           if (pi.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pi.info_glosario.coste_exp);
-                                           if (pi.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pi.info_glosario.coste_ryous);
-                                         }
-                                         onUpdateField('personajes_inventario', character.personajes_inventario?.filter((i: PersonajeItem)=>i.item_id !== pi.item_id));
-                                       } else {
-                                         onQuickRemoveItem?.(pi);
-                                       }
-                                     }} 
-                                     className="text-rojo-sangre/40 p-3 hover:bg-rojo-sangre/10 hover:text-rojo-sangre transition-all"
-                                   >
-                                     <Trash2 className="w-4 h-4" />
-                                   </button>
-                                 )}
-                                </div>
-                              </div>
-                            ))}
+                          <div className="overflow-x-auto rounded-[4px] border border-oro/10 bg-black/40 backdrop-blur-md">
+                            <table className="w-full text-left border-collapse table-fixed min-w-[600px]">
+                              <thead>
+                                <tr className="bg-black/60 text-[10px] font-black uppercase tracking-[0.2em] text-oro border-b border-oro/15">
+                                  <th className="py-4 px-6 w-[40%]">Objeto</th>
+                                  <th className="py-4 px-6 w-[45%]">Requisitos</th>
+                                  <th className="py-4 px-6 w-[15%] text-center">Acciones</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-oro/5 bg-black/20">
+                                {items.map((pi: PersonajeItem, idx: number) => (
+                                  <tr key={`${pi.item_id}-${idx}`} className="hover:bg-oro/[0.02] transition-colors">
+                                    <td className="py-4 px-6">
+                                      <div className="flex flex-col">
+                                        <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base">
+                                          {pi.info_glosario?.nombre_es}
+                                        </span>
+                                        {pi.info_glosario?.nombre_jp && (
+                                          <span className="text-[10px] text-oro/30 uppercase font-black tracking-tighter mt-0.5">
+                                            {pi.info_glosario?.nombre_jp}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </td>
+                                    <td className="py-4 px-6">
+                                      {renderRequisitos(pi.info_glosario?.requisitos)}
+                                    </td>
+                                    <td className="py-4 px-6 text-center">
+                                      {(isEditing || isNew) && (
+                                        <button 
+                                          onClick={() => {
+                                            const isNewlyAdded = !pi.id;
+                                            if (isEditing || isNew) {
+                                              if (isNewlyAdded) {
+                                                if (pi.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pi.info_glosario.coste_exp);
+                                                if (pi.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pi.info_glosario.coste_ryous);
+                                              }
+                                              onUpdateField('personajes_inventario', character.personajes_inventario?.filter((i: PersonajeItem) => i.item_id !== pi.item_id));
+                                            } else {
+                                              onQuickRemoveItem?.(pi);
+                                            }
+                                          }} 
+                                          className="text-rojo-sangre/60 p-2 hover:bg-rojo-sangre/10 hover:text-rojo-sangre transition-all rounded-[3px]"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
                           </div>
                         </div>
                       ))}
@@ -812,79 +929,335 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
         )}
 
         {activeTab === 'tecnicas' && (
-          <div className="space-y-12">
+          <div className="space-y-8">
             <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} />
+
+            {/* SECCIÓN 1: ARTES Y JUTSUS NINJA */}
             <SectionCard title="ARTES Y JUTSUS NINJA" icon={Zap} color="oro">
-              <div className="space-y-16">
-                {Object.entries(groupedTecnicas).map(([catName, subs]: [string, any]) => (
-                  <div key={catName} className="space-y-8">
-                    <div className="flex items-center gap-6">
-                      <h3 className="text-xl xl:text-3xl font-black text-oro uppercase tracking-[0.2em]">{catName}</h3>
-                      <div className="flex-1 h-px bg-oro/10" />
-                    </div>
-              
-                    <div className="space-y-10">
-                      {Object.entries(subs).map(([subName, items]: [string, any]) => (
-                        <div key={subName} className="space-y-6">
-                          <h4 className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
-                            <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
-                            {subName}
-                          </h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Object.keys(tecnicasGrouped).length === 0 ? (
+                <div className="py-12 text-center rounded-[4px] border border-oro/10 bg-black/20 text-xs font-black text-oro/30 uppercase tracking-[0.25em]">
+                  No tienes técnicas aprendidas
+                </div>
+              ) : (
+                <div className="space-y-10">
+                  {Object.entries(tecnicasGrouped).map(([subName, items]: [string, any]) => (
+                    <div key={subName} className="space-y-6">
+                      <h4 className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
+                        <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
+                        {subName}
+                      </h4>
+                      <div className="overflow-x-auto rounded-[4px] border border-oro/10 bg-black/40 backdrop-blur-md">
+                        <table className="w-full text-left border-collapse table-fixed min-w-[700px]">
+                          <thead>
+                            <tr className="bg-black/60 text-[10px] font-black uppercase tracking-[0.2em] text-oro border-b border-oro/15">
+                              <th className="py-4 px-6 w-[35%]">Técnica</th>
+                              <th className="py-4 px-6 w-[15%] text-center">Rango</th>
+                              <th className="py-4 px-6 w-[35%]">Requisitos</th>
+                              <th className="py-4 px-6 w-[15%] text-center">Acciones</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-oro/5 bg-black/20">
                             {items.map((pt: PersonajeTecnica, idx: number) => (
-                              <div key={`${pt.tecnica_id}-${idx}`} className="bg-black/40 p-6 border border-oro/10 relative group hover:border-oro/40 transition-all flex justify-between items-center overflow-hidden" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}>
-                                <div className="absolute top-0 right-0 w-12 h-12 bg-oro/5 rotate-45 -mr-6 -mt-6 pointer-events-none" />
-                                <div className="relative z-10 flex items-center gap-6">
-                                   <div className="w-12 h-12 bg-oro/5 flex items-center justify-center text-xs font-black text-oro border border-oro/20" style={{ clipPath: 'polygon(20% 0, 80% 0, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0 80%, 0 20%)' }}>
-                                     {pt.info_glosario?.requisitos?.rango || 'D'}
-                                   </div>
-                                   <div>
-                                      <p className="font-black text-oro uppercase tracking-widest text-sm xl:text-base mb-1">{pt.info_glosario?.nombre_es}</p>
-                                      <p className="text-[10px] text-oro/30 uppercase font-black tracking-tighter">{pt.info_glosario?.nombre_jp || '---'}</p>
-                                   </div>
-                                </div>
-              
-                                <div className="relative z-10">
+                              <tr key={`${pt.tecnica_id}-${idx}`} className="hover:bg-oro/[0.02] transition-colors">
+                                <td className="py-4 px-6">
+                                  <div className="flex flex-col">
+                                    <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base">
+                                      {pt.info_glosario?.nombre_es}
+                                    </span>
+                                    {pt.info_glosario?.nombre_jp && (
+                                      <span className="text-[10px] text-oro/30 uppercase font-black tracking-tighter mt-0.5">
+                                        {pt.info_glosario?.nombre_jp}
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="py-4 px-6 text-center">
+                                  <span className="inline-block px-2.5 py-1 bg-oro/5 border border-oro/20 text-oro text-xs font-black rounded-sm">
+                                    {pt.info_glosario?.requisitos?.rango || 'D'}
+                                  </span>
+                                </td>
+                                <td className="py-4 px-6">
+                                  {renderRequisitos(pt.info_glosario?.requisitos)}
+                                </td>
+                                <td className="py-4 px-6 text-center">
                                   {(isEditing || isNew) && (
-                                     <button 
-                                       onClick={()=>{
-                                         const isNewlyAdded = !pt.id;
-                                         if (isEditing || isNew) {
-                                           if (isNewlyAdded) {
-                                             if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
-                                             if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
-                                           }
-                                           onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica)=>t.tecnica_id !== pt.tecnica_id));
-                                         } else {
-                                           onQuickRemoveTechnique?.(pt);
-                                         }
-                                       }} 
-                                       className="text-rojo-sangre/40 p-3 hover:bg-rojo-sangre/10 hover:text-rojo-sangre transition-all"
-                                     >
-                                       <Trash2 className="w-4 h-4" />
-                                     </button>
-                                   )}
-                                </div>
-                              </div>
+                                    <button 
+                                      onClick={() => {
+                                        const isNewlyAdded = !pt.id;
+                                        if (isEditing || isNew) {
+                                          if (isNewlyAdded) {
+                                            if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
+                                            if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
+                                          }
+                                          onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
+                                        } else {
+                                          onQuickRemoveTechnique?.(pt);
+                                        }
+                                      }} 
+                                      className="text-rojo-sangre/60 p-2 hover:bg-rojo-sangre/10 hover:text-rojo-sangre transition-all rounded-[3px]"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
                             ))}
-                          </div>
-                        </div>
-                      ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
 
               {(canEdit || isNew) && (isEditing || isNew) && (
-                <div className="mt-20 pt-12 border-t border-oro/10">
+                <div className="mt-12 pt-12 border-t border-oro/10">
                   <SearchableSelect 
                     label="APRENDER NUEVA TÉCNICA" 
                     placeholder="BUSCAR JUTSU EN EL GLOSARIO..."
                     options={(glosarioFiltrado || [])
-                      .filter((i: Glosario) => i.categoria_id !== 2 && meetsRequirements(i) && !(character.personajes_tecnicas || []).some((pt: PersonajeTecnica) => pt.tecnica_id === i.id))
+                      .filter((i: Glosario) => i.categoria_id === 1 && meetsRequirements(i) && !(character.personajes_tecnicas || []).some((pt: PersonajeTecnica) => pt.tecnica_id === i.id))
                       .map((t: any) => {
                         const subData = t.info_glosario_subcategorias;
                         const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'TÉCNICA';
+                        return { 
+                          label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS`, 
+                          value: t.id 
+                        };
+                      })
+                    } 
+                    onChange={(v) => {
+                      const tec = (glosarioFiltrado || []).find((t: any) => t.id === Number(v));
+                      const current = character.personajes_tecnicas || [];
+                      
+                      if (tec && !current.some((t: any) => t.tecnica_id === tec.id)) {
+                        const costExp = tec.coste_exp || 0;
+                        const costRyous = tec.coste_ryous || 0;
+                        const currentExp = character.xp || 0;
+                        const currentRyous = character.ryous || 0;
+
+                        if (currentExp < costExp || currentRyous < costRyous) {
+                          addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP Y ${costRyous} RYOUS.`, "error");
+                          return;
+                        }
+
+                        onUpdateField('personajes_tecnicas', [...current, { tecnica_id: tec.id, info_glosario: tec }]);
+                        if (costExp > 0) onUpdateField('xp', currentExp - costExp);
+                        if (costRyous > 0) onUpdateField('ryous', currentRyous - costRyous);
+                      }
+                    }} 
+                  />
+                </div>
+              )}
+            </SectionCard>
+
+            {/* SECCIÓN 2: HABILIDADES PASIVAS */}
+            <SectionCard title="HABILIDADES PASIVAS" icon={ScrollText} color="oro">
+              {Object.keys(pasivasGrouped).length === 0 ? (
+                <div className="py-12 text-center rounded-[4px] border border-oro/10 bg-black/20 text-xs font-black text-oro/30 uppercase tracking-[0.25em]">
+                  No tienes habilidades pasivas
+                </div>
+              ) : (
+                <div className="space-y-10">
+                  {Object.entries(pasivasGrouped).map(([subName, items]: [string, any]) => (
+                    <div key={subName} className="space-y-6">
+                      <h4 className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
+                        <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
+                        {subName}
+                      </h4>
+                      <div className="overflow-x-auto rounded-[4px] border border-oro/10 bg-black/40 backdrop-blur-md">
+                        <table className="w-full text-left border-collapse table-fixed min-w-[700px]">
+                          <thead>
+                            <tr className="bg-black/60 text-[10px] font-black uppercase tracking-[0.2em] text-oro border-b border-oro/15">
+                              <th className="py-4 px-6 w-[35%]">Habilidad Pasiva</th>
+                              <th className="py-4 px-6 w-[15%] text-center">Rango</th>
+                              <th className="py-4 px-6 w-[35%]">Requisitos</th>
+                              <th className="py-4 px-6 w-[15%] text-center">Acciones</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-oro/5 bg-black/20">
+                            {items.map((pt: PersonajeTecnica, idx: number) => (
+                              <tr key={`${pt.tecnica_id}-${idx}`} className="hover:bg-oro/[0.02] transition-colors">
+                                <td className="py-4 px-6">
+                                  <div className="flex flex-col">
+                                    <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base">
+                                      {pt.info_glosario?.nombre_es}
+                                    </span>
+                                    {pt.info_glosario?.nombre_jp && (
+                                      <span className="text-[10px] text-oro/30 uppercase font-black tracking-tighter mt-0.5">
+                                        {pt.info_glosario?.nombre_jp}
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="py-4 px-6 text-center">
+                                  <span className="inline-block px-2.5 py-1 bg-oro/5 border border-oro/20 text-oro text-xs font-black rounded-sm">
+                                    {pt.info_glosario?.requisitos?.rango || 'D'}
+                                  </span>
+                                </td>
+                                <td className="py-4 px-6">
+                                  {renderRequisitos(pt.info_glosario?.requisitos)}
+                                </td>
+                                <td className="py-4 px-6 text-center">
+                                  {(isEditing || isNew) && (
+                                    <button 
+                                      onClick={() => {
+                                        const isNewlyAdded = !pt.id;
+                                        if (isEditing || isNew) {
+                                          if (isNewlyAdded) {
+                                            if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
+                                            if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
+                                          }
+                                          onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
+                                        } else {
+                                          onQuickRemoveTechnique?.(pt);
+                                        }
+                                      }} 
+                                      className="text-rojo-sangre/60 p-2 hover:bg-rojo-sangre/10 hover:text-rojo-sangre transition-all rounded-[3px]"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {(canEdit || isNew) && (isEditing || isNew) && (
+                <div className="mt-12 pt-12 border-t border-oro/10">
+                  <SearchableSelect 
+                    label="APRENDER NUEVA PASIVA" 
+                    placeholder="BUSCAR HABILIDAD PASIVA EN EL GLOSARIO..."
+                    options={(glosarioFiltrado || [])
+                      .filter((i: Glosario) => i.categoria_id === 4 && meetsRequirements(i) && !(character.personajes_tecnicas || []).some((pt: PersonajeTecnica) => pt.tecnica_id === i.id))
+                      .map((t: any) => {
+                        const subData = t.info_glosario_subcategorias;
+                        const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'PASIVA';
+                        return { 
+                          label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS`, 
+                          value: t.id 
+                        };
+                      })
+                    } 
+                    onChange={(v) => {
+                      const tec = (glosarioFiltrado || []).find((t: any) => t.id === Number(v));
+                      const current = character.personajes_tecnicas || [];
+                      
+                      if (tec && !current.some((t: any) => t.tecnica_id === tec.id)) {
+                        const costExp = tec.coste_exp || 0;
+                        const costRyous = tec.coste_ryous || 0;
+                        const currentExp = character.xp || 0;
+                        const currentRyous = character.ryous || 0;
+
+                        if (currentExp < costExp || currentRyous < costRyous) {
+                          addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP Y ${costRyous} RYOUS.`, "error");
+                          return;
+                        }
+
+                        onUpdateField('personajes_tecnicas', [...current, { tecnica_id: tec.id, info_glosario: tec }]);
+                        if (costExp > 0) onUpdateField('xp', currentExp - costExp);
+                        if (costRyous > 0) onUpdateField('ryous', currentRyous - costRyous);
+                      }
+                    }} 
+                  />
+                </div>
+              )}
+            </SectionCard>
+
+            {/* SECCIÓN 3: INVOCACIONES Y KUCHIYOSES */}
+            <SectionCard title="INVOCACIONES Y KUCHIYOSES" icon={Swords} color="oro">
+              {Object.keys(kuchiyosesGrouped).length === 0 ? (
+                <div className="py-12 text-center rounded-[4px] border border-oro/10 bg-black/20 text-xs font-black text-oro/30 uppercase tracking-[0.25em]">
+                  No tienes ningún kuchiyose invocado
+                </div>
+              ) : (
+                <div className="space-y-10">
+                  {Object.entries(kuchiyosesGrouped).map(([subName, items]: [string, any]) => (
+                    <div key={subName} className="space-y-6">
+                      <h4 className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
+                        <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
+                        {subName}
+                      </h4>
+                      <div className="overflow-x-auto rounded-[4px] border border-oro/10 bg-black/40 backdrop-blur-md">
+                        <table className="w-full text-left border-collapse table-fixed min-w-[700px]">
+                          <thead>
+                            <tr className="bg-black/60 text-[10px] font-black uppercase tracking-[0.2em] text-oro border-b border-oro/15">
+                              <th className="py-4 px-6 w-[35%]">Invocación / Kuchiyose</th>
+                              <th className="py-4 px-6 w-[15%] text-center">Rango</th>
+                              <th className="py-4 px-6 w-[35%]">Requisitos</th>
+                              <th className="py-4 px-6 w-[15%] text-center">Acciones</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-oro/5 bg-black/20">
+                            {items.map((pt: PersonajeTecnica, idx: number) => (
+                              <tr key={`${pt.tecnica_id}-${idx}`} className="hover:bg-oro/[0.02] transition-colors">
+                                <td className="py-4 px-6">
+                                  <div className="flex flex-col">
+                                    <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base">
+                                      {pt.info_glosario?.nombre_es}
+                                    </span>
+                                    {pt.info_glosario?.nombre_jp && (
+                                      <span className="text-[10px] text-oro/30 uppercase font-black tracking-tighter mt-0.5">
+                                        {pt.info_glosario?.nombre_jp}
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="py-4 px-6 text-center">
+                                  <span className="inline-block px-2.5 py-1 bg-oro/5 border border-oro/20 text-oro text-xs font-black rounded-sm">
+                                    {pt.info_glosario?.requisitos?.rango || 'D'}
+                                  </span>
+                                </td>
+                                <td className="py-4 px-6">
+                                  {renderRequisitos(pt.info_glosario?.requisitos)}
+                                </td>
+                                <td className="py-4 px-6 text-center">
+                                  {(isEditing || isNew) && (
+                                    <button 
+                                      onClick={() => {
+                                        const isNewlyAdded = !pt.id;
+                                        if (isEditing || isNew) {
+                                          if (isNewlyAdded) {
+                                            if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
+                                            if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
+                                          }
+                                          onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
+                                        } else {
+                                          onQuickRemoveTechnique?.(pt);
+                                        }
+                                      }} 
+                                      className="text-rojo-sangre/60 p-2 hover:bg-rojo-sangre/10 hover:text-rojo-sangre transition-all rounded-[3px]"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {(canEdit || isNew) && (isEditing || isNew) && (
+                <div className="mt-12 pt-12 border-t border-oro/10">
+                  <SearchableSelect 
+                    label="INVOCAR KUCHIYOSE" 
+                    placeholder="BUSCAR KUCHIYOSE EN EL GLOSARIO..."
+                    options={(glosarioFiltrado || [])
+                      .filter((i: Glosario) => i.categoria_id === 3 && meetsRequirements(i) && !(character.personajes_tecnicas || []).some((pt: PersonajeTecnica) => pt.tecnica_id === i.id))
+                      .map((t: any) => {
+                        const subData = t.info_glosario_subcategorias;
+                        const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'KUCHIYOSE';
                         return { 
                           label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS`, 
                           value: t.id 
@@ -919,11 +1292,13 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
         )}
 
         {activeTab === 'onrol' && (
-          <div className="grid gap-12">
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-8">
+            <SectionCard title="DATOS PERSONALES" icon={User} color="oro">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <DataField label="EDAD" value={character.edad} disabled={!isEditing && !isNew} onChange={(v)=>onUpdateField('edad', Number(v))} />
                 <SelectField label="SEXO" value={character.sexo} options={['MASCULINO', 'FEMENINO', 'OTRO']} disabled={!isEditing && !isNew} onChange={(v)=>onUpdateField('sexo', v)} />
-             </div>
+              </div>
+            </SectionCard>
              
             <SectionCard title="DESCRIPCIÓN FÍSICA Y APARIENCIA" icon={Sword} color="oro" headerAction={!isNew && canEdit && isEditing && <button onClick={()=>onSave('apariencia')} className="px-8 py-3 bg-oro text-rojo-sangre text-[10px] font-black uppercase tracking-widest active:scale-95 shadow-xl shadow-oro/20" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>SINCRONIZAR DISCORD</button>}>
               <textarea 
@@ -949,36 +1324,52 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
         )}
 
         {activeTab === 'registros' && (
-          <div className="space-y-12">
+          <div className="space-y-8">
             <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} />
             <MissionCounter counts={missionCounts} />
             
-            <div className="flex flex-wrap gap-4 p-3 bg-black/40 border border-oro/10 w-fit mx-auto lg:mx-0 overflow-hidden" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}>
-               {(['mision', 'accion', 'combate'] as const).map(tab => {
-                 const Icon = tab === 'mision' ? ScrollText : tab === 'combate' ? Swords : Zap;
-                 const isActive = registroTab === tab;
-                 
-                 return (
-                   <button 
+            {/* Header Row: Subtabs Buttons & Filters */}
+            <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-8">
+              
+              {/* Left Side: Subtabs Buttons (exactly styled like the main sheet tabs menu) */}
+              <div className="flex flex-nowrap gap-4 overflow-x-auto pb-2 lg:pb-0 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+                {(['mision', 'accion', 'combate'] as const).map(tab => {
+                  const Icon = tab === 'mision' ? ScrollText : tab === 'combate' ? Swords : Zap;
+                  const isActive = registroTab === tab;
+                  
+                  return (
+                    <button 
                       key={tab} 
                       onClick={() => {
                         setRegistroTab(tab);
                         setRecordPage(1);
                       }}
-                      className={`flex items-center gap-4 px-10 py-4 font-black uppercase tracking-[0.2em] transition-all duration-300 group text-xs xl:text-sm ninja-clip-sm border ${
+                      className={`px-8 sm:px-12 py-4 text-[11px] xl:text-sm font-black uppercase tracking-widest transition-all duration-300 border ninja-clip-sm shrink-0 relative group flex items-center gap-4 ${
                         isActive 
-                        ? 'bg-oro text-rojo-sangre shadow-[0_0_25px_rgba(255,230,159,0.4)] border-oro' 
-                        : 'text-oro/40 hover:text-oro hover:bg-oro/10 border-oro/10 hover:border-oro/30 hover:-translate-y-1'
+                        ? 'bg-oro text-rojo-sangre border-oro shadow-[0_0_30px_rgba(255,230,159,0.5)]' 
+                        : 'bg-black/60 text-oro/30 border-oro/10 hover:border-oro/60 hover:text-oro hover:bg-black/90'
                       }`}
                     >
-                      <Icon className={`w-4 h-4 transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-125 text-oro/40 group-hover:text-oro'}`} />
-                      {tab === 'mision' ? 'MISIONES' : tab === 'combate' ? 'COMBATES' : 'ACCIONES'}
+                      <Icon className={`w-4 h-4 transition-transform duration-300 ${isActive ? 'scale-110 text-rojo-sangre' : 'group-hover:scale-125 text-oro/30 group-hover:text-oro'}`} />
+                      <span>{tab === 'mision' ? 'MISIONES' : tab === 'combate' ? 'COMBATES' : 'ACCIONES'}</span>
+                      {!isActive && (
+                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-oro transition-all duration-300 group-hover:w-[80%]" />
+                      )}
                     </button>
-                 );
-               })}
-                  <div className="flex flex-wrap items-center gap-4 sm:gap-8 p-6 sm:p-8 ninja-card-oro relative overflow-hidden">
-                <div className="flex items-center gap-4">
-                  <span className="text-[10px] font-black text-oro/40 uppercase tracking-[0.3em]">DESDE</span>
+                  );
+                })}
+              </div>
+
+              {/* Right Side: Sleek Date Filters */}
+              <div 
+                className="flex flex-wrap items-center gap-4 sm:gap-6 py-2.5 px-6 bg-black/40 border border-oro/10 relative overflow-hidden"
+                style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
+              >
+                {/* Decorative golden details matching theme */}
+                <div className="absolute top-0 right-0 w-8 h-8 bg-oro/5 rotate-45 -mr-4 -mt-4 pointer-events-none" />
+
+                <div className="flex items-center gap-3">
+                  <span className="text-[9px] font-black text-oro/40 uppercase tracking-[0.2em]">DESDE</span>
                   <input 
                     type="date" 
                     value={startDate}
@@ -986,11 +1377,11 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                       setStartDate(e.target.value);
                       setRecordPage(1);
                     }}
-                    className="ninja-input py-2"
+                    className="ninja-input py-1 px-3 text-xs bg-black/20 border-oro/15 focus:border-oro/30"
                   />
                 </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-[10px] font-black text-oro/40 uppercase tracking-[0.3em]">HASTA</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-[9px] font-black text-oro/40 uppercase tracking-[0.2em]">HASTA</span>
                   <input 
                     type="date" 
                     value={endDate}
@@ -998,7 +1389,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                       setEndDate(e.target.value);
                       setRecordPage(1);
                     }}
-                    className="ninja-input py-2"
+                    className="ninja-input py-1 px-3 text-xs bg-black/20 border-oro/15 focus:border-oro/30"
                   />
                 </div>
                 {(startDate || endDate) && (
@@ -1008,13 +1399,14 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                       setEndDate('');
                       setRecordPage(1);
                     }}
-                    className="text-[10px] font-black text-rojo-sangre uppercase tracking-[0.3em] hover:brightness-125 transition-all border-b border-rojo-sangre/30 pb-1"
+                    className="text-[9px] font-black text-rojo-sangre uppercase tracking-[0.2em] hover:brightness-125 transition-all border-b border-rojo-sangre/30 pb-0.5"
                   >
                     LIMPIAR FILTROS
                   </button>
                 )}
-             </div>
-          </div>
+              </div>
+
+            </div>
 
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               {(() => {

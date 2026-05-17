@@ -70,17 +70,17 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
   return (
     <div className="ninja-card-oro p-1 overflow-hidden border border-oro/10">
       <div className="overflow-x-auto scrollbar-hide">
-        <table className="w-full text-left border-collapse min-w-[700px]">
+        <table className="w-full text-left border-collapse min-w-[700px] table-fixed">
           <thead>
             <tr className="border-b border-oro/10 text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em]">
-              <th className="py-6 px-8 w-32">Fecha</th>
-              <th className="py-6 px-8">Combate / Resumen</th>
-              <th className="py-6 px-8 w-36">Resultado</th>
-              <th className="py-6 px-8 w-36">Recompensa</th>
-              <th className="py-6 px-8 text-right w-44">Acciones</th>
+              <th className="py-6 px-8 w-[18%]">Fecha</th>
+              <th className="py-6 px-8 w-[42%]">Combate / Resumen</th>
+              <th className="py-6 px-8 w-[15%] w-36">Resultado</th>
+              <th className="py-6 px-8 w-[15%] w-36">Recompensa</th>
+              <th className="py-6 px-8 text-right w-[10%] w-44">Acciones</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-oro/5 bg-black/20">
+          <tbody className="divide-y divide-oro/5 bg-black/40">
             {combates.map((m) => {
               const sid = subjectId || activeCharacter?.id || m.autor_id;
               const teamA = m.data.equipo_a || [];
@@ -125,14 +125,14 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                       
                       {/* Fecha de Modificación */}
                       {m.data.fecha_modificacion && (
-                        <div className="flex flex-col border-t border-rojo-sangre/10 pt-1.5">
-                          <span className="text-[7px] font-black text-rojo-sangre/40 uppercase tracking-widest">
+                        <div className="flex flex-col border-t border-red-500/30 pt-1.5">
+                          <span className="text-[7px] font-black text-red-500/60 uppercase tracking-widest">
                             MODIFICADO
                           </span>
-                          <span className="text-[10px] font-black text-rojo-sangre/80 uppercase tracking-wider mt-0.5">
+                          <span className="text-[10px] font-black text-red-400 uppercase tracking-wider mt-0.5">
                             {new Date(m.data.fecha_modificacion).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                           </span>
-                          <span className="text-[8px] font-bold text-rojo-sangre/40 uppercase tracking-widest mt-0.5">
+                          <span className="text-[8px] font-bold text-red-500/60 uppercase tracking-widest mt-0.5">
                             {new Date(m.data.fecha_modificacion).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
@@ -141,51 +141,65 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                   </td>
 
                   {/* Combate / Resumen */}
-                  <td className="py-6 px-8 text-oro/80 text-xs xl:text-sm whitespace-normal break-words">
-                    <strong className="font-black text-oro">{selfName}</strong>
-                    {' combatió '}
-                    {allies.length > 0 && (
-                      <>
-                        {'junto a '}
-                        {allies.map((name: string, i: number) => (
-                          <React.Fragment key={i}>
-                            <strong className="font-black text-oro">{name}</strong>
-                            {i < allies.length - 1 ? ', ' : ''}
-                          </React.Fragment>
-                        ))}
-                        {' '}
-                      </>
-                    )}
-                    {'contra '}
-                    {enemies.map((name: string, i: number) => (
-                      <React.Fragment key={i}>
-                        <strong className="font-black text-oro">{name}</strong>
-                        {i < enemies.length - 1 ? ', ' : ''}
-                      </React.Fragment>
-                    ))}
-                    {'.'}
+                  <td className="py-6 px-8 whitespace-normal break-words">
+                    <div className="flex flex-col gap-1.5 justify-center">
+                      <div className="flex items-center flex-wrap gap-2 text-xs xl:text-sm">
+                        {/* Bando Propio (Aliados + Jugador) */}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-black text-oro drop-shadow-[0_0_8px_rgba(223,184,87,0.15)]">{selfName}</span>
+                          {allies.length > 0 && allies.map((name: string, i: number) => (
+                            <span key={i} className="text-oro/70 font-semibold before:content-['+'] before:mr-1">{name}</span>
+                          ))}
+                        </div>
+
+                        {/* VS Tag */}
+                        <div className="flex items-center gap-1 px-2 py-0.5 bg-red-600/10 border border-red-500/20 rounded-[3px] shadow-[0_0_8px_rgba(239,68,68,0.1)]">
+                          <Swords className="w-3 h-3 text-red-400" />
+                          <span className="font-ninja text-[9px] text-red-400 italic font-black uppercase tracking-wider">VS</span>
+                        </div>
+
+                        {/* Bando Enemigo */}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {enemies.map((name: string, i: number) => (
+                            <React.Fragment key={i}>
+                              <span className="font-black text-oro/90">{name}</span>
+                              {i < enemies.length - 1 && <span className="text-oro/30 font-light">&</span>}
+                            </React.Fragment>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {/* Optional metadata description below if exists */}
+                      {m.data.descripcion_combate && (
+                        <p className="text-[10px] text-oro/40 italic mt-0.5 line-clamp-1">
+                          "{m.data.descripcion_combate}"
+                        </p>
+                      )}
+                    </div>
                   </td>
 
                   {/* Resultado */}
                   <td className="py-6 px-8">
                     {isEmpate ? (
-                      <span className="text-[9px] font-black text-oro/60 border border-oro/20 px-2 py-0.5 ninja-clip-xs bg-oro/5 tracking-widest">
+                      <span className="inline-block text-[9px] font-black text-oro/70 border border-oro/30 px-2.5 py-0.5 ninja-clip-xs bg-oro/5 tracking-widest shadow-[0_0_8px_rgba(223,184,87,0.08)]">
                         EMPATE
                       </span>
                     ) : won ? (
-                      <span className="text-[9px] font-black text-green-500 border border-green-500/30 px-2 py-0.5 ninja-clip-xs bg-green-500/5 tracking-widest">
+                      <span className="inline-block text-[9px] font-black text-emerald-400 border border-emerald-500/30 px-2.5 py-0.5 ninja-clip-xs bg-emerald-500/5 tracking-widest shadow-[0_0_10px_rgba(52,211,153,0.12)]">
                         VICTORIA
                       </span>
                     ) : (
-                      <span className="text-[9px] font-black text-red-500 border border-red-500/30 px-2 py-0.5 ninja-clip-xs bg-red-500/5 tracking-widest">
+                      <span className="inline-block text-[9px] font-black text-red-400 border border-red-500/30 px-2.5 py-0.5 ninja-clip-xs bg-red-500/5 tracking-widest shadow-[0_0_10px_rgba(239,68,68,0.12)]">
                         DERROTA
                       </span>
                     )}
                   </td>
 
                   {/* Recompensa */}
-                  <td className="py-6 px-8 font-black text-oro tracking-wider text-xs xl:text-sm">
-                    +{xpGained} XP
+                  <td className="py-6 px-8">
+                    <span className="inline-block text-[10px] xl:text-xs font-black text-emerald-400 tracking-wider bg-emerald-500/5 border border-emerald-500/20 py-1 px-3 ninja-clip-xs shadow-[0_0_10px_rgba(52,211,153,0.05)]">
+                      +{xpGained} XP
+                    </span>
                   </td>
 
                   {/* Acciones */}
@@ -234,14 +248,14 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
       {/* Modal Detallado de Combate */}
       {selectedCombat && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          <div 
-            className="fixed inset-0 bg-black/90 backdrop-blur-xl transition-all duration-500 animate-in fade-in" 
-            onClick={() => setSelectedCombat(null)} 
-          />
-          <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col bg-black/95 ninja-box ninja-border shadow-[0_0_80px_rgba(0,0,0,0.8)] animate-in zoom-in slide-in-from-bottom-8 duration-500 overflow-hidden">
-            
-            {/* Modal Header */}
-            <div className="flex-none p-6 border-b border-oro/10 flex justify-between items-center bg-rojo-sangre/10 backdrop-blur-md">
+            <div 
+              className="fixed inset-0 bg-black/85 backdrop-blur-md transition-all duration-500 animate-in fade-in" 
+              onClick={() => setSelectedCombat(null)} 
+            />
+            <div className="relative w-full max-w-5xl max-h-[90vh] flex flex-col bg-[#1a1a1c] border border-oro/20 shadow-[0_0_80px_rgba(0,0,0,0.9)] animate-in zoom-in slide-in-from-bottom-8 duration-500 overflow-hidden" style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}>
+              
+              {/* Modal Header */}
+              <div className="flex-none p-6 border-b border-oro/15 flex justify-between items-center bg-[#222226]">
               <div className="flex items-center gap-4">
                 <Swords className="w-6 h-6 text-oro animate-pulse" />
                 <div>
@@ -251,7 +265,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
               </div>
               <button 
                 onClick={() => setSelectedCombat(null)}
-                className="p-2 bg-oro/5 hover:bg-oro/10 border border-oro/10 text-oro/40 hover:text-oro transition-all"
+                className="p-2 bg-oro/10 hover:bg-oro/20 border border-oro/20 text-oro/60 hover:text-oro transition-all ninja-clip-xs shadow-md shadow-black/20"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -273,7 +287,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                   </div>
                   <div className="space-y-4">
                     {selectedCombat.data.equipo_a?.map((p: any) => (
-                      <div key={p.id} className="p-4 bg-black/40 border border-oro/5 ninja-clip-xs space-y-3">
+                      <div key={p.id} className="p-4 bg-[#26262b]/70 border border-oro/15 hover:border-oro/30 hover:bg-[#26262b]/95 transition-all ninja-clip-xs space-y-3 shadow-md shadow-black/10">
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-3">
                             <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
@@ -281,6 +295,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                               +{calculateParticipantXP(selectedCombat, 'A', p.huye)} XP
                             </span>
                           </div>
+                          
                           <div className="flex items-center gap-3">
                             {p.has_estado_alterado && (
                               <span className="px-2 py-0.5 bg-oro/20 text-oro text-[9px] font-black uppercase ninja-clip-xs border border-oro/40">
@@ -292,7 +307,9 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                                 HUYE
                               </span>
                             )}
-                            <span className="text-[10px] font-black text-oro/70 uppercase">{p.estado_nombre || 'SIN ESTADO'}</span>
+                            <span className="text-[10px] font-black text-oro/70 uppercase">
+                              {p.estado_nombre || 'SIN ESTADO'}
+                            </span>
                           </div>
                         </div>
                         {p.has_estado_alterado && p.descripcion_estado && (
@@ -310,9 +327,9 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                   <div className="h-px lg:w-px lg:h-12 bg-oro/40 w-full opacity-20" />
                   <div className="flex flex-col items-center gap-2">
                     {selectedCombat.data.ganador === 'Empate' ? (
-                      <span className="font-black text-oro text-xl xl:text-2xl uppercase tracking-[0.2em]">RETIRADO</span>
+                      <span className="font-black text-oro text-2xl xl:text-4xl uppercase tracking-[0.2em]">RETIRADO</span>
                     ) : (
-                      <span className="font-ninja text-3xl text-oro italic opacity-20">VS</span>
+                      <span className="font-ninja text-3xl xl:text-5xl text-oro italic opacity-20">VS</span>
                     )}
                   </div>
                   <div className="h-px lg:w-px lg:h-12 bg-oro/40 w-full opacity-20" />
@@ -330,7 +347,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                   </div>
                   <div className="space-y-4">
                     {selectedCombat.data.equipo_b?.map((p: any) => (
-                      <div key={p.id} className="p-4 bg-black/40 border border-oro/5 ninja-clip-xs space-y-3">
+                      <div key={p.id} className="p-4 bg-[#26262b]/70 border border-oro/15 hover:border-oro/30 hover:bg-[#26262b]/95 transition-all ninja-clip-xs space-y-3 shadow-md shadow-black/10">
                         <div className="flex justify-between items-center lg:flex-row-reverse">
                           <div className="flex items-center gap-3 lg:flex-row-reverse">
                             <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
@@ -338,6 +355,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                               +{calculateParticipantXP(selectedCombat, 'B', p.huye)} XP
                             </span>
                           </div>
+                          
                           <div className="flex items-center gap-3 lg:flex-row-reverse">
                             {p.has_estado_alterado && (
                               <span className="px-2 py-0.5 bg-oro/20 text-oro text-[9px] font-black uppercase ninja-clip-xs border border-oro/40">
@@ -349,7 +367,9 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                                 HUYE
                               </span>
                             )}
-                            <span className="text-[10px] font-black text-oro/70 uppercase">{p.estado_nombre || 'SIN ESTADO'}</span>
+                            <span className="text-[10px] font-black text-oro/70 uppercase">
+                              {p.estado_nombre || 'SIN ESTADO'}
+                            </span>
                           </div>
                         </div>
                         {p.has_estado_alterado && p.descripcion_estado && (
@@ -377,7 +397,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                         href={url} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="flex items-center gap-2 px-4 py-2.5 bg-oro/5 border border-oro/10 hover:border-oro/40 hover:bg-oro/10 text-[10px] font-black text-oro/40 hover:text-oro uppercase tracking-wider transition-all ninja-clip-xs"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-oro/10 border border-oro/20 hover:border-oro/40 hover:bg-oro/20 text-[10px] font-black text-oro/60 hover:text-oro uppercase tracking-wider transition-all ninja-clip-xs shadow-sm"
                       >
                         <span>ENLACE DE PRUEBA {i + 1}</span>
                       </a>
@@ -388,7 +408,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
             </div>
 
             {/* Modal Footer */}
-            <div className="flex-none p-6 border-t border-oro/10 bg-black/60 text-center">
+            <div className="flex-none p-6 border-t border-oro/15 bg-[#1d1d21] text-center">
               <button 
                 onClick={() => setSelectedCombat(null)}
                 className="px-8 py-3 ninja-btn-oro text-xs font-black tracking-widest uppercase"
