@@ -534,7 +534,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
 
 
         {activeTab === 'general' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 animate-fade-in">
               {/* Columna de Retrato */}
               <div className="lg:col-span-4 space-y-8 max-w-sm mx-auto lg:max-w-none w-full">
                 <div className="relative group">
@@ -726,88 +726,90 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
         )}
         
         {activeTab === 'ninja' && (
-          <SectionCard 
-            title="ATRIBUTOS Y ESTADÍSTICAS" 
-            icon={Heart} 
-            color="oro" 
-            headerAction={
-              <div className="flex flex-col items-end">
-                <span className="text-[10px] font-black text-oro/40 uppercase tracking-[0.3em] mb-1">Puntos Disponibles</span>
-                <span className="text-3xl xl:text-5xl font-black text-oro italic">
-                  {puntosLibres}
-                  <span className="text-oro/20 text-sm xl:text-lg ml-2">/ {character.puntos_stats}</span>
-                </span>
-              </div>
-            }
-          >
-            {/* Gráfico en Radar Dinámico */}
-            <div className="flex justify-center items-center w-full mb-2 border-b border-oro/5 pb-2 -mt-6">
-              <CharacterRadarChart 
-                stats={character.stats_base} 
-                maxVal={10} 
-              />
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 xl:gap-20">
-              <div className="lg:col-span-7 space-y-10">
-                <div className="flex items-center gap-4 mb-8">
-                  <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45" />
-                  <h3 className="text-xs xl:text-sm font-black text-oro/60 uppercase tracking-[0.4em]">Estadísticas Base</h3>
+          <div className="animate-fade-in">
+            <SectionCard 
+              title="ATRIBUTOS Y ESTADÍSTICAS" 
+              icon={Heart} 
+              color="oro" 
+              headerAction={
+                <div className="flex flex-col items-end">
+                  <span className="text-[10px] font-black text-oro/40 uppercase tracking-[0.3em] mb-1">Puntos Disponibles</span>
+                  <span className="text-3xl xl:text-5xl font-black text-oro italic">
+                    {puntosLibres}
+                    <span className="text-oro/20 text-sm xl:text-lg ml-2">/ {character.puntos_stats}</span>
+                  </span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
-                  {['NIN', 'GEN', 'TAI', 'SM', 'FUE', 'AGI', 'EST', 'INT'].map((s) => {
-                    const val = character.stats_base[s as keyof CharacterStats] || 0;
-                    const max = masters.rangoRules?.[character.rango]?.stat_max || 10;
-                    return (
-                      <div key={s} className="bg-black/40 border border-oro/10 p-6 flex justify-between items-center relative group hover:border-oro/40 transition-all overflow-hidden" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 0px)' }}>
-                        <div className="absolute top-0 right-0 w-12 h-12 bg-oro/5 rotate-45 -mr-6 -mt-6 pointer-events-none" />
-                        <div className="flex flex-col items-start relative z-10">
-                          <span className="text-xs font-black text-oro/40 uppercase tracking-[0.2em]">{s}</span>
-                          <span className="text-[8px] font-black text-oro/20 mt-1 uppercase tracking-tighter">LÍMITE: {max}</span>
+              }
+            >
+              {/* Gráfico en Radar Dinámico */}
+              <div className="flex justify-center items-center w-full mb-2 border-b border-oro/5 pb-2 -mt-6">
+                <CharacterRadarChart 
+                  stats={character.stats_base} 
+                  maxVal={10} 
+                />
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 xl:gap-20">
+                <div className="lg:col-span-7 space-y-10">
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45" />
+                    <h3 className="text-xs xl:text-sm font-black text-oro/60 uppercase tracking-[0.4em]">Estadísticas Base</h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                    {['NIN', 'GEN', 'TAI', 'SM', 'FUE', 'AGI', 'EST', 'INT'].map((s) => {
+                      const val = character.stats_base[s as keyof CharacterStats] || 0;
+                      const max = masters.rangoRules?.[character.rango]?.stat_max || 10;
+                      return (
+                        <div key={s} className="bg-black/40 border border-oro/10 p-6 flex justify-between items-center relative group hover:border-oro/40 transition-all overflow-hidden" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 0px)' }}>
+                          <div className="absolute top-0 right-0 w-12 h-12 bg-oro/5 rotate-45 -mr-6 -mt-6 pointer-events-none" />
+                          <div className="flex flex-col items-start relative z-10">
+                            <span className="text-xs font-black text-oro/40 uppercase tracking-[0.2em]">{s}</span>
+                            <span className="text-[8px] font-black text-oro/20 mt-1 uppercase tracking-tighter">LÍMITE: {max}</span>
+                          </div>
+                          <div className="flex items-center gap-2 relative z-10">
+                            <input 
+                              type="number" 
+                              value={val} 
+                              disabled={!isEditing && !isNew}
+                              onChange={(e) => onUpdateStat(s as keyof CharacterStats, parseInt(e.target.value))}
+                              className="bg-transparent text-2xl xl:text-3xl font-black text-oro w-16 text-right outline-none disabled:cursor-default selection:bg-oro/20 leading-none py-1"
+                            />
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 relative z-10">
-                          <input 
-                            type="number" 
-                            value={val} 
-                            disabled={!isEditing && !isNew}
-                            onChange={(e) => onUpdateStat(s as keyof CharacterStats, parseInt(e.target.value))}
-                            className="bg-transparent text-2xl xl:text-3xl font-black text-oro w-16 text-right outline-none disabled:cursor-default selection:bg-oro/20 leading-none py-1"
-                          />
-                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="lg:col-span-5 space-y-10 lg:border-l lg:border-oro/5 lg:pl-12 xl:pl-20">
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45" />
+                    <h3 className="text-xs xl:text-sm font-black text-oro/60 uppercase tracking-[0.4em]">Atributos Calculados</h3>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { label: 'VIT', val: character.atributos_derivados.VIT, color: 'text-rojo-sangre' },
+                      { label: 'CH', val: character.atributos_derivados.CH, color: 'text-blue-500' },
+                      { label: 'VEL', val: character.atributos_derivados.VEL, color: 'text-oro' },
+                      { label: 'RES', val: `${character.atributos_derivados.RES}%`, color: 'text-oro/80' },
+                      { label: 'VR', val: character.atributos_derivados.VR, color: 'text-oro/60' },
+                      { label: 'DET', val: character.atributos_derivados.DET, color: 'text-oro/40' },
+                    ].map(attr => (
+                      <div key={attr.label} className="bg-black/60 border border-oro/10 p-6 flex justify-between items-center group hover:border-oro/40 transition-all" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}>
+                        <span className="text-xs font-black text-oro/40 uppercase tracking-[0.2em]">{attr.label}</span>
+                        <span className={`text-2xl xl:text-3xl font-black ${attr.color} italic leading-none`}>
+                          {String(attr.val || 0)}
+                        </span>
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
                 </div>
               </div>
-
-              <div className="lg:col-span-5 space-y-10 lg:border-l lg:border-oro/5 lg:pl-12 xl:pl-20">
-                <div className="flex items-center gap-4 mb-8">
-                  <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45" />
-                  <h3 className="text-xs xl:text-sm font-black text-oro/60 uppercase tracking-[0.4em]">Atributos Calculados</h3>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { label: 'VIT', val: character.atributos_derivados.VIT, color: 'text-rojo-sangre' },
-                    { label: 'CH', val: character.atributos_derivados.CH, color: 'text-blue-500' },
-                    { label: 'VEL', val: character.atributos_derivados.VEL, color: 'text-oro' },
-                    { label: 'RES', val: `${character.atributos_derivados.RES}%`, color: 'text-oro/80' },
-                    { label: 'VR', val: character.atributos_derivados.VR, color: 'text-oro/60' },
-                    { label: 'DET', val: character.atributos_derivados.DET, color: 'text-oro/40' },
-                  ].map(attr => (
-                    <div key={attr.label} className="bg-black/60 border border-oro/10 p-6 flex justify-between items-center group hover:border-oro/40 transition-all" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}>
-                      <span className="text-xs font-black text-oro/40 uppercase tracking-[0.2em]">{attr.label}</span>
-                      <span className={`text-2xl xl:text-3xl font-black ${attr.color} italic leading-none`}>
-                        {String(attr.val || 0)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </SectionCard>
+            </SectionCard>
+          </div>
         )}
         {activeTab === 'inventario' && (
-          <div className="space-y-8">
+          <div className="space-y-8 animate-fade-in">
             <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} />
             <SectionCard title="MOCHILA Y PERTENENCIAS" icon={Briefcase} color="oro">
               <div className="space-y-16">
@@ -929,7 +931,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
         )}
 
         {activeTab === 'tecnicas' && (
-          <div className="space-y-8">
+          <div className="space-y-8 animate-fade-in">
             <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} />
 
             {/* SECCIÓN 1: ARTES Y JUTSUS NINJA */}
@@ -1292,7 +1294,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
         )}
 
         {activeTab === 'onrol' && (
-          <div className="space-y-8">
+          <div className="space-y-8 animate-fade-in">
             <SectionCard title="DATOS PERSONALES" icon={User} color="oro">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <DataField label="EDAD" value={character.edad} disabled={!isEditing && !isNew} onChange={(v)=>onUpdateField('edad', Number(v))} />
@@ -1324,7 +1326,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
         )}
 
         {activeTab === 'registros' && (
-          <div className="space-y-8">
+          <div className="space-y-8 animate-fade-in">
             <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} />
             <MissionCounter counts={missionCounts} />
             
