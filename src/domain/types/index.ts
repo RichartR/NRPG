@@ -4,6 +4,7 @@ export interface Profile {
   username: string;
   role: 'admin' | 'user';
   url_avatar?: string;
+  url_img?: string | null;
 }
 
 export interface Aldea {
@@ -147,9 +148,10 @@ export interface Character {
   activo: boolean;
   apariencia_msg_id?: string;
   historia_msg_id?: string;
+  url_img?: string | null;
   
   // Relations
-  profiles?: { username: string };
+  profiles?: Profile | Profile[];
   aldeas?: Aldea;
   personajes_inventario?: PersonajeItem[];
   personajes_tecnicas?: PersonajeTecnica[];

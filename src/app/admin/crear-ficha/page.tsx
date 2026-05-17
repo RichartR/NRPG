@@ -130,6 +130,16 @@ function CrearFichaAdminContent() {
                 {['D', 'C', 'B', 'A', 'S'].map(r => <option key={r} value={r} className="bg-zinc-950">RANGO {r}</option>)}
               </select>
             </div>
+            <div className="space-y-3 md:col-span-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.4em] text-oro/30 ml-2">URL de Imagen del Personaje (OPCIONAL)</label>
+              <input 
+                value={character.url_img || ''}
+                onChange={(e) => setCharacter({...character, url_img: e.target.value})}
+                className="w-full bg-black/40 border border-oro/10 py-5 px-8 text-oro font-bold outline-none focus:border-oro/40 transition-all placeholder:text-oro/10 text-sm"
+                style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
+                placeholder="HTTPS://..."
+              />
+            </div>
           </div>
 
           <button 

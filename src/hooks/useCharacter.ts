@@ -345,6 +345,18 @@ export function useCharacter(characterId: string) {
           });
         }
 
+        // Check Profile Image change
+        const currentProfile = Array.isArray(character.profiles) ? character.profiles[0] : character.profiles;
+        const originalProfile = Array.isArray(originalCharacter?.profiles) ? originalCharacter?.profiles[0] : originalCharacter?.profiles;
+        
+        if (currentProfile && currentProfile.url_img !== originalProfile?.url_img && character.user_id) {
+          try {
+            await ProfileService.updateProfile(character.user_id, { url_img: currentProfile.url_img });
+          } catch (profileErr) {
+            console.error("Error updating profile image:", profileErr);
+          }
+        }
+
         // 4. Guardar datos principales y relaciones a través de la API (para bypass de RLS)
         const saveRes = await fetch(`/api/characters/${characterId}`, {
           method: 'PATCH',
