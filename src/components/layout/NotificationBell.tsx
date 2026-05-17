@@ -17,6 +17,8 @@ export default function NotificationBell() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
   const [rejectingId, setRejectingId] = useState<number | null>(null);
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,7 +28,12 @@ export default function NotificationBell() {
   // Click outside listener for the dropdown
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current && 
+        !dropdownRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     }
@@ -35,6 +42,40 @@ export default function NotificationBell() {
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  const updateCoords = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const isMobile = window.innerWidth < 768;
+      const dropdownWidth = isMobile ? 320 : 384;
+      
+      let left = rect.right + window.scrollX - dropdownWidth;
+      const margin = 16;
+      if (left < margin) {
+        left = margin;
+      }
+      if (left + dropdownWidth > window.innerWidth - margin) {
+        left = window.innerWidth - dropdownWidth - margin;
+      }
+
+      setCoords({
+        top: rect.bottom + window.scrollY,
+        left: left
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      updateCoords();
+      window.addEventListener('resize', updateCoords);
+      window.addEventListener('scroll', updateCoords, true);
+    }
+    return () => {
+      window.removeEventListener('resize', updateCoords);
+      window.removeEventListener('scroll', updateCoords, true);
     };
   }, [isOpen]);
 
@@ -99,8 +140,9 @@ export default function NotificationBell() {
   if (!activeCharacter) return null;
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative">
       <button 
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-3 bg-rojo-sangre/10 border border-oro/20 hover:bg-rojo-sangre/20 transition-all group flex items-center justify-center"
         style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
@@ -113,8 +155,16 @@ export default function NotificationBell() {
         )}
       </button>
 
-      {isOpen && (
-        <div className="absolute right-0 mt-6 w-80 md:w-96 bg-black/90 ninja-box ninja-border shadow-2xl z-[100] overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
+      {isOpen && typeof document !== 'undefined' && createPortal(
+        <div 
+          ref={dropdownRef}
+          style={{
+            position: 'absolute',
+            top: `${coords.top + 6}px`,
+            left: `${coords.left}px`,
+          }}
+          className="w-80 md:w-96 bg-black/95 ninja-box ninja-border shadow-2xl z-[9999] overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300"
+        >
           <div className="p-6 bg-rojo-sangre/20 border-b border-oro/10 flex justify-between items-center">
             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-oro flex items-center gap-3">
               <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45" /> Notificaciones
@@ -219,7 +269,8 @@ export default function NotificationBell() {
               Cerrar Panel
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal de Registro */}
