@@ -1176,7 +1176,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
             <SectionCard title="INVOCACIONES Y KUCHIYOSES" icon={Swords} color="oro">
               {Object.keys(kuchiyosesGrouped).length === 0 ? (
                 <div className="py-12 text-center rounded-[4px] border border-oro/10 bg-black/20 text-xs font-black text-oro/30 uppercase tracking-[0.25em]">
-                  No tienes ningún kuchiyose invocado
+                  No tienes ningún pacto kuchiyose
                 </div>
               ) : (
                 <div className="space-y-10">
