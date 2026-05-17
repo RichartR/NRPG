@@ -41,6 +41,10 @@
   --font-body: "Noto Sans JP", sans-serif;
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   background-color: var(--negro-primario);
   background-image: url('https://game.gtimg.cn/images/hyrz/web202003/bg-list.jpg');
@@ -73,7 +77,7 @@ body {
   }
   
   .ninja-card-oro {
-    @apply bg-black/80 backdrop-blur-xl relative shadow-[0_0_30px_rgba(255,230,159,0.1)];
+    @apply bg-black/80 relative shadow-[0_0_30px_rgba(255,230,159,0.1)];
     clip-path: var(--clip-lg);
     background-image: radial-gradient(circle at center, rgba(255, 230, 159, 0.05) 0%, transparent 70%);
   }
@@ -93,7 +97,7 @@ body {
   }
 
   .ninja-card-rojo {
-    @apply bg-black/80 backdrop-blur-xl relative shadow-[0_0_30px_rgba(103,9,9,0.2)];
+    @apply bg-black/80 relative shadow-[0_0_30px_rgba(103,9,9,0.2)];
     clip-path: var(--clip-lg);
     background-image: radial-gradient(circle at center, rgba(103, 9, 9, 0.1) 0%, transparent 70%);
   }
@@ -168,6 +172,31 @@ body {
   .hover-ninja:hover {
     transform: scale(1.02);
     filter: brightness(1.1);
+  }
+
+  /* Fade-in buttery smooth RPG transition */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Scrollbar hide for mobile navigation */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 

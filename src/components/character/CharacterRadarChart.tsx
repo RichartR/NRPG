@@ -169,6 +169,7 @@ export function CharacterRadarChart({ stats, maxVal }: CharacterRadarChartProps)
             fill="#ef4444"
             fillOpacity={0.3}
             activeDot={{ r: 5, stroke: '#dfb857', strokeWidth: 1.5, fill: '#ef4444' }}
+            isAnimationActive={false}
           />
           {/* Tooltip premium personalizado al pasar el ratón */}
           <Tooltip content={<CustomTooltip />} />
