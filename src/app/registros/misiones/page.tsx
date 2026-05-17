@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { RegistrosService } from '@/services/supabase/registros.service';
 import { Registro } from '@/domain/types';
 import MissionForm from '@/components/registros/MissionForm';
-import RegistroCard from '@/components/registros/RegistroCard';
+import MissionTable from '@/components/registros/MissionTable';
 import { ScrollText, ChevronLeft, ChevronRight, Loader2, ArrowLeft, Plus, X } from 'lucide-react';
 import { AuthService } from '@/services/supabase/auth.service';
 import { createClient } from '@/utils/supabase/client';
@@ -146,18 +146,12 @@ export default function MisionesPage() {
                 </div>
               ) : data.list.length > 0 ? (
                 <div className="space-y-10">
-                  <div className="flex flex-col gap-6 xl:gap-8">
-                    {data.list.map(reg => (
-                      <RegistroCard 
-                        key={reg.id} 
-                        registro={reg} 
-                        onRefresh={() => fetchData(data.page)} 
-                        isAdmin={isAdmin} 
-                        isGlobalView={true}
-                        onEdit={(r) => { setEditingRegistro(r); setShowForm(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                      />
-                    ))}
-                  </div>
+                  <MissionTable 
+                    misiones={data.list} 
+                    onRefresh={() => fetchData(data.page)} 
+                    isAdmin={isAdmin} 
+                    onEdit={(r) => { setEditingRegistro(r); setShowForm(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  />
                   
                   <div className="flex justify-center items-center gap-10 pt-16 border-t border-oro/10">
                     <button 

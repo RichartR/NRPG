@@ -14,9 +14,12 @@ import { DataField, SelectField, SearchableSelect } from '@/components/ui/Fields
 import { Character, CharacterStats, Glosario, PersonajeItem, PersonajeTecnica, Registro } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
 import RegistroCard from '@/components/registros/RegistroCard';
+import MissionTable from '@/components/registros/MissionTable';
+import ActionTable from '@/components/registros/ActionTable';
+import CombatTable from '@/components/registros/CombatTable';
 import MissionForm from '@/components/registros/MissionForm';
 import CombatForm from '@/components/registros/CombatForm';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 interface CharacterSheetViewProps {
   character: Character;
@@ -227,11 +230,23 @@ export function CharacterSheetView({
   const [editingRegistro, setEditingRegistro] = useState<Registro | null>(null);
   const [registroTab, setRegistroTab] = useState<'mision' | 'accion' | 'combate'>('mision');
   const [recordPage, setRecordPage] = useState(1);
-  const recordsPerPage = 5;
+  const recordsPerPage = 10;
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [editingImageKey, setEditingImageKey] = useState<'character' | 'user' | null>(null);
   const [imageUrlInput, setImageUrlInput] = useState<string>('');
+
+  // Bloquear scroll de fondo al abrir el modal de edición
+  useEffect(() => {
+    if (editingRegistro || editingImageKey) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [editingRegistro, editingImageKey]);
 
 // Componentes Helper fuera del render principal para evitar re-montajes
 const ResourceDisplay = ({ character, totalExp, totalRyous }: { character: Character, totalExp: number, totalRyous: number }) => (
@@ -464,7 +479,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                         <div className="text-center">
                           <ImageIcon className="w-8 h-8 text-oro mx-auto mb-2" />
-                          <p className="text-[10px] font-black text-oro uppercase tracking-widest">CAMBIAR RETRATO</p>
+                          <p className="text-[10px] font-black text-oro uppercase tracking-widest">CAMBIAR IMAGEN</p>
                         </div>
                       </div>
                     )}
@@ -1031,6 +1046,117 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                   );
                 }
 
+                if (registroTab === 'mision') {
+                  const misionesList = currentRecords.map((r: any) => r.registros || r);
+                  return (
+                    <div className="space-y-12">
+                      <MissionTable 
+                        misiones={misionesList}
+                        onRefresh={onRefresh}
+                        onEdit={(reg) => setEditingRegistro(reg)}
+                        isAdmin={isAdmin}
+                        subjectId={character.id}
+                      />
+
+                      {totalPages > 1 && (
+                        <div className="flex justify-center items-center gap-10 pt-10 border-t border-oro/10">
+                          <button 
+                            onClick={() => setRecordPage(prev => Math.max(1, prev - 1))}
+                            disabled={recordPage === 1}
+                            className="p-4 ninja-btn-oro"
+                          >
+                            <ChevronLeft className="w-6 h-6" />
+                          </button>
+                          <span className="text-xs xl:text-sm font-black text-oro uppercase tracking-[0.4em] italic">
+                            PÁGINA <span className="text-oro/40">{recordPage}</span> DE <span className="text-oro/40">{totalPages}</span>
+                          </span>
+                          <button 
+                            onClick={() => setRecordPage(prev => Math.min(totalPages, prev + 1))}
+                            disabled={recordPage === totalPages}
+                            className="p-4 ninja-btn-oro"
+                          >
+                            <ChevronRight className="w-6 h-6" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                if (registroTab === 'accion') {
+                  const accionesList = currentRecords.map((r: any) => r.registros || r);
+                  return (
+                    <div className="space-y-12">
+                      <ActionTable 
+                        acciones={accionesList}
+                        onRefresh={onRefresh}
+                        onEdit={(reg) => setEditingRegistro(reg)}
+                        isAdmin={isAdmin}
+                        subjectId={character.id}
+                      />
+
+                      {totalPages > 1 && (
+                        <div className="flex justify-center items-center gap-10 pt-10 border-t border-oro/10">
+                          <button 
+                            onClick={() => setRecordPage(prev => Math.max(1, prev - 1))}
+                            disabled={recordPage === 1}
+                            className="p-4 ninja-btn-oro"
+                          >
+                            <ChevronLeft className="w-6 h-6" />
+                          </button>
+                          <span className="text-xs xl:text-sm font-black text-oro uppercase tracking-[0.4em] italic">
+                            PÁGINA <span className="text-oro/40">{recordPage}</span> DE <span className="text-oro/40">{totalPages}</span>
+                          </span>
+                          <button 
+                            onClick={() => setRecordPage(prev => Math.min(totalPages, prev + 1))}
+                            disabled={recordPage === totalPages}
+                            className="p-4 ninja-btn-oro"
+                          >
+                            <ChevronRight className="w-6 h-6" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                if (registroTab === 'combate') {
+                  const combatesList = currentRecords.map((r: any) => r.registros || r);
+                  return (
+                    <div className="space-y-12">
+                      <CombatTable 
+                        combates={combatesList}
+                        onRefresh={onRefresh}
+                        onEdit={(reg) => setEditingRegistro(reg)}
+                        isAdmin={isAdmin}
+                        subjectId={character.id}
+                      />
+
+                      {totalPages > 1 && (
+                        <div className="flex justify-center items-center gap-10 pt-10 border-t border-oro/10">
+                          <button 
+                            onClick={() => setRecordPage(prev => Math.max(1, prev - 1))}
+                            disabled={recordPage === 1}
+                            className="p-4 ninja-btn-oro"
+                          >
+                            <ChevronLeft className="w-6 h-6" />
+                          </button>
+                          <span className="text-xs xl:text-sm font-black text-oro uppercase tracking-[0.4em] italic">
+                            PÁGINA <span className="text-oro/40">{recordPage}</span> DE <span className="text-oro/40">{totalPages}</span>
+                          </span>
+                          <button 
+                            onClick={() => setRecordPage(prev => Math.min(totalPages, prev + 1))}
+                            disabled={recordPage === totalPages}
+                            className="p-4 ninja-btn-oro"
+                          >
+                            <ChevronRight className="w-6 h-6" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
                 return (
                   <div className="space-y-12">
                     <div className="grid grid-cols-1 gap-8 xl:gap-12">
@@ -1074,17 +1200,8 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
           </div>
         )}
         {editingRegistro && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto ninja-card-oro p-8 xl:p-12">
-              <div className="flex justify-between items-center mb-10 border-b border-oro/10 pb-6">
-                <h2 className="ninja-title text-3xl xl:text-5xl">Editar Registro</h2>
-                <button onClick={() => setEditingRegistro(null)} className="p-4 text-oro/40 hover:text-oro transition-all"><X className="w-10 h-10" /></button>
-              </div>
-             
-             <div className="bg-oro/5 border border-oro/10 ninja-clip-md p-8 mb-10">
-               <p className="text-[10px] font-black text-oro/40 uppercase tracking-[0.3em] mb-2">Tipo de Registro</p>
-               <p className="text-2xl font-black text-oro uppercase italic">{editingRegistro.tipo}</p>
-             </div>
+          <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md overflow-y-auto p-4 sm:p-6 md:p-8 flex justify-center items-start sm:items-center animate-in fade-in duration-300">
+            <div className="w-full max-w-4xl my-auto">
               {editingRegistro.tipo === 'combate' ? (
                 <CombatForm 
                   initialData={editingRegistro} 
@@ -1109,7 +1226,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
               <div className="flex items-center justify-between relative z-10">
                 <h3 className="text-xl font-black text-oro uppercase tracking-[0.3em] flex items-center gap-4 italic">
                   <ImageIcon className="w-6 h-6" />
-                  {editingImageKey === 'character' ? 'Retrato del Ninja' : 'Imagen de Jugador'}
+                  {editingImageKey === 'character' ? 'Apariencia del Ninja' : 'Imagen de Jugador'}
                 </h3>
                 <button 
                   onClick={() => setEditingImageKey(null)}

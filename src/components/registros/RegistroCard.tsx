@@ -25,7 +25,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
   const [showFullDetails, setShowFullDetails] = useState(false);
 
   const isOwner = activeCharacter?.id === registro.autor_id;
-  const canManage = isOwner || isAdmin;
+  const canManage = registro.tipo === 'accion' ? isAdmin : (isOwner || isAdmin);
 
   const handleDelete = async () => {
     const ok = await confirmAction({
