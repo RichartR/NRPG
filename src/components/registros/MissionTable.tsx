@@ -70,19 +70,19 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
   return (
     <div className="ninja-card-oro p-1 overflow-hidden border border-oro/10">
       <div className="overflow-x-auto scrollbar-hide">
-        <table className="w-full text-left border-collapse min-w-[700px]">
+        <table className="w-full text-left border-collapse min-w-[700px] table-fixed">
           <thead>
             <tr className="border-b border-oro/10 text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em]">
-              <th className="py-6 px-8">Fecha</th>
-              <th className="py-6 px-8">Código</th>
-              <th className="py-6 px-8">Rango</th>
-              <th className="py-6 px-8">Participantes</th>
-              <th className="py-6 px-8">Recompensa</th>
-              <th className="py-6 px-8">Pruebas</th>
-              <th className="py-6 px-8 text-right w-36">Acciones</th>
+              <th className="py-6 px-8 w-[16%]">Fecha</th>
+              <th className="py-6 px-8 w-[12%]">Código</th>
+              <th className="py-6 px-8 w-[12%]">Rango</th>
+              <th className="py-6 px-8 w-[22%]">Participantes</th>
+              <th className="py-6 px-8 w-[18%]">Recompensa</th>
+              <th className="py-6 px-8 w-[20%]">Pruebas</th>
+              <th className="py-6 px-8 text-right w-36 w-[10%]">Acciones</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-oro/5 bg-black/20">
+          <tbody className="divide-y divide-oro/5 bg-black/40">
             {misiones.map((m) => {
               const participants = getParticipants(m);
               const isOwner = activeCharacter?.id === m.autor_id;
@@ -106,14 +106,14 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
                       
                       {/* Fecha de Modificación */}
                       {m.data.fecha_modificacion && (
-                        <div className="flex flex-col border-t border-rojo-sangre/10 pt-1.5">
-                          <span className="text-[7px] font-black text-rojo-sangre/40 uppercase tracking-widest">
+                        <div className="flex flex-col border-t border-red-500/30 pt-1.5">
+                          <span className="text-[7px] font-black text-red-500/60 uppercase tracking-widest">
                             MODIFICADO
                           </span>
-                          <span className="text-[10px] font-black text-rojo-sangre/80 uppercase tracking-wider mt-0.5">
+                          <span className="text-[10px] font-black text-red-400 uppercase tracking-wider mt-0.5">
                             {new Date(m.data.fecha_modificacion).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                           </span>
-                          <span className="text-[8px] font-bold text-rojo-sangre/40 uppercase tracking-widest mt-0.5">
+                          <span className="text-[8px] font-bold text-red-500/60 uppercase tracking-widest mt-0.5">
                             {new Date(m.data.fecha_modificacion).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
