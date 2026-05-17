@@ -95,7 +95,7 @@ export default async function MundoNinjaPublicVillagePage({ params }: { params: 
                 <table className="w-full text-left border-collapse min-w-[600px]">
                   <thead>
                     <tr className={`border-b ${isRenegado ? 'border-rojo-sangre/10' : 'border-oro/10'} text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em]`}>
-                      <th className="py-6 px-8 w-24">RETRATO</th>
+                      <th className="py-6 px-8 w-24">Apariencia</th>
                       <th className="py-6 px-8">SHINOBI</th>
                       <th className="py-6 px-8 text-right w-40">RANGO</th>
                     </tr>

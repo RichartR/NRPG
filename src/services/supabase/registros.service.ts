@@ -127,17 +127,110 @@ export const RegistrosService = {
     return data || [];
   },
 
-  async updateRegistro(id: number, payload: Partial<Registro>) {
+  async updateRegistro(id: number, payload: Partial<Registro> & { participantes_ids?: number[] }) {
     const supabase = createClient();
-    const { error } = await supabase
+    
+    // 1. Obtener el registro viejo y sus participantes actuales de la DB
+    const { data: oldRegistro } = await supabase.from('reg_registros').select('*').eq('id', id).single();
+    const { data: currentDbParticipants } = await supabase.from('reg_registros_participantes').select('*').eq('registro_id', id);
+    
+    if (!oldRegistro) throw new Error('Registro no encontrado');
+    
+    // Inyectar fecha de última modificación en el JSON data
+    const updatedData = {
+      ...payload.data,
+      fecha_modificacion: new Date().toISOString()
+    };
+    
+    // 2. Actualizar el registro base
+    const { error: updateError } = await supabase
       .from('reg_registros')
       .update({
         subtipo: payload.subtipo,
-        data: payload.data
+        data: updatedData
       })
       .eq('id', id);
     
-    if (error) throw error;
+    if (updateError) throw updateError;
+
+    // Si no se pasaron participantes_ids, no hay nada que sincronizar
+    if (!payload.participantes_ids) return;
+
+    const newParticipantIds = payload.participantes_ids;
+    const oldParticipants = currentDbParticipants || [];
+    const oldParticipantIds = oldParticipants.map(p => p.personaje_id);
+
+    // A. ELIMINADOS: En la DB vieja pero NO en la nueva lista
+    const removedParticipants = oldParticipants.filter(p => !newParticipantIds.includes(p.personaje_id));
+    for (const p of removedParticipants) {
+      if (p.estado === 'aceptado') {
+        const { xp, ryous } = RewardLogic.calculateReward(oldRegistro, p.personaje_id);
+        const { data: char } = await supabase.from('reg_characters').select('xp, ryous').eq('id', p.personaje_id).single();
+        if (char) {
+          await supabase.from('reg_characters').update({
+            xp: Math.max(0, (char.xp || 0) - xp),
+            ryous: Math.max(0, (char.ryous || 0) - ryous)
+          }).eq('id', p.personaje_id);
+        }
+      }
+      // Eliminar participación de la DB
+      await supabase.from('reg_registros_participantes').delete().eq('id', p.id);
+    }
+
+    // B. AÑADIDOS: En la nueva lista pero NO en la DB vieja
+    const addedParticipantIds = newParticipantIds.filter(pid => !oldParticipantIds.includes(pid));
+    const autorId = payload.autor_id || oldRegistro.autor_id;
+    for (const pid of addedParticipantIds) {
+      const isAutor = pid === autorId;
+      const estado = isAutor ? 'aceptado' : 'pendiente';
+
+      const { data: newPart } = await supabase
+        .from('reg_registros_participantes')
+        .insert({
+          registro_id: id,
+          personaje_id: pid,
+          estado
+        })
+        .select()
+        .single();
+
+      if (isAutor && newPart) {
+        // Al autor se le entrega la recompensa inmediatamente (basado en el NUEVO registro ya actualizado)
+        const newRegistroFull = { ...oldRegistro, subtipo: payload.subtipo, data: payload.data };
+        const { xp, ryous } = RewardLogic.calculateReward(newRegistroFull, pid);
+
+        const { data: char } = await supabase.from('reg_characters').select('xp, ryous').eq('id', pid).single();
+        if (char) {
+          await supabase.from('reg_characters').update({
+            xp: (char.xp || 0) + xp,
+            ryous: (char.ryous || 0) + ryous
+          }).eq('id', pid);
+        }
+      }
+    }
+
+    // C. EXISTENTES: En ambas listas. Si ya aceptaron, ajustamos diferencias de recompensas por si cambiaron de valor
+    const existingParticipants = oldParticipants.filter(p => newParticipantIds.includes(p.personaje_id));
+    const newRegistroFull = { ...oldRegistro, subtipo: payload.subtipo, data: payload.data };
+    for (const p of existingParticipants) {
+      if (p.estado === 'aceptado') {
+        const oldRewards = RewardLogic.calculateReward(oldRegistro, p.personaje_id);
+        const newRewards = RewardLogic.calculateReward(newRegistroFull, p.personaje_id);
+
+        const diffXp = newRewards.xp - oldRewards.xp;
+        const diffRyous = newRewards.ryous - oldRewards.ryous;
+
+        if (diffXp !== 0 || diffRyous !== 0) {
+          const { data: char } = await supabase.from('reg_characters').select('xp, ryous').eq('id', p.personaje_id).single();
+          if (char) {
+            await supabase.from('reg_characters').update({
+              xp: Math.max(0, (char.xp || 0) + diffXp),
+              ryous: Math.max(0, (char.ryous || 0) + diffRyous)
+            }).eq('id', p.personaje_id);
+          }
+        }
+      }
+    }
   },
 
   async deleteRegistro(id: number) {
@@ -147,17 +240,35 @@ export const RegistrosService = {
     const { data: registro } = await supabase.from('reg_registros').select('*').eq('id', id).single();
     const { data: participantes } = await supabase.from('reg_registros_participantes').select('*').eq('registro_id', id);
     
-    if (registro && participantes) {
-      for (const p of participantes) {
-        if (p.estado === 'aceptado') {
-          const { xp, ryous } = RewardLogic.calculateReward(registro, p.personaje_id);
-          
-          const { data: char } = await supabase.from('reg_characters').select('xp, ryous').eq('id', p.personaje_id).single();
+    if (registro) {
+      if (participantes) {
+        for (const p of participantes) {
+          if (p.estado === 'aceptado') {
+            const { xp, ryous } = RewardLogic.calculateReward(registro, p.personaje_id);
+            
+            const { data: char } = await supabase.from('reg_characters').select('xp, ryous').eq('id', p.personaje_id).single();
+            if (char) {
+              await supabase.from('reg_characters').update({
+                xp: (char.xp || 0) - xp,
+                ryous: (char.ryous || 0) - ryous
+              }).eq('id', p.personaje_id);
+            }
+          }
+        }
+      }
+
+      // Revert costs/expenses (refund) for general actions
+      if (registro.tipo === 'accion') {
+        const spentXp = Number(registro.data?.gasto_xp) || 0;
+        const spentRyous = Number(registro.data?.gasto_ryous) || 0;
+
+        if (spentXp > 0 || spentRyous > 0) {
+          const { data: char } = await supabase.from('reg_characters').select('xp, ryous').eq('id', registro.autor_id).single();
           if (char) {
             await supabase.from('reg_characters').update({
-              xp: (char.xp || 0) - xp,
-              ryous: (char.ryous || 0) - ryous
-            }).eq('id', p.personaje_id);
+              xp: (char.xp || 0) + spentXp,
+              ryous: (char.ryous || 0) + spentRyous
+            }).eq('id', registro.autor_id);
           }
         }
       }
