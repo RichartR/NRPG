@@ -42,7 +42,7 @@
 }
 
 html {
-  scrollbar-gutter: stable;
+  overflow-y: auto;
 }
 
 body {
