@@ -9,8 +9,10 @@ import MissionTable from '@/components/registros/MissionTable';
 import { ScrollText, ChevronLeft, ChevronRight, Loader2, ArrowLeft, Plus, X } from 'lucide-react';
 import { AuthService } from '@/services/supabase/auth.service';
 import { createClient } from '@/utils/supabase/client';
+import { useCharacterStore } from '@/store/useCharacterStore';
 
 export default function MisionesPage() {
+  const { activeCharacter, fetchActiveCharacter } = useCharacterStore();
   const [data, setData] = useState<{ list: Registro[], count: number, page: number }>({
     list: [], count: 0, page: 1
   });
@@ -20,6 +22,10 @@ export default function MisionesPage() {
   const [editingRegistro, setEditingRegistro] = useState<Registro | null>(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  useEffect(() => {
+    fetchActiveCharacter();
+  }, []);
 
   useEffect(() => {
     fetchData(1);
@@ -95,7 +101,9 @@ export default function MisionesPage() {
             
             <button 
               onClick={() => setShowForm(true)}
-              className="flex items-center gap-4 sm:gap-6 px-8 sm:px-10 py-3 sm:py-5 ninja-btn-oro w-full lg:w-auto justify-center text-xs sm:text-base"
+              disabled={!activeCharacter}
+              title={!activeCharacter ? "Requiere tener un personaje activo en tu ficha shinobi" : undefined}
+              className="flex items-center gap-4 sm:gap-6 px-8 sm:px-10 py-3 sm:py-5 ninja-btn-oro w-full lg:w-auto justify-center text-xs sm:text-base disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <Plus className="w-5 h-5" /> NUEVA MISIÓN
             </button>
