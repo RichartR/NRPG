@@ -8,6 +8,7 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import { CharacterService } from '@/services/supabase/character.service';
 import { ProfileService } from '@/services/supabase/profile.service';
 import { SectionCard } from '@/components/ui/SectionCard';
@@ -453,10 +454,32 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
           
           {/* Top Row: Back Button & Actions (Mobile) / Left Side (Desktop) */}
           <div className="flex items-center justify-between w-full lg:w-auto gap-6">
-            <button onClick={onBack} className="flex items-center gap-3 text-oro hover:brightness-125 transition-all group font-black uppercase tracking-widest text-[10px] sm:text-xs xl:text-lg shrink-0">
-              <div className="w-2 xl:w-3 h-2 xl:h-3 bg-rojo-sangre rotate-45 group-hover:bg-oro transition-colors" />
-              <span>VOLVER</span>
-            </button>
+            <Breadcrumbs 
+              items={
+                isNew
+                  ? [
+                      { label: 'Inicio', href: '/' },
+                      { label: 'Crear Ficha' }
+                    ]
+                  : [
+                      { label: 'Inicio', href: '/' },
+                      { label: 'Mundo Ninja', href: '/mundo-ninja' },
+                      ...(character.aldea_id && character.aldeas
+                        ? [
+                            { 
+                              label: character.aldeas.abreviatura || character.aldeas.nombre_completo, 
+                              href: `/mundo-ninja/${character.aldea_id}` 
+                            }
+                          ]
+                        : character.aldea_id === null
+                        ? [
+                            { label: 'Renegados / Ninjas sin Aldea', href: '/mundo-ninja/renegados' }
+                          ]
+                        : []),
+                      { label: character.nombre_ninja }
+                    ]
+              }
+            />
 
             {/* Title (Mobile) */}
             <div className="lg:hidden text-center flex-1 min-w-0">

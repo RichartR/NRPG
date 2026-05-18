@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { GitBranch, ScrollText, Swords, ChevronRight } from 'lucide-react';
 import { MasterServerService } from '@/services/supabase/master.server.service';
+import Breadcrumbs, { CrumbItem } from '@/components/ui/Breadcrumbs';
 
 export default async function RamaDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -24,13 +25,27 @@ export default async function RamaDetailPage({ params }: { params: Promise<{ slu
     MasterServerService.getDocumentosCombateByRama(supabase, rama.id),
   ]);
 
+  const breadcrumbsItems: CrumbItem[] = [
+    { label: 'Inicio', href: '/' },
+    { label: 'Biblioteca', href: '/documentos' },
+  ];
+
+  if (rama.tipo === 'clan' && rama.info_aldeas) {
+    breadcrumbsItems.push({ label: 'Aldeas y Organizaciones', href: '/aldeas' });
+    breadcrumbsItems.push({ 
+      label: rama.info_aldeas.abreviatura || (rama.info_aldeas as any).nombre_completo, 
+      href: `/aldeas/${rama.info_aldeas.slug}` 
+    });
+  } else {
+    breadcrumbsItems.push({ label: 'Ramas', href: '/ramas' });
+  }
+
+  breadcrumbsItems.push({ label: rama.nombre });
+
   return (
     <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col">
       <header className="w-full max-w-[1750px] mx-auto flex flex-col md:flex-row justify-between items-center gap-10 mb-10 ninja-card-oro p-8 xl:p-10 z-50">
-        <Link href={backUrl} className="flex items-center gap-4 text-oro hover:brightness-125 transition-all group font-black uppercase tracking-widest text-sm xl:text-lg">
-          <div className="w-2 xl:w-3 h-2 xl:h-3 bg-rojo-sangre rotate-45 group-hover:bg-oro transition-colors" />
-          {backText}
-        </Link>
+        <Breadcrumbs items={breadcrumbsItems} />
         <div className="flex items-center gap-4">
           <GitBranch className="w-5 xl:w-7 h-auto text-oro" />
           <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">

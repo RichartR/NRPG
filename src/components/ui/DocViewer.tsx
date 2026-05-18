@@ -4,14 +4,16 @@ import { useState, useEffect } from 'react';
 import { convertDriveUrl, getDownloadUrl } from '@/lib/utils/driveConverter';
 import { ArrowLeft, Download } from 'lucide-react';
 import Link from 'next/link';
+import Breadcrumbs, { CrumbItem } from './Breadcrumbs';
 
 interface DocViewerProps {
   title: string;
   url: string;
   backUrl?: string;
+  breadcrumbs?: CrumbItem[];
 }
 
-export default function DocViewer({ title, url, backUrl = "/bienvenida" }: DocViewerProps) {
+export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcrumbs }: DocViewerProps) {
   const [zoom, setZoom] = useState(1);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
@@ -47,17 +49,25 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida" }: DocVi
     <div className="min-h-screen flex flex-col overflow-hidden">
       <header className={`h-20 xl:h-28 flex items-center justify-between px-6 xl:px-12 shrink-0 z-50 border-b border-oro/10 relative transition-all duration-1000 ${loading ? 'bg-black' : 'bg-black/80 backdrop-blur-xl'}`}>
         <div className="flex items-center gap-6 xl:gap-10 min-w-0 flex-1">
-          <Link 
-            href={backUrl}
-            className="flex items-center gap-3 px-4 py-2 font-black text-[10px] xl:text-sm uppercase tracking-[0.2em] transition-all active:scale-95 text-oro/60 hover:text-oro group shrink-0"
-          >
-            <div className="w-2 xl:w-2.5 h-2 xl:h-2.5 bg-rojo-sangre rotate-45 group-hover:bg-oro transition-colors" />
-            <span>VOLVER</span>
-          </Link>
-          <div className="h-8 w-px bg-oro/10 shrink-0 hidden sm:block" />
-          <h1 className="text-lg xl:text-2xl font-black tracking-[0.1em] uppercase text-oro font-ninja truncate max-w-[40vw] pt-1">
-            {title}
-          </h1>
+          {breadcrumbs && breadcrumbs.length > 0 ? (
+            <div className="shrink-0">
+              <Breadcrumbs items={breadcrumbs} />
+            </div>
+          ) : (
+            <>
+              <Link 
+                href={backUrl}
+                className="flex items-center gap-3 px-4 py-2 font-black text-[10px] xl:text-sm uppercase tracking-[0.2em] transition-all active:scale-95 text-oro/60 hover:text-oro group shrink-0"
+              >
+                <div className="w-2 xl:w-2.5 h-2 xl:h-2.5 bg-rojo-sangre rotate-45 group-hover:bg-oro transition-colors" />
+                <span>VOLVER</span>
+              </Link>
+              <div className="h-8 w-px bg-oro/10 shrink-0 hidden sm:block" />
+              <h1 className="text-lg xl:text-2xl font-black tracking-[0.1em] uppercase text-oro font-ninja truncate max-w-[40vw] pt-1">
+                {title}
+              </h1>
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-6 xl:gap-10 shrink-0">

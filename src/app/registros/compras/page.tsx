@@ -8,6 +8,7 @@ import RegistroCard from '@/components/registros/RegistroCard';
 import { ShoppingBag, ChevronLeft, ChevronRight, Loader2, ArrowLeft, X } from 'lucide-react';
 import { AuthService } from '@/services/supabase/auth.service';
 import { createClient } from '@/utils/supabase/client';
+import Breadcrumbs from '@/components/ui/Breadcrumbs';
 
 export default function ComprasPage() {
   const [data, setData] = useState<{ list: Registro[], count: number, page: number }>({
@@ -58,15 +59,15 @@ export default function ComprasPage() {
         <header className="w-full mb-10 sm:mb-16 ninja-card-oro p-4 sm:p-8 xl:p-12 z-50">
           <div className="flex flex-col lg:flex-row justify-between items-center gap-6 lg:gap-10">
             
-            {/* Top Row: Back Button & Title (Mobile) / Left Side (Desktop) */}
+            {/* Top Row: Breadcrumbs & Title (Mobile) / Left Side (Desktop) */}
             <div className="flex items-center justify-between w-full lg:w-auto gap-6">
-              <Link 
-                href="/registros" 
-                className="flex items-center gap-3 text-oro hover:brightness-125 transition-all group font-black uppercase tracking-widest text-[10px] sm:text-xs xl:text-base shrink-0"
-              >
-                <div className="w-2 xl:w-3 h-2 xl:h-3 bg-rojo-sangre rotate-45 group-hover:bg-oro transition-colors" />
-                <span>VOLVER</span>
-              </Link>
+              <Breadcrumbs 
+                items={[
+                  { label: 'Inicio', href: '/' },
+                  { label: 'Registros', href: '/registros' },
+                  { label: 'Compras' }
+                ]} 
+              />
 
               {/* Title (Mobile) */}
               <div className="lg:hidden text-center flex-1 min-w-0">

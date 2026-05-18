@@ -227,7 +227,7 @@ export const MasterServerService = {
   async getDocumentoCombateByClave(supabase: SupabaseClient, clave: string): Promise<DocumentoCombate | null> {
     const { data } = await supabase
       .from('info_documentos_combate')
-      .select('*, info_ramas_clanes(slug), info_sub_especialidades(slug, info_ramas_clanes(slug))')
+      .select('*, info_ramas_clanes(nombre, tipo, slug, info_aldeas(slug, abreviatura, nombre_completo)), info_sub_especialidades(nombre, slug, info_ramas_clanes(nombre, tipo, slug, info_aldeas(slug, abreviatura, nombre_completo)))')
       .eq('clave', clave)
       .single();
     return data ?? null;
