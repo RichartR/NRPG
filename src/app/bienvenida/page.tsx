@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ArrowLeft, BookOpen } from 'lucide-react';
 import { createClient } from '@/utils/supabase/server';
 import { MasterServerService } from '@/services/supabase/master.server.service';
+import Breadcrumbs from '@/components/ui/Breadcrumbs';
 
 export default async function BienvenidaPage() {
   const supabase = await createClient();
@@ -11,10 +12,12 @@ export default async function BienvenidaPage() {
   return (
     <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col">
       <header className="w-full max-w-[1750px] mx-auto flex flex-col md:flex-row justify-between items-center gap-10 mb-10 ninja-card-oro p-8 xl:p-10 z-50">
-        <Link href="/" className="flex items-center gap-4 text-oro hover:brightness-125 transition-all group font-black uppercase tracking-widest text-sm xl:text-lg">
-          <div className="w-2 xl:w-3 h-2 xl:h-3 bg-rojo-sangre rotate-45 group-hover:bg-oro transition-colors" />
-          Volver al Dashboard
-        </Link>
+        <Breadcrumbs 
+          items={[
+            { label: 'Inicio', href: '/' },
+            { label: 'Bienvenida' }
+          ]} 
+        />
         <div className="flex items-center gap-4">
           <img 
             src="/assets/ui/logo.png" 

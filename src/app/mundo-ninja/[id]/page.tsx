@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import { CharacterServerService } from '@/services/supabase/character.server.service';
 import { NinjaSearchInput } from '@/components/character/NinjaSearchInput';
+import Breadcrumbs from '@/components/ui/Breadcrumbs';
 
 export default async function MundoNinjaPublicVillagePage({ 
   params,
@@ -64,10 +65,15 @@ export default async function MundoNinjaPublicVillagePage({
             </div>
           )}
 
-          <Link href="/mundo-ninja" className="flex items-center gap-3 text-oro hover:brightness-125 transition-all group font-black uppercase tracking-widest text-[10px] sm:text-xs xl:text-sm mb-10 relative z-10">
-            <div className={`w-2 h-2 ${isRenegado ? 'bg-rojo-sangre' : 'bg-oro'} rotate-45 group-hover:bg-oro transition-colors`} />
-            <span>Volver al Mundo Ninja</span>
-          </Link>
+          <div className="relative z-10 mb-10">
+            <Breadcrumbs 
+              items={[
+                { label: 'Inicio', href: '/' },
+                { label: 'Mundo Ninja', href: '/mundo-ninja' },
+                { label: isRenegado ? 'Renegados / Ninjas sin Aldea' : (aldea?.abreviatura || aldea?.nombre_completo || '') }
+              ]} 
+            />
+          </div>
 
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10 relative z-10">
             <div className="flex items-center gap-8">

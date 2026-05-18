@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { MapPin, ChevronLeft, Globe, Users } from 'lucide-react';
 import Link from 'next/link';
 import { MasterServerService } from '@/services/supabase/master.server.service';
+import Breadcrumbs from '@/components/ui/Breadcrumbs';
 
 export default async function MundoNinjaSelectionPage() {
   const supabase = await createClient();
@@ -16,10 +17,12 @@ export default async function MundoNinjaSelectionPage() {
   return (
     <div className="pt-24 pb-20 px-4 flex flex-col">
       <header className="w-full max-w-[1750px] mx-auto flex flex-col md:flex-row justify-between items-center gap-10 mb-16 ninja-card-oro p-8 xl:p-12 z-50">
-        <Link href="/" className="flex items-center gap-4 text-oro hover:brightness-125 transition-all group font-black uppercase tracking-widest text-sm xl:text-lg">
-          <div className="w-2 xl:w-3 h-2 xl:h-3 bg-rojo-sangre rotate-45 group-hover:bg-oro transition-colors" />
-          Volver al Dashboard
-        </Link>
+        <Breadcrumbs 
+          items={[
+            { label: 'Inicio', href: '/' },
+            { label: 'Mundo Ninja' }
+          ]} 
+        />
         <div className="flex items-center gap-4">
           <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto" alt="icon" />
           <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
