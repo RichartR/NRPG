@@ -121,8 +121,8 @@ export const RegistrosService = {
     const supabase = createClient();
     const { data, error } = await supabase
       .from('reg_characters')
-      .select('id, nombre_ninja, rango')
-      .ilike('nombre_ninja', `%${query}%`)
+      .select('id, nombre_ninja, hobba_name, rango')
+      .or(`nombre_ninja.ilike.%${query}%,hobba_name.ilike.%${query}%`)
       .limit(5);
     
     if (error) throw error;

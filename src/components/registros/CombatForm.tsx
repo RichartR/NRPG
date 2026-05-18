@@ -32,7 +32,7 @@ export default function CombatForm({
   
   const [participantSearch, setParticipantSearch] = useState('');
   const [searchTargetTeam, setSearchTargetTeam] = useState<'A' | 'B'>('A');
-  const [searchResults, setSearchResults] = useState<{ id: number; nombre_ninja: string }[]>([]);
+  const [searchResults, setSearchResults] = useState<{ id: number; nombre_ninja: string; hobba_name?: string | null }[]>([]);
   
   // Equipos
   const [teamA, setTeamA] = useState<{ id: number; nombre_ninja: string; rango?: string; estado_nombre?: string; has_estado_alterado?: boolean; descripcion_estado?: string; huye?: boolean }[]>([]);
@@ -214,7 +214,7 @@ export default function CombatForm({
                   <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-oro/20" />
                   <input 
                     type="text"
-                    placeholder="AÑADIR NINJA..."
+                    placeholder="BUSCAR POR PERSONAJE O HOBBA..."
                     value={searchTargetTeam === 'A' ? participantSearch : ''}
                     onChange={(e) => handleSearchParticipants(e.target.value, 'A')}
                     className="w-full ninja-input pl-14 py-4 text-xs"
@@ -223,7 +223,7 @@ export default function CombatForm({
                     <div className="absolute z-50 w-full mt-2 bg-black border border-oro/20 shadow-2xl animate-in fade-in zoom-in duration-200">
                       {searchResults.map(p => (
                         <button key={p.id} onClick={() => addParticipant(p)} className="w-full px-6 py-5 text-left text-[10px] font-black text-oro/60 hover:bg-oro/10 hover:text-oro flex items-center gap-3 transition-all border-b border-oro/5 last:border-0 uppercase tracking-widest">
-                          <UserPlus className="w-4 h-4" /> {p.nombre_ninja}
+                          <UserPlus className="w-4 h-4" /> {p.nombre_ninja} {p.hobba_name ? `(${p.hobba_name})` : ''}
                         </button>
                       ))}
                     </div>
@@ -305,7 +305,7 @@ export default function CombatForm({
                   <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-oro/20" />
                   <input 
                     type="text"
-                    placeholder="AÑADIR NINJA..."
+                    placeholder="BUSCAR POR PERSONAJE O HOBBA..."
                     value={searchTargetTeam === 'B' ? participantSearch : ''}
                     onChange={(e) => handleSearchParticipants(e.target.value, 'B')}
                     className="w-full ninja-input pl-14 py-4 text-xs"
@@ -314,7 +314,7 @@ export default function CombatForm({
                     <div className="absolute z-50 w-full mt-2 bg-black border border-oro/20 shadow-2xl animate-in fade-in zoom-in duration-200">
                       {searchResults.map(p => (
                         <button key={p.id} onClick={() => addParticipant(p)} className="w-full px-6 py-5 text-left text-[10px] font-black text-oro/60 hover:bg-oro/10 hover:text-oro flex items-center gap-3 transition-all border-b border-oro/5 last:border-0 uppercase tracking-widest">
-                          <UserPlus className="w-4 h-4" /> {p.nombre_ninja}
+                          <UserPlus className="w-4 h-4" /> {p.nombre_ninja} {p.hobba_name ? `(${p.hobba_name})` : ''}
                         </button>
                       ))}
                     </div>

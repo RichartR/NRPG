@@ -213,9 +213,22 @@ export function CharacterSheetView({
 
     // 6. Exclusividad
     if (req.personaje_id) {
-      const reqPId = Number(req.personaje_id);
-      if (!isNaN(reqPId) && reqPId > 0) {
-        if (Number(character.id) !== reqPId) return false;
+      const pId = req.personaje_id;
+      if (Array.isArray(pId)) {
+        const normalizedIds = pId.map(id => Number(id)).filter(id => !isNaN(id));
+        if (normalizedIds.length > 0 && !normalizedIds.includes(Number(character.id))) {
+          return false;
+        }
+      } else if (typeof pId === 'string') {
+        const normalizedIds = pId.split(',').map(id => Number(id.trim())).filter(id => !isNaN(id));
+        if (normalizedIds.length > 0 && !normalizedIds.includes(Number(character.id))) {
+          return false;
+        }
+      } else {
+        const reqPId = Number(pId);
+        if (!isNaN(reqPId) && reqPId > 0) {
+          if (Number(character.id) !== reqPId) return false;
+        }
       }
     }
 

@@ -41,7 +41,7 @@ export default function MissionForm({
   
   // Participantes
   const [participantSearch, setParticipantSearch] = useState('');
-  const [searchResults, setSearchResults] = useState<{ id: number; nombre_ninja: string }[]>([]);
+  const [searchResults, setSearchResults] = useState<{ id: number; nombre_ninja: string; hobba_name?: string | null }[]>([]);
   const [participants, setParticipants] = useState<{ id: number; nombre_ninja: string }[]>(
     initialData?.participantes?.map((p: any) => ({ id: p.personaje_id, nombre_ninja: p.personaje?.nombre_ninja }))
     .filter((p: any) => p.id && Number(p.id) !== Number(initialData?.autor_id)) || []
@@ -231,7 +231,7 @@ export default function MissionForm({
                       type="text"
                       value={participantSearch}
                       onChange={(e) => handleSearchParticipants(e.target.value)}
-                      placeholder="BUSCAR NINJA POR NOMBRE..."
+                      placeholder="BUSCAR POR PERSONAJE O HOBBA..."
                       className="w-full ninja-input pl-16 py-5"
                     />
                   </div>
@@ -244,7 +244,7 @@ export default function MissionForm({
                           onClick={() => addParticipant(p)} 
                           className="w-full px-8 py-6 text-left text-xs font-black text-oro/60 hover:bg-oro/10 hover:text-oro flex items-center gap-4 transition-all border-b border-oro/5 last:border-0 uppercase tracking-widest"
                         >
-                          <UserPlus className="w-5 h-5" /> {p.nombre_ninja}
+                          <UserPlus className="w-5 h-5" /> {p.nombre_ninja} {p.hobba_name ? `(${p.hobba_name})` : ''}
                         </button>
                       ))}
                     </div>
