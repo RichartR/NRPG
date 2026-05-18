@@ -6,13 +6,114 @@ import { ProfileService } from '@/services/supabase/profile.service';
 import NotificationBell from '@/components/layout/NotificationBell';
 import AdminNotificationBadge from '@/components/admin/AdminNotificationBadge';
 import ProfileSettings from '@/components/layout/ProfileSettings';
-import { User } from 'lucide-react';
+import { 
+  User, 
+  ScrollText, 
+  Swords, 
+  ShoppingBag, 
+  Compass, 
+  Coins, 
+  Sparkles, 
+  ArrowRight,
+  MessageSquare,
+  UserPlus
+} from 'lucide-react';
+
+function formatRelativeTime(dateString: string) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMins < 1) return 'hace unos instantes';
+  if (diffMins < 60) return `hace ${diffMins} min`;
+  if (diffHours < 24) return `hace ${diffHours} h`;
+  if (diffDays === 1) return 'ayer';
+  return `hace ${diffDays} días`;
+}
 
 export default async function Home() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   const profile = user ? await ProfileService.getProfile(user.id) : null;
+
+  let registros: any[] = [];
+  let characters: any[] = [];
+  try {
+    const { data: regData } = await supabase
+      .from('reg_registros')
+      .select(`
+        id,
+        tipo,
+        fecha,
+        data,
+        autor_id,
+        autor: reg_characters!reg_registros_autor_id_fkey(nombre_ninja, url_img)
+      `)
+      .in('tipo', ['mision', 'combate', 'compra'])
+      .order('fecha', { ascending: false })
+      .range(0, 4);
+    registros = regData || [];
+  } catch (error) {
+    console.error('Error loading latest registers:', error);
+  }
+
+  try {
+    const { data: charData } = await supabase
+      .from('reg_characters')
+      .select(`
+        id,
+        nombre_ninja,
+        created_at,
+        url_img,
+        rango,
+        aldeas: info_aldeas(nombre_completo, abreviatura)
+      `)
+      .order('created_at', { ascending: false })
+      .range(0, 4);
+    characters = charData || [];
+  } catch (error) {
+    console.error('Error loading latest characters:', error);
+  }
+
+  // Merge and sort chronologically
+  const events: any[] = [];
+  
+  registros.forEach((reg: any) => {
+    events.push({
+      id: `reg-${reg.id}`,
+      tipo: reg.tipo,
+      fecha: reg.fecha,
+      timestamp: new Date(reg.fecha).getTime(),
+      data: reg.data,
+      autorName: reg.autor?.nombre_ninja || 'Ninja Desaparecido',
+      avatarUrl: reg.autor?.url_img,
+      link: `/registros`
+    });
+  });
+
+  characters.forEach((char: any) => {
+    events.push({
+      id: `char-${char.id}`,
+      tipo: 'nuevo_personaje',
+      fecha: char.created_at || new Date().toISOString(),
+      timestamp: new Date(char.created_at || new Date()).getTime(),
+      data: {
+        nombre: char.nombre_ninja,
+        rango: char.rango,
+        aldea: char.aldeas?.abreviatura || char.aldeas?.nombre_completo || 'Sin Aldea / Renegado'
+      },
+      autorName: char.nombre_ninja,
+      avatarUrl: char.url_img,
+      link: `/ficha/${char.id}`
+    });
+  });
+
+  events.sort((a, b) => b.timestamp - a.timestamp);
+  const latestEvents = events.slice(0, 5);
 
   return (
     <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col">
@@ -63,8 +164,9 @@ export default async function Home() {
           <CharacterSheet />
         </div>
 
-        {/* Columna Derecha: Bento Grid de Categorías */}
-        <div className="lg:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-3 xl:gap-4">
+        {/* Columna Derecha: Bento Grid de Categorías + Actividad Reciente */}
+        <div className="lg:col-span-7 flex flex-col gap-6 xl:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 xl:gap-4">
           
           {/* Bienvenida */}
           <Link href="/bienvenida" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja md:col-span-2 flex flex-col justify-center min-h-[140px]">
@@ -123,6 +225,157 @@ export default async function Home() {
               <p className="text-gris-texto leading-relaxed text-sm xl:text-base max-w-2xl">Manuales y normativa oficial del juego.</p>
             </div>
           </Link>
+
+          </div>
+
+          {/* Actividad Reciente del Servidor (ForumCommunity Style) */}
+          <div className="ninja-card-oro p-6 xl:p-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-[0.01] pointer-events-none">
+              <MessageSquare className="w-40 h-40 rotate-12 text-oro" />
+            </div>
+
+            <div className="flex items-center gap-4 mb-6 pb-4 border-b border-oro/10 relative z-10">
+              <div className="w-2 xl:w-2.5 h-2 xl:h-2.5 bg-rojo-sangre rotate-45" />
+              <h3 className="text-lg xl:text-2xl font-black text-oro tracking-[0.2em] uppercase font-ninja pt-1">
+                Última Actividad Ninja
+              </h3>
+            </div>
+
+            <div className="relative z-10 divide-y divide-oro/5">
+              {latestEvents && latestEvents.length > 0 ? (
+                latestEvents.map((event) => {
+                  const authorName = event.autorName;
+                  const timeStr = formatRelativeTime(event.fecha);
+                  
+                  let typeLabel = '';
+                  let typeColor = '';
+                  let titleText = '';
+                  let iconElement = null;
+                  let rewardElement = null;
+
+                  switch (event.tipo) {
+                    case 'nuevo_personaje':
+                      typeLabel = 'Nuevo Shinobi';
+                      typeColor = 'border-green-500/30 text-green-400 bg-green-950/20';
+                      titleText = `¡Un nuevo shinobi llega al mundo ninja: ${event.data?.nombre || 'Shinobi'}!`;
+                      iconElement = <UserPlus className="w-4 h-4 text-green-400/60" />;
+                      rewardElement = (
+                        <span className="text-[10px] xl:text-xs font-black text-green-400/60 uppercase tracking-widest px-3 py-1 bg-green-950/30 border border-green-500/20 ninja-clip-xs">
+                          {event.data?.aldea || 'Renegado'}
+                        </span>
+                      );
+                      break;
+                    case 'mision':
+                      typeLabel = 'Misión';
+                      typeColor = 'border-oro/30 text-oro bg-oro/5';
+                      titleText = `Completada: Misión Rango ${event.data?.rango || ''} (${event.data?.codigo_mision || 'General'})`;
+                      iconElement = <ScrollText className="w-4 h-4 text-oro/60" />;
+                      if (event.data?.recompensa_xp || event.data?.recompensa_ryous) {
+                        rewardElement = (
+                          <div className="flex items-center gap-3 text-[10px] xl:text-xs font-bold text-oro/60">
+                            {event.data.recompensa_xp > 0 && <span className="flex items-center gap-1"><Sparkles className="w-3.5 h-3.5 text-oro/40" /> +{event.data.recompensa_xp} XP</span>}
+                            {event.data.recompensa_ryous > 0 && <span className="flex items-center gap-1"><Coins className="w-3.5 h-3.5 text-oro/40" /> +{event.data.recompensa_ryous} R</span>}
+                          </div>
+                        );
+                      }
+                      break;
+                    case 'combate':
+                      typeLabel = 'Combate';
+                      typeColor = 'border-red-600/40 text-red-500 bg-red-950/20';
+                      const teamA = event.data?.equipo_a || [];
+                      const teamB = event.data?.equipo_b || [];
+                      const namesA = teamA.map((p: any) => p.nombre_ninja).join(', ');
+                      const namesB = teamB.map((p: any) => p.nombre_ninja).join(', ');
+                      titleText = `Encuentro: ${namesA || 'Bando A'} vs ${namesB || 'Bando B'}`;
+                      iconElement = <Swords className="w-4 h-4 text-red-500/60" />;
+                      break;
+                    case 'compra':
+                      typeLabel = 'Adquisición';
+                      typeColor = 'border-amber-600/30 text-amber-500 bg-amber-950/20';
+                      titleText = `Adquirido: ${event.data?.objeto || 'Equipo'}`;
+                      iconElement = <ShoppingBag className="w-4 h-4 text-amber-500/60" />;
+                      if (event.data?.coste_ryous) {
+                        rewardElement = (
+                          <div className="flex items-center gap-1 text-[10px] xl:text-xs font-bold text-amber-500/60">
+                            <Coins className="w-3.5 h-3.5 text-amber-500/40" /> -{event.data.coste_ryous} R
+                          </div>
+                        );
+                      }
+                      break;
+                    default:
+                      typeLabel = 'Actividad';
+                      typeColor = 'border-oro/30 text-oro bg-oro/5';
+                      titleText = 'Evento del servidor';
+                      iconElement = <MessageSquare className="w-4 h-4 text-oro/60" />;
+                      break;
+                  }
+
+                  return (
+                    <div key={event.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-4 hover:bg-oro/5 transition-all duration-300 group px-2">
+                      <div className="flex items-center gap-4 min-w-0 flex-1">
+                        {/* Avatar con mini-badge */}
+                        <div className="relative shrink-0">
+                          <div className="w-10 h-10 xl:w-12 xl:h-12 border border-oro/20 bg-black/40 overflow-hidden flex items-center justify-center ninja-clip-xs group-hover:border-oro/40 transition-all">
+                            {event.avatarUrl ? (
+                              <img 
+                                src={event.avatarUrl} 
+                                className="w-full h-full object-cover object-top" 
+                                alt="Avatar" 
+                              />
+                            ) : (
+                              <User className="w-5 h-5 text-oro/35" />
+                            )}
+                          </div>
+                          {/* Mini-badge del tipo de actividad */}
+                          <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border border-oro/20 flex items-center justify-center shadow-lg bg-black/90 p-0.5">
+                            {event.tipo === 'nuevo_personaje' && <UserPlus className="w-2.5 h-2.5 text-green-400" />}
+                            {event.tipo === 'mision' && <ScrollText className="w-2.5 h-2.5 text-oro" />}
+                            {event.tipo === 'combate' && <Swords className="w-2.5 h-2.5 text-red-500" />}
+                            {event.tipo === 'compra' && <ShoppingBag className="w-2.5 h-2.5 text-amber-500" />}
+                          </div>
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 border ${typeColor}`}>
+                              {typeLabel}
+                            </span>
+                            <span className="text-xs font-bold text-oro/80 truncate font-ninja uppercase tracking-widest block">
+                              {titleText}
+                            </span>
+                          </div>
+                          {event.tipo === 'nuevo_personaje' ? (
+                            <p className="text-[10px] text-gris-texto/60 font-black uppercase tracking-wider">
+                              Rango: <span className="text-oro/60">{event.data?.rango || 'Sin Rango'}</span> <span className="text-oro/20">•</span> {timeStr}
+                            </p>
+                          ) : (
+                            <p className="text-[10px] text-gris-texto/60 font-black uppercase tracking-wider">
+                              Por <span className="text-oro/60">{authorName}</span> <span className="text-oro/20">•</span> {timeStr}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 shrink-0 self-end sm:self-auto">
+                        {rewardElement}
+                        <Link 
+                          href={event.link}
+                          className="p-1.5 bg-black/40 border border-oro/10 hover:border-oro hover:bg-oro/20 text-oro/60 hover:text-oro transition-all ninja-clip-xs"
+                        >
+                          <ArrowRight className="w-4 h-4" />
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="py-8 text-center">
+                  <p className="text-sm text-gris-texto/40 font-black uppercase tracking-widest italic">
+                    El silencio impera en las aldeas. No hay actividad reciente registrada.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
 
         </div>
       </main>
