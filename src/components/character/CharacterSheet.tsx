@@ -4,8 +4,9 @@ import { useCharacterStore } from '@/store/useCharacterStore';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { ImageIcon, Save, X, Loader2, User } from 'lucide-react';
+import { ImageIcon, Save, X, Loader2, User, GitBranch } from 'lucide-react';
 import { CharacterService } from '@/services/supabase/character.service';
+import { CharacterRadarChart } from './CharacterRadarChart';
 
 export default function CharacterSheet() {
   const { activeCharacter, loading, error, fetchActiveCharacter } = useCharacterStore();
@@ -71,11 +72,11 @@ export default function CharacterSheet() {
   const portrait = activeCharacter.url_img || '/assets/placeholders/shinobi.png';
 
   return (
-    <div className="relative ninja-card-oro p-6 sm:p-10 xl:p-12 shadow-2xl h-full flex flex-col justify-center overflow-hidden">
+    <div className="relative ninja-card-oro p-5 sm:p-6 xl:p-6 shadow-2xl h-full flex flex-col justify-between overflow-hidden">
       <div className="absolute top-0 right-0 w-80 h-80 bg-oro/5 rounded-full blur-3xl -mr-40 -mt-40 pointer-events-none"></div>
 
-      <div className="relative z-10 w-full">
-        <div className="flex flex-col 2xl:flex-row justify-between items-center 2xl:items-start gap-8 mb-10 w-full">
+      <div className="relative z-10 w-full h-full flex flex-col justify-between gap-6">
+        <div className="flex flex-col 2xl:flex-row justify-between items-center 2xl:items-start gap-6 w-full">
           <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left min-w-0 w-full 2xl:w-auto overflow-hidden">
             <div 
               onClick={() => {
@@ -125,22 +126,22 @@ export default function CharacterSheet() {
           </Link>
         </div>
 
-        <div className="w-full min-w-0 space-y-12">
+        <div className="w-full min-w-0 flex-1 flex flex-col justify-between gap-6">
             {/* Atributos Derivados */}
-            <div className="space-y-8 w-full min-w-0">
-              <h3 className="text-xs sm:text-base xl:text-xl font-black text-oro mb-6 flex items-center justify-center sm:justify-start gap-3 uppercase tracking-[0.3em]">
+            <div className="space-y-4 w-full min-w-0">
+              <h3 className="text-xs sm:text-base xl:text-xl font-black text-oro mb-3 flex items-center justify-center sm:justify-start gap-3 uppercase tracking-[0.3em]">
                 <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto object-contain" alt="icon" />
                 Estado Vital
               </h3>
               
-              <div className="space-y-6 w-full min-w-0">
+              <div className="space-y-3.5 w-full min-w-0">
                 <div className="space-y-3 w-full min-w-0">
                   <div className="flex justify-between text-[10px] xl:text-sm font-black uppercase tracking-widest w-full gap-2">
-                    <span className="text-rojo-sangre flex items-center gap-3 shrink-0">VIT (Vitalidad)</span>
+                    <span className="text-red-600 flex items-center gap-3 shrink-0">VIT (Vitalidad)</span>
                     <span className="text-oro shrink-0">{atributos_derivados.VIT} / {atributos_derivados.VIT}</span>
                   </div>
                   <div className="h-2 w-full bg-black/40 border border-oro/10 p-[1px] relative overflow-hidden">
-                    <div className="h-full bg-rojo-sangre shadow-[0_0_12px_rgba(103,9,9,0.5)]" style={{ width: '100%' }}></div>
+                    <div className="h-full bg-red-600 shadow-[0_0_12px_rgba(103,9,9,0.5)]" style={{ width: '100%' }}></div>
                   </div>
                 </div>
 
@@ -155,28 +156,72 @@ export default function CharacterSheet() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 mt-8">
-                <div className="bg-rojo-sangre/10 border border-oro/20 p-4 sm:p-6 flex flex-col justify-center items-center group hover:bg-rojo-sangre/20 transition-all ninja-clip-xs">
-                  <div className="w-1.5 h-1.5 bg-oro/20 rotate-45 mb-3 group-hover:bg-oro transition-colors" />
-                  <span className="text-oro/40 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em]">Resistencia</span>
-                  <span className="text-xl sm:text-2xl font-black text-oro">{atributos_derivados.RES}%</span>
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                <div className="bg-rojo-sangre/10 border border-oro/20 p-2 sm:p-2.5 flex items-center justify-between px-4 group hover:bg-rojo-sangre/20 transition-all ninja-clip-xs">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-1 h-1 bg-oro/20 rotate-45 group-hover:bg-oro transition-colors shrink-0" />
+                    <span className="text-oro/40 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] truncate">Resistencia</span>
+                  </div>
+                  <span className="text-base sm:text-lg font-black text-oro shrink-0">{atributos_derivados.RES}%</span>
                 </div>
-                <div className="bg-rojo-sangre/10 border border-oro/20 p-4 sm:p-6 flex flex-col justify-center items-center group hover:bg-rojo-sangre/20 transition-all ninja-clip-xs">
-                  <div className="w-1.5 h-1.5 bg-oro/20 rotate-45 mb-3 group-hover:bg-oro transition-colors" />
-                  <span className="text-oro/40 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em]">Velocidad</span>
-                  <span className="text-xl sm:text-2xl font-black text-oro">{atributos_derivados.VEL}</span>
+                <div className="bg-rojo-sangre/10 border border-oro/20 p-2 sm:p-2.5 flex items-center justify-between px-4 group hover:bg-rojo-sangre/20 transition-all ninja-clip-xs">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-1 h-1 bg-oro/20 rotate-45 group-hover:bg-oro transition-colors shrink-0" />
+                    <span className="text-oro/40 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] truncate">Velocidad</span>
+                  </div>
+                  <span className="text-base sm:text-lg font-black text-oro shrink-0">{atributos_derivados.VEL}</span>
                 </div>
               </div>
+
+              {/* Ramas y Especialidades */}
+              {activeCharacter.personajes_ramas && activeCharacter.personajes_ramas.some((r: any) => r.info_ramas_clanes) && (
+                <div className="grid grid-cols-2 gap-3 mt-3">
+                  {activeCharacter.personajes_ramas
+                    .filter((r: any) => r.info_ramas_clanes)
+                    .sort((a: any, b: any) => a.slot - b.slot)
+                    .map((rama: any) => (
+                      <div key={rama.slot} className="bg-black/40 border border-oro/10 p-2 sm:p-2.5 flex flex-col justify-center px-4 relative overflow-hidden ninja-clip-xs group hover:border-oro/30 transition-all">
+                        <div className="absolute top-0 right-0 w-16 h-16 bg-oro/5 rounded-full blur-xl -mr-8 -mt-8 pointer-events-none" />
+                        
+                        <div className="flex items-center gap-2 min-w-0">
+                          <GitBranch className="w-3 h-3 text-oro/60 shrink-0 group-hover:text-oro transition-colors" />
+                          <span className="text-oro/40 text-[9px] font-black uppercase tracking-[0.15em] truncate">
+                            Rama / Clan
+                          </span>
+                        </div>
+
+                        <div className="mt-1 text-xs xl:text-sm font-black text-oro truncate">
+                          {rama.info_ramas_clanes?.nombre}
+                        </div>
+
+                        {rama.info_sub_especialidades && (
+                          <div className="text-[9px] xl:text-[10px] text-red-500 font-bold uppercase tracking-widest mt-0.5 truncate">
+                            {rama.info_sub_especialidades.nombre}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              )}
             </div>
 
             {/* Stats Base */}
-            <div>
-              <h3 className="text-xs sm:text-base xl:text-xl font-black text-oro mb-6 flex items-center justify-center sm:justify-start gap-3 uppercase tracking-[0.3em]">
+            <div className="space-y-4">
+              <h3 className="text-xs sm:text-base xl:text-xl font-black text-oro flex items-center justify-center sm:justify-start gap-3 uppercase tracking-[0.3em] my-0">
                 <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto object-contain" alt="icon" />
                 Atributos Base
               </h3>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
+              {/* Radar visible en todo momento */}
+              <div className="flex justify-center items-center w-full bg-black/20 border border-oro/10 p-2.5 ninja-clip-xs relative overflow-hidden flex-1">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-oro/5 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none" />
+                <div className="w-full max-w-[440px] xl:max-w-[460px] mx-auto">
+                  <CharacterRadarChart stats={stats_base} maxVal={10} />
+                </div>
+              </div>
+
+              {/* Cuadrícula compacta de Atributos Base */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full">
                 {[
                   { label: 'NIN', value: stats_base.NIN },
                   { label: 'TAI', value: stats_base.TAI },
@@ -187,7 +232,7 @@ export default function CharacterSheet() {
                   { label: 'EST', value: stats_base.EST },
                   { label: 'SM', value: stats_base.SM },
                 ].map((stat) => (
-                  <div key={stat.label} className="bg-black/40 border border-oro/10 p-3 sm:p-4 flex justify-between items-center group hover:border-oro/40 transition-all ninja-clip-xs overflow-hidden">
+                  <div key={stat.label} className="bg-black/40 border border-oro/10 p-2.5 sm:p-3 flex justify-between items-center group hover:border-oro/40 transition-all ninja-clip-xs overflow-hidden">
                     <div className="flex items-center gap-2 min-w-0">
                       <div className="w-1 h-1 bg-oro/20 group-hover:bg-oro transition-colors rotate-45 shrink-0" />
                       <span className="text-oro/60 text-[9px] sm:text-[10px] font-black uppercase tracking-widest truncate">{stat.label}</span>
@@ -195,7 +240,7 @@ export default function CharacterSheet() {
                     <span className="text-base sm:text-lg font-black text-oro shrink-0">{stat.value}</span>
                   </div>
                 ))}
-            </div>
+              </div>
           </div>
         </div>
       </div>
