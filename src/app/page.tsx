@@ -260,7 +260,7 @@ export default async function Home() {
                       titleText = `¡Un nuevo shinobi llega al mundo ninja: ${event.data?.nombre || 'Shinobi'}!`;
                       iconElement = <UserPlus className="w-4 h-4 text-green-400/60" />;
                       rewardElement = (
-                        <span className="text-[10px] xl:text-xs font-black text-green-400/60 uppercase tracking-widest px-3 py-1 bg-green-950/30 border border-green-500/20 ninja-clip-xs">
+                        <span className="text-[10px] xl:text-xs font-black text-oro/80 uppercase tracking-widest px-3 py-1 bg-oro/10 border border-oro/10 ninja-clip-xs">
                           {event.data?.aldea || 'Renegado'}
                         </span>
                       );
