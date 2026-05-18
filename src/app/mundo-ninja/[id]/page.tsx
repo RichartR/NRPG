@@ -32,12 +32,15 @@ export default async function MundoNinjaPublicVillagePage({
 
   const aldeaParam = !isRenegado ? `?aldea_id=${id}` : '';
 
-  // Filtrado por buscador (por nombre del ninja)
+  // Filtrado por buscador (por nombre del ninja o por cuenta de Discord / nombre de usuario)
   const searchQuery = resolvedSearchParams.search || '';
   const filteredNinjas = searchQuery
-    ? ninjas.filter((ninja) => 
-        ninja.nombre_ninja.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+    ? ninjas.filter((ninja) => {
+        const nombreMatches = ninja.nombre_ninja.toLowerCase().includes(searchQuery.toLowerCase());
+        const profileUsername = (Array.isArray(ninja.profiles) ? ninja.profiles[0]?.username : ninja.profiles?.username) || ninja.hobba_name || '';
+        const discordMatches = profileUsername.toLowerCase().includes(searchQuery.toLowerCase());
+        return nombreMatches || discordMatches;
+      })
     : ninjas;
 
   // Configuración de Paginación (10 elementos por página sobre el set filtrado)
@@ -96,7 +99,7 @@ export default async function MundoNinjaPublicVillagePage({
                   href={`/crear-ficha${aldeaParam}`}
                   className={`flex items-center justify-center gap-4 px-10 py-5 ${isRenegado ? 'ninja-btn-rojo' : 'ninja-btn-oro'} text-xs xl:text-sm`}
                 >
-                  <UserPlus className="w-5 h-5" /> UNIRSE A ESTA SENDA
+                  <UserPlus className="w-5 h-5" /> CREAR PERSONAJE
                 </Link>
               ) : !user ? (
                 <Link
