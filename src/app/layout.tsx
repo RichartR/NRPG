@@ -3,7 +3,6 @@ import { Noto_Sans_JP, Shojumaru } from "next/font/google";
 import "./globals.css";
 import { ToastContainer } from "@/components/ui/Toast";
 import { ConfirmContainer } from "@/components/ui/ConfirmDialog";
-import GlobalLoading from "@/components/layout/GlobalLoading";
 
 const notoLines = Noto_Sans_JP({
   variable: "--font-body",
@@ -34,7 +33,6 @@ export default function RootLayout({
       className={`${notoLines.variable} ${shojumaru.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col selection:bg-rojo-sangre selection:text-oro">
-        <GlobalLoading />
         {children}
         <ToastContainer />
         <ConfirmContainer />

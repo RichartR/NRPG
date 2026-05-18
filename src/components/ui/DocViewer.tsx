@@ -31,15 +31,15 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida" }: DocVi
   // Lógica Híbrida: PDF.js en móvil (auto-load) y Nativo en PC (high-performance)
   const embedUrl = isMobile 
     ? `/pdf-viewer.html?file=${encodeURIComponent(rawProxyUrl)}`
-    : rawProxyUrl;
+    : `${rawProxyUrl}#navpanes=0`;
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 2.0));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.6));
 
   // Medidas de precisión (Escritorio)
-  const desktopBaseWidth = 794;
+  const desktopBaseWidth = 793;
   const desktopBaseHeight = 1050;
-  const desktopIframeWidth = 950;
+  const desktopIframeWidth = 949;
   const desktopLeftOffset = 71;
   const desktopTopOffset = 60;
 
@@ -90,10 +90,12 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida" }: DocVi
       <main className={`flex-1 overflow-auto custom-scrollbar transition-colors duration-1000 ${loading ? 'bg-black' : 'bg-transparent'}`}>
         <div 
           className="py-12 xl:py-20 flex flex-col items-center min-h-full"
-          style={{ 
+          style={zoom !== 1 ? { 
             width: '100%',
             transform: `scale(${zoom})`,
             transformOrigin: 'top center'
+          } : {
+            width: '100%'
           }}
         >
           <div 

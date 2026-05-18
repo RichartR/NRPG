@@ -11,21 +11,24 @@ export async function GET(request: NextRequest) {
   const googleUrl = `https://docs.google.com/document/d/${fileId}/export?format=pdf`;
 
   try {
-    // Usamos streaming para que el navegador reciba datos mientras Google los genera
     const response = await fetch(googleUrl);
 
     if (!response.ok) {
       return new NextResponse('Error fetching from Google', { status: response.status });
     }
 
-    // Retornamos el body directamente como un stream
-    // Esto es mucho más rápido que esperar al arrayBuffer()
-    return new NextResponse(response.body, {
+    // Esperamos a tener el archivo completo para enviarlo de una sola vez.
+    // Esto evita que el navegador intente renderizar progresivamente un archivo incompleto
+    // (el cual causaba tirones y lentitud al hacer scroll).
+    const arrayBuffer = await response.arrayBuffer();
+    const pdfBuffer = Buffer.from(arrayBuffer);
+
+    return new NextResponse(pdfBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
-        // Cache en el cliente por 1 hora, y permite servir versión antigua mientras valida
         'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
         'Content-Disposition': 'inline; filename="document.pdf"',
+        'Content-Length': pdfBuffer.length.toString(),
       },
     });
   } catch (error) {

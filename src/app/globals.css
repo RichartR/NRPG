@@ -47,7 +47,7 @@ html {
 
 body {
   background-color: var(--negro-primario);
-  background-image: url('https://game.gtimg.cn/images/hyrz/web202003/bg-list.jpg');
+  background-image: url('/assets/ui/bg-list.jpg');
   background-attachment: fixed;
   background-size: cover;
   background-position: center;
