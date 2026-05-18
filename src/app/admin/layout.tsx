@@ -26,7 +26,7 @@ export default async function AdminLayout({
       {/* Fondo Global (Sin filtros que lo oscurezcan) */}
       <div 
         className="fixed inset-0 bg-cover bg-center bg-fixed z-[-10]" 
-        style={{ backgroundImage: 'url("https://game.gtimg.cn/images/hyrz/web202003/bg-list.jpg")' }} 
+        style={{ backgroundImage: 'url("/assets/ui/bg-list.jpg")' }} 
       />
       
       {/* Sidebar Admin */}
