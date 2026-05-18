@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Plus, Trash2, Save, Search, Filter, 
   Layers, Tag, Box, Check, X, ChevronLeft, ArrowRight, Archive, Eye,
@@ -538,12 +538,12 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                     value={formData.requisitos?.rama_id} 
                     onChange={(id: any) => updateReq('rama_id', id)} 
                   />
-                  <SearchableSelect 
+                  <SearchableMultiSelect 
                     label="Exclusivo para" 
                     icon={<User size={12}/>} 
                     options={(personajes || []).map((p: any) => ({ id: p.id, label: p.nombre_ninja }))} 
                     value={formData.requisitos?.personaje_id} 
-                    onChange={(id: any) => updateReq('personaje_id', id)} 
+                    onChange={(ids: any) => updateReq('personaje_id', ids)} 
                   />
                 </div>
               </div>
@@ -592,6 +592,102 @@ function SearchableSelect({ label, icon, options, value, onChange }: any) {
             {filteredOptions.map((o: any) => (
               <button key={o.id} onClick={() => { onChange(o.id); setOpen(false); }} className={`w-full text-left px-4 py-3 text-xs font-bold transition-all hover:bg-emerald-500 hover:text-emerald-950 ${o.id === value ? 'bg-emerald-500/10 text-emerald-500' : 'text-white'}`}>{o.label}</button>
             ))}
+            {filteredOptions.length === 0 && <div className="px-4 py-8 text-center text-[10px] font-black text-zinc-700 uppercase">Sin resultados</div>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SearchableMultiSelect({ label, icon, options, value, onChange }: any) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const selectedIds: number[] = useMemo(() => {
+    if (Array.isArray(value)) return value.map(id => Number(id));
+    if (value) return [Number(value)];
+    return [];
+  }, [value]);
+
+  const selectedOptions = options.filter((o: any) => selectedIds.includes(Number(o.id)));
+  const filteredOptions = options.filter((o: any) => o.label.toLowerCase().includes(search.toLowerCase()));
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const toggleOption = (id: number) => {
+    const isSelected = selectedIds.includes(id);
+    let newSelected: number[];
+    if (isSelected) {
+      newSelected = selectedIds.filter(x => x !== id);
+    } else {
+      newSelected = [...selectedIds, id];
+    }
+    onChange(newSelected.length > 0 ? newSelected : null);
+  };
+
+  return (
+    <div className="relative space-y-2 text-left" ref={containerRef}>
+      <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">{icon} {label}</label>
+      <button 
+        type="button"
+        onClick={() => setOpen(!open)} 
+        className="w-full flex items-center justify-between bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none hover:border-zinc-700 transition-all text-left"
+      >
+        <span className={selectedOptions.length > 0 ? 'text-white' : 'text-zinc-600'}>
+          {selectedOptions.length > 0 ? `${selectedOptions.length} seleccionados` : 'Seleccionar personajes...'}
+        </span>
+        <ChevronDown size={16} className={`text-zinc-600 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {selectedOptions.length > 0 && (
+        <div className="flex flex-wrap gap-2 mt-2">
+          {selectedOptions.map((o: any) => (
+            <span key={o.id} className="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-xl">
+              {o.label}
+              <button 
+                type="button" 
+                onClick={(e) => { e.stopPropagation(); toggleOption(Number(o.id)); }} 
+                className="hover:text-red-400 transition-colors"
+              >
+                <X size={10} strokeWidth={3} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {open && (
+        <div className="absolute z-[60] bottom-full mb-2 w-full bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-2">
+          <div className="p-3 border-b border-zinc-800">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={14} />
+              <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} autoFocus className="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-9 pr-4 py-2 text-white text-xs font-bold outline-none focus:border-emerald-500" placeholder="Buscar..." />
+            </div>
+          </div>
+          <div className="max-h-48 overflow-y-auto">
+            <button type="button" onClick={() => { onChange(null); setOpen(false); }} className="w-full text-left px-4 py-3 text-[10px] font-black text-zinc-500 hover:bg-white/5 uppercase tracking-widest">Ninguno / Quitar todos</button>
+            {filteredOptions.map((o: any) => {
+              const isSelected = selectedIds.includes(Number(o.id));
+              return (
+                <button 
+                  type="button"
+                  key={o.id} 
+                  onClick={() => toggleOption(Number(o.id))} 
+                  className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold transition-all hover:bg-emerald-500 hover:text-emerald-950 ${isSelected ? 'bg-emerald-500/10 text-emerald-400' : 'text-white'}`}
+                >
+                  <span>{o.label}</span>
+                  {isSelected && <Check size={14} strokeWidth={3} className="text-emerald-400 group-hover:text-emerald-950" />}
+                </button>
+              );
+            })}
             {filteredOptions.length === 0 && <div className="px-4 py-8 text-center text-[10px] font-black text-zinc-700 uppercase">Sin resultados</div>}
           </div>
         </div>
