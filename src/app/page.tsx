@@ -141,7 +141,16 @@ export default async function Home() {
 
           <nav className="flex flex-wrap justify-center gap-4 xl:gap-6 2xl:gap-10 items-center w-full lg:w-auto border-t lg:border-t-0 border-oro/5 pt-4 lg:pt-0">
             {profile?.role === 'admin' && (
-              <AdminNotificationBadge />
+              <>
+                <Link
+                  href="/admin"
+                  className="flex items-center gap-3 px-6 py-2.5 bg-oro/5 text-oro border border-oro/20 hover:bg-oro/10 hover:border-oro/40 transition-all group font-black text-[10px] uppercase tracking-widest cursor-pointer"
+                  style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                >
+                  PANEL ADMIN
+                </Link>
+                <AdminNotificationBadge />
+              </>
             )}
             {user ? (
               <LogoutButton />

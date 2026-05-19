@@ -402,7 +402,7 @@ export function CharacterSheetView({
   }, [editingRegistro, editingImageKey]);
 
 // Componentes Helper fuera del render principal para evitar re-montajes
-const ResourceDisplay = ({ character, totalExp, totalRyous, totalPuntosCombate }: { character: Character, totalExp: number, totalRyous: number, totalPuntosCombate: number }) => (
+const ResourceDisplay = ({ character, totalExp, totalRyous, totalPuntosCombate, xpLimitUsage }: { character: Character, totalExp: number, totalRyous: number, totalPuntosCombate: number, xpLimitUsage?: number | null }) => (
   <div className="flex flex-wrap justify-center items-center gap-6 mb-8">
     <div className="flex items-center gap-4 px-8 py-4 ninja-card-oro group hover-ninja">
       <div className="w-10 h-10 bg-rojo-sangre rotate-45 flex items-center justify-center shadow-[0_0_12px_rgba(103,9,9,0.4)]">
@@ -422,12 +422,27 @@ const ResourceDisplay = ({ character, totalExp, totalRyous, totalPuntosCombate }
         <span className="text-rojo-sangre font-black -rotate-45 text-[11px] italic">XP</span>
       </div>
       <div>
-        <p className="text-[9px] font-black text-oro/40 uppercase tracking-[0.3em] mb-1">EXPERIENCIA (DISPONIBLE / TOTAL)</p>
-        <p className="text-xl xl:text-2xl font-black text-oro leading-none">
-          {new Intl.NumberFormat('es-ES').format(character.xp || 0)}
-          <span className="text-oro/20 mx-3">/</span>
-          <span className="text-oro/60 text-sm xl:text-lg">{new Intl.NumberFormat('es-ES').format(totalExp)}</span>
+        <p className="text-[9px] font-black text-oro/40 uppercase tracking-[0.3em] mb-1">
+          {xpLimitUsage ? 'EXPERIENCIA (DISP. / TOTAL / LÍMITE)' : 'EXPERIENCIA (DISPONIBLE / TOTAL)'}
         </p>
+        <div className="flex items-center gap-2">
+          <p className="text-xl xl:text-2xl font-black text-oro leading-none">
+            {new Intl.NumberFormat('es-ES').format(character.xp || 0)}
+            <span className="text-oro/20 mx-3">/</span>
+            <span className="text-oro/60 text-sm xl:text-lg">{new Intl.NumberFormat('es-ES').format(totalExp)}</span>
+            {xpLimitUsage && (
+              <>
+                <span className="text-oro/20 mx-3">/</span>
+                <span className="text-oro/60 text-sm xl:text-lg font-black text-oro/90">{new Intl.NumberFormat('es-ES').format(xpLimitUsage)}</span>
+              </>
+            )}
+          </p>
+          {xpLimitUsage && totalExp >= xpLimitUsage && (
+            <span className="px-2 py-0.5 text-[8px] font-black uppercase bg-rojo-sangre/20 border border-rojo-sangre/40 text-rojo-sangre tracking-widest ninja-clip-xs animate-pulse">
+              LÍMITE
+            </span>
+          )}
+        </div>
       </div>
     </div>
     <div className="flex items-center gap-4 px-8 py-4 ninja-card-oro group hover-ninja">
@@ -909,7 +924,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
         )}
         {activeTab === 'inventario' && (
           <div className="space-y-8 animate-fade-in">
-            <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} totalPuntosCombate={totalPuntosCombate} />
+            <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} totalPuntosCombate={totalPuntosCombate} xpLimitUsage={masters?.xpLimitUsage} />
             <SectionCard title="MOCHILA Y PERTENENCIAS" icon={Briefcase} color="oro">
               <div className="space-y-16">
                 {Object.entries(groupedInventory).map(([catName, subs]: [string, any]) => (
@@ -1036,7 +1051,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
 
         {activeTab === 'tecnicas' && (
           <div className="space-y-8 animate-fade-in">
-            <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} totalPuntosCombate={totalPuntosCombate} />
+            <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} totalPuntosCombate={totalPuntosCombate} xpLimitUsage={masters?.xpLimitUsage} />
 
             {/* SECCIÓN 1: ARTES Y JUTSUS NINJA */}
             <SectionCard title="ARTES Y JUTSUS NINJA" icon={Zap} color="oro">
@@ -1446,7 +1461,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
 
         {activeTab === 'registros' && (
           <div className="space-y-8 animate-fade-in">
-            <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} totalPuntosCombate={totalPuntosCombate} />
+            <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} totalPuntosCombate={totalPuntosCombate} xpLimitUsage={masters?.xpLimitUsage} />
             <MissionCounter counts={missionCounts} />
             
             {/* Header Row: Subtabs Buttons & Filters */}
