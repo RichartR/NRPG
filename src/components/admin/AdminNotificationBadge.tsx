@@ -170,13 +170,12 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
   return (
     <div className="relative inline-block">
       {isSidebar ? (
-        <button
-          ref={buttonRef}
-          onClick={() => setIsOpen(!isOpen)}
-          className={`w-full flex items-center justify-between p-4 hover:bg-oro/[0.03] transition-all font-black text-xs xl:text-sm group relative overflow-hidden rounded-sm cursor-pointer border border-transparent ${isOpen ? 'bg-oro/[0.03] border-oro/15' : ''}`}
+        <Link
+          href="/admin/disputas"
+          className="w-full flex items-center justify-between p-4 hover:bg-oro/[0.03] transition-all font-black text-xs xl:text-sm group relative overflow-hidden rounded-sm cursor-pointer border border-transparent"
         >
           <div className="flex items-center gap-4">
-            <ShieldAlert className={`w-4 h-4 transition-colors ${isOpen ? 'text-rojo-sangre' : 'text-oro/30 group-hover:text-oro'}`} />
+            <ShieldAlert className="w-4 h-4 text-oro/30 group-hover:text-oro transition-colors" />
             <span className="group-hover:translate-x-1 transition-transform uppercase tracking-widest text-left">Disputas</span>
           </div>
           {count > 0 && (
@@ -184,8 +183,8 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
               {count}
             </span>
           )}
-          <div className={`absolute left-0 top-1/2 -translate-y-1/2 h-4 w-[2px] bg-oro transition-all ${isOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} />
-        </button>
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-[2px] bg-oro transition-all opacity-0 group-hover:opacity-100" />
+        </Link>
       ) : (
         <div className="relative inline-block">
           <button 
@@ -206,7 +205,7 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
       )}
 
       {/* Real-time Admin Dropdown Menu */}
-      {isOpen && typeof document !== 'undefined' && createPortal(
+      {isOpen && !isSidebar && typeof document !== 'undefined' && createPortal(
         <div 
           ref={dropdownRef}
           style={{

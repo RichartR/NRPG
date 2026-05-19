@@ -26,6 +26,7 @@ interface MasterState {
   requiredTrainingRank: string;
   recursosPJInicio: { ryous_iniciales: number; xp_inicial: number };
   rangosJerarquicos: string[];
+  xpLimitUsage: number | null;
   loading: boolean;
   initialized: boolean;
   error: string | null;
@@ -46,6 +47,7 @@ export const useMasterStore = create<MasterState>((set, get) => ({
   requiredTrainingRank: 'B',
   recursosPJInicio: { ryous_iniciales: 0, xp_inicial: 0 },
   rangosJerarquicos: [],
+  xpLimitUsage: null,
   loading: false,
   initialized: false,
   error: null,
@@ -78,7 +80,8 @@ export const useMasterStore = create<MasterState>((set, get) => ({
           'orden-rangos',
           'rango-acceso-entrenamiento',
           'recursos_pj_inicio',
-          'rangos_jerarquicos'
+          'rangos_jerarquicos',
+          'xp_limit_usage'
         ])
       ]);
 
@@ -113,6 +116,7 @@ export const useMasterStore = create<MasterState>((set, get) => ({
         requiredTrainingRank: configs['rango-acceso-entrenamiento'] || 'B',
         recursosPJInicio: configs['recursos_pj_inicio'] || { ryous_iniciales: 0, xp_inicial: 0 },
         rangosJerarquicos: configs['rangos_jerarquicos'] || ["Estudiante", "Genin", "Chunin", "Jonin"],
+        xpLimitUsage: configs['xp_limit_usage'] !== undefined && configs['xp_limit_usage'] !== null ? Number(configs['xp_limit_usage']) : null,
         initialized: true,
         loading: false
       });
