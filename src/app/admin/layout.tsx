@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { LayoutDashboard, FileText, Settings, LogOut, ShieldCheck, Map, GitBranch, Sword, ScrollText } from 'lucide-react';
 import { ProfileService } from '@/services/supabase/profile.service';
+import AdminNotificationBadge from '@/components/admin/AdminNotificationBadge';
 
 export default async function AdminLayout({
   children,
@@ -79,6 +80,7 @@ export default async function AdminLayout({
                   <div className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-[2px] bg-oro opacity-0 group-hover:opacity-100 transition-all" />
                 </Link>
               ))}
+              <AdminNotificationBadge isSidebar={true} />
             </div>
           </div>
 

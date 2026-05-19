@@ -82,15 +82,21 @@ select::-ms-expand {
 
   /* Combined Card Patterns */
   .ninja-card {
-    background-color: color-mix(in oklab, #000000d6 80%, transparent);
+    background-image: linear-gradient(rgba(5, 3, 9, 0.6), rgba(5, 3, 9, 0.6)), url('/assets/ui/bg-list.jpg');
+    background-size: cover;
+    background-position: center;
     @apply backdrop-blur-md relative;
   }
   
   .ninja-card-oro {
-    background-color: color-mix(in oklab, #000000d6 80%, transparent);
-    @apply relative shadow-[0_0_30px_rgba(255,230,159,0.1)];
+    background-image: radial-gradient(circle at center, rgba(255, 230, 159, 0.05) 0%, transparent 70%), 
+                      linear-gradient(rgba(5, 3, 9, 0.55), rgba(5, 3, 9, 0.55)), 
+                      url('/assets/ui/bg-list.jpg');
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 0 30px rgba(255, 230, 159, 0.1);
+    @apply relative backdrop-blur-md;
     clip-path: var(--clip-lg);
-    background-image: radial-gradient(circle at center, rgba(255, 230, 159, 0.05) 0%, transparent 70%);
   }
 
   .ninja-card-oro::before {
@@ -108,10 +114,14 @@ select::-ms-expand {
   }
 
   .ninja-card-rojo {
-    background-color: color-mix(in oklab, #000000d6 80%, transparent);
-    @apply relative shadow-[0_0_30px_rgba(103,9,9,0.2)];
+    background-image: radial-gradient(circle at center, rgba(103, 9, 9, 0.1) 0%, transparent 70%), 
+                      linear-gradient(rgba(5, 3, 9, 0.55), rgba(5, 3, 9, 0.55)), 
+                      url('/assets/ui/bg-list.jpg');
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 0 30px rgba(103, 9, 9, 0.2);
+    @apply relative backdrop-blur-md;
     clip-path: var(--clip-lg);
-    background-image: radial-gradient(circle at center, rgba(103, 9, 9, 0.1) 0%, transparent 70%);
   }
 
   .ninja-card-rojo::before {

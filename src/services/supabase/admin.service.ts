@@ -302,7 +302,7 @@ export const AdminService = {
       .from('sys_notificaciones_admin')
       .select(`
         *,
-        personaje:reg_characters(nombre_ninja),
+        personaje:reg_characters(nombre_ninja, url_img),
         registro:reg_registros(*)
       `)
       .eq('estado', 'pendiente')
