@@ -117,7 +117,7 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col">
-      <header className="w-full max-w-[1800px] mx-auto mb-10 sm:mb-10 ninja-card-oro p-4 sm:p-8 xl:p-10 z-50">
+      <header className="w-full max-w-[1800px] mx-auto mb-10 sm:mb-10 ninja-card-oro p-6 sm:p-8 xl:p-10 z-50">
         <div className="flex flex-col lg:flex-row justify-between items-center gap-6 lg:gap-10">
           <div className="flex items-center justify-between w-full lg:w-auto gap-6">
             <div className="flex items-center gap-4 md:gap-10">

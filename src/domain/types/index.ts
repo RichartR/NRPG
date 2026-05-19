@@ -216,7 +216,7 @@ export interface NotificacionAdmin {
   created_at: string;
   // Joins
   registro?: Registro;
-  personaje?: { nombre_ninja: string };
+  personaje?: { nombre_ninja: string; url_img?: string | null };
 }
 
 export interface PersonajeItem {
