@@ -76,6 +76,12 @@ export default function CharacterSheet() {
       <div className="absolute top-0 right-0 w-80 h-80 bg-oro/5 rounded-full blur-3xl -mr-40 -mt-40 pointer-events-none"></div>
 
       <div className="relative z-10 w-full h-full flex flex-col justify-between gap-6">
+        {activeCharacter.activo === false && (
+          <div className="bg-rojo-sangre/20 border border-rojo-sangre/40 text-oro p-3.5 text-[9px] sm:text-xs font-black uppercase tracking-widest text-center ninja-clip-xs flex items-center justify-center gap-2 relative overflow-hidden animate-pulse">
+            <span className="text-rojo-sangre text-sm">⚠️</span>
+            <span>SHINOBI ARCHIVADO / INACTIVO (FUERA DE SERVICIO)</span>
+          </div>
+        )}
         <div className="flex flex-col 2xl:flex-row justify-between items-center 2xl:items-start gap-6 w-full">
           <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left min-w-0 w-full 2xl:w-auto overflow-hidden">
             <div className="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0">

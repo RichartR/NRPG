@@ -405,15 +405,19 @@ export function useCharacter(characterId: string) {
     addToast("Cambios descartados", "info");
   };
 
-  const remove = async () => {
+  const remove = async (force = false) => {
     if (!character || !canEdit) return;
     
+    const message = force 
+      ? '¿ESTÁS SEGURO? Esta acción es irreversible y borrará FÍSICAMENTE todo el historial, inventario y ramas del personaje de forma inmediata.'
+      : '¿ESTÁS SEGURO? Tu personaje se archivará y dejará de estar activo, liberando sus cupos y requisitos. Se eliminará definitivamente tras 3 meses si no es restaurado por un administrador.';
+
     const ok = await confirmAction({
-      title: 'Eliminar Personaje',
-      message: '¿ESTÁS SEGURO? Esta acción es irreversible y borrará TODO el historial del personaje.',
+      title: force ? 'Eliminar Definitivamente' : 'Archivar Personaje',
+      message,
       variant: 'danger',
-      confirmLabel: 'Eliminar para siempre',
-      requireValidation: true
+      confirmLabel: force ? 'Borrar Físicamente' : 'Archivar Personaje',
+      requireValidation: force
     });
 
     if (!ok) return;
@@ -421,17 +425,43 @@ export function useCharacter(characterId: string) {
     setSaving(true);
     try {
       const villageId = character.aldea_id;
-      const res = await fetch(`/api/characters/${characterId}`, { method: 'DELETE' });
+      const url = force ? `/api/characters/${characterId}?force=true` : `/api/characters/${characterId}`;
+      const res = await fetch(url, { method: 'DELETE' });
       
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error || 'Error al eliminar el personaje');
+        throw new Error(err.error || 'Error al procesar la solicitud');
       }
 
-      addToast("Personaje y mensajes de Discord eliminados", "success");
+      addToast(force ? "Personaje eliminado definitivamente" : "Personaje archivado con éxito", "success");
       window.location.href = villageId ? `/mundo-ninja/${villageId}` : '/';
     } catch (err: any) {
-      addToast(err.message || "Error al eliminar", "error");
+      addToast(err.message || "Error al procesar", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const restore = async () => {
+    if (!character || !isAdmin) return;
+    
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/characters/${characterId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ section: 'restore' })
+      });
+      
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Error al restaurar el personaje');
+      }
+
+      addToast("Shinobi restaurado con éxito", "success");
+      await loadData();
+    } catch (err: any) {
+      addToast(err.message || "Error al restaurar", "error");
     } finally {
       setSaving(false);
     }
@@ -547,6 +577,7 @@ export function useCharacter(characterId: string) {
     save,
     cancel,
     remove,
+    restore,
     refresh: loadData,
     quickRemoveItem,
     quickRemoveTechnique

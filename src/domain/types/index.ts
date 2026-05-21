@@ -148,6 +148,8 @@ export interface Character {
   edad: number;
   sexo: string;
   activo: boolean;
+  eliminado_voluntario?: boolean;
+  archived_at?: string | null;
   apariencia_msg_id?: string;
   historia_msg_id?: string;
   url_img?: string | null;
