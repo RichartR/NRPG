@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "fetch:aldeas-logos": "node scripts/fetch-aldea-logos.mjs",
+    "sync:aldeas-iconos": "node scripts/sync-aldea-iconos.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
@@ -26,6 +28,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

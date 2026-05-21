@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 import { sendDiscordMessage, getDiscordChannel } from '@/lib/discord';
 import { CharacterServerService } from '@/services/supabase/character.server.service';
+import { MasterServerService } from '@/services/supabase/master.server.service';
 import { createAdminClient } from '@/utils/supabase/admin';
 
 export async function POST(request: Request) {
@@ -12,6 +13,25 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
   try {
+    // Validar cupos máximos de la aldea si no es renegado (renegado es id nulo / no establecido)
+    if (data.aldea_id) {
+      // 1. Obtener la cantidad de personajes actuales en esa aldea
+      const { count, error: countError } = await supabase
+        .from('personajes')
+        .select('*', { count: 'exact', head: true })
+        .eq('aldea_id', data.aldea_id);
+
+      if (countError) throw countError;
+
+      // 2. Obtener el límite máximo configurado
+      const limitRaw = await MasterServerService.getConfiguracion(supabase, 'cupos_maximos_aldea');
+      const maxCupos = limitRaw != null && limitRaw !== '' ? Number(limitRaw) : 30;
+
+      if (count !== null && count >= maxCupos) {
+        return NextResponse.json({ error: 'La aldea seleccionada ya ha alcanzado el límite máximo de cupos y no permite nuevos shinobis.' }, { status: 400 });
+      }
+    }
+
     // 1. Crear el personaje base
     const character = await CharacterServerService.createCharacter(supabase, {
       user_id: user.id,
