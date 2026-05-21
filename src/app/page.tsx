@@ -72,6 +72,7 @@ export default async function Home() {
         rango,
         aldeas: info_aldeas(nombre_completo, abreviatura)
       `)
+      .eq('activo', true)
       .order('created_at', { ascending: false })
       .range(0, 4);
     characters = charData || [];

@@ -83,6 +83,15 @@ export default function AdminPage() {
       color: 'text-oro',
       bgColor: 'bg-oro/10',
       borderColor: 'hover:border-oro/50'
+    },
+    {
+      title: 'Fichas Archivadas',
+      desc: 'Recuperar fichas inactivas o archivadas por los usuarios.',
+      icon: ShieldAlert,
+      href: '/admin/fichas',
+      color: 'text-oro',
+      bgColor: 'bg-oro/10',
+      borderColor: 'hover:border-oro/50'
     }
   ];
 

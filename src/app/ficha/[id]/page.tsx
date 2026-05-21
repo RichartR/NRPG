@@ -27,6 +27,7 @@ export default function FichaPublicPage() {
     save,
     cancel,
     remove,
+    restore,
     refresh,
     glosarioFiltrado,
     quickRemoveItem,
@@ -60,6 +61,7 @@ export default function FichaPublicPage() {
       onSave={save}
       onCancel={cancel}
       onDelete={remove}
+      onRestore={restore}
       onRefresh={refresh}
       onSetActiveTab={setActiveTab}
       onBack={() => router.back()}

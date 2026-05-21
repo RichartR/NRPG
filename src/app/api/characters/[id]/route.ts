@@ -23,8 +23,16 @@ export async function PATCH(
 
     // 2. Verificar Permisos (Dueño o Admin)
     const isOwner = character.user_id === user.id;
+    
+    // Obtener rol del perfil en la base de datos
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
     // @ts-ignore - roles might be in user_metadata or profiles
-    const isAdmin = user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin';
+    const isAdmin = profile?.role === 'admin' || user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin';
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: 'No tienes permiso para editar este personaje' }, { status: 403 });
@@ -189,6 +197,13 @@ export async function PATCH(
         }
         break;
 
+      case 'restore':
+        if (!isAdmin) {
+          return NextResponse.json({ error: 'No tienes permiso para restaurar este personaje' }, { status: 403 });
+        }
+        await CharacterServerService.restoreCharacter(adminClient, characterId);
+        break;
+
       default:
         throw new Error('Sección no válida');
     }
@@ -211,6 +226,9 @@ export async function DELETE(
 ) {
   try {
     const { id: characterId } = await params;
+    const { searchParams } = new URL(request.url);
+    const force = searchParams.get('force') === 'true';
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
@@ -221,37 +239,52 @@ export async function DELETE(
 
     // 2. Verificar Permisos (Dueño o Admin)
     const isOwner = character.user_id === user.id;
+    
+    // Obtener rol del perfil en la base de datos
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
     // @ts-ignore
-    const isAdmin = user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin';
+    const isAdmin = profile?.role === 'admin' || user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin';
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: 'No tienes permiso para borrar este personaje' }, { status: 403 });
     }
 
+    if (force && !isAdmin) {
+      return NextResponse.json({ error: 'Solo un administrador puede forzar la eliminación definitiva de un personaje' }, { status: 403 });
+    }
+
     const adminClient = createAdminClient();
     const channelId = await getDiscordChannel(supabase);
 
-    // 3. Eliminar mensajes de Discord y Personaje en paralelo
-    const cleanupPromises: Promise<any>[] = [];
-    
-    // Eliminar de la DB (esto disparará ON DELETE CASCADE si está configurado, si no, hay que borrar lo relacionado)
-    cleanupPromises.push(Promise.resolve(adminClient.from('reg_characters').delete().eq('id', characterId)));
+    if (force) {
+      // 3. Eliminar mensajes de Discord y Personaje físicamente en paralelo
+      const cleanupPromises: Promise<any>[] = [];
+      
+      cleanupPromises.push(Promise.resolve(adminClient.from('reg_characters').delete().eq('id', characterId)));
 
-    // Eliminar mensajes de Discord
-    if (channelId) {
-      if (character.apariencia_msg_id) {
-        cleanupPromises.push(deleteDiscordMessage(channelId, character.apariencia_msg_id).catch(e => console.error('Discord Delete Error (Ap):', e)));
+      if (channelId) {
+        if (character.apariencia_msg_id) {
+          cleanupPromises.push(deleteDiscordMessage(channelId, character.apariencia_msg_id).catch(e => console.error('Discord Delete Error (Ap):', e)));
+        }
+        if (character.historia_msg_id) {
+          cleanupPromises.push(deleteDiscordMessage(channelId, character.historia_msg_id).catch(e => console.error('Discord Delete Error (Hi):', e)));
+        }
       }
-      if (character.historia_msg_id) {
-        cleanupPromises.push(deleteDiscordMessage(channelId, character.historia_msg_id).catch(e => console.error('Discord Delete Error (Hi):', e)));
-      }
+
+      await Promise.all(cleanupPromises);
+    } else {
+      // 3. De forma regular: archivar voluntariamente
+      await CharacterServerService.archiveCharacter(adminClient, characterId, true);
     }
-
-    await Promise.all(cleanupPromises);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('Ficha Delete Error:', error);
+    console.error('Ficha Delete/Archive Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

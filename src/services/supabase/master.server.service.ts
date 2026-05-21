@@ -74,14 +74,16 @@ export const MasterServerService = {
         const { count } = await supabase
           .from('reg_characters')
           .select('*', { count: 'exact', head: true })
-          .eq('aldea_id', id);
+          .eq('aldea_id', id)
+          .eq('activo', true);
         countsMap[id] = count || 0;
       }),
       (async () => {
         const { count } = await supabase
           .from('reg_characters')
           .select('*', { count: 'exact', head: true })
-          .is('aldea_id', null);
+          .is('aldea_id', null)
+          .eq('activo', true);
         countsMap['renegados'] = count || 0;
       })()
     ];
@@ -94,6 +96,7 @@ export const MasterServerService = {
     let query = supabase
       .from('reg_characters')
       .select('*, info_aldeas(nombre_completo), profiles:user_id(username)')
+      .eq('activo', true)
       .order('nombre_ninja');
 
     if (aldeaId === null) {

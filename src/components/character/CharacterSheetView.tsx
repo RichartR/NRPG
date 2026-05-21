@@ -41,7 +41,8 @@ interface CharacterSheetViewProps {
   onUpdateStat: (stat: keyof CharacterStats, value: number) => void;
   onSave: (section?: 'apariencia' | 'historia') => void | Promise<void>;
   onCancel: () => void;
-  onDelete?: () => void;
+  onDelete?: (force?: boolean) => void | Promise<void>;
+  onRestore?: () => void | Promise<void>;
   onSetActiveTab: (tab: string) => void;
   onBack: () => void;
   onRefresh?: () => void;
@@ -66,6 +67,7 @@ export function CharacterSheetView({
   onSave,
   onCancel,
   onDelete,
+  onRestore,
   onSetActiveTab,
   onBack,
   onRefresh,
@@ -479,6 +481,49 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
 
   return (
     <div className="min-h-screen p-4 sm:p-8 xl:p-20 flex flex-col">
+      {character.activo === false && (
+        <div className="w-full max-w-[1750px] mx-auto mb-6 ninja-card-oro p-6 border-oro/30 bg-black/80 backdrop-blur-md relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-6 shadow-[0_0_50px_rgba(212,175,55,0.15)] animate-in fade-in slide-in-from-top-6 duration-500">
+          <div className="absolute top-0 left-0 w-2 h-full bg-oro"></div>
+          <div className="absolute top-0 right-0 w-96 h-96 bg-oro/5 rounded-full blur-3xl -mr-48 -mt-48 pointer-events-none"></div>
+          
+          <div className="flex items-center gap-5 min-w-0 z-10">
+            <div className="w-12 h-12 rounded-full bg-oro/10 border border-oro/30 flex items-center justify-center animate-pulse shrink-0">
+              <ScrollText className="w-6 h-6 text-oro" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-oro font-black uppercase tracking-[0.25em] text-sm xl:text-base italic mb-1 flex items-center gap-3">
+                <span>SHINOBI ARCHIVADO / INACTIVO</span>
+                <span className="px-2 py-0.5 text-[8px] font-black uppercase bg-rojo-sangre text-oro tracking-widest ninja-clip-xs">
+                  {character.eliminado_voluntario ? 'VOLUNTARIO' : 'INACTIVIDAD'}
+                </span>
+              </h3>
+              <p className="text-oro/60 text-[10px] xl:text-xs font-bold uppercase tracking-widest leading-relaxed">
+                Este expediente se encuentra fuera de servicio. {character.archived_at && `Archivado el ${new Date(character.archived_at).toLocaleDateString('es-ES')}.`}
+              </p>
+            </div>
+          </div>
+
+          {isAdmin && (
+            <div className="flex flex-wrap items-center gap-4 w-full md:w-auto justify-end z-10 shrink-0">
+              <button
+                onClick={() => onRestore?.()}
+                disabled={saving}
+                className="px-6 py-3 bg-oro text-rojo-sangre hover:bg-oro/80 text-[10px] xl:text-xs font-black uppercase tracking-widest transition-all duration-300 shadow-[0_0_20px_rgba(255,230,159,0.3)] disabled:opacity-50"
+              >
+                RESTAURAR SHINOBI
+              </button>
+              <button
+                onClick={() => onDelete?.(true)}
+                disabled={saving}
+                className="px-6 py-3 bg-rojo-sangre/20 border border-rojo-sangre/40 text-rojo-sangre hover:bg-rojo-sangre hover:text-oro text-[10px] xl:text-xs font-black uppercase tracking-widest transition-all duration-300 disabled:opacity-50"
+              >
+                ELIMINAR DEFINITIVAMENTE
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       <header className="w-full max-w-[1750px] mx-auto mb-6 sm:mb-8 ninja-card-oro p-4 sm:p-8 xl:p-10 z-50">
         <div className="flex flex-col gap-6 xl:gap-8 w-full">
           
@@ -518,7 +563,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
             <div className="flex items-center gap-4 sm:gap-6 w-full sm:w-auto justify-end shrink-0">
               {!isNew && canEdit && onDelete && (
                 <button 
-                  onClick={onDelete}
+                  onClick={() => onDelete?.(false)}
                   className="p-3 text-rojo-sangre hover:scale-105 active:scale-95 hover:brightness-125 transition-all"
                   title="Borrar Personaje"
                 >
@@ -547,7 +592,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
           </div>
 
           {/* Fila 2: Banner de Identidad del Personaje (Avatar, Nombre y Rango) */}
-          <div className="flex flex-col md:flex-row items-center gap-6 md:gap-10 justify-center text-center md:text-left py-2">
+          <div className="flex flex-col md:flex-row items-center gap-6 md:gap-10 justify-center md:justify-start text-center md:text-left py-2 w-full">
             {/* Contenedor del Avatar */}
             <div className="w-24 h-24 sm:w-32 sm:h-32 shrink-0 ninja-card-oro p-1.5 border-oro/20 bg-black/40 shadow-2xl flex items-center justify-center relative">
               {character.url_img ? (
@@ -571,13 +616,13 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
             </div>
 
             {/* Información del Personaje */}
-            <div className="min-w-0 flex flex-col items-center md:items-start">
+            <div className="min-w-0 flex-1 flex flex-col items-center md:items-start w-full md:w-auto">
               <div className="flex items-center gap-3 mb-2 justify-center md:justify-start">
                 <div className="w-2 h-2 bg-rojo-sangre rotate-45" />
                 <p className="text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.5em]">EXPEDIENTE NINJA OFICIAL</p>
               </div>
 
-              <h1 className="ninja-title text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl italic break-words leading-tight text-center md:text-left px-2 md:px-0">
+              <h1 className="ninja-title text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl italic break-words leading-tight text-center md:text-left px-2 md:px-0 w-full block">
                 {character.nombre_ninja || (isNew ? 'NUEVO SHINOBI' : '')}
               </h1>
 

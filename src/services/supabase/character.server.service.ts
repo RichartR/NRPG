@@ -153,5 +153,265 @@ export const CharacterServerService = {
       .from('reg_personajes_mensajes')
       .insert({ personaje_id: personajeId, discord_message_id: discordMessageId, tipo });
     if (error) throw error;
+  },
+
+  async archiveCharacter(supabase: SupabaseClient, characterId: string | number, voluntario: boolean = true) {
+    const { error } = await supabase
+      .from('reg_characters')
+      .update({
+        activo: false,
+        eliminado_voluntario: voluntario,
+        archived_at: new Date().toISOString()
+      })
+      .eq('id', characterId);
+    
+    if (error) throw error;
+
+    // Si es voluntario, inmediatamente liberamos los requisitos del glosario
+    if (voluntario) {
+      await this.releaseGlossaryRequirements(supabase, characterId);
+    }
+  },
+
+  async restoreCharacter(supabase: SupabaseClient, characterId: string | number) {
+    // 1. Obtener el personaje para saber a qué usuario pertenece
+    const { data: character, error: getError } = await supabase
+      .from('reg_characters')
+      .select('user_id, activo')
+      .eq('id', characterId)
+      .single();
+    
+    if (getError) throw getError;
+    if (!character) throw new Error('Character not found');
+    if (character.activo) throw new Error('Character is already active');
+
+    // 2. Verificar el límite de personajes del usuario
+    const limitReached = await this.hasReachedCharacterLimit(supabase, character.user_id);
+    if (limitReached) {
+      throw new Error('User has reached active character limit');
+    }
+
+    // 3. Reactivar el personaje y resetear los campos de archivado
+    const { error: updateError } = await supabase
+      .from('reg_characters')
+      .update({
+        activo: true,
+        eliminado_voluntario: false,
+        archived_at: null
+      })
+      .eq('id', characterId);
+
+    if (updateError) throw updateError;
+  },
+
+  async releaseGlossaryRequirements(supabase: SupabaseClient, characterId: string | number) {
+    const targetIdStr = String(characterId);
+    const targetIdNum = Number(characterId);
+
+    // 1. Traer todos los elementos del glosario que tengan requisitos
+    const { data: items, error: getError } = await supabase
+      .from('info_glosario')
+      .select('id, requisitos');
+
+    if (getError) throw getError;
+    if (!items) return;
+
+    for (const item of items) {
+      if (!item.requisitos) continue;
+      
+      let req = typeof item.requisitos === 'string' ? JSON.parse(item.requisitos) : item.requisitos;
+      if (!req || req.personaje_id === undefined || req.personaje_id === null) continue;
+
+      let changed = false;
+      const pid = req.personaje_id;
+
+      if (Array.isArray(pid)) {
+        const filtered = pid.filter(id => String(id) !== targetIdStr);
+        if (filtered.length !== pid.length) {
+          req.personaje_id = filtered.length > 0 ? filtered : null;
+          changed = true;
+        }
+      } else if (typeof pid === 'number') {
+        if (pid === targetIdNum) {
+          req.personaje_id = null;
+          changed = true;
+        }
+      } else if (typeof pid === 'string') {
+        if (pid === targetIdStr) {
+          req.personaje_id = null;
+          changed = true;
+        } else if (pid.includes(',')) {
+          const parts = pid.split(',').map(p => p.trim());
+          const filtered = parts.filter(p => p !== targetIdStr);
+          if (filtered.length !== parts.length) {
+            req.personaje_id = filtered.length > 0 ? filtered.join(',') : null;
+            changed = true;
+          }
+        }
+      }
+
+      if (changed) {
+        const { error: updateError } = await supabase
+          .from('info_glosario')
+          .update({ requisitos: req })
+          .eq('id', item.id);
+        if (updateError) throw updateError;
+      }
+    }
+  },
+
+  async cleanupCharacters(supabase: SupabaseClient): Promise<{
+    voluntariosBorrados: number;
+    inactivosArchivados: number;
+    inactivosLiberadosGlosario: number;
+    inactivosBorrados: number;
+  }> {
+    const now = new Date();
+    
+    // Calcular límites de tiempo
+    const tresMesesAtras = new Date();
+    tresMesesAtras.setMonth(now.getMonth() - 3);
+
+    const seisMesesAtras = new Date(); // 3 meses archivados para inactivos (3 meses actividad + 3 meses archivo = 6 meses)
+    seisMesesAtras.setMonth(now.getMonth() - 3);
+
+    const unAnoAtras = new Date(); // 9 meses archivados para inactivos (3 meses actividad + 9 meses archivo = 12 meses)
+    unAnoAtras.setMonth(now.getMonth() - 9);
+
+    // --- REGLA 1: Eliminación voluntaria de más de 3 meses ---
+    const { data: voluntaries, error: errVol } = await supabase
+      .from('reg_characters')
+      .select('id')
+      .eq('activo', false)
+      .eq('eliminado_voluntario', true)
+      .lte('archived_at', tresMesesAtras.toISOString());
+
+    if (errVol) throw errVol;
+
+    let voluntariosBorrados = 0;
+    if (voluntaries && voluntaries.length > 0) {
+      const ids = voluntaries.map(v => v.id);
+      const { error: errDelVol } = await supabase
+        .from('reg_characters')
+        .delete()
+        .in('id', ids);
+      if (errDelVol) throw errDelVol;
+      voluntariosBorrados = ids.length;
+    }
+
+    // --- REGLA 4: Eliminación física de inactivos de más de 1 año (9 meses archivados) ---
+    const { data: inactiveDels, error: errInactDel } = await supabase
+      .from('reg_characters')
+      .select('id')
+      .eq('activo', false)
+      .eq('eliminado_voluntario', false)
+      .lte('archived_at', unAnoAtras.toISOString());
+
+    if (errInactDel) throw errInactDel;
+
+    let inactivosBorrados = 0;
+    if (inactiveDels && inactiveDels.length > 0) {
+      const ids = inactiveDels.map(i => i.id);
+      const { error: errDelInact } = await supabase
+        .from('reg_characters')
+        .delete()
+        .in('id', ids);
+      if (errDelInact) throw errDelInact;
+      inactivosBorrados = ids.length;
+    }
+
+    // --- REGLA 3: Liberación de requisitos de inactivos de más de 6 meses (3 meses archivados) ---
+    const { data: inactiveLibs, error: errInactLib } = await supabase
+      .from('reg_characters')
+      .select('id')
+      .eq('activo', false)
+      .eq('eliminado_voluntario', false)
+      .lte('archived_at', seisMesesAtras.toISOString());
+
+    if (errInactLib) throw errInactLib;
+
+    let inactivosLiberadosGlosario = 0;
+    if (inactiveLibs && inactiveLibs.length > 0) {
+      for (const char of inactiveLibs) {
+        await this.releaseGlossaryRequirements(supabase, char.id);
+        inactivosLiberadosGlosario++;
+      }
+    }
+
+    // --- REGLA 2: Archivado de personajes activos sin actividad en 3 meses ---
+    const { data: activeChars, error: errAct } = await supabase
+      .from('reg_characters')
+      .select('id, created_at')
+      .eq('activo', true)
+      .lte('created_at', tresMesesAtras.toISOString());
+
+    if (errAct) throw errAct;
+
+    let inactivosArchivados = 0;
+    if (activeChars && activeChars.length > 0) {
+      for (const char of activeChars) {
+        // Verificar registros creados por el personaje en los últimos 3 meses
+        const { count: authorRegs, error: errAut } = await supabase
+          .from('reg_registros')
+          .select('*', { count: 'exact', head: true })
+          .eq('autor_id', char.id)
+          .gte('fecha', tresMesesAtras.toISOString());
+
+        if (errAut) throw errAut;
+
+        // Verificar registros en los que ha participado en los últimos 3 meses
+        const { data: participations, error: errPart } = await supabase
+          .from('reg_registros_participantes')
+          .select('registro:reg_registros(fecha)')
+          .eq('personaje_id', char.id);
+
+        if (errPart) throw errPart;
+
+        const hasRecentParticipation = participations?.some((p: any) => {
+          if (!p.registro || !p.registro.fecha) return false;
+          const regDate = new Date(p.registro.fecha);
+          return regDate >= tresMesesAtras;
+        }) ?? false;
+
+        const hasActivity = (authorRegs ?? 0) > 0 || hasRecentParticipation;
+
+        if (!hasActivity) {
+          await this.archiveCharacter(supabase, char.id, false);
+          inactivosArchivados++;
+        }
+      }
+    }
+
+    return {
+      voluntariosBorrados,
+      inactivosArchivados,
+      inactivosLiberadosGlosario,
+      inactivosBorrados
+    };
+  },
+
+  async getArchivedCharacters(supabase: SupabaseClient): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('reg_characters')
+      .select(`
+        id,
+        nombre_ninja,
+        hobba_name,
+        rango,
+        rango_jerarquico,
+        url_img,
+        eliminado_voluntario,
+        archived_at,
+        user_id,
+        profiles:user_id(username)
+      `)
+      .eq('activo', false)
+      .order('archived_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching archived characters:', error);
+      return [];
+    }
+    return data || [];
   }
 };

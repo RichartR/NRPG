@@ -69,6 +69,7 @@ export default async function AdminLayout({
                 { href: '/admin/ramas', icon: GitBranch, label: 'Ramas' },
                 { href: '/admin/combate', icon: Sword, label: 'Biblioteca' },
                 { href: '/admin/documentos', icon: FileText, label: 'Documentos' },
+                { href: '/admin/fichas', icon: ShieldCheck, label: 'Fichas Archivadas' },
               ].map((item) => (
                 <Link 
                   key={item.href}
