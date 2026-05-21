@@ -480,166 +480,125 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
   return (
     <div className="min-h-screen p-4 sm:p-8 xl:p-20 flex flex-col">
       <header className="w-full max-w-[1750px] mx-auto mb-6 sm:mb-8 ninja-card-oro p-4 sm:p-8 xl:p-10 z-50">
-        <div className="flex flex-col lg:flex-row justify-between items-center lg:items-center gap-6 lg:gap-10">
+        <div className="flex flex-col gap-6 xl:gap-8 w-full">
           
-          {/* Top Row: Back Button & Actions (Mobile) / Left Side (Desktop) */}
-          <div className="flex items-center justify-between w-full lg:w-auto gap-6">
-            <Breadcrumbs 
-              items={
-                isNew
-                  ? [
-                      { label: 'Inicio', href: '/' },
-                      { label: 'Crear Ficha' }
-                    ]
-                  : [
-                      { label: 'Inicio', href: '/' },
-                      { label: 'Mundo Ninja', href: '/mundo-ninja' },
-                      ...(character.aldea_id && character.aldeas
-                        ? [
-                            { 
-                              label: character.aldeas.abreviatura || character.aldeas.nombre_completo, 
-                              href: `/mundo-ninja/${character.aldea_id}` 
-                            }
-                          ]
-                        : character.aldea_id === null
-                        ? [
-                            { label: 'Renegados / Ninjas sin Aldea', href: '/mundo-ninja/renegados' }
-                          ]
-                        : []),
-                      { label: character.nombre_ninja }
-                    ]
-              }
-            />
-
-            {/* Title (Mobile) */}
-            <div className="lg:hidden text-center flex-1 min-w-0">
-              <h1 className="ninja-title text-2xl sm:text-3xl truncate px-2">
-                {character.nombre_ninja || (isNew ? 'NUEVO SHINOBI' : '')}
-              </h1>
+          {/* Fila 1: Navegación/Breadcrumbs y Botones de Acción */}
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-b border-oro/10 pb-4 w-full">
+            {/* Breadcrumbs */}
+            <div className="w-full sm:w-auto flex-1 min-w-0">
+              <Breadcrumbs 
+                items={
+                  isNew
+                    ? [
+                        { label: 'Inicio', href: '/' },
+                        { label: 'Crear Ficha' }
+                      ]
+                    : [
+                        { label: 'Inicio', href: '/' },
+                        { label: 'Mundo Ninja', href: '/mundo-ninja' },
+                        ...(character.aldea_id && character.aldeas
+                          ? [
+                              { 
+                                label: character.aldeas.abreviatura || character.aldeas.nombre_completo, 
+                                href: `/mundo-ninja/${character.aldea_id}` 
+                              }
+                            ]
+                          : character.aldea_id === null
+                          ? [
+                              { label: 'Renegados / Ninjas sin Aldea', href: '/mundo-ninja/renegados' }
+                            ]
+                          : []),
+                        { label: character.nombre_ninja }
+                      ]
+                }
+              />
             </div>
 
-            {/* Mobile Actions Container (Optional if we want buttons here) */}
-            <div className="lg:hidden flex items-center gap-2">
+            {/* Botones de Acción (Editar/Guardar/Cancelar/Borrar) */}
+            <div className="flex items-center gap-4 sm:gap-6 w-full sm:w-auto justify-end shrink-0">
               {!isNew && canEdit && onDelete && (
-                <button onClick={onDelete} className="p-2 text-rojo-sangre" title="Borrar">
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Title & Info (Desktop) */}
-          <div className="hidden lg:flex items-center gap-10 flex-1 justify-center">
-            <div className="h-10 w-px bg-oro/10" />
-            <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-10 text-center sm:text-left">
-              <div className="w-24 h-24 sm:w-32 sm:h-32 shrink-0 ninja-card-oro p-1.5 border-oro/20 bg-black/40 shadow-2xl flex items-center justify-center relative">
-                {character.url_img ? (
-                  <img 
-                    src={character.url_img} 
-                    className="w-full h-full object-cover object-top"
-                    alt="Avatar"
-                  />
-                ) : (
-                  <User className="w-12 h-12 text-oro/20" />
-                )}
-                {iconUrl && (
-                  <div className="absolute -top-3 -right-3 z-20 transition-transform duration-300 hover:scale-110">
-                    <img 
-                      src={iconUrl} 
-                      alt={aldeaObj?.nombre_completo || 'Aldea'} 
-                      className="w-8 h-8 sm:w-10 sm:h-10 object-contain filter drop-shadow-[0_0_6px_rgba(255,215,0,0.7)] hover:drop-shadow-[0_0_10px_rgba(255,215,0,0.9)] transition-all duration-300"
-                    />
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-center sm:justify-start gap-4 mb-3">
-                  <div className="w-2 h-2 bg-rojo-sangre rotate-45 hidden sm:block" />
-                  <p className="text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.5em]">EXPEDIENTE NINJA OFICIAL</p>
-                </div>
-                <h1 className="ninja-title text-4xl sm:text-5xl xl:text-7xl italic break-words leading-tight">
-                  {character.nombre_ninja || (isNew ? 'NUEVO SHINOBI' : '')}
-                </h1>
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 sm:gap-6 mt-6">
-                  <div className="px-6 py-2 bg-rojo-sangre text-oro text-xs xl:text-sm font-black uppercase tracking-[0.3em] shadow-lg">
-                    RANGO {character.rango}
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-1.5 h-1.5 bg-oro/20 rotate-45" />
-                    <span className="text-oro font-bold text-xs xl:text-base uppercase tracking-widest">{character.rango_jerarquico}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="h-10 w-px bg-oro/10" />
-          </div>
-
-          {/* Info (Mobile) */}
-          <div className="lg:hidden w-full flex flex-col items-center gap-6 py-6 border-y border-oro/5">
-              <div className="w-20 h-20 shrink-0 ninja-card-oro p-1 border-oro/20 bg-black/40 shadow-xl flex items-center justify-center relative">
-                {character.url_img ? (
-                  <img 
-                    src={character.url_img} 
-                    className="w-full h-full object-cover object-top"
-                    alt="Avatar"
-                  />
-                ) : (
-                  <User className="w-10 h-10 text-oro/20" />
-                )}
-                {iconUrl && (
-                  <div className="absolute -top-1 -right-1 z-20">
-                    <img 
-                      src={iconUrl} 
-                      alt={aldeaObj?.nombre_completo || 'Aldea'} 
-                      className="w-7 h-7 object-contain filter drop-shadow-[0_0_5px_rgba(255,215,0,0.7)]"
-                    />
-                  </div>
-                )}
-              </div>
-             <div className="text-center">
-                <h1 className="ninja-title text-3xl mb-2 italic">
-                  {character.nombre_ninja || (isNew ? 'NUEVO SHINOBI' : '')}
-                </h1>
-                <div className="flex justify-center items-center gap-4">
-                  <span className="text-[9px] font-black text-oro/60 uppercase tracking-[0.2em]">{character.rango_jerarquico}</span>
-                  <div className="w-1 h-1 bg-rojo-sangre rotate-45 self-center" />
-                  <span className="text-[9px] font-black text-oro/40 uppercase tracking-[0.2em]">{aldeaObj?.nombre_completo || character.aldeas?.nombre_completo || 'SIN ALDEA'}</span>
-                </div>
-             </div>
-          </div>
-
-          {/* Actions Container */}
-          <div className="flex items-center gap-4 sm:gap-6 w-full lg:w-auto justify-center lg:justify-end">
-            <div className="hidden lg:flex items-center gap-4">
-               {!isNew && canEdit && onDelete && (
                 <button 
                   onClick={onDelete}
-                  className="p-4 text-rojo-sangre hover:brightness-125 transition-all"
+                  className="p-3 text-rojo-sangre hover:scale-105 active:scale-95 hover:brightness-125 transition-all"
                   title="Borrar Personaje"
                 >
-                  <Trash2 className="w-6 h-6" />
+                  <Trash2 className="w-5 h-5 sm:w-6 sm:h-6" />
+                </button>
+              )}
+              
+              {(!isNew && canEdit) && (
+                <button 
+                  onClick={() => isEditing ? onCancel() : setIsEditing?.(true)} 
+                  className={`px-5 sm:px-8 py-2.5 text-xs sm:text-sm font-black uppercase tracking-widest transition-all ${isEditing ? 'ninja-btn-oro' : 'ninja-btn-ghost'}`}
+                >
+                  {isEditing ? 'CANCELAR' : 'EDITAR FICHA'}
+                </button>
+              )}
+              {(isEditing || isNew) && (
+                <button 
+                  onClick={() => onSave()} 
+                  disabled={saving} 
+                  className={`px-6 sm:px-10 py-2.5 sm:py-3.5 text-xs sm:text-sm font-black uppercase tracking-widest transition-all ${isNew ? 'ninja-btn-oro' : 'ninja-btn-rojo'}`}
+                >
+                  {isNew ? 'INICIALIZAR' : 'GUARDAR'}
                 </button>
               )}
             </div>
-            
-            {(!isNew && canEdit) && (
-              <button 
-                onClick={() => isEditing ? onCancel() : setIsEditing?.(true)} 
-                className={`flex-1 lg:flex-none px-6 sm:px-8 py-3 text-xs sm:text-sm ${isEditing ? 'ninja-btn-oro' : 'ninja-btn-ghost'}`}
-              >
-                {isEditing ? 'CANCELAR' : 'EDITAR FICHA'}
-              </button>
-            )}
-            {(isEditing || isNew) && (
-              <button 
-                onClick={() => onSave()} 
-                disabled={saving} 
-                className={`flex-1 lg:flex-none px-8 sm:px-10 py-3 sm:py-4 text-xs sm:text-sm ${isNew ? 'ninja-btn-oro' : 'ninja-btn-rojo'}`}
-              >
-                {isNew ? 'INICIALIZAR' : 'GUARDAR'}
-              </button>
-            )}
           </div>
+
+          {/* Fila 2: Banner de Identidad del Personaje (Avatar, Nombre y Rango) */}
+          <div className="flex flex-col md:flex-row items-center gap-6 md:gap-10 justify-center text-center md:text-left py-2">
+            {/* Contenedor del Avatar */}
+            <div className="w-24 h-24 sm:w-32 sm:h-32 shrink-0 ninja-card-oro p-1.5 border-oro/20 bg-black/40 shadow-2xl flex items-center justify-center relative">
+              {character.url_img ? (
+                <img 
+                  src={character.url_img} 
+                  className="w-full h-full object-cover object-top"
+                  alt="Avatar"
+                />
+              ) : (
+                <User className="w-12 h-12 text-oro/20" />
+              )}
+              {iconUrl && (
+                <div className="absolute -top-3 -right-3 z-20 transition-transform duration-300 hover:scale-110">
+                  <img 
+                    src={iconUrl} 
+                    alt={aldeaObj?.nombre_completo || 'Aldea'} 
+                    className="w-8 h-8 sm:w-10 sm:h-10 object-contain filter drop-shadow-[0_0_6px_rgba(255,215,0,0.7)] hover:drop-shadow-[0_0_10px_rgba(255,215,0,0.9)] transition-all duration-300"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Información del Personaje */}
+            <div className="min-w-0 flex flex-col items-center md:items-start">
+              <div className="flex items-center gap-3 mb-2 justify-center md:justify-start">
+                <div className="w-2 h-2 bg-rojo-sangre rotate-45" />
+                <p className="text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.5em]">EXPEDIENTE NINJA OFICIAL</p>
+              </div>
+
+              <h1 className="ninja-title text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl italic break-words leading-tight text-center md:text-left px-2 md:px-0">
+                {character.nombre_ninja || (isNew ? 'NUEVO SHINOBI' : '')}
+              </h1>
+
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 sm:gap-6 mt-4">
+                <div className="px-5 py-1.5 sm:px-6 sm:py-2 bg-rojo-sangre text-oro text-[10px] sm:text-xs xl:text-sm font-black uppercase tracking-[0.3em] shadow-lg">
+                  RANGO {character.rango}
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="w-1.5 h-1.5 bg-oro/20 rotate-45" />
+                  <span className="text-oro font-bold text-xs xl:text-base uppercase tracking-widest">{character.rango_jerarquico}</span>
+                  {(aldeaObj?.nombre_completo || character.aldeas?.nombre_completo) && (
+                    <>
+                      <div className="w-1.5 h-1.5 bg-oro/20 rotate-45" />
+                      <span className="text-oro/60 font-bold text-xs xl:text-base uppercase tracking-widest">{aldeaObj?.nombre_completo || character.aldeas?.nombre_completo}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </header>
 
@@ -675,12 +634,12 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                   <div className="absolute -inset-1 bg-gradient-to-b from-oro/20 to-transparent blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
                   <div 
                     onClick={() => {
-                      if (isEditing || canEdit) {
+                      if (isEditing || isNew) {
                         setImageUrlInput(character.url_img || '');
                         setEditingImageKey('character');
                       }
                     }}
-                    className={`relative aspect-[3/4] w-full ninja-card-oro overflow-hidden border-oro/20 group flex items-center justify-center bg-black/40 ${isEditing || canEdit ? 'cursor-pointer hover:border-oro/40' : ''}`}
+                    className={`relative aspect-[3/4] w-full ninja-card-oro overflow-hidden border-oro/20 group flex items-center justify-center bg-black/40 ${isEditing || isNew ? 'cursor-pointer hover:border-oro/40' : ''}`}
                   >
                     {character.url_img ? (
                       <img 
@@ -694,7 +653,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
                     
                     {/* Overlay de Edición */}
-                    {(isEditing || canEdit) && (
+                    {(isEditing || isNew) && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                         <div className="text-center">
                           <ImageIcon className="w-8 h-8 text-oro mx-auto mb-2" />
@@ -705,7 +664,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
 
                     <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between gap-4 z-20">
                       <div className="min-w-0">
-                        <p className="ninja-title text-2xl mb-1 truncate">{character.nombre_ninja}</p>
+                        <p className="ninja-title text-lg sm:text-2xl mb-1 truncate">{character.nombre_ninja}</p>
                         <p className="text-[10px] font-black text-oro/40 uppercase tracking-[0.3em]">{character.rango_jerarquico}</p>
                       </div>
                       {iconUrl && (

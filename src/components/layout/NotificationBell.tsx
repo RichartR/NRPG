@@ -144,8 +144,7 @@ export default function NotificationBell() {
       <button 
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
-        className="p-3 bg-rojo-sangre/10 border border-oro/20 hover:bg-rojo-sangre/20 transition-all group flex items-center justify-center cursor-pointer"
-        style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+        className="p-3 hover:bg-white/5 transition-all group flex items-center justify-center cursor-pointer rounded-lg"
       >
         <Bell className={`w-5 h-5 transition-all ${notifications.length > 0 ? 'text-oro animate-pulse' : 'text-oro/40 group-hover:text-oro'}`} />
       </button>

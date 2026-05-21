@@ -23,11 +23,11 @@ export default function DocumentosPage() {
 
       <main className="w-full max-w-[1750px] mx-auto flex-1">
         {/* Hero Section idéntico a Registros */}
-        <div className="mb-10 ninja-card-oro p-12 xl:p-16">
+        <div className="mb-10 ninja-card-oro p-8 sm:p-12 xl:p-16">
           <div className="flex items-center gap-6 mb-6">
-            <h1 className="ninja-title text-5xl xl:text-8xl uppercase leading-none">Biblioteca Ninja</h1>
+            <h1 className="ninja-title text-3xl sm:text-5xl xl:text-8xl uppercase leading-none">Biblioteca Ninja</h1>
           </div>
-          <p className="text-gris-texto text-lg xl:text-2xl max-w-4xl leading-relaxed">
+          <p className="text-gris-texto text-base sm:text-lg xl:text-2xl max-w-4xl leading-relaxed">
             Toda la sabiduría del Mundo Ninja concentrada en un solo lugar. Geografía, clanes y las artes de combate.
           </p>
         </div>

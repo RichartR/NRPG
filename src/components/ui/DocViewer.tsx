@@ -47,14 +47,14 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
 
   return (
     <div className="min-h-screen flex flex-col overflow-hidden">
-      <header className={`h-20 xl:h-28 flex items-center justify-between px-6 xl:px-12 shrink-0 z-50 border-b border-oro/10 relative transition-all duration-1000 ${loading ? 'bg-black' : 'bg-black/80 backdrop-blur-xl'}`}>
-        <div className="flex items-center gap-6 xl:gap-10 min-w-0 flex-1">
+      <header className={`min-h-20 py-4 md:py-0 md:h-24 xl:h-28 flex flex-col md:flex-row items-center justify-between px-4 sm:px-6 xl:px-12 gap-4 shrink-0 z-50 border-b border-oro/10 relative transition-all duration-1000 ${loading ? 'bg-black' : 'bg-black/80 backdrop-blur-xl'}`}>
+        <div className="flex items-center gap-4 xl:gap-10 min-w-0 flex-1 w-full justify-center md:justify-start">
           {breadcrumbs && breadcrumbs.length > 0 ? (
-            <div className="shrink-0">
+            <div className="w-full min-w-0">
               <Breadcrumbs items={breadcrumbs} />
             </div>
           ) : (
-            <>
+            <div className="flex items-center gap-3 sm:gap-6 min-w-0 flex-1 justify-center md:justify-start">
               <Link 
                 href={backUrl}
                 className="flex items-center gap-3 px-4 py-2 font-black text-[10px] xl:text-sm uppercase tracking-[0.2em] transition-all active:scale-95 text-oro/60 hover:text-oro group shrink-0"
@@ -63,22 +63,22 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
                 <span>VOLVER</span>
               </Link>
               <div className="h-8 w-px bg-oro/10 shrink-0 hidden sm:block" />
-              <h1 className="text-lg xl:text-2xl font-black tracking-[0.1em] uppercase text-oro font-ninja truncate max-w-[40vw] pt-1">
+              <h1 className="text-lg xl:text-2xl font-black tracking-[0.1em] uppercase text-oro font-ninja truncate max-w-[50vw] md:max-w-[40vw] pt-1">
                 {title}
               </h1>
-            </>
+            </div>
           )}
         </div>
 
-        <div className="flex items-center gap-6 xl:gap-10 shrink-0">
+        <div className="flex flex-wrap items-center justify-center md:justify-end gap-4 sm:gap-6 shrink-0 w-full md:w-auto">
           <div className="flex items-center gap-2 p-1.5 bg-black/60 border border-oro/10 ninja-box shadow-2xl">
-            <button onClick={handleZoomOut} className="p-2.5 hover:bg-rojo-sangre/20 transition-all text-oro/40 hover:text-oro">
+            <button onClick={handleZoomOut} className="p-2 md:p-2.5 hover:bg-rojo-sangre/20 transition-all text-oro/40 hover:text-oro">
               <div className="w-3 h-0.5 bg-current" />
             </button>
             <div className="text-[9px] xl:text-xs font-black w-12 text-center select-none text-oro/80 tabular-nums">
               {Math.round(zoom * 100)}%
             </div>
-            <button onClick={handleZoomIn} className="p-2.5 hover:bg-rojo-sangre/20 transition-all text-oro/40 hover:text-oro">
+            <button onClick={handleZoomIn} className="p-2 md:p-2.5 hover:bg-rojo-sangre/20 transition-all text-oro/40 hover:text-oro">
               <div className="relative w-3 h-3 flex items-center justify-center">
                 <div className="absolute w-3 h-0.5 bg-current" />
                 <div className="absolute w-0.5 h-3 bg-current" />
@@ -89,7 +89,7 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
           <a 
             href={downloadUrl} 
             download 
-            className="hidden md:flex items-center gap-4 px-8 py-3.5 bg-oro text-rojo-sangre font-black text-[10px] xl:text-xs uppercase tracking-[0.2em] transition-all shadow-[0_0_20px_rgba(255,230,159,0.2)] active:scale-95 hover:brightness-110"
+            className="flex items-center justify-center gap-4 px-6 md:px-8 py-2.5 md:py-3.5 bg-oro text-rojo-sangre font-black text-[10px] xl:text-xs uppercase tracking-[0.2em] transition-all shadow-[0_0_20px_rgba(255,230,159,0.2)] active:scale-95 hover:brightness-110 shrink-0"
             style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
           >
             DESCARGAR PDF

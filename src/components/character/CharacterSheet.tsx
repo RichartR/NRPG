@@ -78,33 +78,21 @@ export default function CharacterSheet() {
       <div className="relative z-10 w-full h-full flex flex-col justify-between gap-6">
         <div className="flex flex-col 2xl:flex-row justify-between items-center 2xl:items-start gap-6 w-full">
           <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left min-w-0 w-full 2xl:w-auto overflow-hidden">
-            <div 
-              onClick={() => {
-                setNewPortraitUrl(activeCharacter.url_img || '');
-                setIsEditingPortrait(true);
-              }}
-              className="relative group cursor-pointer w-20 h-20 sm:w-24 sm:h-24 shrink-0"
-            >
-               <div className="absolute -inset-1 bg-oro/20 rounded-lg blur opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0">
                <div className="relative w-full h-full ninja-card-oro p-1 border-oro/20 bg-black/40 overflow-hidden flex items-center justify-center">
                 {activeCharacter.url_img ? (
                   <img 
                     src={activeCharacter.url_img} 
-                    className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-500"
+                    className="w-full h-full object-cover object-top"
                     alt="Avatar"
                   />
                 ) : (
-                  <User className="w-8 h-8 sm:w-10 sm:h-10 text-oro/20 group-hover:text-oro/40 transition-colors" />
+                  <User className="w-8 h-8 sm:w-10 sm:h-10 text-oro/20" />
                 )}
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="p-2 bg-oro text-rojo-sangre rounded-full shadow-lg">
-                    <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-                  </div>
-                </div>
               </div>
             </div>
             <div className="flex-1 min-w-0 overflow-hidden">
-              <h2 className="ninja-title text-4xl sm:text-5xl mb-2 break-words leading-tight">
+              <h2 className="ninja-title text-2xl sm:text-4xl xl:text-5xl mb-2 break-words leading-tight">
                 {nombre_ninja}
               </h2>
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 sm:gap-4 mt-4">

@@ -38,7 +38,7 @@ export default function ProfileSettings({ profile, userId }: ProfileSettingsProp
       {/* Gatillo: El área del perfil en la cabecera */}
       <button 
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-4 px-6 xl:px-10 py-4 bg-rojo-sangre/20 border border-oro/20 ninja-clip-xs hover:bg-rojo-sangre/30 transition-all group"
+        className="flex items-center gap-4 px-4 xl:px-6 py-2.5 hover:bg-white/5 transition-all group rounded-lg"
       >
         <div className="relative">
           {profile?.url_img || profile?.url_avatar ? (
@@ -80,7 +80,7 @@ export default function ProfileSettings({ profile, userId }: ProfileSettingsProp
 
             <div className="flex items-center gap-4 mb-10">
               <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45" />
-              <h2 className="ninja-title text-3xl">AJUSTES DE PERFIL</h2>
+              <h2 className="ninja-title text-xl sm:text-3xl">AJUSTES DE PERFIL</h2>
             </div>
 
             <div className="space-y-8">

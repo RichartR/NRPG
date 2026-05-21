@@ -27,11 +27,11 @@ export default async function RamasPage() {
       </header>
 
       <main className="w-full max-w-[1750px] mx-auto flex-1">
-        <div className="mb-20 ninja-card-oro p-12 xl:p-16">
+        <div className="mb-20 ninja-card-oro p-8 sm:p-12 xl:p-16">
           <div className="flex items-center gap-6 mb-6">
-            <h1 className="ninja-title text-5xl xl:text-8xl uppercase leading-none">Ramas de Combate</h1>
+            <h1 className="ninja-title text-3xl sm:text-5xl xl:text-8xl uppercase leading-none">Ramas de Combate</h1>
           </div>
-          <p className="text-gris-texto text-lg xl:text-2xl max-w-4xl leading-relaxed">
+          <p className="text-gris-texto text-base sm:text-lg xl:text-2xl max-w-4xl leading-relaxed">
             Las disciplinas fundamentales que definen el camino de cada shinobi. Especialidades, artes secretas y clanes milenarios.
           </p>
         </div>

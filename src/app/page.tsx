@@ -119,50 +119,52 @@ export default async function Home() {
     <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col">
       <header className="w-full max-w-[1800px] mx-auto mb-10 sm:mb-10 ninja-card-oro p-6 sm:p-8 xl:p-10 z-50">
         <div className="flex flex-col lg:flex-row justify-between items-center gap-6 lg:gap-10">
-          <div className="flex items-center justify-between w-full lg:w-auto gap-6">
-            <div className="flex items-center gap-4 md:gap-10">
-              <img 
-                src="/assets/ui/logo.png" 
-                alt="Naruto Logo" 
-                className="h-14 sm:h-20 md:h-28 w-auto object-contain drop-shadow-[0_0_20px_rgba(255,230,159,0.3)]"
-              />
-              <div className="hidden xl:block">
-                <h1 className="ninja-title text-4xl 2xl:text-7xl">NRPG</h1>
-              </div>
+          {/* Logo and Branding */}
+          <div className="flex items-center gap-4 md:gap-10 justify-center lg:justify-start w-full lg:w-auto">
+            <img 
+              src="/assets/ui/logo.png" 
+              alt="Naruto Logo" 
+              className="h-14 sm:h-20 md:h-24 xl:h-28 w-auto object-contain drop-shadow-[0_0_20px_rgba(255,230,159,0.3)]"
+            />
+            <div>
+              <h1 className="ninja-title text-3xl sm:text-5xl lg:text-6xl xl:text-7xl leading-none">NRPG</h1>
             </div>
-            
+          </div>
+
+          {/* Controls and Navigation */}
+          <div className="flex flex-wrap items-center justify-center lg:justify-end gap-4 sm:gap-6 w-full lg:w-auto border-t lg:border-t-0 border-oro/5 pt-4 lg:pt-0">
             {user && (
               <div className="flex items-center gap-4 sm:gap-6">
                 <ProfileSettings profile={profile} userId={user.id} />
                 <NotificationBell />
               </div>
             )}
-          </div>
-
-          <nav className="flex flex-wrap justify-center gap-4 xl:gap-6 2xl:gap-10 items-center w-full lg:w-auto border-t lg:border-t-0 border-oro/5 pt-4 lg:pt-0">
-            {profile?.role === 'admin' && (
-              <>
-                <Link
-                  href="/admin"
-                  className="flex items-center gap-3 px-6 py-2.5 bg-oro/5 text-oro border border-oro/20 hover:bg-oro/10 hover:border-oro/40 transition-all group font-black text-[10px] uppercase tracking-widest cursor-pointer"
-                  style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+            
+            <nav className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+              {profile?.role === 'admin' && (
+                <>
+                  <Link
+                    href="/admin"
+                    className="flex items-center gap-3 px-5 py-2.5 bg-oro/5 text-oro border border-oro/20 hover:bg-oro/10 hover:border-oro/40 transition-all group font-black text-[10px] uppercase tracking-widest cursor-pointer"
+                    style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                  >
+                    PANEL ADMIN
+                  </Link>
+                  <AdminNotificationBadge />
+                </>
+              )}
+              {user ? (
+                <LogoutButton />
+              ) : (
+                <Link 
+                  href="/login" 
+                  className="px-6 py-3.5 ninja-btn-oro text-xs sm:text-sm font-black uppercase tracking-widest text-center"
                 >
-                  PANEL ADMIN
+                  INICIAR SESIÓN
                 </Link>
-                <AdminNotificationBadge />
-              </>
-            )}
-            {user ? (
-              <LogoutButton />
-            ) : (
-              <Link 
-                href="/login" 
-                className="px-8 sm:px-16 py-3 sm:py-6 ninja-btn-oro text-sm sm:text-2xl w-full sm:w-auto text-center"
-              >
-                INICIAR SESIÓN
-              </Link>
-            )}
-          </nav>
+              )}
+            </nav>
+          </div>
         </div>
       </header>
 

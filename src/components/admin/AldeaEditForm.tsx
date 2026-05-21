@@ -58,13 +58,13 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto">
       <div className="relative w-full max-w-3xl ninja-card-oro p-6 sm:p-10 xl:p-12 my-auto animate-in fade-in zoom-in duration-300">
-        <header className="flex justify-between items-center mb-10">
-          <div className="flex items-center gap-4">
-            <div className="p-4 border border-oro/20 bg-oro/10 text-oro ninja-clip-sm">
+        <header className="flex flex-col sm:flex-row justify-between items-center gap-6 mb-10">
+          <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-4">
+            <div className="p-4 border border-oro/20 bg-oro/10 text-oro ninja-clip-sm shrink-0">
               <MapPin className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="ninja-title text-2xl sm:text-3xl">
+              <h2 className="ninja-title text-xl sm:text-3xl">
                 {isCreate ? 'Nueva Aldea' : 'Editar Aldea'}
               </h2>
               <p className="text-[10px] font-black text-oro/40 uppercase tracking-[0.2em] mt-1">Configuración del núcleo geográfico</p>

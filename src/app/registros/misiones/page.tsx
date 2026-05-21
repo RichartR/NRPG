@@ -64,50 +64,40 @@ export default function MisionesPage() {
   return (
     <div className="min-h-screen p-4 sm:p-8 xl:p-20 flex flex-col">
       <div className="max-w-[1750px] mx-auto w-full flex-1">
-        <header className="w-full mb-6 sm:mb-8 ninja-card-oro p-4 sm:p-8 xl:p-12 z-50">
-          <div className="flex flex-col lg:flex-row justify-between items-center gap-6 lg:gap-10">
-            
-            {/* Top Row: Breadcrumbs & Title (Mobile) / Left Side (Desktop) */}
-            <div className="flex items-center justify-between w-full lg:w-auto gap-6">
-              <Breadcrumbs 
-                items={[
-                  { label: 'Inicio', href: '/' },
-                  { label: 'Registros', href: '/registros' },
-                  { label: 'Misiones' }
-                ]} 
-              />
-
-              {/* Title (Mobile) */}
-              <div className="lg:hidden text-center flex-1 min-w-0">
-                <h1 className="ninja-title text-xl sm:text-3xl truncate uppercase tracking-widest">
-                  <span className="text-oro">MISIONES</span>
-                </h1>
+        <header className="w-full mb-6 sm:mb-8 ninja-card-oro p-4 sm:p-6 xl:p-8 z-50">
+          <div className="flex flex-col gap-6 w-full">
+            {/* Row 1: Breadcrumbs & Action Button */}
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-b border-oro/10 pb-4 w-full">
+              <div className="w-full sm:w-auto flex-1 min-w-0">
+                <Breadcrumbs 
+                  items={[
+                    { label: 'Inicio', href: '/' },
+                    { label: 'Registros', href: '/registros' },
+                    { label: 'Misiones' }
+                  ]} 
+                />
               </div>
-
-              {/* Spacer for centering title on mobile */}
-              <div className="lg:hidden w-10 sm:w-12" />
+              
+              <button 
+                onClick={() => setShowForm(true)}
+                disabled={!activeCharacter}
+                title={!activeCharacter ? "Requiere tener un personaje activo en tu ficha shinobi" : undefined}
+                className="flex items-center gap-3 px-6 py-2.5 ninja-btn-oro w-full sm:w-auto justify-center text-xs disabled:opacity-30 disabled:cursor-not-allowed uppercase tracking-widest font-black shrink-0"
+              >
+                <Plus className="w-4 h-4" /> NUEVA MISIÓN
+              </button>
             </div>
 
-            {/* Title & Icon (Desktop) */}
-            <div className="hidden lg:flex items-center gap-10 flex-1 justify-center">
-              <div className="h-10 w-px bg-oro/10" />
-              <div className="flex items-center gap-6">
-                {/* <img src="/assets/icons/shuriken.png" className="w-6 xl:w-8 h-auto" alt="icon" /> */}
-                <h1 className="ninja-title text-4xl xl:text-7xl uppercase tracking-[0.3em] leading-none break-words">
+            {/* Row 2: Page Identity Title */}
+            <div className="flex items-center justify-center py-2">
+              <div className="flex items-center gap-4 sm:gap-6">
+                <div className="w-2 h-2 bg-rojo-sangre rotate-45" />
+                <h1 className="ninja-title text-3xl sm:text-5xl xl:text-7xl uppercase tracking-[0.3em] leading-none text-center">
                   <span className="text-oro">MISIONES</span>
                 </h1>
+                <div className="w-2 h-2 bg-rojo-sangre rotate-45" />
               </div>
-              <div className="h-10 w-px bg-oro/10" />
             </div>
-            
-            <button 
-              onClick={() => setShowForm(true)}
-              disabled={!activeCharacter}
-              title={!activeCharacter ? "Requiere tener un personaje activo en tu ficha shinobi" : undefined}
-              className="flex items-center gap-4 sm:gap-6 px-8 sm:px-10 py-3 sm:py-5 ninja-btn-oro w-full lg:w-auto justify-center text-xs sm:text-base disabled:opacity-30 disabled:cursor-not-allowed"
-            >
-              <Plus className="w-5 h-5" /> NUEVA MISIÓN
-            </button>
           </div>
         </header>
 

@@ -47,16 +47,16 @@ export default function DocEditForm({ doc, categories, onCancel, defaultCategory
       <div className="bg-black/60 ninja-box ninja-border w-full max-w-4xl shadow-[0_0_100px_rgba(0,0,0,0.8)] relative overflow-hidden my-auto backdrop-blur-md">
         <div className="absolute top-0 right-0 w-96 h-96 bg-oro/5 rounded-full blur-[100px] -mr-48 -mt-48 pointer-events-none" />
         
-        <header className="bg-black/40 p-10 xl:p-12 flex justify-between items-center border-b border-oro/10">
-          <div className="flex items-center gap-8">
-            <div className="w-20 h-20 bg-rojo-sangre/10 border border-rojo-sangre/20 flex items-center justify-center" style={{ clipPath: 'polygon(20% 0, 80% 0, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0 80%, 0 20%)' }}>
-               <PlusCircle className="w-10 h-10 text-rojo-sangre" />
+        <header className="bg-black/40 p-6 sm:p-10 xl:p-12 flex flex-col md:flex-row justify-between items-center gap-6 border-b border-oro/10">
+          <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-4 sm:gap-8">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-rojo-sangre/10 border border-rojo-sangre/20 flex items-center justify-center shrink-0" style={{ clipPath: 'polygon(20% 0, 80% 0, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0 80%, 0 20%)' }}>
+               <PlusCircle className="w-8 h-8 sm:w-10 sm:h-10 text-rojo-sangre" />
             </div>
             <div>
-              <h2 className="ninja-title text-3xl xl:text-5xl leading-none">
+              <h2 className="ninja-title text-xl sm:text-3xl xl:text-5xl leading-none">
                 {isCreate ? 'REGISTRO TÁCTICO' : 'ACTUALIZAR REGISTRO'}
               </h2>
-              <p className="text-[10px] xl:text-xs font-black text-oro/30 uppercase tracking-[0.4em] mt-3 italic">MÓDULO DE GESTIÓN DE ARCHIVOS SHINOBI</p>
+              <p className="text-[8px] sm:text-[10px] xl:text-xs font-black text-oro/30 uppercase tracking-[0.4em] mt-3 italic">MÓDULO DE GESTIÓN DE ARCHIVOS SHINOBI</p>
             </div>
           </div>
           

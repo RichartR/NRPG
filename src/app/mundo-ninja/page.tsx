@@ -41,16 +41,16 @@ export default async function MundoNinjaSelectionPage() {
       </header>
 
       <main className="w-full max-w-[1750px] mx-auto flex-1">
-        <div className="mb-20 ninja-card-oro p-12 xl:p-16 relative overflow-hidden group">
+        <div className="mb-20 ninja-card-oro p-8 sm:p-12 xl:p-16 relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-12 opacity-[0.02] pointer-events-none group-hover:opacity-[0.05] transition-opacity">
             <Globe className="w-64 h-64 rotate-12" />
           </div>
           <div className="flex items-center gap-6 mb-6 relative z-10">
-            <h1 className="ninja-title text-5xl xl:text-8xl uppercase leading-none">
+            <h1 className="ninja-title text-3xl sm:text-5xl xl:text-8xl uppercase leading-none">
               Shinobis de las Naciones
             </h1>
           </div>
-          <p className="text-gris-texto text-lg xl:text-2xl max-w-4xl leading-relaxed relative z-10">
+          <p className="text-gris-texto text-base sm:text-lg xl:text-2xl max-w-4xl leading-relaxed relative z-10">
             Explora el censo oficial de las Grandes Naciones Shinobi. Descubre a los guerreros que
             forjan la historia y el destino de cada aldea oculta.
           </p>

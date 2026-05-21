@@ -268,7 +268,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
               <div className="flex items-center gap-4">
                 <Swords className="w-6 h-6 text-oro animate-pulse" />
                 <div>
-                  <h3 className="ninja-title text-xl tracking-[0.2em]">INFORME DE COMBATE</h3>
+                  <h3 className="ninja-title text-lg sm:text-xl tracking-[0.1em] sm:tracking-[0.2em]">INFORME DE COMBATE</h3>
                   <p className="text-[9px] text-oro/40 uppercase tracking-widest font-black">Archivo ninja oficial</p>
                 </div>
               </div>

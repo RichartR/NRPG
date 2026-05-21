@@ -28,11 +28,11 @@ export default async function BienvenidaPage() {
       </header>
 
       <main className="w-full max-w-[1750px] mx-auto flex-1">
-        <div className="mb-20 ninja-card-oro p-12 xl:p-16">
+        <div className="mb-20 ninja-card-oro p-8 sm:p-12 xl:p-16">
           <div className="flex items-center gap-6 mb-6">
-            <h1 className="ninja-title text-5xl xl:text-8xl uppercase tracking-[0.3em]">BIENVENIDA</h1>
+            <h1 className="ninja-title text-3xl sm:text-5xl xl:text-8xl uppercase tracking-[0.3em]">BIENVENIDA</h1>
           </div>
-          <p className="text-gris-texto text-lg xl:text-2xl max-w-4xl leading-relaxed">Selecciona una sección para obtener más información sobre el mundo ninja y las reglas fundamentales.</p>
+          <p className="text-gris-texto text-base sm:text-lg xl:text-2xl max-w-4xl leading-relaxed">Selecciona una sección para obtener más información sobre el mundo ninja y las reglas fundamentales.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10 xl:gap-16">

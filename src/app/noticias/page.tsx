@@ -49,7 +49,7 @@ export default async function NoticiasPage() {
 
   return (
     <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col">
-      <header className="w-full max-w-[1750px] mx-auto flex justify-between items-center mb-10 ninja-card-oro p-8 xl:p-10 relative z-50">
+      <header className="w-full max-w-[1750px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4 mb-10 ninja-card-oro p-6 sm:p-8 xl:p-10 relative z-50">
         <Breadcrumbs 
           items={[
             { label: 'Inicio', href: '/' },
@@ -58,19 +58,19 @@ export default async function NoticiasPage() {
         />
         <div className="flex items-center gap-4">
           <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto" alt="icon" />
-          <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
+          <h1 className="text-lg xl:text-2xl font-black text-oro uppercase tracking-[0.3em] pt-1">
             Muro de Anuncios
           </h1>
         </div>
       </header>
 
       <main className="w-full max-w-[1750px] mx-auto space-y-12 flex-1">
-        <div className="mb-10 ninja-card-oro p-12 xl:p-16">
+        <div className="mb-10 ninja-card-oro p-8 sm:p-12 xl:p-16">
           <div className="flex items-center gap-6 mb-6">
             <img src="/assets/icons/shuriken.png" className="w-5 xl:w-8 h-auto" alt="icon" />
-            <h1 className="ninja-title text-5xl xl:text-8xl">NOTICIAS Y EVENTOS</h1>
+            <h1 className="ninja-title text-3xl sm:text-5xl xl:text-8xl">NOTICIAS Y EVENTOS</h1>
           </div>
-          <p className="text-gris-texto text-lg xl:text-2xl max-w-4xl leading-relaxed">Mantente al día con las últimas actualizaciones del servidor, eventos de rol y parches de equilibrio.</p>
+          <p className="text-gris-texto text-base sm:text-lg xl:text-2xl max-w-4xl leading-relaxed">Mantente al día con las últimas actualizaciones del servidor, eventos de rol y parches de equilibrio.</p>
         </div>
 
         {newsWithContent.map((news: any) => (

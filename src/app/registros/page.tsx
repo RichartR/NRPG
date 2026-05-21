@@ -23,12 +23,12 @@ export default function RegistrosLandingPage() {
       </header>
 
       <main className="w-full max-w-[1750px] mx-auto flex-1">
-        <div className="mb-20 ninja-card-oro p-12 xl:p-16">
+        <div className="mb-20 ninja-card-oro p-8 sm:p-12 xl:p-16">
           <div className="flex items-center gap-6 mb-6">
             {/* <img src="/assets/icons/shuriken.png" className="w-5 xl:w-8 h-auto" alt="icon" /> */}
-            <h1 className="ninja-title text-5xl xl:text-8xl">REGISTROS NINJA</h1>
+            <h1 className="ninja-title text-3xl sm:text-5xl xl:text-8xl">REGISTROS NINJA</h1>
           </div>
-          <p className="text-gris-texto text-lg xl:text-2xl max-w-4xl leading-relaxed">Consulta el historial de misiones, registros de combate y transacciones económicas de todo el mundo ninja.</p>
+          <p className="text-gris-texto text-base sm:text-lg xl:text-2xl max-w-4xl leading-relaxed">Consulta el historial de misiones, registros de combate y transacciones económicas de todo el mundo ninja.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10 xl:gap-16">

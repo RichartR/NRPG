@@ -162,7 +162,7 @@ export default function MissionForm({
           {/* Header del Formulario (Ahora integrado) */}
           <div className="flex justify-between items-start border-b border-oro/10 pb-10">
             <div className="space-y-2">
-              <h3 className="ninja-title text-4xl sm:text-6xl text-oro">
+              <h3 className="ninja-title text-2xl sm:text-4xl md:text-5xl xl:text-6xl text-oro">
                 {initialData ? 'EDITAR REGISTRO' : (formType === 'mision' ? 'REGISTRAR MISIÓN' : 'REGISTRAR ACCIÓN')}
               </h3>
               <p className="text-xs sm:text-sm font-black text-oro/40 uppercase tracking-[0.4em]">Sincronizando con el archivo histórico shinobi</p>
