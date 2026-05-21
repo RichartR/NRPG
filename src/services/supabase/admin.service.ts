@@ -7,7 +7,7 @@ export const AdminService = {
   // Aldeas
   async saveAldea(aldea: Partial<Aldea>) {
     const supabase = createClient();
-    const { url_icono, id, ...cleanData } = aldea;
+    const { id, ...cleanData } = aldea;
     
     if (id) {
       const { data, error } = await supabase.from('info_aldeas').update(cleanData).eq('id', id).select().single();

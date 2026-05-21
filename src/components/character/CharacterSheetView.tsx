@@ -24,6 +24,7 @@ import CombatForm from '@/components/registros/CombatForm';
 import { CharacterRadarChart } from './CharacterRadarChart';
 import { useState, useMemo, useEffect, Fragment } from 'react';
 import { RewardLogic } from '@/domain/character/logic';
+import { resolveAldeaIcono } from '@/utils/aldea-icon';
 
 interface CharacterSheetViewProps {
   character: Character;
@@ -244,6 +245,7 @@ export function CharacterSheetView({
   }, [character.stats_base, character.puntos_stats]);
 
   const aldeaObj = useMemo(() => masters.aldeas.find((a: any) => a.id == character.aldea_id), [masters.aldeas, character.aldea_id]);
+  const iconUrl = useMemo(() => aldeaObj ? resolveAldeaIcono(aldeaObj) : null, [aldeaObj]);
   
   const canAccessTraining = useMemo(() => {
     const currentRankValue = masters.rankOrder[character.rango || 'D'] || 0;
@@ -530,7 +532,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
           <div className="hidden lg:flex items-center gap-10 flex-1 justify-center">
             <div className="h-10 w-px bg-oro/10" />
             <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-10 text-center sm:text-left">
-              <div className="w-24 h-24 sm:w-32 sm:h-32 shrink-0 ninja-card-oro p-1.5 border-oro/20 bg-black/40 shadow-2xl flex items-center justify-center">
+              <div className="w-24 h-24 sm:w-32 sm:h-32 shrink-0 ninja-card-oro p-1.5 border-oro/20 bg-black/40 shadow-2xl flex items-center justify-center relative">
                 {character.url_img ? (
                   <img 
                     src={character.url_img} 
@@ -539,6 +541,15 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                   />
                 ) : (
                   <User className="w-12 h-12 text-oro/20" />
+                )}
+                {iconUrl && (
+                  <div className="absolute -top-3 -right-3 z-20 transition-transform duration-300 hover:scale-110">
+                    <img 
+                      src={iconUrl} 
+                      alt={aldeaObj?.nombre_completo || 'Aldea'} 
+                      className="w-8 h-8 sm:w-10 sm:h-10 object-contain filter drop-shadow-[0_0_6px_rgba(255,215,0,0.7)] hover:drop-shadow-[0_0_10px_rgba(255,215,0,0.9)] transition-all duration-300"
+                    />
+                  </div>
                 )}
               </div>
               <div className="flex-1 min-w-0">
@@ -565,7 +576,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
 
           {/* Info (Mobile) */}
           <div className="lg:hidden w-full flex flex-col items-center gap-6 py-6 border-y border-oro/5">
-              <div className="w-20 h-20 shrink-0 ninja-card-oro p-1 border-oro/20 bg-black/40 shadow-xl flex items-center justify-center">
+              <div className="w-20 h-20 shrink-0 ninja-card-oro p-1 border-oro/20 bg-black/40 shadow-xl flex items-center justify-center relative">
                 {character.url_img ? (
                   <img 
                     src={character.url_img} 
@@ -574,6 +585,15 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                   />
                 ) : (
                   <User className="w-10 h-10 text-oro/20" />
+                )}
+                {iconUrl && (
+                  <div className="absolute -top-1 -right-1 z-20">
+                    <img 
+                      src={iconUrl} 
+                      alt={aldeaObj?.nombre_completo || 'Aldea'} 
+                      className="w-7 h-7 object-contain filter drop-shadow-[0_0_5px_rgba(255,215,0,0.7)]"
+                    />
+                  </div>
                 )}
               </div>
              <div className="text-center">
@@ -683,9 +703,20 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                       </div>
                     )}
 
-                    <div className="absolute bottom-6 left-6 right-6">
-                      <p className="ninja-title text-2xl mb-1">{character.nombre_ninja}</p>
-                      <p className="text-[10px] font-black text-oro/40 uppercase tracking-[0.3em]">{character.rango_jerarquico}</p>
+                    <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between gap-4 z-20">
+                      <div className="min-w-0">
+                        <p className="ninja-title text-2xl mb-1 truncate">{character.nombre_ninja}</p>
+                        <p className="text-[10px] font-black text-oro/40 uppercase tracking-[0.3em]">{character.rango_jerarquico}</p>
+                      </div>
+                      {iconUrl && (
+                        <div className="shrink-0 transition-transform duration-300 hover:scale-110">
+                          <img 
+                            src={iconUrl} 
+                            alt={aldeaObj?.nombre_completo || 'Aldea'} 
+                            className="w-12 h-12 object-contain filter drop-shadow-[0_0_8px_rgba(255,215,0,0.65)] hover:drop-shadow-[0_0_12px_rgba(255,215,0,0.9)] transition-all duration-300"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

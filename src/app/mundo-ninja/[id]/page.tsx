@@ -21,15 +21,23 @@ export default async function MundoNinjaPublicVillagePage({
   // Sesión del usuario (no redirige si no está logueado)
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Datos de la aldea, ninjas y elegibilidad — todo en paralelo
-  const [aldea, ninjas, haAlcanzadoLimite] = await Promise.all([
+  // Datos de la aldea, ninjas, elegibilidad y cupos máximos — todo en paralelo
+  const [aldea, ninjas, haAlcanzadoLimite, maxCuposRaw] = await Promise.all([
     isRenegado ? Promise.resolve(null) : MasterServerService.getAldeaById(supabase, Number(id)),
     MasterServerService.getNinjasByAldea(supabase, isRenegado ? null : Number(id)),
     user ? CharacterServerService.hasReachedCharacterLimit(supabase, user.id) : Promise.resolve(false),
+    isRenegado ? Promise.resolve(null) : MasterServerService.getConfiguracion(supabase, 'cupos_maximos_aldea'),
   ]);
 
-  // Puede crear ficha: está logueado Y no ha alcanzado el límite configurado
-  const puedeCrearFicha = !!user && !haAlcanzadoLimite;
+  const maxCupos =
+    maxCuposRaw != null && maxCuposRaw !== ''
+      ? Number(maxCuposRaw)
+      : 30;
+
+  const haAlcanzadoCupoAldea = !isRenegado && ninjas.length >= maxCupos;
+
+  // Puede crear ficha: está logueado Y no ha alcanzado el límite configurado Y la aldea no está llena
+  const puedeCrearFicha = !!user && !haAlcanzadoLimite && !haAlcanzadoCupoAldea;
 
   const aldeaParam = !isRenegado ? `?aldea_id=${id}` : '';
 
@@ -93,31 +101,37 @@ export default async function MundoNinjaPublicVillagePage({
                     SHINOBIS REGISTRADOS
                   </span>
                   <div className={`w-1 h-1 ${isRenegado ? 'bg-rojo-sangre/20' : 'bg-oro/20'} rotate-45`} />
-                  <span className="text-xl xl:text-2xl font-black text-oro italic leading-none">{ninjas.length}</span>
+                  <span className="text-xl xl:text-2xl font-black text-oro italic leading-none">
+                    {isRenegado ? ninjas.length : `${ninjas.length}/${maxCupos}`}
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* CTA de creación de ficha */}
             <div className="shrink-0">
-              {puedeCrearFicha ? (
-                <Link
-                  href={`/crear-ficha${aldeaParam}`}
-                  className={`flex items-center justify-center gap-4 px-10 py-5 ${isRenegado ? 'ninja-btn-rojo' : 'ninja-btn-oro'} text-xs xl:text-sm`}
-                >
-                  <UserPlus className="w-5 h-5" /> CREAR PERSONAJE
-                </Link>
-              ) : !user ? (
+              {!user ? (
                 <Link
                   href="/login"
                   className="flex items-center justify-center gap-4 px-10 py-5 ninja-btn-ghost text-xs xl:text-sm"
                 >
                   <LogIn className="w-5 h-5" /> INICIAR SESIÓN
                 </Link>
-              ) : (
+              ) : haAlcanzadoLimite ? (
                 <div className="flex items-center gap-4 px-10 py-5 bg-black/20 border border-oro/10 ninja-clip-sm text-[10px] xl:text-xs font-black uppercase tracking-widest text-oro/40 italic backdrop-blur-sm">
                   <User className="w-5 h-5 opacity-20" /> Ya posees un personaje activo
                 </div>
+              ) : haAlcanzadoCupoAldea ? (
+                <div className="flex items-center gap-4 px-10 py-5 bg-rojo-sangre/10 border border-rojo-sangre/30 ninja-clip-sm text-[10px] xl:text-xs font-black uppercase tracking-widest text-rojo-sangre/70 italic backdrop-blur-sm shadow-[0_0_15px_rgba(185,28,28,0.15)]">
+                  <User className="w-5 h-5 opacity-40 text-rojo-sangre" /> Cupos agotados en esta aldea
+                </div>
+              ) : (
+                <Link
+                  href={`/crear-ficha${aldeaParam}`}
+                  className={`flex items-center justify-center gap-4 px-10 py-5 ${isRenegado ? 'ninja-btn-rojo' : 'ninja-btn-oro'} text-xs xl:text-sm`}
+                >
+                  <UserPlus className="w-5 h-5" /> CREAR PERSONAJE
+                </Link>
               )}
             </div>
           </div>
@@ -142,10 +156,10 @@ export default async function MundoNinjaPublicVillagePage({
                 <table className="w-full text-left border-collapse min-w-[700px]">
                   <thead>
                     <tr className={`border-b ${isRenegado ? 'border-rojo-sangre/10' : 'border-oro/10'} text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em]`}>
-                      <th className="py-6 px-8 w-24">Apariencia</th>
-                      <th className="py-6 px-8">SHINOBI</th>
-                      <th className="py-6 px-8 text-center w-48">JERARQUÍA</th>
-                      <th className="py-6 px-8 text-right w-40">RANGO</th>
+                      <th className="py-6 px-8 w-24 whitespace-nowrap">Apariencia</th>
+                      <th className="py-6 px-8 w-full whitespace-nowrap">SHINOBI</th>
+                      <th className="py-6 px-8 text-center whitespace-nowrap">JERARQUÍA</th>
+                      <th className="py-6 px-8 text-right whitespace-nowrap">RANGO</th>
                     </tr>
                   </thead>
                   <tbody className={`divide-y ${isRenegado ? 'divide-rojo-sangre/5' : 'divide-oro/5'}`}>
@@ -169,18 +183,18 @@ export default async function MundoNinjaPublicVillagePage({
                             <p className="ninja-title text-xl xl:text-2xl group-hover:text-white transition-colors leading-tight">
                               {ninja.nombre_ninja}
                             </p>
-                            <p className="text-[10px] text-oro/30 font-black uppercase tracking-widest mt-1 italic">
+                            <p className="text-[10px] text-oro/30 font-black uppercase tracking-widest mt-1 italic whitespace-nowrap">
                               @{ (Array.isArray(ninja.profiles) ? ninja.profiles[0]?.username : ninja.profiles?.username) || ninja.hobba_name }
                             </p>
                           </Link>
                         </td>
-                        <td className="py-5 px-8 text-center">
-                          <span className={`text-[10px] xl:text-xs font-black ${isRenegado ? 'text-rojo-sangre/60' : 'text-oro/60'} uppercase tracking-widest`}>
+                        <td className="py-5 px-8 text-center whitespace-nowrap">
+                          <span className={`text-[10px] xl:text-xs font-black ${isRenegado ? 'text-rojo-sangre/60' : 'text-oro/60'} uppercase tracking-widest whitespace-nowrap`}>
                             {ninja.rango_jerarquico || 'SIN RANGO'}
                           </span>
                         </td>
-                        <td className="py-5 px-8 text-right">
-                          <span className={`px-4 py-1.5 ${isRenegado ? 'bg-rojo-sangre/20 text-rojo-sangre border-rojo-sangre/40' : 'bg-oro/10 text-oro border-oro/20'} text-[10px] xl:text-xs font-black border uppercase tracking-widest ninja-clip-xs`}>
+                        <td className="py-5 px-8 text-right whitespace-nowrap">
+                          <span className={`inline-block px-4 py-1.5 ${isRenegado ? 'bg-rojo-sangre/20 text-rojo-sangre border-rojo-sangre/40' : 'bg-oro/10 text-oro border-oro/20'} text-[10px] xl:text-xs font-black border uppercase tracking-widest ninja-clip-xs whitespace-nowrap`}>
                             RANGO {ninja.rango}
                           </span>
                         </td>

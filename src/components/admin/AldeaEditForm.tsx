@@ -23,6 +23,7 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
     nombre_completo: '',
     descripcion: '',
     url_imagen: '',
+    url_icono: '',
     activo: true
   });
   const [loading, setLoading] = useState(false);
@@ -158,6 +159,25 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
                 placeholder="https://..."
                 className="w-full ninja-input py-4"
               />
+            </div>
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1 flex items-center gap-2">
+                <ImageIcon className="w-4 h-4" /> URL Icono / Emblema
+              </label>
+              <div className="flex gap-4 items-start">
+                <input 
+                  type="text"
+                  value={formData.url_icono || ''} 
+                  onChange={(e) => updateField('url_icono', e.target.value)} 
+                  placeholder="/assets/logos_aldeas/konoha.webp"
+                  className="w-full ninja-input py-4 flex-1"
+                />
+                {formData.url_icono && (
+                  <div className="w-16 h-16 shrink-0 border border-oro/20 bg-black/40 p-2 flex items-center justify-center">
+                    <img src={formData.url_icono} alt="" className="w-full h-full object-contain" />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

@@ -190,7 +190,11 @@ export const MasterServerService = {
       .select('valor')
       .eq('clave', clave)
       .single();
-    return data?.valor as string ?? null;
+    const valor = data?.valor;
+    if (valor === null || valor === undefined) return null;
+    if (typeof valor === 'string') return valor;
+    if (typeof valor === 'number' || typeof valor === 'boolean') return String(valor);
+    return JSON.stringify(valor);
   },
 
   async getClanesByAldeaId(supabase: SupabaseClient, aldeaId: number): Promise<RamaClan[]> {
