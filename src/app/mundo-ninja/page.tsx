@@ -4,6 +4,17 @@ import Link from 'next/link';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 
+function getTitleFontSize(name: string) {
+  const len = name.length;
+  if (len <= 4) {
+    return "text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-5xl 2xl:text-6xl";
+  }
+  if (len <= 7) {
+    return "text-2xl sm:text-3xl md:text-4xl lg:text-4xl xl:text-4xl 2xl:text-5xl";
+  }
+  return "text-xl sm:text-2xl md:text-3xl lg:text-3xl xl:text-3xl 2xl:text-4xl";
+}
+
 export default async function MundoNinjaSelectionPage() {
   const supabase = await createClient();
 
@@ -78,21 +89,21 @@ export default async function MundoNinjaSelectionPage() {
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
 
-                  <div className="absolute bottom-8 left-10 right-10 z-10">
-                    <div className="flex justify-between items-end gap-6 w-full">
-                      <div className="flex flex-col gap-2 min-w-0">
-                        <h2 className="ninja-title text-4xl xl:text-6xl group-hover:text-oro transition-all truncate">
+                  <div className="absolute bottom-8 left-8 right-8 z-10">
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4 w-full">
+                      <div className="flex flex-col gap-1 min-w-0">
+                        <h2 className={`ninja-title ${getTitleFontSize(aldea.abreviatura || aldea.nombre_jap)} group-hover:text-oro transition-all leading-tight py-1`}>
                           {aldea.abreviatura || aldea.nombre_jap}
                         </h2>
-                        <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em] truncate">
+                        <span className="text-[10px] sm:text-xs md:text-sm lg:text-base xl:text-lg font-black text-oro/40 uppercase tracking-[0.2em] sm:tracking-[0.4em] break-words">
                           {aldea.nombre_español}
                         </span>
                       </div>
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                        <span className="text-2xl xl:text-4xl font-black text-oro tabular-nums leading-none">
+                      <div className="flex flex-col items-start sm:items-end gap-0.5 shrink-0">
+                        <span className="text-2xl md:text-3xl xl:text-4xl font-black text-oro tabular-nums leading-none">
                           {actuales}/{maxCupos}
                         </span>
-                        <span className="text-[10px] font-black text-oro/20 uppercase tracking-widest">
+                        <span className="text-[10px] md:text-xs xl:text-sm font-black text-oro/20 uppercase tracking-widest">
                           SHINOBIS
                         </span>
                       </div>
@@ -101,18 +112,15 @@ export default async function MundoNinjaSelectionPage() {
                 </div>
 
                 <div className="p-10 xl:p-12 flex flex-col flex-1 relative z-10">
-                  <p className="text-gris-texto/80 text-lg xl:text-xl leading-relaxed mb-8 line-clamp-3">
+                  <p className="text-gris-texto/80 text-base sm:text-lg md:text-xl xl:text-2xl leading-relaxed mb-8 line-clamp-3">
                     {aldea.descripcion || 'Sin descripción registrada.'}
                   </p>
 
                   <div className="mt-auto flex items-center justify-between gap-6">
-                    <div className="flex items-center gap-4 text-oro font-black uppercase tracking-[0.2em] text-xs xl:text-base group-hover:brightness-125 transition-all">
+                    <div className="flex items-center gap-4 text-oro font-black uppercase tracking-[0.2em] text-xs md:text-sm lg:text-base xl:text-lg group-hover:brightness-125 transition-all">
                       <span>Ver censo</span>
                       <div className="w-1.5 h-1.5 bg-oro rotate-45 group-hover:translate-x-2 transition-transform" />
                     </div>
-                    <span className="text-[10px] text-oro/10 font-black tracking-widest italic shrink-0">
-                      #{aldea.slug}
-                    </span>
                   </div>
                 </div>
               </Link>
@@ -128,21 +136,21 @@ export default async function MundoNinjaSelectionPage() {
               <div className="w-full h-full bg-rojo-sangre/5" />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
 
-              <div className="absolute bottom-8 left-10 right-10 z-10">
-                <div className="flex justify-between items-end gap-6 w-full">
-                  <div className="flex flex-col gap-2 min-w-0">
-                    <h2 className="ninja-title text-4xl xl:text-6xl group-hover:text-rojo-sangre transition-all">
+              <div className="absolute bottom-8 left-8 right-8 z-10">
+                <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4 w-full">
+                  <div className="flex flex-col gap-1 min-w-0">
+                    <h2 className={`ninja-title ${getTitleFontSize('RENEGADOS')} group-hover:text-rojo-sangre transition-all leading-tight py-1`}>
                       RENEGADOS
                     </h2>
-                    <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">
+                    <span className="text-[10px] sm:text-xs md:text-sm lg:text-base xl:text-lg font-black text-oro/40 uppercase tracking-[0.2em] sm:tracking-[0.4em] break-words">
                       Shinobis sin afiliación
                     </span>
                   </div>
-                  <div className="flex flex-col items-end gap-1 shrink-0">
-                    <span className="text-2xl xl:text-4xl font-black text-rojo-sangre tabular-nums leading-none">
+                  <div className="flex flex-col items-start sm:items-end gap-0.5 shrink-0">
+                    <span className="text-2xl md:text-3xl xl:text-4xl font-black text-rojo-sangre tabular-nums leading-none">
                       {getCount(null)}
                     </span>
-                    <span className="text-[10px] font-black text-oro/20 uppercase tracking-widest">
+                    <span className="text-[10px] md:text-xs xl:text-sm font-black text-oro/20 uppercase tracking-widest">
                       SHINOBIS
                     </span>
                   </div>
@@ -155,19 +163,16 @@ export default async function MundoNinjaSelectionPage() {
             </div>
 
             <div className="p-10 xl:p-12 flex flex-col flex-1 relative z-10">
-              <p className="text-gris-texto/80 text-lg xl:text-xl leading-relaxed mb-8 line-clamp-3">
+              <p className="text-gris-texto/80 text-base sm:text-lg md:text-xl xl:text-2xl leading-relaxed mb-8 line-clamp-3">
                 Guerreros sin aldea oculta, exiliados o ronin que operan fuera del control de las
                 grandes naciones.
               </p>
 
               <div className="mt-auto flex items-center justify-between gap-6">
-                <div className="flex items-center gap-4 text-oro font-black uppercase tracking-[0.2em] text-xs xl:text-base group-hover:brightness-125 transition-all">
+                <div className="flex items-center gap-4 text-oro font-black uppercase tracking-[0.2em] text-xs md:text-sm lg:text-base xl:text-lg group-hover:brightness-125 transition-all">
                   <span>Ver censo</span>
                   <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45 group-hover:translate-x-2 transition-transform" />
                 </div>
-                <span className="text-[10px] text-oro/10 font-black tracking-widest italic shrink-0">
-                  #renegados
-                </span>
               </div>
             </div>
           </Link>

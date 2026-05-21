@@ -6,14 +6,14 @@ import { ProfileService } from '@/services/supabase/profile.service';
 import NotificationBell from '@/components/layout/NotificationBell';
 import AdminNotificationBadge from '@/components/admin/AdminNotificationBadge';
 import ProfileSettings from '@/components/layout/ProfileSettings';
-import { 
-  User, 
-  ScrollText, 
-  Swords, 
-  ShoppingBag, 
-  Compass, 
-  Coins, 
-  Sparkles, 
+import {
+  User,
+  ScrollText,
+  Swords,
+  ShoppingBag,
+  Compass,
+  Coins,
+  Sparkles,
   ArrowRight,
   MessageSquare,
   UserPlus
@@ -81,8 +81,17 @@ export default async function Home() {
 
   // Merge and sort chronologically
   const events: any[] = [];
-  
+
   registros.forEach((reg: any) => {
+    let targetLink = '/registros';
+    if (reg.tipo === 'mision') {
+      targetLink = '/registros/misiones';
+    } else if (reg.tipo === 'combate') {
+      targetLink = '/registros/combates';
+    } else if (reg.tipo === 'compra') {
+      targetLink = '/registros/compras';
+    }
+
     events.push({
       id: `reg-${reg.id}`,
       tipo: reg.tipo,
@@ -91,7 +100,7 @@ export default async function Home() {
       data: reg.data,
       autorName: reg.autor?.nombre_ninja || 'Ninja Desaparecido',
       avatarUrl: reg.autor?.url_img,
-      link: `/registros`
+      link: targetLink
     });
   });
 
@@ -121,9 +130,9 @@ export default async function Home() {
         <div className="flex flex-col lg:flex-row justify-between items-center gap-6 lg:gap-10">
           {/* Logo and Branding */}
           <div className="flex items-center gap-4 md:gap-10 justify-center lg:justify-start w-full lg:w-auto">
-            <img 
-              src="/assets/ui/logo.png" 
-              alt="Naruto Logo" 
+            <img
+              src="/assets/ui/logo.png"
+              alt="Naruto Logo"
               className="h-14 sm:h-20 md:h-24 xl:h-28 w-auto object-contain drop-shadow-[0_0_20px_rgba(255,230,159,0.3)]"
             />
             <div>
@@ -139,7 +148,7 @@ export default async function Home() {
                 <NotificationBell />
               </div>
             )}
-            
+
             <nav className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
               {profile?.role === 'admin' && (
                 <>
@@ -156,8 +165,8 @@ export default async function Home() {
               {user ? (
                 <LogoutButton />
               ) : (
-                <Link 
-                  href="/login" 
+                <Link
+                  href="/login"
                   className="px-6 py-3.5 ninja-btn-oro text-xs sm:text-sm font-black uppercase tracking-widest text-center"
                 >
                   INICIAR SESIÓN
@@ -169,7 +178,7 @@ export default async function Home() {
       </header>
 
       <main className="w-full max-w-[1800px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 xl:gap-12">
-        
+
         {/* Columna Izquierda: Personaje */}
         <div className="lg:col-span-5 h-full">
           <CharacterSheet />
@@ -178,64 +187,64 @@ export default async function Home() {
         {/* Columna Derecha: Bento Grid de Categorías + Actividad Reciente */}
         <div className="lg:col-span-7 flex flex-col gap-6 xl:gap-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 xl:gap-4">
-          
-          {/* Bienvenida */}
-          <Link href="/bienvenida" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja md:col-span-2 flex flex-col justify-center min-h-[140px]">
-            <div className="relative z-10">
+
+            {/* Bienvenida */}
+            <Link href="/bienvenida" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja md:col-span-2 flex flex-col justify-center min-h-[140px]">
+              <div className="relative z-10">
+                <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
+                  <img src="/assets/icons/shuriken.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
+                  Bienvenida
+                </h3>
+                <p className="text-gris-texto leading-relaxed text-sm xl:text-base max-w-2xl">Información general, reglas y primeros pasos.</p>
+              </div>
+            </Link>
+
+            {/* Noticias */}
+            <Link href="/noticias" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja flex flex-col justify-center min-h-[140px]">
               <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
                 <img src="/assets/icons/shuriken.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
-                Bienvenida
+                Noticias
               </h3>
-              <p className="text-gris-texto leading-relaxed text-sm xl:text-base max-w-2xl">Información general, reglas y primeros pasos.</p>
-            </div>
-          </Link>
+              <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Anuncios oficiales y parches.</p>
+            </Link>
 
-          {/* Noticias */}
-          <Link href="/noticias" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja flex flex-col justify-center min-h-[140px]">
-            <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
-              <img src="/assets/icons/shuriken.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
-              Noticias
-            </h3>
-            <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Anuncios oficiales y parches.</p>
-          </Link>
-
-          {/* Sistemas */}
-          <Link href="/sistemas" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja flex flex-col justify-center min-h-[140px]">
-            <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
-              <img src="/assets/icons/shuriken.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
-              Sistemas
-            </h3>
-            <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Mecánicas y glosario técnico.</p>
-          </Link>
-
-          {/* Registros */}
-          <Link href="/registros" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja flex flex-col justify-center min-h-[140px]">
-            <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
-              <img src="/assets/icons/shuriken.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
-              Registros
-            </h3>
-            <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Historial de misiones y combates.</p>
-          </Link>
-
-          {/* Mundo Ninja */}
-          <Link href="/mundo-ninja" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja flex flex-col justify-center min-h-[140px]">
-            <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
-              <img src="/assets/icons/shuriken.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
-              Mundo Ninja
-            </h3>
-            <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Lore, mapa y jerarquía.</p>
-          </Link>
-
-          {/* Documentos */}
-          <Link href="/documentos" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja md:col-span-2 flex flex-col justify-center min-h-[140px]">
-            <div className="relative z-10">
-              <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4 tracking-widest">
+            {/* Sistemas */}
+            <Link href="/sistemas" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja flex flex-col justify-center min-h-[140px]">
+              <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
                 <img src="/assets/icons/shuriken.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
-                Documentos
+                Sistemas
               </h3>
-              <p className="text-gris-texto leading-relaxed text-sm xl:text-base max-w-2xl">Manuales y normativa oficial del juego.</p>
-            </div>
-          </Link>
+              <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Mecánicas y glosario técnico.</p>
+            </Link>
+
+            {/* Registros */}
+            <Link href="/registros" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja flex flex-col justify-center min-h-[140px]">
+              <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
+                <img src="/assets/icons/shuriken.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
+                Registros
+              </h3>
+              <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Historial de misiones y combates.</p>
+            </Link>
+
+            {/* Mundo Ninja */}
+            <Link href="/mundo-ninja" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja flex flex-col justify-center min-h-[140px]">
+              <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
+                <img src="/assets/icons/shuriken.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
+                Mundo Ninja
+              </h3>
+              <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Lore, mapa y jerarquía.</p>
+            </Link>
+
+            {/* Documentos */}
+            <Link href="/documentos" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja md:col-span-2 flex flex-col justify-center min-h-[140px]">
+              <div className="relative z-10">
+                <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4 tracking-widest">
+                  <img src="/assets/icons/shuriken.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
+                  Documentos
+                </h3>
+                <p className="text-gris-texto leading-relaxed text-sm xl:text-base max-w-2xl">Manuales y normativa oficial del juego.</p>
+              </div>
+            </Link>
 
           </div>
 
@@ -257,7 +266,7 @@ export default async function Home() {
                 latestEvents.map((event) => {
                   const authorName = event.autorName;
                   const timeStr = formatRelativeTime(event.fecha);
-                  
+
                   let typeLabel = '';
                   let typeColor = '';
                   let titleText = '';
@@ -284,8 +293,8 @@ export default async function Home() {
                       if (event.data?.recompensa_xp || event.data?.recompensa_ryous) {
                         rewardElement = (
                           <div className="flex items-center gap-3 text-[10px] xl:text-xs font-bold text-oro/60">
-                            {event.data.recompensa_xp > 0 && <span className="flex items-center gap-1"><Sparkles className="w-3.5 h-3.5 text-oro/40" /> +{event.data.recompensa_xp} XP</span>}
-                            {event.data.recompensa_ryous > 0 && <span className="flex items-center gap-1"><Coins className="w-3.5 h-3.5 text-oro/40" /> +{event.data.recompensa_ryous} R</span>}
+                            {event.data.recompensa_xp > 0 && <span className="flex items-center gap-1"><Sparkles className="w-3.5 h-3.5 text-oro/40" /> +{event.data.recompensa_xp} EXP</span>}
+                            {event.data.recompensa_ryous > 0 && <span className="flex items-center gap-1"><Coins className="w-3.5 h-3.5 text-oro/40" /> +{event.data.recompensa_ryous} RYOUS</span>}
                           </div>
                         );
                       }
@@ -328,10 +337,10 @@ export default async function Home() {
                         <div className="relative shrink-0">
                           <div className="w-10 h-10 xl:w-12 xl:h-12 border border-oro/20 bg-black/40 overflow-hidden flex items-center justify-center ninja-clip-xs group-hover:border-oro/40 transition-all">
                             {event.avatarUrl ? (
-                              <img 
-                                src={event.avatarUrl} 
-                                className="w-full h-full object-cover object-top" 
-                                alt="Avatar" 
+                              <img
+                                src={event.avatarUrl}
+                                className="w-full h-full object-cover object-top"
+                                alt="Avatar"
                               />
                             ) : (
                               <User className="w-5 h-5 text-oro/35" />
@@ -368,7 +377,7 @@ export default async function Home() {
                       </div>
                       <div className="flex items-center gap-4 shrink-0 self-end sm:self-auto">
                         {rewardElement}
-                        <Link 
+                        <Link
                           href={event.link}
                           className="p-1.5 bg-black/40 border border-oro/10 hover:border-oro hover:bg-oro/20 text-oro/60 hover:text-oro transition-all ninja-clip-xs"
                         >
