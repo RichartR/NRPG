@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client';
-import { Aldea, RamaClan, SubEspecialidad, DocumentoSistema, DocumentoCombate, ConfiguracionSistema, Glosario, GlosarioCategoria, GlosarioSubcategoria, Entrenamiento, MisionMaster } from '@/domain/types';
+import { Aldea, RamaClan, SubEspecialidad, DocumentoSistema, DocumentoCombate, ConfiguracionSistema, Glosario, GlosarioCategoria, GlosarioSubcategoria, Entrenamiento, MisionMaster, Tienda, TiendaObjeto } from '@/domain/types';
 import { RewardLogic } from '@/domain/character/logic';
 import { RegistrosService } from './registros.service';
 
@@ -423,5 +423,65 @@ export const AdminService = {
       estado: 'resuelto',
       resolucion 
     }).eq('id', notificacionId);
+  },
+
+  // Gestión de Tiendas Ninja
+  async saveTienda(tienda: Partial<Tienda>) {
+    const supabase = createClient();
+    const { id, ...cleanData } = tienda;
+    if (id) {
+      const { data, error } = await supabase.from('info_tiendas').update(cleanData).eq('id', id).select().single();
+      if (error) throw error;
+      return data;
+    } else {
+      const { data, error } = await supabase.from('info_tiendas').insert([cleanData]).select().single();
+      if (error) throw error;
+      return data;
+    }
+  },
+
+  async deleteTienda(id: number) {
+    const supabase = createClient();
+    const { error } = await supabase.from('info_tiendas').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  async saveTiendaObjeto(obj: Partial<TiendaObjeto>) {
+    const supabase = createClient();
+    const { info_glosario, info_tiendas, id, ...cleanData } = obj as any;
+    if (id) {
+      const { data, error } = await supabase.from('reg_tiendas_objetos').update(cleanData).eq('id', id).select().single();
+      if (error) throw error;
+      return data;
+    } else {
+      const { data, error } = await supabase.from('reg_tiendas_objetos').insert([cleanData]).select().single();
+      if (error) throw error;
+      return data;
+    }
+  },
+
+  async deleteTiendaObjeto(id: number) {
+    const supabase = createClient();
+    const { error } = await supabase.from('reg_tiendas_objetos').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  async reiniciarMonedasEvento() {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('reg_characters')
+      .update({ moneda_evento: 0 })
+      .gt('id', 0);
+    if (error) throw error;
+  },
+
+  async actualizarNombreMoneda(nombre: string) {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('sys_configuracion_sistema')
+      .update({ valor: nombre })
+      .eq('clave', 'moneda_evento_nombre');
+    if (error) throw error;
   }
 };
+

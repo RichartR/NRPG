@@ -98,6 +98,7 @@ export const CharacterService = {
         puntos_stats: updates.puntos_stats,
         xp: updates.xp,
         ryous: updates.ryous,
+        moneda_evento: updates.moneda_evento,
         tiempo_rpg: updates.tiempo_rpg,
         edad: updates.edad,
         sexo: updates.sexo,

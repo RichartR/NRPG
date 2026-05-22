@@ -90,7 +90,7 @@ export default async function Home() {
     } else if (reg.tipo === 'combate') {
       targetLink = '/registros/combates';
     } else if (reg.tipo === 'compra') {
-      targetLink = '/registros/compras';
+      targetLink = '/registros/tiendas';
     }
 
     events.push({
@@ -222,7 +222,7 @@ export default async function Home() {
             <Link href="/registros" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja flex flex-col justify-center min-h-[140px]">
               <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
                 <img src="/assets/icons/shuriken.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
-                Registros
+                Tiendas y Registros
               </h3>
               <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Historial de misiones y combates.</p>
             </Link>
@@ -311,14 +311,38 @@ export default async function Home() {
                       iconElement = <Swords className="w-4 h-4 text-red-500/60" />;
                       break;
                     case 'compra':
-                      typeLabel = 'Adquisición';
-                      typeColor = 'border-amber-600/30 text-amber-500 bg-amber-950/20';
-                      titleText = `Adquirido: ${event.data?.objeto || 'Equipo'}`;
-                      iconElement = <ShoppingBag className="w-4 h-4 text-amber-500/60" />;
+                      typeLabel = 'Compra';
+                      typeColor = 'border-oro/20 text-oro bg-oro/5';
+                      titleText = `¡${event.autorName} ha adquirido ${event.data?.objeto || 'un artículo'}!`;
+                      iconElement = <ShoppingBag className="w-4 h-4 text-oro/60" />;
+                      
+                      const costParts = [];
                       if (event.data?.coste_ryous) {
+                        costParts.push(
+                          <span key="ryous" className="flex items-center gap-1">
+                            <Coins className="w-3.5 h-3.5 text-oro/40" /> -{event.data.coste_ryous.toLocaleString()} RYOUS
+                          </span>
+                        );
+                      }
+                      if (event.data?.coste_exp) {
+                        costParts.push(
+                          <span key="exp" className="flex items-center gap-1">
+                            <Sparkles className="w-3.5 h-3.5 text-oro/40" /> -{event.data.coste_exp.toLocaleString()} EXP
+                          </span>
+                        );
+                      }
+                      if (event.data?.coste_moneda_evento) {
+                        costParts.push(
+                          <span key="evento" className="flex items-center gap-1">
+                            <Coins className="w-3.5 h-3.5 text-oro/40" /> -{event.data.coste_moneda_evento.toLocaleString()} ME
+                          </span>
+                        );
+                      }
+                      
+                      if (costParts.length > 0) {
                         rewardElement = (
-                          <div className="flex items-center gap-1 text-[10px] xl:text-xs font-bold text-amber-500/60">
-                            <Coins className="w-3.5 h-3.5 text-amber-500/40" /> -{event.data.coste_ryous} R
+                          <div className="flex flex-wrap items-center gap-2.5 text-[10px] xl:text-xs font-bold text-oro/60">
+                            {costParts}
                           </div>
                         );
                       }

@@ -1,9 +1,10 @@
 import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
+import { ScrollText } from 'lucide-react';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import Breadcrumbs, { CrumbItem } from '@/components/ui/Breadcrumbs';
+import NinjaCard from '@/components/ui/NinjaCard';
 
 export default async function GroupingDetailPage({ params }: { params: Promise<{ slug: string, grouping: string }> }) {
   const { slug, grouping } = await params;
@@ -60,26 +61,23 @@ export default async function GroupingDetailPage({ params }: { params: Promise<{
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 xl:gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 xl:gap-16">
           {documentos.map((doc) => (
-            <Link
+            <NinjaCard
               key={doc.id}
               href={`/docs/${doc.clave}`}
-              className="group flex items-center justify-between p-10 ninja-card-oro hover-ninja transition-all relative overflow-hidden"
-            >
-              <div className="flex items-center gap-8 relative z-10">
-                <div className="w-16 h-16 bg-oro/5 border border-oro/10 flex items-center justify-center group-hover:bg-oro transition-all duration-500 ninja-clip-md">
-                   <img src="/assets/icons/shuriken.png" className="w-8 h-8 group-hover:invert transition-all" alt="icon" />
+              title={doc.titulo}
+              category="PERGAMINO TÉCNICO"
+              imageUrl={doc.url_imagen || 'https://game.gtimg.cn/images/hyrz/web2026/content.jpg'}
+              description={doc.descripcion || 'Pergamino de doctrina secreta y técnicas de combate.'}
+              actionText="Leer Pergamino"
+              titleClassName="text-2xl sm:text-3xl md:text-4xl"
+              headerOverlayRight={
+                <div className="w-10 h-10 bg-black/60 border border-oro/20 flex items-center justify-center" style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}>
+                  <ScrollText className="w-5 h-5 text-oro" />
                 </div>
-                <div>
-                  <h4 className="ninja-title text-3xl xl:text-4xl group-hover:text-oro transition-colors italic leading-none mb-2">{doc.titulo}</h4>
-                  <p className="text-oro/40 text-[10px] uppercase font-black tracking-widest">{doc.descripcion || 'Pergamino de Combate'}</p>
-                </div>
-              </div>
-              <div className="w-10 h-10 flex items-center justify-center border border-oro/20 text-oro group-hover:bg-oro group-hover:text-rojo-sangre transition-all">
-                 <ChevronRight className="w-6 h-6" />
-              </div>
-            </Link>
+              }
+            />
           ))}
           
           {documentos.length === 0 && (
