@@ -18,14 +18,17 @@ export async function fetchDiscordMessage(messageId: string): Promise<DiscordMes
     const { MasterServerService } = await import('@/services/supabase/master.server.service');
     const channelId = await MasterServerService.getConfiguracion(supabase, 'discord_history_appearance_channel_id');
 
-    if (!token || !channelId) {
-      console.warn("DISCORD_BOT_TOKEN or channel config missing, returning mock data.");
+    // Intercept mock IDs or missing configurations
+    if (!token || !channelId || messageId === '1' || messageId === '2') {
+      console.warn("DISCORD_BOT_TOKEN/channel missing or mock ID requested, returning mock data.");
       return {
         id: messageId,
-        content: "**NOTICIA:** Nuevo Sistema de Combate\n**AUTOR:** Hokage\n**CUERPO:**\nHemos actualizado la calculadora para reflejar mejor el cansancio. ¡Revisa el glosario!",
+        content: messageId === '1' 
+          ? "**NOTICIA:** ¡Bienvenidos al nuevo servidor de NRPG! Revisa las secciones para ver las reglas, mapas, sistemas y crear tu primer personaje shinobi."
+          : "**PARCHE:** Ajustes generales de equilibrio, balance de Taijutsu y optimizaciones en la calculadora de combate.",
         timestamp: new Date().toISOString(),
         author: {
-          username: "MockBot",
+          username: "Sistema",
           avatar: ""
         }
       };
@@ -41,7 +44,11 @@ export async function fetchDiscordMessage(messageId: string): Promise<DiscordMes
     });
 
     if (!res.ok) {
-      console.error(`Error fetching discord message: ${res.statusText}`);
+      if (res.status === 404) {
+        console.warn(`Discord message not found (404): ${messageId}`);
+      } else {
+        console.error(`Error fetching discord message (${res.status}): ${res.statusText}`);
+      }
       return null;
     }
 

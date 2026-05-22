@@ -85,14 +85,17 @@ export default function NinjaCard({
           </p>
         )}
 
-        <div className="flex items-center justify-between gap-6 flex-shrink-0">
+        <div className="flex flex-col gap-1.5 flex-shrink-0 w-full mt-auto">
           {actionText && (
-            <div className={`flex items-center gap-4 ${actionTextClass} font-black uppercase tracking-[0.2em] text-xs md:text-sm lg:text-base xl:text-lg group-hover:brightness-125 transition-all`}>
+            <div className={`flex items-center gap-2 ${actionTextClass} font-black uppercase tracking-[0.2em] text-xs sm:text-sm xl:text-base group-hover:brightness-125 transition-all whitespace-nowrap flex-shrink-0`}>
               <span>{actionText}</span>
-              <div className={`w-1.5 h-1.5 ${dotBgClass} rotate-45 group-hover:translate-x-2 transition-transform`} />
             </div>
           )}
-          {footerRight}
+          {footerRight && (
+            <div className="flex items-center gap-2 flex-shrink-0 min-w-0 mr-auto mt-0.5">
+              {footerRight}
+            </div>
+          )}
         </div>
       </div>
     </>

@@ -89,6 +89,8 @@ export interface Glosario {
   coste_puntos_combate: number;
   activo: boolean;
   inicial?: boolean;
+  es_tienda_exp?: boolean;
+  descripcion?: string;
   // Joins opcionales
   info_glosario_categorias?: GlosarioCategoria;
   info_glosario_subcategorias?: GlosarioSubcategoria;
@@ -148,6 +150,7 @@ export interface Character {
   xp: number;
   ryous: number;
   puntos_combate: number;
+  moneda_evento: number; // Moneda de Evento del personaje
   tiempo_rpg: string;
   edad: number;
   sexo: string;
@@ -268,6 +271,7 @@ export interface DocumentoCombate {
   clave: string;
   descripcion?: string;
   url_drive: string;
+  url_imagen?: string;
   rama_id?: number;
   sub_especialidad_id?: number;
   activo: boolean;
@@ -289,3 +293,31 @@ export interface EstadoCombate {
   nombre: string;
   activo: boolean;
 }
+
+export interface Tienda {
+  id: number;
+  nombre: string;
+  descripcion?: string;
+  activo: boolean;
+  es_evento: boolean;
+  es_experiencia: boolean;
+  nombre_moneda?: string | null;
+  url_imagen?: string | null;
+  created_at?: string;
+}
+
+export interface TiendaObjeto {
+  id: number;
+  tienda_id: number;
+  glosario_id: number;
+  coste_ryous: number;
+  coste_exp: number;
+  coste_moneda_evento: number;
+  mantener_requisitos: boolean;
+  requisitos_personalizados?: any;
+  created_at?: string;
+  // Joins
+  info_glosario?: Glosario;
+  info_tiendas?: Tienda;
+}
+

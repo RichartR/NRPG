@@ -5,12 +5,16 @@ import {
   Sword, Swords, ScrollText, GitBranch, UserCircle, X, Heart, Trash2, Edit3, ShoppingBag,
   ChevronLeft,
   ChevronRight,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Coins,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import { CharacterService } from '@/services/supabase/character.service';
 import { ProfileService } from '@/services/supabase/profile.service';
+import { MasterService } from '@/services/supabase/master.service';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { DataField, SelectField, SearchableSelect } from '@/components/ui/Fields';
 import { Character, CharacterStats, Glosario, PersonajeItem, PersonajeTecnica, Registro } from '@/domain/types';
@@ -77,6 +81,20 @@ export function CharacterSheetView({
 }: CharacterSheetViewProps) {
   const addToast = useToastStore(state => state.addToast);
   const [mounted, setMounted] = useState(false);
+  const [eventCoinName, setEventCoinName] = useState('Monedas de Evento');
+
+  useEffect(() => {
+    setMounted(true);
+    const fetchEventCoinName = async () => {
+      try {
+        const val = await MasterService.getSystemConfig('moneda_evento_nombre');
+        if (val) setEventCoinName(val);
+      } catch (err) {
+        console.error("Error fetching event coin name in CharacterSheetView:", err);
+      }
+    };
+    fetchEventCoinName();
+  }, []);
 
   const [occupancy, setOccupancy] = useState<{
     countByAldea: Record<number, number>;
@@ -527,18 +545,33 @@ export function CharacterSheetView({
         </div>
       </div>
       <div className="flex items-center gap-4 px-8 py-4 ninja-card-oro group hover-ninja">
-        <div className="w-10 h-10 bg-emerald-950/80 border border-emerald-500/30 rotate-45 flex items-center justify-center shadow-[0_0_12px_rgba(16,185,129,0.2)]">
-          <Swords className="w-5 h-5 text-emerald-400 -rotate-45" />
+        <div className="w-10 h-10 bg-emerald-950/80 border border-oro/20 rotate-45 flex items-center justify-center shadow-[0_0_12px_rgba(212,175,55,0.15)]">
+          <Swords className="w-5 h-5 text-oro -rotate-45" />
         </div>
         <div>
-          <p className="text-[9px] font-black text-emerald-500/60 uppercase tracking-[0.3em] mb-1">P. COMBATE (DISPONIBLE / TOTAL)</p>
-          <p className="text-xl xl:text-2xl font-black text-emerald-400 leading-none">
+          <p className="text-[9px] font-black text-oro/40 uppercase tracking-[0.3em] mb-1">P. COMBATE (DISPONIBLE / TOTAL)</p>
+          <p className="text-xl xl:text-2xl font-black text-oro leading-none">
             {character.puntos_combate || 0}
-            <span className="text-emerald-500/20 mx-3">/</span>
-            <span className="text-emerald-500/60 text-sm xl:text-lg">{totalPuntosCombate}</span>
+            <span className="text-oro/20 mx-3">/</span>
+            <span className="text-oro/60 text-sm xl:text-lg">{totalPuntosCombate}</span>
           </p>
         </div>
       </div>
+      {character.moneda_evento !== undefined && (
+        <div className="flex items-center gap-4 px-8 py-4 ninja-card-oro group hover-ninja">
+          <div className="w-10 h-10 bg-purple-950/80 border border-oro/20 rotate-45 flex items-center justify-center shadow-[0_0_12px_rgba(212,175,55,0.15)]">
+            <Coins className="w-5 h-5 text-oro -rotate-45" />
+          </div>
+          <div>
+            <p className="text-[9px] font-black text-oro/40 uppercase tracking-[0.3em] mb-1">
+              {eventCoinName.toUpperCase()}
+            </p>
+            <p className="text-xl xl:text-2xl font-black text-oro leading-none">
+              {new Intl.NumberFormat('es-ES').format(character.moneda_evento || 0)}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -978,17 +1011,47 @@ export function CharacterSheetView({
                         <div key={s} className="bg-black/40 border border-oro/10 p-6 flex justify-between items-center relative group hover:border-oro/40 transition-all overflow-hidden" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 0px)' }}>
                           <div className="absolute top-0 right-0 w-12 h-12 bg-oro/5 rotate-45 -mr-6 -mt-6 pointer-events-none" />
                           <div className="flex flex-col items-start relative z-10">
-                            <span className="text-xs font-black text-oro/40 uppercase tracking-[0.2em]">{s}</span>
-                            <span className="text-[8px] font-black text-oro/20 mt-1 uppercase tracking-tighter">LÍMITE: {max}</span>
+                            <span className="text-xs font-black text-oro/60 uppercase tracking-[0.2em]">{s}</span>
+                            <span className="text-[10px] font-black text-oro/45 mt-0.5 uppercase tracking-wider whitespace-nowrap">LÍMITE: {max}</span>
                           </div>
-                          <div className="flex items-center gap-2 relative z-10">
+                          <div className="flex items-center gap-1.5 relative z-10">
                             <input
                               type="number"
                               value={val}
                               disabled={!isEditing && !isNew}
-                              onChange={(e) => onUpdateStat(s as keyof CharacterStats, parseInt(e.target.value))}
-                              className="bg-transparent text-2xl xl:text-3xl font-black text-oro w-16 text-right outline-none disabled:cursor-default selection:bg-oro/20 leading-none py-1"
+                              onChange={(e) => onUpdateStat(s as keyof CharacterStats, parseInt(e.target.value) || 0)}
+                              className="bg-transparent text-2xl xl:text-3xl font-black text-oro w-12 text-right outline-none disabled:cursor-default selection:bg-oro/20 leading-none py-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             />
+                            {(isEditing || isNew) && (
+                              <div className="flex flex-col gap-0 justify-center items-center select-none">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newVal = val + 1;
+                                    if (newVal <= max) {
+                                      onUpdateStat(s as keyof CharacterStats, newVal);
+                                    }
+                                  }}
+                                  className="text-oro/40 hover:text-oro active:scale-75 transition-all p-0.5"
+                                  title="Incrementar"
+                                >
+                                  <ChevronUp className="w-3.5 h-3.5 stroke-[3]" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newVal = val - 1;
+                                    if (newVal >= 0) {
+                                      onUpdateStat(s as keyof CharacterStats, newVal);
+                                    }
+                                  }}
+                                  className="text-oro/40 hover:text-oro active:scale-75 transition-all p-0.5"
+                                  title="Decrementar"
+                                >
+                                  <ChevronDown className="w-3.5 h-3.5 stroke-[3]" />
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -1056,8 +1119,13 @@ export function CharacterSheetView({
                                   <tr key={`${pi.item_id}-${idx}`} className="hover:bg-oro/[0.02] transition-colors">
                                     <td className="py-4 px-6">
                                       <div className="flex flex-col">
-                                        <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base">
+                                        <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
                                           {pi.info_glosario?.nombre_es}
+                                          {pi.info_glosario?.es_tienda_exp && (
+                                            <span className="px-1.5 py-0.5 text-[8px] font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
+                                              EXP SHOP
+                                            </span>
+                                          )}
                                         </span>
                                         {pi.info_glosario?.nombre_jp && (
                                           <span className="text-[10px] text-oro/30 uppercase font-black tracking-tighter mt-0.5">
@@ -1183,8 +1251,13 @@ export function CharacterSheetView({
                               <tr key={`${pt.tecnica_id}-${idx}`} className="hover:bg-oro/[0.02] transition-colors">
                                 <td className="py-4 px-6">
                                   <div className="flex flex-col">
-                                    <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base">
+                                    <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
                                       {pt.info_glosario?.nombre_es}
+                                      {pt.info_glosario?.es_tienda_exp && (
+                                        <span className="px-1.5 py-0.5 text-[8px] font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
+                                          EXP SHOP
+                                        </span>
+                                      )}
                                     </span>
                                     {pt.info_glosario?.nombre_jp && (
                                       <span className="text-[10px] text-oro/30 uppercase font-black tracking-tighter mt-0.5">
@@ -1307,8 +1380,13 @@ export function CharacterSheetView({
                               <tr key={`${pt.tecnica_id}-${idx}`} className="hover:bg-oro/[0.02] transition-colors">
                                 <td className="py-4 px-6">
                                   <div className="flex flex-col">
-                                    <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base">
+                                    <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
                                       {pt.info_glosario?.nombre_es}
+                                      {pt.info_glosario?.es_tienda_exp && (
+                                        <span className="px-1.5 py-0.5 text-[8px] font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
+                                          EXP SHOP
+                                        </span>
+                                      )}
                                     </span>
                                     {pt.info_glosario?.nombre_jp && (
                                       <span className="text-[10px] text-oro/30 uppercase font-black tracking-tighter mt-0.5">
@@ -1431,8 +1509,13 @@ export function CharacterSheetView({
                               <tr key={`${pt.tecnica_id}-${idx}`} className="hover:bg-oro/[0.02] transition-colors">
                                 <td className="py-4 px-6">
                                   <div className="flex flex-col">
-                                    <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base">
+                                    <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
                                       {pt.info_glosario?.nombre_es}
+                                      {pt.info_glosario?.es_tienda_exp && (
+                                        <span className="px-1.5 py-0.5 text-[8px] font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
+                                          EXP SHOP
+                                        </span>
+                                      )}
                                     </span>
                                     {pt.info_glosario?.nombre_jp && (
                                       <span className="text-[10px] text-oro/30 uppercase font-black tracking-tighter mt-0.5">

@@ -35,7 +35,7 @@ export default function RegistrosLandingPage() {
             title="Misiones"
             titleClassName="text-3xl sm:text-4xl md:text-5xl"
             category="REGISTROS"
-            imageUrl="https://game.gtimg.cn/images/hyrz/web2026/match.jpg"
+            imageUrl="/assets/images/misiones.jpg"
             description="Historial de encargos completados, rangos ninja y recompensas obtenidas por la aldea."
             actionText="Explorar Registros"
           />
@@ -46,20 +46,20 @@ export default function RegistrosLandingPage() {
             title="Combates"
             titleClassName="text-3xl sm:text-4xl md:text-5xl"
             category="REGISTROS"
-            imageUrl="https://game.gtimg.cn/images/hyrz/web2026/ninja.jpg"
+            imageUrl="/assets/images/combate.png"
             description="Crónicas de enfrentamientos, duelos por el honor y batallas a gran escala."
             actionText="Ver Resultados"
           />
 
-          {/* Tarjeta Compras */}
+          {/* Tarjeta Tiendas */}
           <NinjaCard
-            href="/registros/compras"
-            title="Compras"
+            href="/registros/tiendas"
+            title="Tiendas Ninja"
             titleClassName="text-3xl sm:text-4xl md:text-5xl"
             category="REGISTROS"
-            imageUrl="https://game.gtimg.cn/images/hyrz/web2026/player.jpg"
-            description="Registro de transacciones, adquisición de armamento y equipo shinobi."
-            actionText="Revisar Gastos"
+            imageUrl="/assets/images/tienda.png"
+            description="Registro de tiendas activas, comercio shinobi y adquisición de armamento, técnicas y equipo especial."
+            actionText="Visitar Tiendas"
           />
         </div>
       </main>

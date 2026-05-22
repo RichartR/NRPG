@@ -64,6 +64,17 @@ select::-ms-expand {
   display: none !important;
 }
 
+/* Hide number input spinner arrows globally */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+
 @layer utilities {
   .ninja-title {
     background: linear-gradient(to bottom, var(--oro-gradiente-top), var(--oro-principal));
