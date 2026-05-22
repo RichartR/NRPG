@@ -3,6 +3,7 @@ export interface Profile {
   id: string;
   username: string;
   role: 'admin' | 'user';
+  active_char_id?: number | null;
   url_avatar?: string;
   url_img?: string | null;
 }
