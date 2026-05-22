@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 import { sendDiscordMessage, editDiscordMessage, deleteDiscordMessage, getDiscordChannel } from '@/lib/discord';
 import { CharacterServerService } from '@/services/supabase/character.server.service';
+import { MasterServerService } from '@/services/supabase/master.server.service';
 import { createAdminClient } from '@/utils/supabase/admin';
 
 export async function PATCH(
@@ -44,6 +45,88 @@ export async function PATCH(
     // 2. Lógica por secciones
     switch (section) {
       case 'all':
+        // Validar cupos máximos de la aldea/organización si cambia y el personaje está activo
+        if (character.activo && !character.eliminado_voluntario) {
+          if (data.aldea_id && Number(data.aldea_id) !== Number(character.aldea_id)) {
+            // 1. Obtener información de la aldea y su categoría
+            const { data: aldeaInfo, error: aldeaError } = await supabase
+              .from('info_aldeas')
+              .select('nombre_completo, categoria_id')
+              .eq('id', data.aldea_id)
+              .single();
+
+            if (aldeaError) throw aldeaError;
+
+            // 2. Obtener la cantidad de personajes actuales y activos en esa aldea/organización
+            const { count, error: countError } = await supabase
+              .from('reg_characters')
+              .select('*', { count: 'exact', head: true })
+              .eq('aldea_id', data.aldea_id)
+              .eq('activo', true)
+              .eq('eliminado_voluntario', false);
+
+            if (countError) throw countError;
+
+            // 3. Obtener el límite configurado según la categoría
+            let maxCupos = 10;
+            if (aldeaInfo.categoria_id === 2) {
+              // Organización
+              const limitRaw = await MasterServerService.getConfiguracion(supabase, 'cupos_maximos_organizacion');
+              maxCupos = limitRaw != null && limitRaw !== '' ? Number(limitRaw) : 10;
+            } else {
+              // Aldea
+              const limitRaw = await MasterServerService.getConfiguracion(supabase, 'cupos_maximos_aldea');
+              maxCupos = limitRaw != null && limitRaw !== '' ? Number(limitRaw) : 10;
+            }
+
+            if (count !== null && count >= maxCupos) {
+              const tipoEntidad = aldeaInfo.categoria_id === 2 ? 'La organización' : 'La aldea';
+              return NextResponse.json({ error: `${tipoEntidad} "${aldeaInfo.nombre_completo}" ya ha alcanzado el límite máximo de cupos (${maxCupos}) y no permite nuevos shinobis.` }, { status: 400 });
+            }
+          }
+
+          // Validar cupos máximos de los clanes seleccionados que sean NUEVOS para el personaje
+          if (data.personajes_ramas) {
+            const oldRamaIds = (character as any).personajes_ramas?.map((r: any) => Number(r.rama_id)).filter(Boolean) || [];
+            const newRamasInput = data.personajes_ramas || [];
+            const newRamaIds = newRamasInput.map((r: any) => Number(r.rama_id)).filter(Boolean);
+            const addedRamaIds = newRamaIds.filter((id: number) => !oldRamaIds.includes(id));
+
+            if (addedRamaIds.length > 0) {
+              const { data: selectRamas, error: selectRamasError } = await supabase
+                .from('info_ramas_clanes')
+                .select('id, nombre, tipo, es_especial')
+                .in('id', addedRamaIds);
+
+              if (selectRamasError) throw selectRamasError;
+
+              const clans = selectRamas?.filter(r => r.tipo === 'clan') || [];
+              for (const clan of clans) {
+                // 1. Obtener cupos_maximos_aldea de config para calcular el límite dinámico del clan
+                const limitAldeaRaw = await MasterServerService.getConfiguracion(supabase, 'cupos_maximos_aldea');
+                const C = limitAldeaRaw != null && limitAldeaRaw !== '' ? Number(limitAldeaRaw) : 10;
+
+                // Límite de clan = (es_especial ? 2 : 4) + Math.floor((C - 10) / 5)
+                const limitClan = (clan.es_especial ? 2 : 4) + Math.floor((C - 10) / 5);
+
+                // 2. Contar personajes activos en este clan
+                const { count: clanActiveCount, error: clanCountError } = await supabase
+                  .from('reg_personajes_ramas')
+                  .select('id, reg_characters!inner(id)', { count: 'exact', head: true })
+                  .eq('rama_id', clan.id)
+                  .eq('reg_characters.activo', true)
+                  .eq('reg_characters.eliminado_voluntario', false);
+
+                if (clanCountError) throw clanCountError;
+
+                if (clanActiveCount !== null && clanActiveCount >= limitClan) {
+                  return NextResponse.json({ error: `El clan "${clan.nombre}" ya ha alcanzado el límite máximo de cupos (${clanActiveCount}/${limitClan}) y no permite nuevos miembros.` }, { status: 400 });
+                }
+              }
+            }
+          }
+        }
+
         updateData = {
           hobba_name: data.hobba_name,
           nombre_ninja: data.nombre_ninja,

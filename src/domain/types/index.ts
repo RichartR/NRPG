@@ -18,6 +18,7 @@ export interface Aldea {
   url_icono?: string;
   descripcion?: string;
   activo: boolean;
+  categoria_id?: number | null;
 }
 
 export interface RamaClan {
@@ -29,6 +30,7 @@ export interface RamaClan {
   tipo: 'rama' | 'clan';
   aldea_id?: number;
   activo: boolean;
+  es_especial?: boolean;
 }
 
 export interface SubEspecialidad {

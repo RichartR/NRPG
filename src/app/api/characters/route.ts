@@ -13,22 +13,77 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
   try {
-    // Validar cupos máximos de la aldea si no es renegado (renegado es id nulo / no establecido)
+    // Validar cupos máximos de la aldea/organización si no es renegado (renegado es id nulo / no establecido)
     if (data.aldea_id) {
-      // 1. Obtener la cantidad de personajes actuales en esa aldea
+      // 1. Obtener información de la aldea y su categoría
+      const { data: aldeaInfo, error: aldeaError } = await supabase
+        .from('info_aldeas')
+        .select('nombre_completo, categoria_id')
+        .eq('id', data.aldea_id)
+        .single();
+
+      if (aldeaError) throw aldeaError;
+
+      // 2. Obtener la cantidad de personajes actuales y activos en esa aldea/organización
       const { count, error: countError } = await supabase
-        .from('personajes')
+        .from('reg_characters')
         .select('*', { count: 'exact', head: true })
-        .eq('aldea_id', data.aldea_id);
+        .eq('aldea_id', data.aldea_id)
+        .eq('activo', true)
+        .eq('eliminado_voluntario', false);
 
       if (countError) throw countError;
 
-      // 2. Obtener el límite máximo configurado
-      const limitRaw = await MasterServerService.getConfiguracion(supabase, 'cupos_maximos_aldea');
-      const maxCupos = limitRaw != null && limitRaw !== '' ? Number(limitRaw) : 30;
+      // 3. Obtener el límite configurado según la categoría
+      let maxCupos = 10;
+      if (aldeaInfo.categoria_id === 2) {
+        // Organización
+        const limitRaw = await MasterServerService.getConfiguracion(supabase, 'cupos_maximos_organizacion');
+        maxCupos = limitRaw != null && limitRaw !== '' ? Number(limitRaw) : 10;
+      } else {
+        // Aldea
+        const limitRaw = await MasterServerService.getConfiguracion(supabase, 'cupos_maximos_aldea');
+        maxCupos = limitRaw != null && limitRaw !== '' ? Number(limitRaw) : 10;
+      }
 
       if (count !== null && count >= maxCupos) {
-        return NextResponse.json({ error: 'La aldea seleccionada ya ha alcanzado el límite máximo de cupos y no permite nuevos shinobis.' }, { status: 400 });
+        const tipoEntidad = aldeaInfo.categoria_id === 2 ? 'La organización' : 'La aldea';
+        return NextResponse.json({ error: `${tipoEntidad} "${aldeaInfo.nombre_completo}" ya ha alcanzado el límite máximo de cupos (${maxCupos}) y no permite nuevos shinobis.` }, { status: 400 });
+      }
+    }
+
+    // Validar cupos máximos de los clanes seleccionados
+    const branchIds = data.personajes_ramas?.map((r: any) => r.rama_id).filter(Boolean) || [];
+    if (branchIds.length > 0) {
+      const { data: selectRamas, error: selectRamasError } = await supabase
+        .from('info_ramas_clanes')
+        .select('id, nombre, tipo, es_especial')
+        .in('id', branchIds);
+
+      if (selectRamasError) throw selectRamasError;
+
+      const clans = selectRamas?.filter(r => r.tipo === 'clan') || [];
+      for (const clan of clans) {
+        // 1. Obtener cupos_maximos_aldea de config para calcular el límite dinámico del clan
+        const limitAldeaRaw = await MasterServerService.getConfiguracion(supabase, 'cupos_maximos_aldea');
+        const C = limitAldeaRaw != null && limitAldeaRaw !== '' ? Number(limitAldeaRaw) : 10;
+
+        // Límite de clan = (es_especial ? 2 : 4) + FLOOR((C - 10) / 5)
+        const limitClan = (clan.es_especial ? 2 : 4) + Math.floor((C - 10) / 5);
+
+        // 2. Contar personajes activos en este clan
+        const { count: clanActiveCount, error: clanCountError } = await supabase
+          .from('reg_personajes_ramas')
+          .select('id, reg_characters!inner(id)', { count: 'exact', head: true })
+          .eq('rama_id', clan.id)
+          .eq('reg_characters.activo', true)
+          .eq('reg_characters.eliminado_voluntario', false);
+
+        if (clanCountError) throw clanCountError;
+
+        if (clanActiveCount !== null && clanActiveCount >= limitClan) {
+          return NextResponse.json({ error: `El clan "${clan.nombre}" ya ha alcanzado el límite máximo de cupos (${clanActiveCount}/${limitClan}) y no permite nuevos miembros.` }, { status: 400 });
+        }
       }
     }
 

@@ -77,9 +77,86 @@ export function CharacterSheetView({
 }: CharacterSheetViewProps) {
   const addToast = useToastStore(state => state.addToast);
   const [mounted, setMounted] = useState(false);
+
+  const [occupancy, setOccupancy] = useState<{
+    countByAldea: Record<number, number>;
+    countByClan: Record<number, number>;
+    cuposMaximosAldea: number;
+    cuposMaximosOrganizacion: number;
+  }>({
+    countByAldea: {},
+    countByClan: {},
+    cuposMaximosAldea: 10,
+    cuposMaximosOrganizacion: 10
+  });
+
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (isEditing || isNew) {
+      fetch('/api/characters/occupancy')
+        .then(res => res.json())
+        .then(data => {
+          if (data && !data.error) {
+            setOccupancy(data);
+          }
+        })
+        .catch(err => console.error("Error fetching occupancy in CharacterSheetView:", err));
+    }
+  }, [isEditing, isNew]);
+
+  const aldeaOptions = useMemo(() => {
+    return (masters.aldeas || []).map((a: any) => {
+      const activeCount = occupancy.countByAldea[a.id] || 0;
+      const isOrganizacion = a.categoria_id === 2;
+      const limit = isOrganizacion ? occupancy.cuposMaximosOrganizacion : occupancy.cuposMaximosAldea;
+      
+      const isOriginalAldea = !isNew && originalCharacter?.aldea_id === a.id;
+      const isFull = activeCount >= limit;
+      const shouldDisable = isFull && !isOriginalAldea;
+
+      const label = `${a.nombre_completo} (${activeCount}/${limit} cupos)${shouldDisable ? ' - LLENO' : ''}`;
+      return {
+        label,
+        value: a.id,
+        disabled: shouldDisable
+      };
+    });
+  }, [masters.aldeas, occupancy, originalCharacter, isNew]);
+
+  const getClanOptions = (slot: number) => {
+    const filteredRamas = (masters.ramas || []).filter((r: any) => !r.aldea_id || Number(r.aldea_id) === Number(character.aldea_id));
+
+    return filteredRamas.map((r: any) => {
+      const isClan = r.tipo === 'clan';
+      if (!isClan) {
+        return {
+          label: r.nombre,
+          value: r.id,
+          disabled: false
+        };
+      }
+
+      const activeCount = occupancy.countByClan[r.id] || 0;
+      const C = occupancy.cuposMaximosAldea;
+      const limit = (r.es_especial ? 2 : 4) + Math.floor((C - 10) / 5);
+
+      const isOriginalClan = !isNew && originalCharacter?.personajes_ramas?.some((pr: any) => pr.rama_id === r.id);
+      const isFull = activeCount >= limit;
+      const shouldDisable = isFull && !isOriginalClan;
+
+      const tagEspecial = r.es_especial ? ' [Especial]' : '';
+      const label = `${r.nombre}${tagEspecial} (${activeCount}/${limit} cupos)${shouldDisable ? ' - LLENO' : ''}`;
+
+      return {
+        label,
+        value: r.id,
+        disabled: shouldDisable
+      };
+    });
+  };
 
   // Cálculos Memoizados para evitar trabajo redundante en cada render
   const { allRegistros, totalExp, totalRyous, missionCounts, totalPuntosCombate } = useMemo(() => {
@@ -796,7 +873,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                     <SelectField 
                       label="ALDEA DE ORIGEN" 
                       value={character.aldea_id} 
-                      options={masters.aldeas.map((a:any)=>({label:a.nombre_completo, value:a.id}))} 
+                      options={aldeaOptions} 
                       disabled={!isEditing && !isNew} 
                       placeholder="SIN ALDEA"
                       onChange={(v)=>onUpdateField('aldea_id', v ? Number(v) : null)} 
@@ -824,10 +901,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                             <SelectField 
                               label="RAMA / CLAN" 
                               value={pr?.rama_id} 
-                              options={masters.ramas
-                                 .filter((r: any) => !r.aldea_id || Number(r.aldea_id) === Number(character.aldea_id))
-                                 .map((r:any)=>({label:r.nombre, value:r.id}))
-                               } 
+                              options={getClanOptions(slot)} 
                               disabled={!isEditing && !isNew} 
                               onChange={(v)=>{
                                 const newRamas = [...(character.personajes_ramas?.filter((r:any)=>Number(r.slot) !== slot) || []), { slot, rama_id: Number(v), sub_especialidad_id: null, id_entrenamiento: null }];
