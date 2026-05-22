@@ -20,6 +20,7 @@ export default function SubEspecialidadList({ initialSubs, ramas }: { initialSub
     slug: '', 
     rama_id: undefined, 
     descripcion: '',
+    url_imagen: '',
     activo: true 
   });
   const [loading, setLoading] = useState(false);
@@ -39,7 +40,7 @@ export default function SubEspecialidadList({ initialSubs, ramas }: { initialSub
 
       const data = await AdminService.saveSubEspecialidad(payload);
       setSubs([data as SubEspecialidad, ...subs]);
-      setNewSub({ nombre: '', slug: '', rama_id: undefined, descripcion: '', activo: true });
+      setNewSub({ nombre: '', slug: '', rama_id: undefined, descripcion: '', url_imagen: '', activo: true });
       setIsAdding(false);
       addToast("Sub-especialidad creada con éxito", "success");
       router.refresh();
@@ -148,7 +149,7 @@ export default function SubEspecialidadList({ initialSubs, ramas }: { initialSub
         <div className="bg-zinc-950 border border-blue-500/20 rounded-[3rem] p-10 animate-in slide-in-from-top-4 duration-300 space-y-8 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <DataField 
               label="Nombre" 
               value={newSub.nombre || ''} 
@@ -162,6 +163,12 @@ export default function SubEspecialidadList({ initialSubs, ramas }: { initialSub
               value={newSub.rama_id} 
               options={ramas.map(r => ({ label: r.nombre, value: r.id }))} 
               onChange={v => setNewSub({ ...newSub, rama_id: Number(v) })} 
+            />
+            <DataField 
+              label="URL Imagen" 
+              value={newSub.url_imagen || ''} 
+              onChange={v => setNewSub({ ...newSub, url_imagen: v })} 
+              placeholder="https://ejemplo.com/imagen.jpg"
             />
           </div>
 
@@ -202,11 +209,13 @@ export default function SubEspecialidadList({ initialSubs, ramas }: { initialSub
               <div className="space-y-6">
                 <DataField label="Nombre" value={editForm.nombre || ''} onChange={v => setEditForm({ ...editForm, nombre: v })} />
                 <SearchableSelect label="Rama" value={editForm.rama_id} options={ramas.map(r => ({ label: r.nombre, value: r.id }))} onChange={v => setEditForm({ ...editForm, rama_id: Number(v) })} />
+                <DataField label="URL Imagen" value={editForm.url_imagen || ''} onChange={v => setEditForm({ ...editForm, url_imagen: v })} placeholder="https://ejemplo.com/imagen.jpg" />
                 <textarea 
                   value={editForm.descripcion || ''} 
                   onChange={e => setEditForm({ ...editForm, descripcion: e.target.value })}
                   className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-white text-xs outline-none focus:border-blue-500"
                   rows={3}
+                  placeholder="Descripción / Lore"
                 />
                 <div className="flex justify-end gap-4 pt-4">
                   <button onClick={() => setEditingId(null)} className="text-zinc-600 font-black uppercase text-[10px] tracking-widest px-4">Cancelar</button>
@@ -218,7 +227,11 @@ export default function SubEspecialidadList({ initialSubs, ramas }: { initialSub
                 <div>
                   <div className="flex justify-between items-start mb-6">
                     <div className="w-16 h-16 rounded-2xl bg-zinc-900 border border-zinc-800 overflow-hidden flex items-center justify-center group-hover:border-blue-500/50 transition-all">
-                      <Shield className="w-6 h-6 text-zinc-700 group-hover:text-blue-500" />
+                      {sub.url_imagen ? (
+                        <img src={sub.url_imagen} alt={sub.nombre} className="w-full h-full object-cover" />
+                      ) : (
+                        <Shield className="w-6 h-6 text-zinc-700 group-hover:text-blue-500" />
+                      )}
                     </div>
                     <div className="flex items-center gap-3">
                       <button 

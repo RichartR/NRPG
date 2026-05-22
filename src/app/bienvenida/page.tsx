@@ -1,12 +1,10 @@
-import Link from 'next/link';
-import { ArrowLeft, BookOpen } from 'lucide-react';
 import { createClient } from '@/utils/supabase/server';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
+import NinjaCard from '@/components/ui/NinjaCard';
 
 export default async function BienvenidaPage() {
   const supabase = await createClient();
-
   const docs = await MasterServerService.getDocumentosByCategoria(supabase, 'bienvenida');
 
   return (
@@ -37,38 +35,16 @@ export default async function BienvenidaPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10 xl:gap-16">
           {docs.map((doc) => (
-            <Link 
-              key={doc.id} 
+            <NinjaCard
+              key={doc.id}
               href={`/docs/${doc.clave}`}
-              className="group relative overflow-hidden ninja-card-oro p-10 xl:p-16 hover-ninja flex flex-col justify-between min-h-[400px]"
-            >
-              {/* Imagen de fondo opcional del documento */}
-              {doc.url_imagen && (
-                <div className="absolute inset-0 z-0 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
-                  <img 
-                    src={doc.url_imagen} 
-                    alt="" 
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent" />
-                </div>
-              )}
-
-              <div className="relative z-10">
-                <div className="flex items-center gap-4 mb-8">
-                  <h3 className="text-3xl xl:text-5xl font-black text-oro uppercase tracking-widest">{doc.titulo}</h3>
-                </div>
-                <p className="text-gris-texto/80 text-lg xl:text-2xl leading-relaxed max-w-sm mb-12">
-                  {doc.descripcion}
-                </p>
-              </div>
-              
-              <div className="flex items-center gap-4 text-oro font-black uppercase tracking-[0.2em] text-xs xl:text-base group-hover:brightness-125 transition-all relative z-10">
-                <span>Consultar Guía</span>
-                <div className="w-1.5 h-1.5 bg-oro rotate-45 group-hover:translate-x-2 transition-transform" />
-              </div>
-            </Link>
+              title={doc.titulo}
+              titleClassName="text-2xl sm:text-3xl md:text-4xl"
+              category="BIENVENIDA"
+              imageUrl={doc.url_imagen}
+              description={doc.descripcion}
+              actionText="Consultar Guía"
+            />
           ))}
         </div>
       </main>

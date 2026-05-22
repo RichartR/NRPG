@@ -1,9 +1,9 @@
 import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
-import { Map, ChevronRight } from 'lucide-react';
+import { Map } from 'lucide-react';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
+import NinjaCard from '@/components/ui/NinjaCard';
 
 export default async function AldeaDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -62,25 +62,16 @@ export default async function AldeaDetailPage({ params }: { params: Promise<{ sl
           {clanes && clanes.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 xl:gap-16">
               {clanes.map((clan) => (
-                <Link 
-                  key={clan.id} 
+                <NinjaCard
+                  key={clan.id}
                   href={`/ramas/${clan.slug}`}
-                  className="group relative overflow-hidden ninja-card-oro p-10 xl:p-16 hover-ninja flex flex-col justify-between min-h-[400px] xl:min-h-[450px]"
-                >
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-4 mb-8">
-                      <h3 className="ninja-title text-3xl xl:text-5xl group-hover:text-oro transition-all leading-none">{clan.nombre}</h3>
-                    </div>
-                    <p className="text-gris-texto/80 text-lg xl:text-2xl leading-relaxed mb-12 italic line-clamp-5">
-                      {clan.descripcion}
-                    </p>
-                  </div>
-                  
-                  <div className="flex items-center gap-4 text-oro font-black uppercase tracking-[0.2em] text-xs xl:text-base group-hover:brightness-125 transition-all relative z-10">
-                    <span>Explorar Clan</span>
-                    <div className="w-1.5 h-1.5 bg-oro rotate-45 group-hover:translate-x-2 transition-transform" />
-                  </div>
-                </Link>
+                  title={clan.nombre}
+                  titleClassName="text-2xl sm:text-3xl md:text-4xl"
+                  category={clan.tipo === 'clan' ? 'CLAN' : clan.tipo === 'rama' ? 'RAMA' : 'ESPECIALIDAD'}
+                  imageUrl={clan.url_imagen || 'https://game.gtimg.cn/images/hyrz/web2026/content.jpg'}
+                  description={clan.descripcion}
+                  actionText="Explorar Clan"
+                />
               ))}
             </div>
           ) : (

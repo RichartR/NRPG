@@ -28,10 +28,11 @@ export interface RamaClan {
   nombre: string;
   slug: string;
   descripcion?: string;
-  tipo: 'rama' | 'clan';
+  tipo: 'rama' | 'clan' | 'especialidad';
   aldea_id?: number;
   activo: boolean;
   es_especial?: boolean;
+  url_imagen?: string;
 }
 
 export interface SubEspecialidad {

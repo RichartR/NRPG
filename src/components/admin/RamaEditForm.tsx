@@ -30,7 +30,8 @@ export default function RamaEditForm({ rama, aldeas, onCancel }: RamaEditFormPro
       tipo: 'rama',
       aldea_id: undefined,
       activo: true,
-      es_especial: false
+      es_especial: false,
+      url_imagen: ''
     };
   });
   const [loading, setLoading] = useState(false);
@@ -165,6 +166,14 @@ export default function RamaEditForm({ rama, aldeas, onCancel }: RamaEditFormPro
                 </div>
               </div>
             )}
+            <div className="md:col-span-2">
+              <DataField 
+                label="URL Imagen" 
+                value={formData.url_imagen} 
+                onChange={(v) => updateField('url_imagen', v)} 
+                placeholder="https://ejemplo.com/imagen.jpg"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
