@@ -6,11 +6,19 @@ export const MasterService = {
     const supabase = createClient();
     const { data, error } = await supabase
       .from('info_aldeas')
-      .select('*')
-      .order('nombre_jap', { ascending: true });
+      .select('*');
     
     if (error) throw error;
-    return data || [];
+    if (!data) return [];
+
+    const mainIds = [1, 2, 3, 4, 5];
+    return data.sort((a, b) => {
+      const aIsMain = mainIds.includes(a.id);
+      const bIsMain = mainIds.includes(b.id);
+      if (aIsMain && !bIsMain) return -1;
+      if (!aIsMain && bIsMain) return 1;
+      return a.id - b.id;
+    });
   },
 
   async getRamas(): Promise<RamaClan[]> {

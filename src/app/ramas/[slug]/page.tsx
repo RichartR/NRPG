@@ -1,9 +1,10 @@
 import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { GitBranch, ScrollText, Swords, ChevronRight } from 'lucide-react';
+import { GitBranch, ScrollText, ChevronRight } from 'lucide-react';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import Breadcrumbs, { CrumbItem } from '@/components/ui/Breadcrumbs';
+import NinjaCard from '@/components/ui/NinjaCard';
 
 export default async function RamaDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -32,9 +33,9 @@ export default async function RamaDetailPage({ params }: { params: Promise<{ slu
 
   if (rama.tipo === 'clan' && rama.info_aldeas) {
     breadcrumbsItems.push({ label: 'Aldeas y Organizaciones', href: '/aldeas' });
-    breadcrumbsItems.push({ 
-      label: rama.info_aldeas.abreviatura || (rama.info_aldeas as any).nombre_completo, 
-      href: `/aldeas/${rama.info_aldeas.slug}` 
+    breadcrumbsItems.push({
+      label: rama.info_aldeas.abreviatura || (rama.info_aldeas as any).nombre_completo,
+      href: `/aldeas/${rama.info_aldeas.slug}`
     });
   } else {
     breadcrumbsItems.push({ label: 'Ramas', href: '/ramas' });
@@ -67,22 +68,16 @@ export default async function RamaDetailPage({ params }: { params: Promise<{ slu
             <h2 className="ninja-title text-4xl xl:text-6xl mb-10">Sub-Especialidades</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 xl:gap-16">
               {subEspecialidades.map((sub) => (
-                <Link
+                <NinjaCard
                   key={sub.id}
                   href={`/ramas/${slug}/${sub.slug}`}
-                  className="group relative overflow-hidden ninja-card-oro p-10 xl:p-16 hover-ninja flex flex-col justify-between min-h-[350px]"
-                >
-                  <div className="relative z-10">
-                    <h3 className="ninja-title text-3xl xl:text-5xl group-hover:text-oro transition-all mb-6">{sub.nombre}</h3>
-                    <p className="text-gris-texto/80 text-lg xl:text-xl italic leading-relaxed line-clamp-4">
-                      {sub.nombre_español || sub.descripcion}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-4 text-oro font-black uppercase tracking-[0.2em] text-xs xl:text-base group-hover:brightness-125 transition-all relative z-10">
-                    <span>Ver Documento</span>
-                    <div className="w-1.5 h-1.5 bg-oro rotate-45 group-hover:translate-x-2 transition-transform" />
-                  </div>
-                </Link>
+                  title={sub.nombre}
+                  category="SUB-ESPECIALIDAD"
+                  imageUrl={sub.url_imagen || 'https://game.gtimg.cn/images/hyrz/web2026/player.jpg'}
+                  description={sub.nombre_español || sub.descripcion || ''}
+                  actionText="Ver Documento"
+                  titleClassName="text-2xl sm:text-3xl md:text-4xl"
+                />
               ))}
             </div>
           </div>
@@ -90,7 +85,7 @@ export default async function RamaDetailPage({ params }: { params: Promise<{ slu
 
         {documentos.length > 0 && (
           <div className="mb-16">
-            <h2 className="ninja-title text-4xl xl:text-6xl mb-10">Archivos Doctrinales</h2>
+            <h2 className="ninja-title text-4xl xl:text-6xl mb-10">Pergaminos</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 xl:gap-12">
               {documentos.map((doc) => (
                 <Link
@@ -108,7 +103,7 @@ export default async function RamaDetailPage({ params }: { params: Promise<{ slu
                     </div>
                   </div>
                   <div className="w-10 h-10 flex items-center justify-center border border-oro/20 text-oro group-hover:bg-oro group-hover:text-rojo-sangre transition-all">
-                     <ChevronRight className="w-6 h-6" />
+                    <ChevronRight className="w-6 h-6" />
                   </div>
                 </Link>
               ))}

@@ -1,6 +1,6 @@
-import Link from 'next/link';
 import { Swords } from 'lucide-react';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
+import NinjaCard from '@/components/ui/NinjaCard';
 
 export default function DocumentosPage() {
   return (
@@ -34,58 +34,37 @@ export default function DocumentosPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 xl:gap-16 max-w-[1750px]">
           {/* Tarjeta Aldeas */}
-          <Link href="/aldeas" className="group relative overflow-hidden ninja-card-oro p-10 xl:p-16 hover-ninja flex flex-col justify-between min-h-[400px]">
-            <div className="relative z-10">
-                <div className="flex flex-col mb-8">
-                  <span className="text-xs font-black uppercase tracking-[0.4em] text-oro/40 leading-none mb-2">CATEGORÍA</span>
-                  <h2 className="ninja-title text-3xl xl:text-5xl group-hover:text-oro transition-all">ALDEAS</h2>
-                </div>
-              <p className="text-gris-texto/80 text-lg xl:text-2xl leading-relaxed max-w-sm mb-12">
-                Descubre los secretos de aldeas y organizaciones: su historia, clanes fundadores y geografía sagrada.
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-4 text-oro font-black uppercase tracking-[0.2em] text-xs xl:text-base group-hover:brightness-125 transition-all relative z-10">
-              <span>Explorar Mundo</span>
-              <div className="w-1.5 h-1.5 bg-oro rotate-45 group-hover:translate-x-2 transition-transform" />
-            </div>
-          </Link>
+          <NinjaCard
+            href="/aldeas"
+            title="ALDEAS"
+            titleClassName="text-3xl sm:text-4xl md:text-5xl"
+            category="BIBLIOTECA"
+            imageUrl="https://game.gtimg.cn/images/hyrz/web2026/match.jpg"
+            description="Descubre los secretos de aldeas y organizaciones: su historia, clanes fundadores y geografía sagrada."
+            actionText="Explorar Mundo"
+          />
 
           {/* Tarjeta Ramas */}
-          <Link href="/ramas" className="group relative overflow-hidden ninja-card-oro p-10 xl:p-16 hover-ninja flex flex-col justify-between min-h-[400px]">
-            <div className="relative z-10">
-              <div className="flex flex-col mb-8">
-                <span className="text-xs font-black uppercase tracking-[0.4em] text-oro/40 leading-none mb-2">CATEGORÍA</span>
-                <h2 className="ninja-title text-3xl xl:text-5xl group-hover:text-oro transition-all">RAMAS</h2>
-              </div>
-              <p className="text-gris-texto/80 text-lg xl:text-2xl leading-relaxed max-w-sm mb-12">
-                Especialidades de combate, el despertar de clanes y el funcionamiento de las artes ninja prohibidas.
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-4 text-oro font-black uppercase tracking-[0.2em] text-xs xl:text-base group-hover:brightness-125 transition-all relative z-10">
-              <span>Ver Especialidades</span>
-              <div className="w-1.5 h-1.5 bg-oro rotate-45 group-hover:translate-x-2 transition-transform" />
-            </div>
-          </Link>
+          <NinjaCard
+            href="/ramas"
+            title="RAMAS"
+            titleClassName="text-3xl sm:text-4xl md:text-5xl"
+            category="ESPECIALIDAD"
+            imageUrl="https://game.gtimg.cn/images/hyrz/web2026/ninja.jpg"
+            description="Especialidades de combate, el despertar de clanes y el funcionamiento de las artes ninja prohibidas."
+            actionText="Ver Especialidades"
+          />
 
           {/* Tarjeta Glosario */}
-          <Link href="/glosario" className="group relative overflow-hidden ninja-card-oro p-10 xl:p-16 hover-ninja flex flex-col justify-between min-h-[400px]">
-            <div className="relative z-10">
-                <div className="flex flex-col mb-8">
-                  <span className="text-xs font-black uppercase tracking-[0.4em] text-oro/40 leading-none mb-2">CATEGORÍA</span>
-                  <h2 className="ninja-title text-3xl xl:text-5xl group-hover:text-oro transition-all">GLOSARIO</h2>
-                </div>
-              <p className="text-gris-texto/80 text-lg xl:text-2xl leading-relaxed max-w-sm mb-12">
-                Consulta el glosario con todo el conocimiento del mundo shinobi.
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-4 text-oro font-black uppercase tracking-[0.2em] text-xs xl:text-base group-hover:brightness-125 transition-all relative z-10">
-              <span>Consultar Glosario</span>
-              <div className="w-1.5 h-1.5 bg-oro rotate-45 group-hover:translate-x-2 transition-transform" />
-            </div>
-          </Link>
+          <NinjaCard
+            href="/glosario"
+            title="GLOSARIO"
+            titleClassName="text-3xl sm:text-4xl md:text-5xl"
+            category="GLOSARIO"
+            imageUrl="https://game.gtimg.cn/images/hyrz/web2026/content.jpg"
+            description="Consulta el glosario con todo el conocimiento del mundo shinobi."
+            actionText="Consultar Glosario"
+          />
         </div>
       </main>
     </div>

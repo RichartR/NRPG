@@ -60,10 +60,18 @@ export const MasterServerService = {
     const { data, error } = await supabase
       .from('info_aldeas')
       .select('*')
-      .eq('activo', true)
-      .order('nombre_completo');
+      .eq('activo', true);
     if (error) throw error;
-    return data || [];
+    if (!data) return [];
+
+    const mainIds = [1, 2, 3, 4, 5];
+    return data.sort((a, b) => {
+      const aIsMain = mainIds.includes(a.id);
+      const bIsMain = mainIds.includes(b.id);
+      if (aIsMain && !bIsMain) return -1;
+      if (!aIsMain && bIsMain) return 1;
+      return a.id - b.id;
+    });
   },
 
   async getCharacterCountsByAldea(supabase: SupabaseClient, aldeaIds: number[]): Promise<Record<string, number>> {
