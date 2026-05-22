@@ -15,16 +15,25 @@ interface AldeaEditFormProps {
 
 export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
   const isCreate = !aldea;
-  const [formData, setFormData] = useState<Partial<Aldea>>(aldea || {
-    nombre_jap: '',
-    abreviatura: '',
-    slug: '',
-    nombre_español: '',
-    nombre_completo: '',
-    descripcion: '',
-    url_imagen: '',
-    url_icono: '',
-    activo: true
+  const [formData, setFormData] = useState<Partial<Aldea>>(() => {
+    if (aldea) {
+      return {
+        ...aldea,
+        categoria_id: aldea.categoria_id ?? 1
+      };
+    }
+    return {
+      nombre_jap: '',
+      abreviatura: '',
+      slug: '',
+      nombre_español: '',
+      nombre_completo: '',
+      descripcion: '',
+      url_imagen: '',
+      url_icono: '',
+      activo: true,
+      categoria_id: 1
+    };
   });
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -71,7 +80,25 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
             </div>
           </div>
           
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+            <label className="flex items-center gap-3 cursor-pointer group bg-oro/5 px-4 py-2 border border-oro/10 hover:border-oro/30 transition-all">
+              <span className="text-[9px] font-black uppercase tracking-widest text-oro/40">
+                TIPO:
+              </span>
+              <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${formData.categoria_id === 2 ? 'text-oro' : 'text-oro/70'}`}>
+                {formData.categoria_id === 2 ? 'ORGANIZACIÓN' : 'ALDEA'}
+              </span>
+              <input 
+                type="checkbox" 
+                checked={formData.categoria_id === 2} 
+                onChange={(e) => updateField('categoria_id', e.target.checked ? 2 : 1)}
+                className="hidden"
+              />
+              <div className={`w-8 h-4 rounded-none transition-all relative ${formData.categoria_id === 2 ? 'bg-oro/20 border-oro/40' : 'bg-black/40 border-oro/10'} border`}>
+                <div className={`absolute top-[2px] w-2.5 h-2.5 transition-all ${formData.categoria_id === 2 ? 'right-[2px] bg-oro shadow-[0_0_10px_rgba(255,230,159,0.5)]' : 'left-[2px] bg-oro/10'}`} />
+              </div>
+            </label>
+
             <label className="flex items-center gap-3 cursor-pointer group bg-oro/5 px-4 py-2 border border-oro/10 hover:border-oro/30 transition-all">
               <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${formData.activo ? 'text-oro' : 'text-oro/20'}`}>
                 {formData.activo ? 'ACTIVA' : 'INACTIVA'}

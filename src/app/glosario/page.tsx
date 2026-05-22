@@ -18,6 +18,43 @@ export default async function GlosarioPage() {
     MasterServerService.getSubEspecialidades(supabase)
   ]);
 
+  // 1. Obtener personajes que ocupan cupo (activos OR inactivos por inactividad de menos de 6 meses)
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+  const { data: charactersInCupos } = await supabase
+    .from('reg_characters')
+    .select('id, aldea_id, reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(rama_id)')
+    .eq('eliminado_voluntario', false)
+    .or(`activo.eq.true,and(activo.eq.false,archived_at.gt.${sixMonthsAgo.toISOString()})`);
+
+  const countByAldea: Record<number, number> = {};
+  const countByClan: Record<number, number> = {};
+
+  charactersInCupos?.forEach(c => {
+    if (c.aldea_id) {
+      countByAldea[c.aldea_id] = (countByAldea[c.aldea_id] || 0) + 1;
+    }
+    const ramas = c.reg_personajes_ramas;
+    if (Array.isArray(ramas)) {
+      ramas.forEach((r: any) => {
+        if (r.rama_id) {
+          countByClan[r.rama_id] = (countByClan[r.rama_id] || 0) + 1;
+        }
+      });
+    } else if (ramas && (ramas as any).rama_id) {
+      const rId = (ramas as any).rama_id;
+      countByClan[rId] = (countByClan[rId] || 0) + 1;
+    }
+  });
+
+  // 3. Obtener límites de configuración
+  const limitAldeaRaw = await MasterServerService.getConfiguracion(supabase, 'cupos_maximos_aldea');
+  const limitOrganizacionRaw = await MasterServerService.getConfiguracion(supabase, 'cupos_maximos_organizacion');
+  
+  const cuposMaximosAldea = limitAldeaRaw != null && limitAldeaRaw !== '' ? Number(limitAldeaRaw) : 10;
+  const cuposMaximosOrganizacion = limitOrganizacionRaw != null && limitOrganizacionRaw !== '' ? Number(limitOrganizacionRaw) : 10;
+
   return (
     <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col">
       {/* Header */}
@@ -45,6 +82,10 @@ export default async function GlosarioPage() {
           ramas={ramas}
           aldeas={aldeas}
           subespecialidades={subespecialidades}
+          countByAldea={countByAldea}
+          countByClan={countByClan}
+          cuposMaximosAldea={cuposMaximosAldea}
+          cuposMaximosOrganizacion={cuposMaximosOrganizacion}
         />
       </main>
     </div>

@@ -11,9 +11,24 @@ interface GlosarioViewProps {
   ramas: any[];
   aldeas: any[];
   subespecialidades: any[];
+  countByAldea?: Record<number, number>;
+  countByClan?: Record<number, number>;
+  cuposMaximosAldea?: number;
+  cuposMaximosOrganizacion?: number;
 }
 
-export default function GlosarioView({ categorias, subcategorias, glosarios, ramas, aldeas, subespecialidades }: GlosarioViewProps) {
+export default function GlosarioView({ 
+  categorias, 
+  subcategorias, 
+  glosarios, 
+  ramas, 
+  aldeas, 
+  subespecialidades,
+  countByAldea = {},
+  countByClan = {},
+  cuposMaximosAldea = 10,
+  cuposMaximosOrganizacion = 10
+}: GlosarioViewProps) {
   const [search, setSearch] = useState('');
   const [selectedCategoria, setSelectedCategoria] = useState<number | null>(null);
   const [selectedAldea, setSelectedAldea] = useState<number | null>(null);
@@ -288,10 +303,17 @@ export default function GlosarioView({ categorias, subcategorias, glosarios, ram
             {/* NIVEL 1: ALDEA */}
             <div className="relative py-6 mb-8 border-b-2 border-oro/30">
                 <div className="flex flex-col items-center text-center">
-                    <span className="text-xs font-black text-rojo-sangre/40 uppercase tracking-[1em] mb-2">Gran Nación</span>
+                    <span className="text-xs font-black text-rojo-sangre/40 uppercase tracking-[1em] mb-2">
+                      {aldeaGroup.info.categoria_id === 2 ? 'Organización' : 'Gran Nación'}
+                    </span>
                     <h2 className="text-4xl xl:text-7xl font-black text-rojo-sangre uppercase tracking-[0.2em]">
                         {aldeaGroup.info.nombre_completo}
                     </h2>
+                    {aldeaGroup.info.id !== null && (
+                      <div className="mt-4 px-5 py-2 bg-oro/10 border border-oro/20 rounded-none text-xs font-black text-oro tracking-[0.2em] uppercase inline-block shadow-[0_0_15px_rgba(212,175,55,0.05)]">
+                        Cupos: <span className="text-white">{countByAldea[aldeaGroup.info.id] ?? 0}</span> / <span className="text-white">{aldeaGroup.info.categoria_id === 2 ? cuposMaximosOrganizacion : cuposMaximosAldea}</span>
+                      </div>
+                    )}
                     <div className="w-24 h-1 bg-oro mt-4 shadow-sm" />
                 </div>
             </div>
@@ -300,9 +322,23 @@ export default function GlosarioView({ categorias, subcategorias, glosarios, ram
               {aldeaGroup.ramas.map((ramaGroup: any) => (
                 <div key={ramaGroup.info.id || 'base'} className="space-y-6">
                   {/* NIVEL 2: RAMA / CLAN */}
-                  <div className="flex flex-col border-l-4 border-rojo-sangre pl-6">
-                        <span className="text-[10px] font-black text-rojo-sangre/60 uppercase tracking-[0.5em] mb-1 italic">Rama / Clan</span>
-                        <h3 className="text-3xl xl:text-5xl font-black text-zinc-900 uppercase tracking-widest">{ramaGroup.info.nombre}</h3>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-l-4 border-rojo-sangre pl-6">
+                    <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-rojo-sangre/60 uppercase tracking-[0.5em] mb-1 italic">
+                          {ramaGroup.info.tipo === 'clan' ? 'Clan' : 'Rama'}
+                        </span>
+                        <h3 className="text-3xl xl:text-5xl font-black text-zinc-900 uppercase tracking-widest">
+                          {ramaGroup.info.nombre}
+                          {ramaGroup.info.tipo === 'clan' && ramaGroup.info.es_especial && (
+                            <span className="ml-3 text-[10px] bg-purple-600/10 border border-purple-500/20 text-purple-600 px-2 py-0.5 font-black tracking-wider uppercase rounded-sm italic align-middle">Especial</span>
+                          )}
+                        </h3>
+                    </div>
+                    {ramaGroup.info.tipo === 'clan' && ramaGroup.info.id !== null && (
+                      <div className="px-4 py-2 bg-zinc-950 text-oro border border-oro/20 rounded-none text-xs font-black tracking-widest uppercase shrink-0 self-start sm:self-center shadow-lg">
+                        Cupos: <span className="text-white">{countByClan[ramaGroup.info.id] ?? 0}</span> / <span className="text-white">{(ramaGroup.info.es_especial ? 2 : 4) + Math.floor((cuposMaximosAldea - 10) / 5)}</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-10 pl-4 md:pl-10">

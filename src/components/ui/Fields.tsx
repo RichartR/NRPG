@@ -28,7 +28,7 @@ export function DataField({ label, value, onChange, disabled, type = "text", pla
 interface SelectFieldProps {
   label: string;
   value?: any;
-  options: { label: string; value: any }[] | string[];
+  options: { label: string; value: any; disabled?: boolean }[] | string[];
   onChange?: (val: string) => void;
   disabled?: boolean;
   placeholder?: string;
@@ -47,7 +47,12 @@ export function SelectField({ label, value, options, onChange, disabled, placeho
         >
           <option value="" className="bg-zinc-950 text-oro/40">{placeholder}</option>
           {options.map((o: any) => (
-            <option key={o.value || o} value={o.value || o} className="bg-zinc-950 text-oro">
+            <option 
+              key={o.value || o} 
+              value={o.value || o} 
+              disabled={o.disabled}
+              className={`bg-zinc-950 ${o.disabled ? 'text-zinc-600 line-through' : 'text-oro'}`}
+            >
               {o.label || o}
             </option>
           ))}
