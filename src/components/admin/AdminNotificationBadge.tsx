@@ -146,11 +146,20 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
   }, [isOpen]);
 
   const handleResolve = async (id: string, action: 'aceptada' | 'rechazada') => {
+    const dispute = disputes.find(d => d.id === id);
+    const isAppeal = dispute ? dispute.registro_id === null : false;
+
     const ok = await confirmAction({
-      title: action === 'aceptada' ? 'Aceptar Disputa' : 'Invalidar Registro',
-      message: action === 'aceptada' 
-        ? '¿Estás seguro de que quieres aceptar la disputa? Se darán las recompensas correspondientes al jugador.'
-        : '¿Estás seguro de que quieres invalidar el registro? Se retirarán las recompensas de todos los implicados.',
+      title: isAppeal
+        ? (action === 'aceptada' ? 'Aceptar Apelación' : 'Rechazar Apelación')
+        : (action === 'aceptada' ? 'Aceptar Disputa' : 'Invalidar Registro'),
+      message: isAppeal
+        ? (action === 'aceptada' 
+            ? '¿Estás seguro de que quieres aceptar la apelación? Se restaurará la ficha de este shinobi.'
+            : '¿Estás seguro de que quieres rechazar la apelación? La ficha seguirá archivada.')
+        : (action === 'aceptada' 
+            ? '¿Estás seguro de que quieres aceptar la disputa? Se darán las recompensas correspondientes al jugador.'
+            : '¿Estás seguro de que quieres invalidar el registro? Se retirarán las recompensas de todos los implicados.'),
       variant: action === 'aceptada' ? 'primary' : 'danger'
     });
 
@@ -158,7 +167,12 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
     setLoading(true);
     try {
       await AdminService.resolveDispute(id, action);
-      addToast(action === 'aceptada' ? 'Disputa resuelta a favor del jugador' : 'Registro invalidado y recompensas revertidas', 'success');
+      addToast(
+        isAppeal
+          ? (action === 'aceptada' ? 'Apelación aceptada y ficha restaurada' : 'Apelación rechazada')
+          : (action === 'aceptada' ? 'Disputa resuelta a favor del jugador' : 'Registro invalidado y recompensas revertidas'), 
+        'success'
+      );
       fetchData();
     } catch (err: any) {
       addToast(err.message || 'Error al resolver disputa', 'error');
@@ -253,9 +267,15 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
                             </span>
                           </div>
                           
-                          <span className="text-[8px] font-black uppercase px-2 py-0.5 bg-rojo-sangre text-oro border border-oro/20 inline-block tracking-wider ninja-clip-xs mb-2">
-                            Rechazo: {d.registro?.tipo}
-                          </span>
+                          {d.registro_id === null ? (
+                            <span className="text-[8px] font-black uppercase px-2 py-0.5 bg-oro text-rojo-sangre border border-oro/20 inline-block tracking-wider ninja-clip-xs mb-2">
+                              Apelación de Shinobi
+                            </span>
+                          ) : (
+                            <span className="text-[8px] font-black uppercase px-2 py-0.5 bg-rojo-sangre text-oro border border-oro/20 inline-block tracking-wider ninja-clip-xs mb-2">
+                              Rechazo: {d.registro?.tipo}
+                            </span>
+                          )}
 
                           <div className="p-2.5 bg-black/5 border border-black/5 relative shadow-inner mb-1 rounded-sm">
                             <p className="text-black/75 text-[10px] leading-relaxed italic font-medium">
@@ -263,9 +283,15 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
                             </p>
                           </div>
                           
-                          <span className="text-[9px] text-black/45 font-semibold tracking-wide">
-                            Registro: "{d.registro?.data?.titulo || 'Sin título'}"
-                          </span>
+                          {d.registro_id === null ? (
+                            <span className="text-[9px] text-black/45 font-semibold tracking-wide">
+                              Apelación para reactivar cuenta archivada.
+                            </span>
+                          ) : (
+                            <span className="text-[9px] text-black/45 font-semibold tracking-wide">
+                              Registro: "{d.registro?.data?.titulo || 'Sin título'}"
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -282,15 +308,17 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
                           disabled={loading}
                           className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-rojo-sangre/10 text-rojo-sangre border border-rojo-sangre/20 text-[9px] font-black uppercase tracking-widest hover:bg-rojo-sangre hover:text-oro active:scale-[0.98] transition-all cursor-pointer ninja-clip-xs"
                         >
-                          <X className="w-3.5 h-3.5 stroke-[3]" /> Invalidar
+                          <X className="w-3.5 h-3.5 stroke-[3]" /> {d.registro_id === null ? 'Rechazar' : 'Invalidar'}
                         </button>
-                        <button 
-                          onClick={() => setSelectedRegistro(d.registro)}
-                          className="p-2 bg-black/5 text-black/50 hover:text-rojo-sangre hover:border-rojo-sangre/30 transition-all border border-black/10 active:scale-[0.98] cursor-pointer ninja-clip-xs"
-                          title="Inspeccionar Registro Completo"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                        </button>
+                        {d.registro_id !== null && (
+                          <button 
+                            onClick={() => setSelectedRegistro(d.registro)}
+                            className="p-2 bg-black/5 text-black/50 hover:text-rojo-sangre hover:border-rojo-sangre/30 transition-all border border-black/10 active:scale-[0.98] cursor-pointer ninja-clip-xs"
+                            title="Inspeccionar Registro Completo"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

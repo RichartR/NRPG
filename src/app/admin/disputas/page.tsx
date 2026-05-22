@@ -59,11 +59,20 @@ export default function AdminDisputePage() {
   }, []);
 
   const handleResolve = async (id: string, action: 'aceptada' | 'rechazada') => {
+    const dispute = disputes.find(d => d.id === id);
+    const isAppeal = dispute ? dispute.registro_id === null : false;
+
     const ok = await confirmAction({
-      title: action === 'aceptada' ? 'Aceptar Disputa' : 'Invalidar Registro',
-      message: action === 'aceptada' 
-        ? '¿Estás seguro de que quieres aceptar la disputa? Se darán las recompensas correspondientes al jugador.'
-        : '¿Estás seguro de que quieres invalidar el registro? Se retirarán las recompensas de todos los implicados.',
+      title: isAppeal
+        ? (action === 'aceptada' ? 'Aceptar Apelación' : 'Rechazar Apelación')
+        : (action === 'aceptada' ? 'Aceptar Disputa' : 'Invalidar Registro'),
+      message: isAppeal
+        ? (action === 'aceptada' 
+            ? '¿Estás seguro de que quieres aceptar la apelación? Se restaurará la ficha de este shinobi.'
+            : '¿Estás seguro de que quieres rechazar la apelación? La ficha seguirá archivada.')
+        : (action === 'aceptada' 
+            ? '¿Estás seguro de que quieres aceptar la disputa? Se darán las recompensas correspondientes al jugador.'
+            : '¿Estás seguro de que quieres invalidar el registro? Se retirarán las recompensas de todos los implicados.'),
       variant: action === 'aceptada' ? 'primary' : 'danger'
     });
 
@@ -71,7 +80,12 @@ export default function AdminDisputePage() {
     
     try {
       await AdminService.resolveDispute(id, action);
-      addToast(action === 'aceptada' ? 'Disputa resuelta a favor del jugador' : 'Registro invalidado y recompensas revertidas', 'success');
+      addToast(
+        isAppeal
+          ? (action === 'aceptada' ? 'Apelación aceptada y ficha restaurada' : 'Apelación rechazada')
+          : (action === 'aceptada' ? 'Disputa resuelta a favor del jugador' : 'Registro invalidado y recompensas revertidas'), 
+        'success'
+      );
       fetchDisputes();
       router.refresh();
     } catch (err: any) {
@@ -126,9 +140,15 @@ export default function AdminDisputePage() {
                       </div>
                       <div>
                         <h3 className="text-oro font-black text-xl uppercase tracking-wider italic flex items-center gap-2">{d.personaje?.nombre_ninja}</h3>
-                        <span className="text-[10px] text-oro/40 font-bold uppercase tracking-[0.2em] mt-0.5 block">
-                          Rechazó: <span className="text-oro/70">"{d.registro?.data?.titulo || 'Registro sin título'}"</span>
-                        </span>
+                        {d.registro_id === null ? (
+                          <span className="text-[10px] text-oro/40 font-bold uppercase tracking-[0.2em] mt-0.5 block">
+                            Apelación de Shinobi
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-oro/40 font-bold uppercase tracking-[0.2em] mt-0.5 block">
+                            Rechazó: <span className="text-oro/70">"{d.registro?.data?.titulo || 'Registro sin título'}"</span>
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -139,8 +159,12 @@ export default function AdminDisputePage() {
 
                     <div className="flex flex-wrap items-center gap-8 pt-2">
                       <div className="flex flex-col">
-                        <span className="text-[8px] font-black text-oro/30 uppercase tracking-[0.2em]">Tipo de Registro</span>
-                        <span className="text-xs font-black text-oro uppercase mt-0.5 tracking-wider bg-rojo-sangre/20 border border-rojo-sangre/30 px-2.5 py-0.5 ninja-clip-xs">{d.registro?.tipo}</span>
+                        <span className="text-[8px] font-black text-oro/30 uppercase tracking-[0.2em]">
+                          {d.registro_id === null ? 'Tipo de Caso' : 'Tipo de Registro'}
+                        </span>
+                        <span className="text-xs font-black text-oro uppercase mt-0.5 tracking-wider bg-rojo-sangre/20 border border-rojo-sangre/30 px-2.5 py-0.5 ninja-clip-xs">
+                          {d.registro_id === null ? 'Apelación de Recuperación' : d.registro?.tipo}
+                        </span>
                       </div>
                       <div className="flex flex-col">
                         <span className="text-[8px] font-black text-oro/30 uppercase tracking-[0.2em]">Fecha de Envío</span>
@@ -155,22 +179,24 @@ export default function AdminDisputePage() {
                       className="w-full py-3.5 bg-emerald-950/20 border border-emerald-500/25 text-emerald-400 text-[10px] font-black uppercase tracking-[0.25em] hover:bg-emerald-500 hover:text-black transition-all shadow-[0_0_15px_rgba(16,185,129,0.15)] flex items-center justify-center gap-2 cursor-pointer"
                       style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                     >
-                      <Check className="w-4 h-4 stroke-[2.5]" /> ACEPTAR DISPUTA
+                      <Check className="w-4 h-4 stroke-[2.5]" /> {d.registro_id === null ? 'ACEPTAR APELACIÓN' : 'ACEPTAR DISPUTA'}
                     </button>
                     <button 
                       onClick={() => handleResolve(d.id, 'rechazada')}
                       className="w-full py-3.5 bg-rojo-sangre/15 border border-rojo-sangre/30 text-red-400 text-[10px] font-black uppercase tracking-[0.25em] hover:bg-rojo-sangre hover:text-oro transition-all shadow-[0_0_15px_rgba(184,32,32,0.15)] flex items-center justify-center gap-2 cursor-pointer"
                       style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                     >
-                      <X className="w-4 h-4 stroke-[2.5]" /> INVALIDAR REGISTRO
+                      <X className="w-4 h-4 stroke-[2.5]" /> {d.registro_id === null ? 'RECHAZAR APELACIÓN' : 'INVALIDAR REGISTRO'}
                     </button>
-                    <button 
-                      onClick={() => setSelectedRegistro(d.registro)}
-                      className="w-full py-3.5 bg-oro text-rojo-sangre text-[10px] font-black uppercase tracking-[0.25em] hover:brightness-110 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_20px_rgba(255,230,159,0.15)]"
-                      style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
-                    >
-                      <Eye className="w-4 h-4 stroke-[2.5]" /> INSPECCIONAR REGISTRO
-                    </button>
+                    {d.registro_id !== null && (
+                      <button 
+                        onClick={() => setSelectedRegistro(d.registro)}
+                        className="w-full py-3.5 bg-oro text-rojo-sangre text-[10px] font-black uppercase tracking-[0.25em] hover:brightness-110 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_20px_rgba(255,230,159,0.15)]"
+                        style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                      >
+                        <Eye className="w-4 h-4 stroke-[2.5]" /> INSPECCIONAR REGISTRO
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

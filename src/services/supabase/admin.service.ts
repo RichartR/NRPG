@@ -326,30 +326,97 @@ export const AdminService = {
       throw new Error('Esta disputa ya ha sido resuelta por otro administrador.');
     }
 
-    if (resolucion === 'aceptada') {
-      const { xp, ryous } = RewardLogic.calculateReward(notif.registro, notif.personaje_id);
-      const combatPts = RewardLogic.calculateCombatPoints(notif.registro, notif.personaje_id);
-      const { data: char, error: charError } = await supabase
-        .from('reg_characters')
-        .select('xp, ryous, puntos_combate')
-        .eq('id', notif.personaje_id)
-        .single();
-      
-      if (charError) throw charError;
+    if (notif.registro_id === null) {
+      // Es una apelación de shinobi archivado por inactividad
+      if (resolucion === 'aceptada') {
+        // 1. Obtener datos del personaje para saber el user_id
+        const { data: character, error: getError } = await supabase
+          .from('reg_characters')
+          .select('user_id, activo, nombre_ninja')
+          .eq('id', notif.personaje_id)
+          .single();
+        
+        if (getError) throw getError;
+        if (!character) throw new Error('Personaje no encontrado.');
+        if (character.activo) throw new Error('El personaje ya está activo.');
 
-      await supabase.from('reg_characters').update({
-        xp: (char.xp || 0) + xp,
-        ryous: (char.ryous || 0) + ryous,
-        puntos_combate: (char.puntos_combate || 0) + combatPts
-      }).eq('id', notif.personaje_id);
+        // 2. Verificar el límite de personajes activos
+        const { count, error: countError } = await supabase
+          .from('reg_characters')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', character.user_id)
+          .eq('activo', true);
 
-      await supabase.from('reg_registros_participantes').update({ estado: 'finalizado_admin' })
-        .match({ registro_id: notif.registro_id, personaje_id: notif.personaje_id });
+        if (countError) throw countError;
 
+        // Obtener limite de la config
+        const { data: configData, error: configError } = await supabase
+          .from('sys_configuracion')
+          .select('valor')
+          .eq('clave', 'characters_per_player')
+          .single();
+
+        let limit = 1;
+        if (!configError && configData?.valor) {
+          limit = parseInt(configData.valor, 10);
+        }
+
+        if ((count ?? 0) >= limit) {
+          throw new Error(`El usuario ya ha alcanzado el límite de personajes activos (${limit}).`);
+        }
+
+        // 3. Reactivar el personaje y resetear los campos de archivado
+        const { error: updateCharError } = await supabase
+          .from('reg_characters')
+          .update({
+            activo: true,
+            eliminado_voluntario: false,
+            archived_at: null
+          })
+          .eq('id', notif.personaje_id);
+
+        if (updateCharError) throw updateCharError;
+
+        // 4. Si profiles.active_char_id está vacío, asignarle este personaje
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('active_char_id')
+          .eq('id', character.user_id)
+          .single();
+
+        if (!profileError && !profile?.active_char_id) {
+          await supabase
+            .from('profiles')
+            .update({ active_char_id: notif.personaje_id })
+            .eq('id', character.user_id);
+        }
+      }
     } else {
-      // El admin RECHAZA la disputa (el registro era inválido) -> Borrar registro completo
-      // RegistrosService.deleteRegistro ya se encarga de restar XP/Ryous a todos los aceptados
-      await RegistrosService.deleteRegistro(notif.registro_id);
+      // Disputa de registro tradicional
+      if (resolucion === 'aceptada') {
+        const { xp, ryous } = RewardLogic.calculateReward(notif.registro, notif.personaje_id);
+        const combatPts = RewardLogic.calculateCombatPoints(notif.registro, notif.personaje_id);
+        const { data: char, error: charError } = await supabase
+          .from('reg_characters')
+          .select('xp, ryous, puntos_combate')
+          .eq('id', notif.personaje_id)
+          .single();
+        
+        if (charError) throw charError;
+
+        await supabase.from('reg_characters').update({
+          xp: (char.xp || 0) + xp,
+          ryous: (char.ryous || 0) + ryous,
+          puntos_combate: (char.puntos_combate || 0) + combatPts
+        }).eq('id', notif.personaje_id);
+
+        await supabase.from('reg_registros_participantes').update({ estado: 'finalizado_admin' })
+          .match({ registro_id: notif.registro_id, personaje_id: notif.personaje_id });
+
+      } else {
+        // El admin RECHAZA la disputa (el registro era inválido) -> Borrar registro completo
+        await RegistrosService.deleteRegistro(notif.registro_id);
+      }
     }
 
     await supabase.from('sys_notificaciones_admin').update({ 

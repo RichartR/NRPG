@@ -269,5 +269,35 @@ export const CharacterService = {
       info_glosario_categorias: item.info_glosario_categorias,
       info_glosario_subcategorias: item.info_glosario_subcategorias
     })) as Glosario[];
+  },
+
+  async checkPendingAppeal(characterId: number): Promise<boolean> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('sys_notificaciones_admin')
+      .select('id')
+      .eq('personaje_id', characterId)
+      .eq('estado', 'pendiente')
+      .is('registro_id', null);
+    
+    if (error) {
+      console.error('Error checking pending appeal:', error);
+      return false;
+    }
+    return (data && data.length > 0);
+  },
+
+  async appealArchive(characterId: number): Promise<void> {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('sys_notificaciones_admin')
+      .insert({
+        personaje_id: characterId,
+        registro_id: null,
+        mensaje: 'El jugador ha apelado para recuperar su cuenta archivada por inactividad',
+        estado: 'pendiente'
+      });
+    
+    if (error) throw error;
   }
 };

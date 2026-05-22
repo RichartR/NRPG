@@ -1,7 +1,7 @@
 'use client';
 
-import { 
-  User, Briefcase, Zap, Save, ArrowLeft, 
+import {
+  User, Briefcase, Zap, Save, ArrowLeft,
   Sword, Swords, ScrollText, GitBranch, UserCircle, X, Heart, Trash2, Edit3, ShoppingBag,
   ChevronLeft,
   ChevronRight,
@@ -112,7 +112,7 @@ export function CharacterSheetView({
       const activeCount = occupancy.countByAldea[a.id] || 0;
       const isOrganizacion = a.categoria_id === 2;
       const limit = isOrganizacion ? occupancy.cuposMaximosOrganizacion : occupancy.cuposMaximosAldea;
-      
+
       const isOriginalAldea = !isNew && originalCharacter?.aldea_id === a.id;
       const isFull = activeCount >= limit;
       const shouldDisable = isFull && !isOriginalAldea;
@@ -165,8 +165,8 @@ export function CharacterSheetView({
       ...(character.registros_autor || []),
       ...(character.registros_participante?.map((p: any) => p.registro).filter(Boolean) || [])
     ].forEach((r: Registro) => allRegistrosMap.set(r.id, r));
-    
-    const allRegs = Array.from(allRegistrosMap.values()).sort((a, b) => 
+
+    const allRegs = Array.from(allRegistrosMap.values()).sort((a, b) =>
       new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
     );
     const missions = allRegs.filter(r => r.tipo === 'mision');
@@ -185,15 +185,15 @@ export function CharacterSheetView({
     const addedItems = (character.personajes_inventario || []).filter(ci => !(originalCharacter?.personajes_inventario || []).some(oi => Number(oi.item_id) === Number(ci.item_id)));
     const addedTecs = (character.personajes_tecnicas || []).filter(ct => !(originalCharacter?.personajes_tecnicas || []).some(ot => Number(ot.tecnica_id) === Number(ct.tecnica_id)));
 
-    const unsavedExpSpent = 
+    const unsavedExpSpent =
       addedItems.reduce((sum, i) => sum + (i.info_glosario?.coste_exp || 0), 0) +
       addedTecs.reduce((sum, t) => sum + (t.info_glosario?.coste_exp || 0), 0);
 
-    const unsavedRyousSpent = 
+    const unsavedRyousSpent =
       addedItems.reduce((sum, i) => sum + (i.info_glosario?.coste_ryous || 0), 0) +
       addedTecs.reduce((sum, t) => sum + (t.info_glosario?.coste_ryous || 0), 0);
 
-    const unsavedPCSpent = 
+    const unsavedPCSpent =
       addedItems.reduce((sum, i) => sum + (i.info_glosario?.requisitos?.combates || 0), 0) +
       addedTecs.reduce((sum, t) => sum + (t.info_glosario?.requisitos?.combates || 0), 0);
 
@@ -211,11 +211,11 @@ export function CharacterSheetView({
       }
     };
   }, [
-    character.id, 
-    character.xp, 
-    character.ryous, 
-    character.puntos_combate, 
-    character.registros_autor, 
+    character.id,
+    character.xp,
+    character.ryous,
+    character.puntos_combate,
+    character.registros_autor,
     character.registros_participante,
     character.personajes_inventario,
     character.personajes_tecnicas,
@@ -237,7 +237,7 @@ export function CharacterSheetView({
       const rankOrder: Record<string, number> = { 'D': 0, 'C': 1, 'B': 2, 'A': 3, 'S': 4 };
       const charR = (character.rango || 'D').toUpperCase();
       const reqR = req.rango.toUpperCase();
-      
+
       const charRank = rankOrder[charR] ?? 0;
       const reqRank = rankOrder[reqR] ?? 0;
       if (charRank < reqRank) return false;
@@ -266,7 +266,7 @@ export function CharacterSheetView({
       for (const [rank, count] of Object.entries(req.misiones)) {
         const reqCount = Number(count);
         if (isNaN(reqCount) || reqCount <= 0) continue;
-        
+
         const rKey = rank.toUpperCase() as keyof typeof counts;
         const charCount = Number(counts[rKey] || 0);
         if (charCount < reqCount) return false;
@@ -325,7 +325,7 @@ export function CharacterSheetView({
 
   const aldeaObj = useMemo(() => masters.aldeas.find((a: any) => a.id == character.aldea_id), [masters.aldeas, character.aldea_id]);
   const iconUrl = useMemo(() => aldeaObj ? resolveAldeaIcono(aldeaObj) : null, [aldeaObj]);
-  
+
   const canAccessTraining = useMemo(() => {
     const currentRankValue = masters.rankOrder[character.rango || 'D'] || 0;
     const requiredRankValue = masters.rankOrder[masters.requiredTrainingRank] || 0;
@@ -338,10 +338,10 @@ export function CharacterSheetView({
       // Soporte tanto para objeto directo como para array de Supabase
       const catData = pi.info_glosario?.info_glosario_categorias;
       const subData = pi.info_glosario?.info_glosario_subcategorias;
-      
+
       const cat = (Array.isArray(catData) ? catData[0]?.nombre : catData?.nombre) || 'General';
       const sub = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'Otros';
-      
+
       if (!acc[cat]) acc[cat] = {};
       if (!acc[cat][sub]) acc[cat][sub] = [];
       acc[cat][sub].push(pi);
@@ -352,9 +352,9 @@ export function CharacterSheetView({
   const renderRequisitos = (reqs: any) => {
     if (!reqs) return <span className="text-[10px] text-oro/30 italic">Sin requisitos</span>;
     if (typeof reqs === 'string') return <span className="text-[10px] text-oro/60 font-bold uppercase">{reqs}</span>;
-    
+
     const elements: React.ReactNode[] = [];
-    
+
     if (reqs.rango) {
       elements.push(<span key="rango" className="text-rojo-sangre font-black">{reqs.rango}</span>);
     }
@@ -368,7 +368,7 @@ export function CharacterSheetView({
         </span>
       );
     }
-    
+
     if (reqs.stats && typeof reqs.stats === 'object') {
       Object.entries(reqs.stats).forEach(([stat, val]) => {
         if (val && val !== 0) {
@@ -482,78 +482,78 @@ export function CharacterSheetView({
     };
   }, [editingRegistro, editingImageKey]);
 
-// Componentes Helper fuera del render principal para evitar re-montajes
-const ResourceDisplay = ({ character, totalExp, totalRyous, totalPuntosCombate, xpLimitUsage }: { character: Character, totalExp: number, totalRyous: number, totalPuntosCombate: number, xpLimitUsage?: number | null }) => (
-  <div className="flex flex-wrap justify-center items-center gap-6 mb-8">
-    <div className="flex items-center gap-4 px-8 py-4 ninja-card-oro group hover-ninja">
-      <div className="w-10 h-10 bg-rojo-sangre rotate-45 flex items-center justify-center shadow-[0_0_12px_rgba(103,9,9,0.4)]">
-        <span className="text-oro font-black -rotate-45 text-lg italic">¥</span>
-      </div>
-      <div>
-        <p className="text-[9px] font-black text-oro/40 uppercase tracking-[0.3em] mb-1">RYOUS (DISPONIBLE / TOTAL)</p>
-        <p className="text-xl xl:text-2xl font-black text-oro leading-none">
-          {new Intl.NumberFormat('es-ES').format(character.ryous || 0)}
-          <span className="text-oro/20 mx-3">/</span>
-          <span className="text-oro/60 text-sm xl:text-lg">{new Intl.NumberFormat('es-ES').format(totalRyous)}</span>
-        </p>
-      </div>
-    </div>
-    <div className="flex items-center gap-4 px-8 py-4 ninja-card-oro group hover-ninja">
-      <div className="w-10 h-10 bg-oro rotate-45 flex items-center justify-center shadow-[0_0_12px_rgba(255,230,159,0.25)]">
-        <span className="text-rojo-sangre font-black -rotate-45 text-[11px] italic">XP</span>
-      </div>
-      <div>
-        <p className="text-[9px] font-black text-oro/40 uppercase tracking-[0.3em] mb-1">
-          {xpLimitUsage ? 'EXPERIENCIA (DISP. / TOTAL / LÍMITE)' : 'EXPERIENCIA (DISPONIBLE / TOTAL)'}
-        </p>
-        <div className="flex items-center gap-2">
+  // Componentes Helper fuera del render principal para evitar re-montajes
+  const ResourceDisplay = ({ character, totalExp, totalRyous, totalPuntosCombate, xpLimitUsage }: { character: Character, totalExp: number, totalRyous: number, totalPuntosCombate: number, xpLimitUsage?: number | null }) => (
+    <div className="flex flex-wrap justify-center items-center gap-6 mb-8">
+      <div className="flex items-center gap-4 px-8 py-4 ninja-card-oro group hover-ninja">
+        <div className="w-10 h-10 bg-rojo-sangre rotate-45 flex items-center justify-center shadow-[0_0_12px_rgba(103,9,9,0.4)]">
+          <span className="text-oro font-black -rotate-45 text-lg italic">¥</span>
+        </div>
+        <div>
+          <p className="text-[9px] font-black text-oro/40 uppercase tracking-[0.3em] mb-1">RYOUS (DISPONIBLE / TOTAL)</p>
           <p className="text-xl xl:text-2xl font-black text-oro leading-none">
-            {new Intl.NumberFormat('es-ES').format(character.xp || 0)}
+            {new Intl.NumberFormat('es-ES').format(character.ryous || 0)}
             <span className="text-oro/20 mx-3">/</span>
-            <span className="text-oro/60 text-sm xl:text-lg">{new Intl.NumberFormat('es-ES').format(totalExp)}</span>
-            {xpLimitUsage && (
-              <>
-                <span className="text-oro/20 mx-3">/</span>
-                <span className="text-oro/60 text-sm xl:text-lg font-black text-oro/90">{new Intl.NumberFormat('es-ES').format(xpLimitUsage)}</span>
-              </>
-            )}
+            <span className="text-oro/60 text-sm xl:text-lg">{new Intl.NumberFormat('es-ES').format(totalRyous)}</span>
           </p>
-          {xpLimitUsage && totalExp >= xpLimitUsage && (
-            <span className="px-2 py-0.5 text-[8px] font-black uppercase bg-rojo-sangre/20 border border-rojo-sangre/40 text-rojo-sangre tracking-widest ninja-clip-xs animate-pulse">
-              LÍMITE
-            </span>
-          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-4 px-8 py-4 ninja-card-oro group hover-ninja">
+        <div className="w-10 h-10 bg-oro rotate-45 flex items-center justify-center shadow-[0_0_12px_rgba(255,230,159,0.25)]">
+          <span className="text-rojo-sangre font-black -rotate-45 text-[11px] italic">XP</span>
+        </div>
+        <div>
+          <p className="text-[9px] font-black text-oro/40 uppercase tracking-[0.3em] mb-1">
+            {xpLimitUsage ? 'EXPERIENCIA (DISP. / TOTAL / LÍMITE)' : 'EXPERIENCIA (DISPONIBLE / TOTAL)'}
+          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-xl xl:text-2xl font-black text-oro leading-none">
+              {new Intl.NumberFormat('es-ES').format(character.xp || 0)}
+              <span className="text-oro/20 mx-3">/</span>
+              <span className="text-oro/60 text-sm xl:text-lg">{new Intl.NumberFormat('es-ES').format(totalExp)}</span>
+              {xpLimitUsage && (
+                <>
+                  <span className="text-oro/20 mx-3">/</span>
+                  <span className="text-oro/60 text-sm xl:text-lg font-black text-oro/90">{new Intl.NumberFormat('es-ES').format(xpLimitUsage)}</span>
+                </>
+              )}
+            </p>
+            {xpLimitUsage && totalExp >= xpLimitUsage && (
+              <span className="px-2 py-0.5 text-[8px] font-black uppercase bg-rojo-sangre/20 border border-rojo-sangre/40 text-rojo-sangre tracking-widest ninja-clip-xs animate-pulse">
+                LÍMITE
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center gap-4 px-8 py-4 ninja-card-oro group hover-ninja">
+        <div className="w-10 h-10 bg-emerald-950/80 border border-emerald-500/30 rotate-45 flex items-center justify-center shadow-[0_0_12px_rgba(16,185,129,0.2)]">
+          <Swords className="w-5 h-5 text-emerald-400 -rotate-45" />
+        </div>
+        <div>
+          <p className="text-[9px] font-black text-emerald-500/60 uppercase tracking-[0.3em] mb-1">P. COMBATE (DISPONIBLE / TOTAL)</p>
+          <p className="text-xl xl:text-2xl font-black text-emerald-400 leading-none">
+            {character.puntos_combate || 0}
+            <span className="text-emerald-500/20 mx-3">/</span>
+            <span className="text-emerald-500/60 text-sm xl:text-lg">{totalPuntosCombate}</span>
+          </p>
         </div>
       </div>
     </div>
-    <div className="flex items-center gap-4 px-8 py-4 ninja-card-oro group hover-ninja">
-      <div className="w-10 h-10 bg-emerald-950/80 border border-emerald-500/30 rotate-45 flex items-center justify-center shadow-[0_0_12px_rgba(16,185,129,0.2)]">
-        <Swords className="w-5 h-5 text-emerald-400 -rotate-45" />
-      </div>
-      <div>
-        <p className="text-[9px] font-black text-emerald-500/60 uppercase tracking-[0.3em] mb-1">P. COMBATE (DISPONIBLE / TOTAL)</p>
-        <p className="text-xl xl:text-2xl font-black text-emerald-400 leading-none">
-          {character.puntos_combate || 0}
-          <span className="text-emerald-500/20 mx-3">/</span>
-          <span className="text-emerald-500/60 text-sm xl:text-lg">{totalPuntosCombate}</span>
-        </p>
-      </div>
-    </div>
-  </div>
-);
+  );
 
-const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
-  <SectionCard title="HISTORIAL DE MISIONES" icon={ScrollText} color="oro">
-    <div className="grid grid-cols-2 sm:grid-cols-5 gap-6">
-      {Object.entries(counts).map(([rank, count]) => (
-        <div key={rank} className="ninja-card-oro p-6 text-center group hover-ninja transition-all">
-          <p className="text-[10px] font-black text-oro/40 uppercase tracking-widest mb-3">RANGO {rank}</p>
-          <p className="text-3xl xl:text-5xl font-black text-oro italic leading-none">{count}</p>
-        </div>
-      ))}
-    </div>
-  </SectionCard>
-);
+  const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
+    <SectionCard title="HISTORIAL DE MISIONES" icon={ScrollText} color="oro">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-6">
+        {Object.entries(counts).map(([rank, count]) => (
+          <div key={rank} className="ninja-card-oro p-6 text-center group hover-ninja transition-all">
+            <p className="text-[10px] font-black text-oro/40 uppercase tracking-widest mb-3">RANGO {rank}</p>
+            <p className="text-3xl xl:text-5xl font-black text-oro italic leading-none">{count}</p>
+          </div>
+        ))}
+      </div>
+    </SectionCard>
+  );
 
 
   return (
@@ -562,7 +562,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
         <div className="w-full max-w-[1750px] mx-auto mb-6 ninja-card-oro p-6 border-oro/30 bg-black/80 backdrop-blur-md relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-6 shadow-[0_0_50px_rgba(212,175,55,0.15)] animate-in fade-in slide-in-from-top-6 duration-500">
           <div className="absolute top-0 left-0 w-2 h-full bg-oro"></div>
           <div className="absolute top-0 right-0 w-96 h-96 bg-oro/5 rounded-full blur-3xl -mr-48 -mt-48 pointer-events-none"></div>
-          
+
           <div className="flex items-center gap-5 min-w-0 z-10">
             <div className="w-12 h-12 rounded-full bg-oro/10 border border-oro/30 flex items-center justify-center animate-pulse shrink-0">
               <ScrollText className="w-6 h-6 text-oro" />
@@ -603,35 +603,35 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
 
       <header className="w-full max-w-[1750px] mx-auto mb-6 sm:mb-8 ninja-card-oro p-4 sm:p-8 xl:p-10 z-50">
         <div className="flex flex-col gap-6 xl:gap-8 w-full">
-          
+
           {/* Fila 1: Navegación/Breadcrumbs y Botones de Acción */}
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-b border-oro/10 pb-4 w-full">
             {/* Breadcrumbs */}
             <div className="w-full sm:w-auto flex-1 min-w-0">
-              <Breadcrumbs 
+              <Breadcrumbs
                 items={
                   isNew
                     ? [
-                        { label: 'Inicio', href: '/' },
-                        { label: 'Crear Ficha' }
-                      ]
+                      { label: 'Inicio', href: '/' },
+                      { label: 'Crear Ficha' }
+                    ]
                     : [
-                        { label: 'Inicio', href: '/' },
-                        { label: 'Mundo Ninja', href: '/mundo-ninja' },
-                        ...(character.aldea_id && character.aldeas
+                      { label: 'Inicio', href: '/' },
+                      { label: 'Mundo Ninja', href: '/mundo-ninja' },
+                      ...(character.aldea_id && character.aldeas
+                        ? [
+                          {
+                            label: character.aldeas.abreviatura || character.aldeas.nombre_completo,
+                            href: `/mundo-ninja/${character.aldea_id}`
+                          }
+                        ]
+                        : character.aldea_id === null
                           ? [
-                              { 
-                                label: character.aldeas.abreviatura || character.aldeas.nombre_completo, 
-                                href: `/mundo-ninja/${character.aldea_id}` 
-                              }
-                            ]
-                          : character.aldea_id === null
-                          ? [
-                              { label: 'Renegados / Ninjas sin Aldea', href: '/mundo-ninja/renegados' }
-                            ]
+                            { label: 'Renegados / Ninjas sin Aldea', href: '/mundo-ninja/renegados' }
+                          ]
                           : []),
-                        { label: character.nombre_ninja }
-                      ]
+                      { label: character.nombre_ninja }
+                    ]
                 }
               />
             </div>
@@ -639,7 +639,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
             {/* Botones de Acción (Editar/Guardar/Cancelar/Borrar) */}
             <div className="flex items-center gap-4 sm:gap-6 w-full sm:w-auto justify-end shrink-0">
               {!isNew && canEdit && onDelete && (
-                <button 
+                <button
                   onClick={() => onDelete?.(false)}
                   className="p-3 text-rojo-sangre hover:scale-105 active:scale-95 hover:brightness-125 transition-all"
                   title="Borrar Personaje"
@@ -647,19 +647,19 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                   <Trash2 className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
               )}
-              
+
               {(!isNew && canEdit) && (
-                <button 
-                  onClick={() => isEditing ? onCancel() : setIsEditing?.(true)} 
+                <button
+                  onClick={() => isEditing ? onCancel() : setIsEditing?.(true)}
                   className={`px-5 sm:px-8 py-2.5 text-xs sm:text-sm font-black uppercase tracking-widest transition-all ${isEditing ? 'ninja-btn-oro' : 'ninja-btn-ghost'}`}
                 >
                   {isEditing ? 'CANCELAR' : 'EDITAR FICHA'}
                 </button>
               )}
               {(isEditing || isNew) && (
-                <button 
-                  onClick={() => onSave()} 
-                  disabled={saving} 
+                <button
+                  onClick={() => onSave()}
+                  disabled={saving}
                   className={`px-6 sm:px-10 py-2.5 sm:py-3.5 text-xs sm:text-sm font-black uppercase tracking-widest transition-all ${isNew ? 'ninja-btn-oro' : 'ninja-btn-rojo'}`}
                 >
                   {isNew ? 'INICIALIZAR' : 'GUARDAR'}
@@ -671,25 +671,18 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
           {/* Fila 2: Banner de Identidad del Personaje (Avatar, Nombre y Rango) */}
           <div className="flex flex-col md:flex-row items-center gap-6 md:gap-10 justify-center md:justify-start text-center md:text-left py-2 w-full">
             {/* Contenedor del Avatar */}
-            <div className="w-24 h-24 sm:w-32 sm:h-32 shrink-0 ninja-card-oro p-1.5 border-oro/20 bg-black/40 shadow-2xl flex items-center justify-center relative">
-              {character.url_img ? (
-                <img 
-                  src={character.url_img} 
-                  className="w-full h-full object-cover object-top"
-                  alt="Avatar"
-                />
-              ) : (
-                <User className="w-12 h-12 text-oro/20" />
-              )}
-              {iconUrl && (
-                <div className="absolute -top-3 -right-3 z-20 transition-transform duration-300 hover:scale-110">
-                  <img 
-                    src={iconUrl} 
-                    alt={aldeaObj?.nombre_completo || 'Aldea'} 
-                    className="w-8 h-8 sm:w-10 sm:h-10 object-contain filter drop-shadow-[0_0_6px_rgba(255,215,0,0.7)] hover:drop-shadow-[0_0_10px_rgba(255,215,0,0.9)] transition-all duration-300"
+            <div className="w-24 h-24 sm:w-32 sm:h-32 shrink-0 flex items-center justify-center relative">
+              <div className="w-full h-full bg-black/40 overflow-hidden flex items-center justify-center ninja-clip-md shadow-2xl">
+                {character.url_img ? (
+                  <img
+                    src={character.url_img}
+                    className="w-full h-full object-cover object-top"
+                    alt="Avatar"
                   />
-                </div>
-              )}
+                ) : (
+                  <User className="w-12 h-12 text-oro/20" />
+                )}
+              </div>
             </div>
 
             {/* Información del Personaje */}
@@ -729,14 +722,13 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
           {['general', 'ninja', 'inventario', 'tecnicas', 'onrol', 'registros'].map((tab) => {
             const isActive = activeTab === tab;
             return (
-              <button 
-                key={tab} 
-                onClick={() => onSetActiveTab(tab)} 
-                className={`px-8 sm:px-12 py-4 text-[11px] xl:text-sm font-black uppercase tracking-widest transition-all duration-300 border ninja-clip-sm shrink-0 relative group ${
-                  isActive 
-                  ? 'bg-oro text-rojo-sangre border-oro shadow-[0_0_30px_rgba(255,230,159,0.5)]' 
+              <button
+                key={tab}
+                onClick={() => onSetActiveTab(tab)}
+                className={`px-8 sm:px-12 py-4 text-[11px] xl:text-sm font-black uppercase tracking-widest transition-all duration-300 border ninja-clip-sm shrink-0 relative group ${isActive
+                  ? 'bg-oro text-rojo-sangre border-oro shadow-[0_0_30px_rgba(255,230,159,0.5)]'
                   : 'bg-black/60 text-oro/30 border-oro/10 hover:border-oro/60 hover:text-oro hover:bg-black/90'
-                }`}
+                  }`}
               >
                 <span>{tab}</span>
                 {!isActive && (
@@ -749,211 +741,211 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
 
 
         {activeTab === 'general' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 animate-fade-in">
-              {/* Columna de Retrato */}
-              <div className="lg:col-span-4 space-y-8 max-w-sm mx-auto lg:max-w-none w-full">
-                <div className="relative group">
-                  <div className="absolute -inset-1 bg-gradient-to-b from-oro/20 to-transparent blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
-                  <div 
-                    onClick={() => {
-                      if (isEditing || isNew) {
-                        setImageUrlInput(character.url_img || '');
-                        setEditingImageKey('character');
-                      }
-                    }}
-                    className={`relative aspect-[3/4] w-full ninja-card-oro overflow-hidden border-oro/20 group flex items-center justify-center bg-black/40 ${isEditing || isNew ? 'cursor-pointer hover:border-oro/40' : ''}`}
-                  >
-                    {character.url_img ? (
-                      <img 
-                        src={character.url_img} 
-                        className="w-full h-full object-cover object-top hover:scale-110 transition-transform duration-700"
-                        alt={character.nombre_ninja}
-                      />
-                    ) : (
-                      <User className="w-24 h-24 text-oro/10 group-hover:text-oro/20 transition-colors" />
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
-                    
-                    {/* Overlay de Edición */}
-                    {(isEditing || isNew) && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                        <div className="text-center">
-                          <ImageIcon className="w-8 h-8 text-oro mx-auto mb-2" />
-                          <p className="text-[10px] font-black text-oro uppercase tracking-widest">CAMBIAR IMAGEN</p>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between gap-4 z-20">
-                      <div className="min-w-0">
-                        <p className="ninja-title text-lg sm:text-2xl mb-1 truncate">{character.nombre_ninja}</p>
-                        <p className="text-[10px] font-black text-oro/40 uppercase tracking-[0.3em]">{character.rango_jerarquico}</p>
-                      </div>
-                      {iconUrl && (
-                        <div className="shrink-0 transition-transform duration-300 hover:scale-110">
-                          <img 
-                            src={iconUrl} 
-                            alt={aldeaObj?.nombre_completo || 'Aldea'} 
-                            className="w-12 h-12 object-contain filter drop-shadow-[0_0_8px_rgba(255,215,0,0.65)] hover:drop-shadow-[0_0_12px_rgba(255,215,0,0.9)] transition-all duration-300"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                  
-                  {/* Si el usuario tiene url_img propia, mostrarla debajo como miniatura opcional o decorativa */}
-                  {(Array.isArray(character.profiles) ? character.profiles[0]?.url_img : character.profiles?.url_img) ? (
-                    <div 
-                      onClick={() => {
-                        if (isAdmin) {
-                          const profileUrl = Array.isArray(character.profiles) ? character.profiles[0]?.url_img : character.profiles?.url_img;
-                          setImageUrlInput(profileUrl || '');
-                          setEditingImageKey('user');
-                        }
-                      }}
-                      className={`ninja-card-oro p-6 flex items-center gap-6 group transition-all ${isAdmin ? 'cursor-pointer hover:border-oro/40' : ''}`}
-                    >
-                      <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-oro/10 group-hover:border-oro/30 transition-all">
-                        <img 
-                          src={(Array.isArray(character.profiles) ? character.profiles[0]?.url_img : character.profiles?.url_img) || undefined} 
-                          className="w-full h-full object-cover"
-                          alt="Usuario"
-                        />
-                        {isAdmin && (
-                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Edit3 className="w-4 h-4 text-oro" />
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-black text-oro/30 uppercase tracking-widest mb-1">IMAGEN DE JUGADOR</p>
-                        <p className="text-xs font-bold text-oro uppercase">
-                          {isAdmin ? 'HAGA CLIC PARA CAMBIAR' : 'SINCRONIZADA'}
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    // Si no tiene imagen de jugador, pero es admin, permitir asignarla
-                    isAdmin && (
-                      <div 
-                        onClick={() => {
-                          setImageUrlInput('');
-                          setEditingImageKey('user');
-                        }}
-                        className="ninja-card-oro p-6 flex items-center justify-center gap-4 group cursor-pointer hover:border-oro/40 transition-all"
-                      >
-                        <ImageIcon className="w-5 h-5 text-oro/40 group-hover:text-oro transition-colors" />
-                        <span className="text-[10px] font-black text-oro/60 uppercase tracking-widest">ASIGNAR IMAGEN DE JUGADOR</span>
-                      </div>
-                    )
-                  )}
-                </div>
-
-              <div className="lg:col-span-8 space-y-8">
-              <SectionCard title="INFORMACIÓN DEL JUGADOR" icon={User} color="oro">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <DataField 
-                      label="USUARIO DISCORD (PLAYER)" 
-                      value={
-                        Array.isArray(character.profiles) 
-                          ? character.profiles[0]?.username 
-                          : character.profiles?.username || (isNew ? 'CARGANDO...' : 'NO VINCULADO')
-                      } 
-                      disabled={true} 
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 animate-fade-in">
+            {/* Columna de Retrato */}
+            <div className="lg:col-span-4 space-y-8 max-w-sm mx-auto lg:max-w-none w-full">
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-t from-oro/20 to-transparent blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+                <div
+                  onClick={() => {
+                    if (isEditing || isNew) {
+                      setImageUrlInput(character.url_img || '');
+                      setEditingImageKey('character');
+                    }
+                  }}
+                  className={`relative aspect-[3/4] w-full overflow-hidden group flex items-center justify-center bg-black/40 ninja-clip-md ${isEditing || isNew ? 'cursor-pointer' : ''}`}
+                >
+                  {character.url_img ? (
+                    <img
+                      src={character.url_img}
+                      className="w-full h-full object-cover object-top hover:scale-110 transition-transform duration-700"
+                      alt={character.nombre_ninja}
                     />
-                    <DataField label="NOMBRE EN HOBBA" value={character.hobba_name} disabled={!isEditing && !isNew} onChange={(v)=>onUpdateField('hobba_name', v)} />
-                    <DataField label="TIEMPO EN EL RPG" value={character.tiempo_rpg} disabled={!isEditing && !isNew} onChange={(v)=>onUpdateField('tiempo_rpg', v)} />
+                  ) : (
+                    <User className="w-24 h-24 text-oro/10 group-hover:text-oro/20 transition-colors" />
+                  )}
+                  <div className="absolute bottom-0 left-0 right-0 h-[40%] bg-gradient-to-t from-black/95 via-black/50 to-transparent pointer-events-none"></div>
+
+                  {/* Overlay de Edición */}
+                  {(isEditing || isNew) && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                      <div className="text-center">
+                        <ImageIcon className="w-8 h-8 text-oro mx-auto mb-2" />
+                        <p className="text-[10px] font-black text-oro uppercase tracking-widest">CAMBIAR IMAGEN</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between gap-4 z-20">
+                    <div className="min-w-0">
+                      <p className="ninja-title text-lg sm:text-2xl mb-1 truncate">{character.nombre_ninja}</p>
+                      <p className="text-[10px] font-black text-oro/40 uppercase tracking-[0.3em]">{character.rango_jerarquico}</p>
+                    </div>
+                    {iconUrl && (
+                      <div className="shrink-0 transition-transform duration-300 hover:scale-110">
+                        <img
+                          src={iconUrl}
+                          alt={aldeaObj?.nombre_completo || 'Aldea'}
+                          className="w-16 h-16 sm:w-20 sm:h-20 object-contain transition-all duration-300"
+                        />
+                      </div>
+                    )}
                   </div>
+                </div>
+              </div>
+
+              {/* Si el usuario tiene url_img propia, mostrarla debajo como miniatura opcional o decorativa */}
+              {(Array.isArray(character.profiles) ? character.profiles[0]?.url_img : character.profiles?.url_img) ? (
+                <div
+                  onClick={() => {
+                    if (isAdmin) {
+                      const profileUrl = Array.isArray(character.profiles) ? character.profiles[0]?.url_img : character.profiles?.url_img;
+                      setImageUrlInput(profileUrl || '');
+                      setEditingImageKey('user');
+                    }
+                  }}
+                  className={`ninja-card-oro p-6 flex items-center gap-6 group transition-all ${isAdmin ? 'cursor-pointer hover:border-oro/40' : ''}`}
+                >
+                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-oro/10 group-hover:border-oro/30 transition-all">
+                    <img
+                      src={(Array.isArray(character.profiles) ? character.profiles[0]?.url_img : character.profiles?.url_img) || undefined}
+                      className="w-full h-full object-cover"
+                      alt="Usuario"
+                    />
+                    {isAdmin && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Edit3 className="w-4 h-4 text-oro" />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-oro/30 uppercase tracking-widest mb-1">IMAGEN DE JUGADOR</p>
+                    <p className="text-xs font-bold text-oro uppercase">
+                      {isAdmin ? 'HAGA CLIC PARA CAMBIAR' : 'SINCRONIZADA'}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                // Si no tiene imagen de jugador, pero es admin, permitir asignarla
+                isAdmin && (
+                  <div
+                    onClick={() => {
+                      setImageUrlInput('');
+                      setEditingImageKey('user');
+                    }}
+                    className="ninja-card-oro p-6 flex items-center justify-center gap-4 group cursor-pointer hover:border-oro/40 transition-all"
+                  >
+                    <ImageIcon className="w-5 h-5 text-oro/40 group-hover:text-oro transition-colors" />
+                    <span className="text-[10px] font-black text-oro/60 uppercase tracking-widest">ASIGNAR IMAGEN DE JUGADOR</span>
+                  </div>
+                )
+              )}
+            </div>
+
+            <div className="lg:col-span-8 space-y-8">
+              <SectionCard title="INFORMACIÓN DEL JUGADOR" icon={User} color="oro">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  <DataField
+                    label="USUARIO DISCORD (PLAYER)"
+                    value={
+                      Array.isArray(character.profiles)
+                        ? character.profiles[0]?.username
+                        : character.profiles?.username || (isNew ? 'CARGANDO...' : 'NO VINCULADO')
+                    }
+                    disabled={true}
+                  />
+                  <DataField label="NOMBRE EN HOBBA" value={character.hobba_name} disabled={!isEditing && !isNew} onChange={(v) => onUpdateField('hobba_name', v)} />
+                  <DataField label="TIEMPO EN EL RPG" value={character.tiempo_rpg} disabled={!isEditing && !isNew} onChange={(v) => onUpdateField('tiempo_rpg', v)} />
+                </div>
               </SectionCard>
 
               <SectionCard title="PERFIL DEL SHINOBI" icon={UserCircle} color="oro">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <DataField label="NOMBRE NINJA" value={character.nombre_ninja} disabled={!isEditing && !isNew} onChange={(v)=>onUpdateField('nombre_ninja', v)} />
-                    <SelectField 
-                      label="ALDEA DE ORIGEN" 
-                      value={character.aldea_id} 
-                      options={aldeaOptions} 
-                      disabled={!isEditing && !isNew} 
-                      placeholder="SIN ALDEA"
-                      onChange={(v)=>onUpdateField('aldea_id', v ? Number(v) : null)} 
-                    />
-                    <DataField label="RANGO ACTUAL" value={`RANGO ${character.rango}`} disabled={true} />
-                    <SelectField 
-                      label="POSICIÓN JERÁRQUICA" 
-                      value={character.rango_jerarquico} 
-                      options={masters.rangosJerarquicos || ["ESTUDIANTE", "GENIN", "CHUNIN", "JONIN"]} 
-                      disabled={!isEditing && !isNew} 
-                      onChange={(v)=>onUpdateField('rango_jerarquico', v)} 
-                    />
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <DataField label="NOMBRE NINJA" value={character.nombre_ninja} disabled={!isEditing && !isNew} onChange={(v) => onUpdateField('nombre_ninja', v)} />
+                  <SelectField
+                    label="ALDEA DE ORIGEN"
+                    value={character.aldea_id}
+                    options={aldeaOptions}
+                    disabled={!isEditing && !isNew}
+                    placeholder="SIN ALDEA"
+                    onChange={(v) => onUpdateField('aldea_id', v ? Number(v) : null)}
+                  />
+                  <DataField label="RANGO ACTUAL" value={`RANGO ${character.rango}`} disabled={true} />
+                  <SelectField
+                    label="POSICIÓN JERÁRQUICA"
+                    value={character.rango_jerarquico}
+                    options={masters.rangosJerarquicos || ["ESTUDIANTE", "GENIN", "CHUNIN", "JONIN"]}
+                    disabled={!isEditing && !isNew}
+                    onChange={(v) => onUpdateField('rango_jerarquico', v)}
+                  />
+                </div>
               </SectionCard>
 
               <SectionCard title="RAMAS Y ESPECIALIDADES" icon={GitBranch} color="oro">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                   {[1, 2].map(slot => {
-                     const pr = character.personajes_ramas?.find((r: any) => Number(r.slot) === slot);
-                     return (
-                       <div key={slot} className="space-y-6 p-8 bg-black/40 border border-oro/10 relative overflow-hidden ninja-clip-md">
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-oro/5 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none" />
-                          <h4 className="text-[10px] font-black text-oro/40 uppercase tracking-[0.3em] mb-4">ESPECIALIDAD SLOT {slot}</h4>
-                          <div className="space-y-6">
-                            <SelectField 
-                              label="RAMA / CLAN" 
-                              value={pr?.rama_id} 
-                              options={getClanOptions(slot)} 
-                              disabled={!isEditing && !isNew} 
-                              onChange={(v)=>{
-                                const newRamas = [...(character.personajes_ramas?.filter((r:any)=>Number(r.slot) !== slot) || []), { slot, rama_id: Number(v), sub_especialidad_id: null, id_entrenamiento: null }];
+                  {[1, 2].map(slot => {
+                    const pr = character.personajes_ramas?.find((r: any) => Number(r.slot) === slot);
+                    return (
+                      <div key={slot} className="space-y-6 p-8 bg-black/40 border border-oro/10 relative overflow-hidden ninja-clip-md">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-oro/5 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none" />
+                        <h4 className="text-[10px] font-black text-oro/40 uppercase tracking-[0.3em] mb-4">ESPECIALIDAD SLOT {slot}</h4>
+                        <div className="space-y-6">
+                          <SelectField
+                            label="RAMA / CLAN"
+                            value={pr?.rama_id}
+                            options={getClanOptions(slot)}
+                            disabled={!isEditing && !isNew}
+                            onChange={(v) => {
+                              const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { slot, rama_id: Number(v), sub_especialidad_id: null, id_entrenamiento: null }];
+                              onUpdateField('personajes_ramas', newRamas);
+                            }}
+                          />
+                          {masters.subEspecialidades.some((s: any) => s.rama_id === pr?.rama_id) && (
+                            <SelectField
+                              label="SUB-ESPECIALIDAD"
+                              value={pr?.sub_especialidad_id}
+                              options={masters.subEspecialidades.filter((s: any) => s.rama_id === pr?.rama_id).map((s: any) => ({ label: s.nombre, value: s.id }))}
+                              disabled={!isEditing && !isNew}
+                              onChange={(v) => {
+                                const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { ...pr, slot, rama_id: pr?.rama_id, sub_especialidad_id: v ? Number(v) : null, id_entrenamiento: null }];
                                 onUpdateField('personajes_ramas', newRamas);
-                              }} 
+                              }}
                             />
-                            {masters.subEspecialidades.some((s: any) => s.rama_id === pr?.rama_id) && (
-                              <SelectField 
-                                label="SUB-ESPECIALIDAD" 
-                                value={pr?.sub_especialidad_id} 
-                                options={masters.subEspecialidades.filter((s:any)=>s.rama_id === pr?.rama_id).map((s:any)=>({label:s.nombre, value:s.id}))} 
-                                disabled={!isEditing && !isNew} 
-                                onChange={(v)=>{
-                                  const newRamas = [...(character.personajes_ramas?.filter((r:any)=>Number(r.slot) !== slot) || []), { ...pr, slot, rama_id: pr?.rama_id, sub_especialidad_id: v ? Number(v) : null, id_entrenamiento: null }];
-                                  onUpdateField('personajes_ramas', newRamas);
-                                }} 
-                              />
-                            )}
-                            {canAccessTraining && (
-                              <SelectField 
-                                label="ENTRENAMIENTO" 
-                                value={pr?.id_entrenamiento} 
-                                options={masters.entrenamientos
-                                  .filter((e: any) => 
-                                    e.id_ramaclan === pr?.rama_id && 
-                                    (!pr?.sub_especialidad_id ? !e.id_subespecialidad : (e.id_subespecialidad === pr?.sub_especialidad_id || !e.id_subespecialidad))
-                                  )
-                                  .map((e: any) => ({ label: e.nombre_esp, value: e.id }))
-                                } 
-                                disabled={!isEditing && !isNew} 
-                                onChange={(v) => {
-                                  const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { ...pr, slot, id_entrenamiento: v ? Number(v) : null }];
-                                  onUpdateField('personajes_ramas', newRamas);
-                                }} 
-                              />
-                            )}
-                          </div>
-                       </div>
-                     );
-                   })}
+                          )}
+                          {canAccessTraining && (
+                            <SelectField
+                              label="ENTRENAMIENTO"
+                              value={pr?.id_entrenamiento}
+                              options={masters.entrenamientos
+                                .filter((e: any) =>
+                                  e.id_ramaclan === pr?.rama_id &&
+                                  (!pr?.sub_especialidad_id ? !e.id_subespecialidad : (e.id_subespecialidad === pr?.sub_especialidad_id || !e.id_subespecialidad))
+                                )
+                                .map((e: any) => ({ label: e.nombre_esp, value: e.id }))
+                              }
+                              disabled={!isEditing && !isNew}
+                              onChange={(v) => {
+                                const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { ...pr, slot, id_entrenamiento: v ? Number(v) : null }];
+                                onUpdateField('personajes_ramas', newRamas);
+                              }}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </SectionCard>
             </div>
           </div>
         )}
-        
+
         {activeTab === 'ninja' && (
           <div className="animate-fade-in">
-            <SectionCard 
-              title="ATRIBUTOS Y ESTADÍSTICAS" 
-              icon={Heart} 
-              color="oro" 
+            <SectionCard
+              title="ATRIBUTOS Y ESTADÍSTICAS"
+              icon={Heart}
+              color="oro"
               headerAction={
                 <div className="flex flex-col items-end">
                   <span className="text-[10px] font-black text-oro/40 uppercase tracking-[0.3em] mb-1">Puntos Disponibles</span>
@@ -966,9 +958,9 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
             >
               {/* Gráfico en Radar Dinámico */}
               <div className="flex justify-center items-center w-full mb-2 border-b border-oro/5 pb-2 -mt-6">
-                <CharacterRadarChart 
-                  stats={character.stats_base} 
-                  maxVal={10} 
+                <CharacterRadarChart
+                  stats={character.stats_base}
+                  maxVal={10}
                 />
               </div>
 
@@ -990,9 +982,9 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                             <span className="text-[8px] font-black text-oro/20 mt-1 uppercase tracking-tighter">LÍMITE: {max}</span>
                           </div>
                           <div className="flex items-center gap-2 relative z-10">
-                            <input 
-                              type="number" 
-                              value={val} 
+                            <input
+                              type="number"
+                              value={val}
                               disabled={!isEditing && !isNew}
                               onChange={(e) => onUpdateStat(s as keyof CharacterStats, parseInt(e.target.value))}
                               className="bg-transparent text-2xl xl:text-3xl font-black text-oro w-16 text-right outline-none disabled:cursor-default selection:bg-oro/20 leading-none py-1"
@@ -1042,7 +1034,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                       <h3 className="text-xl xl:text-3xl font-black text-oro uppercase tracking-[0.2em]">{catName}</h3>
                       <div className="flex-1 h-px bg-oro/10" />
                     </div>
-              
+
                     <div className="space-y-10">
                       {Object.entries(subs).map(([subName, items]: [string, any]) => (
                         <div key={subName} className="space-y-6">
@@ -1079,7 +1071,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                                     </td>
                                     <td className="py-4 px-6 text-center">
                                       {(isEditing || isNew) && (
-                                        <button 
+                                        <button
                                           onClick={() => {
                                             const isNewlyAdded = !pi.id;
                                             if (isEditing || isNew) {
@@ -1092,7 +1084,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                                             } else {
                                               onQuickRemoveItem?.(pi);
                                             }
-                                          }} 
+                                          }}
                                           className="text-rojo-sangre/60 p-2 hover:bg-rojo-sangre/10 hover:text-rojo-sangre transition-all rounded-[3px]"
                                         >
                                           <Trash2 className="w-4 h-4" />
@@ -1113,8 +1105,8 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
 
               {(canEdit || isNew) && (isEditing || isNew) && (
                 <div className="mt-20 pt-12 border-t border-oro/10">
-                  <SearchableSelect 
-                    label="ADQUIRIR NUEVO OBJETO" 
+                  <SearchableSelect
+                    label="ADQUIRIR NUEVO OBJETO"
                     placeholder="BUSCAR EN EL GLOSARIO DE EQUIPO..."
                     options={(glosarioFiltrado || [])
                       .filter((i: Glosario) => i.categoria_id === 2 && meetsRequirements(i) && !(character.personajes_inventario || []).some((pi: PersonajeItem) => pi.item_id === i.id))
@@ -1122,16 +1114,16 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                         const subData = i.info_glosario_subcategorias;
                         const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'GENERAL';
                         const pcCostText = ` / ${i.requisitos?.combates || 0} PC`;
-                        return { 
-                          label: `${i.nombre_es} (${subName}) — ${i.coste_exp} EXP / ${i.coste_ryous} RYOUS${pcCostText}`, 
-                          value: i.id 
+                        return {
+                          label: `${i.nombre_es} (${subName}) — ${i.coste_exp} EXP / ${i.coste_ryous} RYOUS${pcCostText}`,
+                          value: i.id
                         };
                       })
-                    } 
+                    }
                     onChange={(v) => {
                       const it = (glosarioFiltrado || []).find((i: any) => i.id === Number(v));
                       const current = character.personajes_inventario || [];
-                      
+
                       if (it && !current.some((i: any) => i.item_id === it.id)) {
                         const costExp = it.coste_exp || 0;
                         const costRyous = it.coste_ryous || 0;
@@ -1150,7 +1142,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                         if (costRyous > 0) onUpdateField('ryous', currentRyous - costRyous);
                         if (costPC > 0) onUpdateField('puntos_combate', currentPC - costPC);
                       }
-                    }} 
+                    }}
                   />
                 </div>
               )}
@@ -1211,7 +1203,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                                 </td>
                                 <td className="py-4 px-6 text-center">
                                   {(isEditing || isNew) && (
-                                    <button 
+                                    <button
                                       onClick={() => {
                                         const isNewlyAdded = !pt.id;
                                         if (isEditing || isNew) {
@@ -1224,7 +1216,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                                         } else {
                                           onQuickRemoveTechnique?.(pt);
                                         }
-                                      }} 
+                                      }}
                                       className="text-rojo-sangre/60 p-2 hover:bg-rojo-sangre/10 hover:text-rojo-sangre transition-all rounded-[3px]"
                                     >
                                       <Trash2 className="w-4 h-4" />
@@ -1243,8 +1235,8 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
 
               {(canEdit || isNew) && (isEditing || isNew) && (
                 <div className="mt-12 pt-12 border-t border-oro/10">
-                  <SearchableSelect 
-                    label="APRENDER NUEVA TÉCNICA" 
+                  <SearchableSelect
+                    label="APRENDER NUEVA TÉCNICA"
                     placeholder="BUSCAR JUTSU EN EL GLOSARIO..."
                     options={(glosarioFiltrado || [])
                       .filter((i: Glosario) => i.categoria_id === 1 && meetsRequirements(i) && !(character.personajes_tecnicas || []).some((pt: PersonajeTecnica) => pt.tecnica_id === i.id))
@@ -1252,16 +1244,16 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                         const subData = t.info_glosario_subcategorias;
                         const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'TÉCNICA';
                         const pcCostText = ` / ${t.requisitos?.combates || 0} PC`;
-                        return { 
-                          label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${pcCostText}`, 
-                          value: t.id 
+                        return {
+                          label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${pcCostText}`,
+                          value: t.id
                         };
                       })
-                    } 
+                    }
                     onChange={(v) => {
                       const tec = (glosarioFiltrado || []).find((t: any) => t.id === Number(v));
                       const current = character.personajes_tecnicas || [];
-                      
+
                       if (tec && !current.some((t: any) => t.tecnica_id === tec.id)) {
                         const costExp = tec.coste_exp || 0;
                         const costRyous = tec.coste_ryous || 0;
@@ -1280,7 +1272,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                         if (costRyous > 0) onUpdateField('ryous', currentRyous - costRyous);
                         if (costPC > 0) onUpdateField('puntos_combate', currentPC - costPC);
                       }
-                    }} 
+                    }}
                   />
                 </div>
               )}
@@ -1335,7 +1327,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                                 </td>
                                 <td className="py-4 px-6 text-center">
                                   {(isEditing || isNew) && (
-                                    <button 
+                                    <button
                                       onClick={() => {
                                         const isNewlyAdded = !pt.id;
                                         if (isEditing || isNew) {
@@ -1348,7 +1340,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                                         } else {
                                           onQuickRemoveTechnique?.(pt);
                                         }
-                                      }} 
+                                      }}
                                       className="text-rojo-sangre/60 p-2 hover:bg-rojo-sangre/10 hover:text-rojo-sangre transition-all rounded-[3px]"
                                     >
                                       <Trash2 className="w-4 h-4" />
@@ -1367,8 +1359,8 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
 
               {(canEdit || isNew) && (isEditing || isNew) && (
                 <div className="mt-12 pt-12 border-t border-oro/10">
-                  <SearchableSelect 
-                    label="APRENDER NUEVA PASIVA" 
+                  <SearchableSelect
+                    label="APRENDER NUEVA PASIVA"
                     placeholder="BUSCAR HABILIDAD PASIVA EN EL GLOSARIO..."
                     options={(glosarioFiltrado || [])
                       .filter((i: Glosario) => i.categoria_id === 4 && meetsRequirements(i) && !(character.personajes_tecnicas || []).some((pt: PersonajeTecnica) => pt.tecnica_id === i.id))
@@ -1376,16 +1368,16 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                         const subData = t.info_glosario_subcategorias;
                         const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'PASIVA';
                         const pcCostText = ` / ${t.requisitos?.combates || 0} PC`;
-                        return { 
-                          label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${pcCostText}`, 
-                          value: t.id 
+                        return {
+                          label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${pcCostText}`,
+                          value: t.id
                         };
                       })
-                    } 
+                    }
                     onChange={(v) => {
                       const tec = (glosarioFiltrado || []).find((t: any) => t.id === Number(v));
                       const current = character.personajes_tecnicas || [];
-                      
+
                       if (tec && !current.some((t: any) => t.tecnica_id === tec.id)) {
                         const costExp = tec.coste_exp || 0;
                         const costRyous = tec.coste_ryous || 0;
@@ -1404,7 +1396,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                         if (costRyous > 0) onUpdateField('ryous', currentRyous - costRyous);
                         if (costPC > 0) onUpdateField('puntos_combate', currentPC - costPC);
                       }
-                    }} 
+                    }}
                   />
                 </div>
               )}
@@ -1459,7 +1451,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                                 </td>
                                 <td className="py-4 px-6 text-center">
                                   {(isEditing || isNew) && (
-                                    <button 
+                                    <button
                                       onClick={() => {
                                         const isNewlyAdded = !pt.id;
                                         if (isEditing || isNew) {
@@ -1472,7 +1464,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                                         } else {
                                           onQuickRemoveTechnique?.(pt);
                                         }
-                                      }} 
+                                      }}
                                       className="text-rojo-sangre/60 p-2 hover:bg-rojo-sangre/10 hover:text-rojo-sangre transition-all rounded-[3px]"
                                     >
                                       <Trash2 className="w-4 h-4" />
@@ -1491,8 +1483,8 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
 
               {(canEdit || isNew) && (isEditing || isNew) && (
                 <div className="mt-12 pt-12 border-t border-oro/10">
-                  <SearchableSelect 
-                    label="INVOCAR KUCHIYOSE" 
+                  <SearchableSelect
+                    label="INVOCAR KUCHIYOSE"
                     placeholder="BUSCAR KUCHIYOSE EN EL GLOSARIO..."
                     options={(glosarioFiltrado || [])
                       .filter((i: Glosario) => i.categoria_id === 3 && meetsRequirements(i) && !(character.personajes_tecnicas || []).some((pt: PersonajeTecnica) => pt.tecnica_id === i.id))
@@ -1500,16 +1492,16 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                         const subData = t.info_glosario_subcategorias;
                         const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'KUCHIYOSE';
                         const pcCostText = ` / ${t.requisitos?.combates || 0} PC`;
-                        return { 
-                          label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${pcCostText}`, 
-                          value: t.id 
+                        return {
+                          label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${pcCostText}`,
+                          value: t.id
                         };
                       })
-                    } 
+                    }
                     onChange={(v) => {
                       const tec = (glosarioFiltrado || []).find((t: any) => t.id === Number(v));
                       const current = character.personajes_tecnicas || [];
-                      
+
                       if (tec && !current.some((t: any) => t.tecnica_id === tec.id)) {
                         const costExp = tec.coste_exp || 0;
                         const costRyous = tec.coste_ryous || 0;
@@ -1528,7 +1520,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                         if (costRyous > 0) onUpdateField('ryous', currentRyous - costRyous);
                         if (costPC > 0) onUpdateField('puntos_combate', currentPC - costPC);
                       }
-                    }} 
+                    }}
                   />
                 </div>
               )}
@@ -1540,28 +1532,28 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
           <div className="space-y-8 animate-fade-in">
             <SectionCard title="DATOS PERSONALES" icon={User} color="oro">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <DataField label="EDAD" value={character.edad} disabled={!isEditing && !isNew} onChange={(v)=>onUpdateField('edad', Number(v))} />
-                <SelectField label="SEXO" value={character.sexo} options={['MASCULINO', 'FEMENINO', 'OTRO']} disabled={!isEditing && !isNew} onChange={(v)=>onUpdateField('sexo', v)} />
+                <DataField label="EDAD" value={character.edad} disabled={!isEditing && !isNew} onChange={(v) => onUpdateField('edad', Number(v))} />
+                <SelectField label="SEXO" value={character.sexo} options={['MASCULINO', 'FEMENINO']} disabled={!isEditing && !isNew} onChange={(v) => onUpdateField('sexo', v)} />
               </div>
             </SectionCard>
-             
-            <SectionCard title="DESCRIPCIÓN FÍSICA Y APARIENCIA" icon={Sword} color="oro" headerAction={!isNew && canEdit && isEditing && <button onClick={()=>onSave('apariencia')} className="px-8 py-3 bg-oro text-rojo-sangre text-[10px] font-black uppercase tracking-widest active:scale-95 shadow-xl shadow-oro/20" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>SINCRONIZAR DISCORD</button>}>
-              <textarea 
-                value={character.apariencia} 
-                disabled={!isEditing && !isNew} 
-                onChange={(e)=>onUpdateField('apariencia', e.target.value)} 
-                className="w-full h-80 bg-black/40 border border-oro/10 p-10 text-oro/80 italic text-xl xl:text-2xl leading-relaxed outline-none focus:border-oro/40 transition-all disabled:opacity-80 resize-none" 
-                placeholder="DESCRIBE LOS RASGOS, VESTIMENTA Y MARCAS DE TU SHINOBI..." 
+
+            <SectionCard title="DESCRIPCIÓN FÍSICA Y APARIENCIA" icon={Sword} color="oro" headerAction={!isNew && canEdit && isEditing && <button onClick={() => onSave('apariencia')} className="px-8 py-3 bg-oro text-rojo-sangre text-[10px] font-black uppercase tracking-widest active:scale-95 shadow-xl shadow-oro/20" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>SINCRONIZAR DISCORD</button>}>
+              <textarea
+                value={character.apariencia}
+                disabled={!isEditing && !isNew}
+                onChange={(e) => onUpdateField('apariencia', e.target.value)}
+                className="w-full h-80 bg-black/40 border border-oro/10 p-10 text-oro/80 italic text-xl xl:text-2xl leading-relaxed outline-none focus:border-oro/40 transition-all disabled:opacity-80 resize-none"
+                placeholder="DESCRIBE LOS RASGOS, VESTIMENTA Y MARCAS DE TU SHINOBI..."
                 style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' }}
               />
             </SectionCard>
-            <SectionCard title="HISTORIA Y CRÓNICA NINJA" icon={ScrollText} color="oro" headerAction={!isNew && canEdit && isEditing && <button onClick={()=>onSave('historia')} className="px-8 py-3 bg-oro text-rojo-sangre text-[10px] font-black uppercase tracking-widest active:scale-95 shadow-xl shadow-oro/20" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>SINCRONIZAR DISCORD</button>}>
-              <textarea 
-                value={character.historia} 
-                disabled={!isEditing && !isNew} 
-                onChange={(e)=>onUpdateField('historia', e.target.value)} 
-                className="w-full h-[600px] bg-black/40 border border-oro/10 p-10 text-oro/80 text-xl xl:text-2xl leading-relaxed outline-none focus:border-oro/40 transition-all disabled:opacity-80 resize-none" 
-                placeholder="RELATA LOS ORÍGENES, MOTIVACIONES Y EL CAMINO NINJA DE TU PERSONAJE..." 
+            <SectionCard title="HISTORIA Y CRÓNICA NINJA" icon={ScrollText} color="oro" headerAction={!isNew && canEdit && isEditing && <button onClick={() => onSave('historia')} className="px-8 py-3 bg-oro text-rojo-sangre text-[10px] font-black uppercase tracking-widest active:scale-95 shadow-xl shadow-oro/20" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>SINCRONIZAR DISCORD</button>}>
+              <textarea
+                value={character.historia}
+                disabled={!isEditing && !isNew}
+                onChange={(e) => onUpdateField('historia', e.target.value)}
+                className="w-full h-[600px] bg-black/40 border border-oro/10 p-10 text-oro/80 text-xl xl:text-2xl leading-relaxed outline-none focus:border-oro/40 transition-all disabled:opacity-80 resize-none"
+                placeholder="RELATA LOS ORÍGENES, MOTIVACIONES Y EL CAMINO NINJA DE TU PERSONAJE..."
                 style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' }}
               />
             </SectionCard>
@@ -1572,28 +1564,27 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
           <div className="space-y-8 animate-fade-in">
             <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} totalPuntosCombate={totalPuntosCombate} xpLimitUsage={masters?.xpLimitUsage} />
             <MissionCounter counts={missionCounts} />
-            
+
             {/* Header Row: Subtabs Buttons & Filters */}
             <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-8">
-              
+
               {/* Left Side: Subtabs Buttons (exactly styled like the main sheet tabs menu) */}
               <div className="flex flex-nowrap gap-4 overflow-x-auto pb-2 lg:pb-0 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
                 {(['mision', 'accion', 'combate'] as const).map(tab => {
                   const Icon = tab === 'mision' ? ScrollText : tab === 'combate' ? Swords : Zap;
                   const isActive = registroTab === tab;
-                  
+
                   return (
-                    <button 
-                      key={tab} 
+                    <button
+                      key={tab}
                       onClick={() => {
                         setRegistroTab(tab);
                         setRecordPage(1);
                       }}
-                      className={`px-8 sm:px-12 py-4 text-[11px] xl:text-sm font-black uppercase tracking-widest transition-all duration-300 border ninja-clip-sm shrink-0 relative group flex items-center gap-4 ${
-                        isActive 
-                        ? 'bg-oro text-rojo-sangre border-oro shadow-[0_0_30px_rgba(255,230,159,0.5)]' 
+                      className={`px-8 sm:px-12 py-4 text-[11px] xl:text-sm font-black uppercase tracking-widest transition-all duration-300 border ninja-clip-sm shrink-0 relative group flex items-center gap-4 ${isActive
+                        ? 'bg-oro text-rojo-sangre border-oro shadow-[0_0_30px_rgba(255,230,159,0.5)]'
                         : 'bg-black/60 text-oro/30 border-oro/10 hover:border-oro/60 hover:text-oro hover:bg-black/90'
-                      }`}
+                        }`}
                     >
                       <Icon className={`w-4 h-4 transition-transform duration-300 ${isActive ? 'scale-110 text-rojo-sangre' : 'group-hover:scale-125 text-oro/30 group-hover:text-oro'}`} />
                       <span>{tab === 'mision' ? 'MISIONES' : tab === 'combate' ? 'COMBATES' : 'ACCIONES'}</span>
@@ -1606,7 +1597,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
               </div>
 
               {/* Right Side: Sleek Date Filters */}
-              <div 
+              <div
                 className="flex flex-wrap items-center gap-4 sm:gap-6 py-2.5 px-6 bg-black/40 border border-oro/10 relative overflow-hidden"
                 style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
               >
@@ -1615,8 +1606,8 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
 
                 <div className="flex items-center gap-3">
                   <span className="text-[9px] font-black text-oro/40 uppercase tracking-[0.2em]">DESDE</span>
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     value={startDate}
                     onChange={(e) => {
                       setStartDate(e.target.value);
@@ -1627,8 +1618,8 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-[9px] font-black text-oro/40 uppercase tracking-[0.2em]">HASTA</span>
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     value={endDate}
                     onChange={(e) => {
                       setEndDate(e.target.value);
@@ -1638,7 +1629,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                   />
                 </div>
                 {(startDate || endDate) && (
-                  <button 
+                  <button
                     onClick={() => {
                       setStartDate('');
                       setEndDate('');
@@ -1687,7 +1678,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                   const misionesList = currentRecords.map((r: any) => r.registros || r);
                   return (
                     <div className="space-y-12">
-                      <MissionTable 
+                      <MissionTable
                         misiones={misionesList}
                         onRefresh={onRefresh}
                         onEdit={(reg) => setEditingRegistro(reg)}
@@ -1697,7 +1688,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
 
                       {totalPages > 1 && (
                         <div className="flex justify-center items-center gap-10 pt-10 border-t border-oro/10">
-                          <button 
+                          <button
                             onClick={() => setRecordPage(prev => Math.max(1, prev - 1))}
                             disabled={recordPage === 1}
                             className="p-4 ninja-btn-oro"
@@ -1707,7 +1698,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                           <span className="text-xs xl:text-sm font-black text-oro uppercase tracking-[0.4em] italic">
                             PÁGINA <span className="text-oro/40">{recordPage}</span> DE <span className="text-oro/40">{totalPages}</span>
                           </span>
-                          <button 
+                          <button
                             onClick={() => setRecordPage(prev => Math.min(totalPages, prev + 1))}
                             disabled={recordPage === totalPages}
                             className="p-4 ninja-btn-oro"
@@ -1724,7 +1715,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                   const accionesList = currentRecords.map((r: any) => r.registros || r);
                   return (
                     <div className="space-y-12">
-                      <ActionTable 
+                      <ActionTable
                         acciones={accionesList}
                         onRefresh={onRefresh}
                         onEdit={(reg) => setEditingRegistro(reg)}
@@ -1734,7 +1725,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
 
                       {totalPages > 1 && (
                         <div className="flex justify-center items-center gap-10 pt-10 border-t border-oro/10">
-                          <button 
+                          <button
                             onClick={() => setRecordPage(prev => Math.max(1, prev - 1))}
                             disabled={recordPage === 1}
                             className="p-4 ninja-btn-oro"
@@ -1744,7 +1735,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                           <span className="text-xs xl:text-sm font-black text-oro uppercase tracking-[0.4em] italic">
                             PÁGINA <span className="text-oro/40">{recordPage}</span> DE <span className="text-oro/40">{totalPages}</span>
                           </span>
-                          <button 
+                          <button
                             onClick={() => setRecordPage(prev => Math.min(totalPages, prev + 1))}
                             disabled={recordPage === totalPages}
                             className="p-4 ninja-btn-oro"
@@ -1761,7 +1752,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                   const combatesList = currentRecords.map((r: any) => r.registros || r);
                   return (
                     <div className="space-y-12">
-                      <CombatTable 
+                      <CombatTable
                         combates={combatesList}
                         onRefresh={onRefresh}
                         onEdit={(reg) => setEditingRegistro(reg)}
@@ -1771,7 +1762,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
 
                       {totalPages > 1 && (
                         <div className="flex justify-center items-center gap-10 pt-10 border-t border-oro/10">
-                          <button 
+                          <button
                             onClick={() => setRecordPage(prev => Math.max(1, prev - 1))}
                             disabled={recordPage === 1}
                             className="p-4 ninja-btn-oro"
@@ -1781,7 +1772,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                           <span className="text-xs xl:text-sm font-black text-oro uppercase tracking-[0.4em] italic">
                             PÁGINA <span className="text-oro/40">{recordPage}</span> DE <span className="text-oro/40">{totalPages}</span>
                           </span>
-                          <button 
+                          <button
                             onClick={() => setRecordPage(prev => Math.min(totalPages, prev + 1))}
                             disabled={recordPage === totalPages}
                             className="p-4 ninja-btn-oro"
@@ -1798,9 +1789,9 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                   <div className="space-y-12">
                     <div className="grid grid-cols-1 gap-8 xl:gap-12">
                       {currentRecords.map((r: any) => (
-                        <RegistroCard 
-                          key={r.id} 
-                          registro={r.registros || r} 
+                        <RegistroCard
+                          key={r.id}
+                          registro={r.registros || r}
                           onRefresh={onRefresh}
                           onEdit={(reg) => setEditingRegistro(reg)}
                           isAdmin={isAdmin}
@@ -1811,7 +1802,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
 
                     {totalPages > 1 && (
                       <div className="flex justify-center items-center gap-10 pt-10 border-t border-oro/10">
-                        <button 
+                        <button
                           onClick={() => setRecordPage(prev => Math.max(1, prev - 1))}
                           disabled={recordPage === 1}
                           className="p-4 ninja-btn-oro"
@@ -1821,7 +1812,7 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                         <span className="text-xs xl:text-sm font-black text-oro uppercase tracking-[0.4em] italic">
                           PÁGINA <span className="text-oro/40">{recordPage}</span> DE <span className="text-oro/40">{totalPages}</span>
                         </span>
-                        <button 
+                        <button
                           onClick={() => setRecordPage(prev => Math.min(totalPages, prev + 1))}
                           disabled={recordPage === totalPages}
                           className="p-4 ninja-btn-oro"
@@ -1840,14 +1831,14 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
           <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md overflow-y-auto p-4 sm:p-6 md:p-8 flex justify-center items-start sm:items-center animate-in fade-in duration-300">
             <div className="w-full max-w-4xl my-auto">
               {editingRegistro.tipo === 'combate' ? (
-                <CombatForm 
-                  initialData={editingRegistro} 
-                  onCreated={() => { setEditingRegistro(null); onRefresh ? onRefresh() : window.location.reload(); }} 
+                <CombatForm
+                  initialData={editingRegistro}
+                  onCreated={() => { setEditingRegistro(null); onRefresh ? onRefresh() : window.location.reload(); }}
                 />
               ) : (
-                <MissionForm 
-                  initialData={editingRegistro} 
-                  onCreated={() => { setEditingRegistro(null); onRefresh ? onRefresh() : window.location.reload(); }} 
+                <MissionForm
+                  initialData={editingRegistro}
+                  onCreated={() => { setEditingRegistro(null); onRefresh ? onRefresh() : window.location.reload(); }}
                   initialType={editingRegistro.tipo as any}
                 />
               )}
@@ -1860,13 +1851,13 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
             <div className="w-full max-w-lg ninja-card-oro p-8 space-y-6 relative overflow-hidden" style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' }}>
               {/* Decoración de fondo */}
               <div className="absolute top-0 right-0 w-32 h-32 bg-oro/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
-              
+
               <div className="flex items-center justify-between relative z-10">
                 <h3 className="text-xl font-black text-oro uppercase tracking-[0.3em] flex items-center gap-4 italic">
                   <ImageIcon className="w-6 h-6" />
                   {editingImageKey === 'character' ? 'Apariencia del Ninja' : 'Imagen de Jugador'}
                 </h3>
-                <button 
+                <button
                   onClick={() => setEditingImageKey(null)}
                   className="text-oro/40 hover:text-oro transition-colors"
                 >
@@ -1876,16 +1867,16 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
 
               <div className="space-y-4 relative z-10">
                 <p className="text-oro/60 text-xs font-bold uppercase tracking-widest leading-relaxed">
-                  {editingImageKey === 'character' 
-                    ? 'Introduce la URL de la imagen para este personaje. Se recomienda una relación de aspecto 3:4.' 
+                  {editingImageKey === 'character'
+                    ? 'Introduce la URL de la imagen para este personaje. Se recomienda una relación de aspecto 3:4.'
                     : 'Introduce la URL de la imagen de perfil del jugador.'}
                 </p>
                 <div className="group relative">
                   <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-oro/20 group-focus-within:text-oro transition-colors">
                     <ImageIcon className="w-5 h-5" />
                   </div>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={imageUrlInput}
                     onChange={(e) => setImageUrlInput(e.target.value)}
                     placeholder="https://ejemplo.com/imagen.jpg"
@@ -1895,13 +1886,13 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
               </div>
 
               <div className="flex gap-4 pt-4 relative z-10">
-                <button 
+                <button
                   onClick={() => setEditingImageKey(null)}
                   className="flex-1 px-6 py-4 bg-black/40 border border-oro/10 text-oro/60 text-xs font-black uppercase tracking-widest hover:bg-black/60 hover:text-oro transition-all"
                 >
                   Cancelar
                 </button>
-                <button 
+                <button
                   onClick={async () => {
                     const finalVal = imageUrlInput.trim() || null;
                     if (isEditing) {
@@ -1926,9 +1917,9 @@ const MissionCounter = ({ counts }: { counts: Record<string, number> }) => (
                             throw new Error("No user ID associated with the profile.");
                           }
                         }
-                        
+
                         addToast("Imagen actualizada correctamente.", "success");
-                        
+
                         if (onRefresh) {
                           onRefresh();
                         } else {

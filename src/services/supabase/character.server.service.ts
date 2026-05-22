@@ -167,8 +167,17 @@ export const CharacterServerService = {
     
     if (error) throw error;
 
-    // Si es voluntario, inmediatamente liberamos los requisitos del glosario
+    // Si es voluntario, inmediatamente liberamos los requisitos del glosario y limpiamos active_char_id de profiles
     if (voluntario) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ active_char_id: null })
+        .eq('active_char_id', characterId);
+      
+      if (profileError) {
+        console.error('Error clearing active_char_id on profiles:', profileError);
+      }
+
       await this.releaseGlossaryRequirements(supabase, characterId);
     }
   },
@@ -202,6 +211,20 @@ export const CharacterServerService = {
       .eq('id', characterId);
 
     if (updateError) throw updateError;
+
+    // 4. Si el perfil del jugador no tiene un personaje activo en este momento, vincularle este personaje restaurado
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('active_char_id')
+      .eq('id', character.user_id)
+      .single();
+
+    if (!profileError && (!profile || !profile.active_char_id)) {
+      await supabase
+        .from('profiles')
+        .update({ active_char_id: characterId })
+        .eq('id', character.user_id);
+    }
   },
 
   async releaseGlossaryRequirements(supabase: SupabaseClient, characterId: string | number) {
@@ -402,6 +425,7 @@ export const CharacterServerService = {
         url_img,
         eliminado_voluntario,
         archived_at,
+        created_at,
         user_id,
         profiles:user_id(username)
       `)

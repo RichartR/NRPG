@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { ImageIcon, Save, X, Loader2, User, GitBranch } from 'lucide-react';
 import { CharacterService } from '@/services/supabase/character.service';
 import { CharacterRadarChart } from './CharacterRadarChart';
+import { useToastStore } from '@/components/ui/Toast';
+import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 
 export default function CharacterSheet() {
   const { activeCharacter, loading, error, fetchActiveCharacter } = useCharacterStore();
@@ -15,10 +17,74 @@ export default function CharacterSheet() {
   const [updating, setUpdating] = useState(false);
   const [mounted, setMounted] = useState(false);
 
+  const [hasPendingAppeal, setHasPendingAppeal] = useState(false);
+  const [checkingAppeal, setCheckingAppeal] = useState(false);
+  const [sendingAppeal, setSendingAppeal] = useState(false);
+
+  const addToast = useToastStore(state => state.addToast);
+  const { confirm: confirmAction } = useConfirmStore();
+
   useEffect(() => {
     setMounted(true);
     fetchActiveCharacter();
   }, [fetchActiveCharacter]);
+
+  useEffect(() => {
+    if (activeCharacter && activeCharacter.activo === false) {
+      setCheckingAppeal(true);
+      CharacterService.checkPendingAppeal(activeCharacter.id)
+        .then(hasAppeal => {
+          setHasPendingAppeal(hasAppeal);
+        })
+        .catch(err => console.error("Error checking pending appeal:", err))
+        .finally(() => setCheckingAppeal(false));
+    }
+  }, [activeCharacter]);
+
+  const handleAppeal = async () => {
+    if (!activeCharacter) return;
+    setSendingAppeal(true);
+    try {
+      await CharacterService.appealArchive(activeCharacter.id);
+      setHasPendingAppeal(true);
+      addToast("Apelación enviada con éxito al equipo de administración", "success");
+    } catch (err: any) {
+      console.error("Error sending appeal:", err);
+      addToast(err.message || "Error al enviar la apelación", "error");
+    } finally {
+      setSendingAppeal(false);
+    }
+  };
+
+  const handleManualArchive = async () => {
+    if (!activeCharacter) return;
+    
+    const ok = await confirmAction({
+      title: 'Archivar Definitivamente',
+      message: '¿ESTÁS SEGURO? Si archivas definitivamente este personaje, se liberarán inmediatamente todos sus requisitos y cupos en el glosario. La ficha no se podrá recuperar de forma automática ni apelar.',
+      variant: 'danger',
+      confirmLabel: 'Archivar Definitivamente'
+    });
+
+    if (!ok) return;
+
+    setUpdating(true);
+    try {
+      const res = await fetch(`/api/characters/${activeCharacter.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Error al archivar personaje');
+      }
+      
+      addToast("Personaje archivado definitivamente con éxito", "success");
+      await fetchActiveCharacter();
+    } catch (err: any) {
+      console.error("Error manual archiving:", err);
+      addToast(err.message || "Error al archivar", "error");
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   const handleUpdatePortrait = async () => {
     if (!activeCharacter) return;
@@ -77,15 +143,51 @@ export default function CharacterSheet() {
 
       <div className="relative z-10 w-full h-full flex flex-col justify-between gap-6">
         {activeCharacter.activo === false && (
-          <div className="bg-rojo-sangre/20 border border-rojo-sangre/40 text-oro p-3.5 text-[9px] sm:text-xs font-black uppercase tracking-widest text-center ninja-clip-xs flex items-center justify-center gap-2 relative overflow-hidden animate-pulse">
-            <span className="text-rojo-sangre text-sm">⚠️</span>
-            <span>SHINOBI ARCHIVADO / INACTIVO (FUERA DE SERVICIO)</span>
+          <div className="bg-rojo-sangre/15 border border-rojo-sangre/30 p-5 ninja-clip-xs flex flex-col gap-4 relative overflow-hidden shadow-[0_0_20px_rgba(103,9,9,0.25)]">
+            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-rojo-sangre via-oro to-transparent" />
+            <div className="flex items-center gap-3 justify-center sm:justify-start">
+              <span className="text-rojo-sangre text-base animate-pulse">⚠️</span>
+              <span className="text-oro text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] font-ninja">
+                Shinobi Archivado por Inactividad
+              </span>
+            </div>
+            <p className="text-gris-texto text-[10px] sm:text-xs font-bold leading-relaxed uppercase tracking-wider text-center sm:text-left">
+              Tu personaje ha superado los 3 meses sin actividad reglamentaria. Puedes apelar para reactivarlo o archivarlo manualmente de forma definitiva.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 w-full">
+              {hasPendingAppeal ? (
+                <button
+                  disabled
+                  className="flex-1 py-2.5 bg-black/40 border border-oro/10 text-oro/40 text-[9px] sm:text-xs font-black uppercase tracking-widest cursor-not-allowed text-center"
+                  style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                >
+                  Apelación Pendiente
+                </button>
+              ) : (
+                <button
+                  onClick={handleAppeal}
+                  disabled={checkingAppeal || sendingAppeal}
+                  className="flex-1 py-2.5 bg-oro text-rojo-sangre border border-oro-soft hover:brightness-110 active:scale-[0.98] transition-all text-[9px] sm:text-xs font-black uppercase tracking-widest text-center cursor-pointer disabled:opacity-50"
+                  style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                >
+                  {sendingAppeal ? 'Enviando...' : 'Apelar Recuperación'}
+                </button>
+              )}
+              <button
+                onClick={handleManualArchive}
+                disabled={updating}
+                className="flex-1 py-2.5 bg-rojo-sangre/20 text-red-400 border border-rojo-sangre/30 hover:bg-rojo-sangre hover:text-oro active:scale-[0.98] transition-all text-[9px] sm:text-xs font-black uppercase tracking-widest text-center cursor-pointer disabled:opacity-50"
+                style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+              >
+                {updating ? 'Archivando...' : 'Archivar Definitivamente'}
+              </button>
+            </div>
           </div>
         )}
         <div className="flex flex-col 2xl:flex-row justify-between items-center 2xl:items-start gap-6 w-full">
           <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left min-w-0 w-full 2xl:w-auto overflow-hidden">
             <div className="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0">
-               <div className="relative w-full h-full ninja-card-oro p-1 border-oro/20 bg-black/40 overflow-hidden flex items-center justify-center">
+               <div className="relative w-full h-full bg-black/40 overflow-hidden flex items-center justify-center ninja-clip-md">
                 {activeCharacter.url_img ? (
                   <img 
                     src={activeCharacter.url_img} 

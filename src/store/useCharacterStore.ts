@@ -45,6 +45,16 @@ export const useCharacterStore = create<CharacterState>((set) => ({
 
       const charData = await CharacterService.getCharacterById(activeCharId);
 
+      if (!charData || (charData.activo === false && charData.eliminado_voluntario === true)) {
+        try {
+          await ProfileService.updateProfile(user.id, { active_char_id: null });
+        } catch (e) {
+          console.error("Error clearing active_char_id on voluntarily deleted character:", e);
+        }
+        set({ activeCharacter: null, loading: false });
+        return;
+      }
+
       // Calcular derivados usando la lógica centralizada de dominio y los datos del store
       const rules = useMasterStore.getState();
       const bases = rules.rangoRules?.[charData.rango];

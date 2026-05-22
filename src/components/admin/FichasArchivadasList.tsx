@@ -19,6 +19,7 @@ interface ArchivedCharacter {
   url_img?: string;
   eliminado_voluntario: boolean;
   archived_at: string;
+  created_at?: string;
   user_id: string;
   profiles?: Profile | Profile[];
 }
@@ -43,15 +44,20 @@ export default function FichasArchivadasList({ initialCharacters }: { initialCha
   };
 
   const getRemainingDays = (character: ArchivedCharacter) => {
-    if (!character.archived_at) return null;
-    const archivedDate = new Date(character.archived_at);
-    const limitDate = new Date(archivedDate);
+    const baseDateStr = character.archived_at || character.created_at;
+    if (!baseDateStr) return null;
+    const baseDate = new Date(baseDateStr);
+    const limitDate = new Date(baseDate);
     if (character.eliminado_voluntario) {
       // Voluntary: 3 months post-archive
-      limitDate.setMonth(archivedDate.getMonth() + 3);
+      limitDate.setMonth(baseDate.getMonth() + 3);
     } else {
-      // Inactivity: 9 months post-archive (1 year total)
-      limitDate.setMonth(archivedDate.getMonth() + 9);
+      // Inactivity: 9 months post-archive if archived_at is set, or 12 months total if falling back to created_at
+      if (character.archived_at) {
+        limitDate.setMonth(baseDate.getMonth() + 9);
+      } else {
+        limitDate.setMonth(baseDate.getMonth() + 12);
+      }
     }
     const diffTime = limitDate.getTime() - Date.now();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
