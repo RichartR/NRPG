@@ -204,7 +204,7 @@ export default async function Home() {
             <Link href="/noticias" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja flex flex-col justify-center min-h-[140px]">
               <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
                 <img src="/assets/icons/shuriken.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
-                Noticias
+                Noticias y Eventos
               </h3>
               <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Anuncios oficiales y parches.</p>
             </Link>
@@ -315,7 +315,7 @@ export default async function Home() {
                       typeColor = 'border-oro/20 text-oro bg-oro/5';
                       titleText = `¡${event.autorName} ha adquirido ${event.data?.objeto || 'un artículo'}!`;
                       iconElement = <ShoppingBag className="w-4 h-4 text-oro/60" />;
-                      
+
                       const costParts = [];
                       if (event.data?.coste_ryous) {
                         costParts.push(
@@ -338,7 +338,7 @@ export default async function Home() {
                           </span>
                         );
                       }
-                      
+
                       if (costParts.length > 0) {
                         rewardElement = (
                           <div className="flex flex-wrap items-center gap-2.5 text-[10px] xl:text-xs font-bold text-oro/60">

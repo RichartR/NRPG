@@ -30,7 +30,7 @@ export default async function BienvenidaPage() {
           <div className="flex items-center gap-6 mb-6">
             <h1 className="ninja-title text-3xl sm:text-5xl xl:text-8xl uppercase tracking-[0.3em]">BIENVENIDA</h1>
           </div>
-          <p className="text-gris-texto text-base sm:text-lg xl:text-2xl max-w-4xl leading-relaxed">Selecciona una sección para obtener más información sobre el mundo ninja y las reglas fundamentales.</p>
+          <p className="text-gris-texto text-base sm:text-lg xl:text-2xl max-w-4xl leading-relaxed">Selecciona una secci├│n para obtener m├ís informaci├│n sobre el mundo ninja y las reglas fundamentales.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10 xl:gap-16">
@@ -43,7 +43,7 @@ export default async function BienvenidaPage() {
               category="BIENVENIDA"
               imageUrl={doc.url_imagen}
               description={doc.descripcion}
-              actionText="Consultar Guía"
+              actionText="Consultar Gu├¡a"
             />
           ))}
         </div>

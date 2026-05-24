@@ -292,6 +292,11 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
   const handleSave = async (id: number) => {
     setLoadingId(id);
     try {
+      const isLargeNumericString = (val: any): boolean => {
+        if (typeof val !== 'string') return false;
+        return /^\d{15,}$/.test(val);
+      };
+
       // Parsear números antes de enviar
       const parseValue = (val: any): any => {
         if (typeof val === 'object' && val !== null) {
@@ -299,7 +304,7 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
           for (const k in val) newObj[k] = parseValue(val[k]);
           return newObj;
         }
-        return isNaN(Number(val)) || val === "" ? val : Number(val);
+        return isNaN(Number(val)) || val === "" || isLargeNumericString(val) ? val : Number(val);
       };
 
       const finalValue = parseValue(editingValues[id]);
@@ -316,7 +321,12 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
   const handleCreateConfig = async () => {
     if (!newConfig.clave || !newConfig.titulo) return;
     try {
-      const valor = isNaN(Number(newConfig.valor)) ? newConfig.valor : Number(newConfig.valor);
+      const isLargeNumericString = (val: any): boolean => {
+        if (typeof val !== 'string') return false;
+        return /^\d{15,}$/.test(val);
+      };
+
+      const valor = isNaN(Number(newConfig.valor)) || isLargeNumericString(newConfig.valor) ? newConfig.valor : Number(newConfig.valor);
       const data = await AdminService.createConfig(newConfig.clave, newConfig.titulo, valor, newConfig.descripcion);
       setConfigs([data, ...configs]);
       setIsAddingNew(false);

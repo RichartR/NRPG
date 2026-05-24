@@ -6,7 +6,7 @@ import { AdminService } from '@/services/supabase/admin.service';
 import { NotificacionAdmin } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
-import { ShieldAlert, Check, X, Eye, MessageSquare } from 'lucide-react';
+import { ShieldAlert, Check, X, Eye } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import RegistroCard from '@/components/registros/RegistroCard';
 import Link from 'next/link';
@@ -21,7 +21,7 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
   const [isOpen, setIsOpen] = useState(false);
   const [selectedRegistro, setSelectedRegistro] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement | HTMLAnchorElement | any>(null);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
@@ -32,13 +32,13 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
   const fetchData = async () => {
     try {
       const supabase = createClient();
-      
+
       // Get the count of pending disputes
       const { count: pendingCount, error: countError } = await supabase
         .from('sys_notificaciones_admin')
         .select('*', { count: 'exact', head: true })
         .eq('estado', 'pendiente');
-      
+
       if (!countError) {
         setCount(pendingCount || 0);
       }
@@ -87,7 +87,7 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
-        dropdownRef.current && 
+        dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node) &&
         buttonRef.current &&
         !buttonRef.current.contains(event.target as Node)
@@ -108,7 +108,7 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
       const rect = buttonRef.current.getBoundingClientRect();
       const isMobile = window.innerWidth < 768;
       const dropdownWidth = isMobile ? 320 : 384;
-      
+
       if (isSidebar) {
         // Position next to sidebar button
         setCoords({
@@ -154,12 +154,12 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
         ? (action === 'aceptada' ? 'Aceptar Apelación' : 'Rechazar Apelación')
         : (action === 'aceptada' ? 'Aceptar Disputa' : 'Invalidar Registro'),
       message: isAppeal
-        ? (action === 'aceptada' 
-            ? '¿Estás seguro de que quieres aceptar la apelación? Se restaurará la ficha de este shinobi.'
-            : '¿Estás seguro de que quieres rechazar la apelación? La ficha seguirá archivada.')
-        : (action === 'aceptada' 
-            ? '¿Estás seguro de que quieres aceptar la disputa? Se darán las recompensas correspondientes al jugador.'
-            : '¿Estás seguro de que quieres invalidar el registro? Se retirarán las recompensas de todos los implicados.'),
+        ? (action === 'aceptada'
+          ? '¿Estás seguro de que quieres aceptar la apelación? Se restaurará la ficha de este shinobi.'
+          : '¿Estás seguro de que quieres rechazar la apelación? La ficha seguirá archivada.')
+        : (action === 'aceptada'
+          ? '¿Estás seguro de que quieres aceptar la disputa? Se darán las recompensas correspondientes al jugador.'
+          : '¿Estás seguro de que quieres invalidar el registro? Se retirarán las recompensas de todos los implicados.'),
       variant: action === 'aceptada' ? 'primary' : 'danger'
     });
 
@@ -170,7 +170,7 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
       addToast(
         isAppeal
           ? (action === 'aceptada' ? 'Apelación aceptada y ficha restaurada' : 'Apelación rechazada')
-          : (action === 'aceptada' ? 'Disputa resuelta a favor del jugador' : 'Registro invalidado y recompensas revertidas'), 
+          : (action === 'aceptada' ? 'Disputa resuelta a favor del jugador' : 'Registro invalidado y recompensas revertidas'),
         'success'
       );
       fetchData();
@@ -201,7 +201,7 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
         </Link>
       ) : (
         <div className="relative inline-block">
-          <button 
+          <button
             ref={buttonRef}
             onClick={() => setIsOpen(!isOpen)}
             className={`flex items-center gap-3 px-6 py-2.5 bg-rojo-sangre/20 text-oro border border-oro/20 hover:bg-rojo-sangre hover:border-oro/40 transition-all group font-black text-[10px] uppercase tracking-widest cursor-pointer ${isOpen ? 'bg-rojo-sangre border-oro/40' : ''}`}
@@ -220,7 +220,7 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
 
       {/* Real-time Admin Dropdown Menu */}
       {isOpen && !isSidebar && typeof document !== 'undefined' && createPortal(
-        <div 
+        <div
           ref={dropdownRef}
           style={{
             position: 'absolute',
@@ -266,7 +266,7 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
                               {d.personaje?.nombre_ninja}
                             </span>
                           </div>
-                          
+
                           {d.registro_id === null ? (
                             <span className="text-[8px] font-black uppercase px-2 py-0.5 bg-oro text-rojo-sangre border border-oro/20 inline-block tracking-wider ninja-clip-xs mb-2">
                               Apelación de Shinobi
@@ -282,7 +282,7 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
                               "{d.mensaje}"
                             </p>
                           </div>
-                          
+
                           {d.registro_id === null ? (
                             <span className="text-[9px] text-black/45 font-semibold tracking-wide">
                               Apelación para reactivar cuenta archivada.
@@ -296,14 +296,14 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
                       </div>
 
                       <div className="flex gap-2">
-                        <button 
+                        <button
                           onClick={() => handleResolve(d.id, 'aceptada')}
                           disabled={loading}
                           className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-oro text-rojo-sangre text-[9px] font-black uppercase tracking-widest hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer shadow-[0_3px_10px_rgba(165,87,11,0.15)] ninja-clip-xs border border-oro-soft"
                         >
                           <Check className="w-3.5 h-3.5 stroke-[3]" /> Aceptar
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleResolve(d.id, 'rechazada')}
                           disabled={loading}
                           className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-rojo-sangre/10 text-rojo-sangre border border-rojo-sangre/20 text-[9px] font-black uppercase tracking-widest hover:bg-rojo-sangre hover:text-oro active:scale-[0.98] transition-all cursor-pointer ninja-clip-xs"
@@ -311,7 +311,7 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
                           <X className="w-3.5 h-3.5 stroke-[3]" /> {d.registro_id === null ? 'Rechazar' : 'Invalidar'}
                         </button>
                         {d.registro_id !== null && (
-                          <button 
+                          <button
                             onClick={() => setSelectedRegistro(d.registro)}
                             className="p-2 bg-black/5 text-black/50 hover:text-rojo-sangre hover:border-rojo-sangre/30 transition-all border border-black/10 active:scale-[0.98] cursor-pointer ninja-clip-xs"
                             title="Inspeccionar Registro Completo"
@@ -326,16 +326,16 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
               </div>
             )}
           </div>
-          
+
           <div className="p-3 bg-transparent border-t border-black/10 text-center flex items-center justify-between px-5">
-            <Link 
-              href="/admin/disputas" 
+            <Link
+              href="/admin/disputas"
               onClick={() => setIsOpen(false)}
               className="text-[8px] font-black text-oro hover:text-oro-soft bg-rojo-sangre/90 px-3 py-1.5 border border-oro/20 ninja-clip-xs uppercase tracking-wider transition-all"
             >
               Ver Todo
             </Link>
-            <button 
+            <button
               onClick={() => setIsOpen(false)}
               className="text-[9px] font-black text-rojo-sangre/70 hover:text-rojo-sangre uppercase tracking-[0.35em] transition-all hover:letter-spacing duration-300 flex items-center justify-center gap-2 cursor-pointer"
             >
@@ -349,9 +349,9 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
       {/* Modal de Inspección (Portal) */}
       {selectedRegistro && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
-          <div 
-            className="fixed inset-0 bg-black/85 backdrop-blur-md transition-all duration-500" 
-            onClick={() => setSelectedRegistro(null)} 
+          <div
+            className="fixed inset-0 bg-black/85 backdrop-blur-md transition-all duration-500"
+            onClick={() => setSelectedRegistro(null)}
           />
           <div className="relative w-full max-w-5xl max-h-[90vh] flex flex-col ninja-card-oro shadow-[0_0_80px_rgba(0,0,0,0.9)] animate-in zoom-in slide-in-from-bottom-8 duration-500 overflow-hidden">
             <div className="flex-none p-8 border-b border-oro/15 flex justify-between items-center bg-gradient-to-r from-rojo-sangre/20 to-transparent backdrop-blur-md relative">
@@ -360,7 +360,7 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
                 <div className="w-2.5 h-2.5 bg-rojo-sangre rotate-45 shadow-[0_0_10px_#b82020] animate-pulse" />
                 <h3 className="text-oro font-black uppercase tracking-[0.35em] text-xs pt-1 ninja-title">Protocolo de Inspección en Disputa</h3>
               </div>
-              <button 
+              <button
                 onClick={() => setSelectedRegistro(null)}
                 className="p-3 bg-rojo-sangre/15 text-rojo-sangre border border-rojo-sangre/30 hover:bg-rojo-sangre hover:text-oro transition-all active:scale-95 cursor-pointer ninja-clip-xs"
               >

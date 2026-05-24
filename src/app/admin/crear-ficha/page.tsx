@@ -1,14 +1,12 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { 
-  User, Shield, Briefcase, Zap, Save, RefreshCw, ArrowLeft, UserPlus,
-  Link
-} from 'lucide-react';
+import { RefreshCw, UserPlus, Link } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToastStore } from '@/components/ui/Toast';
 import { CharacterService } from '@/services/supabase/character.service';
 import { useMasterStore } from '@/store/useMasterStore';
+import { NinjaSelect } from '@/components/ui/Fields';
 
 function CrearFichaAdminContent() {
   const router = useRouter();
@@ -51,7 +49,7 @@ function CrearFichaAdminContent() {
     if (!character.hobba_name?.trim()) {
       return addToast('El nombre de usuario Hobba es obligatorio', 'error');
     }
-    
+
     setLoading(true);
     try {
       const data = await CharacterService.createCharacter(character);
@@ -67,12 +65,12 @@ function CrearFichaAdminContent() {
 
   return (
     <div className="max-w-[1750px]">
-      <header className="mb-16 ninja-card-oro p-8 xl:p-10">
+      <header className="mb-6 ninja-card-oro p-8 xl:p-10">
         <Link href="/admin" className="flex items-center gap-3 text-oro/40 hover:text-oro transition-all mb-8 text-[10px] font-black uppercase tracking-[0.3em] group">
           <div className="w-1.5 h-1.5 bg-oro/20 group-hover:bg-oro rotate-45 transition-colors" />
           VOLVER AL PANEL CENTRAL
         </Link>
-        
+
         <div className="flex items-center gap-6">
           <div className="w-12 h-12 bg-oro/[0.03] border border-oro/10 flex items-center justify-center">
             <UserPlus className="w-6 h-6 text-oro" />
@@ -84,79 +82,74 @@ function CrearFichaAdminContent() {
         </div>
       </header>
 
-        <div className="ninja-card-oro p-10 xl:p-12 space-y-12 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-oro/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-[0.4em] text-oro/30 ml-2">Nombre del Personaje</label>
-              <input 
-                value={character.nombre_ninja}
-                onChange={(e) => setCharacter({...character, nombre_ninja: e.target.value})}
-                className="w-full bg-black/40 border border-oro/10 py-5 px-8 text-oro font-bold outline-none focus:border-oro/40 transition-all placeholder:text-oro/10 text-sm"
-                style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
-                placeholder="EJ: NARUTO UZUMAKI"
-              />
-            </div>
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-[0.4em] text-oro/30 ml-2">Usuario Hobba</label>
-              <input 
-                value={character.hobba_name}
-                onChange={(e) => setCharacter({...character, hobba_name: e.target.value})}
-                className="w-full bg-black/40 border border-oro/10 py-5 px-8 text-oro font-bold outline-none focus:border-oro/40 transition-all placeholder:text-oro/10 text-sm"
-                style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
-                placeholder="EJ: NARUTO99"
-              />
-            </div>
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-[0.4em] text-oro/30 ml-2">Aldea Inicial</label>
-              <select 
-                value={character.aldea_id}
-                onChange={(e) => setCharacter({...character, aldea_id: e.target.value})}
-                className="w-full bg-black/40 border border-oro/10 py-5 px-8 text-oro font-bold outline-none focus:border-oro/40 transition-all appearance-none cursor-pointer text-sm"
-                style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
-              >
-                <option value="">SELECCIONAR NACIÓN...</option>
-                {aldeas.map(a => <option key={a.id} value={a.id} className="bg-zinc-950">{a.nombre_completo.toUpperCase()}</option>)}
-              </select>
-            </div>
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-[0.4em] text-oro/30 ml-2">Rango</label>
-              <select 
-                value={character.rango}
-                onChange={(e) => setCharacter({...character, rango: e.target.value})}
-                className="w-full bg-black/40 border border-oro/10 py-5 px-8 text-oro font-bold outline-none focus:border-oro/40 transition-all appearance-none cursor-pointer text-sm"
-                style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
-              >
-                {['D', 'C', 'B', 'A', 'S'].map(r => <option key={r} value={r} className="bg-zinc-950">RANGO {r}</option>)}
-              </select>
-            </div>
-            <div className="space-y-3 md:col-span-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.4em] text-oro/30 ml-2">URL de Imagen del Personaje (OPCIONAL)</label>
-              <input 
-                value={character.url_img || ''}
-                onChange={(e) => setCharacter({...character, url_img: e.target.value})}
-                className="w-full bg-black/40 border border-oro/10 py-5 px-8 text-oro font-bold outline-none focus:border-oro/40 transition-all placeholder:text-oro/10 text-sm"
-                style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
-                placeholder="HTTPS://..."
-              />
-            </div>
+      <div className="ninja-card-oro p-10 xl:p-12 space-y-12 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-oro/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-[0.4em] text-oro/30 ml-2">Nombre del Personaje</label>
+            <input
+              value={character.nombre_ninja}
+              onChange={(e) => setCharacter({ ...character, nombre_ninja: e.target.value })}
+              className="w-full bg-black/40 border border-oro/10 py-5 px-8 text-oro font-bold outline-none focus:border-oro/40 transition-all placeholder:text-oro/10 text-sm"
+              style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
+              placeholder="EJ: NARUTO UZUMAKI"
+            />
           </div>
-
-          <button 
-            onClick={handleCreate}
-            disabled={loading}
-            className="w-full py-6 bg-oro text-rojo-sangre font-black uppercase tracking-[0.3em] transition-all shadow-xl shadow-oro/5 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-4 hover:brightness-110"
-            style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}
-          >
-            {loading ? <RefreshCw className="w-6 h-6 animate-spin" /> : (
-              <>
-                <UserPlus className="w-5 h-5" />
-                <span>INICIALIZAR REGISTRO NINJA</span>
-              </>
-            )}
-          </button>
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-[0.4em] text-oro/30 ml-2">Usuario Hobba</label>
+            <input
+              value={character.hobba_name}
+              onChange={(e) => setCharacter({ ...character, hobba_name: e.target.value })}
+              className="w-full bg-black/40 border border-oro/10 py-5 px-8 text-oro font-bold outline-none focus:border-oro/40 transition-all placeholder:text-oro/10 text-sm"
+              style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
+              placeholder="EJ: NARUTO99"
+            />
+          </div>
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-[0.4em] text-oro/30 ml-2">Aldea Inicial</label>
+            <NinjaSelect
+              value={character.aldea_id}
+              onChange={(val) => setCharacter({ ...character, aldea_id: val })}
+              placeholder="SELECCIONAR NACIÓN..."
+              options={aldeas.map(a => ({ label: a.nombre_completo.toUpperCase(), value: a.id }))}
+            />
+          </div>
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-[0.4em] text-oro/30 ml-2">Rango</label>
+            <NinjaSelect
+              value={character.rango}
+              onChange={(val) => setCharacter({ ...character, rango: val })}
+              placeholder="SELECCIONAR RANGO..."
+              options={['D', 'C', 'B', 'A', 'S'].map(r => ({ label: `RANGO ${r}`, value: r }))}
+            />
+          </div>
+          <div className="space-y-3 md:col-span-2">
+            <label className="text-[10px] font-black uppercase tracking-[0.4em] text-oro/30 ml-2">URL de Imagen del Personaje (OPCIONAL)</label>
+            <input
+              value={character.url_img || ''}
+              onChange={(e) => setCharacter({ ...character, url_img: e.target.value })}
+              className="w-full bg-black/40 border border-oro/10 py-5 px-8 text-oro font-bold outline-none focus:border-oro/40 transition-all placeholder:text-oro/10 text-sm"
+              style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
+              placeholder="HTTPS://..."
+            />
+          </div>
         </div>
+
+        <button
+          onClick={handleCreate}
+          disabled={loading}
+          className="w-full py-6 bg-oro text-rojo-sangre font-black uppercase tracking-[0.3em] transition-all shadow-xl shadow-oro/5 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-4 hover:brightness-110"
+          style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}
+        >
+          {loading ? <RefreshCw className="w-6 h-6 animate-spin" /> : (
+            <>
+              <UserPlus className="w-5 h-5" />
+              <span>INICIALIZAR REGISTRO NINJA</span>
+            </>
+          )}
+        </button>
       </div>
+    </div>
   );
 }
 

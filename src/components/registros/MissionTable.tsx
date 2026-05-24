@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Registro } from '@/domain/types';
-import { Sparkles, Coins, Link as LinkIcon, Edit3, Trash2, Loader2 } from 'lucide-react';
+import { Link as LinkIcon, Edit3, Trash2, Loader2 } from 'lucide-react';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { RegistrosService } from '@/services/supabase/registros.service';
 import { useToastStore } from '@/components/ui/Toast';
@@ -43,7 +43,7 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
       requireValidation: true
     });
     if (!ok) return;
-    
+
     setLoadingId(id);
     try {
       await RegistrosService.deleteRegistro(id);
@@ -56,23 +56,12 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
     }
   };
 
-  const getRankBadgeStyle = (r: string) => {
-    switch (r?.toUpperCase()) {
-      case 'S': return 'bg-red-500/10 border-red-500/30 text-red-400';
-      case 'A': return 'bg-orange-500/10 border-orange-500/30 text-orange-400';
-      case 'B': return 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400';
-      case 'C': return 'bg-blue-500/10 border-blue-500/30 text-blue-400';
-      case 'D': return 'bg-green-500/10 border-green-500/30 text-green-400';
-      default: return 'bg-oro/10 border-oro/20 text-oro';
-    }
-  };
-
   return (
     <div className="ninja-card-oro p-1 overflow-hidden border border-oro/10">
       <div className="overflow-x-auto scrollbar-hide">
         <table className="w-full text-left border-collapse min-w-[700px] table-fixed">
           <thead>
-            <tr className="border-b border-oro/10 text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em]">
+            <tr className="border-b border-oro/10 text-oro/70 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em]">
               <th className="py-6 px-8 w-[16%]">Fecha</th>
               <th className="py-6 px-8 w-[12%]">Código</th>
               <th className="py-6 px-8 w-[12%]">Rango</th>
@@ -103,7 +92,7 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
                           {new Date(m.fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
-                      
+
                       {/* Fecha de Modificación */}
                       {m.data.fecha_modificacion && (
                         <div className="flex flex-col border-t border-red-500/30 pt-1.5">
@@ -128,7 +117,7 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
 
                   {/* Rango */}
                   <td className="py-6 px-8">
-                    <span className={`inline-block px-3 py-1 text-[10px] font-black uppercase border ninja-clip-xs ${getRankBadgeStyle(rankVal)}`}>
+                    <span className="inline-block px-3 py-1 text-[10px] font-black uppercase border border-oro/30 bg-oro/5 text-oro ninja-clip-xs">
                       Rango {rankVal}
                     </span>
                   </td>
@@ -137,8 +126,8 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
                   <td className="py-6 px-8">
                     <div className="flex flex-wrap gap-2 max-w-[300px]">
                       {participants.map((p, idx) => (
-                        <span 
-                          key={idx} 
+                        <span
+                          key={idx}
                           className="text-[10px] font-black text-oro/70 uppercase tracking-widest px-2.5 py-1 bg-oro/5 border border-oro/10 ninja-clip-xs"
                         >
                           {p.nombre_ninja}
@@ -150,12 +139,10 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
                   {/* Recompensa */}
                   <td className="py-6 px-8">
                     <div className="flex flex-col gap-1.5 justify-center">
-                      <div className="flex items-center gap-2 text-xs font-black text-oro tracking-wider">
-                        <Sparkles className="w-3.5 h-3.5 text-oro/40" />
-                        <span>+{m.data.recompensa_xp || 0} XP</span>
+                      <div className="flex items-center gap-2 text-xs font-black text-green-700 tracking-wider">
+                        <span>+{m.data.recompensa_xp || 0} EXP</span>
                       </div>
-                      <div className="flex items-center gap-2 text-xs font-black text-oro/60 tracking-wider">
-                        <Coins className="w-3.5 h-3.5 text-oro/30" />
+                      <div className="flex items-center gap-2 text-xs font-black text-green-700 tracking-wider">
                         <span>+{m.data.recompensa_ryous || 0} Ryos</span>
                       </div>
                     </div>
@@ -166,12 +153,12 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
                     <div className="flex flex-wrap gap-2 max-w-[200px]">
                       {m.data.urls_imagenes && m.data.urls_imagenes.length > 0 ? (
                         m.data.urls_imagenes.map((url: string, idx: number) => (
-                          <a 
-                            key={idx} 
-                            href={url} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-oro/5 border border-oro/10 hover:border-oro/40 hover:bg-oro/10 text-[9px] font-black text-oro/40 hover:text-oro uppercase tracking-widest transition-all ninja-clip-xs"
+                          <a
+                            key={idx}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-oro/5 border border-oro/10 hover:border-oro/40 hover:bg-oro/10 text-[9px] font-black text-oro/70 hover:text-oro uppercase tracking-widest transition-all ninja-clip-xs"
                             title={url}
                           >
                             <LinkIcon className="w-3 h-3" />
@@ -188,14 +175,14 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
                   <td className="py-6 px-8 text-right">
                     {canManage ? (
                       <div className="flex items-center justify-end gap-2.5">
-                        <button 
+                        <button
                           onClick={() => onEdit?.(m)}
                           className="p-2 bg-oro/10 border border-oro/30 hover:border-oro hover:bg-oro/20 text-oro/80 hover:text-oro transition-all ninja-clip-xs"
                           title="Editar Registro"
                         >
                           <Edit3 className="w-4 h-4" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDelete(m.id)}
                           disabled={loadingId === m.id}
                           className="p-2 bg-red-600/10 border border-red-600/40 hover:border-red-500 hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"

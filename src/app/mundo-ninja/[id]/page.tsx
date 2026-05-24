@@ -1,15 +1,15 @@
 import { createClient } from '@/utils/supabase/server';
-import { MapPin, ChevronLeft, User, UserPlus, LogIn } from 'lucide-react';
+import { MapPin, User, UserPlus, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import { CharacterServerService } from '@/services/supabase/character.server.service';
 import { NinjaSearchInput } from '@/components/character/NinjaSearchInput';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 
-export default async function MundoNinjaPublicVillagePage({ 
+export default async function MundoNinjaPublicVillagePage({
   params,
   searchParams
-}: { 
+}: {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ page?: string; search?: string }>;
 }) {
@@ -45,11 +45,11 @@ export default async function MundoNinjaPublicVillagePage({
   const searchQuery = resolvedSearchParams.search || '';
   const filteredNinjas = searchQuery
     ? ninjas.filter((ninja) => {
-        const nombreMatches = ninja.nombre_ninja.toLowerCase().includes(searchQuery.toLowerCase());
-        const profileUsername = (Array.isArray(ninja.profiles) ? ninja.profiles[0]?.username : ninja.profiles?.username) || ninja.hobba_name || '';
-        const discordMatches = profileUsername.toLowerCase().includes(searchQuery.toLowerCase());
-        return nombreMatches || discordMatches;
-      })
+      const nombreMatches = ninja.nombre_ninja.toLowerCase().includes(searchQuery.toLowerCase());
+      const profileUsername = (Array.isArray(ninja.profiles) ? ninja.profiles[0]?.username : ninja.profiles?.username) || ninja.hobba_name || '';
+      const discordMatches = profileUsername.toLowerCase().includes(searchQuery.toLowerCase());
+      return nombreMatches || discordMatches;
+    })
     : ninjas;
 
   // Configuración de Paginación (10 elementos por página sobre el set filtrado)
@@ -74,12 +74,12 @@ export default async function MundoNinjaPublicVillagePage({
           )}
 
           <div className="relative z-10 mb-10">
-            <Breadcrumbs 
+            <Breadcrumbs
               items={[
                 { label: 'Inicio', href: '/' },
                 { label: 'Mundo Ninja', href: '/mundo-ninja' },
                 { label: isRenegado ? 'Renegados / Ninjas sin Aldea' : (aldea?.abreviatura || aldea?.nombre_completo || '') }
-              ]} 
+              ]}
             />
           </div>
 
@@ -168,10 +168,10 @@ export default async function MundoNinjaPublicVillagePage({
                         <td className="py-5 px-8">
                           <div className={`w-12 h-12 shrink-0 border ${isRenegado ? 'border-rojo-sangre/20' : 'border-oro/20'} bg-black/40 overflow-hidden flex items-center justify-center ninja-clip-xs`}>
                             {ninja.url_img ? (
-                              <img 
-                                src={ninja.url_img} 
-                                className="w-full h-full object-cover object-top" 
-                                alt="Avatar" 
+                              <img
+                                src={ninja.url_img}
+                                className="w-full h-full object-cover object-top"
+                                alt="Avatar"
                               />
                             ) : (
                               <User className={`w-6 h-6 ${isRenegado ? 'text-rojo-sangre/40' : 'text-oro/25'}`} />
@@ -184,7 +184,7 @@ export default async function MundoNinjaPublicVillagePage({
                               {ninja.nombre_ninja}
                             </p>
                             <p className="text-[10px] text-oro/30 font-black uppercase tracking-widest mt-1 italic whitespace-nowrap">
-                              @{ (Array.isArray(ninja.profiles) ? ninja.profiles[0]?.username : ninja.profiles?.username) || ninja.hobba_name }
+                              @{(Array.isArray(ninja.profiles) ? ninja.profiles[0]?.username : ninja.profiles?.username) || ninja.hobba_name}
                             </p>
                           </Link>
                         </td>
@@ -214,7 +214,7 @@ export default async function MundoNinjaPublicVillagePage({
                   </div>
                   <div className="flex items-center gap-4">
                     {currentPage > 1 ? (
-                      <Link 
+                      <Link
                         href={`/mundo-ninja/${id}?page=${currentPage - 1}${searchParamSuffix}`}
                         className={`px-4 py-2 border ${isRenegado ? 'border-rojo-sangre/30 hover:bg-rojo-sangre/20 text-rojo-sangre hover:text-white' : 'border-oro/30 hover:bg-oro/20 text-oro hover:text-white'} transition-all`}
                         style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
@@ -222,7 +222,7 @@ export default async function MundoNinjaPublicVillagePage({
                         Anterior
                       </Link>
                     ) : (
-                      <span 
+                      <span
                         className="px-4 py-2 border border-oro/5 text-oro/10 cursor-not-allowed"
                         style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
                       >
@@ -235,7 +235,7 @@ export default async function MundoNinjaPublicVillagePage({
                     </span>
 
                     {currentPage < totalPages ? (
-                      <Link 
+                      <Link
                         href={`/mundo-ninja/${id}?page=${currentPage + 1}${searchParamSuffix}`}
                         className={`px-4 py-2 border ${isRenegado ? 'border-rojo-sangre/30 hover:bg-rojo-sangre/20 text-rojo-sangre hover:text-white' : 'border-oro/30 hover:bg-oro/20 text-oro hover:text-white'} transition-all`}
                         style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
@@ -243,7 +243,7 @@ export default async function MundoNinjaPublicVillagePage({
                         Siguiente
                       </Link>
                     ) : (
-                      <span 
+                      <span
                         className="px-4 py-2 border border-oro/5 text-oro/10 cursor-not-allowed"
                         style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
                       >
@@ -262,7 +262,7 @@ export default async function MundoNinjaPublicVillagePage({
                 <h3 className="text-lg xl:text-xl font-black text-oro/40 uppercase tracking-[0.3em] italic leading-none">NO SE ENCONTRARON SHINOBIS</h3>
                 <p className="text-[10px] font-black text-oro/20 uppercase tracking-[0.4em]">Ninguna ficha coincide con &quot;{searchQuery}&quot;</p>
               </div>
-              <Link 
+              <Link
                 href={`/mundo-ninja/${id}`}
                 className={`px-6 py-3 border ${isRenegado ? 'border-rojo-sangre/30 hover:bg-rojo-sangre/20 text-rojo-sangre' : 'border-oro/30 hover:bg-oro/20 text-oro'} text-[10px] xl:text-xs font-black uppercase tracking-widest mt-2`}
                 style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
@@ -275,8 +275,8 @@ export default async function MundoNinjaPublicVillagePage({
             <div className={`py-48 text-center ${isRenegado ? 'ninja-card-rojo' : 'ninja-card-oro'} opacity-50 flex flex-col items-center gap-8`}>
               <User className="w-24 h-24 text-oro/10" />
               <div className="space-y-2">
-                 <h3 className="text-xl xl:text-2xl font-black text-oro/40 uppercase tracking-[0.4em] italic leading-none">AÚN NO HAY SHINOBIS EN ESTA REGIÓN</h3>
-                 <p className="text-[10px] xl:text-xs font-black text-oro/20 uppercase tracking-[0.6em]">EL DESTINO AGUARDA A SU PRIMER HÉROE</p>
+                <h3 className="text-xl xl:text-2xl font-black text-oro/40 uppercase tracking-[0.4em] italic leading-none">AÚN NO HAY SHINOBIS EN ESTA REGIÓN</h3>
+                <p className="text-[10px] xl:text-xs font-black text-oro/20 uppercase tracking-[0.6em]">EL DESTINO AGUARDA A SU PRIMER HÉROE</p>
               </div>
               {puedeCrearFicha && (
                 <Link

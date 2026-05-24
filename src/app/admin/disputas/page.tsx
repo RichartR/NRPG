@@ -5,13 +5,11 @@ import { AdminService } from '@/services/supabase/admin.service';
 import { NotificacionAdmin } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
-import { Check, X, ShieldAlert, ChevronLeft, MessageSquare } from 'lucide-react';
+import { Check, X, ShieldAlert, MessageSquare, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
 import RegistroCard from '@/components/registros/RegistroCard';
-import { Eye } from 'lucide-react';
-
 import { createClient } from '@/utils/supabase/client';
 
 export default function AdminDisputePage() {
@@ -67,23 +65,23 @@ export default function AdminDisputePage() {
         ? (action === 'aceptada' ? 'Aceptar Apelación' : 'Rechazar Apelación')
         : (action === 'aceptada' ? 'Aceptar Disputa' : 'Invalidar Registro'),
       message: isAppeal
-        ? (action === 'aceptada' 
-            ? '¿Estás seguro de que quieres aceptar la apelación? Se restaurará la ficha de este shinobi.'
-            : '¿Estás seguro de que quieres rechazar la apelación? La ficha seguirá archivada.')
-        : (action === 'aceptada' 
-            ? '¿Estás seguro de que quieres aceptar la disputa? Se darán las recompensas correspondientes al jugador.'
-            : '¿Estás seguro de que quieres invalidar el registro? Se retirarán las recompensas de todos los implicados.'),
+        ? (action === 'aceptada'
+          ? '¿Estás seguro de que quieres aceptar la apelación? Se restaurará la ficha de este shinobi.'
+          : '¿Estás seguro de que quieres rechazar la apelación? La ficha seguirá archivada.')
+        : (action === 'aceptada'
+          ? '¿Estás seguro de que quieres aceptar la disputa? Se darán las recompensas correspondientes al jugador.'
+          : '¿Estás seguro de que quieres invalidar el registro? Se retirarán las recompensas de todos los implicados.'),
       variant: action === 'aceptada' ? 'primary' : 'danger'
     });
 
     if (!ok) return;
-    
+
     try {
       await AdminService.resolveDispute(id, action);
       addToast(
         isAppeal
           ? (action === 'aceptada' ? 'Apelación aceptada y ficha restaurada' : 'Apelación rechazada')
-          : (action === 'aceptada' ? 'Disputa resuelta a favor del jugador' : 'Registro invalidado y recompensas revertidas'), 
+          : (action === 'aceptada' ? 'Disputa resuelta a favor del jugador' : 'Registro invalidado y recompensas revertidas'),
         'success'
       );
       fetchDisputes();
@@ -96,12 +94,12 @@ export default function AdminDisputePage() {
   return (
     <>
       <div className="max-w-[1750px]">
-        <header className="mb-16 ninja-card-oro p-8 xl:p-10">
+        <header className="mb-6 ninja-card-oro p-8 xl:p-10">
           <Link href="/admin" className="flex items-center gap-3 text-oro/40 hover:text-oro transition-all mb-8 text-[10px] font-black uppercase tracking-[0.3em] group">
             <div className="w-1.5 h-1.5 bg-oro/20 group-hover:bg-oro rotate-45 transition-colors" />
             VOLVER AL PANEL CENTRAL
           </Link>
-          
+
           <div className="flex items-center gap-6">
             <div className="w-12 h-12 bg-rojo-sangre/10 border border-oro/25 flex items-center justify-center shadow-[0_0_15px_rgba(103,9,9,0.4)]">
               <ShieldAlert className="w-6 h-6 text-oro animate-pulse" />
@@ -174,14 +172,14 @@ export default function AdminDisputePage() {
                   </div>
 
                   <div className="flex flex-col gap-4 justify-center min-w-[260px] shrink-0 self-stretch lg:self-center">
-                    <button 
+                    <button
                       onClick={() => handleResolve(d.id, 'aceptada')}
                       className="w-full py-3.5 bg-emerald-950/20 border border-emerald-500/25 text-emerald-400 text-[10px] font-black uppercase tracking-[0.25em] hover:bg-emerald-500 hover:text-black transition-all shadow-[0_0_15px_rgba(16,185,129,0.15)] flex items-center justify-center gap-2 cursor-pointer"
                       style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                     >
                       <Check className="w-4 h-4 stroke-[2.5]" /> {d.registro_id === null ? 'ACEPTAR APELACIÓN' : 'ACEPTAR DISPUTA'}
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleResolve(d.id, 'rechazada')}
                       className="w-full py-3.5 bg-rojo-sangre/15 border border-rojo-sangre/30 text-red-400 text-[10px] font-black uppercase tracking-[0.25em] hover:bg-rojo-sangre hover:text-oro transition-all shadow-[0_0_15px_rgba(184,32,32,0.15)] flex items-center justify-center gap-2 cursor-pointer"
                       style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
@@ -189,7 +187,7 @@ export default function AdminDisputePage() {
                       <X className="w-4 h-4 stroke-[2.5]" /> {d.registro_id === null ? 'RECHAZAR APELACIÓN' : 'INVALIDAR REGISTRO'}
                     </button>
                     {d.registro_id !== null && (
-                      <button 
+                      <button
                         onClick={() => setSelectedRegistro(d.registro)}
                         className="w-full py-3.5 bg-oro text-rojo-sangre text-[10px] font-black uppercase tracking-[0.25em] hover:brightness-110 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_20px_rgba(255,230,159,0.15)]"
                         style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
@@ -208,9 +206,9 @@ export default function AdminDisputePage() {
       {/* Modal de Inspección (Portal) */}
       {selectedRegistro && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          <div 
-            className="fixed inset-0 bg-black/85 backdrop-blur-md transition-all duration-500" 
-            onClick={() => setSelectedRegistro(null)} 
+          <div
+            className="fixed inset-0 bg-black/85 backdrop-blur-md transition-all duration-500"
+            onClick={() => setSelectedRegistro(null)}
           />
           <div className="relative w-full max-w-5xl max-h-[90vh] flex flex-col ninja-card-oro shadow-[0_0_80px_rgba(0,0,0,0.9)] animate-in zoom-in slide-in-from-bottom-8 duration-500 overflow-hidden">
             <div className="flex-none p-8 border-b border-oro/15 flex justify-between items-center bg-gradient-to-r from-rojo-sangre/20 to-transparent backdrop-blur-md relative">
@@ -219,7 +217,7 @@ export default function AdminDisputePage() {
                 <div className="w-2.5 h-2.5 bg-rojo-sangre rotate-45 shadow-[0_0_10px_#b82020] animate-pulse" />
                 <h3 className="text-oro font-black uppercase tracking-[0.35em] text-xs pt-1 ninja-title">Protocolo de Inspección en Disputa</h3>
               </div>
-              <button 
+              <button
                 onClick={() => setSelectedRegistro(null)}
                 className="p-3 bg-rojo-sangre/15 text-rojo-sangre border border-rojo-sangre/30 hover:bg-rojo-sangre hover:text-oro transition-all active:scale-95 cursor-pointer ninja-clip-xs"
               >

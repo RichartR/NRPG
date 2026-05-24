@@ -1,23 +1,27 @@
 'use client';
 
 import { useState } from 'react';
-import { Save, X, PlusCircle, RefreshCw } from 'lucide-react';
+import { X, PlusCircle, RefreshCw, Save } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { DataField, SelectField } from '@/components/ui/Fields';
 
-export default function DocEditForm({ doc, categories, onCancel, defaultCategory, showSubcategory = true }: { doc?: any, categories: any[], onCancel: () => void, defaultCategory?: string, showSubcategory?: boolean }) {
-  const isCreate = !doc;
-  const [formData, setFormData] = useState(doc || {
+interface NewsEditFormProps {
+  newsItem?: any;
+  onCancel: () => void;
+}
+
+export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) {
+  const isCreate = !newsItem;
+  const [formData, setFormData] = useState({
+    activo: true,
     titulo: '',
-    clave: '',
-    url_drive: '',
-    descripcion: '',
-    categoria: defaultCategory || categories[0]?.slug || 'sistemas',
-    subcategoria: doc?.subcategoria || '',
+    categoria: 'Noticia',
+    discord_msg_id: '',
     url_imagen: '',
-    activo: true
+    descripcion: '',
+    ...newsItem
   });
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -28,21 +32,21 @@ export default function DocEditForm({ doc, categories, onCancel, defaultCategory
     setLoading(true);
 
     const titulo = formData.titulo?.trim();
-    const clave = formData.clave?.trim();
-    const url_drive = formData.url_drive?.trim();
+    const categoria = formData.categoria;
+    const discord_msg_id = formData.discord_msg_id?.trim();
 
     if (!titulo) {
-      addToast("El nombre del apartado es obligatorio", "error");
+      addToast("El título de la noticia es obligatorio", "error");
       setLoading(false);
       return;
     }
-    if (!clave) {
-      addToast("La clave es obligatoria", "error");
+    if (!categoria) {
+      addToast("La categoría es obligatoria", "error");
       setLoading(false);
       return;
     }
-    if (!url_drive) {
-      addToast("El enlace de Google Drive es obligatorio", "error");
+    if (!discord_msg_id) {
+      addToast("El ID de mensaje de Discord es obligatorio", "error");
       setLoading(false);
       return;
     }
@@ -50,20 +54,19 @@ export default function DocEditForm({ doc, categories, onCancel, defaultCategory
     try {
       const cleanData = {
         titulo,
-        clave,
-        url_drive,
-        categoria: formData.categoria,
-        subcategoria: formData.subcategoria?.trim() || null,
+        categoria,
+        discord_msg_id,
         url_imagen: formData.url_imagen?.trim() || null,
-        descripcion: formData.descripcion?.trim() || null,
+        descripcion: formData.descripcion?.trim().slice(0, 100) || null,
         activo: formData.activo
       };
 
-      await AdminService.saveDocument({
-        id: doc?.id,
+      await AdminService.saveNewsItem({
+        id: newsItem?.id,
         ...cleanData
       });
-      addToast(isCreate ? "Documento creado" : "Documento actualizado", "success");
+
+      addToast(isCreate ? "Anuncio publicado con éxito" : "Anuncio actualizado con éxito", "success");
       router.refresh();
       onCancel();
     } catch (err: any) {
@@ -72,6 +75,12 @@ export default function DocEditForm({ doc, categories, onCancel, defaultCategory
       setLoading(false);
     }
   };
+
+  const categories = [
+    { label: 'NOTICIA', value: 'Noticia' },
+    { label: 'PARCHE', value: 'Parche' },
+    { label: 'EVENTO', value: 'Evento' }
+  ];
 
   return (
     <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-start sm:items-center justify-center p-4 sm:p-6 xl:p-12 overflow-y-auto">
@@ -85,9 +94,9 @@ export default function DocEditForm({ doc, categories, onCancel, defaultCategory
             </div>
             <div>
               <h2 className="ninja-title text-xl sm:text-3xl xl:text-5xl leading-none">
-                {isCreate ? 'REGISTRO TÁCTICO' : 'ACTUALIZAR REGISTRO'}
+                {isCreate ? 'PUBLICAR ANUNCIO' : 'ACTUALIZAR ANUNCIO'}
               </h2>
-              <p className="text-[8px] sm:text-[10px] xl:text-xs font-black text-oro/30 uppercase tracking-[0.4em] mt-3 italic">MÓDULO DE GESTIÓN DE ARCHIVOS SHINOBI</p>
+              <p className="text-[8px] sm:text-[10px] xl:text-xs font-black text-oro/30 uppercase tracking-[0.4em] mt-3 italic">Muro de Comunicaciones Shinobi</p>
             </div>
           </div>
 
@@ -114,54 +123,57 @@ export default function DocEditForm({ doc, categories, onCancel, defaultCategory
 
         <form onSubmit={handleSave} className="p-5 sm:p-12 xl:p-16 space-y-8 sm:space-y-12 relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-10">
-            <DataField
-              label="NOMBRE DEL APARTADO"
-              value={formData.titulo}
-              onChange={v => {
-                setFormData({
-                  ...formData,
-                  titulo: v,
-                  clave: v.toLowerCase().trim().replace(/\s+/g, '-').normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w-]/g, '')
-                });
-              }}
-            />
+            <div className="md:col-span-2">
+              <DataField
+                label="TÍTULO DE LA NOTICIA / ANUNCIO"
+                value={formData.titulo}
+                onChange={v => setFormData({ ...formData, titulo: v })}
+                placeholder="Escribe un título descriptivo..."
+              />
+            </div>
             <SelectField
-              label="CATEGORÍA"
+              label="CATEGORÍA DEL ANUNCIO"
               value={formData.categoria}
-              options={categories.map(c => ({ label: c.nombre.toUpperCase(), value: c.slug }))}
+              options={categories}
               onChange={v => setFormData({ ...formData, categoria: v })}
             />
             <DataField
-              label="CLAVE (ID DE SISTEMA)"
-              value={formData.clave}
-              onChange={v => setFormData({ ...formData, clave: v.toLowerCase().replace(/\s+/g, '-') })}
+              label="ID MENSAJE DISCORD (REQUISITO TÁCTICO)"
+              value={formData.discord_msg_id}
+              onChange={v => setFormData({ ...formData, discord_msg_id: v })}
+              placeholder="Ej. 123456789012345678"
             />
-            {showSubcategory && (
-              <DataField label="SUBCATEGORÍA / PROTOCOLO" value={formData.subcategoria} onChange={v => setFormData({ ...formData, subcategoria: v })} />
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 gap-6 sm:gap-10">
-            <DataField label="ENLACE DE GOOGLE DRIVE (NUBE)" value={formData.url_drive} onChange={v => setFormData({ ...formData, url_drive: v })} placeholder="https://drive.google.com/..." />
-            <DataField label="URL IMAGEN DE CABECERA (VISUAL)" value={formData.url_imagen} onChange={v => setFormData({ ...formData, url_imagen: v })} placeholder="https://i.imgur.com/..." />
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex justify-between items-center px-2">
-              <label className="text-[9px] sm:text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] text-oro/30">DESCRIPCIÓN CORTA</label>
-              <span className="text-[9px] sm:text-[10px] xl:text-xs font-black tracking-widest text-oro/30">
-                {(formData.descripcion || '').length} / 100
-              </span>
+            <div className="md:col-span-2">
+              <DataField
+                label="URL IMAGEN DE CABECERA (OPCIONAL)"
+                value={formData.url_imagen || ''}
+                onChange={v => setFormData({ ...formData, url_imagen: v })}
+                placeholder="https://i.imgur.com/... o /assets/images/..."
+              />
             </div>
-            <textarea
-              rows={5}
-              maxLength={100}
-              value={formData.descripcion || ''}
-              onChange={e => setFormData({ ...formData, descripcion: e.target.value })}
-              className="w-full bg-black/80 border border-oro/20 hover:border-oro/40 focus:border-oro/60 focus:bg-black/90 focus:shadow-[0_0_20px_rgba(255,230,159,0.1)] outline-none transition-all p-6 sm:p-10 text-oro font-black placeholder:text-oro/20 text-base sm:text-lg xl:text-xl italic uppercase tracking-tight"
-              placeholder="ESCRIBE UNA PEQUEÑA DESCRIPCIÓN DE ESTE APARTADO..."
-              style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}
-            />
+            <div className="md:col-span-2">
+              <div className="flex flex-col gap-2">
+                <label className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] text-oro/50">
+                  DESCRIPCIÓN BREVE <span className="text-oro/30 ml-2">(OPCIONAL · MAX 100 CHARS)</span>
+                </label>
+                <div className="relative">
+                  <textarea
+                    maxLength={100}
+                    rows={2}
+                    value={formData.descripcion || ''}
+                    onChange={e => setFormData({ ...formData, descripcion: e.target.value })}
+                    placeholder="Una frase corta que resume el anuncio..."
+                    className="w-full bg-black/60 border border-oro/20 hover:border-oro/40 focus:border-oro/60 px-5 py-3 text-xs text-oro/90 font-bold outline-none transition-all placeholder:text-oro/20 uppercase tracking-wider resize-none"
+                    style={{ clipPath: 'polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px)' }}
+                  />
+                  <span className={`absolute bottom-3 right-4 text-[9px] font-black tabular-nums tracking-widest transition-colors ${(formData.descripcion?.length || 0) >= 90 ? 'text-rojo-sangre' : 'text-oro/30'
+                    }`}>
+                    {formData.descripcion?.length || 0}/100
+                  </span>
+                </div>
+              </div>
+            </div>
+
           </div>
 
           <footer className="flex flex-col-reverse sm:flex-row justify-end items-center gap-6 sm:gap-12 pt-8 sm:pt-12 border-t border-oro/10">
@@ -172,7 +184,7 @@ export default function DocEditForm({ doc, categories, onCancel, defaultCategory
               className="w-full sm:w-auto ninja-btn-oro px-10 sm:px-16 py-4 sm:py-6 flex items-center justify-center gap-4 sm:gap-6 shadow-2xl active:scale-95 disabled:opacity-50"
             >
               {loading ? <RefreshCw className="w-5 h-5 sm:w-6 sm:h-6 animate-spin text-rojo-sangre" /> : <Save className="w-5 h-5 sm:w-6 sm:h-6 text-rojo-sangre" />}
-              <span>{isCreate ? 'FINALIZAR REGISTRO' : 'CONFIRMAR CAMBIOS'}</span>
+              <span>{isCreate ? 'FINALIZAR PUBLICACIÓN' : 'CONFIRMAR CAMBIOS'}</span>
             </button>
           </footer>
         </form>

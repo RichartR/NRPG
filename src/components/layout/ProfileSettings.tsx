@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { User, Image as ImageIcon, Save, X } from 'lucide-react';
+import { User, Image as ImageIcon, X } from 'lucide-react';
 import { ProfileService } from '@/services/supabase/profile.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { useRouter } from 'next/navigation';
@@ -36,20 +36,20 @@ export default function ProfileSettings({ profile, userId }: ProfileSettingsProp
   return (
     <>
       {/* Gatillo: El área del perfil en la cabecera */}
-      <button 
+      <button
         onClick={() => setIsOpen(true)}
         className="flex items-center gap-4 px-4 xl:px-6 py-2.5 hover:bg-white/5 transition-all group rounded-lg"
       >
         <div className="relative">
           {profile?.url_img || profile?.url_avatar ? (
-            <img 
-              src={profile.url_img || profile.url_avatar} 
-              alt={profile?.username || "Avatar"} 
+            <img
+              src={profile.url_img || profile.url_avatar}
+              alt={profile?.username || "Avatar"}
               className="w-10 xl:w-12 h-10 xl:h-12 rounded-none object-cover border border-oro/40 group-hover:border-oro transition-colors"
             />
           ) : (
             <div className="w-10 xl:w-12 h-10 xl:h-12 bg-oro/5 border border-oro/10 flex items-center justify-center">
-               <User className="w-5 h-5 text-oro/20" />
+              <User className="w-5 h-5 text-oro/20" />
             </div>
           )}
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -67,11 +67,11 @@ export default function ProfileSettings({ profile, userId }: ProfileSettingsProp
       {/* Modal de Ajustes */}
       {isOpen && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div 
+          <div
             className="w-full max-w-lg ninja-card-oro p-8 xl:p-12 relative animate-in fade-in zoom-in duration-300"
             style={{ clipPath: 'polygon(30px 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%, 0 30px)' }}
           >
-            <button 
+            <button
               onClick={() => setIsOpen(false)}
               className="absolute top-6 right-6 text-oro/40 hover:text-oro transition-colors"
             >
@@ -87,7 +87,7 @@ export default function ProfileSettings({ profile, userId }: ProfileSettingsProp
               <div className="space-y-4">
                 <label className="text-[10px] font-black text-oro/40 uppercase tracking-[0.4em] ml-2">URL de Imagen de Perfil</label>
                 <div className="relative">
-                  <input 
+                  <input
                     type="text"
                     value={urlImg}
                     onChange={(e) => setUrlImg(e.target.value)}
@@ -113,7 +113,7 @@ export default function ProfileSettings({ profile, userId }: ProfileSettingsProp
               </div>
 
               <div className="flex gap-4 pt-4">
-                <button 
+                <button
                   onClick={handleSave}
                   disabled={loading}
                   className="flex-1 ninja-btn-oro py-4 text-xs tracking-[0.3em] font-black"

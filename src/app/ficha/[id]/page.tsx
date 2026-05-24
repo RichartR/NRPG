@@ -3,13 +3,12 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useCharacter } from '@/hooks/useCharacter';
 import { CharacterSheetView } from '@/components/character/CharacterSheetView';
-import { RefreshCw } from 'lucide-react';
 
 export default function FichaPublicPage() {
   const params = useParams();
   const id = params.id as string;
   const router = useRouter();
-  
+
   const {
     character,
     originalCharacter,
@@ -46,7 +45,7 @@ export default function FichaPublicPage() {
   }
 
   return (
-    <CharacterSheetView 
+    <CharacterSheetView
       character={character}
       originalCharacter={originalCharacter}
       masters={masters}

@@ -1,12 +1,12 @@
 import { createClient } from '@/utils/supabase/server';
-import { Map, ChevronLeft } from 'lucide-react';
+import { Map } from 'lucide-react';
 import Link from 'next/link';
 import AldeaList from '@/components/admin/AldeaList';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 
 export default async function AdminAldeasPage() {
   const supabase = await createClient();
-  
+
   const aldeas = await MasterServerService.getAdminAldeas(supabase);
 
   return (
@@ -16,7 +16,7 @@ export default async function AdminAldeasPage() {
           <div className="w-1.5 h-1.5 bg-oro/20 group-hover:bg-oro rotate-45 transition-colors" />
           VOLVER AL PANEL CENTRAL
         </Link>
-        
+
         <div className="flex items-center gap-6">
           <div className="w-12 h-12 bg-oro/[0.03] border border-oro/10 flex items-center justify-center">
             <Map className="w-6 h-6 text-oro" />

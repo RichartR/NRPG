@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Bell, Check, X, MessageSquare, AlertCircle } from 'lucide-react';
+import { Bell, Check, X } from 'lucide-react';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { CharacterService } from '@/services/supabase/character.service';
 import { useToastStore } from '@/components/ui/Toast';
@@ -9,6 +9,7 @@ import { createClient } from '@/utils/supabase/client';
 import { RewardLogic } from '@/domain/character/logic';
 import RegistroCard from '../registros/RegistroCard';
 import { Eye } from 'lucide-react';
+
 import { createPortal } from 'react-dom';
 import { useRef } from 'react';
 
@@ -29,7 +30,7 @@ export default function NotificationBell() {
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
-        dropdownRef.current && 
+        dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node) &&
         buttonRef.current &&
         !buttonRef.current.contains(event.target as Node)
@@ -50,7 +51,7 @@ export default function NotificationBell() {
       const rect = buttonRef.current.getBoundingClientRect();
       const isMobile = window.innerWidth < 768;
       const dropdownWidth = isMobile ? 320 : 384;
-      
+
       let left = rect.right + window.scrollX - dropdownWidth;
       const margin = 16;
       if (left < margin) {
@@ -121,9 +122,9 @@ export default function NotificationBell() {
     setLoading(true);
     try {
       await CharacterService.respondToRecord(
-        activeCharacter.id, 
-        registroId, 
-        action, 
+        activeCharacter.id,
+        registroId,
+        action,
         action === 'rechazar' ? comment : undefined
       );
       addToast(action === 'aceptar' ? 'Registro aceptado y recompensas sumadas' : 'Rechazo enviado a administración', 'success');
@@ -141,7 +142,7 @@ export default function NotificationBell() {
 
   return (
     <div className="relative inline-block">
-      <button 
+      <button
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         className="p-3 hover:bg-white/5 transition-all group flex items-center justify-center cursor-pointer rounded-lg"
@@ -155,7 +156,7 @@ export default function NotificationBell() {
       )}
 
       {isOpen && typeof document !== 'undefined' && createPortal(
-        <div 
+        <div
           ref={dropdownRef}
           style={{
             position: 'absolute',
@@ -219,7 +220,7 @@ export default function NotificationBell() {
 
                         {rejectingId === n.registro_id ? (
                           <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                            <textarea 
+                            <textarea
                               placeholder="¿Por qué rechazas este registro?"
                               value={comment}
                               onChange={(e) => setComment(e.target.value)}
@@ -227,14 +228,14 @@ export default function NotificationBell() {
                               style={{ textTransform: 'none' }}
                             />
                             <div className="flex gap-2">
-                              <button 
+                              <button
                                 onClick={() => handleAction(n.registro_id, 'rechazar')}
                                 disabled={!comment.trim() || loading}
                                 className="flex-1 py-2 bg-rojo-sangre text-oro text-[9px] font-black uppercase tracking-widest hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-40 cursor-pointer ninja-clip-xs"
                               >
                                 Enviar Disputa
                               </button>
-                              <button 
+                              <button
                                 onClick={() => setRejectingId(null)}
                                 className="p-2 bg-black/5 text-black/60 hover:text-black hover:bg-black/10 active:scale-[0.98] transition-all cursor-pointer ninja-clip-xs border border-black/10"
                               >
@@ -244,20 +245,20 @@ export default function NotificationBell() {
                           </div>
                         ) : (
                           <div className="flex gap-2">
-                            <button 
+                            <button
                               onClick={() => handleAction(n.registro_id, 'aceptar')}
                               disabled={loading}
                               className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-oro text-rojo-sangre text-[9px] font-black uppercase tracking-widest hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer shadow-[0_3px_10px_rgba(165,87,11,0.15)] ninja-clip-xs border border-oro-soft"
                             >
                               <Check className="w-3.5 h-3.5 stroke-[3]" /> Aceptar
                             </button>
-                            <button 
+                            <button
                               onClick={() => setRejectingId(n.registro_id)}
                               className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-rojo-sangre/10 text-rojo-sangre border border-rojo-sangre/20 text-[9px] font-black uppercase tracking-widest hover:bg-rojo-sangre hover:text-oro active:scale-[0.98] transition-all cursor-pointer ninja-clip-xs"
                             >
                               <X className="w-3.5 h-3.5 stroke-[3]" /> Rechazar
                             </button>
-                            <button 
+                            <button
                               onClick={() => setSelectedRegistro(n.registro)}
                               className="p-2 bg-black/5 text-black/50 hover:text-rojo-sangre hover:border-rojo-sangre/30 transition-all border border-black/10 active:scale-[0.98] cursor-pointer ninja-clip-xs"
                               title="Ver Registro Completo"
@@ -273,9 +274,9 @@ export default function NotificationBell() {
               </div>
             )}
           </div>
-          
+
           <div className="p-3 bg-transparent border-t border-black/10 text-center">
-            <button 
+            <button
               onClick={() => setIsOpen(false)}
               className="text-[9px] font-black text-rojo-sangre/70 hover:text-rojo-sangre uppercase tracking-[0.35em] transition-all hover:letter-spacing duration-300 flex items-center justify-center gap-2 mx-auto cursor-pointer"
             >
@@ -291,9 +292,9 @@ export default function NotificationBell() {
       {/* Modal de Registro */}
       {selectedRegistro && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          <div 
-            className="fixed inset-0 bg-black/85 backdrop-blur-md transition-all duration-500" 
-            onClick={() => setSelectedRegistro(null)} 
+          <div
+            className="fixed inset-0 bg-black/85 backdrop-blur-md transition-all duration-500"
+            onClick={() => setSelectedRegistro(null)}
           />
           <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col ninja-card-oro shadow-[0_0_80px_rgba(0,0,0,0.8)] animate-in zoom-in slide-in-from-bottom-8 duration-500 overflow-hidden">
             <div className="flex-none p-6 border-b border-oro/15 flex justify-between items-center bg-gradient-to-r from-rojo-sangre/20 to-transparent backdrop-blur-md relative">
@@ -302,7 +303,7 @@ export default function NotificationBell() {
                 <div className="w-2.5 h-2.5 bg-rojo-sangre rotate-45 shadow-[0_0_10px_#b82020]" />
                 <h3 className="text-oro font-black uppercase tracking-[0.35em] text-xs pt-1 ninja-title">Inspección de Registro</h3>
               </div>
-              <button 
+              <button
                 onClick={() => setSelectedRegistro(null)}
                 className="p-2.5 bg-rojo-sangre/10 text-rojo-sangre border border-rojo-sangre/30 hover:bg-rojo-sangre hover:text-oro transition-all active:scale-95 cursor-pointer ninja-clip-xs"
               >
@@ -320,7 +321,7 @@ export default function NotificationBell() {
               <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-rojo-sangre via-oro to-transparent" />
               {rejectingId === selectedRegistro.id ? (
                 <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-300">
-                  <textarea 
+                  <textarea
                     placeholder="Motivo del rechazo..."
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
@@ -328,7 +329,7 @@ export default function NotificationBell() {
                     style={{ textTransform: 'none' }}
                   />
                   <div className="flex gap-4">
-                    <button 
+                    <button
                       onClick={async () => {
                         await handleAction(selectedRegistro.id, 'rechazar');
                         setSelectedRegistro(null);
@@ -338,7 +339,7 @@ export default function NotificationBell() {
                     >
                       Confirmar Rechazo
                     </button>
-                    <button 
+                    <button
                       onClick={() => setRejectingId(null)}
                       className="px-8 py-4 bg-black/40 text-oro/60 border border-oro/15 hover:text-oro hover:border-oro/40 transition-all font-black text-xs uppercase tracking-[0.2em] active:scale-95 cursor-pointer ninja-clip-md"
                     >
@@ -348,7 +349,7 @@ export default function NotificationBell() {
                 </div>
               ) : (
                 <div className="flex flex-col md:flex-row gap-4">
-                  <button 
+                  <button
                     onClick={async () => {
                       await handleAction(selectedRegistro.id, 'aceptar');
                       setSelectedRegistro(null);
@@ -358,7 +359,7 @@ export default function NotificationBell() {
                   >
                     <Check className="w-5 h-5 stroke-[2.5]" /> Aceptar Registro
                   </button>
-                  <button 
+                  <button
                     onClick={() => setRejectingId(selectedRegistro.id)}
                     className="flex-1 flex items-center justify-center gap-3 py-4 bg-rojo-sangre/20 text-rojo-sangre border border-rojo-sangre/30 text-xs font-black uppercase tracking-[0.2em] hover:bg-rojo-sangre hover:text-oro transition-all active:scale-95 cursor-pointer ninja-clip-md"
                   >

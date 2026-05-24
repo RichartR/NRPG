@@ -1,15 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { 
-  Plus, Trash2, Save, Search, Filter, 
-  Layers, Tag, Box, Check, X, ChevronLeft, ArrowRight, Archive, Eye,
-  User, Swords, ScrollText, Trophy, Star, ChevronDown
-} from 'lucide-react';
+import { Plus, Trash2, Save, Search, Filter, Layers, Tag, Box, Check, X, ArrowRight, Archive, Eye, User, Swords, ScrollText, Trophy, Star, ChevronDown } from 'lucide-react';
 import { AdminService } from '@/services/supabase/admin.service';
-import { 
-  GlosarioCategoria, 
-  GlosarioSubcategoria, 
+import {
+  GlosarioCategoria,
+  GlosarioSubcategoria,
   Glosario,
   RamaClan
 } from '@/domain/types';
@@ -17,6 +13,7 @@ import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { createClient } from '@/utils/supabase/client';
 import { MasterServerService } from '@/services/supabase/master.server.service';
+import { NinjaSelect } from '@/components/ui/Fields';
 
 type Section = 'hub' | 'elementos' | 'categorias' | 'subcategorias';
 type ViewStatus = 'active' | 'archived';
@@ -42,7 +39,7 @@ export default function GlosarioManager() {
   const [viewStatus, setViewStatus] = useState<ViewStatus>('active');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  
+
   const [categorias, setCategorias] = useState<GlosarioCategoria[]>([]);
   const [subcategorias, setSubcategorias] = useState<GlosarioSubcategoria[]>([]);
   const [elementos, setElementos] = useState<Glosario[]>([]);
@@ -50,14 +47,14 @@ export default function GlosarioManager() {
   const [aldeas, setAldeas] = useState<any[]>([]);
   const [subespecialidades, setSubespecialidades] = useState<any[]>([]);
   const [personajes, setPersonajes] = useState<any[]>([]);
-  
+
   const [search, setSearch] = useState('');
   const [filterCat, setFilterCat] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showNewForm, setShowNewForm] = useState(false);
   const [editingCat, setEditingCat] = useState<GlosarioCategoria | null>(null);
   const [editingSub, setEditingSub] = useState<GlosarioSubcategoria | null>(null);
-  
+
   const addToast = useToastStore(state => state.addToast);
   const { confirm: confirmAction } = useConfirmStore();
   const supabase = createClient();
@@ -147,11 +144,16 @@ export default function GlosarioManager() {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex flex-col gap-2">
-          <button onClick={() => setActiveSection('hub')} className="flex items-center gap-3 text-zinc-500 hover:text-white transition-colors group w-fit">
-            <div className="p-2 bg-zinc-900 rounded-xl group-hover:bg-zinc-800 transition-colors"><ChevronLeft size={16} /></div>
-            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Volver al Panel</span>
+          <button
+            onClick={() => setActiveSection('hub')}
+            className="flex items-center gap-3 text-oro/60 hover:text-oro transition-all mb-6 text-[10px] font-black uppercase tracking-[0.3em] group cursor-pointer bg-transparent border-none p-0 outline-none align-middle"
+          >
+            <div className="w-1.5 h-1.5 bg-oro/40 group-hover:bg-oro rotate-45 transition-colors" />
+            VOLVER AL MENÚ DE GLOSARIO
           </button>
-          <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Gestión de <span className="text-emerald-500">{activeSection.toUpperCase()}</span></h2>
+          <h2 className="ninja-title text-3xl sm:text-4xl xl:text-5xl leading-none">
+            GESTIÓN DE <span className="text-white">{activeSection.toUpperCase()}</span>
+          </h2>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex bg-zinc-900/50 p-1.5 rounded-2xl border border-zinc-800/50">
@@ -170,23 +172,28 @@ export default function GlosarioManager() {
         {activeSection === 'elementos' && (
           <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-2">
             <Filter size={16} className="text-zinc-600" />
-            <select value={filterCat || ''} onChange={(e) => setFilterCat(e.target.value ? Number(e.target.value) : null)} className="bg-transparent text-zinc-400 font-bold text-xs outline-none cursor-pointer">
-              <option value="">Todas las Categorías</option>
-              {categorias.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-            </select>
+            <NinjaSelect
+              variant="inline"
+              value={filterCat || ''}
+              onChange={(val) => setFilterCat(val ? Number(val) : null)}
+              placeholder="Todas las Categorías"
+              options={[
+                ...categorias.map((c: any) => ({ label: c.nombre, value: c.id }))
+              ]}
+            />
           </div>
         )}
       </div>
 
       <div className="grid gap-4">
-         {activeSection === 'elementos' ? (
+        {activeSection === 'elementos' ? (
           filteredData().map((el: any) => (
-            <ElementoCard 
-              key={el.id} 
-              elemento={el} 
-              categorias={categorias} 
-              subcategorias={subcategorias} 
-              onEdit={() => setEditingId(el.id)} 
+            <ElementoCard
+              key={el.id}
+              elemento={el}
+              categorias={categorias}
+              subcategorias={subcategorias}
+              onEdit={() => setEditingId(el.id)}
               onDelete={async () => {
                 const ok = await confirmAction({
                   title: 'Eliminar Elemento',
@@ -195,7 +202,7 @@ export default function GlosarioManager() {
                   requireValidation: true
                 });
                 if (ok) AdminService.deleteGlosario(el.id).then(fetchData);
-              }} 
+              }}
             />
           ))
         ) : activeSection === 'categorias' ? (
@@ -204,8 +211,8 @@ export default function GlosarioManager() {
               <div key={c.id} className="group p-8 bg-zinc-900/30 border border-zinc-800 rounded-[2.5rem] hover:bg-zinc-900/50 transition-all">
                 <div className="flex justify-between items-start mb-6">
                   <div className={`p-3 rounded-xl ${c.activo ? 'bg-blue-500/10 text-blue-500' : 'bg-zinc-800 text-zinc-500'}`}><Tag size={20} /></div>
-                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => { setEditingCat(c); setShowNewForm(true); }} className="p-2 text-zinc-500 hover:text-white transition-colors"><Save size={18}/></button>
+                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => { setEditingCat(c); setShowNewForm(true); }} className="p-2 text-zinc-500 hover:text-white transition-colors"><Save size={18} /></button>
                     <button onClick={async () => {
                       const ok = await confirmAction({
                         title: 'Eliminar Categoría',
@@ -214,7 +221,7 @@ export default function GlosarioManager() {
                         requireValidation: true
                       });
                       if (ok) AdminService.deleteGlosarioCategoria(c.id).then(fetchData);
-                    }} className="p-2 text-zinc-500 hover:text-red-500 transition-colors"><Trash2 size={18}/></button>
+                    }} className="p-2 text-zinc-500 hover:text-red-500 transition-colors"><Trash2 size={18} /></button>
                   </div>
                 </div>
                 <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">{c.nombre}</h3>
@@ -228,8 +235,8 @@ export default function GlosarioManager() {
               <div key={s.id} className="group p-8 bg-zinc-900/30 border border-zinc-800 rounded-[2.5rem] hover:bg-zinc-900/50 transition-all">
                 <div className="flex justify-between items-start mb-6">
                   <div className={`p-3 rounded-xl ${s.activo ? 'bg-amber-500/10 text-amber-500' : 'bg-zinc-800 text-zinc-500'}`}><Layers size={20} /></div>
-                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => { setEditingSub(s); setShowNewForm(true); }} className="p-2 text-zinc-500 hover:text-white transition-colors"><Save size={18}/></button>
+                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => { setEditingSub(s); setShowNewForm(true); }} className="p-2 text-zinc-500 hover:text-white transition-colors"><Save size={18} /></button>
                     <button onClick={async () => {
                       const ok = await confirmAction({
                         title: 'Eliminar Subcategoría',
@@ -238,7 +245,7 @@ export default function GlosarioManager() {
                         requireValidation: true
                       });
                       if (ok) AdminService.deleteGlosarioSubcategoria(s.id).then(fetchData);
-                    }} className="p-2 text-zinc-500 hover:text-red-500 transition-colors"><Trash2 size={18}/></button>
+                    }} className="p-2 text-zinc-500 hover:text-red-500 transition-colors"><Trash2 size={18} /></button>
                   </div>
                 </div>
                 <div className="space-y-1 mb-4"><span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">{categorias.find(c => c.id === s.categoria_id)?.nombre || 'Sin Padre'}</span><h3 className="text-xl font-black text-white uppercase tracking-tight">{s.nombre}</h3></div>
@@ -250,26 +257,26 @@ export default function GlosarioManager() {
       </div>
 
       {(showNewForm || editingId) && activeSection === 'elementos' && (
-        <ElementoForm 
-          initialData={elementos.find(e => e.id === editingId)} 
-          categorias={categorias} 
-          subcategorias={subcategorias} 
-          ramas={ramas} 
+        <ElementoForm
+          initialData={elementos.find(e => e.id === editingId)}
+          categorias={categorias}
+          subcategorias={subcategorias}
+          ramas={ramas}
           aldeas={aldeas}
           subespecialidades={subespecialidades}
-          personajes={personajes} 
-          onClose={() => { setShowNewForm(false); setEditingId(null); }} 
-          onSave={handleSaveElemento} 
-          loading={saving} 
+          personajes={personajes}
+          onClose={() => { setShowNewForm(false); setEditingId(null); }}
+          onSave={handleSaveElemento}
+          loading={saving}
         />
       )}
 
       {(showNewForm || editingCat) && activeSection === 'categorias' && (
-        <GenericForm title={editingCat ? 'Editar Categoría' : 'Nueva Categoría'} initialData={editingCat || { nombre: '', slug: '', activo: true }} fields={[{ name: 'nombre', label: 'Nombre' }, { name: 'slug', label: 'Slug' }, { name: 'activo', label: 'Estado', type: 'toggle' }]} onClose={() => { setShowNewForm(false); setEditingCat(null); }} onSave={(cat:any) => AdminService.saveGlosarioCategoria(cat).then(fetchData).finally(() => {setShowNewForm(false); setEditingCat(null);})} loading={saving} />
+        <GenericForm title={editingCat ? 'Editar Categoría' : 'Nueva Categoría'} initialData={editingCat || { nombre: '', slug: '', activo: true }} fields={[{ name: 'nombre', label: 'Nombre' }, { name: 'slug', label: 'Slug' }, { name: 'activo', label: 'Estado', type: 'toggle' }]} onClose={() => { setShowNewForm(false); setEditingCat(null); }} onSave={(cat: any) => AdminService.saveGlosarioCategoria(cat).then(fetchData).finally(() => { setShowNewForm(false); setEditingCat(null); })} loading={saving} />
       )}
 
       {(showNewForm || editingSub) && activeSection === 'subcategorias' && (
-        <GenericForm title={editingSub ? 'Editar Subcategoría' : 'Nueva Subcategoría'} initialData={editingSub || { nombre: '', slug: '', categoria_id: 0, activo: true }} fields={[{ name: 'nombre', label: 'Nombre' }, { name: 'slug', label: 'Slug' }, { name: 'categoria_id', label: 'Categoría Padre', type: 'select', options: categorias }, { name: 'activo', label: 'Estado', type: 'toggle' }]} onClose={() => { setShowNewForm(false); setEditingSub(null); }} onSave={(sub:any) => AdminService.saveGlosarioSubcategoria(sub).then(fetchData).finally(() => {setShowNewForm(false); setEditingSub(null);})} loading={saving} />
+        <GenericForm title={editingSub ? 'Editar Subcategoría' : 'Nueva Subcategoría'} initialData={editingSub || { nombre: '', slug: '', categoria_id: 0, activo: true }} fields={[{ name: 'nombre', label: 'Nombre' }, { name: 'slug', label: 'Slug' }, { name: 'categoria_id', label: 'Categoría Padre', type: 'select', options: categorias }, { name: 'activo', label: 'Estado', type: 'toggle' }]} onClose={() => { setShowNewForm(false); setEditingSub(null); }} onSave={(sub: any) => AdminService.saveGlosarioSubcategoria(sub).then(fetchData).finally(() => { setShowNewForm(false); setEditingSub(null); })} loading={saving} />
       )}
     </div>
   );
@@ -291,8 +298,8 @@ function HubCard({ title, desc, icon, count, onClick, color }: any) {
 }
 
 function ElementoCard({ elemento, categorias, subcategorias, onEdit, onDelete }: any) {
-  const cat = categorias.find((c:any) => c.id === elemento.categoria_id);
-  const sub = subcategorias.find((s:any) => s.id === elemento.subcategoria_id);
+  const cat = categorias.find((c: any) => c.id === elemento.categoria_id);
+  const sub = subcategorias.find((s: any) => s.id === elemento.subcategoria_id);
   return (
     <div className={`group border rounded-[2.5rem] p-8 flex flex-col md:flex-row items-center gap-8 transition-all ${elemento.activo ? 'bg-zinc-900/30 border-zinc-800/50 hover:border-emerald-500/30 hover:bg-zinc-900/50' : 'bg-zinc-950 border-zinc-900/50 opacity-60'}`}>
       <div className="flex flex-col items-center gap-2"><div className={`w-3 h-3 rounded-full ${elemento.activo ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-zinc-800'}`} /><span className="text-zinc-800 font-black text-[10px] uppercase">ID: {elemento.id}</span></div>
@@ -334,16 +341,16 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
   const [formData, setFormData] = useState<Partial<Glosario>>(() => {
     if (!initialData) {
       return {
-        nombre_es: '', 
-        nombre_jp: '', 
-        categoria_id: 0, 
+        nombre_es: '',
+        nombre_jp: '',
+        categoria_id: 0,
         subcategoria_id: undefined,
         aldea_id: null,
         rama_clan_id: null,
         sub_especialidad_id: null,
-        coste_exp: 0, 
-        coste_ryous: 0, 
-        activo: true, 
+        coste_exp: 0,
+        coste_ryous: 0,
+        activo: true,
         inicial: false,
         requisitos: defaultRequisitos
       };
@@ -365,7 +372,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
     const fAldea = formData.aldea_id === null || formData.aldea_id === undefined ? null : Number(formData.aldea_id);
     return rAldea === fAldea;
   });
-  const filteredSpec = formData.rama_clan_id 
+  const filteredSpec = formData.rama_clan_id
     ? subespecialidades.filter((s: any) => Number(s.rama_id) === Number(formData.rama_clan_id))
     : [];
 
@@ -384,10 +391,10 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
     const newReqs = { ...formData.requisitos };
     const parent = { ...(newReqs[parentKey] || {}) };
     const val = Math.max(0, Number(value));
-    
+
     parent[childKey] = val;
     newReqs[parentKey] = parent;
-    
+
     setFormData({ ...formData, requisitos: newReqs });
   };
 
@@ -404,7 +411,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
             <div className="space-y-8">
               <div className="bg-zinc-900/50 p-8 rounded-[2.5rem] border border-zinc-900 space-y-6">
-                <h3 className="flex items-center gap-3 text-sm font-black text-zinc-500 uppercase tracking-widest mb-4"><Box size={16}/> Información Base</h3>
+                <h3 className="flex items-center gap-3 text-sm font-black text-zinc-500 uppercase tracking-widest mb-4"><Box size={16} /> Información Base</h3>
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">Nombre Español</label>
@@ -417,17 +424,21 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">Categoría</label>
-                      <select value={formData.categoria_id} onChange={(e) => setFormData({ ...formData, categoria_id: Number(e.target.value), subcategoria_id: undefined })} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none appearance-none cursor-pointer">
-                        <option value={0}>Seleccionar...</option>
-                        {categorias.map((c: any) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-                      </select>
+                      <NinjaSelect
+                        value={formData.categoria_id || ''}
+                        onChange={(val) => setFormData({ ...formData, categoria_id: Number(val), subcategoria_id: undefined })}
+                        placeholder="Seleccionar..."
+                        options={categorias.map((c: any) => ({ label: c.nombre, value: c.id }))}
+                      />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">Subcategoría</label>
-                      <select value={formData.subcategoria_id || ''} onChange={(e) => setFormData({ ...formData, subcategoria_id: e.target.value ? Number(e.target.value) : undefined })} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none appearance-none cursor-pointer">
-                        <option value="">Ninguna</option>
-                        {filteredSubs.map((s: any) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
-                      </select>
+                      <NinjaSelect
+                        value={formData.subcategoria_id || ''}
+                        onChange={(val) => setFormData({ ...formData, subcategoria_id: val ? Number(val) : undefined })}
+                        placeholder="Ninguna"
+                        options={filteredSubs.map((s: any) => ({ label: s.nombre, value: s.id }))}
+                      />
                     </div>
                   </div>
 
@@ -437,26 +448,32 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                     <div className="grid grid-cols-1 gap-4">
                       <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">Aldea / Nación</label>
-                        <select value={formData.aldea_id || ''} onChange={(e) => setFormData({ ...formData, aldea_id: e.target.value ? Number(e.target.value) : null, rama_clan_id: null, sub_especialidad_id: null })} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none appearance-none cursor-pointer">
-                          <option value="">General</option>
-                          {aldeas.map((a: any) => <option key={a.id} value={a.id}>{a.nombre_completo}</option>)}
-                        </select>
+                        <NinjaSelect
+                          value={formData.aldea_id || ''}
+                          onChange={(val) => setFormData({ ...formData, aldea_id: val ? Number(val) : null, rama_clan_id: null, sub_especialidad_id: null })}
+                          placeholder="General"
+                          options={aldeas.map((a: any) => ({ label: a.nombre_completo, value: a.id }))}
+                        />
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">Rama / Clan</label>
-                          <select value={formData.rama_clan_id || ''} onChange={(e) => setFormData({ ...formData, rama_clan_id: e.target.value ? Number(e.target.value) : null, sub_especialidad_id: null })} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none appearance-none cursor-pointer">
-                            <option value="">Ninguno</option>
-                            {filteredRamas.map((r: any) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
-                          </select>
+                          <NinjaSelect
+                            value={formData.rama_clan_id || ''}
+                            onChange={(val) => setFormData({ ...formData, rama_clan_id: val ? Number(val) : null, sub_especialidad_id: null })}
+                            placeholder="Ninguno"
+                            options={filteredRamas.map((r: any) => ({ label: r.nombre, value: r.id }))}
+                          />
                         </div>
                         <div className="space-y-2">
                           <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">Subespecialidad</label>
-                          <select value={formData.sub_especialidad_id || ''} onChange={(e) => setFormData({ ...formData, sub_especialidad_id: e.target.value ? Number(e.target.value) : null })} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none appearance-none cursor-pointer">
-                            <option value="">Ninguna</option>
-                            {filteredSpec.map((s: any) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
-                          </select>
+                          <NinjaSelect
+                            value={formData.sub_especialidad_id || ''}
+                            onChange={(val) => setFormData({ ...formData, sub_especialidad_id: val ? Number(val) : null })}
+                            placeholder="Ninguna"
+                            options={filteredSpec.map((s: any) => ({ label: s.nombre, value: s.id }))}
+                          />
                         </div>
                       </div>
                     </div>
@@ -465,7 +482,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
               </div>
 
               <div className="bg-zinc-900/50 p-8 rounded-[2.5rem] border border-zinc-900 space-y-6">
-                <h3 className="flex items-center gap-3 text-sm font-black text-zinc-500 uppercase tracking-widest mb-4"><Star size={16}/> Costes y Estado</h3>
+                <h3 className="flex items-center gap-3 text-sm font-black text-zinc-500 uppercase tracking-widest mb-4"><Star size={16} /> Costes y Estado</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">Coste EXP</label>
@@ -491,10 +508,10 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
 
             <div className="space-y-8">
               <div className="bg-zinc-900/30 p-10 rounded-[3rem] border border-zinc-800/50 space-y-10">
-                <div className="flex items-center justify-between"><h3 className="flex items-center gap-3 text-lg font-black text-white uppercase tracking-tighter"><ScrollText size={20} className="text-emerald-500"/> Requisitos del Sistema</h3></div>
+                <div className="flex items-center justify-between"><h3 className="flex items-center gap-3 text-lg font-black text-white uppercase tracking-tighter"><ScrollText size={20} className="text-emerald-500" /> Requisitos del Sistema</h3></div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-4">
-                    <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1"><Swords size={12}/> Atributos Necesarios</label>
+                    <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1"><Swords size={12} /> Atributos Necesarios</label>
                     <div className="grid grid-cols-1 gap-2">
                       {STATS_LIST.map(s => (
                         <div key={s.key} className="flex items-center justify-between bg-zinc-950/50 p-2 pl-4 rounded-xl border border-zinc-900/50 group hover:border-zinc-700 transition-all">
@@ -506,7 +523,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                   </div>
                   <div className="space-y-8">
                     <div className="space-y-4">
-                      <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1"><Star size={12}/> Rango Mínimo</label>
+                      <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1"><Star size={12} /> Rango Mínimo</label>
                       <div className="flex gap-1 bg-zinc-950 p-1 rounded-xl border border-zinc-900">
                         {RANGOS.map(r => (
                           <button key={r} onClick={() => updateReq('rango', formData.requisitos?.rango === r ? null : r)} className={`flex-1 py-3 rounded-lg font-black text-xs transition-all ${formData.requisitos?.rango === r ? 'bg-emerald-500 text-emerald-950' : 'text-zinc-600 hover:bg-zinc-900'}`}>{r}</button>
@@ -514,7 +531,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                       </div>
                     </div>
                     <div className="space-y-4">
-                      <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1"><Trophy size={12}/> Misiones por Rango</label>
+                      <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1"><Trophy size={12} /> Misiones por Rango</label>
                       <div className="grid grid-cols-5 gap-2">
                         {RANGOS.map(r => (
                           <div key={`mis-${r}`} className="space-y-1">
@@ -525,25 +542,25 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1"><Swords size={12}/>Puntos de Combate</label>
+                      <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1"><Swords size={12} />Puntos de Combate</label>
                       <input type="number" min="0" value={formData.requisitos?.combates ?? 0} onChange={(e) => updateReq('combates', Number(e.target.value))} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-emerald-500" placeholder="0" />
                     </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-zinc-900">
-                  <SearchableSelect 
-                    label="Rama / Clan" 
-                    icon={<Layers size={12}/>} 
-                    options={(ramas || []).map((r: any) => ({ id: r.id, label: r.nombre }))} 
-                    value={formData.requisitos?.rama_id} 
-                    onChange={(id: any) => updateReq('rama_id', id)} 
+                  <SearchableSelect
+                    label="Rama / Clan"
+                    icon={<Layers size={12} />}
+                    options={(ramas || []).map((r: any) => ({ id: r.id, label: r.nombre }))}
+                    value={formData.requisitos?.rama_id}
+                    onChange={(id: any) => updateReq('rama_id', id)}
                   />
-                  <SearchableMultiSelect 
-                    label="Exclusivo para" 
-                    icon={<User size={12}/>} 
-                    options={(personajes || []).map((p: any) => ({ id: p.id, label: p.nombre_ninja }))} 
-                    value={formData.requisitos?.personaje_id} 
-                    onChange={(ids: any) => updateReq('personaje_id', ids)} 
+                  <SearchableMultiSelect
+                    label="Exclusivo para"
+                    icon={<User size={12} />}
+                    options={(personajes || []).map((p: any) => ({ id: p.id, label: p.nombre_ninja }))}
+                    value={formData.requisitos?.personaje_id}
+                    onChange={(ids: any) => updateReq('personaje_id', ids)}
                   />
                 </div>
               </div>
@@ -636,9 +653,9 @@ function SearchableMultiSelect({ label, icon, options, value, onChange }: any) {
   return (
     <div className="relative space-y-2 text-left" ref={containerRef}>
       <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">{icon} {label}</label>
-      <button 
+      <button
         type="button"
-        onClick={() => setOpen(!open)} 
+        onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none hover:border-zinc-700 transition-all text-left"
       >
         <span className={selectedOptions.length > 0 ? 'text-white' : 'text-zinc-600'}>
@@ -652,9 +669,9 @@ function SearchableMultiSelect({ label, icon, options, value, onChange }: any) {
           {selectedOptions.map((o: any) => (
             <span key={o.id} className="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-xl">
               {o.label}
-              <button 
-                type="button" 
-                onClick={(e) => { e.stopPropagation(); toggleOption(Number(o.id)); }} 
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); toggleOption(Number(o.id)); }}
                 className="hover:text-red-400 transition-colors"
               >
                 <X size={10} strokeWidth={3} />
@@ -677,10 +694,10 @@ function SearchableMultiSelect({ label, icon, options, value, onChange }: any) {
             {filteredOptions.map((o: any) => {
               const isSelected = selectedIds.includes(Number(o.id));
               return (
-                <button 
+                <button
                   type="button"
-                  key={o.id} 
-                  onClick={() => toggleOption(Number(o.id))} 
+                  key={o.id}
+                  onClick={() => toggleOption(Number(o.id))}
                   className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold transition-all hover:bg-emerald-500 hover:text-emerald-950 ${isSelected ? 'bg-emerald-500/10 text-emerald-400' : 'text-white'}`}
                 >
                   <span>{o.label}</span>
@@ -708,13 +725,18 @@ function GenericForm({ title, initialData, fields, onClose, onSave, loading }: a
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-zinc-950 border border-zinc-800 w-full max-w-lg rounded-[3rem] shadow-2xl animate-in zoom-in-95">
         <div className="p-10 space-y-8">
-          <div className="flex justify-between"><h2 className="text-2xl font-black text-white uppercase tracking-tighter">{title}</h2><button onClick={onClose} className="text-zinc-600 hover:text-white transition-colors"><X size={20}/></button></div>
+          <div className="flex justify-between"><h2 className="text-2xl font-black text-white uppercase tracking-tighter">{title}</h2><button onClick={onClose} className="text-zinc-600 hover:text-white transition-colors"><X size={20} /></button></div>
           <div className="space-y-5">
             {fields.map((f: any) => (
               <div key={f.name} className="space-y-1">
                 <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">{f.label}</label>
                 {f.type === 'select' ? (
-                  <select value={formData[f.name]} onChange={(e) => handleFieldChange(f.name, Number(e.target.value))} className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none cursor-pointer"><option value={0}>Seleccionar...</option>{f.options.map((o: any) => <option key={o.id} value={o.id}>{o.nombre}</option>)}</select>
+                  <NinjaSelect
+                    value={formData[f.name] || ''}
+                    onChange={(val) => handleFieldChange(f.name, Number(val))}
+                    placeholder="Seleccionar..."
+                    options={f.options.map((o: any) => ({ label: o.nombre, value: o.id }))}
+                  />
                 ) : f.type === 'toggle' ? (
                   <button onClick={() => handleFieldChange(f.name, !formData[f.name])} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${formData[f.name] ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 shadow-lg' : 'bg-zinc-900 border-zinc-800 text-zinc-500'}`}><span className="font-black text-[10px] uppercase tracking-widest ml-2">{formData[f.name] ? 'Activo' : 'Archivado'}</span>{formData[f.name] ? <Check size={18} /> : <X size={18} />}</button>
                 ) : (

@@ -3,7 +3,6 @@
 import { create } from 'zustand';
 import React from 'react';
 import { AlertCircle } from 'lucide-react';
-
 interface ConfirmOptions {
   title?: string;
   message: string;

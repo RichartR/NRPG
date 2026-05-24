@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Registro } from '@/domain/types';
 import { Edit3, Trash2, Loader2 } from 'lucide-react';
 import { useCharacterStore } from '@/store/useCharacterStore';
@@ -24,16 +24,16 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin }: Ac
 
   const renderActionTitle = (title: string, charName: string) => {
     if (!title) return 'Acción General.';
-    
+
     // Normalize string and extract the first word
     const trimmed = title.trim();
     const words = trimmed.split(/\s+/);
     if (words.length === 0) return 'Acción General.';
-    
+
     const firstWordRaw = words[0];
     // Strip trailing punctuation from the first word for matching (e.g. "Kumonin," -> "Kumonin")
     const firstWordClean = firstWordRaw.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ]/g, '');
-    
+
     // Set of common Spanish verbs, articles, and stop words that can start an action log but are NOT names
     const EXCLUDED_FIRST_WORDS = new Set([
       'se', 'el', 'la', 'los', 'las', 'un', 'una', 'este', 'esta',
@@ -42,15 +42,15 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin }: Ac
       'modificó', 'ascendió', 'ascenso', 'combatió', 'combate',
       'fue', 'era', 'tiene', 'tenia', 'tenía', 'hizo', 'realizó'
     ]);
-    
+
     const isCapitalized = /^[A-ZÁÉÍÓÚÑ]/.test(firstWordClean);
     const isExcluded = EXCLUDED_FIRST_WORDS.has(firstWordClean.toLowerCase());
-    
+
     // We treat it as a name if:
     // 1. It matches the current character's name (case-insensitive) OR
     // 2. It is capitalized, longer than 2 characters, not in the exclusion list, and if there is a second word, it starts with lowercase.
     let isName = false;
-    
+
     if (firstWordClean.toLowerCase() === charName.toLowerCase()) {
       isName = true;
     } else if (isCapitalized && firstWordClean.length > 2 && !isExcluded) {
@@ -66,7 +66,7 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin }: Ac
         isName = true;
       }
     }
-    
+
     if (isName) {
       const nameLength = firstWordRaw.length;
       const restOfTitle = trimmed.substring(nameLength);
@@ -78,7 +78,7 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin }: Ac
         </>
       );
     }
-    
+
     return trimmed.endsWith('.') ? trimmed : `${trimmed}.`;
   };
 
@@ -103,7 +103,7 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin }: Ac
       requireValidation: true
     });
     if (!ok) return;
-    
+
     setLoadingId(id);
     try {
       await RegistrosService.deleteRegistro(id);
@@ -121,7 +121,7 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin }: Ac
       <div className="overflow-x-auto scrollbar-hide">
         <table className="w-full text-left border-collapse min-w-[700px] table-fixed">
           <thead>
-            <tr className="border-b border-oro/10 text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em]">
+            <tr className="border-b border-oro/10 text-oro/70 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em]">
               <th className="py-6 px-8 w-[18%]">Fecha</th>
               <th className="py-6 px-8 w-[52%]">Acción / Crónica</th>
               <th className="py-6 px-8 w-[15%] w-36">Coste</th>
@@ -132,11 +132,15 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin }: Ac
             {acciones.map((m) => {
               const isOwner = activeCharacter?.id === m.autor_id;
               const canManage = isAdmin;
-              
-              const xpSpent = m.data.gasto_xp || 0;
-              const ryousSpent = m.data.gasto_ryous || 0;
+
+              const xpSpent = m.tipo === 'compra' ? (m.data.coste_exp || 0) : (m.data.gasto_xp || 0);
+              const ryousSpent = m.tipo === 'compra' ? (m.data.coste_ryous || 0) : (m.data.gasto_ryous || 0);
+              const eventCoinsSpent = m.tipo === 'compra' ? (m.data.coste_moneda_evento || 0) : 0;
 
               const selfName = m.autor?.nombre_ninja || activeCharacter?.nombre_ninja || 'El ninja';
+              const actionTitle = m.tipo === 'compra'
+                ? `${selfName} adquirió ${m.data.objeto_nombre || m.data.objeto || 'Equipo Ninja'}${m.data.detalles ? ` (${m.data.detalles})` : ''}`
+                : m.data.titulo;
 
               return (
                 <tr key={m.id} className="hover:bg-oro/5 transition-colors group">
@@ -152,7 +156,7 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin }: Ac
                           {new Date(m.fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
-                      
+
                       {/* Fecha de Modificación */}
                       {m.data.fecha_modificacion && (
                         <div className="flex flex-col border-t border-red-500/30 pt-1.5">
@@ -172,23 +176,28 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin }: Ac
 
                   {/* Acción / Crónica */}
                   <td className="py-6 px-8 text-oro/80 text-xs xl:text-sm whitespace-normal break-words">
-                    {renderActionTitle(m.data.titulo, selfName)}
+                    {renderActionTitle(actionTitle, selfName)}
                   </td>
 
                   {/* Coste */}
                   <td className="py-6 px-8">
                     <div className="flex flex-col gap-1.5 justify-center">
                       {xpSpent > 0 && (
-                        <div className="text-xs font-black text-red-500 tracking-wider">
-                          -{xpSpent} XP
+                        <div className="text-xs font-black text-red-700 tracking-wider">
+                          -{xpSpent.toLocaleString()} EXP
                         </div>
                       )}
                       {ryousSpent > 0 && (
-                        <div className="text-xs font-black text-oro/60 tracking-wider">
-                          -{ryousSpent} Ryos
+                        <div className="text-xs font-black text-red-700 tracking-wider">
+                          -{ryousSpent.toLocaleString()} Ryos
                         </div>
                       )}
-                      {xpSpent === 0 && ryousSpent === 0 && (
+                      {eventCoinsSpent > 0 && (
+                        <div className="text-xs font-black text-red-700 tracking-wider">
+                          -{eventCoinsSpent.toLocaleString()} Monedas de Evento
+                        </div>
+                      )}
+                      {xpSpent === 0 && ryousSpent === 0 && eventCoinsSpent === 0 && (
                         <span className="text-[10px] text-oro/20 uppercase tracking-widest italic">Gratis</span>
                       )}
                     </div>
@@ -198,14 +207,14 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin }: Ac
                   <td className="py-6 px-8 text-right">
                     {canManage ? (
                       <div className="flex items-center justify-end gap-2.5">
-                        <button 
+                        <button
                           onClick={() => onEdit?.(m)}
                           className="p-2 bg-oro/10 border border-oro/30 hover:border-oro hover:bg-oro/20 text-oro/80 hover:text-oro transition-all ninja-clip-xs"
                           title="Editar Registro"
                         >
                           <Edit3 className="w-4 h-4" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDelete(m.id)}
                           disabled={loadingId === m.id}
                           className="p-2 bg-red-600/10 border border-red-600/40 hover:border-red-500 hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"

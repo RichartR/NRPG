@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { convertDriveUrl, getDownloadUrl } from '@/lib/utils/driveConverter';
-import { ArrowLeft, Download } from 'lucide-react';
 import Link from 'next/link';
 import Breadcrumbs, { CrumbItem } from './Breadcrumbs';
 
@@ -17,7 +16,7 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
   const [zoom, setZoom] = useState(1);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  
+
   const rawProxyUrl = convertDriveUrl(url);
   const downloadUrl = getDownloadUrl(url);
 
@@ -31,7 +30,7 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
   }, []);
 
   // Lógica Híbrida: PDF.js en móvil (auto-load) y Nativo en PC (high-performance)
-  const embedUrl = isMobile 
+  const embedUrl = isMobile
     ? `/pdf-viewer.html?file=${encodeURIComponent(rawProxyUrl)}`
     : `${rawProxyUrl}#navpanes=0`;
 
@@ -55,7 +54,7 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
             </div>
           ) : (
             <div className="flex items-center gap-3 sm:gap-6 min-w-0 flex-1 justify-center md:justify-start">
-              <Link 
+              <Link
                 href={backUrl}
                 className="flex items-center gap-3 px-4 py-2 font-black text-[10px] xl:text-sm uppercase tracking-[0.2em] transition-all active:scale-95 text-oro/60 hover:text-oro group shrink-0"
               >
@@ -86,9 +85,9 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
             </button>
           </div>
 
-          <a 
-            href={downloadUrl} 
-            download 
+          <a
+            href={downloadUrl}
+            download
             className="flex items-center justify-center gap-4 px-6 md:px-8 py-2.5 md:py-3.5 bg-oro text-rojo-sangre font-black text-[10px] xl:text-xs uppercase tracking-[0.2em] transition-all shadow-[0_0_20px_rgba(255,230,159,0.2)] active:scale-95 hover:brightness-110 shrink-0"
             style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
           >
@@ -98,9 +97,9 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
       </header>
 
       <main className={`flex-1 overflow-auto custom-scrollbar transition-colors duration-1000 ${loading ? 'bg-black' : 'bg-transparent'}`}>
-        <div 
+        <div
           className="py-12 xl:py-20 flex flex-col items-center min-h-full"
-          style={zoom !== 1 ? { 
+          style={zoom !== 1 ? {
             width: '100%',
             transform: `scale(${zoom})`,
             transformOrigin: 'top center'
@@ -108,10 +107,10 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
             width: '100%'
           }}
         >
-          <div 
+          <div
             className="bg-white shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden relative transition-all duration-500"
-            style={{ 
-              width: isMobile ? '95vw' : `${desktopBaseWidth}px`, 
+            style={{
+              width: isMobile ? '95vw' : `${desktopBaseWidth}px`,
               height: isMobile ? 'auto' : `${desktopBaseHeight}px`,
               aspectRatio: isMobile ? '1/1.4' : 'auto',
               maxWidth: '98vw',
@@ -120,9 +119,9 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
               WebkitFontSmoothing: 'antialiased'
             }}
           >
-            <div 
+            <div
               className="absolute"
-              style={{ 
+              style={{
                 width: isMobile ? '100%' : `${desktopIframeWidth}px`,
                 height: isMobile ? '100%' : `calc(100% + ${desktopTopOffset}px)`,
                 left: isMobile ? '0' : `-${desktopLeftOffset}px`,
@@ -136,16 +135,16 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
                 allow="autoplay"
               />
             </div>
-            
+
             {loading && (
-               <div className="absolute inset-0 bg-black flex items-center justify-center z-10">
-                  <div className="relative">
-                    <div className="w-20 h-20 border-4 border-oro/20 border-t-oro rounded-full animate-spin" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <img src="/assets/icons/shuriken.png" className="w-6 h-6 object-contain" alt="Logo" />
-                    </div>
+              <div className="absolute inset-0 bg-black flex items-center justify-center z-10">
+                <div className="relative">
+                  <div className="w-20 h-20 border-4 border-oro/20 border-t-oro rounded-full animate-spin" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <img src="/assets/icons/shuriken.png" className="w-6 h-6 object-contain" alt="Logo" />
                   </div>
-               </div>
+                </div>
+              </div>
             )}
           </div>
         </div>

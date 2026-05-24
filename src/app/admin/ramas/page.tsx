@@ -1,12 +1,12 @@
 import { createClient } from '@/utils/supabase/server';
-import { GitBranch, ChevronLeft } from 'lucide-react';
+import { GitBranch } from 'lucide-react';
 import Link from 'next/link';
 import RamaManager from '@/components/admin/RamaManager';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 
 export default async function AdminRamasPage() {
   const supabase = await createClient();
-  
+
   const [ramas, aldeas, subEspecialidades, entrenamientos] = await Promise.all([
     MasterServerService.getAdminRamas(supabase),
     MasterServerService.getAldeasActivas(supabase),
@@ -16,12 +16,12 @@ export default async function AdminRamasPage() {
 
   return (
     <div className="max-w-[1750px]">
-      <header className="mb-16 ninja-card-oro p-8 xl:p-10">
+      <header className="mb-6 ninja-card-oro p-8 xl:p-10">
         <Link href="/admin" className="flex items-center gap-3 text-oro/40 hover:text-oro transition-all mb-8 text-[10px] font-black uppercase tracking-[0.3em] group">
           <div className="w-1.5 h-1.5 bg-oro/20 group-hover:bg-oro rotate-45 transition-colors" />
           VOLVER AL PANEL CENTRAL
         </Link>
-        
+
         <div className="flex items-center gap-6">
           <div className="w-12 h-12 bg-oro/[0.03] border border-oro/10 flex items-center justify-center">
             <GitBranch className="w-6 h-6 text-oro" />
@@ -33,12 +33,12 @@ export default async function AdminRamasPage() {
         </div>
       </header>
 
-        <RamaManager 
-          initialRamas={ramas} 
-          aldeas={aldeas} 
-          initialSubs={subEspecialidades}
-          initialEntrenamientos={entrenamientos}
-        />
+      <RamaManager
+        initialRamas={ramas}
+        aldeas={aldeas}
+        initialSubs={subEspecialidades}
+        initialEntrenamientos={entrenamientos}
+      />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { Registro } from '@/domain/types';
-import { Zap, ScrollText, Swords, User, Image as ImageIcon, Link as LinkIcon, Trash2, Edit3, Loader2, ShieldAlert, Trophy, ShoppingBag, Sparkles, Ghost, Swords as VS, Users, Coins, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Zap, ScrollText, Swords, User, Link as LinkIcon, Trash2, Edit3, Loader2, ShoppingBag, Sparkles, Swords as VS, Users, Coins } from 'lucide-react';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { RegistrosService } from '@/services/supabase/registros.service';
 import { useToastStore } from '@/components/ui/Toast';
@@ -35,7 +35,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
       requireValidation: true
     });
     if (!ok) return;
-    
+
     setLoading(true);
     try {
       await RegistrosService.deleteRegistro(registro.id);
@@ -91,9 +91,9 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
   };
 
   const participants = getParticipants();
-  const authorName = registro.autor?.nombre_ninja || 
-                    registro.data.participantes_historicos?.find((p: any) => p.id === registro.autor_id)?.nombre_ninja || 
-                    'Ninja Desaparecido';
+  const authorName = registro.autor?.nombre_ninja ||
+    registro.data.participantes_historicos?.find((p: any) => p.id === registro.autor_id)?.nombre_ninja ||
+    'Ninja Desaparecido';
 
   const isCombate = registro.tipo === 'combate';
 
@@ -123,14 +123,14 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
         <div className="flex items-center gap-4">
           {canManage && (
             <div className="flex items-center gap-3">
-              <button 
+              <button
                 onClick={() => onEdit?.(registro)}
                 className="w-11 h-11 flex items-center justify-center bg-oro/10 border border-oro/30 hover:border-oro hover:bg-oro/20 text-oro/80 hover:text-oro transition-all ninja-clip-xs shadow-lg shadow-black/20"
                 title="Editar Registro"
               >
                 <Edit3 className="w-5 h-5" />
               </button>
-              <button 
+              <button
                 onClick={handleDelete}
                 disabled={loading}
                 className="w-11 h-11 flex items-center justify-center bg-red-600/10 border border-red-600/40 hover:border-red-500 hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs shadow-lg shadow-black/20"
@@ -147,91 +147,91 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
         {registro.tipo === 'mision' ? (
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 p-6 sm:p-8 bg-black/40 border border-oro/5 ninja-clip-sm">
             <div className="flex-1 space-y-4">
-               <div className="flex items-center gap-3">
-                  <ScrollText className="w-5 h-5 text-oro/40" />
-                  <span className="text-xs font-black text-oro/40 uppercase tracking-[0.3em]">Misión</span>
-                  <span className="text-lg sm:text-2xl font-black text-oro uppercase tracking-widest">{registro.data.codigo_mision}</span>
-               </div>
-               <div className="flex flex-wrap gap-3 items-center">
-                  <div className="flex items-center gap-2 text-oro/30 text-[10px] font-black uppercase tracking-widest mr-2">
-                     <Users className="w-4 h-4" /> PARTICIPANTES:
-                  </div>
-                  {participants.map((p, i) => (
-                    <span key={i} className="text-[11px] font-black text-oro/60 uppercase tracking-widest px-4 py-1.5 bg-oro/5 border border-oro/10 ninja-clip-xs">
-                       {p.nombre_ninja}
-                    </span>
-                  ))}
-               </div>
+              <div className="flex items-center gap-3">
+                <ScrollText className="w-5 h-5 text-oro/40" />
+                <span className="text-xs font-black text-oro/40 uppercase tracking-[0.3em]">Misión</span>
+                <span className="text-lg sm:text-2xl font-black text-oro uppercase tracking-widest">{registro.data.codigo_mision}</span>
+              </div>
+              <div className="flex flex-wrap gap-3 items-center">
+                <div className="flex items-center gap-2 text-oro/30 text-[10px] font-black uppercase tracking-widest mr-2">
+                  <Users className="w-4 h-4" /> PARTICIPANTES:
+                </div>
+                {participants.map((p, i) => (
+                  <span key={i} className="text-[11px] font-black text-oro/60 uppercase tracking-widest px-4 py-1.5 bg-oro/5 border border-oro/10 ninja-clip-xs">
+                    {p.nombre_ninja}
+                  </span>
+                ))}
+              </div>
             </div>
             <div className="flex items-center gap-8 sm:gap-12 shrink-0">
-               <div className="flex flex-col items-center">
-                  <span className="text-[10px] font-black text-oro/30 uppercase tracking-widest mb-2">RECOMPENSA</span>
-                  <div className="flex items-center gap-6">
-                     <div className="flex items-center gap-2 text-oro font-black text-base sm:text-xl tracking-widest">
-                        <Sparkles className="w-4 h-4" /> +{registro.data.recompensa_xp || 0}
-                     </div>
-                     <div className="w-px h-6 bg-oro/10" />
-                     <div className="flex items-center gap-2 text-oro font-black text-base sm:text-xl tracking-widest">
-                        <Coins className="w-4 h-4" /> +{registro.data.recompensa_ryous || 0}
-                     </div>
+              <div className="flex flex-col items-center">
+                <span className="text-[10px] font-black text-oro/30 uppercase tracking-widest mb-2">RECOMPENSA</span>
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-2 text-oro font-black text-base sm:text-xl tracking-widest">
+                    <Sparkles className="w-4 h-4" /> +{registro.data.recompensa_xp || 0}
                   </div>
-               </div>
+                  <div className="w-px h-6 bg-oro/10" />
+                  <div className="flex items-center gap-2 text-oro font-black text-base sm:text-xl tracking-widest">
+                    <Coins className="w-4 h-4" /> +{registro.data.recompensa_ryous || 0}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         ) : registro.tipo === 'compra' ? (
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 p-6 sm:p-8 bg-black/40 border border-oro/5 ninja-clip-sm">
-             <div className="flex-1 space-y-2">
-                <div className="flex items-center gap-3">
-                   <ShoppingBag className="w-5 h-5 text-oro/40" />
-                   <span className="text-xs font-black text-oro/40 uppercase tracking-[0.3em]">ADQUISICIÓN</span>
-                </div>
-                <h4 className="text-lg sm:text-2xl font-black text-oro uppercase tracking-widest">
-                   {registro.data.objeto || 'Equipo Ninja'}
-                </h4>
-             </div>
-             <div className="flex flex-col items-center shrink-0">
-                <span className="text-[10px] font-black text-oro/30 uppercase tracking-widest mb-2">INVERSIÓN</span>
-                <div className="flex items-center gap-2 text-oro font-black text-base sm:text-xl tracking-widest">
-                   <Coins className="w-4 h-4" /> {registro.data.coste_ryous || 0} R
-                </div>
-             </div>
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center gap-3">
+                <ShoppingBag className="w-5 h-5 text-oro/40" />
+                <span className="text-xs font-black text-oro/40 uppercase tracking-[0.3em]">ADQUISICIÓN</span>
+              </div>
+              <h4 className="text-lg sm:text-2xl font-black text-oro uppercase tracking-widest">
+                {registro.data.objeto || 'STATS'}
+              </h4>
+            </div>
+            <div className="flex flex-col items-center shrink-0">
+              <span className="text-[10px] font-black text-oro/30 uppercase tracking-widest mb-2">INVERSIÓN</span>
+              <div className="flex items-center gap-2 text-oro font-black text-base sm:text-xl tracking-widest">
+                <Coins className="w-4 h-4" /> {registro.data.coste_ryous || 0} R
+              </div>
+            </div>
           </div>
         ) : registro.tipo === 'accion' ? (
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 p-6 sm:p-2 bg-black/40 border border-oro/5 ninja-clip-sm">
-             <div className="flex-1 space-y-4">
-                <div>
-                   <h4 className="text-lg sm:text-2xl font-black text-oro uppercase tracking-widest mb-1">
-                      {registro.data.titulo || 'Acción General'}
-                   </h4>
+            <div className="flex-1 space-y-4">
+              <div>
+                <h4 className="text-lg sm:text-2xl font-black text-oro uppercase tracking-widest mb-1">
+                  {registro.data.titulo || 'Acción General'}
+                </h4>
+              </div>
+              {participants.filter((p: any) => p.id !== registro.autor_id).length > 0 && (
+                <div className="flex flex-wrap gap-3 items-center">
+                  <span className="text-[9px] font-black text-oro/20 uppercase tracking-widest mr-2">Participantes:</span>
+                  {participants.filter((p: any) => p.id !== registro.autor_id).map((p: any, i: number) => (
+                    <span key={i} className="text-[10px] font-black text-oro/40 uppercase tracking-widest px-3 py-1 bg-oro/5 border border-oro/10 ninja-clip-xs">
+                      {p.nombre_ninja}
+                    </span>
+                  ))}
                 </div>
-                {participants.filter((p: any) => p.id !== registro.autor_id).length > 0 && (
-                  <div className="flex flex-wrap gap-3 items-center">
-                    <span className="text-[9px] font-black text-oro/20 uppercase tracking-widest mr-2">Participantes:</span>
-                    {participants.filter((p: any) => p.id !== registro.autor_id).map((p: any, i: number) => (
-                      <span key={i} className="text-[10px] font-black text-oro/40 uppercase tracking-widest px-3 py-1 bg-oro/5 border border-oro/10 ninja-clip-xs">
-                         {p.nombre_ninja}
-                      </span>
-                    ))}
-                  </div>
-                )}
-             </div>
-             {(registro.data.gasto_xp !== undefined || registro.data.gasto_ryous !== undefined) && (
-               <div className="flex flex-col items-center shrink-0 p-4 border-l border-oro/10 min-w-[120px]">
-                  <span className="text-[10px] font-black text-oro/30 uppercase tracking-widest mb-2">Coste</span>
-                  <div className="flex flex-col gap-2 items-end w-full">
-                     {registro.data.gasto_xp !== undefined && (
-                       <div className="flex items-center gap-2 text-oro font-black text-sm tracking-widest">
-                          {registro.data.gasto_xp} EXP
-                       </div>
-                     )}
-                     {registro.data.gasto_ryous !== undefined && (
-                       <div className="flex items-center gap-2 text-oro font-black text-sm tracking-widest">
-                          {registro.data.gasto_ryous} RYOUS
-                       </div>
-                     )}
-                  </div>
-               </div>
-             )}
+              )}
+            </div>
+            {(registro.data.gasto_xp !== undefined || registro.data.gasto_ryous !== undefined) && (
+              <div className="flex flex-col items-center shrink-0 p-4 border-l border-oro/10 min-w-[120px]">
+                <span className="text-[10px] font-black text-oro/30 uppercase tracking-widest mb-2">Coste</span>
+                <div className="flex flex-col gap-2 items-end w-full">
+                  {registro.data.gasto_xp !== undefined && (
+                    <div className="flex items-center gap-2 text-oro font-black text-sm tracking-widest">
+                      {registro.data.gasto_xp} EXP
+                    </div>
+                  )}
+                  {registro.data.gasto_ryous !== undefined && (
+                    <div className="flex items-center gap-2 text-oro font-black text-sm tracking-widest">
+                      {registro.data.gasto_ryous} RYOUS
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-8">
@@ -242,21 +242,20 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                     <VS className="w-5 h-5 text-oro/40" />
                     <span className="text-xs font-black text-oro/40 uppercase tracking-[0.3em]">Resumen de Combate</span>
                     {registro.data.ganador === 'Empate' ? (
-                      <span className="text-[10px] font-black text-oro/60 border border-oro/20 px-2 py-0.5">EMPATE</span>
+                      <span className="text-[10px] font-black text-oro border border-oro/20 px-2 py-0.5">EMPATE</span>
                     ) : (
-                      <span className={`text-[10px] font-black px-2 py-0.5 border ${
-                        (registro.data.ganador === 'A' && registro.data.equipo_a?.some((p: any) => p.id === (subjectId || registro.autor_id))) ||
+                      <span className={`text-[10px] font-black px-2 py-0.5 border ${(registro.data.ganador === 'A' && registro.data.equipo_a?.some((p: any) => p.id === (subjectId || registro.autor_id))) ||
                         (registro.data.ganador === 'B' && registro.data.equipo_b?.some((p: any) => p.id === (subjectId || registro.autor_id)))
-                        ? 'text-green-500 border-green-500/30 bg-green-500/5' 
-                        : 'text-red-500 border-red-500/30 bg-red-500/5'
-                      }`}>
-                        { (registro.data.ganador === 'A' && registro.data.equipo_a?.some((p: any) => p.id === (subjectId || registro.autor_id))) ||
+                        ? 'text-[#a7f3d0] border-emerald-500/30 bg-[#064e3b]/80'
+                        : 'text-[#fecaca] border-red-500/30 bg-[#7f1d1d]/80'
+                        }`}>
+                        {(registro.data.ganador === 'A' && registro.data.equipo_a?.some((p: any) => p.id === (subjectId || registro.autor_id))) ||
                           (registro.data.ganador === 'B' && registro.data.equipo_b?.some((p: any) => p.id === (subjectId || registro.autor_id)))
-                          ? 'VICTORIA' : 'DERROTA' }
+                          ? 'VICTORIA' : 'DERROTA'}
                       </span>
                     )}
                   </div>
-                  
+
                   <p className="text-lg xl:text-xl font-medium text-oro/80 leading-relaxed italic">
                     {(() => {
                       const sid = subjectId || registro.autor_id;
@@ -264,7 +263,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                       const teamA = registro.data.equipo_a || [];
                       const teamB = registro.data.equipo_b || [];
                       const isA = teamA.some((p: any) => p.id === sid);
-                      
+
                       const allies = (isA ? teamA : teamB).filter((p: any) => p.id !== sid).map((p: any) => p.nombre_ninja);
                       const enemies = (isA ? teamB : teamA).map((p: any) => p.nombre_ninja);
                       const xpGained = calculateParticipantXP(isA ? 'A' : 'B', (isA ? teamA : teamB).find((p: any) => p.id === sid)?.huye);
@@ -274,15 +273,15 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                           <span className="font-black text-oro not-italic">{sName}</span> combati{allies.length > 0 ? 'ó junto a ' : 'ó '}
                           {allies.length > 0 && <span className="text-oro">{formatNinjaList(allies)}</span>}
                           {allies.length > 0 ? ' contra ' : ' contra '}
-                          <span className="text-oro">{formatNinjaList(enemies)}</span>. 
+                          <span className="text-oro">{formatNinjaList(enemies)}</span>.
                           Obtiene <span className="font-black text-oro not-italic">{xpGained} EXP</span>.
                         </>
                       );
                     })()}
                   </p>
                 </div>
-                
-                <button 
+
+                <button
                   onClick={() => setShowFullDetails(true)}
                   className="ninja-btn-ghost px-6 py-3 text-[10px] focus:outline-none focus:ring-0"
                 >
@@ -294,7 +293,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                 {!isGlobalView && (
                   <div className="flex justify-between items-center mb-8 border-b border-oro/10 pb-4">
                     <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Informe Detallado</span>
-                    <button 
+                    <button
                       onClick={() => setShowFullDetails(false)}
                       className="text-[10px] font-black text-oro/40 hover:text-oro uppercase tracking-widest border-b border-oro/20 focus:outline-none focus:ring-0"
                     >
@@ -302,77 +301,77 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                     </button>
                   </div>
                 )}
-                
+
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-10 lg:gap-16 items-start">
-                   <div className="space-y-6">
-                      <div className="flex items-center gap-3 border-b border-oro/10 pb-4">
-                         <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Bando A</span>
-                         {registro.data.ganador === 'A' && <span className="text-[9px] font-black text-oro bg-oro/10 px-2 py-0.5 ninja-clip-xs border border-oro/20">GANADOR</span>}
-                      </div>
-                      <div className="space-y-4">
-                        {registro.data.equipo_a?.map((p: any) => (
-                          <div key={p.id} className="p-4 bg-black/40 border border-oro/5 ninja-clip-xs space-y-3">
-                            <div className="flex justify-between items-center">
-                              <div className="flex items-center gap-3">
-                                 <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
-                                 <span className="text-[10px] font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">+{calculateParticipantXP('A', p.huye)} XP</span>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                {p.has_estado_alterado && <span className="px-2 py-0.5 bg-oro/20 text-oro text-[9px] font-black uppercase ninja-clip-xs border border-oro/40">ESTADO ALTERADO</span>}
-                                {p.huye && <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[9px] font-black uppercase ninja-clip-xs border border-orange-500/40">HUYE</span>}
-                                <span className="text-[10px] font-black text-oro/70 uppercase">{p.estado_nombre || 'SIN ESTADO'}</span>
-                              </div>
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3 border-b border-oro/10 pb-4">
+                      <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Bando A</span>
+                      {registro.data.ganador === 'A' && <span className="text-[9px] font-black text-oro bg-oro/10 px-2 py-0.5 ninja-clip-xs border border-oro/20">GANADOR</span>}
+                    </div>
+                    <div className="space-y-4">
+                      {registro.data.equipo_a?.map((p: any) => (
+                        <div key={p.id} className="p-4 bg-black/40 border border-oro/5 ninja-clip-xs space-y-3">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                              <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
+                              <span className="text-[10px] font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">+{calculateParticipantXP('A', p.huye)} EXP</span>
                             </div>
-                            {p.has_estado_alterado && p.descripcion_estado && (
-                              <div className="p-3 bg-oro/5 border-l-2 border-oro/20 italic text-[11px] text-oro/60">
-                                 "{p.descripcion_estado}"
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                   </div>
-
-                   <div className="flex lg:flex-col items-center justify-center gap-6 lg:self-center">
-                      <div className="h-px lg:w-px lg:h-12 bg-oro/40 w-full opacity-20" />
-                      <div className="flex flex-col items-center gap-2">
-                        {registro.data.ganador === 'Empate' ? (
-                          <span className="font-black text-oro text-2xl xl:text-4xl uppercase tracking-[0.2em]">RETIRADO</span>
-                        ) : (
-                          <span className="font-ninja text-3xl xl:text-5xl text-oro italic opacity-20">VS</span>
-                        )}
-                      </div>
-                      <div className="h-px lg:w-px lg:h-12 bg-oro/40 w-full opacity-20" />
-                   </div>
-
-                   <div className="space-y-6 lg:text-right">
-                      <div className="flex items-center lg:flex-row-reverse gap-3 border-b border-oro/10 pb-4">
-                        <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Bando B</span>
-                        {registro.data.ganador === 'B' && <span className="text-[9px] font-black text-oro bg-oro/10 px-2 py-0.5 ninja-clip-xs border border-oro/20">GANADOR</span>}
-                      </div>
-                      <div className="space-y-4">
-                        {registro.data.equipo_b?.map((p: any) => (
-                          <div key={p.id} className="p-4 bg-black/40 border border-oro/5 ninja-clip-xs space-y-3">
-                            <div className="flex justify-between items-center lg:flex-row-reverse">
-                              <div className="flex items-center gap-3 lg:flex-row-reverse">
-                                 <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
-                                 <span className="text-[10px] font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">+{calculateParticipantXP('B', p.huye)} XP</span>
-                              </div>
-                              <div className="flex items-center gap-3 lg:flex-row-reverse">
-                                {p.has_estado_alterado && <span className="px-2 py-0.5 bg-oro/20 text-oro text-[9px] font-black uppercase ninja-clip-xs border border-oro/40">ESTADO ALTERADO</span>}
-                                {p.huye && <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[9px] font-black uppercase ninja-clip-xs border border-orange-500/40">HUYE</span>}
-                                <span className="text-[10px] font-black text-oro/70 uppercase">{p.estado_nombre || 'SIN ESTADO'}</span>
-                              </div>
+                            <div className="flex items-center gap-3">
+                              {p.has_estado_alterado && <span className="px-2 py-0.5 bg-oro/20 text-oro text-[9px] font-black uppercase ninja-clip-xs border border-oro/40">ESTADO ALTERADO</span>}
+                              {p.huye && <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[9px] font-black uppercase ninja-clip-xs border border-orange-500/40">HUYE</span>}
+                              <span className="text-[10px] font-black text-oro/70 uppercase">{p.estado_nombre || 'SIN ESTADO'}</span>
                             </div>
-                            {p.has_estado_alterado && p.descripcion_estado && (
-                              <div className="p-3 bg-oro/5 border-r-2 border-oro/20 italic text-[11px] text-oro/60 lg:text-right">
-                                 "{p.descripcion_estado}"
-                              </div>
-                            )}
                           </div>
-                        ))}
-                      </div>
-                   </div>
+                          {p.has_estado_alterado && p.descripcion_estado && (
+                            <div className="p-3 bg-oro/5 border-l-2 border-oro/20 italic text-[11px] text-oro/60">
+                              "{p.descripcion_estado}"
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex lg:flex-col items-center justify-center gap-6 lg:self-center">
+                    <div className="h-px lg:w-px lg:h-12 bg-oro/40 w-full opacity-20" />
+                    <div className="flex flex-col items-center gap-2">
+                      {registro.data.ganador === 'Empate' ? (
+                        <span className="font-black text-oro text-2xl xl:text-4xl uppercase tracking-[0.2em]">RETIRADO</span>
+                      ) : (
+                        <span className="font-ninja text-3xl xl:text-5xl text-oro italic opacity-20">VS</span>
+                      )}
+                    </div>
+                    <div className="h-px lg:w-px lg:h-12 bg-oro/40 w-full opacity-20" />
+                  </div>
+
+                  <div className="space-y-6 lg:text-right">
+                    <div className="flex items-center lg:flex-row-reverse gap-3 border-b border-oro/10 pb-4">
+                      <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Bando B</span>
+                      {registro.data.ganador === 'B' && <span className="text-[9px] font-black text-oro bg-oro/10 px-2 py-0.5 ninja-clip-xs border border-oro/20">GANADOR</span>}
+                    </div>
+                    <div className="space-y-4">
+                      {registro.data.equipo_b?.map((p: any) => (
+                        <div key={p.id} className="p-4 bg-black/40 border border-oro/5 ninja-clip-xs space-y-3">
+                          <div className="flex justify-between items-center lg:flex-row-reverse">
+                            <div className="flex items-center gap-3 lg:flex-row-reverse">
+                              <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
+                              <span className="text-[10px] font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">+{calculateParticipantXP('B', p.huye)} EXP</span>
+                            </div>
+                            <div className="flex items-center gap-3 lg:flex-row-reverse">
+                              {p.has_estado_alterado && <span className="px-2 py-0.5 bg-oro/20 text-oro text-[9px] font-black uppercase ninja-clip-xs border border-oro/40">ESTADO ALTERADO</span>}
+                              {p.huye && <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[9px] font-black uppercase ninja-clip-xs border border-orange-500/40">HUYE</span>}
+                              <span className="text-[10px] font-black text-oro/70 uppercase">{p.estado_nombre || 'SIN ESTADO'}</span>
+                            </div>
+                          </div>
+                          {p.has_estado_alterado && p.descripcion_estado && (
+                            <div className="p-3 bg-oro/5 border-r-2 border-oro/20 italic text-[11px] text-oro/60 lg:text-right">
+                              "{p.descripcion_estado}"
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -384,11 +383,11 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
             <span className="text-[9px] font-black text-oro/20 uppercase tracking-widest mr-2">PRUEBAS VISUALES:</span>
             <div className="flex flex-wrap gap-3">
               {registro.data.urls_imagenes.map((url: string, i: number) => (
-                <a 
-                  key={i} 
-                  href={url} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
+                <a
+                  key={i}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center gap-2 px-3 py-1.5 bg-oro/5 border border-oro/10 hover:border-oro/40 hover:bg-oro/10 text-[9px] font-black text-oro/40 hover:text-oro uppercase tracking-widest transition-all ninja-clip-xs"
                 >
                   <LinkIcon className="w-3 h-3" /> PRUEBA {i + 1}

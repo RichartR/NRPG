@@ -6,13 +6,14 @@ import { MasterService } from '@/services/supabase/master.service';
 import { Registro } from '@/domain/types';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { useToastStore } from '@/components/ui/Toast';
-import { X, Search, UserPlus, User, Trophy, Info, Users, Sparkles } from 'lucide-react';
+import { X, Search, UserPlus, User, Trophy, Info, Sparkles } from 'lucide-react';
+import { NinjaSelect } from '@/components/ui/Fields';
 
-export default function CombatForm({ 
-  onCreated, 
-  initialData = null 
-}: { 
-  onCreated: () => void, 
+export default function CombatForm({
+  onCreated,
+  initialData = null
+}: {
+  onCreated: () => void,
   initialData?: Registro | null
 }) {
   const { activeCharacter, fetchActiveCharacter } = useCharacterStore();
@@ -29,11 +30,11 @@ export default function CombatForm({
   const [winner, setWinner] = useState<'A' | 'B' | 'Empate'>(initialData?.data?.ganador || 'Empate');
   const [combatConfig, setCombatConfig] = useState<Record<string, number> | null>(null);
   const [estados, setEstados] = useState<{ id: number; nombre: string }[]>([]);
-  
+
   const [participantSearch, setParticipantSearch] = useState('');
   const [searchTargetTeam, setSearchTargetTeam] = useState<'A' | 'B'>('A');
   const [searchResults, setSearchResults] = useState<{ id: number; nombre_ninja: string; hobba_name?: string | null }[]>([]);
-  
+
   // Equipos
   const [teamA, setTeamA] = useState<{ id: number; nombre_ninja: string; rango?: string; estado_nombre?: string; has_estado_alterado?: boolean; descripcion_estado?: string; huye?: boolean }[]>([]);
   const [teamB, setTeamB] = useState<{ id: number; nombre_ninja: string; rango?: string; estado_nombre?: string; has_estado_alterado?: boolean; descripcion_estado?: string; huye?: boolean }[]>([]);
@@ -82,7 +83,7 @@ export default function CombatForm({
     try {
       const results = await RegistrosService.searchCharacters(query);
       const allParticipants = [...teamA, ...teamB];
-      setSearchResults(results.filter(r => 
+      setSearchResults(results.filter(r =>
         !allParticipants.find(p => Number(p.id) === Number(r.id))
       ));
     } catch (err) {
@@ -93,7 +94,7 @@ export default function CombatForm({
   const addParticipant = (p: { id: number; nombre_ninja: string; rango?: string }) => {
     if (searchTargetTeam === 'A') setTeamA([...teamA, { ...p, rango: p.rango || 'D', estado_nombre: '' }]);
     else setTeamB([...teamB, { ...p, rango: p.rango || 'D', estado_nombre: '' }]);
-    
+
     setParticipantSearch('');
     setSearchResults([]);
   };
@@ -135,7 +136,7 @@ export default function CombatForm({
     const authorInB = teamB.find(p => Number(p.id) === Number(activeCharacter.id));
     const authorTeam = authorInA ? 'A' : 'B';
     const authorParticipant = authorInA || authorInB;
-    
+
     const finalXP = calculateXP(authorTeam, authorParticipant?.huye);
     let finalResult = 'retirarse';
     if (winner === 'A') finalResult = authorInA ? 'ganar' : 'perder';
@@ -193,8 +194,8 @@ export default function CombatForm({
               </h3>
               <p className="text-xs sm:text-sm font-black text-oro/40 uppercase tracking-[0.4em]">Sincronizando con el archivo histórico de combate</p>
             </div>
-            <button 
-              onClick={() => onCreated()} 
+            <button
+              onClick={() => onCreated()}
               className="group p-4 bg-black/40 border border-oro/10 hover:border-oro/40 transition-all ninja-clip-xs"
             >
               <X className="w-8 h-8 text-oro/40 group-hover:text-oro" />
@@ -208,11 +209,11 @@ export default function CombatForm({
                 <h4 className="text-lg font-black uppercase tracking-[0.3em] text-oro">BANDO A</h4>
                 <span className="text-xs font-bold text-oro/40 uppercase">{teamA.length} NINJAS</span>
               </div>
-              
+
               <div className="space-y-6">
                 <div className="relative">
                   <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-oro/20" />
-                  <input 
+                  <input
                     type="text"
                     placeholder="BUSCAR POR PERSONAJE O HOBBA..."
                     value={searchTargetTeam === 'A' ? participantSearch : ''}
@@ -241,36 +242,32 @@ export default function CombatForm({
                           </span>
                         </div>
                         <div className="flex items-center gap-4">
-                           <div className="flex items-center gap-2 px-3 py-1 bg-oro/10 border border-oro/20 ninja-clip-xs">
-                              <Sparkles className="w-3 h-3 text-oro" />
-                              <span className="text-[10px] font-black text-oro">+{calculateXP('A', p.huye)} XP</span>
-                           </div>
-                           <button onClick={() => removeParticipant(p.id, 'A')} className="opacity-0 group-hover/item:opacity-100 p-2 text-oro/20 hover:text-rojo-sangre transition-all">
-                             <X className="w-4 h-4" />
-                           </button>
+                          <div className="flex items-center gap-2 px-3 py-1 bg-oro/10 border border-oro/20 ninja-clip-xs">
+                            <Sparkles className="w-3 h-3 text-oro" />
+                            <span className="text-[10px] font-black text-oro">+{calculateXP('A', p.huye)} EXP</span>
+                          </div>
+                          <button onClick={() => removeParticipant(p.id, 'A')} className="opacity-0 group-hover/item:opacity-100 p-2 text-oro/20 hover:text-rojo-sangre transition-all">
+                            <X className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
-                      
+
                       <div className="grid grid-cols-1 gap-4">
-                        <select 
+                        <NinjaSelect
                           value={p.estado_nombre || ''}
-                          onChange={(e) => updateParticipantState(p.id, 'A', { estado_nombre: e.target.value })}
-                          className="w-full ninja-input py-3 text-xs"
-                        >
-                          <option value="" className="bg-zinc-950 text-oro/40">SIN ESTADO</option>
-                          {estados.map(est => (
-                            <option key={est.id} value={est.nombre} className="bg-zinc-950 text-oro">{est.nombre}</option>
-                          ))}
-                        </select>
-                        
+                          onChange={(val) => updateParticipantState(p.id, 'A', { estado_nombre: val })}
+                          placeholder="SIN ESTADO"
+                          options={estados.map(est => ({ label: est.nombre, value: est.nombre }))}
+                        />
+
                         <div className="flex flex-wrap gap-3">
-                          <button 
+                          <button
                             onClick={() => updateParticipantState(p.id, 'A', { has_estado_alterado: !p.has_estado_alterado })}
                             className={`px-4 py-2 border text-[10px] font-black uppercase tracking-widest transition-all ${p.has_estado_alterado ? 'bg-oro/20 border-oro/40 text-oro' : 'bg-black/20 border-oro/5 text-oro/20'}`}
                           >
                             ESTADO ALTERADO
                           </button>
-                          <button 
+                          <button
                             onClick={() => updateParticipantState(p.id, 'A', { huye: !p.huye })}
                             className={`px-4 py-2 border text-[10px] font-black uppercase tracking-widest transition-all ${p.huye ? 'bg-rojo-sangre/20 border-rojo-sangre/40 text-rojo-sangre' : 'bg-black/20 border-oro/5 text-oro/20'}`}
                           >
@@ -303,7 +300,7 @@ export default function CombatForm({
               <div className="space-y-6">
                 <div className="relative">
                   <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-oro/20" />
-                  <input 
+                  <input
                     type="text"
                     placeholder="BUSCAR POR PERSONAJE O HOBBA..."
                     value={searchTargetTeam === 'B' ? participantSearch : ''}
@@ -332,36 +329,32 @@ export default function CombatForm({
                           </span>
                         </div>
                         <div className="flex items-center gap-4">
-                           <div className="flex items-center gap-2 px-3 py-1 bg-oro/10 border border-oro/20 ninja-clip-xs">
-                              <Sparkles className="w-3 h-3 text-oro" />
-                              <span className="text-[10px] font-black text-oro">+{calculateXP('B', p.huye)} XP</span>
-                           </div>
-                           <button onClick={() => removeParticipant(p.id, 'B')} className="opacity-0 group-hover/item:opacity-100 p-2 text-oro/20 hover:text-rojo-sangre transition-all">
-                             <X className="w-4 h-4" />
-                           </button>
+                          <div className="flex items-center gap-2 px-3 py-1 bg-oro/10 border border-oro/20 ninja-clip-xs">
+                            <Sparkles className="w-3 h-3 text-oro" />
+                            <span className="text-[10px] font-black text-oro">+{calculateXP('B', p.huye)} EXP</span>
+                          </div>
+                          <button onClick={() => removeParticipant(p.id, 'B')} className="opacity-0 group-hover/item:opacity-100 p-2 text-oro/20 hover:text-rojo-sangre transition-all">
+                            <X className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 gap-4">
-                        <select 
+                        <NinjaSelect
                           value={p.estado_nombre || ''}
-                          onChange={(e) => updateParticipantState(p.id, 'B', { estado_nombre: e.target.value })}
-                          className="w-full ninja-input py-3 text-xs"
-                        >
-                          <option value="" className="bg-zinc-950 text-oro/40">SIN ESTADO</option>
-                          {estados.map(est => (
-                            <option key={est.id} value={est.nombre} className="bg-zinc-950 text-oro">{est.nombre}</option>
-                          ))}
-                        </select>
+                          onChange={(val) => updateParticipantState(p.id, 'B', { estado_nombre: val })}
+                          placeholder="SIN ESTADO"
+                          options={estados.map(est => ({ label: est.nombre, value: est.nombre }))}
+                        />
 
                         <div className="flex flex-wrap gap-3">
-                          <button 
+                          <button
                             onClick={() => updateParticipantState(p.id, 'B', { has_estado_alterado: !p.has_estado_alterado })}
                             className={`px-4 py-2 border text-[10px] font-black uppercase tracking-widest transition-all ${p.has_estado_alterado ? 'bg-oro/20 border-oro/40 text-oro' : 'bg-black/20 border-oro/5 text-oro/20'}`}
                           >
                             ESTADO ALTERADO
                           </button>
-                          <button 
+                          <button
                             onClick={() => updateParticipantState(p.id, 'B', { huye: !p.huye })}
                             className={`px-4 py-2 border text-[10px] font-black uppercase tracking-widest transition-all ${p.huye ? 'bg-rojo-sangre/20 border-rojo-sangre/40 text-rojo-sangre' : 'bg-black/20 border-oro/5 text-oro/20'}`}
                           >
@@ -402,9 +395,8 @@ export default function CombatForm({
                     <button
                       key={opt.id}
                       onClick={() => setWinner(opt.id as any)}
-                      className={`py-6 ninja-clip-sm border transition-all font-black text-xs uppercase tracking-[0.2em] ${
-                        winner === opt.id ? opt.color : 'bg-black/40 border-oro/10 text-oro/40 hover:border-oro/30'
-                      }`}
+                      className={`py-6 ninja-clip-sm border transition-all font-black text-xs uppercase tracking-[0.2em] ${winner === opt.id ? opt.color : 'bg-black/40 border-oro/10 text-oro/40 hover:border-oro/30'
+                        }`}
                     >
                       {opt.label}
                     </button>
@@ -414,31 +406,31 @@ export default function CombatForm({
 
               {combatConfig && (
                 <div className="w-full md:w-[400px] p-8 bg-black/40 border border-oro/10 ninja-clip-md">
-                   <div className="flex items-center gap-4 mb-6 opacity-40">
-                      <Info className="w-5 h-5" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">CÁLCULO DE MÉRITOS</span>
-                   </div>
-                   <div className="space-y-3">
-                      <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest">
-                        <span className="text-oro/40">POR VICTORIA</span>
-                        <span className="text-oro">+{combatConfig.ganar} XP</span>
-                      </div>
-                      <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest">
-                        <span className="text-oro/40">POR DERROTA</span>
-                        <span className="text-oro">+{combatConfig.perder} XP</span>
-                      </div>
-                      <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest">
-                        <span className="text-oro/40">POR EMPATE</span>
-                        <span className="text-oro">+{combatConfig.retirarse} XP</span>
-                      </div>
-                   </div>
+                  <div className="flex items-center gap-4 mb-6 opacity-40">
+                    <Info className="w-5 h-5" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">CÁLCULO DE MÉRITOS</span>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest">
+                      <span className="text-oro/40">POR VICTORIA</span>
+                      <span className="text-oro">+{combatConfig.ganar} EXP</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest">
+                      <span className="text-oro/40">POR DERROTA</span>
+                      <span className="text-oro">+{combatConfig.perder} EXP</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest">
+                      <span className="text-oro/40">POR EMPATE</span>
+                      <span className="text-oro">+{combatConfig.retirarse} EXP</span>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
           </div>
 
           <div className="pt-10">
-            <button 
+            <button
               onClick={handleSubmit}
               disabled={loading}
               className={`w-full py-8 sm:py-10 ninja-btn-oro text-xl sm:text-2xl ${loading ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
