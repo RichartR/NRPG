@@ -1,4 +1,3 @@
-import { Swords } from 'lucide-react';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import NinjaCard from '@/components/ui/NinjaCard';
 
@@ -6,11 +5,11 @@ export default function RegistrosLandingPage() {
   return (
     <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col">
       <header className="w-full max-w-[1750px] mx-auto flex flex-col md:flex-row justify-between items-center gap-10 mb-10 ninja-card-oro p-8 xl:p-10 z-50">
-        <Breadcrumbs 
+        <Breadcrumbs
           items={[
             { label: 'Inicio', href: '/' },
             { label: 'Registros' }
-          ]} 
+          ]}
         />
         <div className="flex items-center gap-4">
           <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto" alt="icon" />

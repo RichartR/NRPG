@@ -1,11 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Save, X, Image as ImageIcon, MapPin, Type, AlignLeft, RefreshCw } from 'lucide-react';
+import { Save, X, Image as ImageIcon, MapPin, AlignLeft, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
-import { DataField } from '@/components/ui/Fields';
 import { Aldea } from '@/domain/types';
 
 interface AldeaEditFormProps {
@@ -79,7 +78,7 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
               <p className="text-[10px] font-black text-oro/40 uppercase tracking-[0.2em] mt-1">Configuración del núcleo geográfico</p>
             </div>
           </div>
-          
+
           <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             <label className="flex items-center gap-3 cursor-pointer group bg-oro/5 px-4 py-2 border border-oro/10 hover:border-oro/30 transition-all">
               <span className="text-[9px] font-black uppercase tracking-widest text-oro/40">
@@ -88,9 +87,9 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
               <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${formData.categoria_id === 2 ? 'text-oro' : 'text-oro/70'}`}>
                 {formData.categoria_id === 2 ? 'ORGANIZACIÓN' : 'ALDEA'}
               </span>
-              <input 
-                type="checkbox" 
-                checked={formData.categoria_id === 2} 
+              <input
+                type="checkbox"
+                checked={formData.categoria_id === 2}
                 onChange={(e) => updateField('categoria_id', e.target.checked ? 2 : 1)}
                 className="hidden"
               />
@@ -103,9 +102,9 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
               <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${formData.activo ? 'text-oro' : 'text-oro/20'}`}>
                 {formData.activo ? 'ACTIVA' : 'INACTIVA'}
               </span>
-              <input 
-                type="checkbox" 
-                checked={formData.activo} 
+              <input
+                type="checkbox"
+                checked={formData.activo}
                 onChange={(e) => updateField('activo', e.target.checked)}
                 className="hidden"
               />
@@ -123,43 +122,43 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
               <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">Nombre Japonés</label>
-              <input 
+              <input
                 type="text"
-                value={formData.nombre_jap} 
-                onChange={(e) => updateField('nombre_jap', e.target.value)} 
+                value={formData.nombre_jap}
+                onChange={(e) => updateField('nombre_jap', e.target.value)}
                 placeholder="Ej: Konohagakure"
                 className="w-full ninja-input py-4"
               />
             </div>
             <div className="space-y-3">
               <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">Abreviatura</label>
-              <input 
+              <input
                 type="text"
-                value={formData.abreviatura} 
+                value={formData.abreviatura}
                 onChange={(e) => {
                   updateField('abreviatura', e.target.value);
                   if (!formData.slug) updateField('slug', e.target.value.toLowerCase().trim().replace(/\s+/g, '-'));
-                }} 
+                }}
                 placeholder="Ej: Konoha"
                 className="w-full ninja-input py-4"
               />
             </div>
             <div className="space-y-3">
               <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">Slug (URL)</label>
-              <input 
+              <input
                 type="text"
-                value={formData.slug} 
-                onChange={(e) => updateField('slug', e.target.value.toLowerCase().replace(/\s+/g, '-'))} 
+                value={formData.slug}
+                onChange={(e) => updateField('slug', e.target.value.toLowerCase().replace(/\s+/g, '-'))}
                 placeholder="ej-konoha"
                 className="w-full ninja-input py-4"
               />
             </div>
             <div className="space-y-3">
               <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">Nombre en Español</label>
-              <input 
+              <input
                 type="text"
-                value={formData.nombre_español} 
-                onChange={(e) => updateField('nombre_español', e.target.value)} 
+                value={formData.nombre_español}
+                onChange={(e) => updateField('nombre_español', e.target.value)}
                 placeholder="Ej: Aldea Oculta de la Hoja"
                 className="w-full ninja-input py-4"
               />
@@ -169,20 +168,20 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
           <div className="grid grid-cols-1 gap-8">
             <div className="space-y-3">
               <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">Nombre Completo</label>
-              <input 
+              <input
                 type="text"
-                value={formData.nombre_completo} 
-                onChange={(e) => updateField('nombre_completo', e.target.value)} 
+                value={formData.nombre_completo}
+                onChange={(e) => updateField('nombre_completo', e.target.value)}
                 placeholder="Ej: Konohagakure no Sato"
                 className="w-full ninja-input py-4"
               />
             </div>
             <div className="space-y-3">
               <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">URL Imagen / Banner</label>
-              <input 
+              <input
                 type="text"
-                value={formData.url_imagen} 
-                onChange={(e) => updateField('url_imagen', e.target.value)} 
+                value={formData.url_imagen}
+                onChange={(e) => updateField('url_imagen', e.target.value)}
                 placeholder="https://..."
                 className="w-full ninja-input py-4"
               />
@@ -192,10 +191,10 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
                 <ImageIcon className="w-4 h-4" /> URL Icono / Emblema
               </label>
               <div className="flex gap-4 items-start">
-                <input 
+                <input
                   type="text"
-                  value={formData.url_icono || ''} 
-                  onChange={(e) => updateField('url_icono', e.target.value)} 
+                  value={formData.url_icono || ''}
+                  onChange={(e) => updateField('url_icono', e.target.value)}
                   placeholder="/assets/logos_aldeas/konoha.webp"
                   className="w-full ninja-input py-4 flex-1"
                 />
@@ -212,9 +211,9 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
             <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1 flex items-center gap-2">
               <AlignLeft className="w-4 h-4" /> Descripción Histórica
             </label>
-            <textarea 
+            <textarea
               rows={4}
-              value={formData.descripcion || ''} 
+              value={formData.descripcion || ''}
               onChange={(e) => updateField('descripcion', e.target.value)}
               className="w-full ninja-input p-6 min-h-[120px] resize-none"
               placeholder="Escribe el lore de esta aldea..."
@@ -222,15 +221,15 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
           </div>
 
           <div className="flex justify-end gap-6 pt-10 border-t border-oro/10">
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={onCancel}
               className="px-8 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-oro/40 hover:text-oro transition-all italic"
             >
               Cancelar
             </button>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading}
               className="ninja-btn-oro px-12 py-5 text-sm"
             >

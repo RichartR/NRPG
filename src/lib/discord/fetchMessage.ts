@@ -10,13 +10,13 @@ export interface DiscordMessage {
   };
 }
 
-export async function fetchDiscordMessage(messageId: string): Promise<DiscordMessage | null> {
+export async function fetchDiscordMessage(messageId: string, configKey: string = 'discord_history_appearance_channel_id'): Promise<DiscordMessage | null> {
   const token = process.env.DISCORD_BOT_TOKEN;
   
   try {
     const supabase = await createClient();
     const { MasterServerService } = await import('@/services/supabase/master.server.service');
-    const channelId = await MasterServerService.getConfiguracion(supabase, 'discord_history_appearance_channel_id');
+    const channelId = await MasterServerService.getConfiguracion(supabase, configKey);
 
     // Intercept mock IDs or missing configurations
     if (!token || !channelId || messageId === '1' || messageId === '2') {
@@ -38,9 +38,7 @@ export async function fetchDiscordMessage(messageId: string): Promise<DiscordMes
       headers: {
         Authorization: `Bot ${token}`,
       },
-      next: {
-        revalidate: 3600 // Cache por 1 hora
-      }
+      cache: 'no-store'
     });
 
     if (!res.ok) {

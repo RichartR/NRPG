@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { MasterServerService } from '@/services/supabase/master.server.service';
-import GlosarioView from '../../components/glosario/GlosarioView';
+import GlosarioView from '@/components/glosario/GlosarioView';
 import Link from 'next/link';
 import { Swords } from 'lucide-react';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';

@@ -1,12 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { 
-  ShoppingBag, Sparkles, Plus, Trash2, Edit3, Coins, 
-  RotateCcw, History, X, Check, Loader2, ArrowLeft,
-  Settings, Lock, HelpCircle, ChevronLeft, ChevronRight
-} from 'lucide-react';
+import { ShoppingBag, Plus, Trash2, Edit3, RotateCcw, History, X, Check, Loader2, Settings, Lock, ChevronLeft, ChevronRight, Link as LinkIcon } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { AuthService } from '@/services/supabase/auth.service';
 import { MasterService } from '@/services/supabase/master.service';
@@ -15,28 +10,31 @@ import { AdminService } from '@/services/supabase/admin.service';
 import { RegistrosService } from '@/services/supabase/registros.service';
 import { Tienda, Registro } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
+import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
-import RegistroCard from '@/components/registros/RegistroCard';
 import NinjaCard from '@/components/ui/NinjaCard';
+import AdminViewSelector from '@/components/admin/AdminViewSelector';
 import { useRouter } from 'next/navigation';
 
 export default function TiendasPage() {
   const router = useRouter();
   const { addToast } = useToastStore();
+  const { confirm: confirmAction } = useConfirmStore();
   const [tiendas, setTiendas] = useState<Tienda[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [viewMode, setViewMode] = useState<'player' | 'admin'>('player');
   const [eventCoinName, setEventCoinName] = useState('Monedas de Evento');
   const [isRenameLoading, setIsRenameLoading] = useState(false);
   const [newCoinNameInput, setNewCoinNameInput] = useState('');
-  
+
   // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
   const [resetConfirmationText, setResetConfirmationText] = useState('');
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isDeletingId, setIsDeletingId] = useState<number | null>(null);
-  
+
   // Create / Edit Shop Form state
   const [formTienda, setFormTienda] = useState<Partial<Tienda>>({
     nombre: '',
@@ -112,7 +110,7 @@ export default function TiendasPage() {
       addToast('El nombre de la tienda es obligatorio', 'error');
       return;
     }
-    
+
     setIsSavingShop(true);
     try {
       const cleanData: Partial<Tienda> = {
@@ -124,11 +122,11 @@ export default function TiendasPage() {
         nombre_moneda: formTienda.es_evento ? (formTienda.nombre_moneda?.trim() || 'Monedas de Evento') : null,
         url_imagen: formTienda.url_imagen?.trim() || null
       };
-      
+
       if (formTienda.id) {
         cleanData.id = formTienda.id;
       }
-      
+
       await AdminService.saveTienda(cleanData);
       addToast(formTienda.id ? 'Tienda actualizada con éxito' : 'Tienda creada con éxito', 'success');
       setIsCreateModalOpen(false);
@@ -189,6 +187,25 @@ export default function TiendasPage() {
     }
   };
 
+  const handleDeleteRegistro = async (id: number) => {
+    const ok = await confirmAction({
+      title: 'Eliminar Registro de Compra',
+      message: '¿Estás seguro de que quieres eliminar este registro de compra permanentemente?',
+      variant: 'danger',
+      requireValidation: true
+    });
+    if (!ok) return;
+
+    try {
+      await RegistrosService.deleteRegistro(id);
+      addToast('Registro de compra eliminado con éxito', 'success');
+      fetchHistory(historyData.page);
+    } catch (err: any) {
+      console.error(err);
+      addToast(err.message || 'Error al eliminar el registro de compra', 'error');
+    }
+  };
+
   // History search
   const fetchHistory = async (page: number) => {
     setHistoryLoading(true);
@@ -212,16 +229,18 @@ export default function TiendasPage() {
     }
   }, [isHistoryOpen, historyStartDate, historyEndDate]);
 
+  const listToShow = (isAdmin && viewMode === 'admin') ? tiendas : tiendas.filter(t => t.activo);
+
   return (
     <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col animate-in fade-in duration-500">
       <div className="max-w-[1750px] mx-auto w-full flex-1">
         <header className="w-full mb-8 ninja-card-oro p-6 xl:p-8 flex flex-col md:flex-row justify-between items-center gap-6 z-50">
-          <Breadcrumbs 
+          <Breadcrumbs
             items={[
               { label: 'Inicio', href: '/' },
               { label: 'Registros', href: '/registros' },
               { label: 'Tiendas Ninja' }
-            ]} 
+            ]}
           />
           <div className="flex items-center gap-4">
             <ShoppingBag className="w-5 xl:w-6 h-auto text-oro animate-pulse" />
@@ -231,14 +250,21 @@ export default function TiendasPage() {
           </div>
         </header>
 
+        <AdminViewSelector
+          isAdmin={isAdmin}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          title="Panel de Control de Tiendas"
+        />
+
         {/* Admin Tools Panel */}
-        {isAdmin && (
+        {isAdmin && viewMode === 'admin' && (
           <section className="mb-10 ninja-card-oro p-6 sm:p-8 xl:p-10 animate-in slide-in-from-top duration-500">
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-oro/10">
               <Settings className="w-5 h-5 text-oro" />
               <h2 className="text-sm sm:text-base font-black text-oro uppercase tracking-[0.2em]">Panel de Control Administrativo</h2>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8">
               {/* Renombrar Moneda */}
               <div className="space-y-4 flex flex-col justify-between">
@@ -247,14 +273,14 @@ export default function TiendasPage() {
                   <p className="text-[10px] text-gris-texto mb-2">Cambia el nombre oficial de la moneda de evento en todo el juego.</p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2.5">
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={newCoinNameInput}
                     onChange={(e) => setNewCoinNameInput(e.target.value)}
                     className="ninja-input py-2.5 px-4 flex-1 text-xs w-full"
                     placeholder="Ej. Monedas de Plata"
                   />
-                  <button 
+                  <button
                     onClick={handleRenameCoin}
                     disabled={isRenameLoading}
                     className="ninja-btn-oro py-2.5 px-5 flex items-center justify-center gap-2 text-xs w-full sm:w-auto shrink-0"
@@ -271,7 +297,7 @@ export default function TiendasPage() {
                   <label className="block text-xs font-black text-oro/60 uppercase tracking-widest mb-1">Restaurar Economía</label>
                   <p className="text-[10px] text-gris-texto">Reinicia la divisa de evento a 0 de todos los personajes.</p>
                 </div>
-                <button 
+                <button
                   onClick={() => {
                     setResetConfirmationText('');
                     setIsResetConfirmOpen(true);
@@ -279,7 +305,7 @@ export default function TiendasPage() {
                   className="w-full ninja-btn-rojo py-3 flex items-center justify-center gap-3 text-xs"
                 >
                   <RotateCcw className="w-4 h-4" />
-                  <span>Reiniciar Monedas Globales</span>
+                  <span>Reiniciar Monedas de Evento</span>
                 </button>
               </div>
 
@@ -287,9 +313,9 @@ export default function TiendasPage() {
               <div className="space-y-4 flex flex-col justify-between md:col-span-2 xl:col-span-1 mt-4 md:mt-0">
                 <div>
                   <label className="block text-xs font-black text-oro/60 uppercase tracking-widest mb-1">Creación y Catálogos</label>
-                  <p className="text-[10px] text-gris-texto">Establece un nuevo bazar o tienda especial en el glosario global.</p>
+                  <p className="text-[10px] text-gris-texto">Crea una nueva tienda.</p>
                 </div>
-                <button 
+                <button
                   onClick={() => {
                     setFormTienda({ nombre: '', descripcion: '', activo: true, es_evento: false, nombre_moneda: '', url_imagen: '' });
                     setIsCreateModalOpen(true);
@@ -307,9 +333,9 @@ export default function TiendasPage() {
         {/* Global actions: History button */}
         <div className="flex justify-between items-center mb-8">
           <p className="text-xs sm:text-sm font-black text-oro/60 uppercase tracking-widest">
-            {loading ? 'Cargando Bazares...' : `${tiendas.length} Tiendas Disponibles`}
+            {loading ? 'Cargando Tiendas...' : `${listToShow.length} Tiendas Disponibles`}
           </p>
-          <button 
+          <button
             onClick={() => setIsHistoryOpen(true)}
             className="ninja-btn-ghost py-2 px-4 text-xs font-black uppercase tracking-widest flex items-center gap-2"
           >
@@ -329,9 +355,9 @@ export default function TiendasPage() {
             </div>
             <p className="text-oro font-black uppercase tracking-[0.4em] text-xs animate-pulse">Abriendo mercados...</p>
           </div>
-        ) : tiendas.length > 0 ? (
+        ) : listToShow.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
-            {tiendas.map((tienda) => {
+            {listToShow.map((tienda) => {
               const isExperience = tienda.es_experiencia;
               return (
                 <NinjaCard
@@ -339,13 +365,13 @@ export default function TiendasPage() {
                   onClick={() => router.push(`/registros/tiendas/${tienda.id}`)}
                   title={tienda.nombre}
                   description={tienda.descripcion}
-                  category={isExperience ? 'Mejoras Especiales' : tienda.es_evento ? 'Evento Especial' : 'Bazar Estándar'}
+                  category={isExperience ? 'Tienda Experiencia' : tienda.es_evento ? 'Tienda Evento' : 'Tienda'}
                   theme="oro"
                   imageUrl={tienda.url_imagen || (
-                    isExperience 
-                      ? 'https://game.gtimg.cn/images/hyrz/web2026/ninja.jpg' 
-                      : tienda.es_evento 
-                        ? 'https://game.gtimg.cn/images/hyrz/web2026/match.jpg' 
+                    isExperience
+                      ? 'https://game.gtimg.cn/images/hyrz/web2026/ninja.jpg'
+                      : tienda.es_evento
+                        ? 'https://game.gtimg.cn/images/hyrz/web2026/match.jpg'
                         : 'https://game.gtimg.cn/images/hyrz/web2026/player.jpg'
                   )}
                   headerOverlayRight={
@@ -355,9 +381,9 @@ export default function TiendasPage() {
                           Inactiva
                         </span>
                       )}
-                      {isAdmin && (
+                      {isAdmin && viewMode === 'admin' && (
                         <>
-                          <button 
+                          <button
                             onClick={() => {
                               setFormTienda(tienda);
                               setIsCreateModalOpen(true);
@@ -369,7 +395,7 @@ export default function TiendasPage() {
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
                           {!isExperience && (
-                            <button 
+                            <button
                               onClick={() => setIsDeletingId(tienda.id)}
                               className="p-1.5 border border-red-500/20 bg-zinc-950/80 hover:border-red-500 hover:bg-red-500/10 text-red-400 transition-all"
                               style={{ clipPath: 'polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px)' }}
@@ -407,9 +433,9 @@ export default function TiendasPage() {
           <div className="py-40 text-center ninja-card-oro border-dashed opacity-60 max-w-lg mx-auto" style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' }}>
             <ShoppingBag className="w-16 h-16 text-oro/20 mx-auto mb-6" />
             <h3 className="text-lg font-black text-oro uppercase tracking-wider mb-2">No hay tiendas registradas</h3>
-            <p className="text-xs text-gris-texto mb-6">El administrador no ha habilitado ningún bazar todavía en esta sección.</p>
-            {isAdmin && (
-              <button 
+            <p className="text-xs text-gris-texto mb-6">El administrador no ha habilitado ninguna tienda todavía.</p>
+            {isAdmin && viewMode === 'admin' && (
+              <button
                 onClick={() => setIsCreateModalOpen(true)}
                 className="ninja-btn-oro px-6 py-3 text-xs font-black uppercase tracking-widest inline-flex items-center gap-2"
               >
@@ -424,26 +450,26 @@ export default function TiendasPage() {
       {/* CREATE / EDIT SHOP MODAL */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[999] flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div 
+          <div
             className="w-full max-w-lg ninja-card-oro p-8 relative"
             style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' }}
           >
-            <button 
+            <button
               onClick={() => setIsCreateModalOpen(false)}
               className="absolute top-6 right-6 p-2 text-oro/40 hover:text-oro transition-all"
             >
               <X className="w-6 h-6" />
             </button>
-            
+
             <h2 className="text-xl sm:text-2xl font-black text-oro uppercase tracking-wider mb-6 pb-2 border-b border-oro/10">
               {formTienda.id ? 'Editar Tienda' : 'Crear Nueva Tienda'}
             </h2>
-            
+
             <form onSubmit={handleCreateOrEditShop} className="space-y-6">
               <div className="space-y-2">
-                <label className="block text-xs font-black text-oro/60 uppercase tracking-widest">Nombre del Bazar</label>
-                <input 
-                  type="text" 
+                <label className="block text-xs font-black text-oro/60 uppercase tracking-widest">Nombre de la Tienda</label>
+                <input
+                  type="text"
                   value={formTienda.nombre || ''}
                   onChange={(e) => setFormTienda({ ...formTienda, nombre: e.target.value })}
                   className="ninja-input py-3 w-full"
@@ -454,7 +480,7 @@ export default function TiendasPage() {
 
               <div className="space-y-2">
                 <label className="block text-xs font-black text-oro/60 uppercase tracking-widest">Descripción</label>
-                <textarea 
+                <textarea
                   value={formTienda.descripcion || ''}
                   onChange={(e) => setFormTienda({ ...formTienda, descripcion: e.target.value })}
                   className="ninja-input py-3 w-full min-h-[80px]"
@@ -464,8 +490,8 @@ export default function TiendasPage() {
 
               <div className="space-y-2">
                 <label className="block text-xs font-black text-oro/60 uppercase tracking-widest">URL de la Imagen</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={formTienda.url_imagen || ''}
                   onChange={(e) => setFormTienda({ ...formTienda, url_imagen: e.target.value })}
                   className="ninja-input py-3 w-full"
@@ -475,19 +501,19 @@ export default function TiendasPage() {
 
               <div className="flex flex-col sm:flex-row gap-6">
                 <label className="flex items-center gap-3 cursor-pointer">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     checked={!!formTienda.activo}
                     onChange={(e) => setFormTienda({ ...formTienda, activo: e.target.checked })}
                     className="w-4 h-4 accent-oro"
                   />
-                  <span className="text-xs font-black text-oro/80 uppercase tracking-widest">Bazar Activo</span>
+                  <span className="text-xs font-black text-oro/80 uppercase tracking-widest">Tienda Activa</span>
                 </label>
 
                 {formTienda.es_experiencia ? null : (
                   <label className="flex items-center gap-3 cursor-pointer">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={!!formTienda.es_evento}
                       onChange={(e) => setFormTienda({ ...formTienda, es_evento: e.target.checked })}
                       className="w-4 h-4 accent-oro"
@@ -500,8 +526,8 @@ export default function TiendasPage() {
               {formTienda.es_evento && (
                 <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
                   <label className="block text-xs font-black text-oro/60 uppercase tracking-widest">Nombre de Moneda del Evento</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={formTienda.nombre_moneda || ''}
                     onChange={(e) => setFormTienda({ ...formTienda, nombre_moneda: e.target.value })}
                     className="ninja-input py-3 w-full"
@@ -511,15 +537,15 @@ export default function TiendasPage() {
               )}
 
               <div className="pt-4 flex gap-4">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setIsCreateModalOpen(false)}
                   className="flex-1 ninja-btn-ghost py-3 font-black text-xs uppercase tracking-widest"
                 >
                   Cancelar
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={isSavingShop}
                   className="flex-1 ninja-btn-oro py-3 flex items-center justify-center gap-2 font-black text-xs uppercase tracking-widest"
                 >
@@ -535,7 +561,7 @@ export default function TiendasPage() {
       {/* RESET CONFIRMATION MODAL */}
       {isResetConfirmOpen && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div 
+          <div
             className="w-full max-w-md ninja-card-oro p-8 relative text-center"
             style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' }}
           >
@@ -546,8 +572,8 @@ export default function TiendasPage() {
             <p className="text-xs text-gris-texto/80 mb-3">
               Para poder reiniciar, escribe <strong className="font-bold text-oro uppercase">reiniciar</strong> a continuación:
             </p>
-            
-            <input 
+
+            <input
               type="text"
               value={resetConfirmationText}
               onChange={(e) => setResetConfirmationText(e.target.value)}
@@ -556,8 +582,8 @@ export default function TiendasPage() {
             />
 
             <div className="flex gap-4">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => {
                   setIsResetConfirmOpen(false);
                   setResetConfirmationText('');
@@ -566,7 +592,7 @@ export default function TiendasPage() {
               >
                 Cancelar
               </button>
-              <button 
+              <button
                 onClick={handleGlobalResetCoins}
                 disabled={resetConfirmationText.toLowerCase() !== 'reiniciar'}
                 className="flex-1 ninja-btn-rojo py-3 font-black text-xs uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
@@ -581,25 +607,25 @@ export default function TiendasPage() {
       {/* DELETING SHOP CONFIRM MODAL */}
       {isDeletingId !== null && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div 
+          <div
             className="w-full max-w-md ninja-card-oro p-8 relative text-center"
             style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' }}
           >
             <Lock className="w-12 h-12 text-red-400 mx-auto mb-4" />
-            <h2 className="text-xl font-black text-red-400 uppercase tracking-wider mb-4">¿Eliminar Bazar Ninja?</h2>
+            <h2 className="text-xl font-black text-red-400 uppercase tracking-wider mb-4">¿Eliminar Tienda?</h2>
             <p className="text-xs sm:text-sm text-gris-texto leading-relaxed mb-6">
-              Eliminarás permanentemente este bazar y todos sus vínculos en el catálogo. Esto <strong className="font-bold text-red-400">no eliminará</strong> los objetos ya comprados por los personajes en su inventario.
+              Eliminarás permanentemente esta tienda. Esto <strong className="font-bold text-red-400">no eliminará</strong> los objetos ya comprados por los personajes ni los registros.
             </p>
-            
+
             <div className="flex gap-4">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => setIsDeletingId(null)}
                 className="flex-1 ninja-btn-ghost py-3 font-black text-xs uppercase tracking-widest"
               >
                 Cancelar
               </button>
-              <button 
+              <button
                 onClick={() => handleDeleteShop(isDeletingId)}
                 className="flex-1 ninja-btn-rojo py-3 font-black text-xs uppercase tracking-widest"
               >
@@ -613,18 +639,18 @@ export default function TiendasPage() {
       {/* HISTORY OF PURCHASES MODAL */}
       {isHistoryOpen && (
         <div className="fixed inset-0 bg-black/95 backdrop-blur-md z-[998] flex items-center justify-center p-4 sm:p-8 xl:p-12 animate-in fade-in duration-300">
-          <div 
+          <div
             className="w-full max-w-[1500px] h-[90vh] ninja-card-oro p-6 sm:p-10 relative flex flex-col overflow-hidden"
             style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' }}
           >
-            
-            <button 
+
+            <button
               onClick={() => setIsHistoryOpen(false)}
               className="absolute top-6 right-6 p-2 text-oro/40 hover:text-oro transition-all z-10"
             >
               <X className="w-7 h-7" />
             </button>
-            
+
             <h2 className="text-2xl font-black text-oro uppercase tracking-[0.2em] mb-6 pb-3 border-b border-oro/10 flex items-center gap-4">
               <History className="w-6 h-6 text-oro" />
               <span>Auditoría e Historial de Compras</span>
@@ -634,8 +660,8 @@ export default function TiendasPage() {
             <div className="flex flex-wrap items-center gap-6 p-6 mb-8 border border-oro/10 bg-black/30" style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}>
               <div className="flex items-center gap-4">
                 <span className="text-[10px] sm:text-xs font-black text-oro/40 uppercase tracking-widest">DESDE</span>
-                <input 
-                  type="date" 
+                <input
+                  type="date"
                   value={historyStartDate}
                   onChange={(e) => setHistoryStartDate(e.target.value)}
                   className="ninja-input py-2"
@@ -643,15 +669,15 @@ export default function TiendasPage() {
               </div>
               <div className="flex items-center gap-4">
                 <span className="text-[10px] sm:text-xs font-black text-oro/40 uppercase tracking-widest">HASTA</span>
-                <input 
-                  type="date" 
+                <input
+                  type="date"
                   value={historyEndDate}
                   onChange={(e) => setHistoryEndDate(e.target.value)}
                   className="ninja-input py-2"
                 />
               </div>
               {(historyStartDate || historyEndDate) && (
-                <button 
+                <button
                   onClick={() => { setHistoryStartDate(''); setHistoryEndDate(''); }}
                   className="text-xs font-black text-rojo-sangre uppercase tracking-widest hover:brightness-125 border-b border-rojo-sangre/30 pb-1 italic transition-all"
                 >
@@ -661,23 +687,120 @@ export default function TiendasPage() {
             </div>
 
             {/* List */}
-            <div className="flex-1 overflow-y-auto pr-2 space-y-6">
+            <div className="flex-1 overflow-y-auto pr-2">
               {historyLoading ? (
                 <div className="py-40 flex flex-col items-center gap-6">
                   <Loader2 className="w-10 h-10 text-oro animate-spin" />
                   <p className="text-oro font-black uppercase tracking-widest text-xs">Cargando registros...</p>
                 </div>
               ) : historyData.list.length > 0 ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {historyData.list.map(reg => (
-                    <RegistroCard 
-                      key={reg.id} 
-                      registro={reg} 
-                      onRefresh={() => fetchHistory(historyData.page)} 
-                      isAdmin={isAdmin} 
-                      isGlobalView={true}
-                    />
-                  ))}
+                <div className="ninja-card-oro overflow-hidden border border-oro/20 bg-black/40 backdrop-blur-sm" style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}>
+                  <div className="overflow-x-auto custom-scrollbar">
+                    <table className="w-full text-left border-collapse min-w-[900px]">
+                      <thead>
+                        <tr className="border-b border-oro/10 text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em]">
+                          <th className="py-6 px-8">Comprador</th>
+                          <th className="py-6 px-8">Fecha/Hora</th>
+                          <th className="py-6 px-8">Objeto Adquirido</th>
+                          <th className="py-6 px-8 text-center">Inversión</th>
+                          <th className="py-6 px-8 text-center">Pruebas</th>
+                          {isAdmin && viewMode === 'admin' && <th className="py-6 px-8 text-right">Acciones</th>}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-oro/5">
+                        {historyData.list.map((reg) => {
+                          const authorName = reg.autor?.nombre_ninja ||
+                            reg.data?.participantes_historicos?.find((p: any) => p.id === reg.autor_id)?.nombre_ninja ||
+                            'Ninja Desaparecido';
+
+                          const formattedDate = new Date(reg.fecha).toLocaleDateString('es-ES', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                          }) + ' - ' + new Date(reg.fecha).toLocaleTimeString('es-ES', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          });
+
+                          return (
+                            <tr key={reg.id} className="hover:bg-oro/5 transition-colors">
+                              <td className="py-6 px-8">
+                                <span className="text-xs sm:text-sm font-black text-oro uppercase tracking-widest">{authorName}</span>
+                              </td>
+                              <td className="py-6 px-8">
+                                <span className="text-[10px] font-bold text-oro/40 uppercase tracking-widest">{formattedDate}</span>
+                              </td>
+                              <td className="py-6 px-8">
+                                <div className="flex flex-col gap-1">
+                                  <span className="text-xs sm:text-sm font-black text-oro/80 uppercase tracking-widest">
+                                    {reg.data.objeto_nombre || reg.data.objeto || 'Equipo Ninja'}
+                                  </span>
+                                  {reg.data.detalles && (
+                                    <span className="text-[9px] font-bold text-oro/40 uppercase tracking-wider">
+                                      {reg.data.detalles}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="py-6 px-8 text-center">
+                                <div className="flex flex-col gap-1 items-center justify-center">
+                                  {(reg.data.coste_exp || 0) > 0 && (
+                                    <span className="text-[11px] font-black text-blue-400 tracking-widest whitespace-nowrap">
+                                      -{reg.data.coste_exp.toLocaleString()} EXP
+                                    </span>
+                                  )}
+                                  {(reg.data.coste_ryous || 0) > 0 && (
+                                    <span className="text-[11px] font-black text-oro tracking-widest whitespace-nowrap">
+                                      -{reg.data.coste_ryous.toLocaleString()} RYOUS
+                                    </span>
+                                  )}
+                                  {(reg.data.coste_moneda_evento || 0) > 0 && (
+                                    <span className="text-[11px] font-black text-amber-500 tracking-widest whitespace-nowrap font-sans">
+                                      -{reg.data.coste_moneda_evento.toLocaleString()} EVENTO
+                                    </span>
+                                  )}
+                                  {(reg.data.coste_exp || 0) === 0 && (reg.data.coste_ryous || 0) === 0 && (reg.data.coste_moneda_evento || 0) === 0 && (
+                                    <span className="text-[10px] text-oro/20 uppercase tracking-widest italic">Gratis</span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="py-6 px-8">
+                                <div className="flex flex-wrap justify-center gap-2">
+                                  {reg.data.urls_imagenes && reg.data.urls_imagenes.length > 0 ? (
+                                    reg.data.urls_imagenes.map((url: string, i: number) => (
+                                      <a
+                                        key={i}
+                                        href={url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-1.5 px-3 py-1 bg-oro/5 border border-oro/10 hover:border-oro/40 hover:bg-oro/10 text-[9px] font-black text-oro/70 hover:text-oro uppercase tracking-widest transition-all ninja-clip-xs"
+                                      >
+                                        <LinkIcon className="w-2.5 h-2.5" />
+                                        <span>Prueba {i + 1}</span>
+                                      </a>
+                                    ))
+                                  ) : (
+                                    <span className="text-[9px] font-bold text-oro/20 uppercase tracking-widest italic">Sin pruebas</span>
+                                  )}
+                                </div>
+                              </td>
+                              {isAdmin && viewMode === 'admin' && (
+                                <td className="py-6 px-8 text-right">
+                                  <button
+                                    onClick={() => handleDeleteRegistro(reg.id)}
+                                    className="w-8 h-8 inline-flex items-center justify-center bg-red-600/10 border border-red-600/40 hover:border-red-500 hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs shadow-lg shadow-black/20"
+                                    title="Eliminar Registro de Compra"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </td>
+                              )}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               ) : (
                 <div className="py-40 text-center opacity-60">
@@ -690,7 +813,7 @@ export default function TiendasPage() {
             {/* Pagination */}
             {historyData.list.length > 0 && !historyLoading && (
               <div className="flex justify-center items-center gap-6 pt-6 border-t border-oro/10 mt-6 bg-transparent">
-                <button 
+                <button
                   disabled={historyData.page === 1}
                   onClick={() => fetchHistory(historyData.page - 1)}
                   className="p-3 ninja-btn-oro"
@@ -700,7 +823,7 @@ export default function TiendasPage() {
                 <span className="text-xs font-black text-oro uppercase tracking-widest italic">
                   PÁGINA <span className="text-oro/40">{historyData.page}</span> DE <span className="text-oro/40">{Math.ceil(historyData.count / 10)}</span>
                 </span>
-                <button 
+                <button
                   disabled={historyData.list.length < 10 || historyData.page * 10 >= historyData.count}
                   onClick={() => fetchHistory(historyData.page + 1)}
                   className="p-3 ninja-btn-oro"

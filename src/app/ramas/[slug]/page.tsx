@@ -1,7 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
-import { GitBranch, ScrollText, ChevronRight } from 'lucide-react';
+import { GitBranch, ScrollText } from 'lucide-react';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import Breadcrumbs, { CrumbItem } from '@/components/ui/Breadcrumbs';
 import NinjaCard from '@/components/ui/NinjaCard';
@@ -12,14 +11,6 @@ export default async function RamaDetailPage({ params }: { params: Promise<{ slu
 
   const rama = await MasterServerService.getRamaBySlug(supabase, slug);
   if (!rama) return notFound();
-
-  const backUrl = rama.tipo === 'clan' && rama.info_aldeas?.slug
-    ? `/aldeas/${rama.info_aldeas.slug}`
-    : '/ramas';
-
-  const backText = rama.tipo === 'clan' && rama.info_aldeas?.abreviatura
-    ? `Volver a ${rama.info_aldeas.abreviatura}`
-    : 'Volver a Ramas';
 
   const [subEspecialidades, documentos] = await Promise.all([
     MasterServerService.getSubEspecialidadesByRama(supabase, rama.id),

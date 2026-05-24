@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Search, RefreshCw, Trash2, ShieldAlert, Sparkles, User, Calendar, Clock, AlertTriangle } from 'lucide-react';
+import { Search, RefreshCw, Trash2, ShieldAlert, Sparkles, User, Clock, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
@@ -28,7 +28,7 @@ export default function FichasArchivadasList({ initialCharacters }: { initialCha
   const [activeTab, setActiveTab] = useState<'all' | 'voluntary' | 'inactivity'>('all');
   const [search, setSearch] = useState('');
   const [loadingId, setLoadingId] = useState<number | null>(null);
-  
+
   const router = useRouter();
   const addToast = useToastStore(state => state.addToast);
   const { confirm: confirmAction } = useConfirmStore();
@@ -131,16 +131,16 @@ export default function FichasArchivadasList({ initialCharacters }: { initialCha
 
   const filteredCharacters = useMemo(() => {
     return initialCharacters.filter(char => {
-      const matchesTab = 
-        activeTab === 'all' 
-          ? true 
-          : activeTab === 'voluntary' 
-            ? char.eliminado_voluntario 
+      const matchesTab =
+        activeTab === 'all'
+          ? true
+          : activeTab === 'voluntary'
+            ? char.eliminado_voluntario
             : !char.eliminado_voluntario;
 
       const username = getUsername(char).toLowerCase();
-      const matchesSearch = 
-        char.nombre_ninja.toLowerCase().includes(search.toLowerCase()) || 
+      const matchesSearch =
+        char.nombre_ninja.toLowerCase().includes(search.toLowerCase()) ||
         username.includes(search.toLowerCase()) ||
         char.rango.toLowerCase().includes(search.toLowerCase());
 
@@ -158,23 +158,22 @@ export default function FichasArchivadasList({ initialCharacters }: { initialCha
             { id: 'voluntary', label: 'Voluntarios' },
             { id: 'inactivity', label: 'Inactividad' }
           ].map((tab) => (
-            <button 
+            <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${
-                activeTab === tab.id 
-                ? 'bg-oro text-rojo-sangre shadow-md shadow-oro/10 font-black' 
-                : 'text-oro/40 hover:text-oro/80'
-              }`}
+              className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${activeTab === tab.id
+                  ? 'bg-oro text-rojo-sangre shadow-md shadow-oro/10 font-black'
+                  : 'text-oro/40 hover:text-oro/80'
+                }`}
             >
-              {tab.label} 
+              {tab.label}
               <span className="ml-2 opacity-50">
                 ({
-                  initialCharacters.filter(c => 
-                    tab.id === 'all' 
-                      ? true 
-                      : tab.id === 'voluntary' 
-                        ? c.eliminado_voluntario 
+                  initialCharacters.filter(c =>
+                    tab.id === 'all'
+                      ? true
+                      : tab.id === 'voluntary'
+                        ? c.eliminado_voluntario
                         : !c.eliminado_voluntario
                   ).length
                 })
@@ -186,9 +185,9 @@ export default function FichasArchivadasList({ initialCharacters }: { initialCha
         <div className="flex w-full md:w-auto gap-4">
           <div className="relative flex-1 md:w-80">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-oro/30" />
-            <input 
-              type="text" 
-              placeholder="BUSCAR EXPEDIENTE..." 
+            <input
+              type="text"
+              placeholder="BUSCAR EXPEDIENTE..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-black/60 border border-oro/15 rounded-xl py-3.5 pl-12 pr-6 text-xs font-bold text-white focus:border-oro outline-none transition-all placeholder:text-oro/20 uppercase tracking-widest"
@@ -218,18 +217,18 @@ export default function FichasArchivadasList({ initialCharacters }: { initialCha
                 const userStr = getUsername(char);
 
                 return (
-                  <tr 
-                    key={char.id} 
+                  <tr
+                    key={char.id}
                     className="group hover:bg-oro/5 transition-all duration-300 relative"
                   >
                     {/* Apariencia */}
                     <td className="py-5 px-8">
                       <div className="w-12 h-12 shrink-0 border border-oro/20 bg-black/40 overflow-hidden flex items-center justify-center ninja-clip-xs">
                         {char.url_img ? (
-                          <img 
-                            src={char.url_img} 
-                            className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500" 
-                            alt="Avatar" 
+                          <img
+                            src={char.url_img}
+                            className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                            alt="Avatar"
                             referrerPolicy="no-referrer"
                           />
                         ) : (
@@ -253,11 +252,10 @@ export default function FichasArchivadasList({ initialCharacters }: { initialCha
 
                     {/* Motivo */}
                     <td className="py-5 px-8 text-center whitespace-nowrap">
-                      <span className={`inline-block px-4 py-1.5 text-[9px] font-black border uppercase tracking-widest ninja-clip-xs ${
-                        char.eliminado_voluntario 
-                          ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' 
+                      <span className={`inline-block px-4 py-1.5 text-[9px] font-black border uppercase tracking-widest ninja-clip-xs ${char.eliminado_voluntario
+                          ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                           : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
-                      }`}>
+                        }`}>
                         {char.eliminado_voluntario ? 'VOLUNTARIO' : 'INACTIVIDAD'}
                       </span>
                     </td>
@@ -276,18 +274,17 @@ export default function FichasArchivadasList({ initialCharacters }: { initialCha
                     {/* Tiempo límite */}
                     <td className="py-5 px-8 text-center whitespace-nowrap">
                       {daysLeft !== null ? (
-                        <span className={`inline-flex items-center gap-2 px-3 py-1.5 text-[10px] font-black border uppercase tracking-wider ninja-clip-xs ${
-                          isCritical
+                        <span className={`inline-flex items-center gap-2 px-3 py-1.5 text-[10px] font-black border uppercase tracking-wider ninja-clip-xs ${isCritical
                             ? 'bg-rojo-sangre/20 text-rojo-sangre border-rojo-sangre/40 animate-pulse'
                             : 'bg-oro/10 text-oro border-oro/20'
-                        }`}>
+                          }`}>
                           {isCritical ? (
                             <AlertTriangle className="w-3.5 h-3.5" />
                           ) : (
                             <Clock className="w-3.5 h-3.5" />
                           )}
-                          {daysLeft > 0 
-                            ? `Eliminación en ${daysLeft}d` 
+                          {daysLeft > 0
+                            ? `Eliminación en ${daysLeft}d`
                             : 'Eliminación programada'}
                         </span>
                       ) : (
@@ -298,7 +295,7 @@ export default function FichasArchivadasList({ initialCharacters }: { initialCha
                     {/* Acciones */}
                     <td className="py-5 px-8 text-right whitespace-nowrap">
                       <div className="inline-flex items-center gap-3">
-                        <button 
+                        <button
                           onClick={() => handleRestore(char.id, char.nombre_ninja)}
                           disabled={loadingId === char.id}
                           className="flex items-center gap-1.5 px-4 py-2 bg-oro hover:bg-oro/80 text-rojo-sangre text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50"
@@ -313,7 +310,7 @@ export default function FichasArchivadasList({ initialCharacters }: { initialCha
                           <span>RESTAURAR</span>
                         </button>
 
-                        <button 
+                        <button
                           onClick={() => handleDelete(char.id, char.nombre_ninja)}
                           disabled={loadingId === char.id}
                           className="p-2.5 bg-rojo-sangre/10 border border-rojo-sangre/30 hover:bg-rojo-sangre hover:text-white text-rojo-sangre transition-all active:scale-95 disabled:opacity-50 shrink-0"

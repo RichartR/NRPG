@@ -3,19 +3,19 @@
 :root {
   --background: #050309;
   --foreground: #d4d4d4;
-  
+
   /* Naruto Mobile Tokens */
   --oro-principal: #ffe69f;
   --oro-gradiente-top: #ffefd3;
   --oro-sombra: #a5570b;
   --oro-suave: #ffe6ba;
-  
+
   --rojo-sangre: #670909;
   --rojo-oscuro: #320d04;
-  
+
   --negro-primario: #050309;
   --negro-overlay: rgba(0, 0, 0, 0.7);
-  
+
   --gris-texto: #d4d4d4;
   --gris-borde: #d2d2d2;
   --sombra-skill: #2b1002;
@@ -30,13 +30,13 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  
+
   --color-oro: var(--oro-principal);
   --color-oro-soft: var(--oro-suave);
   --color-rojo-sangre: var(--rojo-sangre);
   --color-rojo-oscuro: var(--rojo-oscuro);
   --color-negro-p: var(--negro-primario);
-  
+
   --font-ninja: "Shojumaru", system-ui;
   --font-body: "Noto Sans JP", sans-serif;
 }
@@ -60,6 +60,7 @@ select {
   -webkit-appearance: none !important;
   -moz-appearance: none !important;
 }
+
 select::-ms-expand {
   display: none !important;
 }
@@ -70,6 +71,7 @@ input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
+
 input[type=number] {
   -moz-appearance: textfield;
 }
@@ -83,13 +85,24 @@ input[type=number] {
     transform: scaleY(1.4);
     display: inline-block;
     font-family: var(--font-ninja);
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
   }
 
-  .ninja-clip-xs { clip-path: var(--clip-xs); }
-  .ninja-clip-sm { clip-path: var(--clip-sm); }
-  .ninja-clip-md { clip-path: var(--clip-md); }
-  .ninja-clip-lg { clip-path: var(--clip-lg); }
+  .ninja-clip-xs {
+    clip-path: var(--clip-xs);
+  }
+
+  .ninja-clip-sm {
+    clip-path: var(--clip-sm);
+  }
+
+  .ninja-clip-md {
+    clip-path: var(--clip-md);
+  }
+
+  .ninja-clip-lg {
+    clip-path: var(--clip-lg);
+  }
 
   /* Combined Card Patterns */
   .ninja-card {
@@ -98,11 +111,12 @@ input[type=number] {
     background-position: center;
     @apply backdrop-blur-md relative;
   }
-  
+
   .ninja-card-oro {
-    background-image: radial-gradient(circle at center, rgba(255, 230, 159, 0.05) 0%, transparent 70%), 
-                      linear-gradient(rgba(5, 3, 9, 0.55), rgba(5, 3, 9, 0.55)), 
-                      url('/assets/ui/bg-list.jpg');
+    background-color: #050309;
+    background-image: radial-gradient(circle at center, rgba(255, 230, 159, 0.05) 0%, transparent 70%),
+      linear-gradient(rgba(5, 3, 9, 0.55), rgba(5, 3, 9, 0.55)),
+      url('/assets/ui/bg-list.jpg');
     background-size: cover;
     background-position: center;
     box-shadow: 0 0 30px rgba(255, 230, 159, 0.1);
@@ -125,9 +139,10 @@ input[type=number] {
   }
 
   .ninja-card-rojo {
-    background-image: radial-gradient(circle at center, rgba(103, 9, 9, 0.1) 0%, transparent 70%), 
-                      linear-gradient(rgba(5, 3, 9, 0.55), rgba(5, 3, 9, 0.55)), 
-                      url('/assets/ui/bg-list.jpg');
+    background-color: #050309;
+    background-image: radial-gradient(circle at center, rgba(103, 9, 9, 0.1) 0%, transparent 70%),
+      linear-gradient(rgba(5, 3, 9, 0.55), rgba(5, 3, 9, 0.55)),
+      url('/assets/ui/bg-list.jpg');
     background-size: cover;
     background-position: center;
     box-shadow: 0 0 30px rgba(103, 9, 9, 0.2);
@@ -154,11 +169,11 @@ input[type=number] {
     background-color: rgba(255, 230, 159, 0.02);
     border-color: rgba(255, 230, 159, 0.15);
   }
-  
+
   .ninja-table-header {
     background-color: rgba(255, 230, 159, 0.06);
   }
-  
+
   .ninja-table-body {
     background-color: transparent;
   }
@@ -186,6 +201,7 @@ input[type=number] {
   .ninja-input {
     @apply bg-black/80 border border-oro/20 px-6 py-4 text-oro font-black focus:border-oro/60 focus:bg-black/90 focus:shadow-[0_0_20px_rgba(255,230,159,0.1)] outline-none transition-all uppercase placeholder:text-oro/20;
     clip-path: var(--clip-xs);
+
     &:hover {
       @apply border-oro/40 bg-black/70;
     }
@@ -202,13 +218,16 @@ input[type=number] {
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
   }
+
   .custom-scrollbar::-webkit-scrollbar-track {
     background: var(--negro-primario);
   }
+
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: var(--rojo-sangre);
     border-radius: 0;
   }
+
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #800c0c;
   }
@@ -216,6 +235,7 @@ input[type=number] {
   .hover-ninja {
     transition: all 0.3s ease-in-out;
   }
+
   .hover-ninja:hover {
     transform: scale(1.02);
     filter: brightness(1.1);
@@ -227,6 +247,7 @@ input[type=number] {
       opacity: 0;
       transform: translateY(8px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -241,9 +262,9 @@ input[type=number] {
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
 }
-

@@ -8,29 +8,74 @@ import { CharacterServerService } from '@/services/supabase/character.server.ser
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const messageId = searchParams.get('messageId');
+  const categoria = searchParams.get('categoria')?.toLowerCase();
 
   if (!messageId) {
     return NextResponse.json({ error: 'Falta messageId' }, { status: 400 });
   }
 
+  const token = process.env.DISCORD_BOT_TOKEN;
+
+  // Interceptar IDs simulados (Mocks) para pruebas locales o bases de datos vacías
+  if (messageId === '1' || messageId === '2') {
+    return NextResponse.json({
+      id: messageId,
+      content: messageId === '1'
+        ? "**NOTICIA:** ¡Bienvenidos al nuevo servidor de NRPG! Revisa las secciones para ver las reglas, mapas, sistemas y crear tu primer personaje shinobi."
+        : "**PARCHE:** Ajustes generales de equilibrio, balance de Taijutsu y optimizaciones en la calculadora de combate.",
+      timestamp: new Date().toISOString(),
+      author: {
+        username: "Sistema",
+        avatar: ""
+      }
+    });
+  }
+
   try {
     const supabase = await createClient();
-    const channelId = await MasterServerService.getConfiguracion(supabase, 'discord_history_appearance_channel_id');
-
-    if (!channelId) {
-      throw new Error('Canal de Discord no configurado en el sistema');
+    
+    let configKey = 'discord_history_appearance_channel_id';
+    if (categoria === 'noticia') {
+      configKey = 'discord_news_channel_id';
+    } else if (categoria === 'parche') {
+      configKey = 'discord_patch_channel_id';
+    } else if (categoria === 'evento') {
+      configKey = 'discord_event_channel_id';
     }
 
-    const discordMsg = await getDiscordMessage(channelId, messageId);
+    const channelId = await MasterServerService.getConfiguracion(supabase, configKey);
 
-    // Mensaje no encontrado en Discord (eliminado o canal incorrecto)
-    if (!discordMsg) {
-      return NextResponse.json({ content: null, deleted: true }, { status: 200 });
+    if (!channelId || !token) {
+      console.warn(`[Discord API] Bot token o canal (${configKey}) no configurados. Cargando mock fallback.`);
+      return NextResponse.json({
+        content: "Contenido no disponible (Canal de Discord o token no configurados en el sistema).",
+        timestamp: new Date().toISOString()
+      }, { status: 200 });
     }
 
-    return NextResponse.json(discordMsg);
+    try {
+      const discordMsg = await getDiscordMessage(channelId, messageId);
+
+      // Mensaje no encontrado en Discord (eliminado o canal incorrecto)
+      if (!discordMsg) {
+        return NextResponse.json({
+          content: "Contenido no disponible o mensaje eliminado en Discord.",
+          timestamp: new Date().toISOString()
+        }, { status: 200 });
+      }
+
+      return NextResponse.json(discordMsg);
+    } catch (discordError: any) {
+      console.error(`[Discord API] Error recuperando mensaje ${messageId} en canal ${channelId}:`, discordError.message);
+      
+      // En lugar de arrojar un error 500, devolvemos un 200 con un texto de fallback amigable para el jugador
+      return NextResponse.json({
+        content: "Contenido no disponible (canal de Discord incorrecto, privado o mensaje inexistente).",
+        timestamp: new Date().toISOString()
+      }, { status: 200 });
+    }
   } catch (error: any) {
-    console.error('API Error (GET):', error);
+    console.error('API Error (GET) general:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

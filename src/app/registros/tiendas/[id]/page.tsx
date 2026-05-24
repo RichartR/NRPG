@@ -2,17 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import {
-  ShoppingBag, Sparkles, Plus, Trash2, Edit3, Coins,
-  RotateCcw, X, Check, Loader2, ArrowLeft,
-  Settings, Lock, Search, Filter, AlertCircle, ShoppingCart,
-  ChevronRight, Minus
-} from 'lucide-react';
+import { ShoppingBag, Plus, Trash2, X, Check, Loader2, ArrowLeft, Search, AlertCircle, ChevronRight, Minus } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { AuthService } from '@/services/supabase/auth.service';
 import { MasterService } from '@/services/supabase/master.service';
 import { TiendasService } from '@/services/supabase/tiendas.service';
 import { AdminService } from '@/services/supabase/admin.service';
+import { NinjaSelect } from '@/components/ui/Fields';
 import { Character, Tienda, TiendaObjeto, Glosario } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
@@ -584,18 +580,15 @@ export default function TiendaDetallePage() {
                   {charLoading ? (
                     <Loader2 className="w-5 h-5 animate-spin text-oro" />
                   ) : characters.length > 0 ? (
-                    <select
+                    <NinjaSelect
                       value={selectedChar?.id || ''}
-                      onChange={(e) => {
-                        const id = Number(e.target.value);
+                      onChange={(val) => {
+                        const id = Number(val);
                         setSelectedChar(characters.find(c => c.id === id) || null);
                       }}
-                      className="ninja-input py-2 text-sm max-w-xs font-black text-oro bg-zinc-950"
-                    >
-                      {characters.map(c => (
-                        <option key={c.id} value={c.id}>{c.nombre_ninja} ({c.rango_jerarquico})</option>
-                      ))}
-                    </select>
+                      placeholder="SELECCIONAR SHINOBI..."
+                      options={characters.map(c => ({ label: `${c.nombre_ninja} (${c.rango_jerarquico})`, value: c.id }))}
+                    />
                   ) : (
                     <p className="text-xs text-red-400 font-bold uppercase tracking-wider flex items-center gap-2">
                       <AlertCircle className="w-4 h-4" />
@@ -669,8 +662,8 @@ export default function TiendaDetallePage() {
                     key={cat.id ?? 'all'}
                     onClick={() => setSelectedCategory(cat.id)}
                     className={`py-3 px-4 text-left text-xs font-black uppercase tracking-widest transition-all ${selectedCategory === cat.id
-                        ? 'bg-oro text-black shadow-lg shadow-oro/10'
-                        : 'border border-oro/5 hover:border-oro/20 text-oro/70 hover:text-oro bg-black/10'
+                      ? 'bg-oro text-black shadow-lg shadow-oro/10'
+                      : 'border border-oro/5 hover:border-oro/20 text-oro/70 hover:text-oro bg-black/10'
                       }`}
                     style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
                   >
@@ -841,8 +834,8 @@ export default function TiendaDetallePage() {
                                   disabled={!canAfford || isLevelBlocked || statPointsToBuy <= 0}
                                   onClick={() => setIsStatBuyConfirmOpen(true)}
                                   className={`w-full py-4 font-black text-xs uppercase tracking-widest flex items-center justify-center transition-all ${canAfford && !isLevelBlocked && statPointsToBuy > 0
-                                      ? 'ninja-btn-oro shadow-lg shadow-oro/5'
-                                      : 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700/50 bg-black/20'
+                                    ? 'ninja-btn-oro shadow-lg shadow-oro/5'
+                                    : 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700/50 bg-black/20'
                                     }`}
                                   style={(!canAfford || isLevelBlocked || statPointsToBuy <= 0) ? { clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' } : undefined}
                                 >
@@ -899,8 +892,8 @@ export default function TiendaDetallePage() {
                                   <div
                                     key={lvl}
                                     className={`flex justify-between items-center p-3 border transition-all text-xs font-bold ${isTargeted
-                                        ? 'border-oro/30 bg-zinc-900/80 shadow-md shadow-oro/5'
-                                        : 'border-oro/5 bg-zinc-950/20'
+                                      ? 'border-oro/30 bg-zinc-900/80 shadow-md shadow-oro/5'
+                                      : 'border-oro/5 bg-zinc-950/20'
                                       }`}
                                     style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
                                   >
@@ -992,8 +985,8 @@ export default function TiendaDetallePage() {
                                       return (
                                         <span
                                           className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-sm border transition-colors ${isMet
-                                              ? 'bg-black/40 border-oro/10 text-oro/80'
-                                              : 'bg-rojo-oscuro/20 border-rojo-sangre/30 text-rojo-sangre'
+                                            ? 'bg-black/40 border-oro/10 text-oro/80'
+                                            : 'bg-rojo-oscuro/20 border-rojo-sangre/30 text-rojo-sangre'
                                             }`}
                                         >
                                           <span>Rango: <strong className="font-black text-oro">{itemReqs.rango}</strong></span>
@@ -1007,8 +1000,8 @@ export default function TiendaDetallePage() {
                                       return (
                                         <span
                                           className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-sm border transition-colors ${isMet
-                                              ? 'bg-black/40 border-oro/10 text-oro/80'
-                                              : 'bg-rojo-oscuro/20 border-rojo-sangre/30 text-rojo-sangre'
+                                            ? 'bg-black/40 border-oro/10 text-oro/80'
+                                            : 'bg-rojo-oscuro/20 border-rojo-sangre/30 text-rojo-sangre'
                                             }`}
                                         >
                                           <span>Combates: <strong className="font-black text-oro">{itemReqs.combates}</strong></span>
@@ -1027,8 +1020,8 @@ export default function TiendaDetallePage() {
                                           <span
                                             key={k}
                                             className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-sm border transition-colors ${isMet
-                                                ? 'bg-black/40 border-oro/10 text-oro/80'
-                                                : 'bg-rojo-oscuro/20 border-rojo-sangre/30 text-rojo-sangre'
+                                              ? 'bg-black/40 border-oro/10 text-oro/80'
+                                              : 'bg-rojo-oscuro/20 border-rojo-sangre/30 text-rojo-sangre'
                                               }`}
                                           >
                                             <span>{k.toUpperCase()}: <strong className="font-black text-oro">{v}</strong></span>
@@ -1067,8 +1060,8 @@ export default function TiendaDetallePage() {
                               disabled={!allowed}
                               onClick={() => setIsBuyConfirmOpen(obj)}
                               className={`px-5 py-3 font-black text-xs uppercase tracking-widest text-center transition-all ${allowed
-                                  ? 'ninja-btn-oro'
-                                  : 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700/50 bg-black/20'
+                                ? 'ninja-btn-oro'
+                                : 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700/50 bg-black/20'
                                 }`}
                               style={!allowed ? { clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' } : undefined}
                             >
@@ -1237,8 +1230,8 @@ export default function TiendaDetallePage() {
                   type="button"
                   onClick={() => setIsCustomItem(true)}
                   className={`flex-1 py-2 text-xs font-black uppercase tracking-widest border transition-all ${isCustomItem
-                      ? 'bg-oro text-black border-oro'
-                      : 'border-oro/10 text-oro/60 hover:text-oro bg-black/20'
+                    ? 'bg-oro text-black border-oro'
+                    : 'border-oro/10 text-oro/60 hover:text-oro bg-black/20'
                     }`}
                   style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
                 >
@@ -1248,8 +1241,8 @@ export default function TiendaDetallePage() {
                   type="button"
                   onClick={() => setIsCustomItem(false)}
                   className={`flex-1 py-2 text-xs font-black uppercase tracking-widest border transition-all ${!isCustomItem
-                      ? 'bg-oro text-black border-oro'
-                      : 'border-oro/10 text-oro/60 hover:text-oro bg-black/20'
+                    ? 'bg-oro text-black border-oro'
+                    : 'border-oro/10 text-oro/60 hover:text-oro bg-black/20'
                     }`}
                   style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
                 >
@@ -1300,15 +1293,16 @@ export default function TiendaDetallePage() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <label className="block text-xs font-black text-oro/60 uppercase tracking-widest">Categoría de Ficha</label>
-                      <select
+                      <NinjaSelect
                         value={formCustomGlosario.categoria_id}
-                        onChange={(e) => setFormCustomGlosario({ ...formCustomGlosario, categoria_id: Number(e.target.value) })}
-                        className="ninja-input py-2 w-full bg-zinc-950"
-                      >
-                        <option value={2}>Objetos (Inventario)</option>
-                        <option value={1}>Técnicas Shinobi</option>
-                        <option value={4}>Pasivas & Mejoras</option>
-                      </select>
+                        onChange={(val) => setFormCustomGlosario({ ...formCustomGlosario, categoria_id: Number(val) })}
+                        placeholder="Seleccionar..."
+                        options={[
+                          { label: 'Objetos (Inventario)', value: 2 },
+                          { label: 'Técnicas Shinobi', value: 1 },
+                          { label: 'Pasivas & Mejoras', value: 4 },
+                        ]}
+                      />
                     </div>
                     <div className="space-y-2">
                       <label className="block text-xs font-black text-oro/60 uppercase tracking-widest">Coste EXP</label>
@@ -1338,21 +1332,15 @@ export default function TiendaDetallePage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="block text-[10px] font-black text-oro/60 uppercase tracking-widest">Rango Requerido</label>
-                        <select
+                        <NinjaSelect
                           value={formCustomGlosario.requisitos.rango || ''}
-                          onChange={(e) => setFormCustomGlosario({
+                          onChange={(val) => setFormCustomGlosario({
                             ...formCustomGlosario,
-                            requisitos: { ...formCustomGlosario.requisitos, rango: e.target.value || null }
+                            requisitos: { ...formCustomGlosario.requisitos, rango: val || null }
                           })}
-                          className="ninja-input py-2 w-full bg-zinc-950"
-                        >
-                          <option value="">Sin límite</option>
-                          <option value="D">Rango D</option>
-                          <option value="C">Rango C</option>
-                          <option value="B">Rango B</option>
-                          <option value="A">Rango A</option>
-                          <option value="S">Rango S</option>
-                        </select>
+                          placeholder="Sin límite"
+                          options={['D', 'C', 'B', 'A', 'S'].map(r => ({ label: `Rango ${r}`, value: r }))}
+                        />
                       </div>
                       <div className="space-y-2">
                         <label className="block text-[10px] font-black text-oro/60 uppercase tracking-widest">Puntos de Combate</label>
@@ -1376,17 +1364,12 @@ export default function TiendaDetallePage() {
                 <div className="space-y-6 animate-in slide-in-from-top-2 duration-300">
                   <div className="space-y-2">
                     <label className="block text-xs font-black text-oro/60 uppercase tracking-widest">Seleccionar Elemento del Glosario Activo</label>
-                    <select
+                    <NinjaSelect
                       value={selectedGlosarioId || ''}
-                      onChange={(e) => setSelectedGlosarioId(Number(e.target.value))}
-                      className="ninja-input py-2.5 w-full bg-zinc-950 text-oro font-black"
-                      required
-                    >
-                      <option value="">-- Elige un artículo --</option>
-                      {glosarioActivo.map(g => (
-                        <option key={g.id} value={g.id}>{g.nombre_es} ({g.info_glosario_categorias?.nombre || 'Objeto'})</option>
-                      ))}
-                    </select>
+                      onChange={(val) => setSelectedGlosarioId(Number(val))}
+                      placeholder="-- Elige un artículo --"
+                      options={glosarioActivo.map(g => ({ label: `${g.nombre_es} (${g.info_glosario_categorias?.nombre || 'Objeto'})`, value: g.id }))}
+                    />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1445,24 +1428,18 @@ export default function TiendaDetallePage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <label className="block text-[10px] font-black text-oro/60 uppercase tracking-widest">Rango Shinobi</label>
-                            <select
+                            <NinjaSelect
                               value={formObjeto.requisitos_personalizados?.rango || ''}
-                              onChange={(e) => setFormObjeto({
+                              onChange={(val) => setFormObjeto({
                                 ...formObjeto,
                                 requisitos_personalizados: {
                                   ...formObjeto.requisitos_personalizados,
-                                  rango: e.target.value || null
+                                  rango: val || null
                                 }
                               })}
-                              className="ninja-input py-2 w-full bg-zinc-950"
-                            >
-                              <option value="">Cualquiera</option>
-                              <option value="D">Rango D</option>
-                              <option value="C">Rango C</option>
-                              <option value="B">Rango B</option>
-                              <option value="A">Rango A</option>
-                              <option value="S">Rango S</option>
-                            </select>
+                              placeholder="Cualquiera"
+                              options={['D', 'C', 'B', 'A', 'S'].map(r => ({ label: `Rango ${r}`, value: r }))}
+                            />
                           </div>
                           <div className="space-y-2">
                             <label className="block text-[10px] font-black text-oro/60 uppercase tracking-widest">Puntos de Combate</label>

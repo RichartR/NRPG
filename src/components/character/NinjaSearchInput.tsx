@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Search, X } from 'lucide-react';
 
@@ -13,7 +13,7 @@ export function NinjaSearchInput({ placeholder = "Buscar shinobi por nombre...",
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  
+
   const initialQuery = searchParams.get('search') || '';
   const [query, setQuery] = useState(initialQuery);
 
@@ -45,11 +45,10 @@ export function NinjaSearchInput({ placeholder = "Buscar shinobi por nombre...",
         value={query}
         onChange={(e) => handleSearch(e.target.value)}
         placeholder={placeholder}
-        className={`w-full bg-black/80 border ${
-          isRenegado 
-            ? 'border-rojo-sangre/20 focus:border-rojo-sangre/60 focus:ring-1 focus:ring-rojo-sangre/20' 
+        className={`w-full bg-black/80 border ${isRenegado
+            ? 'border-rojo-sangre/20 focus:border-rojo-sangre/60 focus:ring-1 focus:ring-rojo-sangre/20'
             : 'border-oro/20 focus:border-oro/60 focus:ring-1 focus:ring-oro/20'
-        } pl-12 pr-10 py-3 text-xs font-black uppercase tracking-widest text-oro placeholder:text-oro/20 outline-none transition-all`}
+          } pl-12 pr-10 py-3 text-xs font-black uppercase tracking-widest text-oro placeholder:text-oro/20 outline-none transition-all`}
         style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
       />
       {query && (

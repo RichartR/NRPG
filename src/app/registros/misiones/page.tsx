@@ -7,19 +7,23 @@ import { RegistrosService } from '@/services/supabase/registros.service';
 import { Registro } from '@/domain/types';
 import MissionForm from '@/components/registros/MissionForm';
 import MissionTable from '@/components/registros/MissionTable';
-import { ScrollText, ChevronLeft, ChevronRight, Loader2, ArrowLeft, Plus, X } from 'lucide-react';
+import { ScrollText, ChevronLeft, ChevronRight, Plus, Settings, ShieldAlert } from 'lucide-react';
 import { AuthService } from '@/services/supabase/auth.service';
 import { createClient } from '@/utils/supabase/client';
 import { useCharacterStore } from '@/store/useCharacterStore';
+import AdminViewSelector from '@/components/admin/AdminViewSelector';
 
 export default function MisionesPage() {
   const { activeCharacter, fetchActiveCharacter } = useCharacterStore();
-  const [data, setData] = useState<{ list: Registro[], count: number, page: number }>({
-    list: [], count: 0, page: 1
+  const [data, setData] = useState<{ list: Registro[]; count: number; page: number }>({
+    list: [],
+    count: 0,
+    page: 1,
   });
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [viewMode, setViewMode] = useState<'player' | 'admin'>('player');
   const [editingRegistro, setEditingRegistro] = useState<Registro | null>(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -35,7 +39,10 @@ export default function MisionesPage() {
 
   const checkAdmin = async () => {
     try {
-      const { data: { user } } = await AuthService.getUser();
+      const {
+        data: { user },
+      } = await AuthService.getUser();
+
       if (user) {
         const { data: profile } = await createClient().from('profiles').select('role').eq('id', user.id).single();
         setIsAdmin(profile?.role === 'admin');
@@ -48,10 +55,10 @@ export default function MisionesPage() {
   const fetchData = async (page: number) => {
     setLoading(true);
     try {
-      const result = await RegistrosService.getRegistros(page, 15, { 
+      const result = await RegistrosService.getRegistros(page, 15, {
         tipo: 'mision',
         startDate,
-        endDate
+        endDate,
       });
       setData({ list: result.data, count: result.count, page });
     } catch (err) {
@@ -62,125 +69,194 @@ export default function MisionesPage() {
   };
 
   return (
-    <div className="min-h-screen p-4 sm:p-8 xl:p-20 flex flex-col">
-      <div className="max-w-[1750px] mx-auto w-full flex-1">
-        <header className="w-full mb-6 sm:mb-8 ninja-card-oro p-4 sm:p-6 xl:p-8 z-50">
-          <div className="flex flex-col gap-6 w-full">
-            {/* Row 1: Breadcrumbs & Action Button */}
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-b border-oro/10 pb-4 w-full">
-              <div className="w-full sm:w-auto flex-1 min-w-0">
-                <Breadcrumbs 
+    <div className="min-h-screen px-3 py-4 sm:px-6 sm:py-8 xl:px-12 xl:py-12 flex flex-col animate-in fade-in duration-500">
+      <div className="max-w-[1750px] mx-auto w-full flex-1 flex flex-col gap-6 sm:gap-8">
+        <header className="w-full ninja-card-oro p-4 sm:p-6 xl:p-8 z-50">
+          <div className="flex flex-col gap-5 sm:gap-6 w-full">
+            <div className="flex flex-col gap-4 border-b border-oro/10 pb-4 lg:flex-row lg:items-center lg:justify-between w-full">
+              <div className="w-full min-w-0">
+                <Breadcrumbs
                   items={[
                     { label: 'Inicio', href: '/' },
                     { label: 'Registros', href: '/registros' },
-                    { label: 'Misiones' }
-                  ]} 
+                    { label: 'Misiones' },
+                  ]}
                 />
               </div>
-              
-              <button 
+
+              <button
                 onClick={() => setShowForm(true)}
                 disabled={!activeCharacter}
-                title={!activeCharacter ? "Requiere tener un personaje activo en tu ficha shinobi" : undefined}
-                className="flex items-center gap-3 px-6 py-2.5 ninja-btn-oro w-full sm:w-auto justify-center text-xs disabled:opacity-30 disabled:cursor-not-allowed uppercase tracking-widest font-black shrink-0"
+                title={!activeCharacter ? 'Requiere tener un personaje activo en tu ficha shinobi' : undefined}
+                className="flex w-full lg:w-auto items-center justify-center gap-3 px-5 sm:px-6 py-3 ninja-btn-oro text-[10px] sm:text-xs disabled:opacity-30 disabled:cursor-not-allowed uppercase tracking-widest font-black shrink-0"
               >
-                <Plus className="w-4 h-4" /> NUEVA MISIÓN
+                <Plus className="w-4 h-4" /> NUEVA MISION
               </button>
             </div>
 
-            {/* Row 2: Page Identity Title */}
-            <div className="flex items-center justify-center py-2">
-              <div className="flex items-center gap-4 sm:gap-6">
-                <div className="w-2 h-2 bg-rojo-sangre rotate-45" />
-                <h1 className="ninja-title text-3xl sm:text-5xl xl:text-7xl uppercase tracking-[0.3em] leading-none text-center">
+            <div className="flex items-center justify-center py-1 sm:py-2">
+              <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-center">
+                <h1 className="ninja-title text-3xl sm:text-5xl xl:text-7xl uppercase tracking-[0.18em] sm:tracking-[0.3em] leading-none text-center">
                   <span className="text-oro">MISIONES</span>
                 </h1>
-                <div className="w-2 h-2 bg-rojo-sangre rotate-45" />
               </div>
             </div>
           </div>
         </header>
 
-        {(showForm || editingRegistro) ? (
-          <MissionForm 
-            onCreated={() => { setShowForm(false); setEditingRegistro(null); fetchData(data.page); }} 
+        <AdminViewSelector isAdmin={isAdmin} viewMode={viewMode} onViewModeChange={setViewMode} title="Panel de Control de Misiones" />
+
+        {isAdmin && viewMode === 'admin' && !showForm && !editingRegistro && (
+          <section className="ninja-card-oro p-5 sm:p-6 xl:p-10 animate-in slide-in-from-top duration-500">
+            <div className="flex items-center gap-3 mb-5 sm:mb-6 pb-4 border-b border-oro/10">
+              <Settings className="w-5 h-5 text-oro" />
+              <h2 className="text-sm sm:text-base font-black text-oro uppercase tracking-[0.16em] sm:tracking-[0.2em]">Panel de Control Administrativo</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 xl:gap-8">
+              <div
+                className="flex h-full flex-col justify-between gap-4 p-4 sm:p-5 xl:p-6 bg-zinc-950/20 border border-oro/5"
+                style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+              >
+                <div className="space-y-2">
+                  <label className="block text-[10px] sm:text-xs font-black text-oro/60 uppercase tracking-[0.22em] sm:tracking-widest">Misiones Maestras</label>
+                  <p className="text-[11px] sm:text-sm text-gris-texto/70 leading-relaxed">
+                    Edita o crea misiones y sus recompensas en Ryous y EXP.
+                  </p>
+                </div>
+                <Link href="/admin/misiones" className="ninja-btn-oro py-3 px-5 flex items-center justify-center gap-2 text-[10px] sm:text-xs w-full text-center">
+                  <ScrollText className="w-4 h-4 shrink-0" />
+                  <span>Configurar Misiones</span>
+                </Link>
+              </div>
+
+              <div
+                className="flex h-full flex-col justify-between gap-4 p-4 sm:p-5 xl:p-6 bg-zinc-950/20 border border-oro/5"
+                style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+              >
+                <div className="space-y-2">
+                  <label className="block text-[10px] sm:text-xs font-black text-oro/60 uppercase tracking-[0.22em] sm:tracking-widest">Bandeja de Disputas</label>
+                  <p className="text-[11px] sm:text-sm text-gris-texto/70 leading-relaxed">
+                    Revisa, aprueba o rechaza disputas sobre recompensas y reportes de misiones.
+                  </p>
+                </div>
+                <Link href="/admin/disputas" className="ninja-btn-oro py-3 px-5 flex items-center justify-center gap-2 text-[10px] sm:text-xs w-full text-center">
+                  <ShieldAlert className="w-4 h-4 shrink-0" />
+                  <span>Bandeja de Disputas</span>
+                </Link>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {showForm || editingRegistro ? (
+          <MissionForm
+            onCreated={() => {
+              setShowForm(false);
+              setEditingRegistro(null);
+              fetchData(data.page);
+            }}
             initialData={editingRegistro}
           />
         ) : (
-          <div className="space-y-6">
-            <div className="flex flex-wrap items-center gap-6 sm:gap-10 p-6 sm:p-10 ninja-card-oro animate-in fade-in slide-in-from-top-2 duration-500">
-              <div className="flex items-center gap-6">
-                <span className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.3em]">DESDE</span>
-                <input 
-                  type="date" 
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="ninja-input py-2"
-                />
+          <div className="space-y-4 sm:space-y-6">
+            <div className="ninja-card-oro p-4 sm:p-6 xl:p-8 animate-in fade-in slide-in-from-top-2 duration-500">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
+                <div className="flex flex-col gap-2 min-w-0">
+                  <span className="text-[10px] sm:text-xs font-black text-oro/40 uppercase tracking-[0.25em] sm:tracking-[0.3em]">DESDE</span>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="ninja-input w-full py-3 text-sm sm:text-base"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2 min-w-0">
+                  <span className="text-[10px] sm:text-xs font-black text-oro/40 uppercase tracking-[0.25em] sm:tracking-[0.3em]">HASTA</span>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="ninja-input w-full py-3 text-sm sm:text-base"
+                  />
+                </div>
+
+                {(startDate || endDate) && (
+                  <button
+                    onClick={() => {
+                      setStartDate('');
+                      setEndDate('');
+                    }}
+                    className="w-full lg:w-auto justify-self-start text-[10px] sm:text-xs font-black text-rojo-sangre uppercase tracking-[0.25em] sm:tracking-[0.3em] hover:brightness-125 transition-all border-b border-rojo-sangre/30 pb-1 italic"
+                  >
+                    LIMPIAR FILTROS
+                  </button>
+                )}
               </div>
-              <div className="flex items-center gap-6">
-                <span className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.3em]">HASTA</span>
-                <input 
-                  type="date" 
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="ninja-input py-2"
-                />
-              </div>
-              {(startDate || endDate) && (
-                <button 
-                  onClick={() => { setStartDate(''); setEndDate(''); }}
-                  className="text-[10px] xl:text-xs font-black text-rojo-sangre uppercase tracking-[0.3em] hover:brightness-125 transition-all border-b border-rojo-sangre/30 pb-1 italic"
-                >
-                  LIMPIAR FILTROS
-                </button>
-              )}
             </div>
 
-            <div className="bg-transparent space-y-6">
+            <div className="bg-transparent space-y-6 sm:space-y-8">
               {loading ? (
-                <div className="py-60 flex flex-col items-center gap-10">
+                <div className="py-28 sm:py-40 flex flex-col items-center gap-8 sm:gap-10">
                   <div className="relative">
-                    <div className="w-16 h-16 border-4 border-oro/20 border-t-oro rounded-full animate-spin" />
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 border-4 border-oro/20 border-t-oro rounded-full animate-spin" />
                     <div className="absolute inset-0 flex items-center justify-center">
                       <img src="/assets/icons/shuriken.png" className="w-5 h-5 object-contain" alt="Logo" />
                     </div>
                   </div>
-                  <p className="text-oro font-black uppercase tracking-[0.6em] text-sm animate-pulse">Sincronizando Archivos...</p>
+                  <p className="text-center text-oro font-black uppercase tracking-[0.35em] sm:tracking-[0.6em] text-[10px] sm:text-sm animate-pulse">
+                    Sincronizando Archivos...
+                  </p>
                 </div>
               ) : data.list.length > 0 ? (
-                <div className="space-y-10">
-                  <MissionTable 
-                    misiones={data.list} 
-                    onRefresh={() => fetchData(data.page)} 
-                    isAdmin={isAdmin} 
-                    onEdit={(r) => { setEditingRegistro(r); setShowForm(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                <div className="space-y-8 sm:space-y-10">
+                  <MissionTable
+                    misiones={data.list}
+                    onRefresh={() => fetchData(data.page)}
+                    isAdmin={isAdmin}
+                    onEdit={(r) => {
+                      setEditingRegistro(r);
+                      setShowForm(false);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
                   />
-                  
-                  <div className="flex justify-center items-center gap-10 pt-16 border-t border-oro/10">
-                    <button 
-                      disabled={data.page === 1}
-                      onClick={() => fetchData(data.page - 1)}
-                      className="p-5 ninja-btn-oro"
-                    >
-                      <ChevronLeft className="w-7 h-7" />
-                    </button>
-                    <span className="text-xs xl:text-base font-black text-oro uppercase tracking-[0.4em] italic">
-                      PÁGINA <span className="text-oro/40">{data.page}</span> DE <span className="text-oro/40">{Math.ceil(data.count / 15)}</span>
-                    </span>
-                    <button 
-                      disabled={data.list.length < 15 || data.page * 15 >= data.count}
-                      onClick={() => fetchData(data.page + 1)}
-                      className="p-5 ninja-btn-oro"
-                    >
-                      <ChevronRight className="w-7 h-7" />
-                    </button>
+
+                  <div className="flex flex-col items-center gap-5 sm:gap-6 pt-10 sm:pt-16 border-t border-oro/10">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <button
+                        disabled={data.page === 1}
+                        onClick={() => fetchData(data.page - 1)}
+                        className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center ninja-btn-oro"
+                      >
+                        <ChevronLeft className="w-6 h-6 sm:w-7 sm:h-7" />
+                      </button>
+
+                      <div className="flex flex-col items-center px-3 text-center">
+                        <span className="text-[9px] sm:text-[10px] font-black text-oro/40 uppercase tracking-[0.25em] sm:tracking-[0.4em] mb-1">
+                          REGISTROS DE MISION
+                        </span>
+                        <div className="text-[10px] sm:text-sm xl:text-base font-black text-oro uppercase tracking-[0.18em] sm:tracking-[0.2em] italic">
+                          PAGINA <span className="text-oro/40">{data.page}</span> DE <span className="text-oro/40">{Math.ceil(data.count / 15)}</span>
+                        </div>
+                      </div>
+
+                      <button
+                        disabled={data.list.length < 15 || data.page * 15 >= data.count}
+                        onClick={() => fetchData(data.page + 1)}
+                        className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center ninja-btn-oro"
+                      >
+                        <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ) : (
-                <div className="py-60 text-center ninja-card-oro opacity-50">
-                  <ScrollText className="w-24 h-24 text-oro/10 mx-auto mb-8" />
-                  <p className="text-sm xl:text-lg font-black text-oro/20 uppercase tracking-[0.6em] italic">NO HAY MISIONES REGISTRADAS TODAVÍA</p>
+                <div className="py-24 sm:py-40 text-center ninja-card-oro opacity-50">
+                  <ScrollText className="w-16 h-16 sm:w-24 sm:h-24 text-oro/10 mx-auto mb-6 sm:mb-8" />
+                  <p className="text-[10px] sm:text-sm xl:text-lg font-black text-oro/20 uppercase tracking-[0.35em] sm:tracking-[0.6em] italic px-6">
+                    NO HAY MISIONES REGISTRADAS TODAVIA
+                  </p>
                 </div>
               )}
             </div>

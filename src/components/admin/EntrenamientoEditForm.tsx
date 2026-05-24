@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Save, Box, Star, ScrollText } from 'lucide-react';
+import { X, Save, ScrollText, RefreshCw } from 'lucide-react';
 import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { useRouter } from 'next/navigation';
 import { Entrenamiento, RamaClan, SubEspecialidad } from '@/domain/types';
-import { SearchableSelect } from '@/components/ui/Fields';
+import { DataField, SearchableSelect } from '@/components/ui/Fields';
 
 interface Props {
   entrenamiento?: Entrenamiento | null;
@@ -53,105 +53,97 @@ export default function EntrenamientoEditForm({ entrenamiento, ramas, subEspecia
     }
   };
 
+  const isCreate = !entrenamiento;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onCancel} />
-      
-      <div className="relative bg-zinc-950 border border-zinc-800 w-full max-w-2xl rounded-[3rem] shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden">
-        <form onSubmit={handleSubmit} className="p-10 space-y-8">
-          <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-black text-white uppercase tracking-tighter">
-              {entrenamiento ? 'Editar Entrenamiento' : 'Nuevo Entrenamiento'}
-            </h2>
-            <button 
-              type="button" 
-              onClick={onCancel}
-              className="p-3 bg-zinc-900 hover:bg-white hover:text-black rounded-xl transition-all"
-            >
-              <X size={20} />
+    <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-start sm:items-center justify-center p-4 sm:p-6 xl:p-12 overflow-y-auto">
+      <div
+        className="relative w-full max-w-3xl ninja-card-oro p-6 sm:p-10 xl:p-12 my-auto animate-in fade-in zoom-in duration-300"
+      >
+        <div className="absolute top-0 right-0 w-96 h-96 bg-oro/5 rounded-full blur-[100px] -mr-48 -mt-48 pointer-events-none" />
+
+        <header className="flex flex-col sm:flex-row justify-between items-center gap-6 mb-10 relative z-10">
+          <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-4">
+            <div className="p-4 border border-oro/20 bg-oro/10 text-oro ninja-clip-sm shrink-0">
+              <ScrollText className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="ninja-title text-xl sm:text-3xl leading-none">
+                {isCreate ? 'CREAR ENTRENAMIENTO' : 'EDITAR ENTRENAMIENTO'}
+              </h2>
+              <p className="text-[10px] font-black text-oro/40 uppercase tracking-[0.2em] mt-2 italic">Configuración de entrenamientos shinobi</p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+            <label className="flex items-center gap-3 cursor-pointer group bg-oro/5 px-4 py-2 border border-oro/10 hover:border-oro/30 transition-all">
+              <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${formData.activo ? 'text-oro' : 'text-oro/20'}`}>
+                {formData.activo ? 'ACTIVO' : 'INACTIVO'}
+              </span>
+              <input
+                type="checkbox"
+                checked={formData.activo}
+                onChange={(e) => setFormData({ ...formData, activo: e.target.checked })}
+                className="hidden"
+              />
+              <div className={`w-8 h-4 rounded-none transition-all relative ${formData.activo ? 'bg-oro/20 border-oro/40' : 'bg-black/40 border-oro/10'} border`}>
+                <div className={`absolute top-[2px] w-2.5 h-2.5 transition-all ${formData.activo ? 'right-[2px] bg-oro shadow-[0_0_10px_rgba(255,230,159,0.5)]' : 'left-[2px] bg-oro/10'}`} />
+              </div>
+            </label>
+            <button onClick={onCancel} className="p-2 text-oro/40 hover:text-rojo-sangre transition-all hover:rotate-90">
+              <X className="w-8 h-8" />
             </button>
           </div>
+        </header>
 
-          <div className="grid grid-cols-1 gap-6">
-            <div className="bg-zinc-900/50 p-6 rounded-3xl border border-zinc-800 space-y-4">
-              <h3 className="flex items-center gap-2 text-[10px] font-black text-zinc-500 uppercase tracking-widest">
-                <Box size={14} /> Información General
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">Nombre Español</label>
-                  <input 
-                    type="text" 
-                    value={formData.nombre_esp} 
-                    onChange={(e) => setFormData({ ...formData, nombre_esp: e.target.value })}
-                    className="w-full bg-black border border-zinc-800 rounded-2xl px-5 py-3.5 text-white font-bold outline-none focus:border-amber-500 transition-all text-sm"
-                    placeholder="Ej: Entrenamiento de Control de Chakra"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">Nombre Japonés</label>
-                  <input 
-                    type="text" 
-                    value={formData.nombre_jp} 
-                    onChange={(e) => setFormData({ ...formData, nombre_jp: e.target.value })}
-                    className="w-full bg-black border border-zinc-800 rounded-2xl px-5 py-3.5 text-white font-bold outline-none focus:border-amber-500 transition-all text-sm"
-                    placeholder="Ej: Chakura no Torēningu"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-zinc-900/50 p-6 rounded-3xl border border-zinc-800 space-y-4">
-              <h3 className="flex items-center gap-2 text-[10px] font-black text-zinc-500 uppercase tracking-widest">
-                <Star size={14} /> Vinculación
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <SearchableSelect 
-                  label="Rama / Clan" 
-                  value={formData.id_ramaclan} 
-                  options={ramas.map(r => ({ label: r.nombre, value: r.id }))} 
-                  onChange={(v) => setFormData({ ...formData, id_ramaclan: Number(v), id_subespecialidad: null })}
-                />
-
-                <SearchableSelect 
-                  label="Sub-especialidad (Opcional)" 
-                  value={formData.id_subespecialidad} 
-                  disabled={!formData.id_ramaclan}
-                  options={filteredSubs.map(s => ({ label: s.nombre, value: s.id }))} 
-                  onChange={(v) => setFormData({ ...formData, id_subespecialidad: v ? Number(v) : null })}
-                />
-              </div>
-            </div>
-
-            <div className="bg-zinc-900/50 p-6 rounded-3xl border border-zinc-800 flex items-center justify-between">
-              <div className="space-y-1">
-                <h3 className="text-[10px] font-black text-white uppercase tracking-widest">Estado del Entrenamiento</h3>
-                <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-tight">Si está inactivo, los jugadores no podrán verlo.</p>
-              </div>
-              <button 
-                type="button"
-                onClick={() => setFormData({ ...formData, activo: !formData.activo })}
-                className={`px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${
-                  formData.activo 
-                  ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' 
-                  : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
-                }`}
-              >
-                {formData.activo ? 'Activo' : 'Inactivo'}
-              </button>
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <DataField
+              label="Nombre Español"
+              value={formData.nombre_esp}
+              onChange={(v) => setFormData({ ...formData, nombre_esp: v })}
+              placeholder="Ej: Entrenamiento de Control de Chakra"
+            />
+            <DataField
+              label="Nombre Japonés"
+              value={formData.nombre_jp}
+              onChange={(v) => setFormData({ ...formData, nombre_jp: v })}
+              placeholder="Ej: Chakura no Torēningu"
+            />
+            <SearchableSelect
+              label="Rama / Clan Padre"
+              value={formData.id_ramaclan || undefined}
+              options={ramas.map(r => ({ label: r.nombre, value: r.id }))}
+              onChange={(v) => setFormData({ ...formData, id_ramaclan: Number(v), id_subespecialidad: null })}
+              placeholder="Seleccionar Rama / Clan..."
+            />
+            <SearchableSelect
+              label="Sub-especialidad (Opcional)"
+              value={formData.id_subespecialidad || undefined}
+              disabled={!formData.id_ramaclan}
+              options={filteredSubs.map(s => ({ label: s.nombre, value: s.id }))}
+              onChange={(v) => setFormData({ ...formData, id_subespecialidad: v ? Number(v) : null })}
+              placeholder="Ninguna / General"
+            />
           </div>
 
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="w-full bg-white hover:bg-amber-500 text-black py-5 rounded-2xl font-black text-sm uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 shadow-xl shadow-white/5 disabled:opacity-50"
-          >
-            <Save size={20} />
-            {loading ? 'Guardando...' : 'Finalizar y Guardar'}
-          </button>
+          <div className="flex justify-end gap-6 pt-10 border-t border-oro/10">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="ninja-btn-ghost px-10 py-5 text-sm"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="ninja-btn-oro px-12 py-5 text-sm flex items-center justify-center gap-3"
+            >
+              {loading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+              Guardar Entrenamiento
+            </button>
+          </div>
         </form>
       </div>
     </div>

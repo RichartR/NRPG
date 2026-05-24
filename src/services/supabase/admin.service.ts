@@ -60,12 +60,14 @@ export const AdminService = {
   // Documentos y Sistemas
   async saveDocument(doc: Partial<DocumentoSistema>) {
     const supabase = createClient();
-    if (doc.id) {
-      const { data, error } = await supabase.from('info_documentos_sistemas').update(doc).eq('id', doc.id).select().single();
+    const { id, created_at, ...cleanData } = doc as any;
+
+    if (id) {
+      const { data, error } = await supabase.from('info_documentos_sistemas').update(cleanData).eq('id', id).select().single();
       if (error) throw error;
       return data;
     } else {
-      const { data, error } = await supabase.from('info_documentos_sistemas').insert([doc]).select().single();
+      const { data, error } = await supabase.from('info_documentos_sistemas').insert([cleanData]).select().single();
       if (error) throw error;
       return data;
     }
@@ -74,6 +76,28 @@ export const AdminService = {
   async deleteDocument(id: string) {
     const supabase = createClient();
     const { error } = await supabase.from('info_documentos_sistemas').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // Noticias y Eventos
+  async saveNewsItem(item: any) {
+    const supabase = createClient();
+    const { id, created_at, ...cleanData } = item;
+
+    if (id) {
+      const { data, error } = await supabase.from('info_noticias_index').update(cleanData).eq('id', id).select().single();
+      if (error) throw error;
+      return data;
+    } else {
+      const { data, error } = await supabase.from('info_noticias_index').insert([cleanData]).select().single();
+      if (error) throw error;
+      return data;
+    }
+  },
+
+  async deleteNewsItem(id: number) {
+    const supabase = createClient();
+    const { error } = await supabase.from('info_noticias_index').delete().eq('id', id);
     if (error) throw error;
   },
 

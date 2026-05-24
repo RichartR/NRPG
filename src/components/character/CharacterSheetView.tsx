@@ -1,8 +1,8 @@
 'use client';
 
 import {
-  User, Briefcase, Zap, Save, ArrowLeft,
-  Sword, Swords, ScrollText, GitBranch, UserCircle, X, Heart, Trash2, Edit3, ShoppingBag,
+  User, Briefcase, Zap, Save,
+  Sword, Swords, ScrollText, GitBranch, UserCircle, X, Heart, Trash2, Edit3,
   ChevronLeft,
   ChevronRight,
   Image as ImageIcon,
@@ -16,7 +16,7 @@ import { CharacterService } from '@/services/supabase/character.service';
 import { ProfileService } from '@/services/supabase/profile.service';
 import { MasterService } from '@/services/supabase/master.service';
 import { SectionCard } from '@/components/ui/SectionCard';
-import { DataField, SelectField, SearchableSelect } from '@/components/ui/Fields';
+import { DataField, SelectField, SearchableSelect, FormEditContext } from '@/components/ui/Fields';
 import { Character, CharacterStats, Glosario, PersonajeItem, PersonajeTecnica, Registro } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
 import RegistroCard from '@/components/registros/RegistroCard';
@@ -27,7 +27,6 @@ import MissionForm from '@/components/registros/MissionForm';
 import CombatForm from '@/components/registros/CombatForm';
 import { CharacterRadarChart } from './CharacterRadarChart';
 import { useState, useMemo, useEffect, Fragment } from 'react';
-import { RewardLogic } from '@/domain/character/logic';
 import { resolveAldeaIcono } from '@/utils/aldea-icon';
 
 interface CharacterSheetViewProps {
@@ -113,16 +112,14 @@ export function CharacterSheetView({
   }, []);
 
   useEffect(() => {
-    if (isEditing || isNew) {
-      fetch('/api/characters/occupancy')
-        .then(res => res.json())
-        .then(data => {
-          if (data && !data.error) {
-            setOccupancy(data);
-          }
-        })
-        .catch(err => console.error("Error fetching occupancy in CharacterSheetView:", err));
-    }
+    fetch('/api/characters/occupancy')
+      .then(res => res.json())
+      .then(data => {
+        if (data && !data.error) {
+          setOccupancy(data);
+        }
+      })
+      .catch(err => console.error("Error fetching occupancy in CharacterSheetView:", err));
   }, [isEditing, isNew]);
 
   const aldeaOptions = useMemo(() => {
@@ -135,7 +132,7 @@ export function CharacterSheetView({
       const isFull = activeCount >= limit;
       const shouldDisable = isFull && !isOriginalAldea;
 
-      const label = `${a.nombre_completo} (${activeCount}/${limit} cupos)${shouldDisable ? ' - LLENO' : ''}`;
+      const label = `${a.nombre_completo}\n(${activeCount}/${limit} cupos)${shouldDisable ? ' - LLENO' : ''}`;
       return {
         label,
         value: a.id,
@@ -166,7 +163,7 @@ export function CharacterSheetView({
       const shouldDisable = isFull && !isOriginalClan;
 
       const tagEspecial = r.es_especial ? ' [Especial]' : '';
-      const label = `${r.nombre}${tagEspecial} (${activeCount}/${limit} cupos)${shouldDisable ? ' - LLENO' : ''}`;
+      const label = `${r.nombre}${tagEspecial}\n(${activeCount}/${limit} cupos)${shouldDisable ? ' - LLENO' : ''}`;
 
       return {
         label,
@@ -518,7 +515,7 @@ export function CharacterSheetView({
       </div>
       <div className="flex items-center gap-4 px-8 py-4 ninja-card-oro group hover-ninja">
         <div className="w-10 h-10 bg-oro rotate-45 flex items-center justify-center shadow-[0_0_12px_rgba(255,230,159,0.25)]">
-          <span className="text-rojo-sangre font-black -rotate-45 text-[11px] italic">XP</span>
+          <span className="text-rojo-sangre font-black -rotate-45 text-[11px] italic">EXP</span>
         </div>
         <div>
           <p className="text-[9px] font-black text-oro/40 uppercase tracking-[0.3em] mb-1">
@@ -579,7 +576,7 @@ export function CharacterSheetView({
     <SectionCard title="HISTORIAL DE MISIONES" icon={ScrollText} color="oro">
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-6">
         {Object.entries(counts).map(([rank, count]) => (
-          <div key={rank} className="ninja-card-oro p-6 text-center group hover-ninja transition-all">
+          <div key={rank} className="bg-black/40 border border-oro/10 p-6 text-center group hover-ninja transition-all ninja-clip-sm">
             <p className="text-[10px] font-black text-oro/40 uppercase tracking-widest mb-3">RANGO {rank}</p>
             <p className="text-3xl xl:text-5xl font-black text-oro italic leading-none">{count}</p>
           </div>
@@ -590,570 +587,713 @@ export function CharacterSheetView({
 
 
   return (
-    <div className="min-h-screen p-4 sm:p-8 xl:p-20 flex flex-col">
-      {character.activo === false && (
-        <div className="w-full max-w-[1750px] mx-auto mb-6 ninja-card-oro p-6 border-oro/30 bg-black/80 backdrop-blur-md relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-6 shadow-[0_0_50px_rgba(212,175,55,0.15)] animate-in fade-in slide-in-from-top-6 duration-500">
-          <div className="absolute top-0 left-0 w-2 h-full bg-oro"></div>
-          <div className="absolute top-0 right-0 w-96 h-96 bg-oro/5 rounded-full blur-3xl -mr-48 -mt-48 pointer-events-none"></div>
+    <FormEditContext.Provider value={{ isEditing }}>
+      <div className="min-h-screen p-4 sm:p-8 xl:p-20 flex flex-col">
+        {character.activo === false && (
+          <div className="w-full max-w-[1750px] mx-auto mb-6 ninja-card-oro p-6 border-oro/30 bg-black/80 backdrop-blur-md relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-6 shadow-[0_0_50px_rgba(212,175,55,0.15)] animate-in fade-in slide-in-from-top-6 duration-500">
+            <div className="absolute top-0 left-0 w-2 h-full bg-oro"></div>
+            <div className="absolute top-0 right-0 w-96 h-96 bg-oro/5 rounded-full blur-3xl -mr-48 -mt-48 pointer-events-none"></div>
 
-          <div className="flex items-center gap-5 min-w-0 z-10">
-            <div className="w-12 h-12 rounded-full bg-oro/10 border border-oro/30 flex items-center justify-center animate-pulse shrink-0">
-              <ScrollText className="w-6 h-6 text-oro" />
-            </div>
-            <div className="min-w-0">
-              <h3 className="text-oro font-black uppercase tracking-[0.25em] text-sm xl:text-base italic mb-1 flex items-center gap-3">
-                <span>SHINOBI ARCHIVADO / INACTIVO</span>
-                <span className="px-2 py-0.5 text-[8px] font-black uppercase bg-rojo-sangre text-oro tracking-widest ninja-clip-xs">
-                  {character.eliminado_voluntario ? 'VOLUNTARIO' : 'INACTIVIDAD'}
-                </span>
-              </h3>
-              <p className="text-oro/60 text-[10px] xl:text-xs font-bold uppercase tracking-widest leading-relaxed">
-                Este expediente se encuentra fuera de servicio. {character.archived_at && `Archivado el ${new Date(character.archived_at).toLocaleDateString('es-ES')}.`}
-              </p>
-            </div>
-          </div>
-
-          {isAdmin && (
-            <div className="flex flex-wrap items-center gap-4 w-full md:w-auto justify-end z-10 shrink-0">
-              <button
-                onClick={() => onRestore?.()}
-                disabled={saving}
-                className="px-6 py-3 bg-oro text-rojo-sangre hover:bg-oro/80 text-[10px] xl:text-xs font-black uppercase tracking-widest transition-all duration-300 shadow-[0_0_20px_rgba(255,230,159,0.3)] disabled:opacity-50"
-              >
-                RESTAURAR SHINOBI
-              </button>
-              <button
-                onClick={() => onDelete?.(true)}
-                disabled={saving}
-                className="px-6 py-3 bg-rojo-sangre/20 border border-rojo-sangre/40 text-rojo-sangre hover:bg-rojo-sangre hover:text-oro text-[10px] xl:text-xs font-black uppercase tracking-widest transition-all duration-300 disabled:opacity-50"
-              >
-                ELIMINAR DEFINITIVAMENTE
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      <header className="w-full max-w-[1750px] mx-auto mb-6 sm:mb-8 ninja-card-oro p-4 sm:p-8 xl:p-10 z-50">
-        <div className="flex flex-col gap-6 xl:gap-8 w-full">
-
-          {/* Fila 1: Navegación/Breadcrumbs y Botones de Acción */}
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-b border-oro/10 pb-4 w-full">
-            {/* Breadcrumbs */}
-            <div className="w-full sm:w-auto flex-1 min-w-0">
-              <Breadcrumbs
-                items={
-                  isNew
-                    ? [
-                      { label: 'Inicio', href: '/' },
-                      { label: 'Crear Ficha' }
-                    ]
-                    : [
-                      { label: 'Inicio', href: '/' },
-                      { label: 'Mundo Ninja', href: '/mundo-ninja' },
-                      ...(character.aldea_id && character.aldeas
-                        ? [
-                          {
-                            label: character.aldeas.abreviatura || character.aldeas.nombre_completo,
-                            href: `/mundo-ninja/${character.aldea_id}`
-                          }
-                        ]
-                        : character.aldea_id === null
-                          ? [
-                            { label: 'Renegados / Ninjas sin Aldea', href: '/mundo-ninja/renegados' }
-                          ]
-                          : []),
-                      { label: character.nombre_ninja }
-                    ]
-                }
-              />
+            <div className="flex items-center gap-5 min-w-0 z-10">
+              <div className="w-12 h-12 rounded-full bg-oro/10 border border-oro/30 flex items-center justify-center animate-pulse shrink-0">
+                <ScrollText className="w-6 h-6 text-oro" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-oro font-black uppercase tracking-[0.25em] text-sm xl:text-base italic mb-1 flex items-center gap-3">
+                  <span>SHINOBI ARCHIVADO / INACTIVO</span>
+                  <span className="px-2 py-0.5 text-[8px] font-black uppercase bg-rojo-sangre text-oro tracking-widest ninja-clip-xs">
+                    {character.eliminado_voluntario ? 'VOLUNTARIO' : 'INACTIVIDAD'}
+                  </span>
+                </h3>
+                <p className="text-oro/60 text-[10px] xl:text-xs font-bold uppercase tracking-widest leading-relaxed">
+                  Este expediente se encuentra fuera de servicio. {character.archived_at && `Archivado el ${new Date(character.archived_at).toLocaleDateString('es-ES')}.`}
+                </p>
+              </div>
             </div>
 
-            {/* Botones de Acción (Editar/Guardar/Cancelar/Borrar) */}
-            <div className="flex items-center gap-4 sm:gap-6 w-full sm:w-auto justify-end shrink-0">
-              {!isNew && canEdit && onDelete && (
+            {isAdmin && (
+              <div className="flex flex-wrap items-center gap-4 w-full md:w-auto justify-end z-10 shrink-0">
                 <button
-                  onClick={() => onDelete?.(false)}
-                  className="p-3 text-rojo-sangre hover:scale-105 active:scale-95 hover:brightness-125 transition-all"
-                  title="Borrar Personaje"
-                >
-                  <Trash2 className="w-5 h-5 sm:w-6 sm:h-6" />
-                </button>
-              )}
-
-              {(!isNew && canEdit) && (
-                <button
-                  onClick={() => isEditing ? onCancel() : setIsEditing?.(true)}
-                  className={`px-5 sm:px-8 py-2.5 text-xs sm:text-sm font-black uppercase tracking-widest transition-all ${isEditing ? 'ninja-btn-oro' : 'ninja-btn-ghost'}`}
-                >
-                  {isEditing ? 'CANCELAR' : 'EDITAR FICHA'}
-                </button>
-              )}
-              {(isEditing || isNew) && (
-                <button
-                  onClick={() => onSave()}
+                  onClick={() => onRestore?.()}
                   disabled={saving}
-                  className={`px-6 sm:px-10 py-2.5 sm:py-3.5 text-xs sm:text-sm font-black uppercase tracking-widest transition-all ${isNew ? 'ninja-btn-oro' : 'ninja-btn-rojo'}`}
+                  className="px-6 py-3 bg-oro text-rojo-sangre hover:bg-oro/80 text-[10px] xl:text-xs font-black uppercase tracking-widest transition-all duration-300 shadow-[0_0_20px_rgba(255,230,159,0.3)] disabled:opacity-50"
                 >
-                  {isNew ? 'INICIALIZAR' : 'GUARDAR'}
+                  RESTAURAR SHINOBI
                 </button>
-              )}
-            </div>
-          </div>
-
-          {/* Fila 2: Banner de Identidad del Personaje (Avatar, Nombre y Rango) */}
-          <div className="flex flex-col md:flex-row items-center gap-6 md:gap-10 justify-center md:justify-start text-center md:text-left py-2 w-full">
-            {/* Contenedor del Avatar */}
-            <div className="w-24 h-24 sm:w-32 sm:h-32 shrink-0 flex items-center justify-center relative">
-              <div className="w-full h-full bg-black/40 overflow-hidden flex items-center justify-center ninja-clip-md shadow-2xl">
-                {character.url_img ? (
-                  <img
-                    src={character.url_img}
-                    className="w-full h-full object-cover object-top"
-                    alt="Avatar"
-                  />
-                ) : (
-                  <User className="w-12 h-12 text-oro/20" />
-                )}
-              </div>
-            </div>
-
-            {/* Información del Personaje */}
-            <div className="min-w-0 flex-1 flex flex-col items-center md:items-start w-full md:w-auto">
-              <div className="flex items-center gap-3 mb-2 justify-center md:justify-start">
-                <div className="w-2 h-2 bg-rojo-sangre rotate-45" />
-                <p className="text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.5em]">EXPEDIENTE NINJA OFICIAL</p>
-              </div>
-
-              <h1 className="ninja-title text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl italic break-words leading-tight text-center md:text-left px-2 md:px-0 w-full block">
-                {character.nombre_ninja || (isNew ? 'NUEVO SHINOBI' : '')}
-              </h1>
-
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 sm:gap-6 mt-4">
-                <div className="px-5 py-1.5 sm:px-6 sm:py-2 bg-rojo-sangre text-oro text-[10px] sm:text-xs xl:text-sm font-black uppercase tracking-[0.3em] shadow-lg">
-                  RANGO {character.rango}
-                </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="w-1.5 h-1.5 bg-oro/20 rotate-45" />
-                  <span className="text-oro font-bold text-xs xl:text-base uppercase tracking-widest">{character.rango_jerarquico}</span>
-                  {(aldeaObj?.nombre_completo || character.aldeas?.nombre_completo) && (
-                    <>
-                      <div className="w-1.5 h-1.5 bg-oro/20 rotate-45" />
-                      <span className="text-oro/60 font-bold text-xs xl:text-base uppercase tracking-widest">{aldeaObj?.nombre_completo || character.aldeas?.nombre_completo}</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </header>
-
-      <main className="w-full max-w-[1750px] mx-auto flex-1">
-        <div className="flex flex-nowrap gap-4 xl:gap-8 mb-4 sm:mb-4 justify-start sm:justify-center overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-          {['general', 'ninja', 'inventario', 'tecnicas', 'onrol', 'registros'].map((tab) => {
-            const isActive = activeTab === tab;
-            return (
-              <button
-                key={tab}
-                onClick={() => onSetActiveTab(tab)}
-                className={`px-8 sm:px-12 py-4 text-[11px] xl:text-sm font-black uppercase tracking-widest transition-all duration-300 border ninja-clip-sm shrink-0 relative group ${isActive
-                  ? 'bg-oro text-rojo-sangre border-oro shadow-[0_0_30px_rgba(255,230,159,0.5)]'
-                  : 'bg-black/60 text-oro/30 border-oro/10 hover:border-oro/60 hover:text-oro hover:bg-black/90'
-                  }`}
-              >
-                <span>{tab}</span>
-                {!isActive && (
-                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-oro transition-all duration-300 group-hover:w-[80%]" />
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-
-        {activeTab === 'general' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 animate-fade-in">
-            {/* Columna de Retrato */}
-            <div className="lg:col-span-4 space-y-8 max-w-sm mx-auto lg:max-w-none w-full">
-              <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-t from-oro/20 to-transparent blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
-                <div
-                  onClick={() => {
-                    if (isEditing || isNew) {
-                      setImageUrlInput(character.url_img || '');
-                      setEditingImageKey('character');
-                    }
-                  }}
-                  className={`relative aspect-[3/4] w-full overflow-hidden group flex items-center justify-center bg-black/40 ninja-clip-md ${isEditing || isNew ? 'cursor-pointer' : ''}`}
+                <button
+                  onClick={() => onDelete?.(true)}
+                  disabled={saving}
+                  className="px-6 py-3 bg-rojo-sangre/20 border border-rojo-sangre/40 text-rojo-sangre hover:bg-rojo-sangre hover:text-oro text-[10px] xl:text-xs font-black uppercase tracking-widest transition-all duration-300 disabled:opacity-50"
                 >
-                  {character.url_img ? (
-                    <img
-                      src={character.url_img}
-                      className="w-full h-full object-cover object-top hover:scale-110 transition-transform duration-700"
-                      alt={character.nombre_ninja}
-                    />
-                  ) : (
-                    <User className="w-24 h-24 text-oro/10 group-hover:text-oro/20 transition-colors" />
-                  )}
-                  <div className="absolute bottom-0 left-0 right-0 h-[40%] bg-gradient-to-t from-black/95 via-black/50 to-transparent pointer-events-none"></div>
-
-                  {/* Overlay de Edición */}
-                  {(isEditing || isNew) && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                      <div className="text-center">
-                        <ImageIcon className="w-8 h-8 text-oro mx-auto mb-2" />
-                        <p className="text-[10px] font-black text-oro uppercase tracking-widest">CAMBIAR IMAGEN</p>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between gap-4 z-20">
-                    <div className="min-w-0">
-                      <p className="ninja-title text-lg sm:text-2xl mb-1 truncate">{character.nombre_ninja}</p>
-                      <p className="text-[10px] font-black text-oro/40 uppercase tracking-[0.3em]">{character.rango_jerarquico}</p>
-                    </div>
-                    {iconUrl && (
-                      <div className="shrink-0 transition-transform duration-300 hover:scale-110">
-                        <img
-                          src={iconUrl}
-                          alt={aldeaObj?.nombre_completo || 'Aldea'}
-                          className="w-16 h-16 sm:w-20 sm:h-20 object-contain transition-all duration-300"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
+                  ELIMINAR DEFINITIVAMENTE
+                </button>
               </div>
-
-              {/* Si el usuario tiene url_img propia, mostrarla debajo como miniatura opcional o decorativa */}
-              {(Array.isArray(character.profiles) ? character.profiles[0]?.url_img : character.profiles?.url_img) ? (
-                <div
-                  onClick={() => {
-                    if (isAdmin) {
-                      const profileUrl = Array.isArray(character.profiles) ? character.profiles[0]?.url_img : character.profiles?.url_img;
-                      setImageUrlInput(profileUrl || '');
-                      setEditingImageKey('user');
-                    }
-                  }}
-                  className={`ninja-card-oro p-6 flex items-center gap-6 group transition-all ${isAdmin ? 'cursor-pointer hover:border-oro/40' : ''}`}
-                >
-                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-oro/10 group-hover:border-oro/30 transition-all">
-                    <img
-                      src={(Array.isArray(character.profiles) ? character.profiles[0]?.url_img : character.profiles?.url_img) || undefined}
-                      className="w-full h-full object-cover"
-                      alt="Usuario"
-                    />
-                    {isAdmin && (
-                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Edit3 className="w-4 h-4 text-oro" />
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black text-oro/30 uppercase tracking-widest mb-1">IMAGEN DE JUGADOR</p>
-                    <p className="text-xs font-bold text-oro uppercase">
-                      {isAdmin ? 'HAGA CLIC PARA CAMBIAR' : 'SINCRONIZADA'}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                // Si no tiene imagen de jugador, pero es admin, permitir asignarla
-                isAdmin && (
-                  <div
-                    onClick={() => {
-                      setImageUrlInput('');
-                      setEditingImageKey('user');
-                    }}
-                    className="ninja-card-oro p-6 flex items-center justify-center gap-4 group cursor-pointer hover:border-oro/40 transition-all"
-                  >
-                    <ImageIcon className="w-5 h-5 text-oro/40 group-hover:text-oro transition-colors" />
-                    <span className="text-[10px] font-black text-oro/60 uppercase tracking-widest">ASIGNAR IMAGEN DE JUGADOR</span>
-                  </div>
-                )
-              )}
-            </div>
-
-            <div className="lg:col-span-8 space-y-8">
-              <SectionCard title="INFORMACIÓN DEL JUGADOR" icon={User} color="oro">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                  <DataField
-                    label="USUARIO DISCORD (PLAYER)"
-                    value={
-                      Array.isArray(character.profiles)
-                        ? character.profiles[0]?.username
-                        : character.profiles?.username || (isNew ? 'CARGANDO...' : 'NO VINCULADO')
-                    }
-                    disabled={true}
-                  />
-                  <DataField label="NOMBRE EN HOBBA" value={character.hobba_name} disabled={!isEditing && !isNew} onChange={(v) => onUpdateField('hobba_name', v)} />
-                  <DataField label="TIEMPO EN EL RPG" value={character.tiempo_rpg} disabled={!isEditing && !isNew} onChange={(v) => onUpdateField('tiempo_rpg', v)} />
-                </div>
-              </SectionCard>
-
-              <SectionCard title="PERFIL DEL SHINOBI" icon={UserCircle} color="oro">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <DataField label="NOMBRE NINJA" value={character.nombre_ninja} disabled={!isEditing && !isNew} onChange={(v) => onUpdateField('nombre_ninja', v)} />
-                  <SelectField
-                    label="ALDEA DE ORIGEN"
-                    value={character.aldea_id}
-                    options={aldeaOptions}
-                    disabled={!isEditing && !isNew}
-                    placeholder="SIN ALDEA"
-                    onChange={(v) => onUpdateField('aldea_id', v ? Number(v) : null)}
-                  />
-                  <DataField label="RANGO ACTUAL" value={`RANGO ${character.rango}`} disabled={true} />
-                  <SelectField
-                    label="POSICIÓN JERÁRQUICA"
-                    value={character.rango_jerarquico}
-                    options={masters.rangosJerarquicos || ["ESTUDIANTE", "GENIN", "CHUNIN", "JONIN"]}
-                    disabled={!isEditing && !isNew}
-                    onChange={(v) => onUpdateField('rango_jerarquico', v)}
-                  />
-                </div>
-              </SectionCard>
-
-              <SectionCard title="RAMAS Y ESPECIALIDADES" icon={GitBranch} color="oro">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                  {[1, 2].map(slot => {
-                    const pr = character.personajes_ramas?.find((r: any) => Number(r.slot) === slot);
-                    return (
-                      <div key={slot} className="space-y-6 p-8 bg-black/40 border border-oro/10 relative overflow-hidden ninja-clip-md">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-oro/5 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none" />
-                        <h4 className="text-[10px] font-black text-oro/40 uppercase tracking-[0.3em] mb-4">ESPECIALIDAD SLOT {slot}</h4>
-                        <div className="space-y-6">
-                          <SelectField
-                            label="RAMA / CLAN"
-                            value={pr?.rama_id}
-                            options={getClanOptions(slot)}
-                            disabled={!isEditing && !isNew}
-                            onChange={(v) => {
-                              const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { slot, rama_id: Number(v), sub_especialidad_id: null, id_entrenamiento: null }];
-                              onUpdateField('personajes_ramas', newRamas);
-                            }}
-                          />
-                          {masters.subEspecialidades.some((s: any) => s.rama_id === pr?.rama_id) && (
-                            <SelectField
-                              label="SUB-ESPECIALIDAD"
-                              value={pr?.sub_especialidad_id}
-                              options={masters.subEspecialidades.filter((s: any) => s.rama_id === pr?.rama_id).map((s: any) => ({ label: s.nombre, value: s.id }))}
-                              disabled={!isEditing && !isNew}
-                              onChange={(v) => {
-                                const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { ...pr, slot, rama_id: pr?.rama_id, sub_especialidad_id: v ? Number(v) : null, id_entrenamiento: null }];
-                                onUpdateField('personajes_ramas', newRamas);
-                              }}
-                            />
-                          )}
-                          {canAccessTraining && (
-                            <SelectField
-                              label="ENTRENAMIENTO"
-                              value={pr?.id_entrenamiento}
-                              options={masters.entrenamientos
-                                .filter((e: any) =>
-                                  e.id_ramaclan === pr?.rama_id &&
-                                  (!pr?.sub_especialidad_id ? !e.id_subespecialidad : (e.id_subespecialidad === pr?.sub_especialidad_id || !e.id_subespecialidad))
-                                )
-                                .map((e: any) => ({ label: e.nombre_esp, value: e.id }))
-                              }
-                              disabled={!isEditing && !isNew}
-                              onChange={(v) => {
-                                const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { ...pr, slot, id_entrenamiento: v ? Number(v) : null }];
-                                onUpdateField('personajes_ramas', newRamas);
-                              }}
-                            />
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </SectionCard>
-            </div>
+            )}
           </div>
         )}
 
-        {activeTab === 'ninja' && (
-          <div className="animate-fade-in">
-            <SectionCard
-              title="ATRIBUTOS Y ESTADÍSTICAS"
-              icon={Heart}
-              color="oro"
-              headerAction={
-                <div className="flex flex-col items-end">
-                  <span className="text-[10px] font-black text-oro/40 uppercase tracking-[0.3em] mb-1">Puntos Disponibles</span>
-                  <span className="text-3xl xl:text-5xl font-black text-oro italic">
-                    {puntosLibres}
-                    <span className="text-oro/20 text-sm xl:text-lg ml-2">/ {character.puntos_stats}</span>
-                  </span>
-                </div>
-              }
-            >
-              {/* Gráfico en Radar Dinámico */}
-              <div className="flex justify-center items-center w-full mb-2 border-b border-oro/5 pb-2 -mt-6">
-                <CharacterRadarChart
-                  stats={character.stats_base}
-                  maxVal={10}
+        <header className="w-full max-w-[1750px] mx-auto mb-6 sm:mb-8 ninja-card-oro p-4 sm:p-8 xl:p-10 z-50">
+          <div className="flex flex-col gap-6 xl:gap-8 w-full">
+
+            {/* Fila 1: Navegación/Breadcrumbs y Botones de Acción */}
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-b border-oro/10 pb-4 w-full">
+              {/* Breadcrumbs */}
+              <div className="w-full sm:w-auto flex-1 min-w-0">
+                <Breadcrumbs
+                  items={
+                    isNew
+                      ? [
+                        { label: 'Inicio', href: '/' },
+                        { label: 'Crear Ficha' }
+                      ]
+                      : [
+                        { label: 'Inicio', href: '/' },
+                        { label: 'Mundo Ninja', href: '/mundo-ninja' },
+                        ...(character.aldea_id && character.aldeas
+                          ? [
+                            {
+                              label: character.aldeas.abreviatura || character.aldeas.nombre_completo,
+                              href: `/mundo-ninja/${character.aldea_id}`
+                            }
+                          ]
+                          : character.aldea_id === null
+                            ? [
+                              { label: 'Renegados / Ninjas sin Aldea', href: '/mundo-ninja/renegados' }
+                            ]
+                            : []),
+                        { label: character.nombre_ninja }
+                      ]
+                  }
                 />
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 xl:gap-20">
-                <div className="lg:col-span-7 space-y-10">
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45" />
-                    <h3 className="text-xs xl:text-sm font-black text-oro/60 uppercase tracking-[0.4em]">Estadísticas Base</h3>
+              {/* Botones de Acción (Editar/Guardar/Cancelar/Borrar) */}
+              <div className="flex items-center gap-4 sm:gap-6 w-full sm:w-auto justify-end shrink-0">
+                {!isNew && canEdit && onDelete && (
+                  <button
+                    onClick={() => onDelete?.(false)}
+                    className="p-3 text-rojo-sangre hover:scale-105 active:scale-95 hover:brightness-125 transition-all"
+                    title="Borrar Personaje"
+                  >
+                    <Trash2 className="w-5 h-5 sm:w-6 sm:h-6" />
+                  </button>
+                )}
+
+                {(!isNew && canEdit) && (
+                  <button
+                    onClick={() => isEditing ? onCancel() : setIsEditing?.(true)}
+                    className={`px-5 sm:px-8 py-2.5 text-xs sm:text-sm font-black uppercase tracking-widest transition-all ${isEditing ? 'ninja-btn-oro' : 'ninja-btn-ghost'}`}
+                  >
+                    {isEditing ? 'CANCELAR' : 'EDITAR FICHA'}
+                  </button>
+                )}
+                {(isEditing || isNew) && (
+                  <button
+                    onClick={() => onSave()}
+                    disabled={saving}
+                    className={`px-6 sm:px-10 py-2.5 sm:py-3.5 text-xs sm:text-sm font-black uppercase tracking-widest transition-all ${isNew ? 'ninja-btn-oro' : 'ninja-btn-rojo'}`}
+                  >
+                    {isNew ? 'INICIALIZAR' : 'GUARDAR'}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Fila 2: Banner de Identidad del Personaje (Avatar, Nombre y Rango) */}
+            <div className="flex flex-col md:flex-row items-center gap-6 md:gap-10 justify-center md:justify-start text-center md:text-left py-2 w-full">
+              {/* Contenedor del Avatar */}
+              <div className="w-24 h-24 sm:w-32 sm:h-32 shrink-0 flex items-center justify-center relative">
+                <div className="w-full h-full bg-black/40 overflow-hidden flex items-center justify-center ninja-clip-md shadow-2xl">
+                  {character.url_img ? (
+                    <img
+                      src={character.url_img}
+                      className="w-full h-full object-cover object-top"
+                      alt="Avatar"
+                    />
+                  ) : (
+                    <User className="w-12 h-12 text-oro/20" />
+                  )}
+                </div>
+              </div>
+
+              {/* Información del Personaje */}
+              <div className="min-w-0 flex-1 flex flex-col items-center md:items-start w-full md:w-auto">
+                <div className="flex items-center gap-3 mb-2 justify-center md:justify-start">
+                  <div className="w-2 h-2 bg-rojo-sangre rotate-45" />
+                  <p className="text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.5em]">EXPEDIENTE NINJA</p>
+                </div>
+
+                <h1 className="ninja-title text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl italic break-words leading-tight text-center md:text-left px-2 md:px-0 w-full block">
+                  {character.nombre_ninja || (isNew ? 'NUEVO SHINOBI' : '')}
+                </h1>
+
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 sm:gap-6 mt-4">
+                  <div className="px-5 py-1.5 sm:px-6 sm:py-2 bg-rojo-sangre text-oro text-[10px] sm:text-xs xl:text-sm font-black uppercase tracking-[0.3em] shadow-lg">
+                    RANGO {character.rango}
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
-                    {['NIN', 'GEN', 'TAI', 'SM', 'FUE', 'AGI', 'EST', 'INT'].map((s) => {
-                      const val = character.stats_base[s as keyof CharacterStats] || 0;
-                      const max = masters.rangoRules?.[character.rango]?.stat_max || 10;
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="w-2 h-2 bg-rojo-sangre rotate-45" />
+                    <span className="text-oro font-bold text-xs xl:text-base uppercase tracking-widest">{character.rango_jerarquico}</span>
+                    {(aldeaObj?.nombre_completo || character.aldeas?.nombre_completo) && (
+                      <>
+                        <div className="w-2 h-2 bg-rojo-sangre rotate-45" />
+                        <span className="text-oro/60 font-bold text-xs xl:text-base uppercase tracking-widest">{aldeaObj?.nombre_completo || character.aldeas?.nombre_completo}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </header>
+
+        <main className="w-full max-w-[1750px] mx-auto flex-1">
+          <div className="flex flex-nowrap gap-4 xl:gap-8 mb-4 sm:mb-4 justify-start sm:justify-center overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+            {['general', 'ninja', 'inventario', 'tecnicas', 'onrol', 'registros'].map((tab) => {
+              const isActive = activeTab === tab;
+              return (
+                <button
+                  key={tab}
+                  onClick={() => onSetActiveTab(tab)}
+                  className={`px-8 sm:px-12 py-4 text-[11px] xl:text-sm font-black uppercase tracking-widest transition-all duration-300 border ninja-clip-sm shrink-0 relative group ${isActive
+                    ? 'bg-oro text-rojo-sangre border-oro shadow-[0_0_30px_rgba(255,230,159,0.5)]'
+                    : 'bg-black/60 text-oro/30 border-oro/10 hover:border-oro/60 hover:text-oro hover:bg-black/90'
+                    }`}
+                >
+                  <span>{tab}</span>
+                  {!isActive && (
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-oro transition-all duration-300 group-hover:w-[80%]" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+
+          {activeTab === 'general' && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 animate-fade-in">
+              {/* Columna de Retrato */}
+              <div className="lg:col-span-4 space-y-8 max-w-sm mx-auto lg:max-w-none w-full">
+                <div className="relative group">
+                  <div className="absolute -inset-1 bg-gradient-to-t from-oro/20 to-transparent blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+                  <div
+                    onClick={() => {
+                      if (isEditing || isNew) {
+                        setImageUrlInput(character.url_img || '');
+                        setEditingImageKey('character');
+                      }
+                    }}
+                    className={`relative aspect-[3/4] w-full overflow-hidden group flex items-center justify-center bg-black/40 ninja-clip-md ${isEditing || isNew ? 'cursor-pointer' : ''}`}
+                  >
+                    {character.url_img ? (
+                      <img
+                        src={character.url_img}
+                        className="w-full h-full object-cover object-top hover:scale-110 transition-transform duration-700"
+                        alt={character.nombre_ninja}
+                      />
+                    ) : (
+                      <User className="w-24 h-24 text-oro/10 group-hover:text-oro/20 transition-colors" />
+                    )}
+                    <div className="absolute bottom-0 left-0 right-0 h-[40%] bg-gradient-to-t from-black/95 via-black/50 to-transparent pointer-events-none"></div>
+
+                    {/* Overlay de Edición */}
+                    {(isEditing || isNew) && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                        <div className="text-center">
+                          <ImageIcon className="w-8 h-8 text-oro mx-auto mb-2" />
+                          <p className="text-[10px] font-black text-oro uppercase tracking-widest">CAMBIAR IMAGEN</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between gap-4 z-20">
+                      <div className="min-w-0">
+                        <p className="ninja-title text-lg sm:text-2xl mb-1 truncate">{character.nombre_ninja}</p>
+                        <p className="text-[10px] font-black text-oro/40 uppercase tracking-[0.3em]">{character.rango_jerarquico}</p>
+                      </div>
+                      {iconUrl && (
+                        <div className="shrink-0 transition-transform duration-300 hover:scale-110">
+                          <img
+                            src={iconUrl}
+                            alt={aldeaObj?.nombre_completo || 'Aldea'}
+                            className="w-16 h-16 sm:w-20 sm:h-20 object-contain transition-all duration-300"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Si el usuario tiene url_img propia, mostrarla debajo como miniatura opcional o decorativa */}
+                {(Array.isArray(character.profiles) ? character.profiles[0]?.url_img : character.profiles?.url_img) ? (
+                  <div
+                    onClick={() => {
+                      if (isAdmin) {
+                        const profileUrl = Array.isArray(character.profiles) ? character.profiles[0]?.url_img : character.profiles?.url_img;
+                        setImageUrlInput(profileUrl || '');
+                        setEditingImageKey('user');
+                      }
+                    }}
+                    className={`ninja-card-oro p-6 flex items-center gap-6 group transition-all ${isAdmin ? 'cursor-pointer hover:border-oro/40' : ''}`}
+                  >
+                    <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-oro/10 group-hover:border-oro/30 transition-all">
+                      <img
+                        src={(Array.isArray(character.profiles) ? character.profiles[0]?.url_img : character.profiles?.url_img) || undefined}
+                        className="w-full h-full object-cover"
+                        alt="Usuario"
+                      />
+                      {isAdmin && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Edit3 className="w-4 h-4 text-oro" />
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-oro/30 uppercase tracking-widest mb-1">IMAGEN DE JUGADOR</p>
+                      <p className="text-xs font-bold text-oro uppercase">
+                        {isAdmin ? 'HAGA CLIC PARA CAMBIAR' : 'SINCRONIZADA'}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  // Si no tiene imagen de jugador, pero es admin, permitir asignarla
+                  isAdmin && (
+                    <div
+                      onClick={() => {
+                        setImageUrlInput('');
+                        setEditingImageKey('user');
+                      }}
+                      className="ninja-card-oro p-6 flex items-center justify-center gap-4 group cursor-pointer hover:border-oro/40 transition-all"
+                    >
+                      <ImageIcon className="w-5 h-5 text-oro/40 group-hover:text-oro transition-colors" />
+                      <span className="text-[10px] font-black text-oro/60 uppercase tracking-widest">ASIGNAR IMAGEN DE JUGADOR</span>
+                    </div>
+                  )
+                )}
+              </div>
+
+              <div className="lg:col-span-8 space-y-8">
+                <SectionCard title="INFORMACIÓN DEL JUGADOR" icon={User} color="oro">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <DataField
+                      label="USUARIO DISCORD (PLAYER)"
+                      value={
+                        Array.isArray(character.profiles)
+                          ? character.profiles[0]?.username
+                          : character.profiles?.username || (isNew ? 'CARGANDO...' : 'NO VINCULADO')
+                      }
+                      disabled={true}
+                    />
+                    <DataField label="NOMBRE EN HOBBA" value={character.hobba_name} disabled={!isEditing && !isNew} onChange={(v) => onUpdateField('hobba_name', v)} />
+                    <DataField label="TIEMPO EN EL RPG" value={character.tiempo_rpg} disabled={!isEditing && !isNew} onChange={(v) => onUpdateField('tiempo_rpg', v)} />
+                  </div>
+                </SectionCard>
+
+                <SectionCard title="PERFIL DEL SHINOBI" icon={UserCircle} color="oro">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <DataField label="NOMBRE NINJA" value={character.nombre_ninja} disabled={!isEditing && !isNew} onChange={(v) => onUpdateField('nombre_ninja', v)} />
+                    <SelectField
+                      label="ALDEA DE ORIGEN"
+                      value={character.aldea_id}
+                      options={aldeaOptions}
+                      disabled={!isEditing && !isNew}
+                      placeholder="SIN ALDEA"
+                      onChange={(v) => onUpdateField('aldea_id', v ? Number(v) : null)}
+                    />
+                    <DataField label="RANGO ACTUAL" value={`RANGO ${character.rango}`} disabled={true} />
+                    <SelectField
+                      label="POSICIÓN JERÁRQUICA"
+                      value={character.rango_jerarquico}
+                      options={masters.rangosJerarquicos || ["ESTUDIANTE", "GENIN", "CHUNIN", "JONIN"]}
+                      disabled={!isEditing && !isNew}
+                      onChange={(v) => onUpdateField('rango_jerarquico', v)}
+                    />
+                  </div>
+                </SectionCard>
+
+                <SectionCard title="RAMAS Y ESPECIALIDADES" icon={GitBranch} color="oro">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    {[1, 2].map(slot => {
+                      const pr = character.personajes_ramas?.find((r: any) => Number(r.slot) === slot);
                       return (
-                        <div key={s} className="bg-black/40 border border-oro/10 p-6 flex justify-between items-center relative group hover:border-oro/40 transition-all overflow-hidden" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 0px)' }}>
-                          <div className="absolute top-0 right-0 w-12 h-12 bg-oro/5 rotate-45 -mr-6 -mt-6 pointer-events-none" />
-                          <div className="flex flex-col items-start relative z-10">
-                            <span className="text-xs font-black text-oro/60 uppercase tracking-[0.2em]">{s}</span>
-                            <span className="text-[10px] font-black text-oro/45 mt-0.5 uppercase tracking-wider whitespace-nowrap">LÍMITE: {max}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 relative z-10">
-                            <input
-                              type="number"
-                              value={val}
+                        <div key={slot} className="space-y-6 p-8 bg-black/40 border border-oro/10 relative overflow-hidden ninja-clip-md">
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-oro/5 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none" />
+                          <h4 className="text-[10px] font-black text-oro/40 uppercase tracking-[0.3em] mb-4">ESPECIALIDAD SLOT {slot}</h4>
+                          <div className="space-y-6">
+                            <SelectField
+                              label="RAMA / CLAN"
+                              value={pr?.rama_id}
+                              options={getClanOptions(slot)}
                               disabled={!isEditing && !isNew}
-                              onChange={(e) => onUpdateStat(s as keyof CharacterStats, parseInt(e.target.value) || 0)}
-                              className="bg-transparent text-2xl xl:text-3xl font-black text-oro w-12 text-right outline-none disabled:cursor-default selection:bg-oro/20 leading-none py-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              onChange={(v) => {
+                                const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { slot, rama_id: Number(v), sub_especialidad_id: null, id_entrenamiento: null }];
+                                onUpdateField('personajes_ramas', newRamas);
+                              }}
                             />
-                            {(isEditing || isNew) && (
-                              <div className="flex flex-col gap-0 justify-center items-center select-none">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const newVal = val + 1;
-                                    if (newVal <= max) {
-                                      onUpdateStat(s as keyof CharacterStats, newVal);
-                                    }
-                                  }}
-                                  className="text-oro/40 hover:text-oro active:scale-75 transition-all p-0.5"
-                                  title="Incrementar"
-                                >
-                                  <ChevronUp className="w-3.5 h-3.5 stroke-[3]" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const newVal = val - 1;
-                                    if (newVal >= 0) {
-                                      onUpdateStat(s as keyof CharacterStats, newVal);
-                                    }
-                                  }}
-                                  className="text-oro/40 hover:text-oro active:scale-75 transition-all p-0.5"
-                                  title="Decrementar"
-                                >
-                                  <ChevronDown className="w-3.5 h-3.5 stroke-[3]" />
-                                </button>
-                              </div>
+                            {masters.subEspecialidades.some((s: any) => s.rama_id === pr?.rama_id) && (
+                              <SelectField
+                                label="SUB-ESPECIALIDAD"
+                                value={pr?.sub_especialidad_id}
+                                options={masters.subEspecialidades.filter((s: any) => s.rama_id === pr?.rama_id).map((s: any) => ({ label: s.nombre, value: s.id }))}
+                                disabled={!isEditing && !isNew}
+                                onChange={(v) => {
+                                  const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { ...pr, slot, rama_id: pr?.rama_id, sub_especialidad_id: v ? Number(v) : null, id_entrenamiento: null }];
+                                  onUpdateField('personajes_ramas', newRamas);
+                                }}
+                              />
+                            )}
+                            {canAccessTraining && (
+                              <SelectField
+                                label="ENTRENAMIENTO"
+                                value={pr?.id_entrenamiento}
+                                options={masters.entrenamientos
+                                  .filter((e: any) =>
+                                    e.id_ramaclan === pr?.rama_id &&
+                                    (!pr?.sub_especialidad_id ? !e.id_subespecialidad : (e.id_subespecialidad === pr?.sub_especialidad_id || !e.id_subespecialidad))
+                                  )
+                                  .map((e: any) => ({ label: e.nombre_esp, value: e.id }))
+                                }
+                                disabled={!isEditing && !isNew}
+                                onChange={(v) => {
+                                  const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { ...pr, slot, id_entrenamiento: v ? Number(v) : null }];
+                                  onUpdateField('personajes_ramas', newRamas);
+                                }}
+                              />
                             )}
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                </div>
-
-                <div className="lg:col-span-5 space-y-10 lg:border-l lg:border-oro/5 lg:pl-12 xl:pl-20">
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45" />
-                    <h3 className="text-xs xl:text-sm font-black text-oro/60 uppercase tracking-[0.4em]">Atributos Calculados</h3>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { label: 'VIT', val: character.atributos_derivados.VIT, color: 'text-rojo-sangre' },
-                      { label: 'CH', val: character.atributos_derivados.CH, color: 'text-blue-500' },
-                      { label: 'VEL', val: character.atributos_derivados.VEL, color: 'text-oro' },
-                      { label: 'RES', val: `${character.atributos_derivados.RES}%`, color: 'text-oro/80' },
-                      { label: 'VR', val: character.atributos_derivados.VR, color: 'text-oro/60' },
-                      { label: 'DET', val: character.atributos_derivados.DET, color: 'text-oro/40' },
-                    ].map(attr => (
-                      <div key={attr.label} className="bg-black/60 border border-oro/10 p-6 flex justify-between items-center group hover:border-oro/40 transition-all" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}>
-                        <span className="text-xs font-black text-oro/40 uppercase tracking-[0.2em]">{attr.label}</span>
-                        <span className={`text-2xl xl:text-3xl font-black ${attr.color} italic leading-none`}>
-                          {String(attr.val || 0)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                </SectionCard>
               </div>
-            </SectionCard>
-          </div>
-        )}
-        {activeTab === 'inventario' && (
-          <div className="space-y-8 animate-fade-in">
-            <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} totalPuntosCombate={totalPuntosCombate} xpLimitUsage={masters?.xpLimitUsage} />
-            <SectionCard title="MOCHILA Y PERTENENCIAS" icon={Briefcase} color="oro">
-              <div className="space-y-16">
-                {Object.entries(groupedInventory).map(([catName, subs]: [string, any]) => (
-                  <div key={catName} className="space-y-8">
-                    <div className="flex items-center gap-6">
-                      <h3 className="text-xl xl:text-3xl font-black text-oro uppercase tracking-[0.2em]">{catName}</h3>
-                      <div className="flex-1 h-px bg-oro/10" />
-                    </div>
+            </div>
+          )}
 
-                    <div className="space-y-10">
-                      {Object.entries(subs).map(([subName, items]: [string, any]) => (
-                        <div key={subName} className="space-y-6">
-                          <h4 className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
-                            <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
-                            {subName}
-                          </h4>
-                          <div className="overflow-x-auto rounded-[4px] border border-oro/10 ninja-table-container backdrop-blur-md">
-                            <table className="w-full text-left border-collapse table-fixed min-w-[600px]">
+          {activeTab === 'ninja' && (
+            <div className="animate-fade-in">
+              <SectionCard
+                title="ATRIBUTOS Y ESTADÍSTICAS"
+                icon={Heart}
+                color="oro"
+                headerAction={
+                  <div className="flex flex-col items-end">
+                    <span className="text-[10px] font-black text-oro/40 uppercase tracking-[0.3em] mb-1">Puntos Disponibles</span>
+                    <span className="text-3xl xl:text-5xl font-black text-oro italic">
+                      {puntosLibres}
+                      <span className="text-oro/20 text-sm xl:text-lg ml-2">/ {character.puntos_stats}</span>
+                    </span>
+                  </div>
+                }
+              >
+                {/* Gráfico en Radar Dinámico */}
+                <div className="flex justify-center items-center w-full mb-2 border-b border-oro/5 pb-2 -mt-6">
+                  <CharacterRadarChart
+                    stats={character.stats_base}
+                    maxVal={10}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 xl:gap-20">
+                  <div className="lg:col-span-7 space-y-10">
+                    <div className="flex items-center gap-4 mb-8">
+                      <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45" />
+                      <h3 className="text-xs xl:text-sm font-black text-oro/60 uppercase tracking-[0.4em]">Estadísticas Base</h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                      {['NIN', 'GEN', 'TAI', 'SM', 'FUE', 'AGI', 'EST', 'INT'].map((s) => {
+                        const val = character.stats_base[s as keyof CharacterStats] || 0;
+                        const max = masters.rangoRules?.[character.rango]?.stat_max || 10;
+                        return (
+                          <div key={s} className="bg-black/40 border border-oro/10 p-6 flex justify-between items-center relative group hover:border-oro/40 transition-all overflow-hidden" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 0px)' }}>
+                            <div className="absolute top-0 right-0 w-12 h-12 bg-oro/5 rotate-45 -mr-6 -mt-6 pointer-events-none" />
+                            <div className="flex flex-col items-start relative z-10">
+                              <span className="text-xs font-black text-oro/60 uppercase tracking-[0.2em]">{s}</span>
+                              <span className="text-[10px] font-black text-oro/45 mt-0.5 uppercase tracking-wider whitespace-nowrap">LÍMITE: {max}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 relative z-10">
+                              <input
+                                type="number"
+                                value={val}
+                                disabled={!isEditing && !isNew}
+                                onChange={(e) => onUpdateStat(s as keyof CharacterStats, parseInt(e.target.value) || 0)}
+                                className="bg-transparent text-2xl xl:text-3xl font-black text-oro w-12 text-right outline-none disabled:cursor-default selection:bg-oro/20 leading-none py-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              />
+                              {(isEditing || isNew) && (
+                                <div className="flex flex-col gap-0 justify-center items-center select-none">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newVal = val + 1;
+                                      if (newVal <= max) {
+                                        onUpdateStat(s as keyof CharacterStats, newVal);
+                                      }
+                                    }}
+                                    className="text-oro/40 hover:text-oro active:scale-75 transition-all p-0.5"
+                                    title="Incrementar"
+                                  >
+                                    <ChevronUp className="w-3.5 h-3.5 stroke-[3]" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newVal = val - 1;
+                                      if (newVal >= 0) {
+                                        onUpdateStat(s as keyof CharacterStats, newVal);
+                                      }
+                                    }}
+                                    className="text-oro/40 hover:text-oro active:scale-75 transition-all p-0.5"
+                                    title="Decrementar"
+                                  >
+                                    <ChevronDown className="w-3.5 h-3.5 stroke-[3]" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="lg:col-span-5 space-y-10 lg:border-l lg:border-oro/5 lg:pl-12 xl:pl-20">
+                    <div className="flex items-center gap-4 mb-8">
+                      <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45" />
+                      <h3 className="text-xs xl:text-sm font-black text-oro/60 uppercase tracking-[0.4em]">Atributos Calculados</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { label: 'VIT', val: character.atributos_derivados.VIT, color: 'text-rojo-sangre' },
+                        { label: 'CH', val: character.atributos_derivados.CH, color: 'text-blue-500' },
+                        { label: 'VEL', val: character.atributos_derivados.VEL, color: 'text-oro' },
+                        { label: 'RES', val: `${character.atributos_derivados.RES}%`, color: 'text-oro/80' },
+                        { label: 'VR', val: character.atributos_derivados.VR, color: 'text-oro/60' },
+                        { label: 'DET', val: character.atributos_derivados.DET, color: 'text-oro/40' },
+                      ].map(attr => (
+                        <div key={attr.label} className="bg-black/60 border border-oro/10 p-6 flex justify-between items-center group hover:border-oro/40 transition-all" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}>
+                          <span className="text-xs font-black text-oro/40 uppercase tracking-[0.2em]">{attr.label}</span>
+                          <span className={`text-2xl xl:text-3xl font-black ${attr.color} italic leading-none`}>
+                            {String(attr.val || 0)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </SectionCard>
+            </div>
+          )}
+          {activeTab === 'inventario' && (
+            <div className="space-y-8 animate-fade-in">
+              <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} totalPuntosCombate={totalPuntosCombate} xpLimitUsage={masters?.xpLimitUsage} />
+              <SectionCard title="MOCHILA Y PERTENENCIAS" icon={Briefcase} color="oro">
+                <div className="space-y-16">
+                  {Object.entries(groupedInventory).map(([catName, subs]: [string, any]) => (
+                    <div key={catName} className="space-y-8">
+                      <div className="flex items-center gap-6">
+                        <h3 className="text-xl xl:text-3xl font-black text-oro uppercase tracking-[0.2em]">{catName}</h3>
+                        <div className="flex-1 h-px bg-oro/10" />
+                      </div>
+
+                      <div className="space-y-10">
+                        {Object.entries(subs).map(([subName, items]: [string, any]) => (
+                          <div key={subName} className="space-y-6">
+                            <h4 className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
+                              <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
+                              {subName}
+                            </h4>
+                            <div className="ninja-card-oro p-1 overflow-hidden border border-oro/10">
+                              <div className="overflow-x-auto scrollbar-hide">
+                                <table className="w-full text-left border-collapse table-fixed min-w-[600px]">
+                                  <thead>
+                                    <tr className="border-b border-oro/10 text-oro/70 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em] bg-black/20">
+                                      <th className="py-6 px-8 w-[40%]">Objeto</th>
+                                      <th className="py-6 px-8 w-[45%]">Requisitos</th>
+                                      <th className="py-6 px-8 w-[15%] text-center">Acciones</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-oro/5 bg-black/40">
+                                    {items.map((pi: PersonajeItem, idx: number) => (
+                                      <tr key={`${pi.item_id}-${idx}`} className="hover:bg-oro/5 transition-colors group">
+                                        <td className="py-6 px-8">
+                                          <div className="flex flex-col">
+                                            <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
+                                              {pi.info_glosario?.nombre_es}
+                                              {pi.info_glosario?.es_tienda_exp && (
+                                                <span className="px-1.5 py-0.5 text-[8px] font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
+                                                  EXP SHOP
+                                                </span>
+                                              )}
+                                            </span>
+                                            {pi.info_glosario?.nombre_jp && (
+                                              <span className="text-[10px] text-oro/30 uppercase font-black tracking-tighter mt-0.5">
+                                                {pi.info_glosario?.nombre_jp}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </td>
+                                        <td className="py-6 px-8">
+                                          {renderRequisitos(pi.info_glosario?.requisitos)}
+                                        </td>
+                                        <td className="py-6 px-8 text-center">
+                                          {(isEditing || isNew) && (
+                                            <button
+                                              onClick={() => {
+                                                const isNewlyAdded = !pi.id;
+                                                if (isEditing || isNew) {
+                                                  if (isNewlyAdded) {
+                                                    if (pi.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pi.info_glosario.coste_exp);
+                                                    if (pi.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pi.info_glosario.coste_ryous);
+                                                    if (pi.info_glosario?.requisitos?.combates) onUpdateField('puntos_combate', (character.puntos_combate || 0) + pi.info_glosario.requisitos.combates);
+                                                  }
+                                                  onUpdateField('personajes_inventario', character.personajes_inventario?.filter((i: PersonajeItem) => i.item_id !== pi.item_id));
+                                                } else {
+                                                  onQuickRemoveItem?.(pi);
+                                                }
+                                              }}
+                                              className="p-2 bg-red-600/10 border border-red-600/40 hover:border-red-500 hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
+                                              title="Eliminar Objeto"
+                                            >
+                                              <Trash2 className="w-4 h-4" />
+                                            </button>
+                                          )}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {(canEdit || isNew) && (isEditing || isNew) && (
+                  <div className="mt-20 pt-12 border-t border-oro/10">
+                    <SearchableSelect
+                      label="ADQUIRIR NUEVO OBJETO"
+                      placeholder="BUSCAR EN EL GLOSARIO DE EQUIPO..."
+                      options={(glosarioFiltrado || [])
+                        .filter((i: Glosario) => i.categoria_id === 2 && meetsRequirements(i) && !(character.personajes_inventario || []).some((pi: PersonajeItem) => pi.item_id === i.id))
+                        .map((i: any) => {
+                          const subData = i.info_glosario_subcategorias;
+                          const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'GENERAL';
+                          const pcCostText = ` / ${i.requisitos?.combates || 0} PC`;
+                          return {
+                            label: `${i.nombre_es} (${subName}) — ${i.coste_exp} EXP / ${i.coste_ryous} RYOUS${pcCostText}`,
+                            value: i.id
+                          };
+                        })
+                      }
+                      onChange={(v) => {
+                        const it = (glosarioFiltrado || []).find((i: any) => i.id === Number(v));
+                        const current = character.personajes_inventario || [];
+
+                        if (it && !current.some((i: any) => i.item_id === it.id)) {
+                          const costExp = it.coste_exp || 0;
+                          const costRyous = it.coste_ryous || 0;
+                          const costPC = it.requisitos?.combates || 0;
+                          const currentExp = character.xp || 0;
+                          const currentRyous = character.ryous || 0;
+                          const currentPC = character.puntos_combate || 0;
+
+                          if (currentExp < costExp || currentRyous < costRyous || currentPC < costPC) {
+                            addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP, ${costRyous} RYOUS Y ${costPC} P. COMBATE.`, "error");
+                            return;
+                          }
+
+                          onUpdateField('personajes_inventario', [...current, { item_id: it.id, info_glosario: it }]);
+                          if (costExp > 0) onUpdateField('xp', currentExp - costExp);
+                          if (costRyous > 0) onUpdateField('ryous', currentRyous - costRyous);
+                          if (costPC > 0) onUpdateField('puntos_combate', currentPC - costPC);
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+              </SectionCard>
+            </div>
+          )}
+
+          {activeTab === 'tecnicas' && (
+            <div className="space-y-8 animate-fade-in">
+              <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} totalPuntosCombate={totalPuntosCombate} xpLimitUsage={masters?.xpLimitUsage} />
+
+              {/* SECCIÓN 1: JUTSUS NINJA */}
+              <SectionCard title="JUTSUS" color="oro">
+                {Object.keys(tecnicasGrouped).length === 0 ? (
+                  <div className="py-12 text-center rounded-[4px] border border-oro/10 bg-black/20 text-xs font-black text-oro/30 uppercase tracking-[0.25em]">
+                    No tienes técnicas aprendidas
+                  </div>
+                ) : (
+                  <div className="space-y-10">
+                    {Object.entries(tecnicasGrouped).map(([subName, items]: [string, any]) => (
+                      <div key={subName} className="space-y-6">
+                        <h4 className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
+                          <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
+                          {subName}
+                        </h4>
+                        <div className="ninja-card-oro p-1 overflow-hidden border border-oro/10">
+                          <div className="overflow-x-auto scrollbar-hide">
+                            <table className="w-full text-left border-collapse table-fixed min-w-[700px]">
                               <thead>
-                                <tr className="ninja-table-header text-[10px] font-black uppercase tracking-[0.2em] text-oro border-b border-oro/15">
-                                  <th className="py-4 px-6 w-[40%]">Objeto</th>
-                                  <th className="py-4 px-6 w-[45%]">Requisitos</th>
-                                  <th className="py-4 px-6 w-[15%] text-center">Acciones</th>
+                                <tr className="border-b border-oro/10 text-oro/70 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em]  bg-black/10">
+                                  <th className="py-6 px-8 w-[35%]">Técnica</th>
+                                  <th className="py-6 px-8 w-[15%] text-center">Rango</th>
+                                  <th className="py-6 px-8 w-[35%]">Requisitos</th>
+                                  <th className="py-6 px-8 w-[15%] text-center">Acciones</th>
                                 </tr>
                               </thead>
-                              <tbody className="divide-y divide-oro/5 ninja-table-body">
-                                {items.map((pi: PersonajeItem, idx: number) => (
-                                  <tr key={`${pi.item_id}-${idx}`} className="hover:bg-oro/[0.02] transition-colors">
-                                    <td className="py-4 px-6">
+                              <tbody className="divide-y divide-oro/5 bg-black/40">
+                                {items.map((pt: PersonajeTecnica, idx: number) => (
+                                  <tr key={`${pt.tecnica_id}-${idx}`} className="hover:bg-oro/5 transition-colors group">
+                                    <td className="py-6 px-8">
                                       <div className="flex flex-col">
                                         <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
-                                          {pi.info_glosario?.nombre_es}
-                                          {pi.info_glosario?.es_tienda_exp && (
+                                          {pt.info_glosario?.nombre_es}
+                                          {pt.info_glosario?.es_tienda_exp && (
                                             <span className="px-1.5 py-0.5 text-[8px] font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
                                               EXP SHOP
                                             </span>
                                           )}
                                         </span>
-                                        {pi.info_glosario?.nombre_jp && (
+                                        {pt.info_glosario?.nombre_jp && (
                                           <span className="text-[10px] text-oro/30 uppercase font-black tracking-tighter mt-0.5">
-                                            {pi.info_glosario?.nombre_jp}
+                                            {pt.info_glosario?.nombre_jp}
                                           </span>
                                         )}
                                       </div>
                                     </td>
-                                    <td className="py-4 px-6">
-                                      {renderRequisitos(pi.info_glosario?.requisitos)}
+                                    <td className="py-6 px-8 text-center">
+                                      <span className="inline-block px-2.5 py-1 bg-oro/5 border border-oro/20 text-oro text-xs font-black rounded-sm">
+                                        {pt.info_glosario?.requisitos?.rango || 'D'}
+                                      </span>
                                     </td>
-                                    <td className="py-4 px-6 text-center">
+                                    <td className="py-6 px-8">
+                                      {renderRequisitos(pt.info_glosario?.requisitos)}
+                                    </td>
+                                    <td className="py-6 px-8 text-center">
                                       {(isEditing || isNew) && (
                                         <button
                                           onClick={() => {
-                                            const isNewlyAdded = !pi.id;
+                                            const isNewlyAdded = !pt.id;
                                             if (isEditing || isNew) {
                                               if (isNewlyAdded) {
-                                                if (pi.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pi.info_glosario.coste_exp);
-                                                if (pi.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pi.info_glosario.coste_ryous);
-                                                if (pi.info_glosario?.requisitos?.combates) onUpdateField('puntos_combate', (character.puntos_combate || 0) + pi.info_glosario.requisitos.combates);
+                                                if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
+                                                if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
+                                                if (pt.info_glosario?.requisitos?.combates) onUpdateField('puntos_combate', (character.puntos_combate || 0) + pt.info_glosario.requisitos.combates);
                                               }
-                                              onUpdateField('personajes_inventario', character.personajes_inventario?.filter((i: PersonajeItem) => i.item_id !== pi.item_id));
+                                              onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
                                             } else {
-                                              onQuickRemoveItem?.(pi);
+                                              onQuickRemoveTechnique?.(pt);
                                             }
                                           }}
-                                          className="text-rojo-sangre/60 p-2 hover:bg-rojo-sangre/10 hover:text-rojo-sangre transition-all rounded-[3px]"
+                                          className="p-2 bg-red-600/10 border border-red-600/40 hover:border-red-500 hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
+                                          title="Eliminar Técnica"
                                         >
                                           <Trash2 className="w-4 h-4" />
                                         </button>
@@ -1165,869 +1305,761 @@ export function CharacterSheetView({
                             </table>
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                )}
 
-              {(canEdit || isNew) && (isEditing || isNew) && (
-                <div className="mt-20 pt-12 border-t border-oro/10">
-                  <SearchableSelect
-                    label="ADQUIRIR NUEVO OBJETO"
-                    placeholder="BUSCAR EN EL GLOSARIO DE EQUIPO..."
-                    options={(glosarioFiltrado || [])
-                      .filter((i: Glosario) => i.categoria_id === 2 && meetsRequirements(i) && !(character.personajes_inventario || []).some((pi: PersonajeItem) => pi.item_id === i.id))
-                      .map((i: any) => {
-                        const subData = i.info_glosario_subcategorias;
-                        const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'GENERAL';
-                        const pcCostText = ` / ${i.requisitos?.combates || 0} PC`;
-                        return {
-                          label: `${i.nombre_es} (${subName}) — ${i.coste_exp} EXP / ${i.coste_ryous} RYOUS${pcCostText}`,
-                          value: i.id
-                        };
-                      })
-                    }
-                    onChange={(v) => {
-                      const it = (glosarioFiltrado || []).find((i: any) => i.id === Number(v));
-                      const current = character.personajes_inventario || [];
-
-                      if (it && !current.some((i: any) => i.item_id === it.id)) {
-                        const costExp = it.coste_exp || 0;
-                        const costRyous = it.coste_ryous || 0;
-                        const costPC = it.requisitos?.combates || 0;
-                        const currentExp = character.xp || 0;
-                        const currentRyous = character.ryous || 0;
-                        const currentPC = character.puntos_combate || 0;
-
-                        if (currentExp < costExp || currentRyous < costRyous || currentPC < costPC) {
-                          addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP, ${costRyous} RYOUS Y ${costPC} P. COMBATE.`, "error");
-                          return;
-                        }
-
-                        onUpdateField('personajes_inventario', [...current, { item_id: it.id, info_glosario: it }]);
-                        if (costExp > 0) onUpdateField('xp', currentExp - costExp);
-                        if (costRyous > 0) onUpdateField('ryous', currentRyous - costRyous);
-                        if (costPC > 0) onUpdateField('puntos_combate', currentPC - costPC);
+                {(canEdit || isNew) && (isEditing || isNew) && (
+                  <div className="mt-12 pt-12 border-t border-oro/10">
+                    <SearchableSelect
+                      label="APRENDER NUEVA TÉCNICA"
+                      placeholder="BUSCAR JUTSU EN EL GLOSARIO..."
+                      options={(glosarioFiltrado || [])
+                        .filter((i: Glosario) => i.categoria_id === 1 && meetsRequirements(i) && !(character.personajes_tecnicas || []).some((pt: PersonajeTecnica) => pt.tecnica_id === i.id))
+                        .map((t: any) => {
+                          const subData = t.info_glosario_subcategorias;
+                          const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'TÉCNICA';
+                          const pcCostText = ` / ${t.requisitos?.combates || 0} PC`;
+                          return {
+                            label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${pcCostText}`,
+                            value: t.id
+                          };
+                        })
                       }
-                    }}
-                  />
-                </div>
-              )}
-            </SectionCard>
-          </div>
-        )}
+                      onChange={(v) => {
+                        const tec = (glosarioFiltrado || []).find((t: any) => t.id === Number(v));
+                        const current = character.personajes_tecnicas || [];
 
-        {activeTab === 'tecnicas' && (
-          <div className="space-y-8 animate-fade-in">
-            <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} totalPuntosCombate={totalPuntosCombate} xpLimitUsage={masters?.xpLimitUsage} />
+                        if (tec && !current.some((t: any) => t.tecnica_id === tec.id)) {
+                          const costExp = tec.coste_exp || 0;
+                          const costRyous = tec.coste_ryous || 0;
+                          const costPC = tec.requisitos?.combates || 0;
+                          const currentExp = character.xp || 0;
+                          const currentRyous = character.ryous || 0;
+                          const currentPC = character.puntos_combate || 0;
 
-            {/* SECCIÓN 1: ARTES Y JUTSUS NINJA */}
-            <SectionCard title="ARTES Y JUTSUS NINJA" icon={Zap} color="oro">
-              {Object.keys(tecnicasGrouped).length === 0 ? (
-                <div className="py-12 text-center rounded-[4px] border border-oro/10 bg-black/20 text-xs font-black text-oro/30 uppercase tracking-[0.25em]">
-                  No tienes técnicas aprendidas
-                </div>
-              ) : (
-                <div className="space-y-10">
-                  {Object.entries(tecnicasGrouped).map(([subName, items]: [string, any]) => (
-                    <div key={subName} className="space-y-6">
-                      <h4 className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
-                        <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
-                        {subName}
-                      </h4>
-                      <div className="overflow-x-auto rounded-[4px] border border-oro/10 ninja-table-container backdrop-blur-md">
-                        <table className="w-full text-left border-collapse table-fixed min-w-[700px]">
-                          <thead>
-                            <tr className="ninja-table-header text-[10px] font-black uppercase tracking-[0.2em] text-oro border-b border-oro/15">
-                              <th className="py-4 px-6 w-[35%]">Técnica</th>
-                              <th className="py-4 px-6 w-[15%] text-center">Rango</th>
-                              <th className="py-4 px-6 w-[35%]">Requisitos</th>
-                              <th className="py-4 px-6 w-[15%] text-center">Acciones</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-oro/5 ninja-table-body">
-                            {items.map((pt: PersonajeTecnica, idx: number) => (
-                              <tr key={`${pt.tecnica_id}-${idx}`} className="hover:bg-oro/[0.02] transition-colors">
-                                <td className="py-4 px-6">
-                                  <div className="flex flex-col">
-                                    <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
-                                      {pt.info_glosario?.nombre_es}
-                                      {pt.info_glosario?.es_tienda_exp && (
-                                        <span className="px-1.5 py-0.5 text-[8px] font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
-                                          EXP SHOP
+                          if (currentExp < costExp || currentRyous < costRyous || currentPC < costPC) {
+                            addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP, ${costRyous} RYOUS Y ${costPC} P. COMBATE.`, "error");
+                            return;
+                          }
+
+                          onUpdateField('personajes_tecnicas', [...current, { tecnica_id: tec.id, info_glosario: tec }]);
+                          if (costExp > 0) onUpdateField('xp', currentExp - costExp);
+                          if (costRyous > 0) onUpdateField('ryous', currentRyous - costRyous);
+                          if (costPC > 0) onUpdateField('puntos_combate', currentPC - costPC);
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+              </SectionCard>
+
+              {/* SECCIÓN 2: HABILIDADES PASIVAS */}
+              <SectionCard title="HABILIDADES PASIVAS" icon={ScrollText} color="oro">
+                {Object.keys(pasivasGrouped).length === 0 ? (
+                  <div className="py-12 text-center rounded-[4px] border border-oro/10 bg-black/20 text-xs font-black text-oro/30 uppercase tracking-[0.25em]">
+                    No tienes habilidades pasivas
+                  </div>
+                ) : (
+                  <div className="space-y-10">
+                    {Object.entries(pasivasGrouped).map(([subName, items]: [string, any]) => (
+                      <div key={subName} className="space-y-6">
+                        <h4 className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
+                          <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
+                          {subName}
+                        </h4>
+                        <div className="ninja-card-oro p-1 overflow-hidden border border-oro/10">
+                          <div className="overflow-x-auto scrollbar-hide">
+                            <table className="w-full text-left border-collapse table-fixed min-w-[700px]">
+                              <thead>
+                                <tr className="border-b border-oro/10 text-oro/70 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em] bg-black/10">
+                                  <th className="py-6 px-8 w-[35%]">Habilidad Pasiva</th>
+                                  <th className="py-6 px-8 w-[15%] text-center">Rango</th>
+                                  <th className="py-6 px-8 w-[35%]">Requisitos</th>
+                                  <th className="py-6 px-8 w-[15%] text-center">Acciones</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-oro/5 bg-black/40">
+                                {items.map((pt: PersonajeTecnica, idx: number) => (
+                                  <tr key={`${pt.tecnica_id}-${idx}`} className="hover:bg-oro/5 transition-colors group">
+                                    <td className="py-6 px-8">
+                                      <div className="flex flex-col">
+                                        <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
+                                          {pt.info_glosario?.nombre_es}
+                                          {pt.info_glosario?.es_tienda_exp && (
+                                            <span className="px-1.5 py-0.5 text-[8px] font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
+                                              EXP SHOP
+                                            </span>
+                                          )}
                                         </span>
-                                      )}
-                                    </span>
-                                    {pt.info_glosario?.nombre_jp && (
-                                      <span className="text-[10px] text-oro/30 uppercase font-black tracking-tighter mt-0.5">
-                                        {pt.info_glosario?.nombre_jp}
+                                        {pt.info_glosario?.nombre_jp && (
+                                          <span className="text-[10px] text-oro/30 uppercase font-black tracking-tighter mt-0.5">
+                                            {pt.info_glosario?.nombre_jp}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </td>
+                                    <td className="py-6 px-8 text-center">
+                                      <span className="inline-block px-2.5 py-1 bg-oro/5 border border-oro/20 text-oro text-xs font-black rounded-sm">
+                                        {pt.info_glosario?.requisitos?.rango || 'D'}
                                       </span>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="py-4 px-6 text-center">
-                                  <span className="inline-block px-2.5 py-1 bg-oro/5 border border-oro/20 text-oro text-xs font-black rounded-sm">
-                                    {pt.info_glosario?.requisitos?.rango || 'D'}
-                                  </span>
-                                </td>
-                                <td className="py-4 px-6">
-                                  {renderRequisitos(pt.info_glosario?.requisitos)}
-                                </td>
-                                <td className="py-4 px-6 text-center">
-                                  {(isEditing || isNew) && (
-                                    <button
-                                      onClick={() => {
-                                        const isNewlyAdded = !pt.id;
-                                        if (isEditing || isNew) {
-                                          if (isNewlyAdded) {
-                                            if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
-                                            if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
-                                            if (pt.info_glosario?.requisitos?.combates) onUpdateField('puntos_combate', (character.puntos_combate || 0) + pt.info_glosario.requisitos.combates);
-                                          }
-                                          onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
-                                        } else {
-                                          onQuickRemoveTechnique?.(pt);
-                                        }
-                                      }}
-                                      className="text-rojo-sangre/60 p-2 hover:bg-rojo-sangre/10 hover:text-rojo-sangre transition-all rounded-[3px]"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                                    </td>
+                                    <td className="py-6 px-8">
+                                      {renderRequisitos(pt.info_glosario?.requisitos)}
+                                    </td>
+                                    <td className="py-6 px-8 text-center">
+                                      {(isEditing || isNew) && (
+                                        <button
+                                          onClick={() => {
+                                            const isNewlyAdded = !pt.id;
+                                            if (isEditing || isNew) {
+                                              if (isNewlyAdded) {
+                                                if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
+                                                if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
+                                                if (pt.info_glosario?.requisitos?.combates) onUpdateField('puntos_combate', (character.puntos_combate || 0) + pt.info_glosario.requisitos.combates);
+                                              }
+                                              onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
+                                            } else {
+                                              onQuickRemoveTechnique?.(pt);
+                                            }
+                                          }}
+                                          className="p-2 bg-red-600/10 border border-red-600/40 hover:border-red-500 hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
+                                          title="Eliminar Pasiva"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
 
-              {(canEdit || isNew) && (isEditing || isNew) && (
-                <div className="mt-12 pt-12 border-t border-oro/10">
-                  <SearchableSelect
-                    label="APRENDER NUEVA TÉCNICA"
-                    placeholder="BUSCAR JUTSU EN EL GLOSARIO..."
-                    options={(glosarioFiltrado || [])
-                      .filter((i: Glosario) => i.categoria_id === 1 && meetsRequirements(i) && !(character.personajes_tecnicas || []).some((pt: PersonajeTecnica) => pt.tecnica_id === i.id))
-                      .map((t: any) => {
-                        const subData = t.info_glosario_subcategorias;
-                        const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'TÉCNICA';
-                        const pcCostText = ` / ${t.requisitos?.combates || 0} PC`;
-                        return {
-                          label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${pcCostText}`,
-                          value: t.id
-                        };
-                      })
-                    }
-                    onChange={(v) => {
-                      const tec = (glosarioFiltrado || []).find((t: any) => t.id === Number(v));
-                      const current = character.personajes_tecnicas || [];
-
-                      if (tec && !current.some((t: any) => t.tecnica_id === tec.id)) {
-                        const costExp = tec.coste_exp || 0;
-                        const costRyous = tec.coste_ryous || 0;
-                        const costPC = tec.requisitos?.combates || 0;
-                        const currentExp = character.xp || 0;
-                        const currentRyous = character.ryous || 0;
-                        const currentPC = character.puntos_combate || 0;
-
-                        if (currentExp < costExp || currentRyous < costRyous || currentPC < costPC) {
-                          addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP, ${costRyous} RYOUS Y ${costPC} P. COMBATE.`, "error");
-                          return;
-                        }
-
-                        onUpdateField('personajes_tecnicas', [...current, { tecnica_id: tec.id, info_glosario: tec }]);
-                        if (costExp > 0) onUpdateField('xp', currentExp - costExp);
-                        if (costRyous > 0) onUpdateField('ryous', currentRyous - costRyous);
-                        if (costPC > 0) onUpdateField('puntos_combate', currentPC - costPC);
+                {(canEdit || isNew) && (isEditing || isNew) && (
+                  <div className="mt-12 pt-12 border-t border-oro/10">
+                    <SearchableSelect
+                      label="APRENDER NUEVA PASIVA"
+                      placeholder="BUSCAR HABILIDAD PASIVA EN EL GLOSARIO..."
+                      options={(glosarioFiltrado || [])
+                        .filter((i: Glosario) => i.categoria_id === 4 && meetsRequirements(i) && !(character.personajes_tecnicas || []).some((pt: PersonajeTecnica) => pt.tecnica_id === i.id))
+                        .map((t: any) => {
+                          const subData = t.info_glosario_subcategorias;
+                          const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'PASIVA';
+                          const pcCostText = ` / ${t.requisitos?.combates || 0} PC`;
+                          return {
+                            label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${pcCostText}`,
+                            value: t.id
+                          };
+                        })
                       }
-                    }}
-                  />
-                </div>
-              )}
-            </SectionCard>
+                      onChange={(v) => {
+                        const tec = (glosarioFiltrado || []).find((t: any) => t.id === Number(v));
+                        const current = character.personajes_tecnicas || [];
 
-            {/* SECCIÓN 2: HABILIDADES PASIVAS */}
-            <SectionCard title="HABILIDADES PASIVAS" icon={ScrollText} color="oro">
-              {Object.keys(pasivasGrouped).length === 0 ? (
-                <div className="py-12 text-center rounded-[4px] border border-oro/10 bg-black/20 text-xs font-black text-oro/30 uppercase tracking-[0.25em]">
-                  No tienes habilidades pasivas
-                </div>
-              ) : (
-                <div className="space-y-10">
-                  {Object.entries(pasivasGrouped).map(([subName, items]: [string, any]) => (
-                    <div key={subName} className="space-y-6">
-                      <h4 className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
-                        <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
-                        {subName}
-                      </h4>
-                      <div className="overflow-x-auto rounded-[4px] border border-oro/10 ninja-table-container backdrop-blur-md">
-                        <table className="w-full text-left border-collapse table-fixed min-w-[700px]">
-                          <thead>
-                            <tr className="ninja-table-header text-[10px] font-black uppercase tracking-[0.2em] text-oro border-b border-oro/15">
-                              <th className="py-4 px-6 w-[35%]">Habilidad Pasiva</th>
-                              <th className="py-4 px-6 w-[15%] text-center">Rango</th>
-                              <th className="py-4 px-6 w-[35%]">Requisitos</th>
-                              <th className="py-4 px-6 w-[15%] text-center">Acciones</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-oro/5 ninja-table-body">
-                            {items.map((pt: PersonajeTecnica, idx: number) => (
-                              <tr key={`${pt.tecnica_id}-${idx}`} className="hover:bg-oro/[0.02] transition-colors">
-                                <td className="py-4 px-6">
-                                  <div className="flex flex-col">
-                                    <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
-                                      {pt.info_glosario?.nombre_es}
-                                      {pt.info_glosario?.es_tienda_exp && (
-                                        <span className="px-1.5 py-0.5 text-[8px] font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
-                                          EXP SHOP
+                        if (tec && !current.some((t: any) => t.tecnica_id === tec.id)) {
+                          const costExp = tec.coste_exp || 0;
+                          const costRyous = tec.coste_ryous || 0;
+                          const costPC = tec.requisitos?.combates || 0;
+                          const currentExp = character.xp || 0;
+                          const currentRyous = character.ryous || 0;
+                          const currentPC = character.puntos_combate || 0;
+
+                          if (currentExp < costExp || currentRyous < costRyous || currentPC < costPC) {
+                            addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP, ${costRyous} RYOUS Y ${costPC} P. COMBATE.`, "error");
+                            return;
+                          }
+
+                          onUpdateField('personajes_tecnicas', [...current, { tecnica_id: tec.id, info_glosario: tec }]);
+                          if (costExp > 0) onUpdateField('xp', currentExp - costExp);
+                          if (costRyous > 0) onUpdateField('ryous', currentRyous - costRyous);
+                          if (costPC > 0) onUpdateField('puntos_combate', currentPC - costPC);
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+              </SectionCard>
+
+              {/* SECCIÓN 3: INVOCACIONES Y KUCHIYOSES */}
+              <SectionCard title="INVOCACIONES Y KUCHIYOSES" icon={Swords} color="oro">
+                {Object.keys(kuchiyosesGrouped).length === 0 ? (
+                  <div className="py-12 text-center rounded-[4px] border border-oro/10 bg-black/20 text-xs font-black text-oro/30 uppercase tracking-[0.25em]">
+                    No tienes ningún pacto kuchiyose
+                  </div>
+                ) : (
+                  <div className="space-y-10">
+                    {Object.entries(kuchiyosesGrouped).map(([subName, items]: [string, any]) => (
+                      <div key={subName} className="space-y-6">
+                        <h4 className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
+                          <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
+                          {subName}
+                        </h4>
+                        <div className="ninja-card-oro p-1 overflow-hidden border border-oro/10">
+                          <div className="overflow-x-auto scrollbar-hide">
+                            <table className="w-full text-left border-collapse table-fixed min-w-[700px]">
+                              <thead>
+                                <tr className="border-b border-oro/10 text-oro/70 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em] bg-black/10">
+                                  <th className="py-6 px-8 w-[35%]">Invocación / Kuchiyose</th>
+                                  <th className="py-6 px-8 w-[15%] text-center">Rango</th>
+                                  <th className="py-6 px-8 w-[35%]">Requisitos</th>
+                                  <th className="py-6 px-8 w-[15%] text-center">Acciones</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-oro/5 bg-black/40">
+                                {items.map((pt: PersonajeTecnica, idx: number) => (
+                                  <tr key={`${pt.tecnica_id}-${idx}`} className="hover:bg-oro/5 transition-colors group">
+                                    <td className="py-6 px-8">
+                                      <div className="flex flex-col">
+                                        <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
+                                          {pt.info_glosario?.nombre_es}
+                                          {pt.info_glosario?.es_tienda_exp && (
+                                            <span className="px-1.5 py-0.5 text-[8px] font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
+                                              EXP SHOP
+                                            </span>
+                                          )}
                                         </span>
-                                      )}
-                                    </span>
-                                    {pt.info_glosario?.nombre_jp && (
-                                      <span className="text-[10px] text-oro/30 uppercase font-black tracking-tighter mt-0.5">
-                                        {pt.info_glosario?.nombre_jp}
+                                        {pt.info_glosario?.nombre_jp && (
+                                          <span className="text-[10px] text-oro/30 uppercase font-black tracking-tighter mt-0.5">
+                                            {pt.info_glosario?.nombre_jp}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </td>
+                                    <td className="py-6 px-8 text-center">
+                                      <span className="inline-block px-2.5 py-1 bg-oro/5 border border-oro/20 text-oro text-xs font-black rounded-sm">
+                                        {pt.info_glosario?.requisitos?.rango || 'D'}
                                       </span>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="py-4 px-6 text-center">
-                                  <span className="inline-block px-2.5 py-1 bg-oro/5 border border-oro/20 text-oro text-xs font-black rounded-sm">
-                                    {pt.info_glosario?.requisitos?.rango || 'D'}
-                                  </span>
-                                </td>
-                                <td className="py-4 px-6">
-                                  {renderRequisitos(pt.info_glosario?.requisitos)}
-                                </td>
-                                <td className="py-4 px-6 text-center">
-                                  {(isEditing || isNew) && (
-                                    <button
-                                      onClick={() => {
-                                        const isNewlyAdded = !pt.id;
-                                        if (isEditing || isNew) {
-                                          if (isNewlyAdded) {
-                                            if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
-                                            if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
-                                            if (pt.info_glosario?.requisitos?.combates) onUpdateField('puntos_combate', (character.puntos_combate || 0) + pt.info_glosario.requisitos.combates);
-                                          }
-                                          onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
-                                        } else {
-                                          onQuickRemoveTechnique?.(pt);
-                                        }
-                                      }}
-                                      className="text-rojo-sangre/60 p-2 hover:bg-rojo-sangre/10 hover:text-rojo-sangre transition-all rounded-[3px]"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {(canEdit || isNew) && (isEditing || isNew) && (
-                <div className="mt-12 pt-12 border-t border-oro/10">
-                  <SearchableSelect
-                    label="APRENDER NUEVA PASIVA"
-                    placeholder="BUSCAR HABILIDAD PASIVA EN EL GLOSARIO..."
-                    options={(glosarioFiltrado || [])
-                      .filter((i: Glosario) => i.categoria_id === 4 && meetsRequirements(i) && !(character.personajes_tecnicas || []).some((pt: PersonajeTecnica) => pt.tecnica_id === i.id))
-                      .map((t: any) => {
-                        const subData = t.info_glosario_subcategorias;
-                        const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'PASIVA';
-                        const pcCostText = ` / ${t.requisitos?.combates || 0} PC`;
-                        return {
-                          label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${pcCostText}`,
-                          value: t.id
-                        };
-                      })
-                    }
-                    onChange={(v) => {
-                      const tec = (glosarioFiltrado || []).find((t: any) => t.id === Number(v));
-                      const current = character.personajes_tecnicas || [];
-
-                      if (tec && !current.some((t: any) => t.tecnica_id === tec.id)) {
-                        const costExp = tec.coste_exp || 0;
-                        const costRyous = tec.coste_ryous || 0;
-                        const costPC = tec.requisitos?.combates || 0;
-                        const currentExp = character.xp || 0;
-                        const currentRyous = character.ryous || 0;
-                        const currentPC = character.puntos_combate || 0;
-
-                        if (currentExp < costExp || currentRyous < costRyous || currentPC < costPC) {
-                          addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP, ${costRyous} RYOUS Y ${costPC} P. COMBATE.`, "error");
-                          return;
-                        }
-
-                        onUpdateField('personajes_tecnicas', [...current, { tecnica_id: tec.id, info_glosario: tec }]);
-                        if (costExp > 0) onUpdateField('xp', currentExp - costExp);
-                        if (costRyous > 0) onUpdateField('ryous', currentRyous - costRyous);
-                        if (costPC > 0) onUpdateField('puntos_combate', currentPC - costPC);
-                      }
-                    }}
-                  />
-                </div>
-              )}
-            </SectionCard>
-
-            {/* SECCIÓN 3: INVOCACIONES Y KUCHIYOSES */}
-            <SectionCard title="INVOCACIONES Y KUCHIYOSES" icon={Swords} color="oro">
-              {Object.keys(kuchiyosesGrouped).length === 0 ? (
-                <div className="py-12 text-center rounded-[4px] border border-oro/10 bg-black/20 text-xs font-black text-oro/30 uppercase tracking-[0.25em]">
-                  No tienes ningún pacto kuchiyose
-                </div>
-              ) : (
-                <div className="space-y-10">
-                  {Object.entries(kuchiyosesGrouped).map(([subName, items]: [string, any]) => (
-                    <div key={subName} className="space-y-6">
-                      <h4 className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
-                        <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
-                        {subName}
-                      </h4>
-                      <div className="overflow-x-auto rounded-[4px] border border-oro/10 ninja-table-container backdrop-blur-md">
-                        <table className="w-full text-left border-collapse table-fixed min-w-[700px]">
-                          <thead>
-                            <tr className="ninja-table-header text-[10px] font-black uppercase tracking-[0.2em] text-oro border-b border-oro/15">
-                              <th className="py-4 px-6 w-[35%]">Invocación / Kuchiyose</th>
-                              <th className="py-4 px-6 w-[15%] text-center">Rango</th>
-                              <th className="py-4 px-6 w-[35%]">Requisitos</th>
-                              <th className="py-4 px-6 w-[15%] text-center">Acciones</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-oro/5 ninja-table-body">
-                            {items.map((pt: PersonajeTecnica, idx: number) => (
-                              <tr key={`${pt.tecnica_id}-${idx}`} className="hover:bg-oro/[0.02] transition-colors">
-                                <td className="py-4 px-6">
-                                  <div className="flex flex-col">
-                                    <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
-                                      {pt.info_glosario?.nombre_es}
-                                      {pt.info_glosario?.es_tienda_exp && (
-                                        <span className="px-1.5 py-0.5 text-[8px] font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
-                                          EXP SHOP
-                                        </span>
+                                    </td>
+                                    <td className="py-6 px-8">
+                                      {renderRequisitos(pt.info_glosario?.requisitos)}
+                                    </td>
+                                    <td className="py-6 px-8 text-center">
+                                      {(isEditing || isNew) && (
+                                        <button
+                                          onClick={() => {
+                                            const isNewlyAdded = !pt.id;
+                                            if (isEditing || isNew) {
+                                              if (isNewlyAdded) {
+                                                if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
+                                                if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
+                                                if (pt.info_glosario?.requisitos?.combates) onUpdateField('puntos_combate', (character.puntos_combate || 0) + pt.info_glosario.requisitos.combates);
+                                              }
+                                              onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
+                                            } else {
+                                              onQuickRemoveTechnique?.(pt);
+                                            }
+                                          }}
+                                          className="p-2 bg-red-600/10 border border-red-600/40 hover:border-red-500 hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
+                                          title="Eliminar Invocación"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
                                       )}
-                                    </span>
-                                    {pt.info_glosario?.nombre_jp && (
-                                      <span className="text-[10px] text-oro/30 uppercase font-black tracking-tighter mt-0.5">
-                                        {pt.info_glosario?.nombre_jp}
-                                      </span>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="py-4 px-6 text-center">
-                                  <span className="inline-block px-2.5 py-1 bg-oro/5 border border-oro/20 text-oro text-xs font-black rounded-sm">
-                                    {pt.info_glosario?.requisitos?.rango || 'D'}
-                                  </span>
-                                </td>
-                                <td className="py-4 px-6">
-                                  {renderRequisitos(pt.info_glosario?.requisitos)}
-                                </td>
-                                <td className="py-4 px-6 text-center">
-                                  {(isEditing || isNew) && (
-                                    <button
-                                      onClick={() => {
-                                        const isNewlyAdded = !pt.id;
-                                        if (isEditing || isNew) {
-                                          if (isNewlyAdded) {
-                                            if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
-                                            if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
-                                            if (pt.info_glosario?.requisitos?.combates) onUpdateField('puntos_combate', (character.puntos_combate || 0) + pt.info_glosario.requisitos.combates);
-                                          }
-                                          onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
-                                        } else {
-                                          onQuickRemoveTechnique?.(pt);
-                                        }
-                                      }}
-                                      className="text-rojo-sangre/60 p-2 hover:bg-rojo-sangre/10 hover:text-rojo-sangre transition-all rounded-[3px]"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
 
-              {(canEdit || isNew) && (isEditing || isNew) && (
-                <div className="mt-12 pt-12 border-t border-oro/10">
-                  <SearchableSelect
-                    label="INVOCAR KUCHIYOSE"
-                    placeholder="BUSCAR KUCHIYOSE EN EL GLOSARIO..."
-                    options={(glosarioFiltrado || [])
-                      .filter((i: Glosario) => i.categoria_id === 3 && meetsRequirements(i) && !(character.personajes_tecnicas || []).some((pt: PersonajeTecnica) => pt.tecnica_id === i.id))
-                      .map((t: any) => {
-                        const subData = t.info_glosario_subcategorias;
-                        const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'KUCHIYOSE';
-                        const pcCostText = ` / ${t.requisitos?.combates || 0} PC`;
-                        return {
-                          label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${pcCostText}`,
-                          value: t.id
-                        };
-                      })
-                    }
-                    onChange={(v) => {
-                      const tec = (glosarioFiltrado || []).find((t: any) => t.id === Number(v));
-                      const current = character.personajes_tecnicas || [];
-
-                      if (tec && !current.some((t: any) => t.tecnica_id === tec.id)) {
-                        const costExp = tec.coste_exp || 0;
-                        const costRyous = tec.coste_ryous || 0;
-                        const costPC = tec.requisitos?.combates || 0;
-                        const currentExp = character.xp || 0;
-                        const currentRyous = character.ryous || 0;
-                        const currentPC = character.puntos_combate || 0;
-
-                        if (currentExp < costExp || currentRyous < costRyous || currentPC < costPC) {
-                          addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP, ${costRyous} RYOUS Y ${costPC} P. COMBATE.`, "error");
-                          return;
-                        }
-
-                        onUpdateField('personajes_tecnicas', [...current, { tecnica_id: tec.id, info_glosario: tec }]);
-                        if (costExp > 0) onUpdateField('xp', currentExp - costExp);
-                        if (costRyous > 0) onUpdateField('ryous', currentRyous - costRyous);
-                        if (costPC > 0) onUpdateField('puntos_combate', currentPC - costPC);
+                {(canEdit || isNew) && (isEditing || isNew) && (
+                  <div className="mt-12 pt-12 border-t border-oro/10">
+                    <SearchableSelect
+                      label="INVOCAR KUCHIYOSE"
+                      placeholder="BUSCAR KUCHIYOSE EN EL GLOSARIO..."
+                      options={(glosarioFiltrado || [])
+                        .filter((i: Glosario) => i.categoria_id === 3 && meetsRequirements(i) && !(character.personajes_tecnicas || []).some((pt: PersonajeTecnica) => pt.tecnica_id === i.id))
+                        .map((t: any) => {
+                          const subData = t.info_glosario_subcategorias;
+                          const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'KUCHIYOSE';
+                          const pcCostText = ` / ${t.requisitos?.combates || 0} PC`;
+                          return {
+                            label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${pcCostText}`,
+                            value: t.id
+                          };
+                        })
                       }
-                    }}
-                  />
+                      onChange={(v) => {
+                        const tec = (glosarioFiltrado || []).find((t: any) => t.id === Number(v));
+                        const current = character.personajes_tecnicas || [];
+
+                        if (tec && !current.some((t: any) => t.tecnica_id === tec.id)) {
+                          const costExp = tec.coste_exp || 0;
+                          const costRyous = tec.coste_ryous || 0;
+                          const costPC = tec.requisitos?.combates || 0;
+                          const currentExp = character.xp || 0;
+                          const currentRyous = character.ryous || 0;
+                          const currentPC = character.puntos_combate || 0;
+
+                          if (currentExp < costExp || currentRyous < costRyous || currentPC < costPC) {
+                            addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP, ${costRyous} RYOUS Y ${costPC} P. COMBATE.`, "error");
+                            return;
+                          }
+
+                          onUpdateField('personajes_tecnicas', [...current, { tecnica_id: tec.id, info_glosario: tec }]);
+                          if (costExp > 0) onUpdateField('xp', currentExp - costExp);
+                          if (costRyous > 0) onUpdateField('ryous', currentRyous - costRyous);
+                          if (costPC > 0) onUpdateField('puntos_combate', currentPC - costPC);
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+              </SectionCard>
+            </div>
+          )}
+
+          {activeTab === 'onrol' && (
+            <div className="space-y-8 animate-fade-in">
+              <SectionCard title="DATOS PERSONALES" icon={User} color="oro">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <DataField label="EDAD" value={character.edad} disabled={!isEditing && !isNew} onChange={(v) => onUpdateField('edad', Number(v))} />
+                  <SelectField label="SEXO" value={character.sexo} options={['MASCULINO', 'FEMENINO']} disabled={!isEditing && !isNew} onChange={(v) => onUpdateField('sexo', v)} />
                 </div>
-              )}
-            </SectionCard>
-          </div>
-        )}
+              </SectionCard>
 
-        {activeTab === 'onrol' && (
-          <div className="space-y-8 animate-fade-in">
-            <SectionCard title="DATOS PERSONALES" icon={User} color="oro">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <DataField label="EDAD" value={character.edad} disabled={!isEditing && !isNew} onChange={(v) => onUpdateField('edad', Number(v))} />
-                <SelectField label="SEXO" value={character.sexo} options={['MASCULINO', 'FEMENINO']} disabled={!isEditing && !isNew} onChange={(v) => onUpdateField('sexo', v)} />
-              </div>
-            </SectionCard>
+              <SectionCard title="DESCRIPCIÓN FÍSICA Y APARIENCIA" icon={Sword} color="oro" headerAction={!isNew && canEdit && isEditing && <button onClick={() => onSave('apariencia')} className="px-8 py-3 bg-oro text-rojo-sangre text-[10px] font-black uppercase tracking-widest active:scale-95 shadow-xl shadow-oro/20" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>Guardar Apariencia</button>}>
+                <div className="relative">
+                  <textarea
+                    value={character.apariencia}
+                    disabled={!isEditing && !isNew}
+                    onChange={(e) => onUpdateField('apariencia', e.target.value)}
+                    maxLength={1800}
+                    className="w-full h-80 bg-black/40 border border-oro/10 p-10 text-oro/80 italic text-xl xl:text-2xl leading-relaxed outline-none focus:border-oro/40 transition-all disabled:opacity-80 resize-none"
+                    placeholder="DESCRIBE LOS RASGOS, VESTIMENTA Y MARCAS DE TU SHINOBI..."
+                    style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' }}
+                  />
+                  {(isEditing || isNew) && (
+                    <div className={`flex justify-end mt-2 text-[10px] font-black uppercase tracking-widest tabular-nums transition-colors ${(character.apariencia?.length || 0) >= 1800 ? 'text-rojo-sangre' :
+                      (character.apariencia?.length || 0) >= 1500 ? 'text-oro/60' : 'text-oro/30'
+                      }`}>
+                      {character.apariencia?.length || 0} / 1800
+                    </div>
+                  )}
+                </div>
+              </SectionCard>
+              <SectionCard title="HISTORIA Y CRÓNICA NINJA" icon={ScrollText} color="oro" headerAction={!isNew && canEdit && isEditing && <button onClick={() => onSave('historia')} className="px-8 py-3 bg-oro text-rojo-sangre text-[10px] font-black uppercase tracking-widest active:scale-95 shadow-xl shadow-oro/20" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>Guardar Historiaa</button>}>
+                <div className="relative">
+                  <textarea
+                    value={character.historia}
+                    disabled={!isEditing && !isNew}
+                    onChange={(e) => onUpdateField('historia', e.target.value)}
+                    maxLength={1800}
+                    className="w-full h-[600px] bg-black/40 border border-oro/10 p-10 text-oro/80 text-xl xl:text-2xl leading-relaxed outline-none focus:border-oro/40 transition-all disabled:opacity-80 resize-none"
+                    placeholder="RELATA LOS ORÍGENES, MOTIVACIONES Y EL CAMINO NINJA DE TU PERSONAJE..."
+                    style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' }}
+                  />
+                  {(isEditing || isNew) && (
+                    <div className={`flex justify-end mt-2 text-[10px] font-black uppercase tracking-widest tabular-nums transition-colors ${(character.historia?.length || 0) >= 1800 ? 'text-rojo-sangre' :
+                      (character.historia?.length || 0) >= 1500 ? 'text-oro/60' : 'text-oro/30'
+                      }`}>
+                      {character.historia?.length || 0} / 1800
+                    </div>
+                  )}
+                </div>
+              </SectionCard>
+            </div>
+          )}
 
-            <SectionCard title="DESCRIPCIÓN FÍSICA Y APARIENCIA" icon={Sword} color="oro" headerAction={!isNew && canEdit && isEditing && <button onClick={() => onSave('apariencia')} className="px-8 py-3 bg-oro text-rojo-sangre text-[10px] font-black uppercase tracking-widest active:scale-95 shadow-xl shadow-oro/20" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>SINCRONIZAR DISCORD</button>}>
-              <textarea
-                value={character.apariencia}
-                disabled={!isEditing && !isNew}
-                onChange={(e) => onUpdateField('apariencia', e.target.value)}
-                className="w-full h-80 bg-black/40 border border-oro/10 p-10 text-oro/80 italic text-xl xl:text-2xl leading-relaxed outline-none focus:border-oro/40 transition-all disabled:opacity-80 resize-none"
-                placeholder="DESCRIBE LOS RASGOS, VESTIMENTA Y MARCAS DE TU SHINOBI..."
-                style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' }}
-              />
-            </SectionCard>
-            <SectionCard title="HISTORIA Y CRÓNICA NINJA" icon={ScrollText} color="oro" headerAction={!isNew && canEdit && isEditing && <button onClick={() => onSave('historia')} className="px-8 py-3 bg-oro text-rojo-sangre text-[10px] font-black uppercase tracking-widest active:scale-95 shadow-xl shadow-oro/20" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>SINCRONIZAR DISCORD</button>}>
-              <textarea
-                value={character.historia}
-                disabled={!isEditing && !isNew}
-                onChange={(e) => onUpdateField('historia', e.target.value)}
-                className="w-full h-[600px] bg-black/40 border border-oro/10 p-10 text-oro/80 text-xl xl:text-2xl leading-relaxed outline-none focus:border-oro/40 transition-all disabled:opacity-80 resize-none"
-                placeholder="RELATA LOS ORÍGENES, MOTIVACIONES Y EL CAMINO NINJA DE TU PERSONAJE..."
-                style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' }}
-              />
-            </SectionCard>
-          </div>
-        )}
+          {activeTab === 'registros' && (
+            <div className="space-y-8 animate-fade-in">
+              <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} totalPuntosCombate={totalPuntosCombate} xpLimitUsage={masters?.xpLimitUsage} />
+              <MissionCounter counts={missionCounts} />
 
-        {activeTab === 'registros' && (
-          <div className="space-y-8 animate-fade-in">
-            <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} totalPuntosCombate={totalPuntosCombate} xpLimitUsage={masters?.xpLimitUsage} />
-            <MissionCounter counts={missionCounts} />
+              {/* Header Row: Subtabs Buttons & Filters */}
+              <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-8">
 
-            {/* Header Row: Subtabs Buttons & Filters */}
-            <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-8">
+                {/* Left Side: Subtabs Buttons (exactly styled like the main sheet tabs menu) */}
+                <div className="flex flex-nowrap gap-4 overflow-x-auto pb-2 lg:pb-0 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+                  {(['mision', 'accion', 'combate'] as const).map(tab => {
+                    const Icon = tab === 'mision' ? ScrollText : tab === 'combate' ? Swords : Zap;
+                    const isActive = registroTab === tab;
 
-              {/* Left Side: Subtabs Buttons (exactly styled like the main sheet tabs menu) */}
-              <div className="flex flex-nowrap gap-4 overflow-x-auto pb-2 lg:pb-0 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-                {(['mision', 'accion', 'combate'] as const).map(tab => {
-                  const Icon = tab === 'mision' ? ScrollText : tab === 'combate' ? Swords : Zap;
-                  const isActive = registroTab === tab;
+                    return (
+                      <button
+                        key={tab}
+                        onClick={() => {
+                          setRegistroTab(tab);
+                          setRecordPage(1);
+                        }}
+                        className={`px-8 sm:px-16 py-4 text-[11px] xl:text-sm font-black uppercase tracking-widest transition-all duration-300 border ninja-clip-sm shrink-0 relative group flex items-center gap-4 ${isActive
+                          ? 'bg-oro text-rojo-sangre border-oro shadow-[0_0_30px_rgba(255,230,159,0.5)]'
+                          : 'bg-black/60 text-oro/30 border-oro/10 hover:border-oro/60 hover:text-oro hover:bg-black/90'
+                          }`}
+                      >
+                        <span>{tab === 'mision' ? 'MISIONES' : tab === 'combate' ? 'COMBATES' : 'ACCIONES'}</span>
+                        {!isActive && (
+                          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-oro transition-all duration-300 group-hover:w-[80%]" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
 
-                  return (
-                    <button
-                      key={tab}
-                      onClick={() => {
-                        setRegistroTab(tab);
+                {/* Right Side: Sleek Date Filters */}
+                <div
+                  className="flex flex-wrap items-center gap-4 sm:gap-6 py-2.5 px-6 bg-black/40 border border-oro/10 relative overflow-hidden"
+                  style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
+                >
+                  {/* Decorative golden details matching theme */}
+                  <div className="absolute top-0 right-0 w-8 h-8 bg-oro/5 rotate-45 -mr-4 -mt-4 pointer-events-none" />
+
+                  <div className="flex items-center gap-3">
+                    <span className="text-[9px] font-black text-oro/40 uppercase tracking-[0.2em]">DESDE</span>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => {
+                        setStartDate(e.target.value);
                         setRecordPage(1);
                       }}
-                      className={`px-8 sm:px-12 py-4 text-[11px] xl:text-sm font-black uppercase tracking-widest transition-all duration-300 border ninja-clip-sm shrink-0 relative group flex items-center gap-4 ${isActive
-                        ? 'bg-oro text-rojo-sangre border-oro shadow-[0_0_30px_rgba(255,230,159,0.5)]'
-                        : 'bg-black/60 text-oro/30 border-oro/10 hover:border-oro/60 hover:text-oro hover:bg-black/90'
-                        }`}
+                      className="py-1.5 px-3 text-xs bg-black/40 border border-oro/15 focus:border-oro/30 focus:bg-black/60 outline-none text-oro font-black transition-all ninja-clip-xs"
+                      style={{ colorScheme: 'dark' }}
+                    />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[9px] font-black text-oro/40 uppercase tracking-[0.2em]">HASTA</span>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => {
+                        setEndDate(e.target.value);
+                        setRecordPage(1);
+                      }}
+                      className="py-1.5 px-3 text-xs bg-black/40 border border-oro/15 focus:border-oro/30 focus:bg-black/60 outline-none text-oro font-black transition-all ninja-clip-xs"
+                      style={{ colorScheme: 'dark' }}
+                    />
+                  </div>
+                  {(startDate || endDate) && (
+                    <button
+                      onClick={() => {
+                        setStartDate('');
+                        setEndDate('');
+                        setRecordPage(1);
+                      }}
+                      className="text-[9px] font-black text-rojo-sangre uppercase tracking-[0.2em] hover:brightness-125 transition-all border-b border-rojo-sangre/30 pb-0.5"
                     >
-                      <Icon className={`w-4 h-4 transition-transform duration-300 ${isActive ? 'scale-110 text-rojo-sangre' : 'group-hover:scale-125 text-oro/30 group-hover:text-oro'}`} />
-                      <span>{tab === 'mision' ? 'MISIONES' : tab === 'combate' ? 'COMBATES' : 'ACCIONES'}</span>
-                      {!isActive && (
-                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-oro transition-all duration-300 group-hover:w-[80%]" />
-                      )}
+                      LIMPIAR FILTROS
                     </button>
-                  );
-                })}
+                  )}
+                </div>
+
               </div>
 
-              {/* Right Side: Sleek Date Filters */}
-              <div
-                className="flex flex-wrap items-center gap-4 sm:gap-6 py-2.5 px-6 bg-black/40 border border-oro/10 relative overflow-hidden"
-                style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
-              >
-                {/* Decorative golden details matching theme */}
-                <div className="absolute top-0 right-0 w-8 h-8 bg-oro/5 rotate-45 -mr-4 -mt-4 pointer-events-none" />
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {(() => {
+                  const records = allRegistros.filter(r => {
+                    if (registroTab === 'mision') return r.tipo === 'mision';
+                    if (registroTab === 'combate') return r.tipo === 'combate';
+                    return r.tipo === 'accion' || r.tipo === 'compra';
+                  });
 
-                <div className="flex items-center gap-3">
-                  <span className="text-[9px] font-black text-oro/40 uppercase tracking-[0.2em]">DESDE</span>
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => {
-                      setStartDate(e.target.value);
-                      setRecordPage(1);
-                    }}
-                    className="ninja-input py-1 px-3 text-xs bg-black/20 border-oro/15 focus:border-oro/30"
-                  />
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-[9px] font-black text-oro/40 uppercase tracking-[0.2em]">HASTA</span>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => {
-                      setEndDate(e.target.value);
-                      setRecordPage(1);
-                    }}
-                    className="ninja-input py-1 px-3 text-xs bg-black/20 border-oro/15 focus:border-oro/30"
-                  />
-                </div>
-                {(startDate || endDate) && (
-                  <button
-                    onClick={() => {
-                      setStartDate('');
-                      setEndDate('');
-                      setRecordPage(1);
-                    }}
-                    className="text-[9px] font-black text-rojo-sangre uppercase tracking-[0.2em] hover:brightness-125 transition-all border-b border-rojo-sangre/30 pb-0.5"
-                  >
-                    LIMPIAR FILTROS
-                  </button>
-                )}
-              </div>
+                  // Filter by date if applicable
+                  const filteredRecords = records.filter((r: any) => {
+                    const date = r.registros?.fecha || r.fecha;
+                    if (!date) return true;
+                    const d = new Date(date).getTime();
+                    if (startDate && d < new Date(startDate).getTime()) return false;
+                    if (endDate && d > new Date(endDate).getTime()) return false;
+                    return true;
+                  });
 
-            </div>
+                  // Paginate
+                  const totalPages = Math.ceil(filteredRecords.length / recordsPerPage);
+                  const currentRecords = filteredRecords.slice((recordPage - 1) * recordsPerPage, recordPage * recordsPerPage);
 
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              {(() => {
-                const records = allRegistros.filter(r => {
-                  if (registroTab === 'mision') return r.tipo === 'mision';
-                  if (registroTab === 'combate') return r.tipo === 'combate';
-                  return r.tipo === 'accion';
-                });
+                  if (currentRecords.length === 0) {
+                    return (
+                      <div className="py-32 text-center ninja-card-oro">
+                        <p className="text-oro/20 font-black uppercase tracking-[0.4em] text-xl">Sin registros en esta categoría</p>
+                      </div>
+                    );
+                  }
 
-                // Filter by date if applicable
-                const filteredRecords = records.filter((r: any) => {
-                  const date = r.registros?.fecha || r.fecha;
-                  if (!date) return true;
-                  const d = new Date(date).getTime();
-                  if (startDate && d < new Date(startDate).getTime()) return false;
-                  if (endDate && d > new Date(endDate).getTime()) return false;
-                  return true;
-                });
-
-                // Paginate
-                const totalPages = Math.ceil(filteredRecords.length / recordsPerPage);
-                const currentRecords = filteredRecords.slice((recordPage - 1) * recordsPerPage, recordPage * recordsPerPage);
-
-                if (currentRecords.length === 0) {
-                  return (
-                    <div className="py-32 text-center ninja-card-oro">
-                      <p className="text-oro/20 font-black uppercase tracking-[0.4em] text-xl">Sin registros en esta categoría</p>
-                    </div>
-                  );
-                }
-
-                if (registroTab === 'mision') {
-                  const misionesList = currentRecords.map((r: any) => r.registros || r);
-                  return (
-                    <div className="space-y-12">
-                      <MissionTable
-                        misiones={misionesList}
-                        onRefresh={onRefresh}
-                        onEdit={(reg) => setEditingRegistro(reg)}
-                        isAdmin={isAdmin}
-                        subjectId={character.id}
-                      />
-
-                      {totalPages > 1 && (
-                        <div className="flex justify-center items-center gap-10 pt-10 border-t border-oro/10">
-                          <button
-                            onClick={() => setRecordPage(prev => Math.max(1, prev - 1))}
-                            disabled={recordPage === 1}
-                            className="p-4 ninja-btn-oro"
-                          >
-                            <ChevronLeft className="w-6 h-6" />
-                          </button>
-                          <span className="text-xs xl:text-sm font-black text-oro uppercase tracking-[0.4em] italic">
-                            PÁGINA <span className="text-oro/40">{recordPage}</span> DE <span className="text-oro/40">{totalPages}</span>
-                          </span>
-                          <button
-                            onClick={() => setRecordPage(prev => Math.min(totalPages, prev + 1))}
-                            disabled={recordPage === totalPages}
-                            className="p-4 ninja-btn-oro"
-                          >
-                            <ChevronRight className="w-6 h-6" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                }
-
-                if (registroTab === 'accion') {
-                  const accionesList = currentRecords.map((r: any) => r.registros || r);
-                  return (
-                    <div className="space-y-12">
-                      <ActionTable
-                        acciones={accionesList}
-                        onRefresh={onRefresh}
-                        onEdit={(reg) => setEditingRegistro(reg)}
-                        isAdmin={isAdmin}
-                        subjectId={character.id}
-                      />
-
-                      {totalPages > 1 && (
-                        <div className="flex justify-center items-center gap-10 pt-10 border-t border-oro/10">
-                          <button
-                            onClick={() => setRecordPage(prev => Math.max(1, prev - 1))}
-                            disabled={recordPage === 1}
-                            className="p-4 ninja-btn-oro"
-                          >
-                            <ChevronLeft className="w-6 h-6" />
-                          </button>
-                          <span className="text-xs xl:text-sm font-black text-oro uppercase tracking-[0.4em] italic">
-                            PÁGINA <span className="text-oro/40">{recordPage}</span> DE <span className="text-oro/40">{totalPages}</span>
-                          </span>
-                          <button
-                            onClick={() => setRecordPage(prev => Math.min(totalPages, prev + 1))}
-                            disabled={recordPage === totalPages}
-                            className="p-4 ninja-btn-oro"
-                          >
-                            <ChevronRight className="w-6 h-6" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                }
-
-                if (registroTab === 'combate') {
-                  const combatesList = currentRecords.map((r: any) => r.registros || r);
-                  return (
-                    <div className="space-y-12">
-                      <CombatTable
-                        combates={combatesList}
-                        onRefresh={onRefresh}
-                        onEdit={(reg) => setEditingRegistro(reg)}
-                        isAdmin={isAdmin}
-                        subjectId={character.id}
-                      />
-
-                      {totalPages > 1 && (
-                        <div className="flex justify-center items-center gap-10 pt-10 border-t border-oro/10">
-                          <button
-                            onClick={() => setRecordPage(prev => Math.max(1, prev - 1))}
-                            disabled={recordPage === 1}
-                            className="p-4 ninja-btn-oro"
-                          >
-                            <ChevronLeft className="w-6 h-6" />
-                          </button>
-                          <span className="text-xs xl:text-sm font-black text-oro uppercase tracking-[0.4em] italic">
-                            PÁGINA <span className="text-oro/40">{recordPage}</span> DE <span className="text-oro/40">{totalPages}</span>
-                          </span>
-                          <button
-                            onClick={() => setRecordPage(prev => Math.min(totalPages, prev + 1))}
-                            disabled={recordPage === totalPages}
-                            className="p-4 ninja-btn-oro"
-                          >
-                            <ChevronRight className="w-6 h-6" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                }
-
-                return (
-                  <div className="space-y-12">
-                    <div className="grid grid-cols-1 gap-8 xl:gap-12">
-                      {currentRecords.map((r: any) => (
-                        <RegistroCard
-                          key={r.id}
-                          registro={r.registros || r}
+                  if (registroTab === 'mision') {
+                    const misionesList = currentRecords.map((r: any) => r.registros || r);
+                    return (
+                      <div className="space-y-12">
+                        <MissionTable
+                          misiones={misionesList}
                           onRefresh={onRefresh}
                           onEdit={(reg) => setEditingRegistro(reg)}
                           isAdmin={isAdmin}
                           subjectId={character.id}
                         />
-                      ))}
-                    </div>
 
-                    {totalPages > 1 && (
-                      <div className="flex justify-center items-center gap-10 pt-10 border-t border-oro/10">
-                        <button
-                          onClick={() => setRecordPage(prev => Math.max(1, prev - 1))}
-                          disabled={recordPage === 1}
-                          className="p-4 ninja-btn-oro"
-                        >
-                          <ChevronLeft className="w-6 h-6" />
-                        </button>
-                        <span className="text-xs xl:text-sm font-black text-oro uppercase tracking-[0.4em] italic">
-                          PÁGINA <span className="text-oro/40">{recordPage}</span> DE <span className="text-oro/40">{totalPages}</span>
-                        </span>
-                        <button
-                          onClick={() => setRecordPage(prev => Math.min(totalPages, prev + 1))}
-                          disabled={recordPage === totalPages}
-                          className="p-4 ninja-btn-oro"
-                        >
-                          <ChevronRight className="w-6 h-6" />
-                        </button>
+                        {totalPages > 1 && (
+                          <div className="flex justify-center items-center gap-10 pt-10 border-t border-oro/10">
+                            <button
+                              onClick={() => setRecordPage(prev => Math.max(1, prev - 1))}
+                              disabled={recordPage === 1}
+                              className="p-4 ninja-btn-oro"
+                            >
+                              <ChevronLeft className="w-6 h-6" />
+                            </button>
+                            <span className="text-xs xl:text-sm font-black text-oro uppercase tracking-[0.4em] italic">
+                              PÁGINA <span className="text-oro/40">{recordPage}</span> DE <span className="text-oro/40">{totalPages}</span>
+                            </span>
+                            <button
+                              onClick={() => setRecordPage(prev => Math.min(totalPages, prev + 1))}
+                              disabled={recordPage === totalPages}
+                              className="p-4 ninja-btn-oro"
+                            >
+                              <ChevronRight className="w-6 h-6" />
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                );
-              })()}
-            </div>
-          </div>
-        )}
-        {editingRegistro && mounted && createPortal(
-          <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md overflow-y-auto p-4 sm:p-6 md:p-8 flex justify-center items-start sm:items-center animate-in fade-in duration-300">
-            <div className="w-full max-w-4xl my-auto">
-              {editingRegistro.tipo === 'combate' ? (
-                <CombatForm
-                  initialData={editingRegistro}
-                  onCreated={() => { setEditingRegistro(null); onRefresh ? onRefresh() : window.location.reload(); }}
-                />
-              ) : (
-                <MissionForm
-                  initialData={editingRegistro}
-                  onCreated={() => { setEditingRegistro(null); onRefresh ? onRefresh() : window.location.reload(); }}
-                  initialType={editingRegistro.tipo as any}
-                />
-              )}
-            </div>
-          </div>,
-          document.body
-        )}
-        {editingImageKey && mounted && createPortal(
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="w-full max-w-lg ninja-card-oro p-8 space-y-6 relative overflow-hidden" style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' }}>
-              {/* Decoración de fondo */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-oro/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+                    );
+                  }
 
-              <div className="flex items-center justify-between relative z-10">
-                <h3 className="text-xl font-black text-oro uppercase tracking-[0.3em] flex items-center gap-4 italic">
-                  <ImageIcon className="w-6 h-6" />
-                  {editingImageKey === 'character' ? 'Apariencia del Ninja' : 'Imagen de Jugador'}
-                </h3>
-                <button
-                  onClick={() => setEditingImageKey(null)}
-                  className="text-oro/40 hover:text-oro transition-colors"
-                >
-                  <X className="w-6 h-6" />
-                </button>
+                  if (registroTab === 'accion') {
+                    const accionesList = currentRecords.map((r: any) => r.registros || r);
+                    return (
+                      <div className="space-y-12">
+                        <ActionTable
+                          acciones={accionesList}
+                          onRefresh={onRefresh}
+                          onEdit={(reg) => setEditingRegistro(reg)}
+                          isAdmin={isAdmin}
+                          subjectId={character.id}
+                        />
+
+                        {totalPages > 1 && (
+                          <div className="flex justify-center items-center gap-10 pt-10 border-t border-oro/10">
+                            <button
+                              onClick={() => setRecordPage(prev => Math.max(1, prev - 1))}
+                              disabled={recordPage === 1}
+                              className="p-4 ninja-btn-oro"
+                            >
+                              <ChevronLeft className="w-6 h-6" />
+                            </button>
+                            <span className="text-xs xl:text-sm font-black text-oro uppercase tracking-[0.4em] italic">
+                              PÁGINA <span className="text-oro/40">{recordPage}</span> DE <span className="text-oro/40">{totalPages}</span>
+                            </span>
+                            <button
+                              onClick={() => setRecordPage(prev => Math.min(totalPages, prev + 1))}
+                              disabled={recordPage === totalPages}
+                              className="p-4 ninja-btn-oro"
+                            >
+                              <ChevronRight className="w-6 h-6" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  if (registroTab === 'combate') {
+                    const combatesList = currentRecords.map((r: any) => r.registros || r);
+                    return (
+                      <div className="space-y-12">
+                        <CombatTable
+                          combates={combatesList}
+                          onRefresh={onRefresh}
+                          onEdit={(reg) => setEditingRegistro(reg)}
+                          isAdmin={isAdmin}
+                          subjectId={character.id}
+                        />
+
+                        {totalPages > 1 && (
+                          <div className="flex justify-center items-center gap-10 pt-10 border-t border-oro/10">
+                            <button
+                              onClick={() => setRecordPage(prev => Math.max(1, prev - 1))}
+                              disabled={recordPage === 1}
+                              className="p-4 ninja-btn-oro"
+                            >
+                              <ChevronLeft className="w-6 h-6" />
+                            </button>
+                            <span className="text-xs xl:text-sm font-black text-oro uppercase tracking-[0.4em] italic">
+                              PÁGINA <span className="text-oro/40">{recordPage}</span> DE <span className="text-oro/40">{totalPages}</span>
+                            </span>
+                            <button
+                              onClick={() => setRecordPage(prev => Math.min(totalPages, prev + 1))}
+                              disabled={recordPage === totalPages}
+                              className="p-4 ninja-btn-oro"
+                            >
+                              <ChevronRight className="w-6 h-6" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-12">
+                      <div className="grid grid-cols-1 gap-8 xl:gap-12">
+                        {currentRecords.map((r: any) => (
+                          <RegistroCard
+                            key={r.id}
+                            registro={r.registros || r}
+                            onRefresh={onRefresh}
+                            onEdit={(reg) => setEditingRegistro(reg)}
+                            isAdmin={isAdmin}
+                            subjectId={character.id}
+                          />
+                        ))}
+                      </div>
+
+                      {totalPages > 1 && (
+                        <div className="flex justify-center items-center gap-10 pt-10 border-t border-oro/10">
+                          <button
+                            onClick={() => setRecordPage(prev => Math.max(1, prev - 1))}
+                            disabled={recordPage === 1}
+                            className="p-4 ninja-btn-oro"
+                          >
+                            <ChevronLeft className="w-6 h-6" />
+                          </button>
+                          <span className="text-xs xl:text-sm font-black text-oro uppercase tracking-[0.4em] italic">
+                            PÁGINA <span className="text-oro/40">{recordPage}</span> DE <span className="text-oro/40">{totalPages}</span>
+                          </span>
+                          <button
+                            onClick={() => setRecordPage(prev => Math.min(totalPages, prev + 1))}
+                            disabled={recordPage === totalPages}
+                            className="p-4 ninja-btn-oro"
+                          >
+                            <ChevronRight className="w-6 h-6" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
-
-              <div className="space-y-4 relative z-10">
-                <p className="text-oro/60 text-xs font-bold uppercase tracking-widest leading-relaxed">
-                  {editingImageKey === 'character'
-                    ? 'Introduce la URL de la imagen para este personaje. Se recomienda una relación de aspecto 3:4.'
-                    : 'Introduce la URL de la imagen de perfil del jugador.'}
-                </p>
-                <div className="group relative">
-                  <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-oro/20 group-focus-within:text-oro transition-colors">
-                    <ImageIcon className="w-5 h-5" />
-                  </div>
-                  <input
-                    type="text"
-                    value={imageUrlInput}
-                    onChange={(e) => setImageUrlInput(e.target.value)}
-                    placeholder="https://ejemplo.com/imagen.jpg"
-                    className="w-full bg-black/60 border border-oro/20 text-oro p-4 pl-12 text-sm focus:outline-none focus:border-oro transition-all selection:bg-oro/20"
+            </div>
+          )}
+          {editingRegistro && mounted && createPortal(
+            <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md overflow-y-auto p-4 sm:p-6 md:p-8 flex justify-center items-start sm:items-center animate-in fade-in duration-300">
+              <div className="w-full max-w-4xl my-auto">
+                {editingRegistro.tipo === 'combate' ? (
+                  <CombatForm
+                    initialData={editingRegistro}
+                    onCreated={() => { setEditingRegistro(null); onRefresh ? onRefresh() : window.location.reload(); }}
                   />
+                ) : (
+                  <MissionForm
+                    initialData={editingRegistro}
+                    onCreated={() => { setEditingRegistro(null); onRefresh ? onRefresh() : window.location.reload(); }}
+                    initialType={editingRegistro.tipo as any}
+                  />
+                )}
+              </div>
+            </div>,
+            document.body
+          )}
+          {editingImageKey && mounted && createPortal(
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+              <div className="w-full max-w-lg ninja-card-oro p-8 space-y-6 relative overflow-hidden" style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' }}>
+                {/* Decoración de fondo */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-oro/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+
+                <div className="flex items-center justify-between relative z-10">
+                  <h3 className="text-xl font-black text-oro uppercase tracking-[0.3em] flex items-center gap-4 italic">
+                    <ImageIcon className="w-6 h-6" />
+                    {editingImageKey === 'character' ? 'Apariencia del Ninja' : 'Imagen de Jugador'}
+                  </h3>
+                  <button
+                    onClick={() => setEditingImageKey(null)}
+                    className="text-oro/40 hover:text-oro transition-colors"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                <div className="space-y-4 relative z-10">
+                  <p className="text-oro/60 text-xs font-bold uppercase tracking-widest leading-relaxed">
+                    {editingImageKey === 'character'
+                      ? 'Introduce la URL de la imagen para este personaje. Se recomienda una relación de aspecto 3:4.'
+                      : 'Introduce la URL de la imagen de perfil del jugador.'}
+                  </p>
+                  <div className="group relative">
+                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-oro/20 group-focus-within:text-oro transition-colors">
+                      <ImageIcon className="w-5 h-5" />
+                    </div>
+                    <input
+                      type="text"
+                      value={imageUrlInput}
+                      onChange={(e) => setImageUrlInput(e.target.value)}
+                      placeholder="https://ejemplo.com/imagen.jpg"
+                      className="w-full bg-black/60 border border-oro/20 text-oro p-4 pl-12 text-sm focus:outline-none focus:border-oro transition-all selection:bg-oro/20"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-4 pt-4 relative z-10">
+                  <button
+                    onClick={() => setEditingImageKey(null)}
+                    className="flex-1 px-6 py-4 bg-black/40 border border-oro/10 text-oro/60 text-xs font-black uppercase tracking-widest hover:bg-black/60 hover:text-oro transition-all"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const finalVal = imageUrlInput.trim() || null;
+                      if (isEditing) {
+                        if (editingImageKey === 'character') {
+                          onUpdateField('url_img', finalVal);
+                        } else {
+                          const currentProfile = Array.isArray(character.profiles) ? character.profiles[0] : character.profiles;
+                          const updatedProfile = { ...currentProfile, url_img: finalVal };
+                          onUpdateField('profiles', Array.isArray(character.profiles) ? [updatedProfile] : updatedProfile);
+                        }
+                        setEditingImageKey(null);
+                      } else {
+                        try {
+                          if (editingImageKey === 'character') {
+                            await CharacterService.updateCharacter(character.id, { url_img: finalVal });
+                          } else {
+                            const userId = Array.isArray(character.profiles) ? character.profiles[0]?.id : character.profiles?.id;
+                            const finalUserId = userId || character.user_id;
+                            if (finalUserId) {
+                              await ProfileService.updateProfile(finalUserId, { url_img: finalVal });
+                            } else {
+                              throw new Error("No user ID associated with the profile.");
+                            }
+                          }
+
+                          addToast("Imagen actualizada correctamente.", "success");
+
+                          if (onRefresh) {
+                            onRefresh();
+                          } else {
+                            window.location.reload();
+                          }
+                        } catch (err) {
+                          console.error("Error al actualizar la imagen:", err);
+                          addToast("Hubo un error al guardar la imagen.", "error");
+                        } finally {
+                          setEditingImageKey(null);
+                        }
+                      }
+                    }}
+                    className="flex-1 px-6 py-4 ninja-btn-oro text-xs font-black uppercase tracking-widest flex items-center justify-center gap-3"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>Aplicar</span>
+                  </button>
                 </div>
               </div>
-
-              <div className="flex gap-4 pt-4 relative z-10">
-                <button
-                  onClick={() => setEditingImageKey(null)}
-                  className="flex-1 px-6 py-4 bg-black/40 border border-oro/10 text-oro/60 text-xs font-black uppercase tracking-widest hover:bg-black/60 hover:text-oro transition-all"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={async () => {
-                    const finalVal = imageUrlInput.trim() || null;
-                    if (isEditing) {
-                      if (editingImageKey === 'character') {
-                        onUpdateField('url_img', finalVal);
-                      } else {
-                        const currentProfile = Array.isArray(character.profiles) ? character.profiles[0] : character.profiles;
-                        const updatedProfile = { ...currentProfile, url_img: finalVal };
-                        onUpdateField('profiles', Array.isArray(character.profiles) ? [updatedProfile] : updatedProfile);
-                      }
-                      setEditingImageKey(null);
-                    } else {
-                      try {
-                        if (editingImageKey === 'character') {
-                          await CharacterService.updateCharacter(character.id, { url_img: finalVal });
-                        } else {
-                          const userId = Array.isArray(character.profiles) ? character.profiles[0]?.id : character.profiles?.id;
-                          const finalUserId = userId || character.user_id;
-                          if (finalUserId) {
-                            await ProfileService.updateProfile(finalUserId, { url_img: finalVal });
-                          } else {
-                            throw new Error("No user ID associated with the profile.");
-                          }
-                        }
-
-                        addToast("Imagen actualizada correctamente.", "success");
-
-                        if (onRefresh) {
-                          onRefresh();
-                        } else {
-                          window.location.reload();
-                        }
-                      } catch (err) {
-                        console.error("Error al actualizar la imagen:", err);
-                        addToast("Hubo un error al guardar la imagen.", "error");
-                      } finally {
-                        setEditingImageKey(null);
-                      }
-                    }
-                  }}
-                  className="flex-1 px-6 py-4 ninja-btn-oro text-xs font-black uppercase tracking-widest flex items-center justify-center gap-3"
-                >
-                  <Save className="w-4 h-4" />
-                  <span>Aplicar</span>
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-      </main>
-    </div>
+            </div>,
+            document.body
+          )}
+        </main>
+      </div>
+    </FormEditContext.Provider>
   );
 }
 

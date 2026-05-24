@@ -4,7 +4,7 @@ import { useCharacterStore } from '@/store/useCharacterStore';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { ImageIcon, Save, X, Loader2, User, GitBranch } from 'lucide-react';
+import { ImageIcon, Save, X, Loader2, User } from 'lucide-react';
 import { CharacterService } from '@/services/supabase/character.service';
 import { CharacterRadarChart } from './CharacterRadarChart';
 import { useToastStore } from '@/components/ui/Toast';
@@ -58,7 +58,7 @@ export default function CharacterSheet() {
 
   const handleManualArchive = async () => {
     if (!activeCharacter) return;
-    
+
     const ok = await confirmAction({
       title: 'Archivar Definitivamente',
       message: '¿ESTÁS SEGURO? Si archivas definitivamente este personaje, se liberarán inmediatamente todos sus requisitos y cupos en el glosario. La ficha no se podrá recuperar de forma automática ni apelar.',
@@ -75,7 +75,7 @@ export default function CharacterSheet() {
         const err = await res.json();
         throw new Error(err.error || 'Error al archivar personaje');
       }
-      
+
       addToast("Personaje archivado definitivamente con éxito", "success");
       await fetchActiveCharacter();
     } catch (err: any) {
@@ -187,10 +187,10 @@ export default function CharacterSheet() {
         <div className="flex flex-col 2xl:flex-row justify-between items-center 2xl:items-start gap-6 w-full">
           <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left min-w-0 w-full 2xl:w-auto overflow-hidden">
             <div className="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0">
-               <div className="relative w-full h-full bg-black/40 overflow-hidden flex items-center justify-center ninja-clip-md">
+              <div className="relative w-full h-full bg-black/40 overflow-hidden flex items-center justify-center ninja-clip-md">
                 {activeCharacter.url_img ? (
-                  <img 
-                    src={activeCharacter.url_img} 
+                  <img
+                    src={activeCharacter.url_img}
                     className="w-full h-full object-cover object-top"
                     alt="Avatar"
                   />
@@ -207,14 +207,14 @@ export default function CharacterSheet() {
                 <span className="px-4 sm:px-5 py-1.5 text-[10px] sm:text-xs xl:text-sm font-black bg-rojo-sangre text-oro uppercase tracking-[0.2em] whitespace-nowrap">
                   Rango {rango}
                 </span>
-                <span className="text-oro/80 text-[10px] sm:text-xs xl:text-base font-bold uppercase tracking-widest whitespace-nowrap">{xp} XP</span>
+                <span className="text-oro/80 text-[10px] sm:text-xs xl:text-base font-bold uppercase tracking-widest whitespace-nowrap">{xp} EXP</span>
                 <span className="text-oro/80 text-[10px] sm:text-xs xl:text-base font-bold uppercase tracking-widest whitespace-nowrap">{ryous} Ryos</span>
                 <span className="text-emerald-400 text-[10px] sm:text-xs xl:text-base font-bold uppercase tracking-widest whitespace-nowrap">{activeCharacter.puntos_combate || 0} PC</span>
               </div>
             </div>
           </div>
-          
-          <Link 
+
+          <Link
             href={`/ficha/${activeCharacter.id}`}
             className="ninja-btn-oro px-8 py-4 text-xs xl:text-sm w-full 2xl:w-auto text-center shrink-0"
           >
@@ -223,120 +223,119 @@ export default function CharacterSheet() {
         </div>
 
         <div className="w-full min-w-0 flex-1 flex flex-col justify-between gap-6">
-            {/* Atributos Derivados */}
-            <div className="space-y-4 w-full min-w-0">
-              <h3 className="text-xs sm:text-base xl:text-xl font-black text-oro mb-3 flex items-center justify-center sm:justify-start gap-3 uppercase tracking-[0.3em]">
-                <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto object-contain" alt="icon" />
-                Estado Vital
-              </h3>
-              
-              <div className="space-y-3.5 w-full min-w-0">
-                <div className="space-y-3 w-full min-w-0">
-                  <div className="flex justify-between text-[10px] xl:text-sm font-black uppercase tracking-widest w-full gap-2">
-                    <span className="text-red-600 flex items-center gap-3 shrink-0">VIT (Vitalidad)</span>
-                    <span className="text-oro shrink-0">{atributos_derivados.VIT} / {atributos_derivados.VIT}</span>
-                  </div>
-                  <div className="h-2 w-full bg-black/40 border border-oro/10 p-[1px] relative overflow-hidden">
-                    <div className="h-full bg-red-600 shadow-[0_0_12px_rgba(103,9,9,0.5)]" style={{ width: '100%' }}></div>
-                  </div>
-                </div>
+          {/* Atributos Derivados */}
+          <div className="space-y-4 w-full min-w-0">
+            <h3 className="text-xs sm:text-base xl:text-xl font-black text-oro mb-3 flex items-center justify-center sm:justify-start gap-3 uppercase tracking-[0.3em]">
+              <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto object-contain" alt="icon" />
+              Estado Vital
+            </h3>
 
-                <div className="space-y-3 w-full min-w-0">
-                  <div className="flex justify-between text-[10px] xl:text-sm font-black uppercase tracking-widest w-full gap-2">
-                    <span className="text-blue-500 flex items-center gap-3 shrink-0">CH (Chakra)</span>
-                    <span className="text-oro shrink-0">{atributos_derivados.CH} / {atributos_derivados.CH}</span>
-                  </div>
-                  <div className="h-2 w-full bg-black/40 border border-oro/10 p-[1px] relative overflow-hidden">
-                    <div className="h-full bg-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.5)]" style={{ width: '100%' }}></div>
-                  </div>
+            <div className="space-y-3.5 w-full min-w-0">
+              <div className="space-y-3 w-full min-w-0">
+                <div className="flex justify-between text-[10px] xl:text-sm font-black uppercase tracking-widest w-full gap-2">
+                  <span className="text-red-600 flex items-center gap-3 shrink-0">VIT (Vitalidad)</span>
+                  <span className="text-oro shrink-0">{atributos_derivados.VIT} / {atributos_derivados.VIT}</span>
+                </div>
+                <div className="h-2 w-full bg-black/40 border border-oro/10 p-[1px] relative overflow-hidden">
+                  <div className="h-full bg-red-600 shadow-[0_0_12px_rgba(103,9,9,0.5)]" style={{ width: '100%' }}></div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 mt-4">
-                <div className="bg-rojo-sangre/10 border border-oro/20 p-2 sm:p-2.5 flex items-center justify-between px-4 group hover:bg-rojo-sangre/20 transition-all ninja-clip-xs">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-1 h-1 bg-oro/20 rotate-45 group-hover:bg-oro transition-colors shrink-0" />
-                    <span className="text-oro/40 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] truncate">Resistencia</span>
-                  </div>
-                  <span className="text-base sm:text-lg font-black text-oro shrink-0">{atributos_derivados.RES}%</span>
+              <div className="space-y-3 w-full min-w-0">
+                <div className="flex justify-between text-[10px] xl:text-sm font-black uppercase tracking-widest w-full gap-2">
+                  <span className="text-blue-500 flex items-center gap-3 shrink-0">CH (Chakra)</span>
+                  <span className="text-oro shrink-0">{atributos_derivados.CH} / {atributos_derivados.CH}</span>
                 </div>
-                <div className="bg-rojo-sangre/10 border border-oro/20 p-2 sm:p-2.5 flex items-center justify-between px-4 group hover:bg-rojo-sangre/20 transition-all ninja-clip-xs">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-1 h-1 bg-oro/20 rotate-45 group-hover:bg-oro transition-colors shrink-0" />
-                    <span className="text-oro/40 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] truncate">Velocidad</span>
-                  </div>
-                  <span className="text-base sm:text-lg font-black text-oro shrink-0">{atributos_derivados.VEL}</span>
+                <div className="h-2 w-full bg-black/40 border border-oro/10 p-[1px] relative overflow-hidden">
+                  <div className="h-full bg-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.5)]" style={{ width: '100%' }}></div>
                 </div>
               </div>
-
-              {/* Ramas y Especialidades */}
-              {activeCharacter.personajes_ramas && activeCharacter.personajes_ramas.some((r: any) => r.info_ramas_clanes) && (
-                <div className="grid grid-cols-2 gap-3 mt-3">
-                  {activeCharacter.personajes_ramas
-                    .filter((r: any) => r.info_ramas_clanes)
-                    .sort((a: any, b: any) => a.slot - b.slot)
-                    .map((rama: any) => (
-                      <div key={rama.slot} className="bg-black/40 border border-oro/10 p-2 sm:p-2.5 flex flex-col justify-center px-4 relative overflow-hidden ninja-clip-xs group hover:border-oro/30 transition-all">
-                        <div className="absolute top-0 right-0 w-16 h-16 bg-oro/5 rounded-full blur-xl -mr-8 -mt-8 pointer-events-none" />
-                        
-                        <div className="flex items-center gap-2 min-w-0">
-                          <GitBranch className="w-3 h-3 text-oro/60 shrink-0 group-hover:text-oro transition-colors" />
-                          <span className="text-oro/40 text-[9px] font-black uppercase tracking-[0.15em] truncate">
-                            Rama / Clan
-                          </span>
-                        </div>
-
-                        <div className="mt-1 text-xs xl:text-sm font-black text-oro truncate">
-                          {rama.info_ramas_clanes?.nombre}
-                        </div>
-
-                        {rama.info_sub_especialidades && (
-                          <div className="text-[9px] xl:text-[10px] text-red-500 font-bold uppercase tracking-widest mt-0.5 truncate">
-                            {rama.info_sub_especialidades.nombre}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                </div>
-              )}
             </div>
 
-            {/* Stats Base */}
-            <div className="space-y-4">
-              <h3 className="text-xs sm:text-base xl:text-xl font-black text-oro flex items-center justify-center sm:justify-start gap-3 uppercase tracking-[0.3em] my-0">
-                <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto object-contain" alt="icon" />
-                Atributos Base
-              </h3>
-
-              {/* Radar visible en todo momento */}
-              <div className="flex justify-center items-center w-full bg-black/20 border border-oro/10 p-2.5 ninja-clip-xs relative overflow-hidden flex-1">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-oro/5 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none" />
-                <div className="w-full max-w-[440px] xl:max-w-[460px] mx-auto">
-                  <CharacterRadarChart stats={stats_base} maxVal={10} />
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              <div className="bg-rojo-sangre/10 border border-oro/20 p-2 sm:p-2.5 flex items-center justify-between px-4 group hover:bg-rojo-sangre/20 transition-all ninja-clip-xs">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-1 h-1 bg-oro/20 rotate-45 group-hover:bg-oro transition-colors shrink-0" />
+                  <span className="text-oro/40 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] truncate">Resistencia</span>
                 </div>
+                <span className="text-base sm:text-lg font-black text-oro shrink-0">{atributos_derivados.RES}%</span>
               </div>
+              <div className="bg-rojo-sangre/10 border border-oro/20 p-2 sm:p-2.5 flex items-center justify-between px-4 group hover:bg-rojo-sangre/20 transition-all ninja-clip-xs">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-1 h-1 bg-oro/20 rotate-45 group-hover:bg-oro transition-colors shrink-0" />
+                  <span className="text-oro/40 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] truncate">Velocidad</span>
+                </div>
+                <span className="text-base sm:text-lg font-black text-oro shrink-0">{atributos_derivados.VEL}</span>
+              </div>
+            </div>
 
-              {/* Cuadrícula compacta de Atributos Base */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full">
-                {[
-                  { label: 'NIN', value: stats_base.NIN },
-                  { label: 'TAI', value: stats_base.TAI },
-                  { label: 'GEN', value: stats_base.GEN },
-                  { label: 'INT', value: stats_base.INT },
-                  { label: 'FUE', value: stats_base.FUE },
-                  { label: 'AGI', value: stats_base.AGI },
-                  { label: 'EST', value: stats_base.EST },
-                  { label: 'SM', value: stats_base.SM },
-                ].map((stat) => (
-                  <div key={stat.label} className="bg-black/40 border border-oro/10 p-2.5 sm:p-3 flex justify-between items-center group hover:border-oro/40 transition-all ninja-clip-xs overflow-hidden">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-1 h-1 bg-oro/20 group-hover:bg-oro transition-colors rotate-45 shrink-0" />
-                      <span className="text-oro/60 text-[9px] sm:text-[10px] font-black uppercase tracking-widest truncate">{stat.label}</span>
+            {/* Ramas y Especialidades */}
+            {activeCharacter.personajes_ramas && activeCharacter.personajes_ramas.some((r: any) => r.info_ramas_clanes) && (
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                {activeCharacter.personajes_ramas
+                  .filter((r: any) => r.info_ramas_clanes)
+                  .sort((a: any, b: any) => a.slot - b.slot)
+                  .map((rama: any) => (
+                    <div key={rama.slot} className="bg-black/40 border border-oro/10 p-2 sm:p-2.5 flex flex-col justify-center px-4 relative overflow-hidden ninja-clip-xs group hover:border-oro/30 transition-all">
+                      <div className="absolute top-0 right-0 w-16 h-16 bg-oro/5 rounded-full blur-xl -mr-8 -mt-8 pointer-events-none" />
+
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-oro/40 text-[9px] font-black uppercase tracking-[0.15em] truncate">
+                          Rama / Clan
+                        </span>
+                      </div>
+
+                      <div className="mt-1 text-xs xl:text-sm font-black text-oro truncate">
+                        {rama.info_ramas_clanes?.nombre}
+                      </div>
+
+                      {rama.info_sub_especialidades && (
+                        <div className="text-[9px] xl:text-[10px] text-red-500 font-bold uppercase tracking-widest mt-0.5 truncate">
+                          {rama.info_sub_especialidades.nombre}
+                        </div>
+                      )}
                     </div>
-                    <span className="text-base sm:text-lg font-black text-oro shrink-0">{stat.value}</span>
-                  </div>
-                ))}
+                  ))}
               </div>
+            )}
+          </div>
+
+          {/* Stats Base */}
+          <div className="space-y-4">
+            <h3 className="text-xs sm:text-base xl:text-xl font-black text-oro flex items-center justify-center sm:justify-start gap-3 uppercase tracking-[0.3em] my-0">
+              <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto object-contain" alt="icon" />
+              Atributos Base
+            </h3>
+
+            {/* Radar visible en todo momento */}
+            <div className="flex justify-center items-center w-full bg-black/20 border border-oro/10 p-2.5 ninja-clip-xs relative overflow-hidden flex-1">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-oro/5 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none" />
+              <div className="w-full max-w-[440px] xl:max-w-[460px] mx-auto">
+                <CharacterRadarChart stats={stats_base} maxVal={10} />
+              </div>
+            </div>
+
+            {/* Cuadrícula compacta de Atributos Base */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full">
+              {[
+                { label: 'NIN', value: stats_base.NIN },
+                { label: 'TAI', value: stats_base.TAI },
+                { label: 'GEN', value: stats_base.GEN },
+                { label: 'INT', value: stats_base.INT },
+                { label: 'FUE', value: stats_base.FUE },
+                { label: 'AGI', value: stats_base.AGI },
+                { label: 'EST', value: stats_base.EST },
+                { label: 'SM', value: stats_base.SM },
+              ].map((stat) => (
+                <div key={stat.label} className="bg-black/40 border border-oro/10 p-2.5 sm:p-3 flex justify-between items-center group hover:border-oro/40 transition-all ninja-clip-xs overflow-hidden">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-1 h-1 bg-oro/20 group-hover:bg-oro transition-colors rotate-45 shrink-0" />
+                    <span className="text-oro/60 text-[9px] sm:text-[10px] font-black uppercase tracking-widest truncate">{stat.label}</span>
+                  </div>
+                  <span className="text-base sm:text-lg font-black text-oro shrink-0">{stat.value}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -346,13 +345,13 @@ export default function CharacterSheet() {
           <div className="w-full max-w-lg ninja-card-oro p-8 space-y-6 relative overflow-hidden" style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' }}>
             {/* Background Decor */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-oro/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
-            
+
             <div className="flex items-center justify-between relative z-10">
               <h3 className="text-xl font-black text-oro uppercase tracking-[0.3em] flex items-center gap-4 italic">
                 <ImageIcon className="w-6 h-6" />
                 Retrato del Ninja
               </h3>
-              <button 
+              <button
                 onClick={() => setIsEditingPortrait(false)}
                 className="text-oro/40 hover:text-oro transition-colors"
               >
@@ -368,8 +367,8 @@ export default function CharacterSheet() {
                 <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-oro/20 group-focus-within:text-oro transition-colors">
                   <ImageIcon className="w-5 h-5" />
                 </div>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={newPortraitUrl}
                   onChange={(e) => setNewPortraitUrl(e.target.value)}
                   placeholder="https://ejemplo.com/retrato.jpg"
@@ -379,13 +378,13 @@ export default function CharacterSheet() {
             </div>
 
             <div className="flex gap-4 pt-4 relative z-10">
-              <button 
+              <button
                 onClick={() => setIsEditingPortrait(false)}
                 className="flex-1 px-6 py-4 bg-black/40 border border-oro/10 text-oro/60 text-xs font-black uppercase tracking-widest hover:bg-black/60 hover:text-oro transition-all"
               >
                 Cancelar
               </button>
-              <button 
+              <button
                 onClick={handleUpdatePortrait}
                 disabled={updating}
                 className="flex-1 px-6 py-4 ninja-btn-oro text-xs font-black uppercase tracking-widest flex items-center justify-center gap-3 disabled:opacity-50"

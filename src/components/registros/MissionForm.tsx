@@ -5,16 +5,17 @@ import { RegistrosService } from '@/services/supabase/registros.service';
 import { Registro, MisionMaster } from '@/domain/types';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { useToastStore } from '@/components/ui/Toast';
-import { Plus, X, Link as LinkIcon, Search, UserPlus, User } from 'lucide-react';
+import { X, Link as LinkIcon, Search, UserPlus, User } from 'lucide-react';
+import { NinjaSelect } from '@/components/ui/Fields';
 
 type FormType = 'mision' | 'accion';
 
-export default function MissionForm({ 
-  onCreated, 
+export default function MissionForm({
+  onCreated,
   initialType = 'mision',
-  initialData = null 
-}: { 
-  onCreated: () => void, 
+  initialData = null
+}: {
+  onCreated: () => void,
   initialType?: FormType,
   initialData?: Registro | null
 }) {
@@ -29,22 +30,22 @@ export default function MissionForm({
 
   const [formType] = useState<FormType>(initialData?.tipo as FormType || initialType);
   const [loading, setLoading] = useState(false);
-  
+
   // Misiones
   const [rango, setRango] = useState(initialData?.subtipo || 'D');
   const [misiones, setMisiones] = useState<MisionMaster[]>([]);
   const [selectedMision, setSelectedMision] = useState<string>(initialData?.data?.codigo_mision || '');
-  
+
   // General
   const [titulo, setTitulo] = useState(initialData?.data?.titulo || '');
   const [images, setImages] = useState<string[]>(initialData?.data?.urls_imagenes || ['']);
-  
+
   // Participantes
   const [participantSearch, setParticipantSearch] = useState('');
   const [searchResults, setSearchResults] = useState<{ id: number; nombre_ninja: string; hobba_name?: string | null }[]>([]);
   const [participants, setParticipants] = useState<{ id: number; nombre_ninja: string }[]>(
     initialData?.participantes?.map((p: any) => ({ id: p.personaje_id, nombre_ninja: p.personaje?.nombre_ninja }))
-    .filter((p: any) => p.id && Number(p.id) !== Number(initialData?.autor_id)) || []
+      .filter((p: any) => p.id && Number(p.id) !== Number(initialData?.autor_id)) || []
   );
 
   useEffect(() => {
@@ -68,8 +69,8 @@ export default function MissionForm({
     }
     try {
       const results = await RegistrosService.searchCharacters(query);
-      setSearchResults(results.filter(r => 
-        Number(r.id) !== Number(activeCharacter?.id) && 
+      setSearchResults(results.filter(r =>
+        Number(r.id) !== Number(activeCharacter?.id) &&
         !participants.find(p => Number(p.id) === Number(r.id))
       ));
     } catch (err) {
@@ -167,8 +168,8 @@ export default function MissionForm({
               </h3>
               <p className="text-xs sm:text-sm font-black text-oro/40 uppercase tracking-[0.4em]">Sincronizando con el archivo histórico shinobi</p>
             </div>
-            <button 
-              onClick={() => onCreated()} 
+            <button
+              onClick={() => onCreated()}
               className="group p-4 bg-black/40 border border-oro/10 hover:border-oro/40 transition-all ninja-clip-xs"
             >
               <X className="w-8 h-8 text-oro/40 group-hover:text-oro" />
@@ -181,41 +182,32 @@ export default function MissionForm({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12">
                   <div className="space-y-4">
                     <label className="text-xs font-black uppercase tracking-[0.3em] text-oro/40 ml-2">Rango del Pergamino</label>
-                    <select 
-                      value={rango} 
-                      onChange={(e) => setRango(e.target.value)}
-                      className="w-full ninja-input py-5"
-                    >
-                      {['D', 'C', 'B', 'A', 'S'].map(r => (
-                        <option key={r} value={r} className="bg-zinc-950 text-oro">RANGO {r}</option>
-                      ))}
-                    </select>
+                    <NinjaSelect
+                      value={rango}
+                      onChange={(val) => setRango(val)}
+                      placeholder="RANGO..."
+                      options={['D', 'C', 'B', 'A', 'S'].map(r => ({ label: `RANGO ${r}`, value: r }))}
+                    />
                   </div>
                   <div className="space-y-4">
                     <label className="text-xs font-black uppercase tracking-[0.3em] text-oro/40 ml-2">Misión Seleccionada</label>
-                    <select 
-                      value={selectedMision} 
-                      onChange={(e) => setSelectedMision(e.target.value)}
-                      className="w-full ninja-input py-5"
+                    <NinjaSelect
+                      value={selectedMision}
+                      onChange={(val) => setSelectedMision(val)}
+                      placeholder="SELECCIONAR..."
                       disabled={misiones.length === 0}
-                    >
-                      <option value="" className="bg-zinc-950 text-oro/40">SELECCIONAR...</option>
-                      {misiones.map(m => (
-                        <option key={m.codigo_mision} value={m.codigo_mision} className="bg-zinc-950 text-oro">
-                          {m.codigo_mision} (+{m.exp} XP)
-                        </option>
-                      ))}
-                    </select>
+                      options={misiones.map(m => ({ label: `${m.codigo_mision} (+${m.exp} EXP)`, value: m.codigo_mision }))}
+                    />
                   </div>
                 </div>
               ) : (
                 <div className="space-y-4">
                   <label className="text-xs font-black uppercase tracking-[0.3em] text-oro/40 ml-2">Título de la Crónica</label>
-                  <input 
+                  <input
                     type="text"
-                    value={titulo} 
-                    onChange={(e) => setTitulo(e.target.value)} 
-                    placeholder="Describe tu acción..." 
+                    value={titulo}
+                    onChange={(e) => setTitulo(e.target.value)}
+                    placeholder="Describe tu acción..."
                     className="w-full ninja-input py-5"
                   />
                 </div>
@@ -227,7 +219,7 @@ export default function MissionForm({
                   <label className="text-xs font-black uppercase tracking-[0.3em] text-oro/40 ml-2">Participantes Involucrados</label>
                   <div className="relative">
                     <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-oro/20" />
-                    <input 
+                    <input
                       type="text"
                       value={participantSearch}
                       onChange={(e) => handleSearchParticipants(e.target.value)}
@@ -235,13 +227,13 @@ export default function MissionForm({
                       className="w-full ninja-input pl-16 py-5"
                     />
                   </div>
-                  
+
                   {searchResults.length > 0 && (
                     <div className="absolute z-50 w-full mt-2 bg-black border border-oro/20 shadow-[0_10px_30px_rgba(0,0,0,0.8)] animate-in fade-in zoom-in duration-200">
                       {searchResults.map(p => (
-                        <button 
-                          key={p.id} 
-                          onClick={() => addParticipant(p)} 
+                        <button
+                          key={p.id}
+                          onClick={() => addParticipant(p)}
                           className="w-full px-8 py-6 text-left text-xs font-black text-oro/60 hover:bg-oro/10 hover:text-oro flex items-center gap-4 transition-all border-b border-oro/5 last:border-0 uppercase tracking-widest"
                         >
                           <UserPlus className="w-5 h-5" /> {p.nombre_ninja} {p.hobba_name ? `(${p.hobba_name})` : ''}
@@ -276,7 +268,7 @@ export default function MissionForm({
                     <div key={i} className="flex gap-4 group">
                       <div className="relative flex-1">
                         <LinkIcon className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-oro/20" />
-                        <input 
+                        <input
                           value={img}
                           onChange={(e) => {
                             const newImgs = [...images];
@@ -288,8 +280,8 @@ export default function MissionForm({
                         />
                       </div>
                       {images.length > 1 && (
-                        <button 
-                          onClick={() => setImages(images.filter((_, idx) => idx !== i))} 
+                        <button
+                          onClick={() => setImages(images.filter((_, idx) => idx !== i))}
                           className="p-4 text-oro/20 hover:text-rojo-sangre transition-all"
                         >
                           <X className="w-6 h-6" />
@@ -297,8 +289,8 @@ export default function MissionForm({
                       )}
                     </div>
                   ))}
-                  <button 
-                    onClick={() => setImages([...images, ''])} 
+                  <button
+                    onClick={() => setImages([...images, ''])}
                     className="flex items-center gap-4 text-xs font-black uppercase tracking-[0.3em] text-oro/40 hover:text-oro transition-all ml-2 group"
                   >
                     <div className="w-6 h-[1px] bg-oro/20 group-hover:bg-oro transition-all" />
@@ -308,7 +300,7 @@ export default function MissionForm({
               </div>
 
               <div className="pt-10">
-                <button 
+                <button
                   onClick={handleSubmit}
                   disabled={loading}
                   className={`w-full py-8 sm:py-10 ninja-btn-oro text-xl sm:text-2xl ${loading ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}

@@ -1,6 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 import { ScrollText } from 'lucide-react';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import Breadcrumbs, { CrumbItem } from '@/components/ui/Breadcrumbs';
@@ -25,9 +24,9 @@ export default async function GroupingDetailPage({ params }: { params: Promise<{
 
   if (rama.tipo === 'clan' && rama.info_aldeas) {
     breadcrumbsItems.push({ label: 'Aldeas y Organizaciones', href: '/aldeas' });
-    breadcrumbsItems.push({ 
-      label: rama.info_aldeas.abreviatura || (rama.info_aldeas as any).nombre_completo, 
-      href: `/aldeas/${rama.info_aldeas.slug}` 
+    breadcrumbsItems.push({
+      label: rama.info_aldeas.abreviatura || (rama.info_aldeas as any).nombre_completo,
+      href: `/aldeas/${rama.info_aldeas.slug}`
     });
   } else {
     breadcrumbsItems.push({ label: 'Ramas', href: '/ramas' });
@@ -43,7 +42,7 @@ export default async function GroupingDetailPage({ params }: { params: Promise<{
         <div className="flex items-center gap-4">
           <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto" alt="icon" />
           <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
-             ARCHIVO DE <span className="text-oro/40">DOCTRINA</span>
+            ARCHIVO DE <span className="text-oro/40">DOCTRINA</span>
           </h1>
         </div>
       </header>
@@ -51,7 +50,7 @@ export default async function GroupingDetailPage({ params }: { params: Promise<{
       <main className="w-full max-w-[1750px] mx-auto flex-1">
         <div className="mb-16 ninja-card-oro p-12 xl:p-16 relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-12 opacity-[0.02] pointer-events-none group-hover:opacity-[0.05] transition-opacity">
-             <img src="/assets/icons/shuriken.png" className="w-64 h-64 rotate-12" alt="bg" />
+            <img src="/assets/icons/shuriken.png" className="w-64 h-64 rotate-12" alt="bg" />
           </div>
           <div className="flex items-center gap-6 mb-8 relative z-10">
             <h1 className="ninja-title text-6xl xl:text-9xl">{sub.nombre}</h1>
@@ -79,7 +78,7 @@ export default async function GroupingDetailPage({ params }: { params: Promise<{
               }
             />
           ))}
-          
+
           {documentos.length === 0 && (
             <div className="col-span-full text-center py-40 ninja-card-oro opacity-40">
               <p className="text-oro/40 font-black uppercase tracking-[0.6em] text-xl xl:text-2xl italic">ARCHIVOS NO DISPONIBLES</p>
