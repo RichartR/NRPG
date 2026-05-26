@@ -21,6 +21,7 @@ export default function SubEspecialidadList({ initialSubs, ramas }: { initialSub
     rama_id: undefined,
     descripcion: '',
     url_imagen: '',
+    es_repetible: false,
     activo: true
   });
   const [loading, setLoading] = useState(false);
@@ -40,7 +41,7 @@ export default function SubEspecialidadList({ initialSubs, ramas }: { initialSub
 
       const data = await AdminService.saveSubEspecialidad(payload);
       setSubs([data as SubEspecialidad, ...subs]);
-      setNewSub({ nombre: '', slug: '', rama_id: undefined, descripcion: '', url_imagen: '', activo: true });
+      setNewSub({ nombre: '', slug: '', rama_id: undefined, descripcion: '', url_imagen: '', es_repetible: false, activo: true });
       setIsAdding(false);
       addToast("Sub-especialidad creada con éxito", "success");
       router.refresh();
@@ -188,6 +189,28 @@ export default function SubEspecialidadList({ initialSubs, ramas }: { initialSub
                   onChange={v => setNewSub({ ...newSub, url_imagen: v })}
                   placeholder="https://ejemplo.com/imagen.jpg"
                 />
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-oro/60 ml-1">Repetibilidad</label>
+                  <div className="flex bg-black/40 p-4 border border-oro/10 justify-between items-center h-[58px] ninja-clip-sm">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-oro/40">
+                      ¿Es Sub-Especialidad Repetible en slots?
+                    </span>
+                    <label className="flex items-center gap-3 cursor-pointer group">
+                      <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${newSub.es_repetible ? 'text-oro' : 'text-oro/20'}`}>
+                        {newSub.es_repetible ? 'SÍ' : 'NO'}
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={newSub.es_repetible}
+                        onChange={(e) => setNewSub({ ...newSub, es_repetible: e.target.checked })}
+                        className="hidden"
+                      />
+                      <div className={`w-8 h-4 rounded-none transition-all relative ${newSub.es_repetible ? 'bg-oro/20 border-oro/40' : 'bg-black/40 border-oro/10'} border`}>
+                        <div className={`absolute top-[2px] w-2.5 h-2.5 transition-all ${newSub.es_repetible ? 'right-[2px] bg-oro shadow-[0_0_10px_rgba(255,230,159,0.5)]' : 'left-[2px] bg-oro/10'}`} />
+                      </div>
+                    </label>
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -271,19 +294,29 @@ export default function SubEspecialidadList({ initialSubs, ramas }: { initialSub
                   onChange={v => setEditForm({ ...editForm, url_imagen: v })}
                   placeholder="https://ejemplo.com/imagen.jpg"
                 />
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-oro/60 ml-1">Repetibilidad</label>
+                  <div className="flex bg-black/40 p-4 border border-oro/10 justify-between items-center h-[58px] ninja-clip-sm">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-oro/40">
+                      ¿Es Sub-Especialidad Repetible en slots?
+                    </span>
+                    <label className="flex items-center gap-3 cursor-pointer group">
+                      <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${editForm.es_repetible ? 'text-oro' : 'text-oro/20'}`}>
+                        {editForm.es_repetible ? 'SÍ' : 'NO'}
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={editForm.es_repetible || false}
+                        onChange={(e) => setEditForm({ ...editForm, es_repetible: e.target.checked })}
+                        className="hidden"
+                      />
+                      <div className={`w-8 h-4 rounded-none transition-all relative ${editForm.es_repetible ? 'bg-oro/20 border-oro/40' : 'bg-black/40 border-oro/10'} border`}>
+                        <div className={`absolute top-[2px] w-2.5 h-2.5 transition-all ${editForm.es_repetible ? 'right-[2px] bg-oro shadow-[0_0_10px_rgba(255,230,159,0.5)]' : 'left-[2px] bg-oro/10'}`} />
+                      </div>
+                    </label>
+                  </div>
+                </div>
               </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-oro/60 ml-1">Descripción / Lore</label>
-                <textarea
-                  rows={4}
-                  value={editForm.descripcion || ''}
-                  onChange={e => setEditForm({ ...editForm, descripcion: e.target.value })}
-                  className="w-full bg-black/40 border border-oro/10 py-5 px-8 text-oro font-black outline-none focus:border-oro/40 transition-all placeholder:text-oro/10 text-sm md:text-base ninja-clip-sm"
-                  placeholder="Explica de qué trata esta sub-categoría..."
-                />
-              </div>
-
               <div className="flex justify-end gap-6 pt-10 border-t border-oro/10">
                 <button
                   type="button"
@@ -297,7 +330,7 @@ export default function SubEspecialidadList({ initialSubs, ramas }: { initialSub
                   disabled={loading || !editForm.nombre || !editForm.rama_id}
                   className="ninja-btn-oro px-12 py-5 text-sm flex items-center justify-center gap-3"
                 >
-                  {loading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                  {loading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Edit2 className="w-5 h-5" />}
                   Guardar Cambios
                 </button>
               </div>

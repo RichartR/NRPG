@@ -296,6 +296,16 @@ export const MasterServerService = {
     return data || [];
   },
 
+  async getAdminElementosActivos(supabase: SupabaseClient): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('info_elementos')
+      .select('*')
+      .eq('activo', true)
+      .order('nombre_esp', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  },
+
   async getAdminRamasActivas(supabase: SupabaseClient): Promise<RamaClan[]> {
     const { data, error } = await supabase
       .from('info_ramas_clanes')

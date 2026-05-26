@@ -351,7 +351,7 @@ export default function GlosarioView({
                           {subGroup.categorias.map((catGroup: any) => (
                             <div key={catGroup.info.id} className="space-y-4">
                               {/* NIVEL 4: CATEGORÍA */}
-                              <div className="flex items-center gap-3 bg-oro/10 p-4 border border-oro/20">
+                              <div className="flex items-center gap-3 bg-oro/50 p-4 border border-oro/20">
                                 <Hash className="w-4 h-4 text-oro" />
                                 <h5 className="text-sm xl:text-lg font-black text-zinc-600 uppercase tracking-[0.3em]">{catGroup.info.nombre}</h5>
                               </div>

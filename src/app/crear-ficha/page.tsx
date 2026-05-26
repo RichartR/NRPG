@@ -77,14 +77,67 @@ function CrearFichaContent() {
     loadData();
   }, []);
 
+  const equipedRamaIdsStr = JSON.stringify(
+    form.personajes_ramas.map((r: any) => ({
+      rama_id: r.rama_id,
+      p: r.elemento_principal_id,
+      s: r.elemento_secundario_id,
+      t: r.elemento_terciario_id
+    }))
+  );
+
   useEffect(() => {
     if (masters.initialized && masters.glosario) {
+      const equipedRamaIds = form.personajes_ramas
+        .map((r: any) => r.rama_id ? Number(r.rama_id) : null)
+        .filter(Boolean);
+
+      const equipedElementIds = form.personajes_ramas
+        .reduce((acc: number[], r: any) => {
+          if (r.elemento_principal_id) acc.push(Number(r.elemento_principal_id));
+          if (r.elemento_secundario_id) acc.push(Number(r.elemento_secundario_id));
+          if (r.elemento_terciario_id) acc.push(Number(r.elemento_terciario_id));
+          return acc;
+        }, []);
+
       const initialItems = masters.glosario
-        .filter((i: any) => i.inicial && i.categoria_id === 2)
+        .filter((i: any) => {
+          if (!i.inicial || i.categoria_id !== 2) return false;
+          
+          // Validar Rama
+          const requiredRamaId = i.rama_clan_id || i.requisitos?.rama_id;
+          if (requiredRamaId && !equipedRamaIds.includes(Number(requiredRamaId))) {
+            return false;
+          }
+
+          // Validar Elemento
+          const requiredElementId = i.elemento_id || i.requisitos?.elemento_id;
+          if (requiredElementId && !equipedElementIds.includes(Number(requiredElementId))) {
+            return false;
+          }
+
+          return true;
+        })
         .map((i: any) => ({ item_id: i.id, cantidad: 1, info_glosario: i }));
       
       const initialTecs = masters.glosario
-        .filter((t: any) => t.inicial && t.categoria_id !== 2)
+        .filter((t: any) => {
+          if (!t.inicial || t.categoria_id === 2) return false;
+          
+          // Validar Rama
+          const requiredRamaId = t.rama_clan_id || t.requisitos?.rama_id;
+          if (requiredRamaId && !equipedRamaIds.includes(Number(requiredRamaId))) {
+            return false;
+          }
+
+          // Validar Elemento
+          const requiredElementId = t.elemento_id || t.requisitos?.elemento_id;
+          if (requiredElementId && !equipedElementIds.includes(Number(requiredElementId))) {
+            return false;
+          }
+
+          return true;
+        })
         .map((t: any) => ({ tecnica_id: t.id, info_glosario: t }));
 
       setForm((prev: any) => ({
@@ -93,7 +146,7 @@ function CrearFichaContent() {
         personajes_tecnicas: initialTecs
       }));
     }
-  }, [masters.initialized, masters.glosario]);
+  }, [masters.initialized, masters.glosario, equipedRamaIdsStr]);
 
   // Recalcular atributos derivados cuando cambian los stats
   useEffect(() => {
@@ -141,9 +194,43 @@ function CrearFichaContent() {
 
     setLoading(true);
     try {
+      // 1. Obtener las IDs de las ramas equipadas por el personaje en el formulario
+      const equipedRamaIds = form.personajes_ramas
+        .map((r: any) => r.rama_id ? Number(r.rama_id) : null)
+        .filter(Boolean);
+
+      const equipedElementIds = form.personajes_ramas
+        .reduce((acc: number[], r: any) => {
+          if (r.elemento_principal_id) acc.push(Number(r.elemento_principal_id));
+          if (r.elemento_secundario_id) acc.push(Number(r.elemento_secundario_id));
+          if (r.elemento_terciario_id) acc.push(Number(r.elemento_terciario_id));
+          return acc;
+        }, []);
+
+      // 2. Filtrar las técnicas iniciales según las ramas y elementos elegidos
+      const filteredTecnicas = form.personajes_tecnicas.filter((pt: any) => {
+        const t = pt.info_glosario;
+        if (!t) return true;
+        
+        // Validar Rama
+        const requiredRamaId = t.rama_clan_id || t.requisitos?.rama_id;
+        if (requiredRamaId && !equipedRamaIds.includes(Number(requiredRamaId))) {
+          return false;
+        }
+
+        // Validar Elemento
+        const requiredElementId = t.elemento_id || t.requisitos?.elemento_id;
+        if (requiredElementId && !equipedElementIds.includes(Number(requiredElementId))) {
+          return false;
+        }
+
+        return true;
+      });
+
       const payload = {
         ...form,
-        personajes_ramas: form.personajes_ramas.filter((r: any) => r.rama_id !== null)
+        personajes_ramas: form.personajes_ramas.filter((r: any) => r.rama_id !== null),
+        personajes_tecnicas: filteredTecnicas
       };
       const res = await fetch('/api/characters', {
         method: 'POST',

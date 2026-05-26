@@ -8,7 +8,8 @@ import {
   Image as ImageIcon,
   Coins,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Flame
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
@@ -238,6 +239,47 @@ export function CharacterSheetView({
     originalCharacter?.personajes_tecnicas
   ]);
 
+  // DERIVACIÓN DE ELEMENTOS TOTALES DEL PERSONAJE
+  const derivedElements = useMemo(() => {
+    if (!character || !masters.elementos || !masters.ramaElementos) return [];
+
+    // 1. Obtener elementos fijos asociados a las ramas/clanes y sub-especialidades del personaje
+    const charRamas = character.personajes_ramas || [];
+    const fijosSet = new Set<number>();
+
+    charRamas.forEach((pr: any) => {
+      // Por RamaClan
+      if (pr.rama_id) {
+        masters.ramaElementos
+          .filter((re: any) => re.rama_id === pr.rama_id && re.tipo === 'fijo')
+          .forEach((re: any) => {
+            if (re.elemento_id) fijosSet.add(re.elemento_id);
+          });
+      }
+      // Por SubEspecialidad
+      if (pr.sub_especialidad_id) {
+        masters.ramaElementos
+          .filter((re: any) => re.sub_especialidad_id === pr.sub_especialidad_id && re.tipo === 'fijo')
+          .forEach((re: any) => {
+            if (re.elemento_id) fijosSet.add(re.elemento_id);
+          });
+      }
+    });
+
+    // 2. Elementos seleccionados en el Ninjutsu Elemental (rama_id = 4)
+    const ninjutsuRama = charRamas.find((pr: any) => Number(pr.rama_id) === 4);
+    if (ninjutsuRama) {
+      if (ninjutsuRama.elemento_principal_id) fijosSet.add(Number(ninjutsuRama.elemento_principal_id));
+      if (ninjutsuRama.elemento_secundario_id) fijosSet.add(Number(ninjutsuRama.elemento_secundario_id));
+      if (ninjutsuRama.elemento_terciario_id) fijosSet.add(Number(ninjutsuRama.elemento_terciario_id));
+    }
+
+    // 3. Mapear a objetos Elemento completos
+    return Array.from(fijosSet)
+      .map((id) => masters.elementos.find((e: any) => e.id === id))
+      .filter(Boolean);
+  }, [character, masters.elementos, masters.ramaElementos]);
+
   const meetsRequirements = (item: Glosario) => {
     if (!item.requisitos) return true;
     if (!character) return true;
@@ -245,6 +287,15 @@ export function CharacterSheetView({
     let req = item.requisitos;
     if (typeof req === 'string') {
       try { req = JSON.parse(req); } catch { return true; }
+    }
+
+    // Check de elemento_id
+    if (req.elemento_id) {
+      const elementId = Number(req.elemento_id);
+      const characterElementIds = derivedElements.map(e => Number(e.id));
+      if (!characterElementIds.includes(elementId)) {
+        return false;
+      }
     }
 
     // 1. Rango
@@ -374,7 +425,19 @@ export function CharacterSheetView({
       elements.push(<span key="rango" className="text-rojo-sangre font-black">{reqs.rango}</span>);
     }
     if (reqs.rama_id) {
-      elements.push(<span key="rama" className="text-oro font-black">RAMA/CLAN</span>);
+      const rama = (masters.ramas || []).find((r: any) => Number(r.id) === Number(reqs.rama_id));
+      const ramaNombre = rama ? rama.nombre.toUpperCase() : 'RAMA/CLAN';
+      elements.push(<span key="rama" className="text-oro font-black">{ramaNombre}</span>);
+    }
+    if (reqs.elemento_id) {
+      const elem = (masters.elementos || []).find((e: any) => Number(e.id) === Number(reqs.elemento_id));
+      if (elem) {
+        elements.push(
+          <span key="elemento" className="text-oro font-black">
+            ELEMENTO: <span className="text-oro">{elem.nombre_esp.toUpperCase()}</span>
+          </span>
+        );
+      }
     }
     if (reqs.combates) {
       elements.push(
@@ -409,7 +472,7 @@ export function CharacterSheetView({
     }
 
     Object.entries(reqs).forEach(([key, value]) => {
-      if (['rango', 'rama_id', 'stats', 'misiones', 'personaje_id', 'combates'].includes(key)) return;
+      if (['rango', 'rama_id', 'elemento_id', 'stats', 'misiones', 'personaje_id', 'combates'].includes(key)) return;
       if (value === null || value === undefined || value === 0 || value === false || value === '') return;
       elements.push(
         <span key={key} className="text-oro/50 font-black">
@@ -927,7 +990,18 @@ export function CharacterSheetView({
                               options={getClanOptions(slot)}
                               disabled={!isEditing && !isNew}
                               onChange={(v) => {
-                                const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { slot, rama_id: Number(v), sub_especialidad_id: null, id_entrenamiento: null }];
+                                // Validar repetibilidad: si otra rama existe y no es repetible, no permitir seleccionar la misma
+                                const otherSlot = slot === 1 ? 2 : 1;
+                                const otherPr = character.personajes_ramas?.find((r: any) => Number(r.slot) === otherSlot);
+                                if (otherPr && Number(otherPr.rama_id) === Number(v)) {
+                                  const selectedRama = (masters.ramas || []).find((r: any) => r.id === Number(v));
+                                  if (selectedRama && !selectedRama.es_repetible) {
+                                    addToast(`La rama ${selectedRama.nombre} no se puede equipar en ambos slots.`, 'error');
+                                    return;
+                                  }
+                                }
+
+                                const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { slot, rama_id: Number(v), sub_especialidad_id: null, id_entrenamiento: null, elemento_principal_id: null, elemento_secundario_id: null, elemento_terciario_id: null }];
                                 onUpdateField('personajes_ramas', newRamas);
                               }}
                             />
@@ -935,14 +1009,128 @@ export function CharacterSheetView({
                               <SelectField
                                 label="SUB-ESPECIALIDAD"
                                 value={pr?.sub_especialidad_id}
-                                options={masters.subEspecialidades.filter((s: any) => s.rama_id === pr?.rama_id).map((s: any) => ({ label: s.nombre, value: s.id }))}
+                                options={masters.subEspecialidades.filter((s: any) => s.rama_id === pr?.rama_id && (Number(pr?.rama_id) !== 4 || s.slug?.startsWith('ninjutsu-'))).map((s: any) => ({ label: s.nombre, value: s.id }))}
                                 disabled={!isEditing && !isNew}
                                 onChange={(v) => {
-                                  const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { ...pr, slot, rama_id: pr?.rama_id, sub_especialidad_id: v ? Number(v) : null, id_entrenamiento: null }];
+                                  // Validar repetibilidad en sub-especialidad
+                                  const otherSlot = slot === 1 ? 2 : 1;
+                                  const otherPr = character.personajes_ramas?.find((r: any) => Number(r.slot) === otherSlot);
+                                  if (otherPr && Number(otherPr.rama_id) === Number(pr?.rama_id) && Number(otherPr.sub_especialidad_id) === Number(v)) {
+                                    const selectedSub = (masters.subEspecialidades || []).find((s: any) => s.id === Number(v));
+                                    if (selectedSub && !selectedSub.es_repetible) {
+                                      addToast(`La sub-especialidad ${selectedSub.nombre} no se puede repetir en ambos slots.`, 'error');
+                                      return;
+                                    }
+                                  }
+
+                                  const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { ...pr, slot, sub_especialidad_id: v ? Number(v) : null, id_entrenamiento: null, elemento_principal_id: null, elemento_secundario_id: null, elemento_terciario_id: null }];
                                   onUpdateField('personajes_ramas', newRamas);
                                 }}
                               />
                             )}
+
+                            {/* RENDERIZADO DINÁMICO DE SELECTORES DE ELEMENTOS PARA NINJUTSU ELEMENTAL */}
+                            {Number(pr?.rama_id) === 4 && pr?.sub_especialidad_id && (() => {
+                              const subEsp = masters.subEspecialidades.find((s: any) => s.id === pr.sub_especialidad_id);
+                              if (!subEsp) return null;
+
+                              const isNinI = subEsp.slug === 'ninjutsu-i';
+                              const isNinII = subEsp.slug === 'ninjutsu-ii';
+                              const isNinIII = subEsp.slug === 'ninjutsu-iii';
+
+                              if (!isNinI && !isNinII && !isNinIII) return null;
+
+                              // Calcular pool condicionado: elementos fijos básicos del otro slot
+                              const otherSlot = slot === 1 ? 2 : 1;
+                              const otherPr = character.personajes_ramas?.find((r: any) => Number(r.slot) === otherSlot);
+
+                              let poolFijoBasico: any[] = [];
+                              if (otherPr && masters.ramaElementos) {
+                                poolFijoBasico = masters.ramaElementos
+                                  .filter((re: any) =>
+                                    re.tipo === 'fijo' &&
+                                    re.info_elementos?.tipo === 'basico' &&
+                                    (re.rama_id === otherPr.rama_id || re.sub_especialidad_id === otherPr.sub_especialidad_id)
+                                  )
+                                  .map((re: any) => re.info_elementos)
+                                  .filter(Boolean);
+                              }
+
+                              const hasPoolCondicionado = poolFijoBasico.length > 0;
+                              const todosBasicos = (masters.elementos || []).filter((e: any) => e.tipo === 'basico');
+
+                              // Opciones para selectors
+                              const getOptionsForSelector = (currentVal: number | null, otherVals: (number | null)[]) => {
+                                const baseList = hasPoolCondicionado ? poolFijoBasico : todosBasicos;
+                                return baseList.map((e: any) => {
+                                  const isSelectedElsewhere = otherVals.includes(e.id);
+                                  return {
+                                    label: e.nombre_esp.toUpperCase() + (e.nombre_jap ? ` (${e.nombre_jap.toUpperCase()})` : ''),
+                                    value: e.id,
+                                    disabled: isSelectedElsewhere && e.id !== currentVal
+                                  };
+                                });
+                              };
+
+                              return (
+                                <div className="space-y-4 p-4 bg-oro/5 border border-oro/10 ninja-clip-sm animate-in fade-in duration-300">
+                                  <h5 className="text-[9px] font-black text-oro uppercase tracking-[0.2em] mb-2">Elementos de Ninjutsu Elemental</h5>
+
+                                  {/* Selector Principal (Para Ninjutsu I, II y III) */}
+                                  <SelectField
+                                    label="ELEMENTO PRINCIPAL"
+                                    value={pr?.elemento_principal_id ?? null}
+                                    options={getOptionsForSelector(pr?.elemento_principal_id ?? null, [pr?.elemento_secundario_id ?? null, pr?.elemento_terciario_id ?? null])}
+                                    disabled={!isEditing && !isNew}
+                                    onChange={(v) => {
+                                      const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { ...pr, elemento_principal_id: v ? Number(v) : null }];
+                                      onUpdateField('personajes_ramas', newRamas);
+                                    }}
+                                  />
+
+                                  {/* Selector Secundario (Para Ninjutsu II y III) */}
+                                  {(isNinII || isNinIII) && (
+                                    <SelectField
+                                      label="ELEMENTO SECUNDARIO"
+                                      value={pr?.elemento_secundario_id ?? null}
+                                      options={getOptionsForSelector(pr?.elemento_secundario_id ?? null, [pr?.elemento_principal_id ?? null, pr?.elemento_terciario_id ?? null])}
+                                      disabled={!isEditing && !isNew}
+                                      onChange={(v) => {
+                                        const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { ...pr, elemento_secundario_id: v ? Number(v) : null }];
+                                        onUpdateField('personajes_ramas', newRamas);
+                                      }}
+                                    />
+                                  )}
+
+                                  {/* Selector Terciario (Para Ninjutsu III - Siempre Libre entre restantes básicos) */}
+                                  {isNinIII && (() => {
+                                    // El 3er elemento en Ninjutsu III es siempre libre de entre los básicos restantes
+                                    const optionsLibres = todosBasicos.map((e: any) => {
+                                      const isSelectedElsewhere = [pr?.elemento_principal_id, pr?.elemento_secundario_id].includes(e.id);
+                                      return {
+                                        label: e.nombre_esp.toUpperCase() + (e.nombre_jap ? ` (${e.nombre_jap.toUpperCase()})` : ''),
+                                        value: e.id,
+                                        disabled: isSelectedElsewhere && e.id !== pr?.elemento_terciario_id
+                                      };
+                                    });
+
+                                    return (
+                                      <SelectField
+                                        label="ELEMENTO TERCIARIO"
+                                        value={pr?.elemento_terciario_id}
+                                        options={optionsLibres}
+                                        disabled={!isEditing && !isNew}
+                                        onChange={(v) => {
+                                          const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { ...pr, elemento_terciario_id: v ? Number(v) : null }];
+                                          onUpdateField('personajes_ramas', newRamas);
+                                        }}
+                                      />
+                                    );
+                                  })()}
+                                </div>
+                              );
+                            })()}
+
                             {canAccessTraining && (
                               <SelectField
                                 label="ENTRENAMIENTO"
@@ -966,6 +1154,44 @@ export function CharacterSheetView({
                       );
                     })}
                   </div>
+                </SectionCard>
+
+                {/* BLOQUE GRÁFICO DE ELEMENTOS DEL PERSONAJE */}
+                <SectionCard title="AFINIDADES ELEMENTALES" icon={Flame} color="oro">
+                  {derivedElements.length === 0 ? (
+                    <div className="py-12 text-center rounded-[4px] border border-oro/10 bg-black/20 text-xs font-black text-oro/30 uppercase tracking-[0.25em]">
+                      Este shinobi no posee afinidades elementales
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
+                      {derivedElements.map((elem: any) => (
+                        <div
+                          key={elem.id}
+                          className="flex flex-col items-center justify-center p-6 bg-black/40 border border-oro/10 hover:border-oro/30 transition-all group relative overflow-hidden ninja-clip-sm"
+                        >
+                          <div className="absolute top-0 right-0 w-16 h-16 bg-oro/5 rounded-full blur-xl pointer-events-none" />
+                          <div className="w-14 h-14 rounded-none border border-oro/20 bg-black/60 flex items-center justify-center group-hover:scale-110 group-hover:border-oro/50 transition-all duration-500 shadow-lg shadow-black/80 relative mb-4">
+                            {elem.url_icono ? (
+                              <img src={elem.url_icono} alt={elem.nombre_esp} className="w-10 h-10 object-contain" />
+                            ) : (
+                              <span className="text-xl font-bold text-oro/40 group-hover:text-oro transition-colors">{elem.nombre_jap?.[0] || elem.nombre_esp?.[0]}</span>
+                            )}
+                          </div>
+                          <span className="text-[10px] font-black text-oro uppercase tracking-widest text-center leading-none">
+                            {elem.nombre_esp}
+                          </span>
+                          {elem.nombre_jap && (
+                            <span className="text-[8px] font-black text-oro/30 uppercase tracking-tighter text-center mt-1">
+                              {elem.nombre_jap}
+                            </span>
+                          )}
+                          <span className={`mt-3 px-2 py-0.5 text-[7px] font-black uppercase tracking-widest border ${elem.tipo === 'basico' ? 'bg-oro/5 text-oro/60 border-oro/10' : 'bg-rojo-sangre/10 text-rojo-sangre border-rojo-sangre/20'}`}>
+                            {elem.tipo}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </SectionCard>
               </div>
             </div>

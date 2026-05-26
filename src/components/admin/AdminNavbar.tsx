@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Settings, Map, ScrollText, ShoppingBag, GitBranch, Sword, FileText, ShieldCheck, ShieldAlert, LogOut, ChevronDown, LayoutDashboard } from 'lucide-react';
+import { Settings, Map, ScrollText, ShoppingBag, GitBranch, Sword, FileText, ShieldCheck, ShieldAlert, LogOut, ChevronDown, LayoutDashboard, Flame, BookOpen } from 'lucide-react';
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 
@@ -22,6 +22,8 @@ export default function AdminNavbar() {
     { href: '/admin/misiones', label: 'Misiones', icon: ScrollText },
     { href: '/registros/tiendas', label: 'Tiendas', icon: ShoppingBag },
     { href: '/admin/ramas', label: 'Ramas', icon: GitBranch },
+    { href: '/admin/elementos', label: 'Elementos', icon: Flame },
+    { href: '/admin/glosario', label: 'Glosario', icon: BookOpen },
     { href: '/admin/combate', label: 'Biblioteca', icon: Sword },
     { href: '/admin/documentos', label: 'Documentos', icon: FileText },
     { href: '/admin/fichas', label: 'Fichas', icon: ShieldCheck },
