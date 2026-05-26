@@ -20,7 +20,8 @@ export default function RamaEditForm({ rama, aldeas, onCancel }: RamaEditFormPro
     if (rama) {
       return {
         ...rama,
-        es_especial: rama.es_especial ?? false
+        es_especial: rama.es_especial ?? false,
+        es_repetible: rama.es_repetible ?? false
       };
     }
     return {
@@ -31,6 +32,7 @@ export default function RamaEditForm({ rama, aldeas, onCancel }: RamaEditFormPro
       aldea_id: undefined,
       activo: true,
       es_especial: false,
+      es_repetible: false,
       url_imagen: ''
     };
   });
@@ -148,6 +150,28 @@ export default function RamaEditForm({ rama, aldeas, onCancel }: RamaEditFormPro
                 >
                   Clan
                 </button>
+              </div>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-oro/60 ml-1">Repetibilidad</label>
+              <div className="flex bg-black/40 p-4 border border-oro/10 justify-between items-center h-[58px] ninja-clip-sm">
+                <span className="text-[11px] font-black uppercase tracking-widest text-oro/40">
+                  ¿Es Rama Repetible en slots del personaje?
+                </span>
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${formData.es_repetible ? 'text-oro' : 'text-oro/20'}`}>
+                    {formData.es_repetible ? 'SÍ' : 'NO'}
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={formData.es_repetible}
+                    onChange={(e) => updateField('es_repetible', e.target.checked)}
+                    className="hidden"
+                  />
+                  <div className={`w-8 h-4 rounded-none transition-all relative ${formData.es_repetible ? 'bg-oro/20 border-oro/40' : 'bg-black/40 border-oro/10'} border`}>
+                    <div className={`absolute top-[2px] w-2.5 h-2.5 transition-all ${formData.es_repetible ? 'right-[2px] bg-oro shadow-[0_0_10px_rgba(255,230,159,0.5)]' : 'left-[2px] bg-oro/10'}`} />
+                  </div>
+                </label>
               </div>
             </div>
             {formData.tipo === 'clan' && (

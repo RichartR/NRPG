@@ -11,7 +11,9 @@ import {
   StatsEscaladoConfig,
   Glosario,
   Entrenamiento,
-  RangoRules
+  RangoRules,
+  Elemento,
+  RamaElemento
 } from '@/domain/types';
 
 interface MasterState {
@@ -20,6 +22,8 @@ interface MasterState {
   subEspecialidades: SubEspecialidad[];
   entrenamientos: Entrenamiento[];
   glosario: Glosario[];
+  elementos: Elemento[];
+  ramaElementos: RamaElemento[];
   rangoRules: RangoRules | null;
   escaladoRules: StatsEscaladoConfig | null;
   rankOrder: Record<string, number>;
@@ -41,6 +45,8 @@ export const useMasterStore = create<MasterState>((set, get) => ({
   subEspecialidades: [],
   entrenamientos: [],
   glosario: [],
+  elementos: [],
+  ramaElementos: [],
   rangoRules: null,
   escaladoRules: null,
   rankOrder: {},
@@ -67,6 +73,8 @@ export const useMasterStore = create<MasterState>((set, get) => ({
         subEspecialidadesRes, 
         entrenamientosRes,
         glosarioRes,
+        elementosRes,
+        ramaElementosRes,
         configsRes
       ] = await Promise.allSettled([
         MasterService.getAldeas(),
@@ -74,6 +82,8 @@ export const useMasterStore = create<MasterState>((set, get) => ({
         MasterService.getSubEspecialidades(),
         MasterService.getEntrenamientos(),
         MasterServerService.getGlosarios(supabase, { onlyInitial: true }),
+        MasterService.getElementos(),
+        MasterService.getRamaElementos(),
         MasterService.getSystemConfigs([
           'rango_stats_rules',
           'stats_escalado_config',
@@ -100,6 +110,8 @@ export const useMasterStore = create<MasterState>((set, get) => ({
         subEspecialidades: getVal(subEspecialidadesRes, []),
         entrenamientos: getVal(entrenamientosRes, []),
         glosario: getVal(glosarioRes, []),
+        elementos: getVal(elementosRes, []),
+        ramaElementos: getVal(ramaElementosRes, []),
         rangoRules: configs['rango_stats_rules'] || {
           "D": { stat_max: 25, puntos_totales: 16, vit_base: 600, ch_base: 200, vel_base: 5, min: 0 },
           "C": { stat_max: 45, puntos_totales: 40, vit_base: 1200, ch_base: 500, vel_base: 8, min: 25 },

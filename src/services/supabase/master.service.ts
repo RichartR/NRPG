@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client';
-import { Aldea, RamaClan, SubEspecialidad, Entrenamiento } from '@/domain/types';
+import { Aldea, RamaClan, SubEspecialidad, Entrenamiento, Elemento, RamaElemento } from '@/domain/types';
 
 export const MasterService = {
   async getAldeas(): Promise<Aldea[]> {
@@ -64,6 +64,29 @@ export const MasterService = {
       .eq('activo', true)
       .order('nombre', { ascending: true });
     
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getElementos(): Promise<Elemento[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('info_elementos')
+      .select('*')
+      .order('tipo', { ascending: true })
+      .order('nombre_esp', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getRamaElementos(): Promise<RamaElemento[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('info_rama_elementos')
+      .select('*, info_elementos(id, nombre_esp, nombre_jap, url_icono, tipo, activo)')
+      .eq('activo', true);
+
     if (error) throw error;
     return data || [];
   },

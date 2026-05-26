@@ -22,6 +22,28 @@ export interface Aldea {
   categoria_id?: number | null;
 }
 
+export interface Elemento {
+  id: number;
+  nombre_esp: string;
+  nombre_jap: string;
+  url_icono?: string | null;
+  tipo: 'basico' | 'avanzado';
+  activo: boolean;
+  created_at?: string;
+}
+
+export interface RamaElemento {
+  id: number;
+  rama_id?: number | null;
+  sub_especialidad_id?: number | null;
+  elemento_id: number;
+  tipo: 'fijo' | 'seleccionable';
+  activo: boolean;
+  created_at?: string;
+  // Joins
+  info_elementos?: Elemento;
+}
+
 export interface RamaClan {
   nombre_español?: string;
   id: number;
@@ -32,6 +54,7 @@ export interface RamaClan {
   aldea_id?: number;
   activo: boolean;
   es_especial?: boolean;
+  es_repetible?: boolean;
   url_imagen?: string;
 }
 
@@ -44,6 +67,7 @@ export interface SubEspecialidad {
   descripcion?: string;
   url_imagen?: string;
   activo: boolean;
+  es_repetible?: boolean;
 }
 
 export interface GlosarioCategoria {
@@ -248,9 +272,16 @@ export interface PersonajeRama {
   sub_especialidad_id: number | null;
   id_entrenamiento: number | null;
   slot: number;
+  elemento_principal_id?: number | null;
+  elemento_secundario_id?: number | null;
+  elemento_terciario_id?: number | null;
+  // Joins
   info_ramas_clanes?: RamaClan;
   info_sub_especialidades?: SubEspecialidad;
   info_entrenamientos?: Entrenamiento;
+  info_elemento_principal?: Elemento | null;
+  info_elemento_secundario?: Elemento | null;
+  info_elemento_terciario?: Elemento | null;
 }
 
 export interface DocumentoSistema {

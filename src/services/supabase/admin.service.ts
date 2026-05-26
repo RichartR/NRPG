@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client';
-import { Aldea, RamaClan, SubEspecialidad, DocumentoSistema, DocumentoCombate, ConfiguracionSistema, Glosario, GlosarioCategoria, GlosarioSubcategoria, Entrenamiento, MisionMaster, Tienda, TiendaObjeto } from '@/domain/types';
+import { Aldea, RamaClan, SubEspecialidad, DocumentoSistema, DocumentoCombate, ConfiguracionSistema, Glosario, GlosarioCategoria, GlosarioSubcategoria, Entrenamiento, MisionMaster, Tienda, TiendaObjeto, Elemento, RamaElemento } from '@/domain/types';
 import { RewardLogic } from '@/domain/character/logic';
 import { RegistrosService } from './registros.service';
 
@@ -506,6 +506,67 @@ export const AdminService = {
       .update({ valor: nombre })
       .eq('clave', 'moneda_evento_nombre');
     if (error) throw error;
-  }
-};
+  },
 
+  // --- Elementos ---
+  async saveElemento(elemento: Partial<Elemento>): Promise<Elemento> {
+    const supabase = createClient();
+    const { id, created_at, ...cleanData } = elemento as any;
+
+    if (id) {
+      const { data, error } = await supabase
+        .from('info_elementos')
+        .update(cleanData)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    } else {
+      const { data, error } = await supabase
+        .from('info_elementos')
+        .insert([cleanData])
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    }
+  },
+
+  async deleteElemento(id: number) {
+    const supabase = createClient();
+    const { error } = await supabase.from('info_elementos').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // --- Rama Elementos (vinculaciones) ---
+  async saveRamaElemento(rel: Partial<RamaElemento>): Promise<RamaElemento> {
+    const supabase = createClient();
+    const { id, created_at, info_elementos, ...cleanData } = rel as any;
+
+    if (id) {
+      const { data, error } = await supabase
+        .from('info_rama_elementos')
+        .update(cleanData)
+        .eq('id', id)
+        .select('*, info_elementos(id, nombre_esp, nombre_jap, url_icono, tipo, activo)')
+        .single();
+      if (error) throw error;
+      return data;
+    } else {
+      const { data, error } = await supabase
+        .from('info_rama_elementos')
+        .insert([cleanData])
+        .select('*, info_elementos(id, nombre_esp, nombre_jap, url_icono, tipo, activo)')
+        .single();
+      if (error) throw error;
+      return data;
+    }
+  },
+
+  async deleteRamaElemento(id: number) {
+    const supabase = createClient();
+    const { error } = await supabase.from('info_rama_elementos').delete().eq('id', id);
+    if (error) throw error;
+  },
+};
