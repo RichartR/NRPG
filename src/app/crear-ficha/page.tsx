@@ -27,6 +27,7 @@ function CrearFichaContent() {
     puntos_stats: 0,
     xp: 0,
     ryous: 0,
+    moneda_evento: 0,
     edad: 12,
     sexo: 'Masculino',
     tiempo_rpg: '',
@@ -85,6 +86,12 @@ function CrearFichaContent() {
       t: r.elemento_terciario_id
     }))
   );
+  const initialReqsStr = JSON.stringify({
+    rango: form.rango || '',
+    pc: form.puntos_combate || 0,
+    misiones: form.misiones || 0,
+    stats: form.stats_base || {}
+  });
 
   useEffect(() => {
     if (masters.initialized && masters.glosario) {
@@ -100,44 +107,58 @@ function CrearFichaContent() {
           return acc;
         }, []);
 
+      const RANGO_ORDER = ['D', 'C', 'B', 'A', 'S'];
+      const charRango = form.rango || '';
+      const charPC = form.puntos_combate || 0;
+      const charMisiones = form.misiones || 0;
+      const charStats = form.stats_base || {};
+
+      const meetsAllReqs = (entry: any): boolean => {
+        const reqs = entry.requisitos;
+
+        // Validar Rama
+        const requiredRamaId = entry.rama_clan_id || reqs?.rama_id;
+        if (requiredRamaId && !equipedRamaIds.includes(Number(requiredRamaId))) return false;
+
+        // Validar Elemento
+        const requiredElementId = entry.elemento_id || reqs?.elemento_id;
+        if (requiredElementId && !equipedElementIds.includes(Number(requiredElementId))) return false;
+
+        if (reqs) {
+          // Validar Rango
+          if (reqs.rango) {
+            const charRangoIdx = RANGO_ORDER.indexOf(charRango);
+            const reqRangoIdx = RANGO_ORDER.indexOf(reqs.rango);
+            if (charRangoIdx < reqRangoIdx) return false;
+          }
+
+          // Validar Puntos de Combate
+          if (reqs.combates && charPC < Number(reqs.combates)) return false;
+
+          // Validar Misiones
+          if (reqs.misiones && charMisiones < Number(reqs.misiones)) return false;
+
+          // Validar Stats
+          if (reqs.stats) {
+            for (const statKey in reqs.stats) {
+              const reqVal = Number(reqs.stats[statKey]);
+              if (reqVal > 0) {
+                const charVal = Number(charStats[statKey.toUpperCase() as keyof typeof charStats] || 0);
+                if (charVal < reqVal) return false;
+              }
+            }
+          }
+        }
+
+        return true;
+      };
+
       const initialItems = masters.glosario
-        .filter((i: any) => {
-          if (!i.inicial || i.categoria_id !== 2) return false;
-          
-          // Validar Rama
-          const requiredRamaId = i.rama_clan_id || i.requisitos?.rama_id;
-          if (requiredRamaId && !equipedRamaIds.includes(Number(requiredRamaId))) {
-            return false;
-          }
-
-          // Validar Elemento
-          const requiredElementId = i.elemento_id || i.requisitos?.elemento_id;
-          if (requiredElementId && !equipedElementIds.includes(Number(requiredElementId))) {
-            return false;
-          }
-
-          return true;
-        })
+        .filter((i: any) => i.inicial && i.categoria_id === 2 && meetsAllReqs(i))
         .map((i: any) => ({ item_id: i.id, cantidad: 1, info_glosario: i }));
       
       const initialTecs = masters.glosario
-        .filter((t: any) => {
-          if (!t.inicial || t.categoria_id === 2) return false;
-          
-          // Validar Rama
-          const requiredRamaId = t.rama_clan_id || t.requisitos?.rama_id;
-          if (requiredRamaId && !equipedRamaIds.includes(Number(requiredRamaId))) {
-            return false;
-          }
-
-          // Validar Elemento
-          const requiredElementId = t.elemento_id || t.requisitos?.elemento_id;
-          if (requiredElementId && !equipedElementIds.includes(Number(requiredElementId))) {
-            return false;
-          }
-
-          return true;
-        })
+        .filter((t: any) => t.inicial && t.categoria_id !== 2 && meetsAllReqs(t))
         .map((t: any) => ({ tecnica_id: t.id, info_glosario: t }));
 
       setForm((prev: any) => ({
@@ -146,7 +167,7 @@ function CrearFichaContent() {
         personajes_tecnicas: initialTecs
       }));
     }
-  }, [masters.initialized, masters.glosario, equipedRamaIdsStr]);
+  }, [masters.initialized, masters.glosario, equipedRamaIdsStr, initialReqsStr]);
 
   // Recalcular atributos derivados cuando cambian los stats
   useEffect(() => {
@@ -255,10 +276,10 @@ function CrearFichaContent() {
 
   if (!initialDataLoaded) {
     return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
-        <div className="w-16 h-16 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin mb-6" />
-        <h2 className="text-white font-black uppercase tracking-[0.3em] text-sm animate-pulse text-center">
-          Invocando Datos del <span className="text-orange-500">Sistema</span>...
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-8">
+        <div className="w-16 h-16 border-4 border-oro/10 border-t-oro rounded-full animate-spin mb-8" />
+        <h2 className="text-oro font-black uppercase tracking-[0.4em] text-xs xl:text-sm animate-pulse text-center">
+          INVOCANDO EXPEDIENTE <span className="text-oro/40 italic">NINJA</span>...
         </h2>
       </div>
     );

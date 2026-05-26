@@ -198,8 +198,12 @@ export function CharacterSheetView({
     const totalPCSpent = acceptedRegs.reduce((sum, r) => sum + (r.data?.gasto_pc || 0), 0);
 
     // Calcular recursos no guardados (en edición) para mantener estables los totales
-    const addedItems = (character.personajes_inventario || []).filter(ci => !(originalCharacter?.personajes_inventario || []).some(oi => Number(oi.item_id) === Number(ci.item_id)));
-    const addedTecs = (character.personajes_tecnicas || []).filter(ct => !(originalCharacter?.personajes_tecnicas || []).some(ot => Number(ot.tecnica_id) === Number(ct.tecnica_id)));
+    const addedItems = (character.personajes_inventario || [])
+      .filter(ci => !ci.info_glosario?.inicial)
+      .filter(ci => !(originalCharacter?.personajes_inventario || []).some(oi => Number(oi.item_id) === Number(ci.item_id)));
+    const addedTecs = (character.personajes_tecnicas || [])
+      .filter(ct => !ct.info_glosario?.inicial)
+      .filter(ct => !(originalCharacter?.personajes_tecnicas || []).some(ot => Number(ot.tecnica_id) === Number(ct.tecnica_id)));
 
     const unsavedExpSpent =
       addedItems.reduce((sum, i) => sum + (i.info_glosario?.coste_exp || 0), 0) +
