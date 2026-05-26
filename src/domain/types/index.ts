@@ -105,6 +105,7 @@ export interface Glosario {
   aldea_id?: number | null;
   rama_clan_id?: number | null;
   sub_especialidad_id?: number | null;
+  elemento_id?: number | null;
   nombre_es: string;
   nombre_jp?: string;
   requisitos: any;

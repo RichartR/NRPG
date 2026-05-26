@@ -2,7 +2,6 @@
 
 import { create } from 'zustand';
 import { MasterService } from '@/services/supabase/master.service';
-import { MasterServerService } from '@/services/supabase/master.server.service';
 import { createClient } from '@/utils/supabase/client';
 import { 
   Aldea, 
@@ -81,7 +80,7 @@ export const useMasterStore = create<MasterState>((set, get) => ({
         MasterService.getRamas(),
         MasterService.getSubEspecialidades(),
         MasterService.getEntrenamientos(),
-        MasterServerService.getGlosarios(supabase, { onlyInitial: true }),
+        MasterService.getGlosarios({ onlyInitial: true }),
         MasterService.getElementos(),
         MasterService.getRamaElementos(),
         MasterService.getSystemConfigs([

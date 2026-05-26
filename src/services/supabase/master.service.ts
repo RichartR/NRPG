@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client';
-import { Aldea, RamaClan, SubEspecialidad, Entrenamiento, Elemento, RamaElemento } from '@/domain/types';
+import { Aldea, RamaClan, SubEspecialidad, Entrenamiento, Elemento, RamaElemento, Glosario, GlosarioCategoria, GlosarioSubcategoria } from '@/domain/types';
 
 export const MasterService = {
   async getAldeas(): Promise<Aldea[]> {
@@ -123,5 +123,87 @@ export const MasterService = {
       configs[row.clave] = row.valor;
     });
     return configs;
+  },
+
+  async getGlosarioCategorias(): Promise<GlosarioCategoria[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('info_glosario_categorias')
+      .select('*')
+      .order('nombre', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getGlosarioSubcategorias(): Promise<GlosarioSubcategoria[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('info_glosario_subcategorias')
+      .select('*')
+      .order('nombre', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getGlosarios(options?: { categoriaId?: number, onlyInitial?: boolean }): Promise<Glosario[]> {
+    const supabase = createClient();
+    let query = supabase
+      .from('info_glosario')
+      .select('*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre)')
+      .eq('activo', true)
+      .order('nombre_es', { ascending: true });
+    
+    if (options?.categoriaId) {
+      query = query.eq('categoria_id', options.categoriaId);
+    }
+    
+    if (options?.onlyInitial) {
+      query = query.eq('inicial', true);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getAdminRamasActivas(): Promise<RamaClan[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('info_ramas_clanes')
+      .select('id, nombre, tipo, slug, activo, aldea_id')
+      .eq('activo', true)
+      .order('nombre', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getAdminElementosActivos(): Promise<Elemento[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('info_elementos')
+      .select('*')
+      .eq('activo', true)
+      .order('nombre_esp', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getAldeasActivas(): Promise<Aldea[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('info_aldeas')
+      .select('*')
+      .eq('activo', true);
+    if (error) throw error;
+    if (!data) return [];
+
+    const mainIds = [1, 2, 3, 4, 5];
+    return data.sort((a, b) => {
+      const aIsMain = mainIds.includes(a.id);
+      const bIsMain = mainIds.includes(b.id);
+      if (aIsMain && !bIsMain) return -1;
+      if (!aIsMain && bIsMain) return 1;
+      return a.id - b.id;
+    });
   }
 };

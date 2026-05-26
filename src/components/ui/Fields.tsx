@@ -30,7 +30,7 @@ export function DataField({ label, value, onChange, disabled, type = "text", pla
           disabled={disabled}
           placeholder={placeholder}
           onChange={(e) => onChange?.(e.target.value)}
-          className={`w-full bg-black/40 border border-oro/10 px-6 py-4 text-oro font-black outline-none focus:border-oro/40 transition-all disabled:cursor-default placeholder:text-oro/20 text-sm xl:text-base ninja-clip-sm ${showLock ? 'pr-12' : ''}`}
+          className={`w-full h-[58px] bg-black/40 border border-oro/10 px-6 py-4 text-oro font-black outline-none focus:border-oro/40 transition-all disabled:cursor-default placeholder:text-oro/20 text-sm xl:text-base ninja-clip-sm ${showLock ? 'pr-12' : ''}`}
         />
         {showLock && (
           <Lock className="w-3.5 h-3.5 text-oro/40 absolute right-5 top-1/2 -translate-y-1/2" />
@@ -148,7 +148,7 @@ export function NinjaSelect({
   };
 
   const triggerClass = {
-    default: 'bg-black/40 border border-oro/10 px-6 py-4 text-sm xl:text-base hover:border-oro/40 hover:bg-black/70 focus:border-oro/60 ninja-clip-sm',
+    default: 'h-[58px] bg-black/40 border border-oro/10 px-6 py-4 text-sm xl:text-base hover:border-oro/40 hover:bg-black/70 focus:border-oro/60 ninja-clip-sm',
     filter:  'bg-black/20 border border-oro/10 px-6 py-3 text-xs hover:border-oro/30 focus:border-oro/40 ninja-clip-xs',
     inline:  'bg-transparent border border-oro/10 px-4 py-3 text-xs hover:border-oro/20 focus:border-oro/30',
   }[variant];
@@ -338,7 +338,7 @@ export function SearchableSelect({ label, value, options, onChange, disabled, pl
           type="button"
           disabled={disabled}
           onClick={() => setIsOpen(!isOpen)}
-          className="w-full bg-black/40 border border-oro/10 px-6 py-4 text-left text-oro font-black outline-none focus:border-oro/40 disabled:cursor-default flex justify-between items-center transition-all text-sm xl:text-base ninja-clip-sm"
+          className="w-full h-[58px] bg-black/40 border border-oro/10 px-6 py-4 text-left text-oro font-black outline-none focus:border-oro/40 disabled:cursor-default flex justify-between items-center transition-all text-sm xl:text-base ninja-clip-sm"
         >
           <span className={`${!selectedOption ? 'text-oro/20' : ''} w-full text-left`}>
             {selectedOption ? (

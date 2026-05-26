@@ -54,14 +54,16 @@ export default async function RamaDetailPage({ params }: { params: Promise<{ slu
           </p>
         </div>
 
-        {subEspecialidades.length > 0 && (
-          <div className="mb-20">
-            <h2 className="ninja-title text-4xl xl:text-6xl mb-10">Sub-Especialidades</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 xl:gap-16">
-              {subEspecialidades.map((sub) => (
-                <NinjaCard
-                  key={sub.id}
-                  href={`/ramas/${slug}/${sub.slug}`}
+        {(() => {
+          const filteredSubs = subEspecialidades.filter(sub => !sub.slug?.startsWith('ninjutsu-'));
+          return filteredSubs.length > 0 && (
+            <div className="mb-20">
+              <h2 className="ninja-title text-4xl xl:text-6xl mb-10">Sub-Especialidades</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 xl:gap-16">
+                {filteredSubs.map((sub) => (
+                  <NinjaCard
+                    key={sub.id}
+                    href={`/ramas/${slug}/${sub.slug}`}
                   title={sub.nombre}
                   category="SUB-ESPECIALIDAD"
                   imageUrl={sub.url_imagen || 'https://game.gtimg.cn/images/hyrz/web2026/player.jpg'}
@@ -72,7 +74,7 @@ export default async function RamaDetailPage({ params }: { params: Promise<{ slu
               ))}
             </div>
           </div>
-        )}
+        ); })()}
 
         {documentos.length > 0 && (
           <div className="mb-16">

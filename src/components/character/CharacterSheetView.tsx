@@ -8,7 +8,8 @@ import {
   Image as ImageIcon,
   Coins,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Flame
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
@@ -424,7 +425,19 @@ export function CharacterSheetView({
       elements.push(<span key="rango" className="text-rojo-sangre font-black">{reqs.rango}</span>);
     }
     if (reqs.rama_id) {
-      elements.push(<span key="rama" className="text-oro font-black">RAMA/CLAN</span>);
+      const rama = (masters.ramas || []).find((r: any) => Number(r.id) === Number(reqs.rama_id));
+      const ramaNombre = rama ? rama.nombre.toUpperCase() : 'RAMA/CLAN';
+      elements.push(<span key="rama" className="text-oro font-black">{ramaNombre}</span>);
+    }
+    if (reqs.elemento_id) {
+      const elem = (masters.elementos || []).find((e: any) => Number(e.id) === Number(reqs.elemento_id));
+      if (elem) {
+        elements.push(
+          <span key="elemento" className="text-oro font-black">
+            ELEMENTO: <span className="text-oro">{elem.nombre_esp.toUpperCase()}</span>
+          </span>
+        );
+      }
     }
     if (reqs.combates) {
       elements.push(
@@ -459,7 +472,7 @@ export function CharacterSheetView({
     }
 
     Object.entries(reqs).forEach(([key, value]) => {
-      if (['rango', 'rama_id', 'stats', 'misiones', 'personaje_id', 'combates'].includes(key)) return;
+      if (['rango', 'rama_id', 'elemento_id', 'stats', 'misiones', 'personaje_id', 'combates'].includes(key)) return;
       if (value === null || value === undefined || value === 0 || value === false || value === '') return;
       elements.push(
         <span key={key} className="text-oro/50 font-black">
@@ -996,7 +1009,7 @@ export function CharacterSheetView({
                               <SelectField
                                 label="SUB-ESPECIALIDAD"
                                 value={pr?.sub_especialidad_id}
-                                options={masters.subEspecialidades.filter((s: any) => s.rama_id === pr?.rama_id).map((s: any) => ({ label: s.nombre, value: s.id }))}
+                                options={masters.subEspecialidades.filter((s: any) => s.rama_id === pr?.rama_id && (Number(pr?.rama_id) !== 4 || s.slug?.startsWith('ninjutsu-'))).map((s: any) => ({ label: s.nombre, value: s.id }))}
                                 disabled={!isEditing && !isNew}
                                 onChange={(v) => {
                                   // Validar repetibilidad en sub-especialidad
@@ -1015,7 +1028,7 @@ export function CharacterSheetView({
                                 }}
                               />
                             )}
-                            
+
                             {/* RENDERIZADO DINÁMICO DE SELECTORES DE ELEMENTOS PARA NINJUTSU ELEMENTAL */}
                             {Number(pr?.rama_id) === 4 && pr?.sub_especialidad_id && (() => {
                               const subEsp = masters.subEspecialidades.find((s: any) => s.id === pr.sub_especialidad_id);
@@ -1030,12 +1043,12 @@ export function CharacterSheetView({
                               // Calcular pool condicionado: elementos fijos básicos del otro slot
                               const otherSlot = slot === 1 ? 2 : 1;
                               const otherPr = character.personajes_ramas?.find((r: any) => Number(r.slot) === otherSlot);
-                              
+
                               let poolFijoBasico: any[] = [];
                               if (otherPr && masters.ramaElementos) {
                                 poolFijoBasico = masters.ramaElementos
-                                  .filter((re: any) => 
-                                    re.tipo === 'fijo' && 
+                                  .filter((re: any) =>
+                                    re.tipo === 'fijo' &&
                                     re.info_elementos?.tipo === 'basico' &&
                                     (re.rama_id === otherPr.rama_id || re.sub_especialidad_id === otherPr.sub_especialidad_id)
                                   )
@@ -1062,12 +1075,12 @@ export function CharacterSheetView({
                               return (
                                 <div className="space-y-4 p-4 bg-oro/5 border border-oro/10 ninja-clip-sm animate-in fade-in duration-300">
                                   <h5 className="text-[9px] font-black text-oro uppercase tracking-[0.2em] mb-2">Elementos de Ninjutsu Elemental</h5>
-                                  
+
                                   {/* Selector Principal (Para Ninjutsu I, II y III) */}
                                   <SelectField
                                     label="ELEMENTO PRINCIPAL"
-                                    value={pr?.elemento_principal_id}
-                                    options={getOptionsForSelector(pr?.elemento_principal_id, [pr?.elemento_secundario_id, pr?.elemento_terciario_id])}
+                                    value={pr?.elemento_principal_id ?? null}
+                                    options={getOptionsForSelector(pr?.elemento_principal_id ?? null, [pr?.elemento_secundario_id ?? null, pr?.elemento_terciario_id ?? null])}
                                     disabled={!isEditing && !isNew}
                                     onChange={(v) => {
                                       const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { ...pr, elemento_principal_id: v ? Number(v) : null }];
@@ -1079,8 +1092,8 @@ export function CharacterSheetView({
                                   {(isNinII || isNinIII) && (
                                     <SelectField
                                       label="ELEMENTO SECUNDARIO"
-                                      value={pr?.elemento_secundario_id}
-                                      options={getOptionsForSelector(pr?.elemento_secundario_id, [pr?.elemento_principal_id, pr?.elemento_terciario_id])}
+                                      value={pr?.elemento_secundario_id ?? null}
+                                      options={getOptionsForSelector(pr?.elemento_secundario_id ?? null, [pr?.elemento_principal_id ?? null, pr?.elemento_terciario_id ?? null])}
                                       disabled={!isEditing && !isNew}
                                       onChange={(v) => {
                                         const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { ...pr, elemento_secundario_id: v ? Number(v) : null }];
@@ -1152,8 +1165,8 @@ export function CharacterSheetView({
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
                       {derivedElements.map((elem: any) => (
-                        <div 
-                          key={elem.id} 
+                        <div
+                          key={elem.id}
                           className="flex flex-col items-center justify-center p-6 bg-black/40 border border-oro/10 hover:border-oro/30 transition-all group relative overflow-hidden ninja-clip-sm"
                         >
                           <div className="absolute top-0 right-0 w-16 h-16 bg-oro/5 rounded-full blur-xl pointer-events-none" />
