@@ -14,7 +14,7 @@ export default function ElementoManager() {
   const subEspecialidades = useMasterStore((s) => s.subEspecialidades);
   const refreshMaster = useMasterStore((s) => s.refresh);
 
-  const [selectedElemento, setSelectedElemento] = useState<Elemento | undefined>(null);
+  const [selectedElemento, setSelectedElemento] = useState<Elemento | undefined>(undefined);
   const [isEditing, setIsEditing] = useState(false);
   const [localVinculaciones, setLocalVinculaciones] = useState<RamaElemento[]>([]);
 
@@ -39,7 +39,7 @@ export default function ElementoManager() {
 
   const handleCancel = () => {
     setIsEditing(false);
-    setSelectedElemento(null);
+    setSelectedElemento(undefined);
     refreshMaster(); // Recargar datos frescos del master store
   };
 
