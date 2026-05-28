@@ -217,10 +217,10 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
       };
 
       if (editingRegistry) {
-        await RegistrosService.updateRegistro(editingRegistry.id, payload);
+        await RegistrosService.updateRegistro(editingRegistry.id, payload as any);
         addToast('Reparto de premios actualizado correctamente', 'success');
       } else {
-        await RegistrosService.createRegistro(payload);
+        await RegistrosService.createRegistro(payload as any);
         addToast('Premios repartidos y publicados correctamente', 'success');
       }
       onClose();
