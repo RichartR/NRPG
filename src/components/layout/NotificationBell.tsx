@@ -135,6 +135,8 @@ export default function NotificationBell() {
       setRejectingId(null);
       setComment('');
       fetchNotifications();
+      // Refrescar el store del personaje activo inmediatamente
+      useCharacterStore.getState().fetchActiveCharacter().catch(console.error);
     } catch (err: any) {
       addToast(err.message || 'Error al procesar la acción', 'error');
     } finally {

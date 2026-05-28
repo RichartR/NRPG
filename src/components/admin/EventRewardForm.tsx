@@ -6,6 +6,8 @@ import { CharacterService } from '@/services/supabase/character.service';
 import { Glosario, Registro } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
 import { useCharacterStore } from '@/store/useCharacterStore';
+import { AuthService } from '@/services/supabase/auth.service';
+import { ProfileService } from '@/services/supabase/profile.service';
 import { X, Search, UserPlus, User, Trash2, Coins, Sparkles, Plus, BookOpen } from 'lucide-react';
 
 interface EventRewardFormProps {
@@ -23,6 +25,25 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
   const addToast = useToastStore(state => state.addToast);
   const { activeCharacter } = useCharacterStore();
   const [loading, setLoading] = useState(false);
+  const [adminProfile, setAdminProfile] = useState<any>(null);
+
+  // Fetch admin profile if no active character
+  useEffect(() => {
+    const fetchAdminProfile = async () => {
+      try {
+        const { data: { user } } = await AuthService.getUser();
+        if (user) {
+          const profile = await ProfileService.getProfile(user.id);
+          setAdminProfile(profile);
+        }
+      } catch (err) {
+        console.error('Error fetching admin profile:', err);
+      }
+    };
+    if (!activeCharacter) {
+      fetchAdminProfile();
+    }
+  }, [activeCharacter]);
 
   // Rewards states
   const [globalXp, setGlobalXp] = useState<number>(Number(editingRegistry?.data?.global_xp) || 0);
@@ -158,8 +179,8 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
   };
 
   const handleSubmit = async () => {
-    if (!activeCharacter) {
-      addToast('No se ha detectado un personaje administrador activo.', 'error');
+    if (!activeCharacter && !adminProfile) {
+      addToast('No se ha detectado un personaje administrador activo ni cuenta administradora.', 'error');
       return;
     }
     if (participants.length === 0) {
@@ -172,7 +193,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
       const payload = {
         tipo: 'accion' as const,
         subtipo: 'evento_premios',
-        autor_id: activeCharacter.id,
+        autor_id: activeCharacter ? activeCharacter.id : null,
         participantes_ids: participants.map(p => p.id),
         data: {
           titulo: `Reparto de Premios: ${activeNews.titulo}`,
@@ -180,6 +201,10 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
           global_xp: globalXp,
           global_ryous: globalRyous,
           global_monedas_evento: globalMonedasEvento,
+          autor_admin: !activeCharacter && adminProfile ? {
+            id: adminProfile.id,
+            username: adminProfile.username || 'Administrador'
+          } : undefined,
           participantes_premios: participants.map(p => ({
             personaje_id: p.id,
             nombre_ninja: p.nombre_ninja,

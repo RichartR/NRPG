@@ -49,14 +49,15 @@ export default async function Home() {
       .select(`
         id,
         tipo,
+        subtipo,
         fecha,
         data,
         autor_id,
         autor: reg_characters!reg_registros_autor_id_fkey(nombre_ninja, url_img)
       `)
-      .in('tipo', ['mision', 'combate', 'compra'])
+      .or("tipo.in.(mision,combate,compra),subtipo.eq.evento_premios")
       .order('fecha', { ascending: false })
-      .range(0, 9);
+      .range(0, 19);
     registros = regData || [];
   } catch (error) {
     console.error('Error loading latest registers:', error);
@@ -97,6 +98,8 @@ export default async function Home() {
   const events: any[] = [];
 
   registros.forEach((reg: any) => {
+    if (reg.tipo === 'accion' && reg.subtipo !== 'evento_premios') return;
+
     let targetLink = '/registros';
     if (reg.tipo === 'mision') {
       targetLink = '/registros/misiones';
@@ -108,12 +111,12 @@ export default async function Home() {
 
     events.push({
       id: `reg-${reg.id}`,
-      tipo: reg.tipo,
+      tipo: reg.subtipo === 'evento_premios' ? 'evento_premios' : reg.tipo,
       fecha: reg.fecha,
       timestamp: new Date(reg.fecha).getTime(),
       data: reg.data,
-      autorName: reg.autor?.nombre_ninja || 'Ninja Desaparecido',
-      avatarUrl: reg.autor?.url_img,
+      autorName: reg.autor?.nombre_ninja || reg.data.autor_admin?.username || 'Admin / Narrador',
+      avatarUrl: reg.autor?.url_img || '/assets/ui/logo.png',
       link: targetLink
     });
   });
@@ -315,6 +318,43 @@ export default async function Home() {
                         </span>
                       );
                       break;
+                    case 'evento_premios':
+                      typeLabel = 'Premios Evento';
+                      typeColor = 'border-amber-500/30 text-amber-400 bg-amber-950/20';
+                      titleText = event.data?.titulo || 'Reparto de Premios';
+                      iconElement = <Sparkles className="w-4 h-4 text-amber-400/60" />;
+
+                      const rewardParts = [];
+                      if (event.data?.global_xp) {
+                        rewardParts.push(
+                          <span key="xp" className="flex items-center gap-1">
+                            +{event.data.global_xp} EXP
+                          </span>
+                        );
+                      }
+                      if (event.data?.global_ryous) {
+                        rewardParts.push(
+                          <span key="ryous" className="flex items-center gap-1">
+                            +{event.data.global_ryous} RYOUS
+                          </span>
+                        );
+                      }
+                      if (event.data?.global_monedas_evento) {
+                        rewardParts.push(
+                          <span key="evento" className="flex items-center gap-1 text-oro/60">
+                            +{event.data.global_monedas_evento} M. EVENTO
+                          </span>
+                        );
+                      }
+
+                      if (rewardParts.length > 0) {
+                        rewardElement = (
+                          <div className="flex flex-wrap items-center gap-2.5 text-[10px] xl:text-xs font-bold text-oro/60">
+                            {rewardParts}
+                          </div>
+                        );
+                      }
+                      break;
                     case 'mision':
                       typeLabel = 'Misión';
                       typeColor = 'border-oro/30 text-oro bg-oro/5';
@@ -349,21 +389,21 @@ export default async function Home() {
                       if (event.data?.coste_ryous) {
                         costParts.push(
                           <span key="ryous" className="flex items-center gap-1">
-                            <Coins className="w-3.5 h-3.5 text-oro/40" /> -{event.data.coste_ryous.toLocaleString()} RYOUS
+                            -{event.data.coste_ryous.toLocaleString()} RYOUS
                           </span>
                         );
                       }
                       if (event.data?.coste_exp) {
                         costParts.push(
                           <span key="exp" className="flex items-center gap-1">
-                            <Sparkles className="w-3.5 h-3.5 text-oro/40" /> -{event.data.coste_exp.toLocaleString()} EXP
+                            -{event.data.coste_exp.toLocaleString()} EXP
                           </span>
                         );
                       }
                       if (event.data?.coste_moneda_evento) {
                         costParts.push(
                           <span key="evento" className="flex items-center gap-1">
-                            <Coins className="w-3.5 h-3.5 text-oro/40" /> -{event.data.coste_moneda_evento.toLocaleString()} ME
+                            -{event.data.coste_moneda_evento.toLocaleString()} M. EVENTO
                           </span>
                         );
                       }
@@ -417,6 +457,7 @@ export default async function Home() {
                           {/* Mini-badge del tipo de actividad */}
                           <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border border-oro/20 flex items-center justify-center shadow-lg bg-black/90 p-0.5">
                             {event.tipo === 'nuevo_personaje' && <UserPlus className="w-2.5 h-2.5 text-green-400" />}
+                            {event.tipo === 'evento_premios' && <Sparkles className="w-2.5 h-2.5 text-amber-400" />}
                             {event.tipo === 'mision' && <ScrollText className="w-2.5 h-2.5 text-oro" />}
                             {event.tipo === 'combate' && <Swords className="w-2.5 h-2.5 text-red-500" />}
                             {event.tipo === 'compra' && <ShoppingBag className="w-2.5 h-2.5 text-amber-500" />}
@@ -435,7 +476,7 @@ export default async function Home() {
                           </div>
                           {event.tipo === 'nuevo_personaje' ? (
                             <p className="text-[10px] text-gris-texto/60 font-black uppercase tracking-wider">
-                              Rango: <span className="text-oro/60">{event.data?.rango || 'Sin Rango'}</span> <span className="text-oro/20">•</span> {timeStr}
+                              <span className="text-oro/60">Publicado:</span> {timeStr}
                             </p>
                           ) : (event.tipo === 'noticia' || event.tipo === 'parche' || event.tipo === 'evento') ? (
                             <p className="text-[10px] text-gris-texto/60 font-black uppercase tracking-wider">

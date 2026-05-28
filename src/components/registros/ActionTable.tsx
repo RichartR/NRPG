@@ -16,7 +16,7 @@ interface ActionTableProps {
   subjectId?: number;
 }
 
-export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin }: ActionTableProps) {
+export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subjectId }: ActionTableProps) {
   const { activeCharacter } = useCharacterStore();
   const addToast = useToastStore(state => state.addToast);
   const { confirm: confirmAction } = useConfirmStore();
@@ -124,7 +124,7 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin }: Ac
             <tr className="border-b border-oro/10 text-oro/70 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em]">
               <th className="py-6 px-8 w-[18%]">Fecha</th>
               <th className="py-6 px-8 w-[52%]">Acción / Crónica</th>
-              <th className="py-6 px-8 w-[15%] w-36">Coste</th>
+              <th className="py-6 px-8 w-[15%] w-36">Coste / Recompensa</th>
               <th className="py-6 px-8 text-right w-[15%] w-36">Acciones</th>
             </tr>
           </thead>
@@ -141,6 +141,21 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin }: Ac
               const actionTitle = m.tipo === 'compra'
                 ? `${selfName} adquirió ${m.data.objeto_nombre || m.data.objeto || 'Equipo Ninja'}${m.data.detalles ? ` (${m.data.detalles})` : ''}`
                 : m.data.titulo;
+
+              // Obtener premios del shinobi si es reparto de evento
+              const targetCharId = subjectId || activeCharacter?.id;
+              const partPremio = m.subtipo === 'evento_premios'
+                ? m.data.participantes_premios?.find((p: any) => Number(p.personaje_id) === Number(targetCharId))
+                : null;
+              
+              const globalXp = Number(m.data.global_xp) || 0;
+              const globalRyous = Number(m.data.global_ryous) || 0;
+              const globalMonedas = Number(m.data.global_monedas_evento) || 0;
+
+              const xpObtained = globalXp + (Number(partPremio?.xp_extra) || 0);
+              const ryousObtained = globalRyous + (Number(partPremio?.ryous_extra) || 0);
+              const monedasObtained = globalMonedas + (Number(partPremio?.monedas_evento) || 0);
+              const glosarioObtained = partPremio?.glosario_items || [];
 
               return (
                 <tr key={m.id} className="hover:bg-oro/5 transition-colors group">
@@ -182,23 +197,41 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin }: Ac
                   {/* Coste */}
                   <td className="py-6 px-8">
                     <div className="flex flex-col gap-1.5 justify-center">
-                      {xpSpent > 0 && (
-                        <div className="text-xs font-black text-red-700 tracking-wider">
-                          -{xpSpent.toLocaleString()} EXP
+                      {m.subtipo === 'evento_premios' ? (
+                        <div className="flex flex-col gap-1 justify-center text-emerald-400 font-bold text-[11px] tracking-wide">
+                          {xpObtained > 0 && <div className="text-emerald-400">+{xpObtained} EXP</div>}
+                          {ryousObtained > 0 && <div className="text-emerald-400">+{ryousObtained} Ryos</div>}
+                          {monedasObtained > 0 && <div className="text-emerald-400">+{monedasObtained} M. Evento</div>}
+                          {glosarioObtained.length > 0 && (
+                            <div className="text-[9px] text-oro/50 mt-0.5 font-bold uppercase tracking-wide">
+                              + {glosarioObtained.map((g: any) => g.nombre_es).join(', ')}
+                            </div>
+                          )}
+                          {xpObtained === 0 && ryousObtained === 0 && monedasObtained === 0 && glosarioObtained.length === 0 && (
+                            <span className="text-[10px] text-oro/20 uppercase tracking-widest italic">-</span>
+                          )}
                         </div>
-                      )}
-                      {ryousSpent > 0 && (
-                        <div className="text-xs font-black text-red-700 tracking-wider">
-                          -{ryousSpent.toLocaleString()} Ryos
-                        </div>
-                      )}
-                      {eventCoinsSpent > 0 && (
-                        <div className="text-xs font-black text-red-700 tracking-wider">
-                          -{eventCoinsSpent.toLocaleString()} Monedas de Evento
-                        </div>
-                      )}
-                      {xpSpent === 0 && ryousSpent === 0 && eventCoinsSpent === 0 && (
-                        <span className="text-[10px] text-oro/20 uppercase tracking-widest italic">Gratis</span>
+                      ) : (
+                        <>
+                          {xpSpent > 0 && (
+                            <div className="text-xs font-black text-red-700 tracking-wider">
+                              -{xpSpent.toLocaleString()} EXP
+                            </div>
+                          )}
+                          {ryousSpent > 0 && (
+                            <div className="text-xs font-black text-red-700 tracking-wider">
+                              -{ryousSpent.toLocaleString()} Ryos
+                            </div>
+                          )}
+                          {eventCoinsSpent > 0 && (
+                            <div className="text-xs font-black text-red-700 tracking-wider">
+                              -{eventCoinsSpent.toLocaleString()} Monedas de Evento
+                            </div>
+                          )}
+                          {xpSpent === 0 && ryousSpent === 0 && eventCoinsSpent === 0 && (
+                            <span className="text-[10px] text-oro/20 uppercase tracking-widest italic">Gratis</span>
+                          )}
+                        </>
                       )}
                     </div>
                   </td>

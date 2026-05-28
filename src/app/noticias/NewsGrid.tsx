@@ -64,10 +64,10 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
         .eq('tipo', 'accion')
         .eq('subtipo', 'evento_premios')
         .order('fecha', { ascending: false });
-        
+
       if (error) throw error;
-      
-      const filtered = (data || []).filter((reg: any) => 
+
+      const filtered = (data || []).filter((reg: any) =>
         Number(reg.data?.evento_id) === Number(activeNews.id)
       );
       setEventRegistries(filtered);
@@ -338,7 +338,7 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
                           <h3 className="text-xl font-black text-oro uppercase tracking-wider flex items-center gap-2">
-                            <Gift className="w-5 h-5 text-oro" /> PREMIOS OTORGADOS
+                            PREMIOS OTORGADOS
                           </h3>
                           <p className="text-[11px] font-bold text-oro/40 uppercase tracking-widest mt-1">Historial de repartos de este evento</p>
                         </div>

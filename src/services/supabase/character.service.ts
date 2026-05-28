@@ -188,7 +188,10 @@ export const CharacterService = {
     
     const { data: registro, error: regError } = await supabase
       .from('reg_registros')
-      .select('*')
+      .select(`
+        *,
+        participantes:reg_registros_participantes(*)
+      `)
       .eq('id', registroId)
       .single();
     
