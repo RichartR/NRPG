@@ -56,7 +56,7 @@ export default function NoticiasClientView({
               <p className="text-gris-texto text-base sm:text-lg xl:text-2xl max-w-4xl leading-relaxed">Mantente al día con las últimas actualizaciones del servidor, eventos de rol y parches de equilibrio.</p>
             </div>
 
-            <NewsGrid newsList={newsList} />
+            <NewsGrid newsList={newsList} isAdmin={isAdmin} />
           </>
         ) : (
           <div className="animate-in fade-in duration-500">

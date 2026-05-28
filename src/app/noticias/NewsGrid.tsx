@@ -1,9 +1,13 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { X, Calendar, User, Search, RefreshCw } from 'lucide-react';
+import { X, Calendar, User, Search, RefreshCw, Gift } from 'lucide-react';
 import NinjaCard from '@/components/ui/NinjaCard';
 import { renderDiscordMarkdown } from '@/lib/discord/renderDiscordMarkdown';
+import { useScrollLock } from '@/hooks/useScrollLock';
+import { createClient } from '@/utils/supabase/client';
+import RegistroCard from '@/components/registros/RegistroCard';
+import EventRewardForm from '@/components/admin/EventRewardForm';
 
 interface NewsItem {
   id?: string;
@@ -16,9 +20,10 @@ interface NewsItem {
 
 interface NewsGridProps {
   newsList: NewsItem[];
+  isAdmin?: boolean;
 }
 
-export default function NewsGrid({ newsList }: NewsGridProps) {
+export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
   // State for search and category filters
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'todos' | 'noticia' | 'parche' | 'evento'>('todos');
@@ -29,8 +34,53 @@ export default function NewsGrid({ newsList }: NewsGridProps) {
 
   // State for modal active news and lazy-loaded contents
   const [activeNews, setActiveNews] = useState<NewsItem | null>(null);
+
+  // Prevent background scrolling when news modal is open
+  useScrollLock(!!activeNews);
   const [loadedContent, setLoadedContent] = useState<Record<string, { content: string, timestamp: string }>>({});
   const [loadingMsg, setLoadingMsg] = useState(false);
+
+  // States for Event Prizes
+  const [eventRegistries, setEventRegistries] = useState<any[]>([]);
+  const [loadingRegistries, setLoadingRegistries] = useState(false);
+  const [isRewardFormOpen, setIsRewardFormOpen] = useState(false);
+  const [editingRegistry, setEditingRegistry] = useState<any>(null);
+
+  const fetchEventRegistries = async () => {
+    if (!activeNews || activeNews.categoria?.toLowerCase() !== 'evento') return;
+    setLoadingRegistries(true);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('reg_registros')
+        .select(`
+          *,
+          autor: reg_characters!reg_registros_autor_id_fkey(nombre_ninja, url_img, profiles!user_id(username, url_avatar, url_img)),
+          participantes: reg_registros_participantes!reg_registros_participantes_registro_id_fkey(
+            *,
+            personaje: reg_characters!reg_registros_participantes_personaje_id_fkey(nombre_ninja, url_img, profiles!user_id(username, url_avatar, url_img))
+          )
+        `)
+        .eq('tipo', 'accion')
+        .eq('subtipo', 'evento_premios')
+        .order('fecha', { ascending: false });
+
+      if (error) throw error;
+
+      const filtered = (data || []).filter((reg: any) =>
+        Number(reg.data?.evento_id) === Number(activeNews.id)
+      );
+      setEventRegistries(filtered);
+    } catch (err) {
+      console.error('Error fetching event registries:', err);
+    } finally {
+      setLoadingRegistries(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEventRegistries();
+  }, [activeNews]);
 
   // Fetch discord message contents lazily when modal opens
   useEffect(() => {
@@ -233,7 +283,7 @@ export default function NewsGrid({ newsList }: NewsGridProps) {
               ) : (
                 <div className="w-full h-full bg-oro/5" />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-[#050309]/60 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black via-black/50 to-transparent" />
 
               {/* Botón de Cerrar Flotante */}
               <button
@@ -282,11 +332,75 @@ export default function NewsGrid({ newsList }: NewsGridProps) {
                   <div className="prose prose-invert max-w-none text-gris-texto text-base sm:text-lg md:text-xl leading-relaxed">
                     {renderDiscordMarkdown(loadedContent[activeNews.discord_msg_id]?.content || "Contenido no disponible.")}
                   </div>
+
+                  {activeNews.categoria?.toLowerCase() === 'evento' && (
+                    <div className="mt-12 pt-8 border-t border-oro/10 space-y-8">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                          <h3 className="text-xl font-black text-oro uppercase tracking-wider flex items-center gap-2">
+                            PREMIOS OTORGADOS
+                          </h3>
+                          <p className="text-[11px] font-bold text-oro/40 uppercase tracking-widest mt-1">Historial de repartos de este evento</p>
+                        </div>
+                        {isAdmin && (
+                          <button
+                            onClick={() => {
+                              setEditingRegistry(null);
+                              setIsRewardFormOpen(true);
+                            }}
+                            className="px-6 py-2.5 bg-rojo-sangre hover:brightness-125 text-oro font-black text-[10px] xl:text-xs uppercase tracking-widest transition-all shadow-md select-none self-start sm:self-auto"
+                            style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                          >
+                            Repartir Premios
+                          </button>
+                        )}
+                      </div>
+
+                      {loadingRegistries ? (
+                        <div className="flex justify-center items-center py-10 gap-2">
+                          <RefreshCw className="w-5 h-5 text-oro animate-spin" />
+                          <span className="text-[10px] font-black uppercase tracking-widest text-oro/40">Cargando registros...</span>
+                        </div>
+                      ) : eventRegistries.length === 0 ? (
+                        <div className="p-8 text-center bg-black/20 border border-oro/5">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-oro/30 italic">No se han repartido premios en este evento todavía</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          {eventRegistries.map((reg) => (
+                            <RegistroCard
+                              key={reg.id}
+                              registro={reg}
+                              isAdmin={isAdmin}
+                              onRefresh={fetchEventRegistries}
+                              onEdit={(r) => {
+                                setEditingRegistry(r);
+                                setIsRewardFormOpen(true);
+                              }}
+                              isGlobalView={true}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
             </div>
           </div>
         </div>
+      )}
+
+      {(isRewardFormOpen || editingRegistry) && activeNews && (
+        <EventRewardForm
+          activeNews={activeNews}
+          editingRegistry={editingRegistry}
+          onClose={() => {
+            setIsRewardFormOpen(false);
+            setEditingRegistry(null);
+            fetchEventRegistries();
+          }}
+        />
       )}
     </>
   );

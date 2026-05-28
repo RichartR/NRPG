@@ -3,6 +3,8 @@
 import { create } from 'zustand';
 import React from 'react';
 import { AlertCircle } from 'lucide-react';
+import { useScrollLock } from '@/hooks/useScrollLock';
+
 interface ConfirmOptions {
   title?: string;
   message: string;
@@ -36,6 +38,9 @@ export const useConfirmStore = create<ConfirmState>((set, get) => ({
 export function ConfirmContainer() {
   const { isOpen, options, resolve } = useConfirmStore();
   const [inputValue, setInputValue] = React.useState('');
+
+  // Prevent background scrolling when confirmation modal is open
+  useScrollLock(isOpen);
 
   React.useEffect(() => {
     if (!isOpen) setInputValue('');

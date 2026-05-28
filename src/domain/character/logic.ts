@@ -66,6 +66,20 @@ export const RewardLogic = {
   calculateReward(registro: any, personajeId: number): { xp: number; ryous: number } {
     const { tipo, data } = registro;
     
+    if (registro.subtipo === 'evento_premios') {
+      const globalXp = Number(data.global_xp) || 0;
+      const globalRyous = Number(data.global_ryous) || 0;
+      const partPremio = data.participantes_premios?.find((p: any) => Number(p.personaje_id) === Number(personajeId));
+      
+      const xpExtra = Number(partPremio?.xp_extra) || 0;
+      const ryousExtra = Number(partPremio?.ryous_extra) || 0;
+      
+      return {
+        xp: globalXp + xpExtra,
+        ryous: globalRyous + ryousExtra
+      };
+    }
+
     if (tipo === 'combate') {
       const isTeamA = data.equipo_a?.some((p: any) => p.id === personajeId);
       const isTeamB = data.equipo_b?.some((p: any) => p.id === personajeId);
