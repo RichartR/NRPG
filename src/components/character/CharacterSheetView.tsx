@@ -123,6 +123,119 @@ export function CharacterSheetView({
       .catch(err => console.error("Error fetching occupancy in CharacterSheetView:", err));
   }, [isEditing, isNew]);
 
+  // ESTRUCTURA DE ALINEACIÓN AUTOMÁTICA DE ELEMENTOS DE NINJUTSU CON LOS DEL CLAN
+  useEffect(() => {
+    if (!character?.personajes_ramas || !masters.ramaElementos || !masters.elementos || !masters.subEspecialidades) return;
+
+    let hasChanges = false;
+    const newRamas = character.personajes_ramas.map((pr: any) => {
+      if (Number(pr.rama_id) === 4 && pr.sub_especialidad_id) {
+        const subEsp = masters.subEspecialidades.find((s: any) => s.id === pr.sub_especialidad_id);
+        if (!subEsp) return pr;
+
+        const isNinI = subEsp.slug === 'ninjutsu-i';
+        const isNinII = subEsp.slug === 'ninjutsu-ii';
+        const isNinIII = subEsp.slug === 'ninjutsu-iii';
+
+        const S = isNinI ? 1 : isNinII ? 2 : isNinIII ? 3 : 0;
+        if (S === 0) return pr;
+
+        // Calcular elementos fijos de la otra rama/clan
+        const otherSlot = Number(pr.slot) === 1 ? 2 : 1;
+        const otherPr = character.personajes_ramas?.find((r: any) => Number(r.slot) === otherSlot);
+        let poolFijoBasico: any[] = [];
+        if (otherPr && masters.ramaElementos) {
+          poolFijoBasico = masters.ramaElementos
+            .filter((re: any) =>
+              re.tipo === 'fijo' &&
+              re.info_elementos?.tipo === 'basico' &&
+              ((otherPr.rama_id && re.rama_id === otherPr.rama_id) || (otherPr.sub_especialidad_id && re.sub_especialidad_id === otherPr.sub_especialidad_id))
+            )
+            .map((re: any) => re.info_elementos)
+            .filter(Boolean);
+        }
+
+        const N = poolFijoBasico.length;
+
+        let expectedPrincipal = pr.elemento_principal_id || null;
+        let expectedSecundario = pr.elemento_secundario_id || null;
+        let expectedTerciario = pr.elemento_terciario_id || null;
+
+        if (S >= N) {
+          // Los primeros N slots se auto-rellenan con los elementos del clan
+          if (N >= 1) {
+            const firstElemId = poolFijoBasico[0]?.id || null;
+            if (expectedPrincipal !== firstElemId) {
+              expectedPrincipal = firstElemId;
+              hasChanges = true;
+            }
+          }
+          if (N >= 2) {
+            const secondElemId = poolFijoBasico[1]?.id || null;
+            if (expectedSecundario !== secondElemId) {
+              expectedSecundario = secondElemId;
+              hasChanges = true;
+            }
+          }
+          if (N >= 3) {
+            const thirdElemId = poolFijoBasico[2]?.id || null;
+            if (expectedTerciario !== thirdElemId) {
+              expectedTerciario = thirdElemId;
+              hasChanges = true;
+            }
+          }
+
+          // Si el slot excede el número de fijos, y el valor actual no cumple con las restricciones, limpiarlo
+          if (S === 2 && N === 1) {
+            if (expectedSecundario === expectedPrincipal) {
+              expectedSecundario = null;
+              hasChanges = true;
+            }
+          }
+          if (S === 3) {
+            if (N === 1) {
+              if (expectedSecundario === expectedPrincipal) { expectedSecundario = null; hasChanges = true; }
+              if (expectedTerciario === expectedPrincipal || expectedTerciario === expectedSecundario) { expectedTerciario = null; hasChanges = true; }
+            } else if (N === 2) {
+              if (expectedTerciario === expectedPrincipal || expectedTerciario === expectedSecundario) { expectedTerciario = null; hasChanges = true; }
+            }
+          }
+        } else {
+          // S < N: El jugador elige libremente de entre los N fijos
+          if (expectedPrincipal && !poolFijoBasico.some((e: any) => e.id === expectedPrincipal)) {
+            expectedPrincipal = null;
+            hasChanges = true;
+          }
+          expectedSecundario = null;
+          expectedTerciario = null;
+        }
+
+        if (
+          pr.elemento_principal_id !== expectedPrincipal ||
+          pr.elemento_secundario_id !== expectedSecundario ||
+          pr.elemento_terciario_id !== expectedTerciario
+        ) {
+          return {
+            ...pr,
+            elemento_principal_id: expectedPrincipal,
+            elemento_secundario_id: expectedSecundario,
+            elemento_terciario_id: expectedTerciario
+          };
+        }
+      }
+      return pr;
+    });
+
+    if (hasChanges) {
+      onUpdateField('personajes_ramas', newRamas);
+    }
+  }, [
+    character?.personajes_ramas,
+    masters.ramaElementos,
+    masters.elementos,
+    masters.subEspecialidades
+  ]);
+
   const aldeaOptions = useMemo(() => {
     return (masters.aldeas || []).map((a: any) => {
       const activeCount = occupancy.countByAldea[a.id] || 0;
@@ -1054,27 +1167,32 @@ export function CharacterSheetView({
                                   .filter((re: any) =>
                                     re.tipo === 'fijo' &&
                                     re.info_elementos?.tipo === 'basico' &&
-                                    (re.rama_id === otherPr.rama_id || re.sub_especialidad_id === otherPr.sub_especialidad_id)
+                                    ((otherPr.rama_id && re.rama_id === otherPr.rama_id) || (otherPr.sub_especialidad_id && re.sub_especialidad_id === otherPr.sub_especialidad_id))
                                   )
                                   .map((re: any) => re.info_elementos)
                                   .filter(Boolean);
                               }
 
-                              const hasPoolCondicionado = poolFijoBasico.length > 0;
+                              const N = poolFijoBasico.length;
                               const todosBasicos = (masters.elementos || []).filter((e: any) => e.tipo === 'basico');
 
                               // Opciones para selectors
-                              const getOptionsForSelector = (currentVal: number | null, otherVals: (number | null)[]) => {
-                                const baseList = hasPoolCondicionado ? poolFijoBasico : todosBasicos;
+                              const getOptionsForSelector = (selectorSlot: number, currentVal: number | null, otherVals: (number | null)[]) => {
+                                const isRestricted = N >= selectorSlot;
+                                const baseList = isRestricted ? poolFijoBasico : todosBasicos;
                                 return baseList.map((e: any) => {
                                   const isSelectedElsewhere = otherVals.includes(e.id);
                                   return {
-                                    label: e.nombre_esp.toUpperCase() + (e.nombre_jap ? ` (${e.nombre_jap.toUpperCase()})` : ''),
+                                    label: e.nombre_jap
+                                      ? `${e.nombre_jap.toUpperCase()} (${e.nombre_esp.toUpperCase()})`
+                                      : e.nombre_esp.toUpperCase(),
                                     value: e.id,
                                     disabled: isSelectedElsewhere && e.id !== currentVal
                                   };
                                 });
                               };
+
+                              const S = isNinI ? 1 : isNinII ? 2 : isNinIII ? 3 : 0;
 
                               return (
                                 <div className="space-y-4 p-4 bg-oro/5 border border-oro/10 ninja-clip-sm animate-in fade-in duration-300">
@@ -1084,8 +1202,8 @@ export function CharacterSheetView({
                                   <SelectField
                                     label="ELEMENTO PRINCIPAL"
                                     value={pr?.elemento_principal_id ?? null}
-                                    options={getOptionsForSelector(pr?.elemento_principal_id ?? null, [pr?.elemento_secundario_id ?? null, pr?.elemento_terciario_id ?? null])}
-                                    disabled={!isEditing && !isNew}
+                                    options={getOptionsForSelector(1, pr?.elemento_principal_id ?? null, [pr?.elemento_secundario_id ?? null, pr?.elemento_terciario_id ?? null])}
+                                    disabled={!isEditing && !isNew || (S >= N && N >= 1)}
                                     onChange={(v) => {
                                       const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { ...pr, elemento_principal_id: v ? Number(v) : null }];
                                       onUpdateField('personajes_ramas', newRamas);
@@ -1097,8 +1215,8 @@ export function CharacterSheetView({
                                     <SelectField
                                       label="ELEMENTO SECUNDARIO"
                                       value={pr?.elemento_secundario_id ?? null}
-                                      options={getOptionsForSelector(pr?.elemento_secundario_id ?? null, [pr?.elemento_principal_id ?? null, pr?.elemento_terciario_id ?? null])}
-                                      disabled={!isEditing && !isNew}
+                                      options={getOptionsForSelector(2, pr?.elemento_secundario_id ?? null, [pr?.elemento_principal_id ?? null, pr?.elemento_terciario_id ?? null])}
+                                      disabled={!isEditing && !isNew || (S >= N && N >= 2)}
                                       onChange={(v) => {
                                         const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { ...pr, elemento_secundario_id: v ? Number(v) : null }];
                                         onUpdateField('personajes_ramas', newRamas);
@@ -1106,24 +1224,16 @@ export function CharacterSheetView({
                                     />
                                   )}
 
-                                  {/* Selector Terciario (Para Ninjutsu III - Siempre Libre entre restantes básicos) */}
+                                  {/* Selector Terciario (Para Ninjutsu III) */}
                                   {isNinIII && (() => {
-                                    // El 3er elemento en Ninjutsu III es siempre libre de entre los básicos restantes
-                                    const optionsLibres = todosBasicos.map((e: any) => {
-                                      const isSelectedElsewhere = [pr?.elemento_principal_id, pr?.elemento_secundario_id].includes(e.id);
-                                      return {
-                                        label: e.nombre_esp.toUpperCase() + (e.nombre_jap ? ` (${e.nombre_jap.toUpperCase()})` : ''),
-                                        value: e.id,
-                                        disabled: isSelectedElsewhere && e.id !== pr?.elemento_terciario_id
-                                      };
-                                    });
+                                    const optionsLibres = getOptionsForSelector(3, pr?.elemento_terciario_id ?? null, [pr?.elemento_principal_id ?? null, pr?.elemento_secundario_id ?? null]);
 
                                     return (
                                       <SelectField
                                         label="ELEMENTO TERCIARIO"
-                                        value={pr?.elemento_terciario_id}
+                                        value={pr?.elemento_terciario_id ?? null}
                                         options={optionsLibres}
-                                        disabled={!isEditing && !isNew}
+                                        disabled={!isEditing && !isNew || (S >= N && N >= 3)}
                                         onChange={(v) => {
                                           const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { ...pr, elemento_terciario_id: v ? Number(v) : null }];
                                           onUpdateField('personajes_ramas', newRamas);
@@ -1181,16 +1291,13 @@ export function CharacterSheetView({
                               <span className="text-xl font-bold text-oro/40 group-hover:text-oro transition-colors">{elem.nombre_jap?.[0] || elem.nombre_esp?.[0]}</span>
                             )}
                           </div>
-                          <span className="text-[10px] font-black text-oro uppercase tracking-widest text-center leading-none">
-                            {elem.nombre_esp}
-                          </span>
                           {elem.nombre_jap && (
-                            <span className="text-[8px] font-black text-oro/30 uppercase tracking-tighter text-center mt-1">
+                            <span className="text-[10px] font-black text-oro uppercase tracking-widest text-center leading-none">
                               {elem.nombre_jap}
                             </span>
                           )}
-                          <span className={`mt-3 px-2 py-0.5 text-[7px] font-black uppercase tracking-widest border ${elem.tipo === 'basico' ? 'bg-oro/5 text-oro/60 border-oro/10' : 'bg-rojo-sangre/10 text-rojo-sangre border-rojo-sangre/20'}`}>
-                            {elem.tipo}
+                          <span className="text-[8px] font-black text-oro/50 uppercase tracking-tighter text-center mt-1">
+                            {elem.nombre_esp}
                           </span>
                         </div>
                       ))}
