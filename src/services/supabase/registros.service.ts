@@ -168,13 +168,36 @@ export const RegistrosService = {
       if (p.estado === 'aceptado') {
         const { xp, ryous } = RewardLogic.calculateReward(oldRegistro, p.personaje_id);
         const combatPts = RewardLogic.calculateCombatPoints(oldRegistro, p.personaje_id);
-        const { data: char } = await supabase.from('reg_characters').select('xp, ryous, puntos_combate').eq('id', p.personaje_id).single();
+        
+        let extraMonedaEvento = 0;
+        let glosarioItems: any[] = [];
+        if (oldRegistro.subtipo === 'evento_premios') {
+          const oldPartPremio = oldRegistro.data.participantes_premios?.find((pItem: any) => Number(pItem.personaje_id) === Number(p.personaje_id));
+          const globalMonedas = Number(oldRegistro.data.global_monedas_evento) || 0;
+          extraMonedaEvento = globalMonedas + (Number(oldPartPremio?.monedas_evento) || 0);
+          glosarioItems = oldPartPremio?.glosario_items || [];
+        }
+
+        const { data: char } = await supabase.from('reg_characters').select('xp, ryous, puntos_combate, moneda_evento').eq('id', p.personaje_id).single();
         if (char) {
           await supabase.from('reg_characters').update({
             xp: Math.max(0, (char.xp || 0) - xp),
             ryous: Math.max(0, (char.ryous || 0) - ryous),
-            puntos_combate: Math.max(0, (char.puntos_combate || 0) - combatPts)
+            puntos_combate: Math.max(0, (char.puntos_combate || 0) - combatPts),
+            moneda_evento: Math.max(0, (char.moneda_evento || 0) - extraMonedaEvento)
           }).eq('id', p.personaje_id);
+        }
+
+        if (glosarioItems.length > 0) {
+          const itemIds = glosarioItems.filter((i: any) => Number(i.categoria_id) === 2).map((i: any) => i.id);
+          const techIds = glosarioItems.filter((i: any) => Number(i.categoria_id) !== 2).map((i: any) => i.id);
+
+          if (itemIds.length > 0) {
+            await supabase.from('reg_personajes_inventario').delete().eq('personaje_id', p.personaje_id).in('item_id', itemIds);
+          }
+          if (techIds.length > 0) {
+            await supabase.from('reg_personajes_tecnicas').delete().eq('personaje_id', p.personaje_id).in('tecnica_id', techIds);
+          }
         }
       }
       // Eliminar participación de la DB
@@ -229,14 +252,63 @@ export const RegistrosService = {
         const diffRyous = newRewards.ryous - oldRewards.ryous;
         const diffCombatPts = newCombatPts - oldCombatPts;
 
-        if (diffXp !== 0 || diffRyous !== 0 || diffCombatPts !== 0) {
-          const { data: char } = await supabase.from('reg_characters').select('xp, ryous, puntos_combate').eq('id', p.personaje_id).single();
+        let oldExtraME = 0;
+        let oldGlosario: any[] = [];
+        let newExtraME = 0;
+        let newGlosario: any[] = [];
+
+        if (oldRegistro.subtipo === 'evento_premios') {
+          const oldPartPremio = oldRegistro.data.participantes_premios?.find((pItem: any) => Number(pItem.personaje_id) === Number(p.personaje_id));
+          const oldGlobalMonedas = Number(oldRegistro.data.global_monedas_evento) || 0;
+          oldExtraME = oldGlobalMonedas + (Number(oldPartPremio?.monedas_evento) || 0);
+          oldGlosario = oldPartPremio?.glosario_items || [];
+        }
+        if (newRegistroFull.subtipo === 'evento_premios') {
+          const newPartPremio = newRegistroFull.data.participantes_premios?.find((pItem: any) => Number(pItem.personaje_id) === Number(p.personaje_id));
+          const newGlobalMonedas = Number(newRegistroFull.data.global_monedas_evento) || 0;
+          newExtraME = newGlobalMonedas + (Number(newPartPremio?.monedas_evento) || 0);
+          newGlosario = newPartPremio?.glosario_items || [];
+        }
+
+        const diffME = newExtraME - oldExtraME;
+
+        if (diffXp !== 0 || diffRyous !== 0 || diffCombatPts !== 0 || diffME !== 0) {
+          const { data: char } = await supabase.from('reg_characters').select('xp, ryous, puntos_combate, moneda_evento').eq('id', p.personaje_id).single();
           if (char) {
             await supabase.from('reg_characters').update({
               xp: Math.max(0, (char.xp || 0) + diffXp),
               ryous: Math.max(0, (char.ryous || 0) + diffRyous),
-              puntos_combate: Math.max(0, (char.puntos_combate || 0) + diffCombatPts)
+              puntos_combate: Math.max(0, (char.puntos_combate || 0) + diffCombatPts),
+              moneda_evento: Math.max(0, (char.moneda_evento || 0) + diffME)
             }).eq('id', p.personaje_id);
+          }
+        }
+
+        if (oldRegistro.subtipo === 'evento_premios' || newRegistroFull.subtipo === 'evento_premios') {
+          // Remover ítems del glosario viejos y agregar los nuevos
+          const oldItemIds = oldGlosario.filter((i: any) => Number(i.categoria_id) === 2).map((i: any) => i.id);
+          const oldTechIds = oldGlosario.filter((i: any) => Number(i.categoria_id) !== 2).map((i: any) => i.id);
+
+          if (oldItemIds.length > 0) {
+            await supabase.from('reg_personajes_inventario').delete().eq('personaje_id', p.personaje_id).in('item_id', oldItemIds);
+          }
+          if (oldTechIds.length > 0) {
+            await supabase.from('reg_personajes_tecnicas').delete().eq('personaje_id', p.personaje_id).in('tecnica_id', oldTechIds);
+          }
+
+          const inventoryPack = newGlosario
+            .filter((i: any) => Number(i.categoria_id) === 2)
+            .map((i: any) => ({ personaje_id: p.personaje_id, item_id: i.id }));
+
+          const techniquesPack = newGlosario
+            .filter((i: any) => Number(i.categoria_id) !== 2)
+            .map((i: any) => ({ personaje_id: p.personaje_id, tecnica_id: i.id }));
+
+          if (inventoryPack.length > 0) {
+            await supabase.from('reg_personajes_inventario').insert(inventoryPack);
+          }
+          if (techniquesPack.length > 0) {
+            await supabase.from('reg_personajes_tecnicas').insert(techniquesPack);
           }
         }
       }
@@ -257,13 +329,35 @@ export const RegistrosService = {
             const { xp, ryous } = RewardLogic.calculateReward(registro, p.personaje_id);
             const combatPts = RewardLogic.calculateCombatPoints(registro, p.personaje_id);
             
-            const { data: char } = await supabase.from('reg_characters').select('xp, ryous, puntos_combate').eq('id', p.personaje_id).single();
+            let extraMonedaEvento = 0;
+            let glosarioItems: any[] = [];
+            if (registro.subtipo === 'evento_premios') {
+              const partPremio = registro.data.participantes_premios?.find((pItem: any) => Number(pItem.personaje_id) === Number(p.personaje_id));
+              const globalMonedas = Number(registro.data.global_monedas_evento) || 0;
+              extraMonedaEvento = globalMonedas + (Number(partPremio?.monedas_evento) || 0);
+              glosarioItems = partPremio?.glosario_items || [];
+            }
+
+            const { data: char } = await supabase.from('reg_characters').select('xp, ryous, puntos_combate, moneda_evento').eq('id', p.personaje_id).single();
             if (char) {
               await supabase.from('reg_characters').update({
                 xp: Math.max(0, (char.xp || 0) - xp),
                 ryous: Math.max(0, (char.ryous || 0) - ryous),
-                puntos_combate: Math.max(0, (char.puntos_combate || 0) - combatPts)
+                puntos_combate: Math.max(0, (char.puntos_combate || 0) - combatPts),
+                moneda_evento: Math.max(0, (char.moneda_evento || 0) - extraMonedaEvento)
               }).eq('id', p.personaje_id);
+            }
+
+            if (glosarioItems.length > 0) {
+              const itemIds = glosarioItems.filter((i: any) => Number(i.categoria_id) === 2).map((i: any) => i.id);
+              const techIds = glosarioItems.filter((i: any) => Number(i.categoria_id) !== 2).map((i: any) => i.id);
+
+              if (itemIds.length > 0) {
+                await supabase.from('reg_personajes_inventario').delete().eq('personaje_id', p.personaje_id).in('item_id', itemIds);
+              }
+              if (techIds.length > 0) {
+                await supabase.from('reg_personajes_tecnicas').delete().eq('personaje_id', p.personaje_id).in('tecnica_id', techIds);
+              }
             }
           }
         }

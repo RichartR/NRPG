@@ -9,10 +9,14 @@ import { CharacterService } from '@/services/supabase/character.service';
 import { CharacterRadarChart } from './CharacterRadarChart';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 export default function CharacterSheet() {
   const { activeCharacter, loading, error, fetchActiveCharacter } = useCharacterStore();
   const [isEditingPortrait, setIsEditingPortrait] = useState(false);
+  
+  // Prevent background scrolling when portrait modal is open
+  useScrollLock(isEditingPortrait);
   const [newPortraitUrl, setNewPortraitUrl] = useState('');
   const [updating, setUpdating] = useState(false);
   const [mounted, setMounted] = useState(false);

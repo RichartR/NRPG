@@ -196,6 +196,59 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
               </div>
             </div>
           </div>
+        ) : registro.subtipo === 'evento_premios' ? (
+          <div className="p-6 bg-black/40 border border-oro/10 ninja-clip-sm space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-oro/5 pb-4 gap-4">
+              <div>
+                <h4 className="text-lg sm:text-xl font-black text-oro uppercase tracking-wider mb-1">
+                  {registro.data.titulo || 'Reparto de Premios'}
+                </h4>
+                <p className="text-[10px] font-bold text-oro/40 uppercase tracking-widest">REGISTRO DE PREMIOS DE EVENTO</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-4 sm:gap-6 p-3 bg-oro/5 border border-oro/10 ninja-clip-xs shrink-0 text-[10px] sm:text-xs font-black text-oro">
+                <div className="flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-oro/60" /> XP: +{registro.data.global_xp || 0}</div>
+                <div className="w-px h-4 bg-oro/10" />
+                <div className="flex items-center gap-1.5"><Coins className="w-3.5 h-3.5 text-oro/60" /> R: +{registro.data.global_ryous || 0}</div>
+                {registro.data.global_monedas_evento > 0 && (
+                  <>
+                    <div className="w-px h-4 bg-oro/10" />
+                    <div className="flex items-center gap-1.5"><Coins className="w-3.5 h-3.5 text-rojo-sangre" /> ME: +{registro.data.global_monedas_evento}</div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <span className="text-[9px] font-black text-oro/30 uppercase tracking-[0.25em] block">PREMIOS INDIVIDUALES POR SHINOBI:</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {registro.data.participantes_premios?.map((p: any) => (
+                  <div key={p.personaje_id} className="p-4 bg-black/40 border border-oro/5 hover:border-oro/20 transition-all ninja-clip-xs space-y-3">
+                    <div className="flex justify-between items-center border-b border-oro/5 pb-2">
+                      <span className="text-xs font-black text-oro uppercase tracking-wider">{p.nombre_ninja}</span>
+                      <span className="text-[8px] font-bold text-oro/30">RECEPTOR</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2 text-[10px] font-bold text-oro/60 uppercase">
+                      {p.xp_extra > 0 && <span className="bg-oro/5 px-2 py-0.5 border border-oro/10">+{p.xp_extra} XP</span>}
+                      {p.ryous_extra > 0 && <span className="bg-oro/5 px-2 py-0.5 border border-oro/10">+{p.ryous_extra} R</span>}
+                      {p.monedas_evento > 0 && <span className="bg-rojo-sangre/10 text-rojo-sangre px-2 py-0.5 border border-rojo-sangre/20">+{p.monedas_evento} ME</span>}
+                    </div>
+                    {p.glosario_items && p.glosario_items.length > 0 && (
+                      <div className="space-y-1.5">
+                        <span className="text-[8px] font-black text-oro/20 uppercase tracking-widest block">GLOSARIO ADQUIRIDO:</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {p.glosario_items.map((i: any) => (
+                            <span key={i.id} className="text-[9px] font-black bg-oro/10 border border-oro/20 text-oro px-2 py-0.5 ninja-clip-xs">
+                              {i.nombre_es}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         ) : registro.tipo === 'accion' ? (
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 p-6 sm:p-2 bg-black/40 border border-oro/5 ninja-clip-sm">
             <div className="flex-1 space-y-4">

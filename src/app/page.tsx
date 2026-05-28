@@ -42,6 +42,7 @@ export default async function Home() {
 
   let registros: any[] = [];
   let characters: any[] = [];
+  let noticias: any[] = [];
   try {
     const { data: regData } = await supabase
       .from('reg_registros')
@@ -55,7 +56,7 @@ export default async function Home() {
       `)
       .in('tipo', ['mision', 'combate', 'compra'])
       .order('fecha', { ascending: false })
-      .range(0, 4);
+      .range(0, 9);
     registros = regData || [];
   } catch (error) {
     console.error('Error loading latest registers:', error);
@@ -74,10 +75,22 @@ export default async function Home() {
       `)
       .eq('activo', true)
       .order('created_at', { ascending: false })
-      .range(0, 4);
+      .range(0, 9);
     characters = charData || [];
   } catch (error) {
     console.error('Error loading latest characters:', error);
+  }
+
+  try {
+    const { data: newsData } = await supabase
+      .from('info_noticias_index')
+      .select('*')
+      .eq('activo', true)
+      .order('created_at', { ascending: false })
+      .range(0, 9);
+    noticias = newsData || [];
+  } catch (error) {
+    console.error('Error loading latest news:', error);
   }
 
   // Merge and sort chronologically
@@ -122,8 +135,24 @@ export default async function Home() {
     });
   });
 
+  noticias.forEach((news: any) => {
+    events.push({
+      id: `news-${news.id}`,
+      tipo: news.categoria?.toLowerCase() || 'noticia',
+      fecha: news.created_at || new Date().toISOString(),
+      timestamp: new Date(news.created_at || new Date()).getTime(),
+      data: {
+        titulo: news.titulo,
+        categoria: news.categoria || 'NOTICIA'
+      },
+      autorName: 'Muro de Anuncios',
+      avatarUrl: news.url_imagen || '/assets/ui/logo.png',
+      link: `/noticias`
+    });
+  });
+
   events.sort((a, b) => b.timestamp - a.timestamp);
-  const latestEvents = events.slice(0, 5);
+  const latestEvents = events.slice(0, 10);
 
   return (
     <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col">
@@ -262,7 +291,7 @@ export default async function Home() {
               </h3>
             </div>
 
-            <div className="relative z-10 divide-y divide-oro/5">
+            <div className="relative z-10 divide-y divide-oro/5 max-h-[385px] overflow-y-auto custom-scrollbar pr-1">
               {latestEvents && latestEvents.length > 0 ? (
                 latestEvents.map((event) => {
                   const authorName = event.autorName;
@@ -347,6 +376,20 @@ export default async function Home() {
                         );
                       }
                       break;
+                    case 'noticia':
+                    case 'parche':
+                    case 'evento':
+                      typeLabel = event.data?.categoria || 'Anuncio';
+                      if (event.tipo === 'evento') {
+                        typeColor = 'border-amber-500/30 text-amber-400 bg-amber-950/20';
+                      } else if (event.tipo === 'parche') {
+                        typeColor = 'border-blue-500/30 text-blue-400 bg-blue-950/20';
+                      } else {
+                        typeColor = 'border-purple-500/30 text-purple-400 bg-purple-950/20';
+                      }
+                      titleText = event.data?.titulo || 'Anuncio Oficial';
+                      iconElement = <MessageSquare className="w-4 h-4 text-purple-400/60" />;
+                      break;
                     default:
                       typeLabel = 'Actividad';
                       typeColor = 'border-oro/30 text-oro bg-oro/5';
@@ -377,6 +420,7 @@ export default async function Home() {
                             {event.tipo === 'mision' && <ScrollText className="w-2.5 h-2.5 text-oro" />}
                             {event.tipo === 'combate' && <Swords className="w-2.5 h-2.5 text-red-500" />}
                             {event.tipo === 'compra' && <ShoppingBag className="w-2.5 h-2.5 text-amber-500" />}
+                            {(event.tipo === 'noticia' || event.tipo === 'parche' || event.tipo === 'evento') && <MessageSquare className="w-2.5 h-2.5 text-purple-400" />}
                           </div>
                         </div>
 
@@ -393,6 +437,10 @@ export default async function Home() {
                             <p className="text-[10px] text-gris-texto/60 font-black uppercase tracking-wider">
                               Rango: <span className="text-oro/60">{event.data?.rango || 'Sin Rango'}</span> <span className="text-oro/20">•</span> {timeStr}
                             </p>
+                          ) : (event.tipo === 'noticia' || event.tipo === 'parche' || event.tipo === 'evento') ? (
+                            <p className="text-[10px] text-gris-texto/60 font-black uppercase tracking-wider">
+                              Publicado en <span className="text-oro/60">{authorName}</span> <span className="text-oro/20">•</span> {timeStr}
+                            </p>
                           ) : (
                             <p className="text-[10px] text-gris-texto/60 font-black uppercase tracking-wider">
                               Por <span className="text-oro/60">{authorName}</span> <span className="text-oro/20">•</span> {timeStr}
@@ -400,6 +448,7 @@ export default async function Home() {
                           )}
                         </div>
                       </div>
+
                       <div className="flex items-center gap-4 shrink-0 self-end sm:self-auto">
                         {rewardElement}
                         <Link

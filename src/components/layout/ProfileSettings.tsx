@@ -6,6 +6,7 @@ import { ProfileService } from '@/services/supabase/profile.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 interface ProfileSettingsProps {
   profile: any;
@@ -14,6 +15,9 @@ interface ProfileSettingsProps {
 
 export default function ProfileSettings({ profile, userId }: ProfileSettingsProps) {
   const [isOpen, setIsOpen] = useState(false);
+  
+  // Prevent background scrolling when profile settings modal is open
+  useScrollLock(isOpen);
   const [urlImg, setUrlImg] = useState(profile?.url_img || profile?.url_avatar || '');
   const [loading, setLoading] = useState(false);
   const addToast = useToastStore(state => state.addToast);

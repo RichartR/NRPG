@@ -198,9 +198,23 @@ export const CharacterService = {
       const { xp, ryous } = RewardLogic.calculateReward(registro, personajeId);
       const combatPts = RewardLogic.calculateCombatPoints(registro, personajeId);
       
+      let extraMonedaEvento = 0;
+      let glosarioItems: any[] = [];
+      if (registro.subtipo === 'evento_premios') {
+        const partPremio = registro.data.participantes_premios?.find((p: any) => Number(p.personaje_id) === Number(personajeId));
+        const globalMonedas = Number(registro.data.global_monedas_evento) || 0;
+        if (partPremio) {
+          extraMonedaEvento = globalMonedas + (Number(partPremio.monedas_evento) || 0);
+          glosarioItems = partPremio.glosario_items || [];
+        } else if (registro.participantes?.some((part: any) => Number(part.personaje_id) === Number(personajeId))) {
+          // Si el jugador está como participante pero no tiene premios extra, recibe el premio global
+          extraMonedaEvento = globalMonedas;
+        }
+      }
+
       const { data: char, error: charError } = await supabase
         .from('reg_characters')
-        .select('xp, ryous, puntos_combate')
+        .select('xp, ryous, puntos_combate, moneda_evento')
         .eq('id', personajeId)
         .single();
       
@@ -211,11 +225,29 @@ export const CharacterService = {
         .update({
           xp: (char.xp || 0) + xp,
           ryous: (char.ryous || 0) + ryous,
-          puntos_combate: (char.puntos_combate || 0) + combatPts
+          puntos_combate: (char.puntos_combate || 0) + combatPts,
+          moneda_evento: (char.moneda_evento || 0) + extraMonedaEvento
         })
         .eq('id', personajeId);
       
       if (updError) throw updError;
+
+      if (glosarioItems.length > 0) {
+        const inventoryPack = glosarioItems
+          .filter((i: any) => Number(i.categoria_id) === 2)
+          .map((i: any) => ({ personaje_id: personajeId, item_id: i.id }));
+
+        const techniquesPack = glosarioItems
+          .filter((i: any) => Number(i.categoria_id) !== 2)
+          .map((i: any) => ({ personaje_id: personajeId, tecnica_id: i.id }));
+
+        if (inventoryPack.length > 0) {
+          await supabase.from('reg_personajes_inventario').insert(inventoryPack);
+        }
+        if (techniquesPack.length > 0) {
+          await supabase.from('reg_personajes_tecnicas').insert(techniquesPack);
+        }
+      }
 
       await supabase
         .from('reg_registros_participantes')

@@ -12,6 +12,7 @@ import { Eye } from 'lucide-react';
 
 import { createPortal } from 'react-dom';
 import { useRef } from 'react';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 export default function NotificationBell() {
   const { activeCharacter } = useCharacterStore();
@@ -25,6 +26,9 @@ export default function NotificationBell() {
   const [loading, setLoading] = useState(false);
   const [selectedRegistro, setSelectedRegistro] = useState<any>(null);
   const addToast = useToastStore(state => state.addToast);
+
+  // Prevent background scrolling when inspection modal is open
+  useScrollLock(!!selectedRegistro);
 
   // Click outside listener for the dropdown
   useEffect(() => {
