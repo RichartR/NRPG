@@ -6,6 +6,8 @@ import { ProfileService } from '@/services/supabase/profile.service';
 import NotificationBell from '@/components/layout/NotificationBell';
 import AdminNotificationBadge from '@/components/admin/AdminNotificationBadge';
 import ProfileSettings from '@/components/layout/ProfileSettings';
+import { unstable_cache } from 'next/cache';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import {
   User,
   ScrollText,
@@ -18,6 +20,67 @@ import {
   MessageSquare,
   UserPlus
 } from 'lucide-react';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const publicClient = createSupabaseClient(supabaseUrl, supabaseAnonKey);
+
+const getCachedRegistros = unstable_cache(
+  async () => {
+    const { data } = await publicClient
+      .from('reg_registros')
+      .select(`
+        id,
+        tipo,
+        subtipo,
+        fecha,
+        data,
+        autor_id,
+        autor: reg_characters!reg_registros_autor_id_fkey(nombre_ninja, url_img)
+      `)
+      .or("tipo.in.(mision,combate,compra),subtipo.eq.evento_premios")
+      .order('fecha', { ascending: false })
+      .range(0, 19);
+    return data || [];
+  },
+  ['latest-registros'],
+  { revalidate: 30 }
+);
+
+const getCachedCharacters = unstable_cache(
+  async () => {
+    const { data } = await publicClient
+      .from('reg_characters')
+      .select(`
+        id,
+        nombre_ninja,
+        created_at,
+        url_img,
+        rango,
+        aldeas: info_aldeas(nombre_completo, abreviatura)
+      `)
+      .eq('activo', true)
+      .order('created_at', { ascending: false })
+      .range(0, 9);
+    return data || [];
+  },
+  ['latest-characters'],
+  { revalidate: 30 }
+);
+
+const getCachedNoticias = unstable_cache(
+  async () => {
+    const { data } = await publicClient
+      .from('info_noticias_index')
+      .select('*')
+      .eq('activo', true)
+      .order('created_at', { ascending: false })
+      .range(0, 9);
+    return data || [];
+  },
+  ['latest-noticias'],
+  { revalidate: 30 }
+);
 
 function formatRelativeTime(dateString: string) {
   const date = new Date(dateString);
@@ -40,59 +103,11 @@ export default async function Home() {
 
   const profile = user ? await ProfileService.getProfile(user.id) : null;
 
-  let registros: any[] = [];
-  let characters: any[] = [];
-  let noticias: any[] = [];
-  try {
-    const { data: regData } = await supabase
-      .from('reg_registros')
-      .select(`
-        id,
-        tipo,
-        subtipo,
-        fecha,
-        data,
-        autor_id,
-        autor: reg_characters!reg_registros_autor_id_fkey(nombre_ninja, url_img)
-      `)
-      .or("tipo.in.(mision,combate,compra),subtipo.eq.evento_premios")
-      .order('fecha', { ascending: false })
-      .range(0, 19);
-    registros = regData || [];
-  } catch (error) {
-    console.error('Error loading latest registers:', error);
-  }
-
-  try {
-    const { data: charData } = await supabase
-      .from('reg_characters')
-      .select(`
-        id,
-        nombre_ninja,
-        created_at,
-        url_img,
-        rango,
-        aldeas: info_aldeas(nombre_completo, abreviatura)
-      `)
-      .eq('activo', true)
-      .order('created_at', { ascending: false })
-      .range(0, 9);
-    characters = charData || [];
-  } catch (error) {
-    console.error('Error loading latest characters:', error);
-  }
-
-  try {
-    const { data: newsData } = await supabase
-      .from('info_noticias_index')
-      .select('*')
-      .eq('activo', true)
-      .order('created_at', { ascending: false })
-      .range(0, 9);
-    noticias = newsData || [];
-  } catch (error) {
-    console.error('Error loading latest news:', error);
-  }
+  const [registros, characters, noticias] = await Promise.all([
+    getCachedRegistros(),
+    getCachedCharacters(),
+    getCachedNoticias()
+  ]);
 
   // Merge and sort chronologically
   const events: any[] = [];

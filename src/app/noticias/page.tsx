@@ -1,19 +1,29 @@
 import { createClient } from '@/utils/supabase/server';
 import { ProfileService } from '@/services/supabase/profile.service';
 import NoticiasClientView from './NoticiasClientView';
+import { unstable_cache } from 'next/cache';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
-export default async function NoticiasPage() {
-  const supabase = await createClient();
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const publicClient = createSupabaseClient(supabaseUrl, supabaseAnonKey);
 
-  // 1. Obtener todos los índices de noticias para la vista de jugador y admin
-  let allNews: any[] = [];
-  try {
-    const { data, error } = await supabase
+const getCachedAllNews = unstable_cache(
+  async () => {
+    const { data } = await publicClient
       .from('info_noticias_index')
       .select('*')
       .order('id', { ascending: false });
-    if (error) throw error;
-    allNews = data || [];
+    return data || [];
+  },
+  ['all-noticias-page'],
+  { revalidate: 30 }
+);
+
+export default async function NoticiasPage() {
+  let allNews: any[] = [];
+  try {
+    allNews = await getCachedAllNews();
   } catch (error) {
     console.error("Error fetching news index:", error);
     return <div className="p-8 text-red-500">Error cargando el índice de noticias.</div>;
@@ -33,6 +43,7 @@ export default async function NoticiasPage() {
   const adminNewsList = rawNewsList;
 
   // 2. Verificar rol de administrador de forma segura
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const profile = user ? await ProfileService.getProfile(user.id) : null;
   const isAdmin = profile?.role === 'admin';
