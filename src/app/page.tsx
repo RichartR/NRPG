@@ -135,7 +135,7 @@ export default async function Home() {
       autorName: reg.autor?.nombre_ninja || reg.data.autor_admin?.username || reg.data.narrador || 'Admin / Narrador',
       avatarUrl: reg.subtipo === 'narracion'
         ? '/assets/images/narracion.png'
-        : (reg.autor?.url_img || '/assets/ui/logo.png'),
+        : (reg.autor?.url_img || null),
       link: targetLink
     });
   });
@@ -152,7 +152,7 @@ export default async function Home() {
         aldea: char.aldeas?.abreviatura || char.aldeas?.nombre_completo || 'Sin Aldea / Renegado'
       },
       autorName: char.nombre_ninja,
-      avatarUrl: char.url_img,
+      avatarUrl: char.url_img || null,
       link: `/ficha/${char.id}`
     });
   });
@@ -382,8 +382,8 @@ export default async function Home() {
                       if (event.data?.recompensa_xp || event.data?.recompensa_ryous) {
                         rewardElement = (
                           <div className="flex items-center gap-3 text-[10px] xl:text-xs font-bold text-oro/60">
-                            {event.data.recompensa_xp > 0 && <span className="flex items-center gap-1"><Sparkles className="w-3.5 h-3.5 text-oro/40" /> +{event.data.recompensa_xp} EXP</span>}
-                            {event.data.recompensa_ryous > 0 && <span className="flex items-center gap-1"><Coins className="w-3.5 h-3.5 text-oro/40" /> +{event.data.recompensa_ryous} RYOUS</span>}
+                            {event.data.recompensa_xp > 0 && <span className="flex items-center gap-1">+{event.data.recompensa_xp} EXP</span>}
+                            {event.data.recompensa_ryous > 0 && <span className="flex items-center gap-1">+{event.data.recompensa_ryous} RYOUS</span>}
                           </div>
                         );
                       }

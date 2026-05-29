@@ -107,8 +107,22 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
 
       <div className={`flex justify-between items-center ${isGlobalView ? 'mb-6' : 'mb-8'} relative z-10`}>
         <div className="flex items-center gap-4">
-          <div className="p-2.5 bg-oro/10 border border-oro/20 ninja-clip-xs shrink-0">
-            <User className="w-6 h-6 text-oro/60" />
+          <div className="w-11 h-11 bg-black/40 border border-oro/20 ninja-clip-xs shrink-0 overflow-hidden flex items-center justify-center">
+            {registro.subtipo === 'narracion' ? (
+              <img
+                src="/assets/images/narracion.png"
+                alt="Narración"
+                className="w-full h-full object-cover"
+              />
+            ) : registro.autor?.url_img ? (
+              <img
+                src={registro.autor.url_img}
+                alt={authorName}
+                className="w-full h-full object-cover object-top"
+              />
+            ) : (
+              <User className="w-6 h-6 text-oro/60" />
+            )}
           </div>
           <div className="flex flex-col">
             <span className="text-sm xl:text-lg font-black uppercase tracking-[0.2em] text-oro leading-none mb-1">

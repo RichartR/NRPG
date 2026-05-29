@@ -226,7 +226,7 @@ export interface Registro {
   autor_id: number;
   fecha: string;
   // Joins
-  autor?: { nombre_ninja: string };
+  autor?: { nombre_ninja: string; url_img?: string | null; profiles?: any };
   participantes?: RegistroParticipante[];
 }
 
@@ -236,7 +236,7 @@ export interface RegistroParticipante {
   estado: 'pendiente' | 'aceptado' | 'rechazado' | 'disputa_admin' | 'finalizado_admin';
   comentario_rechazo?: string;
   // Joins
-  personaje?: { nombre_ninja: string };
+  personaje?: { nombre_ninja: string; url_img?: string | null; profiles?: any };
   registro?: Registro;
 }
 

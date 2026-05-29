@@ -56,7 +56,7 @@ export const CharacterServerService = {
 
   async updateCharacterFields(supabase: SupabaseClient, id: string | number, fields: Record<string, unknown>) {
     const { error } = await supabase.from('reg_characters').update(fields).eq('id', id);
-    
+
     // Si la columna url_img no existe (error 42703), intentamos guardar sin ella
     if (error && error.code === '42703' && 'url_img' in fields) {
       const { url_img, ...rest } = fields;
@@ -68,13 +68,26 @@ export const CharacterServerService = {
     if (error) throw error;
   },
 
-  async upsertRama(supabase: SupabaseClient, characterId: string | number, slot: number, ramaId: number, subEspecialidadId: number | null, entrenamientoId: number | null) {
+  async upsertRama(
+    supabase: SupabaseClient,
+    characterId: string | number,
+    slot: number,
+    ramaId: number,
+    subEspecialidadId: number | null,
+    entrenamientoId: number | null,
+    elementoPrincipalId?: number | null,
+    elementoSecundarioId?: number | null,
+    elementoTerciarioId?: number | null
+  ) {
     const { error } = await supabase.from('reg_personajes_ramas').upsert({
-      personaje_id: characterId, 
-      slot, 
-      rama_id: ramaId, 
+      personaje_id: characterId,
+      slot,
+      rama_id: ramaId,
       sub_especialidad_id: subEspecialidadId || null,
-      id_entrenamiento: entrenamientoId || null
+      id_entrenamiento: entrenamientoId || null,
+      elemento_principal_id: elementoPrincipalId || null,
+      elemento_secundario_id: elementoSecundarioId || null,
+      elemento_terciario_id: elementoTerciarioId || null
     }, { onConflict: 'personaje_id, slot' });
     if (error) throw error;
   },
@@ -100,16 +113,17 @@ export const CharacterServerService = {
     // Esto permite que Postgres valide la restricción de unicidad al final de la operación,
     // permitiendo "intercambios" de ramas entre slots sin dar error de duplicado.
     if (ramas.length > 0) {
-      const { error } = await supabase.from('reg_personajes_ramas').upsert(
-        ramas.map((r, idx) => ({
-          personaje_id: characterId,
-          slot: r.slot || idx + 1,
-          rama_id: r.rama_id,
-          sub_especialidad_id: r.sub_especialidad_id || null,
-          id_entrenamiento: r.id_entrenamiento || null
-        })), 
-        { onConflict: 'personaje_id, slot' }
-      );
+      const mapped = ramas.map((r, idx) => ({
+        personaje_id: characterId,
+        slot: r.slot || idx + 1,
+        rama_id: r.rama_id,
+        sub_especialidad_id: r.sub_especialidad_id || null,
+        id_entrenamiento: r.id_entrenamiento || null,
+        elemento_principal_id: r.elemento_principal_id || null,
+        elemento_secundario_id: r.elemento_secundario_id || null,
+        elemento_terciario_id: r.elemento_terciario_id || null
+      }));
+      const { error } = await supabase.from('reg_personajes_ramas').upsert(mapped, { onConflict: 'personaje_id, slot' });
       if (error) throw error;
     }
   },
@@ -134,15 +148,18 @@ export const CharacterServerService = {
     }
   },
 
-  async insertRamas(supabase: SupabaseClient, characterId: string | number, ramas: { rama_id: number; sub_especialidad_id?: number; id_entrenamiento?: number }[]) {
+  async insertRamas(supabase: SupabaseClient, characterId: string | number, ramas: { rama_id: number; sub_especialidad_id?: number; id_entrenamiento?: number; elemento_principal_id?: number; elemento_secundario_id?: number; elemento_terciario_id?: number }[]) {
     if (ramas.length === 0) return;
     const { error } = await supabase.from('reg_personajes_ramas').insert(
-      ramas.map((r, idx) => ({ 
-        personaje_id: characterId, 
-        rama_id: r.rama_id, 
-        sub_especialidad_id: r.sub_especialidad_id || null, 
+      ramas.map((r, idx) => ({
+        personaje_id: characterId,
+        rama_id: r.rama_id,
+        sub_especialidad_id: r.sub_especialidad_id || null,
         id_entrenamiento: r.id_entrenamiento || null,
-        slot: idx + 1 
+        elemento_principal_id: r.elemento_principal_id || null,
+        elemento_secundario_id: r.elemento_secundario_id || null,
+        elemento_terciario_id: r.elemento_terciario_id || null,
+        slot: idx + 1
       }))
     );
     if (error) throw error;
@@ -164,7 +181,7 @@ export const CharacterServerService = {
         archived_at: new Date().toISOString()
       })
       .eq('id', characterId);
-    
+
     if (error) throw error;
 
     // Si es voluntario, inmediatamente liberamos los requisitos del glosario y limpiamos active_char_id de profiles
@@ -173,7 +190,7 @@ export const CharacterServerService = {
         .from('profiles')
         .update({ active_char_id: null })
         .eq('active_char_id', characterId);
-      
+
       if (profileError) {
         console.error('Error clearing active_char_id on profiles:', profileError);
       }
@@ -189,7 +206,7 @@ export const CharacterServerService = {
       .select('user_id, activo')
       .eq('id', characterId)
       .single();
-    
+
     if (getError) throw getError;
     if (!character) throw new Error('Character not found');
     if (character.activo) throw new Error('Character is already active');
@@ -241,7 +258,7 @@ export const CharacterServerService = {
 
     for (const item of items) {
       if (!item.requisitos) continue;
-      
+
       let req = typeof item.requisitos === 'string' ? JSON.parse(item.requisitos) : item.requisitos;
       if (!req || req.personaje_id === undefined || req.personaje_id === null) continue;
 
@@ -290,7 +307,7 @@ export const CharacterServerService = {
     inactivosBorrados: number;
   }> {
     const now = new Date();
-    
+
     // Calcular límites de tiempo
     const tresMesesAtras = new Date();
     tresMesesAtras.setMonth(now.getMonth() - 3);
