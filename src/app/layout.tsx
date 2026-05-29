@@ -18,7 +18,7 @@ const shojumaru = Shojumaru({
 
 export const metadata: Metadata = {
   title: "NRPG - Naruto RPG",
-  description: "Sistema de rol basado en Naruto Mobile",
+  description: "Juego de Rol basado en Naruto para la plataforma Hobba",
   referrer: 'no-referrer',
 };
 
