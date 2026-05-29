@@ -67,7 +67,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
       setGlobalXp(Number(editingRegistry.data?.global_xp) || 0);
       setGlobalRyous(Number(editingRegistry.data?.global_ryous) || 0);
       setGlobalMonedasEvento(Number(editingRegistry.data?.global_monedas_evento) || 0);
-      
+
       const initialParts = editingRegistry.participantes?.map((p: any) => {
         const premio = editingRegistry.data?.participantes_premios?.find((pr: any) => Number(pr.personaje_id) === Number(p.personaje_id));
         return {
@@ -264,11 +264,10 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
           {/* Premios Globales */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-6 bg-black/40 border border-oro/10 ninja-clip-sm relative">
             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-              <Sparkles className="w-20 h-20 text-oro" />
             </div>
             <div className="space-y-4">
               <label className="text-xs font-black uppercase tracking-[0.25em] text-oro/50 flex items-center gap-2 min-h-[2.5rem]">
-                <Sparkles className="w-4 h-4 text-oro" /> EXP GLOBAL (Para todos)
+                EXP GLOBAL (Para todos)
               </label>
               <input
                 type="number"
@@ -281,7 +280,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
             </div>
             <div className="space-y-4">
               <label className="text-xs font-black uppercase tracking-[0.25em] text-oro/50 flex items-center gap-2 min-h-[2.5rem]">
-                <Coins className="w-4 h-4 text-oro" /> RYOUS GLOBALES (Para todos)
+                RYOUS GLOBALES (Para todos)
               </label>
               <input
                 type="number"
@@ -294,7 +293,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
             </div>
             <div className="space-y-4">
               <label className="text-xs font-black uppercase tracking-[0.25em] text-oro/50 flex items-center gap-2 min-h-[2.5rem]">
-                <Coins className="w-4 h-4 text-oro" /> MONEDAS GLOBAL (Para todos)
+                MONEDAS GLOBAL (Para todos)
               </label>
               <input
                 type="number"

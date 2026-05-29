@@ -203,7 +203,7 @@ export const CharacterService = {
       
       let extraMonedaEvento = 0;
       let glosarioItems: any[] = [];
-      if (registro.subtipo === 'evento_premios') {
+      if (registro.subtipo === 'evento_premios' || registro.subtipo === 'narracion') {
         const partPremio = registro.data.participantes_premios?.find((p: any) => Number(p.personaje_id) === Number(personajeId));
         const globalMonedas = Number(registro.data.global_monedas_evento) || 0;
         if (partPremio) {

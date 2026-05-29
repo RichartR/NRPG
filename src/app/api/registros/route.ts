@@ -20,11 +20,38 @@ export async function POST(request: Request) {
 
     const isAdmin = profile?.role === 'admin' || user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin';
 
-    if (!isAdmin) {
-      return NextResponse.json({ error: 'No tienes permisos de administrador' }, { status: 403 });
+    const adminClient = createAdminClient();
+
+    // Obtener personaje activo del usuario para validaciones de propietario
+    const { data: activeChar } = await supabase
+      .from('reg_characters')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('activo', true)
+      .maybeSingle();
+
+    let isAuthorized = isAdmin;
+
+    if (!isAuthorized && activeChar) {
+      if (action === 'create' && payload?.subtipo === 'narracion') {
+        if (Number(payload.autor_id) === Number(activeChar.id)) {
+          isAuthorized = true;
+        }
+      } else if ((action === 'update' || action === 'delete') && id) {
+        const { data: existingReg } = await adminClient
+          .from('reg_registros')
+          .select('*')
+          .eq('id', id)
+          .single();
+        if (existingReg && existingReg.subtipo === 'narracion' && Number(existingReg.autor_id) === Number(activeChar.id)) {
+          isAuthorized = true;
+        }
+      }
     }
 
-    const adminClient = createAdminClient();
+    if (!isAuthorized) {
+      return NextResponse.json({ error: 'No tienes permisos de administrador o propietario para esta acción' }, { status: 403 });
+    }
 
     if (action === 'create') {
       // 1. Crear el registro base
@@ -61,10 +88,23 @@ export async function POST(request: Request) {
         const { xp, ryous } = RewardLogic.calculateReward(registro, payload.autor_id);
         const combatPts = RewardLogic.calculateCombatPoints(registro, payload.autor_id);
         
-        if (xp > 0 || ryous > 0 || combatPts > 0) {
+        let extraMonedaEvento = 0;
+        let glosarioItems: any[] = [];
+        if (registro.subtipo === 'evento_premios' || registro.subtipo === 'narracion') {
+          const partPremio = registro.data.participantes_premios?.find((pItem: any) => Number(pItem.personaje_id) === Number(payload.autor_id));
+          const globalMonedas = Number(registro.data.global_monedas_evento) || 0;
+          if (partPremio) {
+            extraMonedaEvento = globalMonedas + (Number(partPremio.monedas_evento) || 0);
+            glosarioItems = partPremio.glosario_items || [];
+          } else if (payload.participantes_ids.includes(payload.autor_id)) {
+            extraMonedaEvento = globalMonedas;
+          }
+        }
+
+        if (xp > 0 || ryous > 0 || combatPts > 0 || extraMonedaEvento > 0) {
           const { data: char } = await adminClient
             .from('reg_characters')
-            .select('xp, ryous, puntos_combate')
+            .select('xp, ryous, puntos_combate, moneda_evento')
             .eq('id', payload.autor_id)
             .single();
 
@@ -74,9 +114,27 @@ export async function POST(request: Request) {
               .update({
                 xp: (char.xp || 0) + xp,
                 ryous: (char.ryous || 0) + ryous,
-                puntos_combate: (char.puntos_combate || 0) + combatPts
+                puntos_combate: (char.puntos_combate || 0) + combatPts,
+                moneda_evento: (char.moneda_evento || 0) + extraMonedaEvento
               })
               .eq('id', payload.autor_id);
+          }
+        }
+
+        if (glosarioItems.length > 0) {
+          const inventoryPack = glosarioItems
+            .filter((i: any) => Number(i.categoria_id) === 2)
+            .map((i: any) => ({ personaje_id: payload.autor_id, item_id: i.id }));
+
+          const techniquesPack = glosarioItems
+            .filter((i: any) => Number(i.categoria_id) !== 2)
+            .map((i: any) => ({ personaje_id: payload.autor_id, tecnica_id: i.id }));
+
+          if (inventoryPack.length > 0) {
+            await adminClient.from('reg_personajes_inventario').insert(inventoryPack);
+          }
+          if (techniquesPack.length > 0) {
+            await adminClient.from('reg_personajes_tecnicas').insert(techniquesPack);
           }
         }
       }
@@ -122,7 +180,7 @@ export async function POST(request: Request) {
           
           let extraMonedaEvento = 0;
           let glosarioItems: any[] = [];
-          if (oldRegistro.subtipo === 'evento_premios') {
+          if (oldRegistro.subtipo === 'evento_premios' || oldRegistro.subtipo === 'narracion') {
             const oldPartPremio = oldRegistro.data.participantes_premios?.find((pItem: any) => Number(pItem.personaje_id) === Number(p.personaje_id));
             const oldGlobalMonedas = Number(oldRegistro.data.global_monedas_evento) || 0;
             extraMonedaEvento = oldGlobalMonedas + (Number(oldPartPremio?.monedas_evento) || 0);
@@ -176,13 +234,44 @@ export async function POST(request: Request) {
           const { xp, ryous } = RewardLogic.calculateReward(newRegistroFull, pid);
           const combatPts = RewardLogic.calculateCombatPoints(newRegistroFull, pid);
 
-          const { data: char } = await adminClient.from('reg_characters').select('xp, ryous, puntos_combate').eq('id', pid).single();
+          let extraMonedaEvento = 0;
+          let glosarioItems: any[] = [];
+          if (newRegistroFull.subtipo === 'evento_premios' || newRegistroFull.subtipo === 'narracion') {
+            const partPremio = newRegistroFull.data.participantes_premios?.find((pItem: any) => Number(pItem.personaje_id) === Number(pid));
+            const globalMonedas = Number(newRegistroFull.data.global_monedas_evento) || 0;
+            if (partPremio) {
+              extraMonedaEvento = globalMonedas + (Number(partPremio.monedas_evento) || 0);
+              glosarioItems = partPremio.glosario_items || [];
+            } else {
+              extraMonedaEvento = globalMonedas;
+            }
+          }
+
+          const { data: char } = await adminClient.from('reg_characters').select('xp, ryous, puntos_combate, moneda_evento').eq('id', pid).single();
           if (char) {
             await adminClient.from('reg_characters').update({
               xp: (char.xp || 0) + xp,
               ryous: (char.ryous || 0) + ryous,
-              puntos_combate: (char.puntos_combate || 0) + combatPts
+              puntos_combate: (char.puntos_combate || 0) + combatPts,
+              moneda_evento: (char.moneda_evento || 0) + extraMonedaEvento
             }).eq('id', pid);
+          }
+
+          if (glosarioItems.length > 0) {
+            const inventoryPack = glosarioItems
+              .filter((i: any) => Number(i.categoria_id) === 2)
+              .map((i: any) => ({ personaje_id: pid, item_id: i.id }));
+
+            const techniquesPack = glosarioItems
+              .filter((i: any) => Number(i.categoria_id) !== 2)
+              .map((i: any) => ({ personaje_id: pid, tecnica_id: i.id }));
+
+            if (inventoryPack.length > 0) {
+              await adminClient.from('reg_personajes_inventario').insert(inventoryPack);
+            }
+            if (techniquesPack.length > 0) {
+              await adminClient.from('reg_personajes_tecnicas').insert(techniquesPack);
+            }
           }
         }
       }
@@ -206,13 +295,13 @@ export async function POST(request: Request) {
           let newExtraME = 0;
           let newGlosario: any[] = [];
 
-          if (oldRegistro.subtipo === 'evento_premios') {
+          if (oldRegistro.subtipo === 'evento_premios' || oldRegistro.subtipo === 'narracion') {
             const oldPartPremio = oldRegistro.data.participantes_premios?.find((pItem: any) => Number(pItem.personaje_id) === Number(p.personaje_id));
             const oldGlobalMonedas = Number(oldRegistro.data.global_monedas_evento) || 0;
             oldExtraME = oldGlobalMonedas + (Number(oldPartPremio?.monedas_evento) || 0);
             oldGlosario = oldPartPremio?.glosario_items || [];
           }
-          if (newRegistroFull.subtipo === 'evento_premios') {
+          if (newRegistroFull.subtipo === 'evento_premios' || newRegistroFull.subtipo === 'narracion') {
             const newPartPremio = newRegistroFull.data.participantes_premios?.find((pItem: any) => Number(pItem.personaje_id) === Number(p.personaje_id));
             const newGlobalMonedas = Number(newRegistroFull.data.global_monedas_evento) || 0;
             newExtraME = newGlobalMonedas + (Number(newPartPremio?.monedas_evento) || 0);
@@ -233,7 +322,7 @@ export async function POST(request: Request) {
             }
           }
 
-          if (oldRegistro.subtipo === 'evento_premios' || newRegistroFull.subtipo === 'evento_premios') {
+          if (oldRegistro.subtipo === 'evento_premios' || oldRegistro.subtipo === 'narracion' || newRegistroFull.subtipo === 'evento_premios' || newRegistroFull.subtipo === 'narracion') {
             const oldItemIds = oldGlosario.filter((i: any) => Number(i.categoria_id) === 2).map((i: any) => i.id);
             const oldTechIds = oldGlosario.filter((i: any) => Number(i.categoria_id) !== 2).map((i: any) => i.id);
 
@@ -279,7 +368,7 @@ export async function POST(request: Request) {
               
               let extraMonedaEvento = 0;
               let glosarioItems: any[] = [];
-              if (registro.subtipo === 'evento_premios') {
+              if (registro.subtipo === 'evento_premios' || registro.subtipo === 'narracion') {
                 const partPremio = registro.data.participantes_premios?.find((pItem: any) => Number(pItem.personaje_id) === Number(p.personaje_id));
                 const globalMonedas = Number(registro.data.global_monedas_evento) || 0;
                 extraMonedaEvento = globalMonedas + (Number(partPremio?.monedas_evento) || 0);

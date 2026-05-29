@@ -2,7 +2,7 @@ import { createClient } from '@/utils/supabase/client';
 import { Registro, MisionMaster } from '@/domain/types';
 
 export const RegistrosService = {
-  async getRegistros(page = 1, limit = 15, filters: { tipo?: string; personaje_id?: number; startDate?: string; endDate?: string } = {}) {
+  async getRegistros(page = 1, limit = 15, filters: { tipo?: string; subtipo?: string; personaje_id?: number; startDate?: string; endDate?: string } = {}) {
     const supabase = createClient();
     const from = (page - 1) * limit;
     const to = from + limit - 1;
@@ -22,6 +22,10 @@ export const RegistrosService = {
 
     if (filters.tipo) {
       query = query.eq('tipo', filters.tipo);
+    }
+
+    if (filters.subtipo) {
+      query = query.eq('subtipo', filters.subtipo);
     }
 
     if (filters.startDate) {
