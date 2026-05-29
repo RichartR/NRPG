@@ -27,7 +27,7 @@ export default function RegistrosLandingPage() {
           <p className="text-gris-texto text-base sm:text-lg xl:text-2xl max-w-4xl leading-relaxed">Consulta el historial de misiones, registros de combate y transacciones económicas de todo el mundo ninja.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10 xl:gap-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-10 xl:gap-16">
           {/* Tarjeta Misiones */}
           <NinjaCard
             href="/registros/misiones"
@@ -48,6 +48,17 @@ export default function RegistrosLandingPage() {
             imageUrl="/assets/images/combate.png"
             description="Crónicas de enfrentamientos, duelos por el honor y batallas a gran escala."
             actionText="Ver Resultados"
+          />
+
+          {/* Tarjeta Narración */}
+          <NinjaCard
+            href="/registros/narracion"
+            title="Narración"
+            titleClassName="text-3xl sm:text-4xl md:text-5xl"
+            category="REGISTROS"
+            imageUrl="/assets/images/narracion.png"
+            description="Registros históricos de eventos, crónicas relatadas por narradores y recompensas extraordinarias."
+            actionText="Consultar Crónicas"
           />
 
           {/* Tarjeta Tiendas */}

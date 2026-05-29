@@ -13,12 +13,12 @@ import {
   ScrollText,
   Swords,
   ShoppingBag,
-  Compass,
   Coins,
   Sparkles,
   ArrowRight,
   MessageSquare,
-  UserPlus
+  UserPlus,
+  BookOpen
 } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -38,7 +38,7 @@ const getCachedRegistros = unstable_cache(
         autor_id,
         autor: reg_characters!reg_registros_autor_id_fkey(nombre_ninja, url_img)
       `)
-      .or("tipo.in.(mision,combate,compra),subtipo.eq.evento_premios")
+      .or("tipo.in.(mision,combate,compra),subtipo.eq.evento_premios,subtipo.eq.narracion")
       .order('fecha', { ascending: false })
       .range(0, 19);
     return data || [];
@@ -113,7 +113,7 @@ export default async function Home() {
   const events: any[] = [];
 
   registros.forEach((reg: any) => {
-    if (reg.tipo === 'accion' && reg.subtipo !== 'evento_premios') return;
+    if (reg.tipo === 'accion' && reg.subtipo !== 'evento_premios' && reg.subtipo !== 'narracion') return;
 
     let targetLink = '/registros';
     if (reg.tipo === 'mision') {
@@ -122,16 +122,20 @@ export default async function Home() {
       targetLink = '/registros/combates';
     } else if (reg.tipo === 'compra') {
       targetLink = '/registros/tiendas';
+    } else if (reg.subtipo === 'narracion') {
+      targetLink = '/registros/narracion';
     }
 
     events.push({
       id: `reg-${reg.id}`,
-      tipo: reg.subtipo === 'evento_premios' ? 'evento_premios' : reg.tipo,
+      tipo: reg.subtipo === 'evento_premios' ? 'evento_premios' : reg.subtipo === 'narracion' ? 'narracion' : reg.tipo,
       fecha: reg.fecha,
       timestamp: new Date(reg.fecha).getTime(),
       data: reg.data,
-      autorName: reg.autor?.nombre_ninja || reg.data.autor_admin?.username || 'Admin / Narrador',
-      avatarUrl: reg.autor?.url_img || '/assets/ui/logo.png',
+      autorName: reg.autor?.nombre_ninja || reg.data.autor_admin?.username || reg.data.narrador || 'Admin / Narrador',
+      avatarUrl: reg.subtipo === 'narracion'
+        ? '/assets/images/narracion.png'
+        : (reg.autor?.url_img || '/assets/ui/logo.png'),
       link: targetLink
     });
   });
@@ -384,6 +388,43 @@ export default async function Home() {
                         );
                       }
                       break;
+                    case 'narracion':
+                      typeLabel = 'Narración';
+                      typeColor = 'border-purple-500/30 text-purple-400 bg-purple-950/20';
+                      titleText = `Nueva Crónica por ${event.data?.narrador || 'Narrador'}`;
+                      iconElement = <BookOpen className="w-4 h-4 text-purple-400/60" />;
+
+                      const rewardPartsNarr = [];
+                      if (event.data?.global_xp) {
+                        rewardPartsNarr.push(
+                          <span key="xp" className="flex items-center gap-1">
+                            +{event.data.global_xp} EXP
+                          </span>
+                        );
+                      }
+                      if (event.data?.global_ryous) {
+                        rewardPartsNarr.push(
+                          <span key="ryous" className="flex items-center gap-1">
+                            +{event.data.global_ryous} RYOUS
+                          </span>
+                        );
+                      }
+                      if (event.data?.global_monedas_evento) {
+                        rewardPartsNarr.push(
+                          <span key="evento" className="flex items-center gap-1 text-oro/60">
+                            +{event.data.global_monedas_evento} M. EVENTO
+                          </span>
+                        );
+                      }
+
+                      if (rewardPartsNarr.length > 0) {
+                        rewardElement = (
+                          <div className="flex flex-wrap items-center gap-2.5 text-[10px] xl:text-xs font-bold text-oro/60">
+                            {rewardPartsNarr}
+                          </div>
+                        );
+                      }
+                      break;
                     case 'combate':
                       typeLabel = 'Combate';
                       typeColor = 'border-red-600/40 text-red-500 bg-red-950/20';
@@ -476,6 +517,7 @@ export default async function Home() {
                             {event.tipo === 'mision' && <ScrollText className="w-2.5 h-2.5 text-oro" />}
                             {event.tipo === 'combate' && <Swords className="w-2.5 h-2.5 text-red-500" />}
                             {event.tipo === 'compra' && <ShoppingBag className="w-2.5 h-2.5 text-amber-500" />}
+                            {event.tipo === 'narracion' && <BookOpen className="w-2.5 h-2.5 text-purple-400" />}
                             {(event.tipo === 'noticia' || event.tipo === 'parche' || event.tipo === 'evento') && <MessageSquare className="w-2.5 h-2.5 text-purple-400" />}
                           </div>
                         </div>

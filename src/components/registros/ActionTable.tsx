@@ -140,11 +140,13 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
               const selfName = m.autor?.nombre_ninja || activeCharacter?.nombre_ninja || 'El ninja';
               const actionTitle = m.tipo === 'compra'
                 ? `${selfName} adquirió ${m.data.objeto_nombre || m.data.objeto || 'Equipo Ninja'}${m.data.detalles ? ` (${m.data.detalles})` : ''}`
+                : m.subtipo === 'narracion'
+                ? `Evento de Narración por ${m.data.narrador || 'Narrador'}`
                 : m.data.titulo;
 
               // Obtener premios del shinobi si es reparto de evento
               const targetCharId = subjectId || activeCharacter?.id;
-              const partPremio = m.subtipo === 'evento_premios'
+              const partPremio = (m.subtipo === 'evento_premios' || m.subtipo === 'narracion')
                 ? m.data.participantes_premios?.find((p: any) => Number(p.personaje_id) === Number(targetCharId))
                 : null;
               
@@ -152,8 +154,8 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
               const globalRyous = Number(m.data.global_ryous) || 0;
               const globalMonedas = Number(m.data.global_monedas_evento) || 0;
 
-              const xpObtained = globalXp + (Number(partPremio?.xp_extra) || 0);
-              const ryousObtained = globalRyous + (Number(partPremio?.ryous_extra) || 0);
+              const xpObtained = globalXp + (Number(partPremio?.xp_extra) || Number(partPremio?.xp) || 0);
+              const ryousObtained = globalRyous + (Number(partPremio?.ryous_extra) || Number(partPremio?.ryous) || 0);
               const monedasObtained = globalMonedas + (Number(partPremio?.monedas_evento) || 0);
               const glosarioObtained = partPremio?.glosario_items || [];
 
@@ -197,7 +199,7 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
                   {/* Coste */}
                   <td className="py-6 px-8">
                     <div className="flex flex-col gap-1.5 justify-center">
-                      {m.subtipo === 'evento_premios' ? (
+                      {(m.subtipo === 'evento_premios' || m.subtipo === 'narracion') ? (
                         <div className="flex flex-col gap-1 justify-center text-emerald-400 font-bold text-[11px] tracking-wide">
                           {xpObtained > 0 && <div className="text-emerald-400">+{xpObtained} EXP</div>}
                           {ryousObtained > 0 && <div className="text-emerald-400">+{ryousObtained} Ryos</div>}

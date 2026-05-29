@@ -49,6 +49,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
   };
 
   const getIcon = () => {
+    if (registro.subtipo === 'narracion') return Sparkles;
     switch (registro.tipo) {
       case 'mision': return ScrollText;
       case 'combate': return Swords;
@@ -277,6 +278,82 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                         </td>
                       </tr>
                     ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        ) : registro.subtipo === 'narracion' ? (
+          <div className="p-6 bg-black/40 border border-oro/10 ninja-clip-sm space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-oro/5 pb-4 gap-4">
+              <div>
+                <h4 className="text-lg sm:text-xl font-black text-oro uppercase tracking-wider mb-1">
+                  {registro.data.titulo || 'Registro de Narración'}
+                </h4>
+                <p className="text-[10px] font-bold text-oro/40 uppercase tracking-widest flex items-center gap-2">
+                  <span>NARRADOR: {registro.data.narrador || 'Sin especificar'}</span>
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-4 sm:gap-6 p-3 bg-oro/5 border border-oro/10 ninja-clip-xs shrink-0 text-[10px] sm:text-xs font-black text-oro">
+                <div className="flex items-center gap-1.5">EXP GLOBAL: +{registro.data.global_xp || 0}</div>
+                <div className="w-px h-4 bg-oro/10" />
+                <div className="flex items-center gap-1.5">RYOUS GLOBAL: +{registro.data.global_ryous || 0}</div>
+                {Number(registro.data.global_monedas_evento) > 0 && (
+                  <>
+                    <div className="w-px h-4 bg-oro/10" />
+                    <div className="flex items-center gap-1.5">M. EVENTO: +{registro.data.global_monedas_evento}</div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <span className="text-[9px] font-black text-oro/30 uppercase tracking-[0.25em] block">RECOMPENSAS Y PARTICIPANTES:</span>
+              <div className="overflow-x-auto custom-scrollbar border border-oro/10 ninja-clip-sm bg-black/45">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-oro/10 bg-black/40 text-[9px] font-black uppercase tracking-[0.2em] text-oro/50">
+                      <th className="py-4 px-6">Shinobi</th>
+                      <th className="py-4 px-6 text-center">EXP Total</th>
+                      <th className="py-4 px-6 text-center">Ryous Total</th>
+                      <th className="py-4 px-6 text-center">Monedas Evento</th>
+                      <th className="py-4 px-6">Glosario</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-oro/5 font-bold text-oro/70 uppercase">
+                    {registro.data.participantes_premios?.map((p: any) => {
+                      const totalXp = (Number(registro.data.global_xp) || 0) + (Number(p.xp_extra) || 0);
+                      const totalRyous = (Number(registro.data.global_ryous) || 0) + (Number(p.ryous_extra) || 0);
+                      const totalMonedas = (Number(registro.data.global_monedas_evento) || 0) + (Number(p.monedas_evento) || 0);
+                      
+                      return (
+                        <tr key={p.personaje_id} className="hover:bg-oro/[0.02] transition-colors">
+                          <td className="py-4 px-6 text-xs font-black text-oro uppercase tracking-wider">{p.nombre_ninja}</td>
+                          <td className="py-4 px-6 text-center text-[11px] font-black text-green-700">+{totalXp} EXP</td>
+                          <td className="py-4 px-6 text-center text-[11px] font-black text-green-700">+{totalRyous} RYOUS</td>
+                          <td className="py-4 px-6 text-center text-[11px]">
+                            {totalMonedas > 0 ? (
+                              <span className="text-oro font-black">+{totalMonedas} M. EVENTO</span>
+                            ) : (
+                              <span className="text-oro/20">-</span>
+                            )}
+                          </td>
+                          <td className="py-4 px-6">
+                            {p.glosario_items && p.glosario_items.length > 0 ? (
+                              <div className="flex flex-wrap gap-1.5">
+                                {p.glosario_items.map((i: any) => (
+                                  <span key={i.id} className="text-[9px] font-black bg-oro/10 border border-oro/20 text-oro px-2.5 py-0.5 ninja-clip-xs">
+                                    {i.nombre_es}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-oro/20">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

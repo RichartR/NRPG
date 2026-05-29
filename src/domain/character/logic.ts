@@ -65,15 +65,15 @@ export const StatsLogic = {
 export const RewardLogic = {
   calculateReward(registro: any, personajeId: number): { xp: number; ryous: number } {
     const { tipo, data } = registro;
-    
-    if (registro.subtipo === 'evento_premios') {
+
+    if (registro.subtipo === 'evento_premios' || registro.subtipo === 'narracion') {
       const globalXp = Number(data.global_xp) || 0;
       const globalRyous = Number(data.global_ryous) || 0;
       const partPremio = data.participantes_premios?.find((p: any) => Number(p.personaje_id) === Number(personajeId));
-      
+
       const xpExtra = Number(partPremio?.xp_extra) || 0;
       const ryousExtra = Number(partPremio?.ryous_extra) || 0;
-      
+
       return {
         xp: globalXp + xpExtra,
         ryous: globalRyous + ryousExtra
@@ -84,20 +84,20 @@ export const RewardLogic = {
       const isTeamA = data.equipo_a?.some((p: any) => p.id === personajeId);
       const isTeamB = data.equipo_b?.some((p: any) => p.id === personajeId);
       const participant = [...(data.equipo_a || []), ...(data.equipo_b || [])].find((p: any) => p.id === personajeId);
-      
+
       if (!participant || participant.huye) return { xp: 0, ryous: 0 };
-      
+
       const config = data.config_xp;
       if (!config) return { xp: 0, ryous: 0 };
-      
+
       let xp = 0;
       if (data.ganador === 'Empate') xp = Number(config.retirarse) || 0;
       else if (data.ganador === (isTeamA ? 'A' : 'B')) xp = Number(config.ganar) || 0;
       else xp = Number(config.perder) || 0;
-      
+
       return { xp, ryous: 0 }; // Combates no suelen dar ryous directos según lo visto
     }
-    
+
     // Misiones o Acciones
     return {
       xp: Number(data.recompensa_xp) || 0,
@@ -115,7 +115,7 @@ export const RewardLogic = {
 
     // Solo se suma al bando ganador y si no huye
     if (!participant || participant.huye) return 0;
-    
+
     const winningBando = data.ganador; // 'A' o 'B'
     const playerBando = isTeamA ? 'A' : 'B';
     if (playerBando !== winningBando) return 0;
@@ -123,7 +123,7 @@ export const RewardLogic = {
     // Calcular el rango máximo del bando oponente
     const opponentTeam = winningBando === 'A' ? (data.equipo_b || []) : (data.equipo_a || []);
     const RANK_SCALE: Record<string, number> = { 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5 };
-    
+
     const opponentMaxRankVal = opponentTeam.reduce((max: number, p: any) => {
       const val = RANK_SCALE[(p.rango || 'D').toUpperCase()] || 1;
       return val > max ? val : max;
