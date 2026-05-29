@@ -14,7 +14,7 @@ import { useScrollLock } from '@/hooks/useScrollLock';
 export default function CharacterSheet() {
   const { activeCharacter, loading, error, fetchActiveCharacter } = useCharacterStore();
   const [isEditingPortrait, setIsEditingPortrait] = useState(false);
-  
+
   // Prevent background scrolling when portrait modal is open
   useScrollLock(isEditingPortrait);
   const [newPortraitUrl, setNewPortraitUrl] = useState('');

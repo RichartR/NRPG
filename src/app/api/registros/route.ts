@@ -33,17 +33,17 @@ export async function POST(request: Request) {
     let isAuthorized = isAdmin;
 
     if (!isAuthorized && activeChar) {
-      if (action === 'create' && payload?.subtipo === 'narracion') {
-        if (Number(payload.autor_id) === Number(activeChar.id)) {
+      if (action === 'create') {
+        if (Number(payload?.autor_id) === Number(activeChar.id)) {
           isAuthorized = true;
         }
-      } else if ((action === 'update' || action === 'delete') && id) {
+      } else if (action === 'update' && id) {
         const { data: existingReg } = await adminClient
           .from('reg_registros')
           .select('*')
           .eq('id', id)
           .single();
-        if (existingReg && existingReg.subtipo === 'narracion' && Number(existingReg.autor_id) === Number(activeChar.id)) {
+        if (existingReg && Number(existingReg.autor_id) === Number(activeChar.id)) {
           isAuthorized = true;
         }
       }

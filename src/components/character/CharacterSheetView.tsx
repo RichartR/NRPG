@@ -1401,7 +1401,7 @@ export function CharacterSheetView({
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       {[
-                        { label: 'VIT', val: character.atributos_derivados.VIT, color: 'text-rojo-sangre' },
+                        { label: 'VIT', val: character.atributos_derivados.VIT, color: 'text-red-600' },
                         { label: 'CH', val: character.atributos_derivados.CH, color: 'text-blue-500' },
                         { label: 'VEL', val: character.atributos_derivados.VEL, color: 'text-oro' },
                         { label: 'RES', val: `${character.atributos_derivados.RES}%`, color: 'text-oro/80' },

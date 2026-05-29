@@ -209,7 +209,6 @@ export async function PATCH(
               });
             }
           }
-
           updatePromises.push(CharacterServerService.bulkUpdateRamas(adminClient, characterId, data.personajes_ramas));
         }
 
