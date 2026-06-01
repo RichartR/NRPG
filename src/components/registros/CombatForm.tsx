@@ -6,7 +6,7 @@ import { MasterService } from '@/services/supabase/master.service';
 import { Registro } from '@/domain/types';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { useToastStore } from '@/components/ui/Toast';
-import { X, Search, UserPlus, User, Trophy, Info, Sparkles } from 'lucide-react';
+import { X, Search, UserPlus, User, Trophy, Info } from 'lucide-react';
 import { NinjaSelect } from '@/components/ui/Fields';
 
 export default function CombatForm({
@@ -28,7 +28,7 @@ export default function CombatForm({
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState(initialData?.data?.urls_imagenes || ['']);
   const [winner, setWinner] = useState<'A' | 'B' | 'Empate'>(initialData?.data?.ganador || 'Empate');
-  const [combatConfig, setCombatConfig] = useState<Record<string, number> | null>(null);
+  const [combatConfig, setCombatConfig] = useState<any | null>(null);
   const [estados, setEstados] = useState<{ id: number; nombre: string }[]>([]);
 
   const [participantSearch, setParticipantSearch] = useState('');
@@ -115,10 +115,36 @@ export default function CombatForm({
   const calculateXP = (team: 'A' | 'B', huye?: boolean) => {
     if (!combatConfig) return 0;
     if (huye) return 0;
-    if (winner === 'Empate') return combatConfig.retirarse || 0;
-    if (winner === 'A') return team === 'A' ? combatConfig.ganar : combatConfig.perder;
-    if (winner === 'B') return team === 'B' ? combatConfig.ganar : combatConfig.perder;
-    return 0;
+    if (winner === 'Empate') return 0;
+
+    const RANK_SCALE: Record<string, number> = { 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5 };
+
+    const maxRankA = teamA.reduce((max, p) => {
+      const val = RANK_SCALE[(p.rango || 'D').toUpperCase()] || 1;
+      return val > max ? val : max;
+    }, 1);
+
+    const maxRankB = teamB.reduce((max, p) => {
+      const val = RANK_SCALE[(p.rango || 'D').toUpperCase()] || 1;
+      return val > max ? val : max;
+    }, 1);
+
+    const isWinner = winner === team;
+    const ownMaxRankVal = team === 'A' ? maxRankA : maxRankB;
+    const opponentMaxRankVal = team === 'A' ? maxRankB : maxRankA;
+
+    const diff = opponentMaxRankVal - ownMaxRankVal;
+
+    const section = isWinner ? combatConfig.victoria : combatConfig.derrota;
+    if (!section) {
+      return isWinner ? (Number(combatConfig.ganar) || 0) : (Number(combatConfig.perder) || 0);
+    }
+
+    if (diff >= 2) return Number(section.mas_2) || 0;
+    if (diff === 1) return Number(section.mas_1) || 0;
+    if (diff === 0) return Number(section.igual) || 0;
+    if (diff === -1) return Number(section.menos_1) || 0;
+    return Number(section.menos_2) || 0;
   };
 
   const handleSubmit = async () => {
@@ -243,7 +269,6 @@ export default function CombatForm({
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="flex items-center gap-2 px-3 py-1 bg-oro/10 border border-oro/20 ninja-clip-xs">
-                            <Sparkles className="w-3 h-3 text-oro" />
                             <span className="text-[10px] font-black text-oro">+{calculateXP('A', p.huye)} EXP</span>
                           </div>
                           <button onClick={() => removeParticipant(p.id, 'A')} className="opacity-0 group-hover/item:opacity-100 p-2 text-oro/20 hover:text-rojo-sangre transition-all">
@@ -330,7 +355,6 @@ export default function CombatForm({
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="flex items-center gap-2 px-3 py-1 bg-oro/10 border border-oro/20 ninja-clip-xs">
-                            <Sparkles className="w-3 h-3 text-oro" />
                             <span className="text-[10px] font-black text-oro">+{calculateXP('B', p.huye)} EXP</span>
                           </div>
                           <button onClick={() => removeParticipant(p.id, 'B')} className="opacity-0 group-hover/item:opacity-100 p-2 text-oro/20 hover:text-rojo-sangre transition-all">
@@ -405,24 +429,45 @@ export default function CombatForm({
               </div>
 
               {combatConfig && (
-                <div className="w-full md:w-[400px] p-8 bg-black/40 border border-oro/10 ninja-clip-md">
-                  <div className="flex items-center gap-4 mb-6 opacity-40">
-                    <Info className="w-5 h-5" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">CÁLCULO DE MÉRITOS</span>
+                <div className="w-full md:w-[450px] p-6 bg-black/40 border border-oro/10 ninja-clip-md text-xs font-black uppercase tracking-widest space-y-4">
+                  <div className="flex items-center gap-4 border-b border-oro/10 pb-3 opacity-60">
+                    <Info className="w-4 h-4 text-oro" />
+                    <span>TABLA DE EXP</span>
                   </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest">
-                      <span className="text-oro/40">POR VICTORIA</span>
-                      <span className="text-oro">+{combatConfig.ganar} EXP</span>
+                  {combatConfig.victoria ? (
+                    <div className="grid grid-cols-3 gap-y-3 gap-x-2 text-center text-[10px]">
+                      <div className="text-left text-oro/40">Diferencia</div>
+                      <div className="text-green-500">Victoria</div>
+                      <div className="text-red-500">Derrota</div>
+
+                      <div className="text-left text-oro/30">+2 Superior</div>
+                      <div className="text-oro">+{combatConfig.victoria.mas_2}</div>
+                      <div className="text-oro">+{combatConfig.derrota.mas_2}</div>
+
+                      <div className="text-left text-oro/30">+1 Superior</div>
+                      <div className="text-oro">+{combatConfig.victoria.mas_1}</div>
+                      <div className="text-oro">+{combatConfig.derrota.mas_1}</div>
+
+                      <div className="text-left text-oro/30">= Rango</div>
+                      <div className="text-oro">+{combatConfig.victoria.igual}</div>
+                      <div className="text-oro">+{combatConfig.derrota.igual}</div>
+
+                      <div className="text-left text-oro/30">-1 Inferior</div>
+                      <div className="text-oro">+{combatConfig.victoria.menos_1}</div>
+                      <div className="text-oro">+{combatConfig.derrota.menos_1}</div>
+
+                      <div className="text-left text-oro/30">-2 Inferior</div>
+                      <div className="text-oro">+{combatConfig.victoria.menos_2}</div>
+                      <div className="text-oro">+{combatConfig.derrota.menos_2}</div>
                     </div>
-                    <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest">
-                      <span className="text-oro/40">POR DERROTA</span>
-                      <span className="text-oro">+{combatConfig.perder} EXP</span>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex justify-between"><span>Victoria</span><span className="text-oro">+{combatConfig.ganar} EXP</span></div>
+                      <div className="flex justify-between"><span>Derrota</span><span className="text-oro">+{combatConfig.perder} EXP</span></div>
                     </div>
-                    <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest">
-                      <span className="text-oro/40">POR EMPATE</span>
-                      <span className="text-oro">+{combatConfig.retirarse} EXP</span>
-                    </div>
+                  )}
+                  <div className="text-[9px] text-oro/30 border-t border-oro/5 pt-2 text-center normal-case font-bold">
+                    El empate siempre otorga 0 EXP.
                   </div>
                 </div>
               )}

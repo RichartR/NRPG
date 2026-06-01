@@ -146,6 +146,42 @@ export default function AdminMisionesPage() {
             />
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 items-center bg-black/20 p-6 border border-oro/5">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="se_puede_fallar"
+                checked={editingMision.se_puede_fallar || false}
+                onChange={(e) => setEditingMision({ 
+                  ...editingMision, 
+                  se_puede_fallar: e.target.checked,
+                  exp_fallida: e.target.checked ? editingMision.exp_fallida || 0 : 0,
+                  ryous_fallida: e.target.checked ? editingMision.ryous_fallida || 0 : 0
+                })}
+                className="w-5 h-5 accent-oro bg-black border border-oro/20"
+              />
+              <label htmlFor="se_puede_fallar" className="text-xs font-black uppercase tracking-[0.2em] text-oro cursor-pointer">
+                Se puede fallar
+              </label>
+            </div>
+            {editingMision.se_puede_fallar && (
+              <>
+                <DataField
+                  label="Recompensa EXP Fallida"
+                  type="number"
+                  value={editingMision.exp_fallida || 0}
+                  onChange={(v) => setEditingMision({ ...editingMision, exp_fallida: Number(v) })}
+                />
+                <DataField
+                  label="Recompensa Ryous Fallida"
+                  type="number"
+                  value={editingMision.ryous_fallida || 0}
+                  onChange={(v) => setEditingMision({ ...editingMision, ryous_fallida: Number(v) })}
+                />
+              </>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <DataField
               label="Imagen Frontal (URL)"
@@ -238,8 +274,16 @@ export default function AdminMisionesPage() {
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex flex-col gap-1">
-                        <span className="text-xs font-bold text-green-500">+{m.exp} EXP</span>
-                        <span className="text-xs font-bold text-green-500">+{m.ryous} Ryous</span>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-black text-green-500 uppercase tracking-wider">Completada:</span>
+                          <span className="text-xs font-bold text-gris-texto">+{m.exp} EXP / +{m.ryous} Ryous</span>
+                        </div>
+                        {m.se_puede_fallar && (
+                          <div className="flex flex-col border-t border-oro/5 pt-1">
+                            <span className="text-[10px] font-black text-red-500 uppercase tracking-wider">Fallada:</span>
+                            <span className="text-xs font-bold text-gris-texto">+{m.exp_fallida} EXP / +{m.ryous_fallida} Ryous</span>
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="px-8 py-6">

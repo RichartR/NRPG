@@ -81,24 +81,69 @@ export const RewardLogic = {
     }
 
     if (tipo === 'combate') {
-      const isTeamA = data.equipo_a?.some((p: any) => p.id === personajeId);
-      const isTeamB = data.equipo_b?.some((p: any) => p.id === personajeId);
-      const participant = [...(data.equipo_a || []), ...(data.equipo_b || [])].find((p: any) => p.id === personajeId);
+      const isTeamA = data.equipo_a?.some((p: any) => Number(p.id) === Number(personajeId));
+      const isTeamB = data.equipo_b?.some((p: any) => Number(p.id) === Number(personajeId));
+      const participant = [...(data.equipo_a || []), ...(data.equipo_b || [])].find((p: any) => Number(p.id) === Number(personajeId));
 
       if (!participant || participant.huye) return { xp: 0, ryous: 0 };
+      if (data.ganador === 'Empate') return { xp: 0, ryous: 0 };
 
       const config = data.config_xp;
       if (!config) return { xp: 0, ryous: 0 };
 
-      let xp = 0;
-      if (data.ganador === 'Empate') xp = Number(config.retirarse) || 0;
-      else if (data.ganador === (isTeamA ? 'A' : 'B')) xp = Number(config.ganar) || 0;
-      else xp = Number(config.perder) || 0;
+      // Calcular el rango máximo de cada bando
+      const RANK_SCALE: Record<string, number> = { 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5 };
+      
+      const maxRankA = (data.equipo_a || []).reduce((max: number, p: any) => {
+        const val = RANK_SCALE[(p.rango || 'D').toUpperCase()] || 1;
+        return val > max ? val : max;
+      }, 1);
 
-      return { xp, ryous: 0 }; // Combates no suelen dar ryous directos según lo visto
+      const maxRankB = (data.equipo_b || []).reduce((max: number, p: any) => {
+        const val = RANK_SCALE[(p.rango || 'D').toUpperCase()] || 1;
+        return val > max ? val : max;
+      }, 1);
+
+      const isWinner = data.ganador === (isTeamA ? 'A' : 'B');
+      const ownMaxRankVal = isTeamA ? maxRankA : maxRankB;
+      const opponentMaxRankVal = isTeamA ? maxRankB : maxRankA;
+
+      const diff = opponentMaxRankVal - ownMaxRankVal;
+
+      // Obtener el mapeo de EXP según victoria/derrota y diferencia
+      const section = isWinner ? config.victoria : config.derrota;
+      if (!section) {
+        // Fallback si la config es antigua (para evitar caídas en registros viejos)
+        let xpFallback = 0;
+        if (isWinner) xpFallback = Number(config.ganar) || 0;
+        else xpFallback = Number(config.perder) || 0;
+        return { xp: xpFallback, ryous: 0 };
+      }
+
+      let xp = 0;
+      if (diff >= 2) xp = Number(section.mas_2) || 0;
+      else if (diff === 1) xp = Number(section.mas_1) || 0;
+      else if (diff === 0) xp = Number(section.igual) || 0;
+      else if (diff === -1) xp = Number(section.menos_1) || 0;
+      else xp = Number(section.menos_2) || 0;
+
+      return { xp, ryous: 0 };
     }
 
     // Misiones o Acciones
+    if (tipo === 'mision') {
+      if (data.fallida) {
+        return {
+          xp: Number(data.recompensa_xp_fallida) || 0,
+          ryous: Number(data.recompensa_ryous_fallida) || 0
+        };
+      }
+      return {
+        xp: Number(data.recompensa_xp) || 0,
+        ryous: Number(data.recompensa_ryous) || 0
+      };
+    }
+
     return {
       xp: Number(data.recompensa_xp) || 0,
       ryous: Number(data.recompensa_ryous) || 0

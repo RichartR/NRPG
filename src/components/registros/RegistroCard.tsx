@@ -62,10 +62,44 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
     const config = registro.data.config_xp;
     if (!config) return 0;
     if (huye) return 0;
-    if (registro.data.ganador === 'Empate') return Number(config.retirarse) || 0;
-    if (registro.data.ganador === 'A') return team === 'A' ? (Number(config.ganar) || 0) : (Number(config.perder) || 0);
-    if (registro.data.ganador === 'B') return team === 'B' ? (Number(config.ganar) || 0) : (Number(config.perder) || 0);
-    return 0;
+    if (registro.data.ganador === 'Empate') return 0;
+
+    // Fallback if config is old format
+    if (!config.victoria) {
+      if (registro.data.ganador === 'A') return team === 'A' ? (Number(config.ganar) || 0) : (Number(config.perder) || 0);
+      if (registro.data.ganador === 'B') return team === 'B' ? (Number(config.ganar) || 0) : (Number(config.perder) || 0);
+      return 0;
+    }
+
+    const RANK_SCALE: Record<string, number> = { 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5 };
+
+    const teamA = registro.data.equipo_a || [];
+    const teamB = registro.data.equipo_b || [];
+
+    const maxRankA = teamA.reduce((max: number, p: any) => {
+      const val = RANK_SCALE[(p.rango || 'D').toUpperCase()] || 1;
+      return val > max ? val : max;
+    }, 1);
+
+    const maxRankB = teamB.reduce((max: number, p: any) => {
+      const val = RANK_SCALE[(p.rango || 'D').toUpperCase()] || 1;
+      return val > max ? val : max;
+    }, 1);
+
+    const isWinner = registro.data.ganador === team;
+    const ownMaxRankVal = team === 'A' ? maxRankA : maxRankB;
+    const opponentMaxRankVal = team === 'A' ? maxRankB : maxRankA;
+
+    const diff = opponentMaxRankVal - ownMaxRankVal;
+
+    const section = isWinner ? config.victoria : config.derrota;
+    if (!section) return 0;
+
+    if (diff >= 2) return Number(section.mas_2) || 0;
+    if (diff === 1) return Number(section.mas_1) || 0;
+    if (diff === 0) return Number(section.igual) || 0;
+    if (diff === -1) return Number(section.menos_1) || 0;
+    return Number(section.menos_2) || 0;
   };
 
   const formatNinjaList = (names: string[]) => {
@@ -98,9 +132,11 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
     'Ninja Desaparecido';
 
   const isCombate = registro.tipo === 'combate';
+  const totalParticipants = (registro.data.equipo_a?.length || 0) + (registro.data.equipo_b?.length || 0);
+  const isCompact = isCombate && totalParticipants <= 2;
 
   return (
-    <div className={`ninja-card-oro group hover-ninja transition-all relative overflow-hidden ${isCombate ? (isGlobalView ? 'p-6 sm:p-8 xl:p-8' : 'p-8 xl:p-12') : 'p-6 sm:p-8 xl:p-10'}`}>
+    <div className={`ninja-card-oro group hover-ninja transition-all relative overflow-hidden ${isCombate ? (isCompact ? 'p-5 sm:p-6' : isGlobalView ? 'p-6 sm:p-8 xl:p-8' : 'p-8 xl:p-12') : 'p-6 sm:p-8 xl:p-10'}`}>
       <div className="absolute top-0 right-0 p-8 opacity-[0.02] pointer-events-none">
         <Icon className={`${isCombate ? 'w-32 h-32' : 'w-24 h-24'} rotate-12`} />
       </div>
@@ -468,7 +504,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
             ) : (
               <div className="animate-in fade-in slide-in-from-top-2 duration-500 outline-none ring-0 border-none">
                 {!isGlobalView && (
-                  <div className="flex justify-between items-center mb-8 border-b border-oro/10 pb-4">
+                  <div className={`flex justify-between items-center ${isCompact ? 'mb-4' : 'mb-8'} border-b border-oro/10 ${isCompact ? 'pb-2' : 'pb-4'}`}>
                     <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Informe Detallado</span>
                     <button
                       onClick={() => setShowFullDetails(false)}
@@ -479,15 +515,26 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-10 lg:gap-16 items-start">
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-3 border-b border-oro/10 pb-4">
+                <div className="space-y-4">
+                  {/* Cabeceras de Bandos */}
+                  <div className={`grid grid-cols-2 lg:grid-cols-[1fr_auto_1fr] items-center border-b border-oro/10 ${isCompact ? 'pb-2' : 'pb-4'}`}>
+                    <div className="flex items-center gap-3">
                       <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Bando A</span>
                       {registro.data.ganador === 'A' && <span className="text-[9px] font-black text-oro bg-oro/10 px-2 py-0.5 ninja-clip-xs border border-oro/20">GANADOR</span>}
                     </div>
-                    <div className="space-y-4">
+                    {/* Espaciador central invisible en desktop para mantener la rejilla perfectamente alineada */}
+                    <div className="hidden lg:block w-[72px]" />
+                    <div className="flex items-center lg:flex-row-reverse gap-3 text-right justify-end">
+                      <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Bando B</span>
+                      {registro.data.ganador === 'B' && <span className="text-[9px] font-black text-oro bg-oro/10 px-2 py-0.5 ninja-clip-xs border border-oro/20">GANADOR</span>}
+                    </div>
+                  </div>
+
+                  {/* Cuerpo de Participantes y VS */}
+                  <div className={`grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] ${isCompact ? 'gap-4 lg:gap-8' : 'gap-10 lg:gap-16'} items-center`}>
+                    <div className={isCompact ? 'space-y-2' : 'space-y-4'}>
                       {registro.data.equipo_a?.map((p: any) => (
-                        <div key={p.id} className="p-4 bg-black/40 border border-oro/5 ninja-clip-xs space-y-3">
+                        <div key={p.id} className={`${isCompact ? 'py-2 px-3' : 'p-4'} bg-black/40 border border-oro/5 ninja-clip-xs ${p.has_estado_alterado && p.descripcion_estado ? 'space-y-2' : ''}`}>
                           <div className="flex justify-between items-center">
                             <div className="flex items-center gap-3">
                               <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
@@ -507,28 +554,22 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                         </div>
                       ))}
                     </div>
-                  </div>
 
-                  <div className="flex lg:flex-col items-center justify-center gap-6 lg:self-center">
-                    <div className="h-px lg:w-px lg:h-12 bg-oro/40 w-full opacity-20" />
-                    <div className="flex flex-col items-center gap-2">
-                      {registro.data.ganador === 'Empate' ? (
-                        <span className="font-black text-oro text-2xl xl:text-4xl uppercase tracking-[0.2em]">RETIRADO</span>
-                      ) : (
-                        <span className="font-ninja text-3xl xl:text-5xl text-oro italic opacity-20">VS</span>
-                      )}
+                    <div className="flex lg:flex-col items-center justify-center gap-4 self-center py-2 shrink-0">
+                      <div className="h-px lg:w-px lg:h-8 bg-oro/40 w-full opacity-20" />
+                      <div className="flex flex-col items-center gap-2">
+                        {registro.data.ganador === 'Empate' ? (
+                          <span className="font-black text-oro text-xl xl:text-2xl uppercase tracking-[0.25em]">RETIRADO</span>
+                        ) : (
+                          <span className="font-ninja text-3xl xl:text-4xl text-oro italic opacity-20">VS</span>
+                        )}
+                      </div>
+                      <div className="h-px lg:w-px lg:h-8 bg-oro/40 w-full opacity-20" />
                     </div>
-                    <div className="h-px lg:w-px lg:h-12 bg-oro/40 w-full opacity-20" />
-                  </div>
 
-                  <div className="space-y-6 lg:text-right">
-                    <div className="flex items-center lg:flex-row-reverse gap-3 border-b border-oro/10 pb-4">
-                      <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Bando B</span>
-                      {registro.data.ganador === 'B' && <span className="text-[9px] font-black text-oro bg-oro/10 px-2 py-0.5 ninja-clip-xs border border-oro/20">GANADOR</span>}
-                    </div>
-                    <div className="space-y-4">
+                    <div className={isCompact ? 'space-y-2' : 'space-y-4'}>
                       {registro.data.equipo_b?.map((p: any) => (
-                        <div key={p.id} className="p-4 bg-black/40 border border-oro/5 ninja-clip-xs space-y-3">
+                        <div key={p.id} className={`${isCompact ? 'py-2 px-3' : 'p-4'} bg-black/40 border border-oro/5 ninja-clip-xs ${p.has_estado_alterado && p.descripcion_estado ? 'space-y-2' : ''}`}>
                           <div className="flex justify-between items-center lg:flex-row-reverse">
                             <div className="flex items-center gap-3 lg:flex-row-reverse">
                               <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
