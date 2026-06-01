@@ -51,10 +51,44 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
     const config = m.data.config_xp;
     if (!config) return 0;
     if (huye) return 0;
-    if (m.data.ganador === 'Empate') return Number(config.retirarse) || 0;
-    if (m.data.ganador === 'A') return team === 'A' ? (Number(config.ganar) || 0) : (Number(config.perder) || 0);
-    if (m.data.ganador === 'B') return team === 'B' ? (Number(config.ganar) || 0) : (Number(config.perder) || 0);
-    return 0;
+    if (m.data.ganador === 'Empate') return 0;
+
+    // Fallback if config is old format
+    if (!config.victoria) {
+      if (m.data.ganador === 'A') return team === 'A' ? (Number(config.ganar) || 0) : (Number(config.perder) || 0);
+      if (m.data.ganador === 'B') return team === 'B' ? (Number(config.ganar) || 0) : (Number(config.perder) || 0);
+      return 0;
+    }
+
+    const RANK_SCALE: Record<string, number> = { 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5 };
+
+    const teamA = m.data.equipo_a || [];
+    const teamB = m.data.equipo_b || [];
+
+    const maxRankA = teamA.reduce((max: number, p: any) => {
+      const val = RANK_SCALE[(p.rango || 'D').toUpperCase()] || 1;
+      return val > max ? val : max;
+    }, 1);
+
+    const maxRankB = teamB.reduce((max: number, p: any) => {
+      const val = RANK_SCALE[(p.rango || 'D').toUpperCase()] || 1;
+      return val > max ? val : max;
+    }, 1);
+
+    const isWinner = m.data.ganador === team;
+    const ownMaxRankVal = team === 'A' ? maxRankA : maxRankB;
+    const opponentMaxRankVal = team === 'A' ? maxRankB : maxRankA;
+
+    const diff = opponentMaxRankVal - ownMaxRankVal;
+
+    const section = isWinner ? config.victoria : config.derrota;
+    if (!section) return 0;
+
+    if (diff >= 2) return Number(section.mas_2) || 0;
+    if (diff === 1) return Number(section.mas_1) || 0;
+    if (diff === 0) return Number(section.igual) || 0;
+    if (diff === -1) return Number(section.menos_1) || 0;
+    return Number(section.menos_2) || 0;
   };
 
   const getRankBadgeStyle = (r: string) => {

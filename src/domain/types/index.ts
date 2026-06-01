@@ -212,6 +212,9 @@ export interface MisionMaster {
   rango: string;
   exp: number;
   ryous: number;
+  exp_fallida: number;
+  ryous_fallida: number;
+  se_puede_fallar: boolean;
   imagen_frontal?: string;
   imagen_trasera?: string;
 }

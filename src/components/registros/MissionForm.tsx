@@ -35,6 +35,7 @@ export default function MissionForm({
   const [rango, setRango] = useState(initialData?.subtipo || 'D');
   const [misiones, setMisiones] = useState<MisionMaster[]>([]);
   const [selectedMision, setSelectedMision] = useState<string>(initialData?.data?.codigo_mision || '');
+  const [esFallida, setEsFallida] = useState<boolean>(initialData?.data?.fallida || false);
 
   // General
   const [titulo, setTitulo] = useState(initialData?.data?.titulo || '');
@@ -113,7 +114,7 @@ export default function MissionForm({
       }
     };
 
-    if (formType === 'mision') {
+      if (formType === 'mision') {
       if (!selectedMision) {
         addToast('Selecciona una misión', 'error');
         return;
@@ -121,10 +122,14 @@ export default function MissionForm({
       const mision = misiones.find(m => m.codigo_mision === selectedMision);
       if (!mision) return;
       payload.subtipo = rango;
-      payload.data.titulo = `Misión ${mision.codigo_mision}`;
+      payload.data.titulo = `Misión ${mision.codigo_mision}${esFallida && mision.se_puede_fallar ? ' (Fallada)' : ''}`;
       payload.data.codigo_mision = mision.codigo_mision;
-      payload.data.recompensa_xp = mision.exp;
-      payload.data.recompensa_ryous = mision.ryous;
+      payload.data.recompensa_xp = esFallida && mision.se_puede_fallar ? (mision.exp_fallida || 0) : (mision.exp || 0);
+      payload.data.recompensa_ryous = esFallida && mision.se_puede_fallar ? (mision.ryous_fallida || 0) : (mision.ryous || 0);
+      payload.data.recompensa_xp_fallida = mision.exp_fallida || 0;
+      payload.data.recompensa_ryous_fallida = mision.ryous_fallida || 0;
+      payload.data.se_puede_fallar = mision.se_puede_fallar || false;
+      payload.data.fallida = esFallida && mision.se_puede_fallar;
     } else {
       if (!titulo) {
         addToast('Indica un título para el registro', 'error');
@@ -184,7 +189,10 @@ export default function MissionForm({
                     <label className="text-xs font-black uppercase tracking-[0.3em] text-oro/40 ml-2">Rango del Pergamino</label>
                     <NinjaSelect
                       value={rango}
-                      onChange={(val) => setRango(val)}
+                      onChange={(val) => {
+                        setRango(val);
+                        setEsFallida(false); // Reset fail state on rank change
+                      }}
                       placeholder="RANGO..."
                       options={['D', 'C', 'B', 'A', 'S'].map(r => ({ label: `RANGO ${r}`, value: r }))}
                     />
@@ -193,12 +201,41 @@ export default function MissionForm({
                     <label className="text-xs font-black uppercase tracking-[0.3em] text-oro/40 ml-2">Misión Seleccionada</label>
                     <NinjaSelect
                       value={selectedMision}
-                      onChange={(val) => setSelectedMision(val)}
+                      onChange={(val) => {
+                        setSelectedMision(val);
+                        setEsFallida(false); // Reset fail state on mission change
+                      }}
                       placeholder="SELECCIONAR..."
                       disabled={misiones.length === 0}
                       options={misiones.map(m => ({ label: `${m.codigo_mision} (+${m.exp} EXP)`, value: m.codigo_mision }))}
                     />
                   </div>
+                  {(() => {
+                    const misionObj = misiones.find(m => m.codigo_mision === selectedMision);
+                    if (!misionObj || !misionObj.se_puede_fallar) return null;
+
+                    return (
+                      <div className="space-y-4 md:col-span-2 animate-in fade-in duration-300">
+                        <label className="text-xs font-black uppercase tracking-[0.3em] text-oro/40 ml-2">Resultado de la Misión</label>
+                        <div className="grid grid-cols-2 gap-4">
+                          <button
+                            type="button"
+                            onClick={() => setEsFallida(false)}
+                            className={`py-4 border text-xs font-black uppercase tracking-widest transition-all ${!esFallida ? 'bg-oro text-rojo-sangre border-oro' : 'bg-black/20 border-oro/5 text-oro/45'}`}
+                          >
+                            COMPLETADA (+{misionObj.exp} EXP)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEsFallida(true)}
+                            className={`py-4 border text-xs font-black uppercase tracking-widest transition-all ${esFallida ? 'bg-rojo-sangre/20 border-rojo-sangre/40 text-rojo-sangre' : 'bg-black/20 border-oro/5 text-oro/45'}`}
+                          >
+                            FALLADA (+{misionObj.exp_fallida} EXP)
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               ) : (
                 <div className="space-y-4">
