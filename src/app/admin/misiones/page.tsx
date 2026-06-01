@@ -144,6 +144,12 @@ export default function AdminMisionesPage() {
               value={editingMision.ryous || 0}
               onChange={(v) => setEditingMision({ ...editingMision, ryous: Number(v) })}
             />
+            <DataField
+              label="Recompensa PA"
+              type="number"
+              value={editingMision.pa_recompensa || 0}
+              onChange={(v) => setEditingMision({ ...editingMision, pa_recompensa: Number(v) })}
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 items-center bg-black/20 p-6 border border-oro/5">
@@ -156,7 +162,8 @@ export default function AdminMisionesPage() {
                   ...editingMision, 
                   se_puede_fallar: e.target.checked,
                   exp_fallida: e.target.checked ? editingMision.exp_fallida || 0 : 0,
-                  ryous_fallida: e.target.checked ? editingMision.ryous_fallida || 0 : 0
+                  ryous_fallida: e.target.checked ? editingMision.ryous_fallida || 0 : 0,
+                  pa_recompensa_fallida: e.target.checked ? editingMision.pa_recompensa_fallida || 0 : 0
                 })}
                 className="w-5 h-5 accent-oro bg-black border border-oro/20"
               />
@@ -177,6 +184,12 @@ export default function AdminMisionesPage() {
                   type="number"
                   value={editingMision.ryous_fallida || 0}
                   onChange={(v) => setEditingMision({ ...editingMision, ryous_fallida: Number(v) })}
+                />
+                <DataField
+                  label="Recompensa PA Fallida"
+                  type="number"
+                  value={editingMision.pa_recompensa_fallida || 0}
+                  onChange={(v) => setEditingMision({ ...editingMision, pa_recompensa_fallida: Number(v) })}
                 />
               </>
             )}
@@ -276,12 +289,12 @@ export default function AdminMisionesPage() {
                       <div className="flex flex-col gap-1">
                         <div className="flex flex-col">
                           <span className="text-[10px] font-black text-green-500 uppercase tracking-wider">Completada:</span>
-                          <span className="text-xs font-bold text-gris-texto">+{m.exp} EXP / +{m.ryous} Ryous</span>
+                          <span className="text-xs font-bold text-gris-texto">+{m.exp} EXP / +{m.ryous} Ryous / +{m.pa_recompensa || 0} PA</span>
                         </div>
                         {m.se_puede_fallar && (
                           <div className="flex flex-col border-t border-oro/5 pt-1">
                             <span className="text-[10px] font-black text-red-500 uppercase tracking-wider">Fallada:</span>
-                            <span className="text-xs font-bold text-gris-texto">+{m.exp_fallida} EXP / +{m.ryous_fallida} Ryous</span>
+                            <span className="text-xs font-bold text-gris-texto">+{m.exp_fallida} EXP / +{m.ryous_fallida} Ryous / +{m.pa_recompensa_fallida || 0} PA</span>
                           </div>
                         )}
                       </div>

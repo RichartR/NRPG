@@ -308,7 +308,7 @@ export function CharacterSheetView({
 
     const totalExpSpent = acceptedRegs.reduce((sum, r) => sum + (r.data?.gasto_xp || 0), 0);
     const totalRyousSpent = acceptedRegs.reduce((sum, r) => sum + (r.data?.gasto_ryous || 0), 0);
-    const totalPCSpent = acceptedRegs.reduce((sum, r) => sum + (r.data?.gasto_pc || 0), 0);
+    const totalPASpent = acceptedRegs.reduce((sum, r) => sum + (r.data?.gasto_pc || 0), 0);
 
     // Calcular recursos no guardados (en edición) para mantener estables los totales
     const addedItems = (character.personajes_inventario || [])
@@ -326,15 +326,15 @@ export function CharacterSheetView({
       addedItems.reduce((sum, i) => sum + (i.info_glosario?.coste_ryous || 0), 0) +
       addedTecs.reduce((sum, t) => sum + (t.info_glosario?.coste_ryous || 0), 0);
 
-    const unsavedPCSpent =
-      addedItems.reduce((sum, i) => sum + (i.info_glosario?.requisitos?.combates || 0), 0) +
-      addedTecs.reduce((sum, t) => sum + (t.info_glosario?.requisitos?.combates || 0), 0);
+    const unsavedPASpent =
+      addedItems.reduce((sum, i) => sum + (i.info_glosario?.coste_puntos_aprendizaje || 0), 0) +
+      addedTecs.reduce((sum, t) => sum + (t.info_glosario?.coste_puntos_aprendizaje || 0), 0);
 
     return {
       allRegistros: allRegs,
       totalExp: (character.xp || 0) + totalExpSpent + unsavedExpSpent,
       totalRyous: (character.ryous || 0) + totalRyousSpent + unsavedRyousSpent,
-      totalPuntosCombate: (character.puntos_combate || 0) + totalPCSpent + unsavedPCSpent,
+      totalPuntosCombate: (character.puntos_aprendizaje || 0) + totalPASpent + unsavedPASpent,
       missionCounts: {
         D: missions.filter(m => m.subtipo === 'D').length,
         C: missions.filter(m => m.subtipo === 'C').length,
@@ -347,7 +347,7 @@ export function CharacterSheetView({
     character.id,
     character.xp,
     character.ryous,
-    character.puntos_combate,
+    character.puntos_aprendizaje,
     character.registros_autor,
     character.registros_participante,
     character.personajes_inventario,
@@ -456,11 +456,11 @@ export function CharacterSheetView({
       }
     }
 
-    // 4. Combates (Costo de Puntos de Combate)
+    // 4. PA (Puntos de Aprendizaje)
     if (req.combates) {
       const reqCombates = Number(req.combates);
       if (!isNaN(reqCombates) && reqCombates > 0) {
-        const charCombates = Number(character.puntos_combate || 0);
+        const charCombates = Number(character.puntos_aprendizaje || 0);
         if (charCombates < reqCombates) return false;
       }
     }
@@ -527,10 +527,10 @@ export function CharacterSheetView({
     if (!character) return false;
     const currentExp = character.xp || 0;
     const currentRyous = character.ryous || 0;
-    const currentPC = character.puntos_combate || 0;
+    const currentPA = character.puntos_aprendizaje || 0;
     return currentExp >= (e.coste_exp || 0) &&
            currentRyous >= (e.coste_ryous || 0) &&
-           currentPC >= (e.coste_puntos_combate || 0);
+           currentPA >= (e.coste_puntos_aprendizaje || 0);
   };
 
   const canAccessTraining = true;
@@ -579,7 +579,7 @@ export function CharacterSheetView({
     if (reqs.combates) {
       elements.push(
         <span key="combates" className="text-emerald-500 font-black">
-          P. COMBATE: <span className="text-emerald-400">{reqs.combates}</span>
+          PA: <span className="text-emerald-400">{reqs.combates}</span>
         </span>
       );
     }
@@ -698,7 +698,7 @@ export function CharacterSheetView({
   }, [editingRegistro, editingImageKey]);
 
   // Componentes Helper fuera del render principal para evitar re-montajes
-  const ResourceDisplay = ({ character, totalExp, totalRyous, totalPuntosCombate, xpLimitUsage }: { character: Character, totalExp: number, totalRyous: number, totalPuntosCombate: number, xpLimitUsage?: number | null }) => (
+  const ResourceDisplay = ({ character, totalExp, totalRyous, totalPuntosCombate, xpLimitUsage }: { character: Character, totalExp: number, totalRyous: number, totalPuntosCombate: number, xpLimitUsage?: number | null }) => (  // totalPuntosCombate now represents PA
     <div className="flex flex-wrap justify-center items-center gap-6 mb-8">
       <div className="flex items-center gap-4 px-8 py-4 ninja-card-oro group hover-ninja">
         <div className="w-10 h-10 bg-rojo-sangre rotate-45 flex items-center justify-center shadow-[0_0_12px_rgba(103,9,9,0.4)]">
@@ -746,9 +746,9 @@ export function CharacterSheetView({
           <Swords className="w-5 h-5 text-oro -rotate-45" />
         </div>
         <div>
-          <p className="text-[9px] font-black text-oro/40 uppercase tracking-[0.3em] mb-1">P. COMBATE (DISPONIBLE / TOTAL)</p>
+          <p className="text-[9px] font-black text-oro/40 uppercase tracking-[0.3em] mb-1">P. APRENDIZAJE (DISPONIBLE / TOTAL)</p>
           <p className="text-xl xl:text-2xl font-black text-oro leading-none">
-            {character.puntos_combate || 0}
+            {character.puntos_aprendizaje || 0}
             <span className="text-oro/20 mx-3">/</span>
             <span className="text-oro/60 text-sm xl:text-lg">{totalPuntosCombate}</span>
           </p>
@@ -1316,8 +1316,8 @@ export function CharacterSheetView({
                                     const rankOptions = eligibleTrainings
                                       .filter((e: any) => (e.rango || 'B').toUpperCase() === rank)
                                       .map((e: any) => {
-                                        const costText = canAffordTraining(e) && (e.coste_exp > 0 || e.coste_ryous > 0 || e.coste_puntos_combate > 0)
-                                          ? ` (${e.coste_exp} EXP / ${e.coste_ryous} Ryous / ${e.coste_puntos_combate} PC)`
+                                        const costText = canAffordTraining(e) && (e.coste_exp > 0 || e.coste_ryous > 0 || e.coste_puntos_aprendizaje > 0)
+                                          ? ` (${e.coste_exp} EXP / ${e.coste_ryous} Ryous / ${e.coste_puntos_aprendizaje} PA)`
                                           : '';
                                         return { label: `${e.nombre_esp}${costText}`, value: e.id };
                                       });
@@ -1576,7 +1576,7 @@ export function CharacterSheetView({
                                                   if (isNewlyAdded) {
                                                     if (pi.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pi.info_glosario.coste_exp);
                                                     if (pi.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pi.info_glosario.coste_ryous);
-                                                    if (pi.info_glosario?.requisitos?.combates) onUpdateField('puntos_combate', (character.puntos_combate || 0) + pi.info_glosario.requisitos.combates);
+                                                    if (pi.info_glosario?.coste_puntos_aprendizaje) onUpdateField('puntos_aprendizaje', (character.puntos_aprendizaje || 0) + pi.info_glosario.coste_puntos_aprendizaje);
                                                   }
                                                   onUpdateField('personajes_inventario', character.personajes_inventario?.filter((i: PersonajeItem) => i.item_id !== pi.item_id));
                                                 } else {
@@ -1613,9 +1613,9 @@ export function CharacterSheetView({
                         .map((i: any) => {
                           const subData = i.info_glosario_subcategorias;
                           const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'GENERAL';
-                          const pcCostText = ` / ${i.requisitos?.combates || 0} PC`;
+                          const paCostText = ` / ${i.coste_puntos_aprendizaje || 0} PA`;
                           return {
-                            label: `${i.nombre_es} (${subName}) — ${i.coste_exp} EXP / ${i.coste_ryous} RYOUS${pcCostText}`,
+                            label: `${i.nombre_es} (${subName}) — ${i.coste_exp} EXP / ${i.coste_ryous} RYOUS${paCostText}`,
                             value: i.id
                           };
                         })
@@ -1627,20 +1627,20 @@ export function CharacterSheetView({
                         if (it && !current.some((i: any) => i.item_id === it.id)) {
                           const costExp = it.coste_exp || 0;
                           const costRyous = it.coste_ryous || 0;
-                          const costPC = it.requisitos?.combates || 0;
+                          const costPA = it.coste_puntos_aprendizaje || 0;
                           const currentExp = character.xp || 0;
                           const currentRyous = character.ryous || 0;
-                          const currentPC = character.puntos_combate || 0;
+                          const currentPA = character.puntos_aprendizaje || 0;
 
-                          if (currentExp < costExp || currentRyous < costRyous || currentPC < costPC) {
-                            addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP, ${costRyous} RYOUS Y ${costPC} P. COMBATE.`, "error");
+                          if (currentExp < costExp || currentRyous < costRyous || currentPA < costPA) {
+                            addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP, ${costRyous} RYOUS Y ${costPA} PA.`, "error");
                             return;
                           }
 
                           onUpdateField('personajes_inventario', [...current, { item_id: it.id, info_glosario: it }]);
                           if (costExp > 0) onUpdateField('xp', currentExp - costExp);
                           if (costRyous > 0) onUpdateField('ryous', currentRyous - costRyous);
-                          if (costPC > 0) onUpdateField('puntos_combate', currentPC - costPC);
+                          if (costPA > 0) onUpdateField('puntos_aprendizaje', currentPA - costPA);
                         }
                       }}
                     />
@@ -1716,7 +1716,7 @@ export function CharacterSheetView({
                                               if (isNewlyAdded) {
                                                 if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
                                                 if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
-                                                if (pt.info_glosario?.requisitos?.combates) onUpdateField('puntos_combate', (character.puntos_combate || 0) + pt.info_glosario.requisitos.combates);
+                                                if (pt.info_glosario?.coste_puntos_aprendizaje) onUpdateField('puntos_aprendizaje', (character.puntos_aprendizaje || 0) + pt.info_glosario.coste_puntos_aprendizaje);
                                               }
                                               onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
                                             } else {
@@ -1751,9 +1751,9 @@ export function CharacterSheetView({
                         .map((t: any) => {
                           const subData = t.info_glosario_subcategorias;
                           const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'TÉCNICA';
-                          const pcCostText = ` / ${t.requisitos?.combates || 0} PC`;
+                          const paCostText = ` / ${t.coste_puntos_aprendizaje || 0} PA`;
                           return {
-                            label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${pcCostText}`,
+                            label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${paCostText}`,
                             value: t.id
                           };
                         })
@@ -1765,20 +1765,20 @@ export function CharacterSheetView({
                         if (tec && !current.some((t: any) => t.tecnica_id === tec.id)) {
                           const costExp = tec.coste_exp || 0;
                           const costRyous = tec.coste_ryous || 0;
-                          const costPC = tec.requisitos?.combates || 0;
+                          const costPA = tec.coste_puntos_aprendizaje || 0;
                           const currentExp = character.xp || 0;
                           const currentRyous = character.ryous || 0;
-                          const currentPC = character.puntos_combate || 0;
+                          const currentPA = character.puntos_aprendizaje || 0;
 
-                          if (currentExp < costExp || currentRyous < costRyous || currentPC < costPC) {
-                            addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP, ${costRyous} RYOUS Y ${costPC} P. COMBATE.`, "error");
+                          if (currentExp < costExp || currentRyous < costRyous || currentPA < costPA) {
+                            addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP, ${costRyous} RYOUS Y ${costPA} PA.`, "error");
                             return;
                           }
 
                           onUpdateField('personajes_tecnicas', [...current, { tecnica_id: tec.id, info_glosario: tec }]);
                           if (costExp > 0) onUpdateField('xp', currentExp - costExp);
                           if (costRyous > 0) onUpdateField('ryous', currentRyous - costRyous);
-                          if (costPC > 0) onUpdateField('puntos_combate', currentPC - costPC);
+                          if (costPA > 0) onUpdateField('puntos_aprendizaje', currentPA - costPA);
                         }
                       }}
                     />
@@ -1848,7 +1848,7 @@ export function CharacterSheetView({
                                               if (isNewlyAdded) {
                                                 if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
                                                 if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
-                                                if (pt.info_glosario?.requisitos?.combates) onUpdateField('puntos_combate', (character.puntos_combate || 0) + pt.info_glosario.requisitos.combates);
+                                                if (pt.info_glosario?.coste_puntos_aprendizaje) onUpdateField('puntos_aprendizaje', (character.puntos_aprendizaje || 0) + pt.info_glosario.coste_puntos_aprendizaje);
                                               }
                                               onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
                                             } else {
@@ -1897,20 +1897,20 @@ export function CharacterSheetView({
                         if (tec && !current.some((t: any) => t.tecnica_id === tec.id)) {
                           const costExp = tec.coste_exp || 0;
                           const costRyous = tec.coste_ryous || 0;
-                          const costPC = tec.requisitos?.combates || 0;
+                          const costPA = tec.coste_puntos_aprendizaje || 0;
                           const currentExp = character.xp || 0;
                           const currentRyous = character.ryous || 0;
-                          const currentPC = character.puntos_combate || 0;
+                          const currentPA = character.puntos_aprendizaje || 0;
 
-                          if (currentExp < costExp || currentRyous < costRyous || currentPC < costPC) {
-                            addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP, ${costRyous} RYOUS Y ${costPC} P. COMBATE.`, "error");
+                          if (currentExp < costExp || currentRyous < costRyous || currentPA < costPA) {
+                            addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP, ${costRyous} RYOUS Y ${costPA} PA.`, "error");
                             return;
                           }
 
                           onUpdateField('personajes_tecnicas', [...current, { tecnica_id: tec.id, info_glosario: tec }]);
                           if (costExp > 0) onUpdateField('xp', currentExp - costExp);
                           if (costRyous > 0) onUpdateField('ryous', currentRyous - costRyous);
-                          if (costPC > 0) onUpdateField('puntos_combate', currentPC - costPC);
+                          if (costPA > 0) onUpdateField('puntos_aprendizaje', currentPA - costPA);
                         }
                       }}
                     />
@@ -1980,7 +1980,7 @@ export function CharacterSheetView({
                                               if (isNewlyAdded) {
                                                 if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
                                                 if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
-                                                if (pt.info_glosario?.requisitos?.combates) onUpdateField('puntos_combate', (character.puntos_combate || 0) + pt.info_glosario.requisitos.combates);
+                                                if (pt.info_glosario?.coste_puntos_aprendizaje) onUpdateField('puntos_aprendizaje', (character.puntos_aprendizaje || 0) + pt.info_glosario.coste_puntos_aprendizaje);
                                               }
                                               onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
                                             } else {
@@ -2029,20 +2029,20 @@ export function CharacterSheetView({
                         if (tec && !current.some((t: any) => t.tecnica_id === tec.id)) {
                           const costExp = tec.coste_exp || 0;
                           const costRyous = tec.coste_ryous || 0;
-                          const costPC = tec.requisitos?.combates || 0;
+                          const costPA = tec.coste_puntos_aprendizaje || 0;
                           const currentExp = character.xp || 0;
                           const currentRyous = character.ryous || 0;
-                          const currentPC = character.puntos_combate || 0;
+                          const currentPA = character.puntos_aprendizaje || 0;
 
-                          if (currentExp < costExp || currentRyous < costRyous || currentPC < costPC) {
-                            addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP, ${costRyous} RYOUS Y ${costPC} P. COMBATE.`, "error");
+                          if (currentExp < costExp || currentRyous < costRyous || currentPA < costPA) {
+                            addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP, ${costRyous} RYOUS Y ${costPA} PA.`, "error");
                             return;
                           }
 
                           onUpdateField('personajes_tecnicas', [...current, { tecnica_id: tec.id, info_glosario: tec }]);
                           if (costExp > 0) onUpdateField('xp', currentExp - costExp);
                           if (costRyous > 0) onUpdateField('ryous', currentRyous - costRyous);
-                          if (costPC > 0) onUpdateField('puntos_combate', currentPC - costPC);
+                          if (costPA > 0) onUpdateField('puntos_aprendizaje', currentPA - costPA);
                         }
                       }}
                     />

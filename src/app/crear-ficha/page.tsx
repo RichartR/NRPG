@@ -88,7 +88,7 @@ function CrearFichaContent() {
   );
   const initialReqsStr = JSON.stringify({
     rango: form.rango || '',
-    pc: form.puntos_combate || 0,
+    pa: form.puntos_aprendizaje || 0,
     misiones: form.misiones || 0,
     stats: form.stats_base || {}
   });
@@ -109,7 +109,7 @@ function CrearFichaContent() {
 
       const RANGO_ORDER = ['D', 'C', 'B', 'A', 'S'];
       const charRango = form.rango || '';
-      const charPC = form.puntos_combate || 0;
+      const charPA = form.puntos_aprendizaje || 0;
       const charMisiones = form.misiones || 0;
       const charStats = form.stats_base || {};
 
@@ -132,8 +132,8 @@ function CrearFichaContent() {
             if (charRangoIdx < reqRangoIdx) return false;
           }
 
-          // Validar Puntos de Combate
-          if (reqs.combates && charPC < Number(reqs.combates)) return false;
+          // Validar Puntos de Aprendizaje
+          if (reqs.combates && charPA < Number(reqs.combates)) return false;
 
           // Validar Misiones
           if (reqs.misiones && charMisiones < Number(reqs.misiones)) return false;

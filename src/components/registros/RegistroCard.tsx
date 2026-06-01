@@ -7,6 +7,7 @@ import { RegistrosService } from '@/services/supabase/registros.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { useState } from 'react';
+import { RewardLogic } from '@/domain/character/logic';
 
 interface RegistroCardProps {
   registro: Registro;
@@ -231,6 +232,14 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                   <div className="flex items-center gap-2 text-oro font-black text-base sm:text-xl tracking-widest">
                     <Coins className="w-4 h-4" /> +{registro.data.recompensa_ryous || 0}
                   </div>
+                  {(registro.data.recompensa_pa || 0) > 0 && (
+                    <>
+                      <div className="w-px h-6 bg-oro/10" />
+                      <div className="flex items-center gap-2 text-emerald-400 font-black text-base sm:text-xl tracking-widest">
+                        <Swords className="w-4 h-4" /> +{registro.data.recompensa_pa} PA
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -480,6 +489,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                       const allies = (isA ? teamA : teamB).filter((p: any) => p.id !== sid).map((p: any) => p.nombre_ninja);
                       const enemies = (isA ? teamB : teamA).map((p: any) => p.nombre_ninja);
                       const xpGained = calculateParticipantXP(isA ? 'A' : 'B', (isA ? teamA : teamB).find((p: any) => p.id === sid)?.huye);
+                      const paGained = RewardLogic.calculateCombatPA(registro, sid);
 
                       return (
                         <>
@@ -487,7 +497,8 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                           {allies.length > 0 && <span className="text-oro">{formatNinjaList(allies)}</span>}
                           {allies.length > 0 ? ' contra ' : ' contra '}
                           <span className="text-oro">{formatNinjaList(enemies)}</span>.
-                          Obtiene <span className="font-black text-oro not-italic">{xpGained} EXP</span>.
+                          Obtiene <span className="font-black text-oro not-italic">{xpGained} EXP</span>
+                          {paGained > 0 && <> y <span className="font-black text-emerald-400 not-italic">{paGained} PA</span></>}.
                         </>
                       );
                     })()}
@@ -539,6 +550,9 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                             <div className="flex items-center gap-3">
                               <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
                               <span className="text-[10px] font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">+{calculateParticipantXP('A', p.huye)} EXP</span>
+                              {RewardLogic.calculateCombatPA(registro, p.id) > 0 && (
+                                <span className="text-[10px] font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-emerald-500/10">+{RewardLogic.calculateCombatPA(registro, p.id)} PA</span>
+                              )}
                             </div>
                             <div className="flex items-center gap-3">
                               {p.has_estado_alterado && <span className="px-2 py-0.5 bg-oro/20 text-oro text-[9px] font-black uppercase ninja-clip-xs border border-oro/40">ESTADO ALTERADO</span>}
@@ -574,6 +588,9 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                             <div className="flex items-center gap-3 lg:flex-row-reverse">
                               <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
                               <span className="text-[10px] font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">+{calculateParticipantXP('B', p.huye)} EXP</span>
+                              {RewardLogic.calculateCombatPA(registro, p.id) > 0 && (
+                                <span className="text-[10px] font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-emerald-500/10">+{RewardLogic.calculateCombatPA(registro, p.id)} PA</span>
+                              )}
                             </div>
                             <div className="flex items-center gap-3 lg:flex-row-reverse">
                               {p.has_estado_alterado && <span className="px-2 py-0.5 bg-oro/20 text-oro text-[9px] font-black uppercase ninja-clip-xs border border-oro/40">ESTADO ALTERADO</span>}

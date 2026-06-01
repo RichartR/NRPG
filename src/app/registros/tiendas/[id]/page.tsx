@@ -471,10 +471,10 @@ export default function TiendaDetallePage() {
         }
       }
 
-      // Combat points check
-      if (reqs.combates && char.puntos_combate < reqs.combates) {
+      // PA check
+      if (reqs.combates && char.puntos_aprendizaje < reqs.combates) {
         allowed = false;
-        reasons.push(`Puntos de Combate insuficientes (Se necesitan ${reqs.combates}, tienes ${char.puntos_combate})`);
+        reasons.push(`Puntos de Aprendizaje insuficientes (Se necesitan ${reqs.combates}, tienes ${char.puntos_aprendizaje})`);
       }
 
       // Stats check
@@ -995,7 +995,7 @@ export default function TiendaDetallePage() {
                                     })()}
 
                                     {hasCombates && (() => {
-                                      const isMet = !selectedChar || selectedChar.puntos_combate >= itemReqs.combates;
+                                      const isMet = !selectedChar || selectedChar.puntos_aprendizaje >= itemReqs.combates;
 
                                       return (
                                         <span
@@ -1004,7 +1004,7 @@ export default function TiendaDetallePage() {
                                             : 'bg-rojo-oscuro/20 border-rojo-sangre/30 text-rojo-sangre'
                                             }`}
                                         >
-                                          <span>Combates: <strong className="font-black text-oro">{itemReqs.combates}</strong></span>
+                                          <span>PA: <strong className="font-black text-oro">{itemReqs.combates}</strong></span>
                                         </span>
                                       );
                                     })()}

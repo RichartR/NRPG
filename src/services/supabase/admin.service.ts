@@ -418,11 +418,10 @@ export const AdminService = {
     } else {
       // Disputa de registro tradicional
       if (resolucion === 'aceptada') {
-        const { xp, ryous } = RewardLogic.calculateReward(notif.registro, notif.personaje_id);
-        const combatPts = RewardLogic.calculateCombatPoints(notif.registro, notif.personaje_id);
+        const { xp, ryous, pa } = RewardLogic.calculateReward(notif.registro, notif.personaje_id);
         const { data: char, error: charError } = await supabase
           .from('reg_characters')
-          .select('xp, ryous, puntos_combate')
+          .select('xp, ryous, puntos_aprendizaje')
           .eq('id', notif.personaje_id)
           .single();
         
@@ -431,7 +430,7 @@ export const AdminService = {
         await supabase.from('reg_characters').update({
           xp: (char.xp || 0) + xp,
           ryous: (char.ryous || 0) + ryous,
-          puntos_combate: (char.puntos_combate || 0) + combatPts
+          puntos_aprendizaje: (char.puntos_aprendizaje || 0) + pa
         }).eq('id', notif.personaje_id);
 
         await supabase.from('reg_registros_participantes').update({ estado: 'finalizado_admin' })

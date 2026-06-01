@@ -169,7 +169,7 @@ export function useCharacter(characterId: string) {
         
         let totalExpCost = 0;
         let totalRyousCost = 0;
-        let totalPCCost = 0;
+        let totalPACost = 0;
         const newTrainingsList: any[] = [];
         
         newEntrenamientos.forEach(newE => {
@@ -179,7 +179,7 @@ export function useCharacter(characterId: string) {
             if (tr) {
               totalExpCost += tr.coste_exp || 0;
               totalRyousCost += tr.coste_ryous || 0;
-              totalPCCost += tr.coste_puntos_combate || 0;
+              totalPACost += tr.coste_puntos_aprendizaje || 0;
               newTrainingsList.push(tr);
             }
           }
@@ -188,21 +188,21 @@ export function useCharacter(characterId: string) {
         if (newTrainingsList.length > 0) {
           const currentExp = character.xp || 0;
           const currentRyous = character.ryous || 0;
-          const currentPC = character.puntos_combate || 0;
+          const currentPA = character.puntos_aprendizaje || 0;
 
-          if (currentExp < totalExpCost || currentRyous < totalRyousCost || currentPC < totalPCCost) {
-            throw new Error(`RECURSOS INSUFICIENTES PARA EL ENTRENAMIENTO. REQUIERES ${totalExpCost} EXP, ${totalRyousCost} RYOUS Y ${totalPCCost} P. COMBATE.`);
+          if (currentExp < totalExpCost || currentRyous < totalRyousCost || currentPA < totalPACost) {
+            throw new Error(`RECURSOS INSUFICIENTES PARA EL ENTRENAMIENTO. REQUIERES ${totalExpCost} EXP, ${totalRyousCost} RYOUS Y ${totalPACost} PA.`);
           }
 
           character.xp = currentExp - totalExpCost;
           character.ryous = currentRyous - totalRyousCost;
-          character.puntos_combate = currentPC - totalPCCost;
+          character.puntos_aprendizaje = currentPA - totalPACost;
 
           const trNames = newTrainingsList.map(t => t.nombre_esp).join(', ');
           const gastoText = [
             totalExpCost > 0 && `${totalExpCost} EXP`,
             totalRyousCost > 0 && `${totalRyousCost} Ryous`,
-            totalPCCost > 0 && `${totalPCCost} PC`
+            totalPACost > 0 && `${totalPACost} PA`
           ].filter(Boolean).join(', ') || '0 EXP';
 
           await RegistrosService.createRegistro({
@@ -216,7 +216,7 @@ export function useCharacter(characterId: string) {
               entrenamientos: newTrainingsList.map(t => ({ id: t.id, nombre: t.nombre_esp })),
               gasto_xp: totalExpCost,
               gasto_ryous: totalRyousCost,
-              gasto_pc: totalPCCost
+              gasto_pc: totalPACost
             }
           });
         }
@@ -330,12 +330,12 @@ export function useCharacter(characterId: string) {
           const itemNames = newItems.map(ni => ni.info_glosario?.nombre_es || 'Objeto Desconocido').join(', ');
           const totalExp = newItems.reduce((sum, ni) => sum + (Number(ni.info_glosario?.coste_exp) || 0), 0);
           const totalRyous = newItems.reduce((sum, ni) => sum + (Number(ni.info_glosario?.coste_ryous) || 0), 0);
-          const totalPC = newItems.reduce((sum, ni) => sum + (Number(ni.info_glosario?.requisitos?.combates) || 0), 0);
+          const totalPA = newItems.reduce((sum, ni) => sum + (Number(ni.info_glosario?.coste_puntos_aprendizaje) || 0), 0);
           
           const gastoText = [
             totalExp > 0 && `${totalExp} EXP`,
             totalRyous > 0 && `${totalRyous} Ryous`,
-            totalPC > 0 && `${totalPC} PC`
+            totalPA > 0 && `${totalPA} PA`
           ].filter(Boolean).join(', ') || '0 EXP';
           
           await RegistrosService.createRegistro({
@@ -349,7 +349,7 @@ export function useCharacter(characterId: string) {
               items: newItems.map(ni => ({ id: ni.item_id, nombre: ni.info_glosario?.nombre_es })),
               gasto_xp: totalExp,
               gasto_ryous: totalRyous,
-              gasto_pc: totalPC
+              gasto_pc: totalPA
             }
           });
         }
@@ -363,12 +363,12 @@ export function useCharacter(characterId: string) {
           const tecNames = newTecs.map(nt => nt.info_glosario?.nombre_es || 'Técnica Desconocida').join(', ');
           const totalExp = newTecs.reduce((sum, nt) => sum + (Number(nt.info_glosario?.coste_exp) || 0), 0);
           const totalRyous = newTecs.reduce((sum, nt) => sum + (Number(nt.info_glosario?.coste_ryous) || 0), 0);
-          const totalPC = newTecs.reduce((sum, nt) => sum + (Number(nt.info_glosario?.requisitos?.combates) || 0), 0);
+          const totalPA = newTecs.reduce((sum, nt) => sum + (Number(nt.info_glosario?.coste_puntos_aprendizaje) || 0), 0);
 
           const gastoText = [
             totalExp > 0 && `${totalExp} EXP`,
             totalRyous > 0 && `${totalRyous} Ryous`,
-            totalPC > 0 && `${totalPC} PC`
+            totalPA > 0 && `${totalPA} PA`
           ].filter(Boolean).join(', ') || '0 EXP';
 
           await RegistrosService.createRegistro({
@@ -382,7 +382,7 @@ export function useCharacter(characterId: string) {
               tecnicas: newTecs.map(nt => ({ id: nt.tecnica_id, nombre: nt.info_glosario?.nombre_es })),
               gasto_xp: totalExp,
               gasto_ryous: totalRyous,
-              gasto_pc: totalPC
+              gasto_pc: totalPA
             }
           });
         }

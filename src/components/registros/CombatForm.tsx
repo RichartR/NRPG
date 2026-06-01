@@ -29,6 +29,7 @@ export default function CombatForm({
   const [images, setImages] = useState(initialData?.data?.urls_imagenes || ['']);
   const [winner, setWinner] = useState<'A' | 'B' | 'Empate'>(initialData?.data?.ganador || 'Empate');
   const [combatConfig, setCombatConfig] = useState<any | null>(null);
+  const [paConfig, setPaConfig] = useState<any | null>(null);
   const [estados, setEstados] = useState<{ id: number; nombre: string }[]>([]);
 
   const [participantSearch, setParticipantSearch] = useState('');
@@ -59,6 +60,8 @@ export default function CombatForm({
     try {
       const config = await MasterService.getSystemConfig('experiencia_combates');
       if (config) setCombatConfig(config);
+      const paConf = await MasterService.getSystemConfig('puntos_aprendizaje_combates');
+      if (paConf) setPaConfig(paConf);
     } catch (err) {
       console.error(err);
     }
@@ -147,6 +150,39 @@ export default function CombatForm({
     return Number(section.menos_2) || 0;
   };
 
+  const calculatePA = (team: 'A' | 'B', huye?: boolean) => {
+    if (!paConfig) return 0;
+    if (huye) return 0;
+    if (winner === 'Empate') return 0;
+
+    const RANK_SCALE: Record<string, number> = { 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5 };
+
+    const maxRankA = teamA.reduce((max, p) => {
+      const val = RANK_SCALE[(p.rango || 'D').toUpperCase()] || 1;
+      return val > max ? val : max;
+    }, 1);
+
+    const maxRankB = teamB.reduce((max, p) => {
+      const val = RANK_SCALE[(p.rango || 'D').toUpperCase()] || 1;
+      return val > max ? val : max;
+    }, 1);
+
+    const isWinner = winner === team;
+    const ownMaxRankVal = team === 'A' ? maxRankA : maxRankB;
+    const opponentMaxRankVal = team === 'A' ? maxRankB : maxRankA;
+
+    const diff = opponentMaxRankVal - ownMaxRankVal;
+
+    const section = isWinner ? paConfig.victoria : paConfig.derrota;
+    if (!section) return 0;
+
+    if (diff >= 2) return Number(section.mas_2) || 0;
+    if (diff === 1) return Number(section.mas_1) || 0;
+    if (diff === 0) return Number(section.igual) || 0;
+    if (diff === -1) return Number(section.menos_1) || 0;
+    return Number(section.menos_2) || 0;
+  };
+
   const handleSubmit = async () => {
     if (!activeCharacter) {
       addToast('No se ha detectado un personaje activo.', 'error');
@@ -179,6 +215,7 @@ export default function CombatForm({
         resultado: finalResult,
         recompensa_xp: finalXP,
         config_xp: combatConfig,
+        config_pa: paConfig,
         participantes_historicos: [
           { id: activeCharacter.id, nombre_ninja: activeCharacter.nombre_ninja },
           ...teamA.map(p => ({ id: p.id, nombre_ninja: p.nombre_ninja })),
@@ -271,6 +308,11 @@ export default function CombatForm({
                           <div className="flex items-center gap-2 px-3 py-1 bg-oro/10 border border-oro/20 ninja-clip-xs">
                             <span className="text-[10px] font-black text-oro">+{calculateXP('A', p.huye)} EXP</span>
                           </div>
+                          {calculatePA('A', p.huye) > 0 && (
+                            <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 ninja-clip-xs">
+                              <span className="text-[10px] font-black text-emerald-400">+{calculatePA('A', p.huye)} PA</span>
+                            </div>
+                          )}
                           <button onClick={() => removeParticipant(p.id, 'A')} className="opacity-0 group-hover/item:opacity-100 p-2 text-oro/20 hover:text-rojo-sangre transition-all">
                             <X className="w-4 h-4" />
                           </button>
@@ -357,6 +399,11 @@ export default function CombatForm({
                           <div className="flex items-center gap-2 px-3 py-1 bg-oro/10 border border-oro/20 ninja-clip-xs">
                             <span className="text-[10px] font-black text-oro">+{calculateXP('B', p.huye)} EXP</span>
                           </div>
+                          {calculatePA('B', p.huye) > 0 && (
+                            <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 ninja-clip-xs">
+                              <span className="text-[10px] font-black text-emerald-400">+{calculatePA('B', p.huye)} PA</span>
+                            </div>
+                          )}
                           <button onClick={() => removeParticipant(p.id, 'B')} className="opacity-0 group-hover/item:opacity-100 p-2 text-oro/20 hover:text-rojo-sangre transition-all">
                             <X className="w-4 h-4" />
                           </button>
@@ -404,7 +451,7 @@ export default function CombatForm({
 
           {/* Resultado y Recompensas */}
           <div className="space-y-12 pt-12 border-t border-oro/10">
-            <div className="flex flex-col md:flex-row gap-12 items-center">
+            <div className="flex flex-col xl:flex-row gap-12 items-start">
               <div className="flex-1 w-full space-y-6">
                 <div className="flex items-center gap-4">
                   <Trophy className="w-5 h-5 text-oro/40" />
@@ -428,49 +475,95 @@ export default function CombatForm({
                 </div>
               </div>
 
-              {combatConfig && (
-                <div className="w-full md:w-[450px] p-6 bg-black/40 border border-oro/10 ninja-clip-md text-xs font-black uppercase tracking-widest space-y-4">
-                  <div className="flex items-center gap-4 border-b border-oro/10 pb-3 opacity-60">
-                    <Info className="w-4 h-4 text-oro" />
-                    <span>TABLA DE EXP</span>
-                  </div>
-                  {combatConfig.victoria ? (
-                    <div className="grid grid-cols-3 gap-y-3 gap-x-2 text-center text-[10px]">
-                      <div className="text-left text-oro/40">Diferencia</div>
-                      <div className="text-green-500">Victoria</div>
-                      <div className="text-red-500">Derrota</div>
-
-                      <div className="text-left text-oro/30">+2 Superior</div>
-                      <div className="text-oro">+{combatConfig.victoria.mas_2}</div>
-                      <div className="text-oro">+{combatConfig.derrota.mas_2}</div>
-
-                      <div className="text-left text-oro/30">+1 Superior</div>
-                      <div className="text-oro">+{combatConfig.victoria.mas_1}</div>
-                      <div className="text-oro">+{combatConfig.derrota.mas_1}</div>
-
-                      <div className="text-left text-oro/30">= Rango</div>
-                      <div className="text-oro">+{combatConfig.victoria.igual}</div>
-                      <div className="text-oro">+{combatConfig.derrota.igual}</div>
-
-                      <div className="text-left text-oro/30">-1 Inferior</div>
-                      <div className="text-oro">+{combatConfig.victoria.menos_1}</div>
-                      <div className="text-oro">+{combatConfig.derrota.menos_1}</div>
-
-                      <div className="text-left text-oro/30">-2 Inferior</div>
-                      <div className="text-oro">+{combatConfig.victoria.menos_2}</div>
-                      <div className="text-oro">+{combatConfig.derrota.menos_2}</div>
+              <div className="flex flex-col md:flex-row gap-6 w-full xl:w-auto shrink-0">
+                {combatConfig && (
+                  <div className="w-full md:w-[320px] p-6 bg-black/40 border border-oro/10 ninja-clip-md text-xs font-black uppercase tracking-widest space-y-4">
+                    <div className="flex items-center gap-4 border-b border-oro/10 pb-3 opacity-60">
+                      <Info className="w-4 h-4 text-oro" />
+                      <span>TABLA DE EXP</span>
                     </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="flex justify-between"><span>Victoria</span><span className="text-oro">+{combatConfig.ganar} EXP</span></div>
-                      <div className="flex justify-between"><span>Derrota</span><span className="text-oro">+{combatConfig.perder} EXP</span></div>
+                    {combatConfig.victoria ? (
+                      <div className="grid grid-cols-3 gap-y-3 gap-x-2 text-center text-[10px]">
+                        <div className="text-left text-oro/40">Diferencia</div>
+                        <div className="text-green-500">Victoria</div>
+                        <div className="text-red-500">Derrota</div>
+
+                        <div className="text-left text-oro/30">+2 Sup</div>
+                        <div className="text-oro">+{combatConfig.victoria.mas_2}</div>
+                        <div className="text-oro">+{combatConfig.derrota.mas_2}</div>
+
+                        <div className="text-left text-oro/30">+1 Sup</div>
+                        <div className="text-oro">+{combatConfig.victoria.mas_1}</div>
+                        <div className="text-oro">+{combatConfig.derrota.mas_1}</div>
+
+                        <div className="text-left text-oro/30">= Rango</div>
+                        <div className="text-oro">+{combatConfig.victoria.igual}</div>
+                        <div className="text-oro">+{combatConfig.derrota.igual}</div>
+
+                        <div className="text-left text-oro/30">-1 Inf</div>
+                        <div className="text-oro">+{combatConfig.victoria.menos_1}</div>
+                        <div className="text-oro">+{combatConfig.derrota.menos_1}</div>
+
+                        <div className="text-left text-oro/30">-2 Inf</div>
+                        <div className="text-oro">+{combatConfig.victoria.menos_2}</div>
+                        <div className="text-oro">+{combatConfig.derrota.menos_2}</div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex justify-between"><span>Victoria</span><span className="text-oro">+{combatConfig.ganar} EXP</span></div>
+                        <div className="flex justify-between"><span>Derrota</span><span className="text-oro">+{combatConfig.perder} EXP</span></div>
+                      </div>
+                    )}
+                    <div className="text-[9px] text-oro/30 border-t border-oro/5 pt-2 text-center normal-case font-bold">
+                      El empate siempre otorga 0 EXP.
                     </div>
-                  )}
-                  <div className="text-[9px] text-oro/30 border-t border-oro/5 pt-2 text-center normal-case font-bold">
-                    El empate siempre otorga 0 EXP.
                   </div>
-                </div>
-              )}
+                )}
+
+                {paConfig && (
+                  <div className="w-full md:w-[320px] p-6 bg-black/40 border border-oro/10 ninja-clip-md text-xs font-black uppercase tracking-widest space-y-4">
+                    <div className="flex items-center gap-4 border-b border-oro/10 pb-3 opacity-60">
+                      <Info className="w-4 h-4 text-emerald-400" />
+                      <span>TABLA DE PA</span>
+                    </div>
+                    {paConfig.victoria ? (
+                      <div className="grid grid-cols-3 gap-y-3 gap-x-2 text-center text-[10px]">
+                        <div className="text-left text-oro/40">Diferencia</div>
+                        <div className="text-green-500">Victoria</div>
+                        <div className="text-red-500">Derrota</div>
+
+                        <div className="text-left text-oro/30">+2 Sup</div>
+                        <div className="text-emerald-400">+{paConfig.victoria.mas_2}</div>
+                        <div className="text-emerald-400">+{paConfig.derrota.mas_2}</div>
+
+                        <div className="text-left text-oro/30">+1 Sup</div>
+                        <div className="text-emerald-400">+{paConfig.victoria.mas_1}</div>
+                        <div className="text-emerald-400">+{paConfig.derrota.mas_1}</div>
+
+                        <div className="text-left text-oro/30">= Rango</div>
+                        <div className="text-emerald-400">+{paConfig.victoria.igual}</div>
+                        <div className="text-emerald-400">+{paConfig.derrota.igual}</div>
+
+                        <div className="text-left text-oro/30">-1 Inf</div>
+                        <div className="text-emerald-400">+{paConfig.victoria.menos_1}</div>
+                        <div className="text-emerald-400">+{paConfig.derrota.menos_1}</div>
+
+                        <div className="text-left text-oro/30">-2 Inf</div>
+                        <div className="text-emerald-400">+{paConfig.victoria.menos_2}</div>
+                        <div className="text-emerald-400">+{paConfig.derrota.menos_2}</div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex justify-between"><span>Victoria</span><span className="text-emerald-400">+{paConfig.ganar} PA</span></div>
+                        <div className="flex justify-between"><span>Derrota</span><span className="text-emerald-400">+{paConfig.perder} PA</span></div>
+                      </div>
+                    )}
+                    <div className="text-[9px] text-oro/30 border-t border-oro/5 pt-2 text-center normal-case font-bold">
+                      El empate siempre otorga 0 PA.
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
