@@ -13,7 +13,8 @@ export const CharacterService = {
         info_aldeas(*), 
         reg_personajes_inventario!reg_personajes_inventario_personaje_id_fkey(*, info_glosario(*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre))), 
         reg_personajes_tecnicas!reg_personajes_tecnicas_personaje_id_fkey(*, info_glosario(*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre))), 
-        reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(*, info_ramas_clanes(*), info_sub_especialidades(*), info_entrenamientos(*)),
+        reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(*, info_ramas_clanes(*), info_sub_especialidades(*)),
+        reg_personajes_entrenamientos!reg_personajes_entrenamientos_personaje_id_fkey(*, info_entrenamientos(*)),
         registros_autor: reg_registros!reg_registros_autor_id_fkey(*, autor: reg_characters!reg_registros_autor_id_fkey(nombre_ninja), participantes: reg_registros_participantes!reg_registros_participantes_registro_id_fkey(*, personaje: reg_characters!reg_registros_participantes_personaje_id_fkey(nombre_ninja))),
         registros_participante: reg_registros_participantes!reg_registros_participantes_personaje_id_fkey(*, registro: reg_registros!reg_registros_participantes_registro_id_fkey(*, autor: reg_characters!reg_registros_autor_id_fkey(nombre_ninja), participantes: reg_registros_participantes!reg_registros_participantes_registro_id_fkey(*, personaje: reg_characters!reg_registros_participantes_personaje_id_fkey(nombre_ninja))))
       `)
@@ -27,6 +28,7 @@ export const CharacterService = {
       ...data,
       aldeas: data.info_aldeas || data.aldeas,
       personajes_ramas: data.reg_personajes_ramas || data.personajes_ramas || data.ramas || [],
+      personajes_entrenamientos: data.reg_personajes_entrenamientos || data.personajes_entrenamientos || [],
       personajes_inventario: data.reg_personajes_inventario || data.personajes_inventario || data.inventario || [],
       personajes_tecnicas: data.reg_personajes_tecnicas || data.personajes_tecnicas || data.tecnicas || [],
       registros_autor: data.registros_autor || [],
@@ -119,8 +121,22 @@ export const CharacterService = {
           personaje_id: id,
           rama_id: r.rama_id,
           sub_especialidad_id: r.sub_especialidad_id,
-          id_entrenamiento: r.id_entrenamiento || null,
           slot: r.slot || 1
+        }))
+      );
+      if (error) throw error;
+    }
+  },
+
+  async updateCharacterEntrenamientos(id: string, entrenamientos: any[]) {
+    const supabase = createClient();
+    await supabase.from('reg_personajes_entrenamientos').delete().eq('personaje_id', id);
+    if (entrenamientos && entrenamientos.length > 0) {
+      const { error } = await supabase.from('reg_personajes_entrenamientos').insert(
+        entrenamientos.map(e => ({
+          personaje_id: id,
+          rama_id: e.rama_id,
+          entrenamiento_id: e.entrenamiento_id
         }))
       );
       if (error) throw error;

@@ -9,14 +9,36 @@ export default async function GlosarioPage() {
   const supabase = await createClient();
   
   // Fetch data in parallel
-  const [categorias, subcategorias, glosarios, ramas, aldeas, subespecialidades] = await Promise.all([
+  const [categorias, subcategorias, glosarios, ramas, aldeas, subespecialidades, entrenamientos] = await Promise.all([
     MasterServerService.getGlosarioCategorias(supabase),
     MasterServerService.getGlosarioSubcategorias(supabase),
     MasterServerService.getGlosarios(supabase),
     MasterServerService.getRamas(supabase),
     MasterServerService.getAldeasActivas(supabase),
-    MasterServerService.getSubEspecialidades(supabase)
+    MasterServerService.getSubEspecialidades(supabase),
+    MasterServerService.getAdminEntrenamientos(supabase)
   ]);
+
+  // Mapear entrenamientos a la estructura de Glosario
+  const mappedEntrenamientos = (entrenamientos || [])
+    .filter((e: any) => e.activo)
+    .map((e: any) => ({
+      id: 100000 + e.id,
+      categoria_id: 5,
+      subcategoria_id: undefined,
+      aldea_id: e.info_ramas_clanes?.aldea_id || null,
+      rama_clan_id: e.id_ramaclan,
+      sub_especialidad_id: e.id_subespecialidad,
+      nombre_es: e.nombre_esp,
+      nombre_jp: e.nombre_jp,
+      requisitos: e.requisitos || (e.rango ? { rango: e.rango } : {}),
+      coste_exp: e.coste_exp || 0,
+      coste_ryous: e.coste_ryous || 0,
+      coste_puntos_combate: e.coste_puntos_combate || 0,
+      activo: true
+    }));
+
+  const combinedGlosarios = [...glosarios, ...mappedEntrenamientos];
 
   // 1. Obtener personajes que ocupan cupo (activos OR inactivos por inactividad de menos de 6 meses)
   const sixMonthsAgo = new Date();
@@ -78,7 +100,7 @@ export default async function GlosarioPage() {
         <GlosarioView 
           categorias={categorias} 
           subcategorias={subcategorias} 
-          glosarios={glosarios} 
+          glosarios={combinedGlosarios} 
           ramas={ramas}
           aldeas={aldeas}
           subespecialidades={subespecialidades}

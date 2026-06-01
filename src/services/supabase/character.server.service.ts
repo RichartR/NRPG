@@ -9,7 +9,7 @@ export const CharacterServerService = {
   async getCharacterById(supabase: SupabaseClient, id: string | number): Promise<Character | null> {
     const { data, error } = await supabase
       .from('reg_characters')
-      .select('*, personajes_ramas:reg_personajes_ramas(*, rama:info_ramas_clanes(nombre), sub_especialidad:info_sub_especialidades(nombre))')
+      .select('*, personajes_ramas:reg_personajes_ramas(*, rama:info_ramas_clanes(nombre), sub_especialidad:info_sub_especialidades(nombre)), personajes_entrenamientos:reg_personajes_entrenamientos(*, info_entrenamientos(*))')
       .eq('id', id)
       .single();
     if (error) return null;
@@ -74,7 +74,6 @@ export const CharacterServerService = {
     slot: number,
     ramaId: number,
     subEspecialidadId: number | null,
-    entrenamientoId: number | null,
     elementoPrincipalId?: number | null,
     elementoSecundarioId?: number | null,
     elementoTerciarioId?: number | null
@@ -84,7 +83,6 @@ export const CharacterServerService = {
       slot,
       rama_id: ramaId,
       sub_especialidad_id: subEspecialidadId || null,
-      id_entrenamiento: entrenamientoId || null,
       elemento_principal_id: elementoPrincipalId || null,
       elemento_secundario_id: elementoSecundarioId || null,
       elemento_terciario_id: elementoTerciarioId || null
@@ -118,12 +116,24 @@ export const CharacterServerService = {
         slot: r.slot || idx + 1,
         rama_id: r.rama_id,
         sub_especialidad_id: r.sub_especialidad_id || null,
-        id_entrenamiento: r.id_entrenamiento || null,
         elemento_principal_id: r.elemento_principal_id || null,
         elemento_secundario_id: r.elemento_secundario_id || null,
         elemento_terciario_id: r.elemento_terciario_id || null
       }));
       const { error } = await supabase.from('reg_personajes_ramas').upsert(mapped, { onConflict: 'personaje_id, slot' });
+      if (error) throw error;
+    }
+  },
+
+  async bulkUpdateEntrenamientos(supabase: SupabaseClient, characterId: string | number, entrenamientos: any[]) {
+    await supabase.from('reg_personajes_entrenamientos').delete().eq('personaje_id', characterId);
+    if (entrenamientos && entrenamientos.length > 0) {
+      const mapped = entrenamientos.map(e => ({
+        personaje_id: characterId,
+        rama_id: e.rama_id,
+        entrenamiento_id: e.entrenamiento_id
+      }));
+      const { error } = await supabase.from('reg_personajes_entrenamientos').insert(mapped);
       if (error) throw error;
     }
   },
@@ -148,14 +158,13 @@ export const CharacterServerService = {
     }
   },
 
-  async insertRamas(supabase: SupabaseClient, characterId: string | number, ramas: { rama_id: number; sub_especialidad_id?: number; id_entrenamiento?: number; elemento_principal_id?: number; elemento_secundario_id?: number; elemento_terciario_id?: number }[]) {
+  async insertRamas(supabase: SupabaseClient, characterId: string | number, ramas: { rama_id: number; sub_especialidad_id?: number; elemento_principal_id?: number; elemento_secundario_id?: number; elemento_terciario_id?: number }[]) {
     if (ramas.length === 0) return;
     const { error } = await supabase.from('reg_personajes_ramas').insert(
       ramas.map((r, idx) => ({
         personaje_id: characterId,
         rama_id: r.rama_id,
         sub_especialidad_id: r.sub_especialidad_id || null,
-        id_entrenamiento: r.id_entrenamiento || null,
         elemento_principal_id: r.elemento_principal_id || null,
         elemento_secundario_id: r.elemento_secundario_id || null,
         elemento_terciario_id: r.elemento_terciario_id || null,

@@ -176,18 +176,6 @@ export async function PATCH(
               }
             }
 
-            // 2. Elección de Entrenamiento
-            if (oldR && newR.id_entrenamiento !== oldR.id_entrenamiento && newR.id_entrenamiento) {
-              const [{ data: trainingInfo }, { data: ramaInfo }] = await Promise.all([
-                adminClient.from('info_entrenamientos').select('nombre_esp').eq('id', newR.id_entrenamiento).single(),
-                adminClient.from('info_ramas_clanes').select('nombre, tipo').eq('id', newR.rama_id).single()
-              ]);
-
-              if (trainingInfo && ramaInfo) {
-                const articulo = ramaInfo.tipo === 'clan' ? 'el' : 'la';
-                changes.push(`ha elegido el ${trainingInfo.nombre_esp} de ${articulo} ${ramaInfo.tipo} ${ramaInfo.nombre}`);
-              }
-            }
           }
 
           if (changes.length > 0) {
@@ -210,6 +198,11 @@ export async function PATCH(
             }
           }
           updatePromises.push(CharacterServerService.bulkUpdateRamas(adminClient, characterId, data.personajes_ramas));
+        }
+
+        // Entrenamientos
+        if (data.personajes_entrenamientos) {
+          updatePromises.push(CharacterServerService.bulkUpdateEntrenamientos(adminClient, characterId, data.personajes_entrenamientos));
         }
 
         // Inventario
