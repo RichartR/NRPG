@@ -213,7 +213,7 @@ export default function CharacterSheet() {
                 </span>
                 <span className="text-oro/80 text-[10px] sm:text-xs xl:text-base font-bold uppercase tracking-widest whitespace-nowrap">{xp} EXP</span>
                 <span className="text-oro/80 text-[10px] sm:text-xs xl:text-base font-bold uppercase tracking-widest whitespace-nowrap">{ryous} Ryos</span>
-                <span className="text-emerald-400 text-[10px] sm:text-xs xl:text-base font-bold uppercase tracking-widest whitespace-nowrap">{activeCharacter.puntos_combate || 0} PC</span>
+                <span className="text-emerald-400 text-[10px] sm:text-xs xl:text-base font-bold uppercase tracking-widest whitespace-nowrap">{activeCharacter.puntos_aprendizaje || 0} PA</span>
               </div>
             </div>
           </div>

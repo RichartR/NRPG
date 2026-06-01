@@ -63,20 +63,23 @@ export const StatsLogic = {
 };
 
 export const RewardLogic = {
-  calculateReward(registro: any, personajeId: number): { xp: number; ryous: number } {
+  calculateReward(registro: any, personajeId: number): { xp: number; ryous: number; pa: number } {
     const { tipo, data } = registro;
 
     if (registro.subtipo === 'evento_premios' || registro.subtipo === 'narracion') {
       const globalXp = Number(data.global_xp) || 0;
       const globalRyous = Number(data.global_ryous) || 0;
+      const globalPa = Number(data.global_pa) || 0;
       const partPremio = data.participantes_premios?.find((p: any) => Number(p.personaje_id) === Number(personajeId));
 
       const xpExtra = Number(partPremio?.xp_extra) || 0;
       const ryousExtra = Number(partPremio?.ryous_extra) || 0;
+      const paExtra = Number(partPremio?.pa_extra) || 0;
 
       return {
         xp: globalXp + xpExtra,
-        ryous: globalRyous + ryousExtra
+        ryous: globalRyous + ryousExtra,
+        pa: globalPa + paExtra
       };
     }
 
@@ -85,11 +88,11 @@ export const RewardLogic = {
       const isTeamB = data.equipo_b?.some((p: any) => Number(p.id) === Number(personajeId));
       const participant = [...(data.equipo_a || []), ...(data.equipo_b || [])].find((p: any) => Number(p.id) === Number(personajeId));
 
-      if (!participant || participant.huye) return { xp: 0, ryous: 0 };
-      if (data.ganador === 'Empate') return { xp: 0, ryous: 0 };
+      if (!participant || participant.huye) return { xp: 0, ryous: 0, pa: 0 };
+      if (data.ganador === 'Empate') return { xp: 0, ryous: 0, pa: 0 };
 
       const config = data.config_xp;
-      if (!config) return { xp: 0, ryous: 0 };
+      if (!config) return { xp: 0, ryous: 0, pa: 0 };
 
       // Calcular el rango máximo de cada bando
       const RANK_SCALE: Record<string, number> = { 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5 };
@@ -112,22 +115,21 @@ export const RewardLogic = {
 
       // Obtener el mapeo de EXP según victoria/derrota y diferencia
       const section = isWinner ? config.victoria : config.derrota;
+      let xp = 0;
       if (!section) {
-        // Fallback si la config es antigua (para evitar caídas en registros viejos)
-        let xpFallback = 0;
-        if (isWinner) xpFallback = Number(config.ganar) || 0;
-        else xpFallback = Number(config.perder) || 0;
-        return { xp: xpFallback, ryous: 0 };
+        if (isWinner) xp = Number(config.ganar) || 0;
+        else xp = Number(config.perder) || 0;
+      } else {
+        if (diff >= 2) xp = Number(section.mas_2) || 0;
+        else if (diff === 1) xp = Number(section.mas_1) || 0;
+        else if (diff === 0) xp = Number(section.igual) || 0;
+        else if (diff === -1) xp = Number(section.menos_1) || 0;
+        else xp = Number(section.menos_2) || 0;
       }
 
-      let xp = 0;
-      if (diff >= 2) xp = Number(section.mas_2) || 0;
-      else if (diff === 1) xp = Number(section.mas_1) || 0;
-      else if (diff === 0) xp = Number(section.igual) || 0;
-      else if (diff === -1) xp = Number(section.menos_1) || 0;
-      else xp = Number(section.menos_2) || 0;
+      const pa = RewardLogic.calculateCombatPA(registro, personajeId);
 
-      return { xp, ryous: 0 };
+      return { xp, ryous: 0, pa };
     }
 
     // Misiones o Acciones
@@ -135,22 +137,25 @@ export const RewardLogic = {
       if (data.fallida) {
         return {
           xp: Number(data.recompensa_xp_fallida) || 0,
-          ryous: Number(data.recompensa_ryous_fallida) || 0
+          ryous: Number(data.recompensa_ryous_fallida) || 0,
+          pa: Number(data.recompensa_pa_fallida) || 0
         };
       }
       return {
         xp: Number(data.recompensa_xp) || 0,
-        ryous: Number(data.recompensa_ryous) || 0
+        ryous: Number(data.recompensa_ryous) || 0,
+        pa: Number(data.recompensa_pa) || 0
       };
     }
 
     return {
       xp: Number(data.recompensa_xp) || 0,
-      ryous: Number(data.recompensa_ryous) || 0
+      ryous: Number(data.recompensa_ryous) || 0,
+      pa: Number(data.recompensa_pa) || 0
     };
   },
 
-  calculateCombatPoints(registro: any, personajeId: number): number {
+  calculateCombatPA(registro: any, personajeId: number): number {
     const { tipo, data } = registro;
     if (tipo !== 'combate' || !data || data.ganador === 'Empate') return 0;
 
@@ -158,26 +163,37 @@ export const RewardLogic = {
     const isTeamB = data.equipo_b?.some((p: any) => Number(p.id) === Number(personajeId));
     const participant = [...(data.equipo_a || []), ...(data.equipo_b || [])].find((p: any) => Number(p.id) === Number(personajeId));
 
-    // Solo se suma al bando ganador y si no huye
+    // Solo se suma si no huye
     if (!participant || participant.huye) return 0;
 
-    const winningBando = data.ganador; // 'A' o 'B'
-    const playerBando = isTeamA ? 'A' : 'B';
-    if (playerBando !== winningBando) return 0;
+    const config = data.config_pa;
+    if (!config) return 0;
 
-    // Calcular el rango máximo del bando oponente
-    const opponentTeam = winningBando === 'A' ? (data.equipo_b || []) : (data.equipo_a || []);
     const RANK_SCALE: Record<string, number> = { 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5 };
 
-    const opponentMaxRankVal = opponentTeam.reduce((max: number, p: any) => {
+    const maxRankA = (data.equipo_a || []).reduce((max: number, p: any) => {
       const val = RANK_SCALE[(p.rango || 'D').toUpperCase()] || 1;
       return val > max ? val : max;
     }, 1);
 
-    const ownRankVal = RANK_SCALE[(participant.rango || 'D').toUpperCase()] || 1;
+    const maxRankB = (data.equipo_b || []).reduce((max: number, p: any) => {
+      const val = RANK_SCALE[(p.rango || 'D').toUpperCase()] || 1;
+      return val > max ? val : max;
+    }, 1);
 
-    // Fórmula: 2 + (Rango enemigo máximo - Rango jugador)
-    const diff = opponentMaxRankVal - ownRankVal;
-    return Math.max(0, 2 + diff);
+    const isWinner = data.ganador === (isTeamA ? 'A' : 'B');
+    const ownMaxRankVal = isTeamA ? maxRankA : maxRankB;
+    const opponentMaxRankVal = isTeamA ? maxRankB : maxRankA;
+
+    const diff = opponentMaxRankVal - ownMaxRankVal;
+
+    const section = isWinner ? config.victoria : config.derrota;
+    if (!section) return 0;
+
+    if (diff >= 2) return Number(section.mas_2) || 0;
+    if (diff === 1) return Number(section.mas_1) || 0;
+    if (diff === 0) return Number(section.igual) || 0;
+    if (diff === -1) return Number(section.menos_1) || 0;
+    return Number(section.menos_2) || 0;
   }
 };

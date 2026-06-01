@@ -126,8 +126,10 @@ export default function MissionForm({
       payload.data.codigo_mision = mision.codigo_mision;
       payload.data.recompensa_xp = esFallida && mision.se_puede_fallar ? (mision.exp_fallida || 0) : (mision.exp || 0);
       payload.data.recompensa_ryous = esFallida && mision.se_puede_fallar ? (mision.ryous_fallida || 0) : (mision.ryous || 0);
+      payload.data.recompensa_pa = esFallida && mision.se_puede_fallar ? (mision.pa_recompensa_fallida || 0) : (mision.pa_recompensa || 0);
       payload.data.recompensa_xp_fallida = mision.exp_fallida || 0;
       payload.data.recompensa_ryous_fallida = mision.ryous_fallida || 0;
+      payload.data.recompensa_pa_fallida = mision.pa_recompensa_fallida || 0;
       payload.data.se_puede_fallar = mision.se_puede_fallar || false;
       payload.data.fallida = esFallida && mision.se_puede_fallar;
     } else {
@@ -207,7 +209,7 @@ export default function MissionForm({
                       }}
                       placeholder="SELECCIONAR..."
                       disabled={misiones.length === 0}
-                      options={misiones.map(m => ({ label: `${m.codigo_mision} (+${m.exp} EXP)`, value: m.codigo_mision }))}
+                      options={misiones.map(m => ({ label: `${m.codigo_mision} (+${m.exp} EXP${m.pa_recompensa ? ` / +${m.pa_recompensa} PA` : ''})`, value: m.codigo_mision }))}
                     />
                   </div>
                   {(() => {
@@ -223,14 +225,14 @@ export default function MissionForm({
                             onClick={() => setEsFallida(false)}
                             className={`py-4 border text-xs font-black uppercase tracking-widest transition-all ${!esFallida ? 'bg-oro text-rojo-sangre border-oro' : 'bg-black/20 border-oro/5 text-oro/45'}`}
                           >
-                            COMPLETADA (+{misionObj.exp} EXP)
+                            COMPLETADA (+{misionObj.exp} EXP{misionObj.pa_recompensa ? ` / +${misionObj.pa_recompensa} PA` : ''})
                           </button>
                           <button
                             type="button"
                             onClick={() => setEsFallida(true)}
                             className={`py-4 border text-xs font-black uppercase tracking-widest transition-all ${esFallida ? 'bg-rojo-sangre/20 border-rojo-sangre/40 text-rojo-sangre' : 'bg-black/20 border-oro/5 text-oro/45'}`}
                           >
-                            FALLADA (+{misionObj.exp_fallida} EXP)
+                            FALLADA (+{misionObj.exp_fallida} EXP{misionObj.pa_recompensa_fallida ? ` / +${misionObj.pa_recompensa_fallida} PA` : ''})
                           </button>
                         </div>
                       </div>

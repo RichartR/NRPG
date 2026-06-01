@@ -28,7 +28,7 @@ export default function EntrenamientoEditForm({ entrenamiento, ramas, subEspecia
       requisitos: {},
       coste_exp: 0,
       coste_ryous: 0,
-      coste_puntos_combate: 0
+      coste_puntos_aprendizaje: 0
     }
   );
 
@@ -153,9 +153,9 @@ export default function EntrenamientoEditForm({ entrenamiento, ramas, subEspecia
               placeholder="Ej: 2000"
             />
             <DataField
-              label="Coste Puntos Combate"
-              value={String(formData.coste_puntos_combate ?? 0)}
-              onChange={(v) => setFormData({ ...formData, coste_puntos_combate: Number(v) || 0 })}
+              label="Coste Puntos de Aprendizaje"
+              value={String(formData.coste_puntos_aprendizaje ?? 0)}
+              onChange={(v) => setFormData({ ...formData, coste_puntos_aprendizaje: Number(v) || 0 })}
               placeholder="Ej: 10"
             />
           </div>

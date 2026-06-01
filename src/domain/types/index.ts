@@ -97,7 +97,7 @@ export interface Entrenamiento {
   requisitos: any;
   coste_exp: number;
   coste_ryous: number;
-  coste_puntos_combate: number;
+  coste_puntos_aprendizaje: number;
   // Joins
   info_ramas_clanes?: RamaClan;
   info_sub_especialidades?: SubEspecialidad;
@@ -116,7 +116,7 @@ export interface Glosario {
   requisitos: any;
   coste_exp: number;
   coste_ryous: number;
-  coste_puntos_combate: number;
+  coste_puntos_aprendizaje: number;
   activo: boolean;
   inicial?: boolean;
   es_tienda_exp?: boolean;
@@ -179,7 +179,7 @@ export interface Character {
   puntos_stats: number;
   xp: number;
   ryous: number;
-  puntos_combate: number;
+  puntos_aprendizaje: number;
   moneda_evento: number; // Moneda de Evento del personaje
   tiempo_rpg: string;
   edad: number;
@@ -214,6 +214,8 @@ export interface MisionMaster {
   ryous: number;
   exp_fallida: number;
   ryous_fallida: number;
+  pa_recompensa: number;
+  pa_recompensa_fallida: number;
   se_puede_fallar: boolean;
   imagen_frontal?: string;
   imagen_trasera?: string;

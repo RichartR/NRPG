@@ -85,8 +85,7 @@ export async function POST(request: Request) {
 
       // 3. Aplicar recompensas instantáneas al autor (si tiene personaje)
       if (payload.autor_id) {
-        const { xp, ryous } = RewardLogic.calculateReward(registro, payload.autor_id);
-        const combatPts = RewardLogic.calculateCombatPoints(registro, payload.autor_id);
+        const { xp, ryous, pa } = RewardLogic.calculateReward(registro, payload.autor_id);
         
         let extraMonedaEvento = 0;
         let glosarioItems: any[] = [];
@@ -101,10 +100,10 @@ export async function POST(request: Request) {
           }
         }
 
-        if (xp > 0 || ryous > 0 || combatPts > 0 || extraMonedaEvento > 0) {
+        if (xp > 0 || ryous > 0 || pa > 0 || extraMonedaEvento > 0) {
           const { data: char } = await adminClient
             .from('reg_characters')
-            .select('xp, ryous, puntos_combate, moneda_evento')
+            .select('xp, ryous, puntos_aprendizaje, moneda_evento')
             .eq('id', payload.autor_id)
             .single();
 
@@ -114,7 +113,7 @@ export async function POST(request: Request) {
               .update({
                 xp: (char.xp || 0) + xp,
                 ryous: (char.ryous || 0) + ryous,
-                puntos_combate: (char.puntos_combate || 0) + combatPts,
+                puntos_aprendizaje: (char.puntos_aprendizaje || 0) + pa,
                 moneda_evento: (char.moneda_evento || 0) + extraMonedaEvento
               })
               .eq('id', payload.autor_id);
@@ -175,8 +174,7 @@ export async function POST(request: Request) {
       const removedParticipants = oldParticipants.filter(p => !newParticipantIds.includes(p.personaje_id));
       for (const p of removedParticipants) {
         if (p.estado === 'aceptado') {
-          const { xp, ryous } = RewardLogic.calculateReward(oldRegistro, p.personaje_id);
-          const combatPts = RewardLogic.calculateCombatPoints(oldRegistro, p.personaje_id);
+          const { xp, ryous, pa } = RewardLogic.calculateReward(oldRegistro, p.personaje_id);
           
           let extraMonedaEvento = 0;
           let glosarioItems: any[] = [];
@@ -187,12 +185,12 @@ export async function POST(request: Request) {
             glosarioItems = oldPartPremio?.glosario_items || [];
           }
 
-          const { data: char } = await adminClient.from('reg_characters').select('xp, ryous, puntos_combate, moneda_evento').eq('id', p.personaje_id).single();
+          const { data: char } = await adminClient.from('reg_characters').select('xp, ryous, puntos_aprendizaje, moneda_evento').eq('id', p.personaje_id).single();
           if (char) {
             await adminClient.from('reg_characters').update({
               xp: Math.max(0, (char.xp || 0) - xp),
               ryous: Math.max(0, (char.ryous || 0) - ryous),
-              puntos_combate: Math.max(0, (char.puntos_combate || 0) - combatPts),
+              puntos_aprendizaje: Math.max(0, (char.puntos_aprendizaje || 0) - pa),
               moneda_evento: Math.max(0, (char.moneda_evento || 0) - extraMonedaEvento)
             }).eq('id', p.personaje_id);
           }
@@ -231,8 +229,7 @@ export async function POST(request: Request) {
 
         if (isAutor && newPart) {
           const newRegistroFull = { ...oldRegistro, subtipo: payload.subtipo, data: payload.data };
-          const { xp, ryous } = RewardLogic.calculateReward(newRegistroFull, pid);
-          const combatPts = RewardLogic.calculateCombatPoints(newRegistroFull, pid);
+          const { xp, ryous, pa } = RewardLogic.calculateReward(newRegistroFull, pid);
 
           let extraMonedaEvento = 0;
           let glosarioItems: any[] = [];
@@ -247,12 +244,12 @@ export async function POST(request: Request) {
             }
           }
 
-          const { data: char } = await adminClient.from('reg_characters').select('xp, ryous, puntos_combate, moneda_evento').eq('id', pid).single();
+          const { data: char } = await adminClient.from('reg_characters').select('xp, ryous, puntos_aprendizaje, moneda_evento').eq('id', pid).single();
           if (char) {
             await adminClient.from('reg_characters').update({
               xp: (char.xp || 0) + xp,
               ryous: (char.ryous || 0) + ryous,
-              puntos_combate: (char.puntos_combate || 0) + combatPts,
+              puntos_aprendizaje: (char.puntos_aprendizaje || 0) + pa,
               moneda_evento: (char.moneda_evento || 0) + extraMonedaEvento
             }).eq('id', pid);
           }
@@ -283,12 +280,10 @@ export async function POST(request: Request) {
         if (p.estado === 'aceptado') {
           const oldRewards = RewardLogic.calculateReward(oldRegistro, p.personaje_id);
           const newRewards = RewardLogic.calculateReward(newRegistroFull, p.personaje_id);
-          const oldCombatPts = RewardLogic.calculateCombatPoints(oldRegistro, p.personaje_id);
-          const newCombatPts = RewardLogic.calculateCombatPoints(newRegistroFull, p.personaje_id);
 
           const diffXp = newRewards.xp - oldRewards.xp;
           const diffRyous = newRewards.ryous - oldRewards.ryous;
-          const diffCombatPts = newCombatPts - oldCombatPts;
+          const diffPa = newRewards.pa - oldRewards.pa;
 
           let oldExtraME = 0;
           let oldGlosario: any[] = [];
@@ -310,13 +305,13 @@ export async function POST(request: Request) {
 
           const diffME = newExtraME - oldExtraME;
 
-          if (diffXp !== 0 || diffRyous !== 0 || diffCombatPts !== 0 || diffME !== 0) {
-            const { data: char } = await adminClient.from('reg_characters').select('xp, ryous, puntos_combate, moneda_evento').eq('id', p.personaje_id).single();
+          if (diffXp !== 0 || diffRyous !== 0 || diffPa !== 0 || diffME !== 0) {
+            const { data: char } = await adminClient.from('reg_characters').select('xp, ryous, puntos_aprendizaje, moneda_evento').eq('id', p.personaje_id).single();
             if (char) {
               await adminClient.from('reg_characters').update({
                 xp: Math.max(0, (char.xp || 0) + diffXp),
                 ryous: Math.max(0, (char.ryous || 0) + diffRyous),
-                puntos_combate: Math.max(0, (char.puntos_combate || 0) + diffCombatPts),
+                puntos_aprendizaje: Math.max(0, (char.puntos_aprendizaje || 0) + diffPa),
                 moneda_evento: Math.max(0, (char.moneda_evento || 0) + diffME)
               }).eq('id', p.personaje_id);
             }
@@ -363,8 +358,7 @@ export async function POST(request: Request) {
         if (participantes) {
           for (const p of participantes) {
             if (p.estado === 'aceptado') {
-              const { xp, ryous } = RewardLogic.calculateReward(registro, p.personaje_id);
-              const combatPts = RewardLogic.calculateCombatPoints(registro, p.personaje_id);
+              const { xp, ryous, pa } = RewardLogic.calculateReward(registro, p.personaje_id);
               
               let extraMonedaEvento = 0;
               let glosarioItems: any[] = [];
@@ -375,12 +369,12 @@ export async function POST(request: Request) {
                 glosarioItems = partPremio?.glosario_items || [];
               }
 
-              const { data: char } = await adminClient.from('reg_characters').select('xp, ryous, puntos_combate, moneda_evento').eq('id', p.personaje_id).single();
+              const { data: char } = await adminClient.from('reg_characters').select('xp, ryous, puntos_aprendizaje, moneda_evento').eq('id', p.personaje_id).single();
               if (char) {
                 await adminClient.from('reg_characters').update({
                   xp: Math.max(0, (char.xp || 0) - xp),
                   ryous: Math.max(0, (char.ryous || 0) - ryous),
-                  puntos_combate: Math.max(0, (char.puntos_combate || 0) - combatPts),
+                  puntos_aprendizaje: Math.max(0, (char.puntos_aprendizaje || 0) - pa),
                   moneda_evento: Math.max(0, (char.moneda_evento || 0) - extraMonedaEvento)
                 }).eq('id', p.personaje_id);
               }
@@ -403,15 +397,15 @@ export async function POST(request: Request) {
         if (registro.tipo === 'accion') {
           const spentXp = Number(registro.data?.gasto_xp) || 0;
           const spentRyous = Number(registro.data?.gasto_ryous) || 0;
-          const spentPC = Number(registro.data?.gasto_pc) || 0;
+          const spentPA = Number(registro.data?.gasto_pa) || 0;
 
-          if (spentXp > 0 || spentRyous > 0 || spentPC > 0) {
-            const { data: char } = await adminClient.from('reg_characters').select('xp, ryous, puntos_combate').eq('id', registro.autor_id).single();
+          if (spentXp > 0 || spentRyous > 0 || spentPA > 0) {
+            const { data: char } = await adminClient.from('reg_characters').select('xp, ryous, puntos_aprendizaje').eq('id', registro.autor_id).single();
             if (char) {
               await adminClient.from('reg_characters').update({
                 xp: (char.xp || 0) + spentXp,
                 ryous: (char.ryous || 0) + spentRyous,
-                puntos_combate: (char.puntos_combate || 0) + spentPC
+                puntos_aprendizaje: (char.puntos_aprendizaje || 0) + spentPA
               }).eq('id', registro.autor_id);
             }
           }

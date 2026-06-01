@@ -129,7 +129,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
               const isEmpate = m.data.ganador === 'Empate';
               const won = (m.data.ganador === 'A' && isA) || (m.data.ganador === 'B' && !isA);
               const xpGained = calculateParticipantXP(m, isA ? 'A' : 'B', (isA ? teamA : teamB).find((p: any) => p.id === sid)?.huye);
-              const pcGained = RewardLogic.calculateCombatPoints(m, sid);
+              const pcGained = RewardLogic.calculateCombatPA(m, sid);
 
               const isOwner = activeCharacter?.id === m.autor_id;
               const canManage = isOwner || isAdmin;
@@ -231,7 +231,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                       </span>
                       {pcGained > 0 && (
                         <span className="inline-block text-[9px] font-black text-[#a7f3d0]/90 tracking-wider bg-[#064e3b]/30 border border-emerald-500/20 py-0.5 px-2 ninja-clip-xs mt-1 w-full text-center">
-                          +{pcGained} PC
+                          +{pcGained} PA
                         </span>
                       )}
                     </div>
@@ -294,7 +294,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
           const isEmpate = m.data.ganador === 'Empate';
           const won = (m.data.ganador === 'A' && isA) || (m.data.ganador === 'B' && !isA);
           const xpGained = calculateParticipantXP(m, isA ? 'A' : 'B', (isA ? teamA : teamB).find((p: any) => p.id === sid)?.huye);
-          const pcGained = RewardLogic.calculateCombatPoints(m, sid);
+          const pcGained = RewardLogic.calculateCombatPA(m, sid);
 
           const isOwner = activeCharacter?.id === m.autor_id;
           const canManage = isOwner || isAdmin;
@@ -364,7 +364,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                   </span>
                   {pcGained > 0 && (
                     <span className="inline-block text-[9px] font-black text-[#a7f3d0]/90 tracking-wider bg-[#064e3b]/30 border border-emerald-500/20 py-0.5 px-2 ninja-clip-xs">
-                      +{pcGained} PC
+                      +{pcGained} PA
                     </span>
                   )}
                 </div>

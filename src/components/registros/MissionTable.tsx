@@ -145,6 +145,11 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
                       <div className="flex items-center gap-2 text-xs font-black text-green-700 tracking-wider">
                         <span>+{m.data.recompensa_ryous || 0} Ryos</span>
                       </div>
+                      {(m.data.recompensa_pa || 0) > 0 && (
+                        <div className="flex items-center gap-2 text-xs font-black text-emerald-500 tracking-wider">
+                          <span>+{m.data.recompensa_pa} PA</span>
+                        </div>
+                      )}
                     </div>
                   </td>
 

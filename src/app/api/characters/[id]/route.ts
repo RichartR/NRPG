@@ -138,7 +138,7 @@ export async function PATCH(
           puntos_stats: data.puntos_stats,
           xp: data.xp,
           ryous: data.ryous,
-          puntos_combate: data.puntos_combate,
+          puntos_aprendizaje: data.puntos_aprendizaje,
           tiempo_rpg: data.tiempo_rpg,
           edad: data.edad,
           sexo: data.sexo,

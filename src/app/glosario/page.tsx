@@ -34,7 +34,7 @@ export default async function GlosarioPage() {
       requisitos: e.requisitos || (e.rango ? { rango: e.rango } : {}),
       coste_exp: e.coste_exp || 0,
       coste_ryous: e.coste_ryous || 0,
-      coste_puntos_combate: e.coste_puntos_combate || 0,
+      coste_puntos_aprendizaje: e.coste_puntos_aprendizaje || 0,
       activo: true
     }));
 
