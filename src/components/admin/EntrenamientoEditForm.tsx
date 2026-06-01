@@ -6,7 +6,7 @@ import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { useRouter } from 'next/navigation';
 import { Entrenamiento, RamaClan, SubEspecialidad } from '@/domain/types';
-import { DataField, SearchableSelect } from '@/components/ui/Fields';
+import { DataField, SearchableSelect, SelectField } from '@/components/ui/Fields';
 
 interface Props {
   entrenamiento?: Entrenamiento | null;
@@ -23,7 +23,12 @@ export default function EntrenamientoEditForm({ entrenamiento, ramas, subEspecia
       nombre_jp: '',
       id_ramaclan: 0,
       id_subespecialidad: null,
-      activo: true
+      activo: true,
+      rango: 'B',
+      requisitos: {},
+      coste_exp: 0,
+      coste_ryous: 0,
+      coste_puntos_combate: 0
     }
   );
 
@@ -42,7 +47,11 @@ export default function EntrenamientoEditForm({ entrenamiento, ramas, subEspecia
 
     setLoading(true);
     try {
-      await AdminService.saveEntrenamiento(formData);
+      const payload = {
+        ...formData,
+        requisitos: { rango: formData.rango || 'B' }
+      };
+      await AdminService.saveEntrenamiento(payload);
       addToast(entrenamiento ? 'Entrenamiento actualizado' : 'Entrenamiento creado', 'success');
       router.refresh();
       onCancel();
@@ -124,6 +133,30 @@ export default function EntrenamientoEditForm({ entrenamiento, ramas, subEspecia
               options={filteredSubs.map(s => ({ label: s.nombre, value: s.id }))}
               onChange={(v) => setFormData({ ...formData, id_subespecialidad: v ? Number(v) : null })}
               placeholder="Ninguna / General"
+            />
+            <SelectField
+              label="Rango de Acceso"
+              value={formData.rango || 'B'}
+              options={['D', 'C', 'B', 'A', 'S']}
+              onChange={(v) => setFormData({ ...formData, rango: v })}
+            />
+            <DataField
+              label="Coste EXP"
+              value={String(formData.coste_exp ?? 0)}
+              onChange={(v) => setFormData({ ...formData, coste_exp: Number(v) || 0 })}
+              placeholder="Ej: 1000"
+            />
+            <DataField
+              label="Coste Ryous"
+              value={String(formData.coste_ryous ?? 0)}
+              onChange={(v) => setFormData({ ...formData, coste_ryous: Number(v) || 0 })}
+              placeholder="Ej: 2000"
+            />
+            <DataField
+              label="Coste Puntos Combate"
+              value={String(formData.coste_puntos_combate ?? 0)}
+              onChange={(v) => setFormData({ ...formData, coste_puntos_combate: Number(v) || 0 })}
+              placeholder="Ej: 10"
             />
           </div>
 

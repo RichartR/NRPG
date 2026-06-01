@@ -163,6 +163,64 @@ export function useCharacter(characterId: string) {
         }
         addToast(`${section === 'apariencia' ? 'Apariencia' : 'Historia'} sincronizada con Discord`, 'success');
       } else {
+        // Check new trainings and deduct costs
+        const oldEntrenamientos = originalCharacter?.personajes_entrenamientos || [];
+        const newEntrenamientos = character.personajes_entrenamientos || [];
+        
+        let totalExpCost = 0;
+        let totalRyousCost = 0;
+        let totalPCCost = 0;
+        const newTrainingsList: any[] = [];
+        
+        newEntrenamientos.forEach(newE => {
+          const wasEquipped = oldEntrenamientos.some(oe => Number(oe.entrenamiento_id) === Number(newE.entrenamiento_id));
+          if (!wasEquipped) {
+            const tr = (masters.entrenamientos || []).find(x => x.id === Number(newE.entrenamiento_id));
+            if (tr) {
+              totalExpCost += tr.coste_exp || 0;
+              totalRyousCost += tr.coste_ryous || 0;
+              totalPCCost += tr.coste_puntos_combate || 0;
+              newTrainingsList.push(tr);
+            }
+          }
+        });
+
+        if (newTrainingsList.length > 0) {
+          const currentExp = character.xp || 0;
+          const currentRyous = character.ryous || 0;
+          const currentPC = character.puntos_combate || 0;
+
+          if (currentExp < totalExpCost || currentRyous < totalRyousCost || currentPC < totalPCCost) {
+            throw new Error(`RECURSOS INSUFICIENTES PARA EL ENTRENAMIENTO. REQUIERES ${totalExpCost} EXP, ${totalRyousCost} RYOUS Y ${totalPCCost} P. COMBATE.`);
+          }
+
+          character.xp = currentExp - totalExpCost;
+          character.ryous = currentRyous - totalRyousCost;
+          character.puntos_combate = currentPC - totalPCCost;
+
+          const trNames = newTrainingsList.map(t => t.nombre_esp).join(', ');
+          const gastoText = [
+            totalExpCost > 0 && `${totalExpCost} EXP`,
+            totalRyousCost > 0 && `${totalRyousCost} Ryous`,
+            totalPCCost > 0 && `${totalPCCost} PC`
+          ].filter(Boolean).join(', ') || '0 EXP';
+
+          await RegistrosService.createRegistro({
+            tipo: 'accion',
+            autor_id: Number(characterId),
+            participantes_ids: [Number(characterId)],
+            data: {
+              titulo: `${character.nombre_ninja} obtiene el entrenamiento: ${trNames}`,
+              subtitulo: `Gasto: ${gastoText}`,
+              tipo_accion: 'compra_entrenamientos',
+              entrenamientos: newTrainingsList.map(t => ({ id: t.id, nombre: t.nombre_esp })),
+              gasto_xp: totalExpCost,
+              gasto_ryous: totalRyousCost,
+              gasto_pc: totalPCCost
+            }
+          });
+        }
+
         // Check village change
         if (character.aldea_id !== originalCharacter?.aldea_id) {
           const oldAldea = masters.aldeas.find(a => a.id === originalCharacter?.aldea_id)?.nombre_completo || 'Ninguna';

@@ -509,11 +509,31 @@ export function CharacterSheetView({
   const aldeaObj = useMemo(() => masters.aldeas.find((a: any) => a.id == character.aldea_id), [masters.aldeas, character.aldea_id]);
   const iconUrl = useMemo(() => aldeaObj ? resolveAldeaIcono(aldeaObj) : null, [aldeaObj]);
 
-  const canAccessTraining = useMemo(() => {
-    const currentRankValue = masters.rankOrder[character.rango || 'D'] || 0;
-    const requiredRankValue = masters.rankOrder[masters.requiredTrainingRank] || 0;
-    return currentRankValue >= requiredRankValue;
-  }, [character.rango, masters.rankOrder, masters.requiredTrainingRank]);
+  const meetsTrainingRequirements = (e: any) => {
+    if (!character) return false;
+    const rankOrder: Record<string, number> = masters.rankOrder || { 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5 };
+    const charR = (character.rango || 'D').toUpperCase();
+    const reqR = (e.rango || 'B').toUpperCase();
+    const charRank = rankOrder[charR] ?? 0;
+    const reqRank = rankOrder[reqR] ?? 0;
+    if (charRank < reqRank) return false;
+    if (e.requisitos) {
+      return meetsRequirements({ requisitos: e.requisitos } as any);
+    }
+    return true;
+  };
+
+  const canAffordTraining = (e: any) => {
+    if (!character) return false;
+    const currentExp = character.xp || 0;
+    const currentRyous = character.ryous || 0;
+    const currentPC = character.puntos_combate || 0;
+    return currentExp >= (e.coste_exp || 0) &&
+           currentRyous >= (e.coste_ryous || 0) &&
+           currentPC >= (e.coste_puntos_combate || 0);
+  };
+
+  const canAccessTraining = true;
 
   // Memoizar el inventario agrupado
   const groupedInventory = useMemo(() => {
@@ -1245,24 +1265,98 @@ export function CharacterSheetView({
                               );
                             })()}
 
-                            {canAccessTraining && (
-                              <SelectField
-                                label="ENTRENAMIENTO"
-                                value={pr?.id_entrenamiento}
-                                options={masters.entrenamientos
-                                  .filter((e: any) =>
-                                    e.id_ramaclan === pr?.rama_id &&
-                                    (!pr?.sub_especialidad_id ? !e.id_subespecialidad : (e.id_subespecialidad === pr?.sub_especialidad_id || !e.id_subespecialidad))
-                                  )
-                                  .map((e: any) => ({ label: e.nombre_esp, value: e.id }))
-                                }
-                                disabled={!isEditing && !isNew}
-                                onChange={(v) => {
-                                  const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { ...pr, slot, id_entrenamiento: v ? Number(v) : null }];
-                                  onUpdateField('personajes_ramas', newRamas);
-                                }}
-                              />
-                            )}
+                            {canAccessTraining && (() => {
+                              if (!pr) return null;
+
+                              const eligibleTrainings = (masters.entrenamientos || [])
+                                .filter((e: any) => {
+                                  if (e.id_ramaclan !== pr.rama_id) return false;
+
+                                  // Lógica especial para Ninjutsu Elemental (rama_id = 4)
+                                  if (Number(pr.rama_id) === 4) {
+                                    if (!pr.elemento_principal_id) {
+                                      // Si no se ha seleccionado el primer elemento, solo mostrar entrenamientos genéricos de Ninjutsu
+                                      return !e.id_subespecialidad && meetsTrainingRequirements(e);
+                                    }
+                                    
+                                    // Obtener el elemento principal
+                                    const mainElement = (masters.elementos || []).find((el: any) => el.id === pr.elemento_principal_id);
+                                    
+                                    // Buscar la sub-especialidad de elemento que coincida
+                                    const elementSub = mainElement 
+                                      ? (masters.subEspecialidades || []).find((s: any) => 
+                                          s.rama_id === 4 && 
+                                          (s.slug?.toLowerCase() === mainElement.nombre_jap?.toLowerCase() || 
+                                           s.nombre?.toLowerCase() === mainElement.nombre_esp?.toLowerCase() ||
+                                           s.nombre?.toLowerCase() === mainElement.nombre_jap?.toLowerCase())
+                                        )
+                                      : null;
+
+                                    if (!elementSub) {
+                                      return !e.id_subespecialidad && meetsTrainingRequirements(e);
+                                    }
+
+                                    // Permitir entrenamientos del elemento principal o entrenamientos genéricos de Ninjutsu
+                                    return (e.id_subespecialidad === elementSub.id || !e.id_subespecialidad) && meetsTrainingRequirements(e);
+                                  }
+
+                                  // Lógica por defecto para otras especialidades
+                                  return (!pr.sub_especialidad_id ? !e.id_subespecialidad : (e.id_subespecialidad === pr.sub_especialidad_id || !e.id_subespecialidad)) && meetsTrainingRequirements(e);
+                                });
+
+                              const rankOrderMap: Record<string, number> = masters.rankOrder || { 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5 };
+                              const ranks = Array.from(new Set(eligibleTrainings.map((e: any) => (e.rango || 'B').toUpperCase())))
+                                .sort((a, b) => (rankOrderMap[a as string] || 0) - (rankOrderMap[b as string] || 0)) as string[];
+
+                              if (ranks.length === 0) return null;
+
+                              return (
+                                <div className="space-y-4">
+                                  {ranks.map((rank: string) => {
+                                    const rankOptions = eligibleTrainings
+                                      .filter((e: any) => (e.rango || 'B').toUpperCase() === rank)
+                                      .map((e: any) => {
+                                        const costText = canAffordTraining(e) && (e.coste_exp > 0 || e.coste_ryous > 0 || e.coste_puntos_combate > 0)
+                                          ? ` (${e.coste_exp} EXP / ${e.coste_ryous} Ryous / ${e.coste_puntos_combate} PC)`
+                                          : '';
+                                        return { label: `${e.nombre_esp}${costText}`, value: e.id };
+                                      });
+
+                                    const selectedTraining = character.personajes_entrenamientos?.find((pe: any) => 
+                                      Number(pe.rama_id) === Number(pr.rama_id) &&
+                                      eligibleTrainings.some((et: any) => et.id === Number(pe.entrenamiento_id) && (et.rango || 'B').toUpperCase() === rank)
+                                    );
+
+                                    return (
+                                      <SelectField
+                                        key={rank}
+                                        label={`ENTRENAMIENTO RANGO ${rank}`}
+                                        value={selectedTraining?.entrenamiento_id ?? null}
+                                        options={rankOptions}
+                                        disabled={!isEditing && !isNew}
+                                        onChange={(v) => {
+                                          const otherEntrenamientos = character.personajes_entrenamientos?.filter((pe: any) => {
+                                            if (Number(pe.rama_id) !== Number(pr.rama_id)) return true;
+                                            const et = (masters.entrenamientos || []).find((x: any) => x.id === Number(pe.entrenamiento_id));
+                                            return et && (et.rango || 'B').toUpperCase() !== rank;
+                                          }) || [];
+
+                                          const newEntrenamientos = [...otherEntrenamientos];
+                                          if (v) {
+                                            newEntrenamientos.push({
+                                              personaje_id: character.id,
+                                              rama_id: pr.rama_id,
+                                              entrenamiento_id: Number(v)
+                                            });
+                                          }
+                                          onUpdateField('personajes_entrenamientos', newEntrenamientos);
+                                        }}
+                                      />
+                                    );
+                                  })}
+                                </div>
+                              );
+                            })()}
                           </div>
                         </div>
                       );

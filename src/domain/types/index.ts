@@ -93,6 +93,11 @@ export interface Entrenamiento {
   nombre_jp: string;
   activo: boolean;
   created_at?: string;
+  rango: string;
+  requisitos: any;
+  coste_exp: number;
+  coste_ryous: number;
+  coste_puntos_combate: number;
   // Joins
   info_ramas_clanes?: RamaClan;
   info_sub_especialidades?: SubEspecialidad;
@@ -192,6 +197,7 @@ export interface Character {
   personajes_inventario?: PersonajeItem[];
   personajes_tecnicas?: PersonajeTecnica[];
   personajes_ramas?: PersonajeRama[];
+  personajes_entrenamientos?: PersonajeEntrenamiento[];
   registros_autor?: Registro[];
   registros_participante?: RegistroParticipante[];
   
@@ -267,11 +273,18 @@ export interface PersonajeTecnica {
   info_glosario?: Glosario;
 }
 
+export interface PersonajeEntrenamiento {
+  id?: number;
+  personaje_id: number;
+  rama_id: number;
+  entrenamiento_id: number;
+  info_entrenamientos?: Entrenamiento;
+}
+
 export interface PersonajeRama {
   personaje_id: string;
   rama_id: number;
   sub_especialidad_id: number | null;
-  id_entrenamiento: number | null;
   slot: number;
   elemento_principal_id?: number | null;
   elemento_secundario_id?: number | null;
@@ -279,7 +292,6 @@ export interface PersonajeRama {
   // Joins
   info_ramas_clanes?: RamaClan;
   info_sub_especialidades?: SubEspecialidad;
-  info_entrenamientos?: Entrenamiento;
   info_elemento_principal?: Elemento | null;
   info_elemento_secundario?: Elemento | null;
   info_elemento_terciario?: Elemento | null;
