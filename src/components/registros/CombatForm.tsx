@@ -37,8 +37,8 @@ export default function CombatForm({
   const [searchResults, setSearchResults] = useState<{ id: number; nombre_ninja: string; hobba_name?: string | null }[]>([]);
 
   // Equipos
-  const [teamA, setTeamA] = useState<{ id: number; nombre_ninja: string; rango?: string; estado_nombre?: string; has_estado_alterado?: boolean; descripcion_estado?: string; huye?: boolean }[]>([]);
-  const [teamB, setTeamB] = useState<{ id: number; nombre_ninja: string; rango?: string; estado_nombre?: string; has_estado_alterado?: boolean; descripcion_estado?: string; huye?: boolean }[]>([]);
+  const [teamA, setTeamA] = useState<{ id: number; nombre_ninja: string; rango?: string; estado_nombre?: string; has_estado_alterado?: boolean; descripcion_estado?: string; has_cds?: boolean; descripcion_cds?: string; huye?: boolean }[]>([]);
+  const [teamB, setTeamB] = useState<{ id: number; nombre_ninja: string; rango?: string; estado_nombre?: string; has_estado_alterado?: boolean; descripcion_estado?: string; has_cds?: boolean; descripcion_cds?: string; huye?: boolean }[]>([]);
 
   useEffect(() => {
     if (initialData) {
@@ -102,7 +102,7 @@ export default function CombatForm({
     setSearchResults([]);
   };
 
-  const updateParticipantState = (id: number, team: 'A' | 'B', updates: Partial<{ estado_nombre: string, has_estado_alterado: boolean, descripcion_estado: string, huye: boolean }>) => {
+  const updateParticipantState = (id: number, team: 'A' | 'B', updates: Partial<{ estado_nombre: string, has_estado_alterado: boolean, descripcion_estado: string, has_cds: boolean, descripcion_cds: string, huye: boolean }>) => {
     if (team === 'A') {
       setTeamA(teamA.map(p => p.id === id ? { ...p, ...updates } : p));
     } else {
@@ -335,6 +335,12 @@ export default function CombatForm({
                             ESTADO ALTERADO
                           </button>
                           <button
+                            onClick={() => updateParticipantState(p.id, 'A', { has_cds: !p.has_cds })}
+                            className={`px-4 py-2 border text-[10px] font-black uppercase tracking-widest transition-all ${p.has_cds ? 'bg-blue-500/20 border-blue-400/40 text-blue-300' : 'bg-black/20 border-oro/5 text-oro/20'}`}
+                          >
+                            CDs
+                          </button>
+                          <button
                             onClick={() => updateParticipantState(p.id, 'A', { huye: !p.huye })}
                             className={`px-4 py-2 border text-[10px] font-black uppercase tracking-widest transition-all ${p.huye ? 'bg-rojo-sangre/20 border-rojo-sangre/40 text-rojo-sangre' : 'bg-black/20 border-oro/5 text-oro/20'}`}
                           >
@@ -348,6 +354,15 @@ export default function CombatForm({
                             onChange={(e) => updateParticipantState(p.id, 'A', { descripcion_estado: e.target.value })}
                             placeholder="Describe el estado..."
                             className="w-full ninja-input p-4 text-xs min-h-[80px] resize-none animate-in slide-in-from-top-2"
+                          />
+                        )}
+
+                        {p.has_cds && (
+                          <textarea
+                            value={p.descripcion_cds || ''}
+                            onChange={(e) => updateParticipantState(p.id, 'A', { descripcion_cds: e.target.value })}
+                            placeholder="Lista de CDs activos..."
+                            className="w-full ninja-input p-4 text-xs min-h-[80px] resize-none animate-in slide-in-from-top-2 border-blue-500/20 focus:border-blue-400/40"
                           />
                         )}
                       </div>
@@ -426,6 +441,12 @@ export default function CombatForm({
                             ESTADO ALTERADO
                           </button>
                           <button
+                            onClick={() => updateParticipantState(p.id, 'B', { has_cds: !p.has_cds })}
+                            className={`px-4 py-2 border text-[10px] font-black uppercase tracking-widest transition-all ${p.has_cds ? 'bg-blue-500/20 border-blue-400/40 text-blue-300' : 'bg-black/20 border-oro/5 text-oro/20'}`}
+                          >
+                            CDs
+                          </button>
+                          <button
                             onClick={() => updateParticipantState(p.id, 'B', { huye: !p.huye })}
                             className={`px-4 py-2 border text-[10px] font-black uppercase tracking-widest transition-all ${p.huye ? 'bg-rojo-sangre/20 border-rojo-sangre/40 text-rojo-sangre' : 'bg-black/20 border-oro/5 text-oro/20'}`}
                           >
@@ -439,6 +460,15 @@ export default function CombatForm({
                             onChange={(e) => updateParticipantState(p.id, 'B', { descripcion_estado: e.target.value })}
                             placeholder="Describe el estado..."
                             className="w-full ninja-input p-4 text-xs min-h-[80px] resize-none animate-in slide-in-from-top-2"
+                          />
+                        )}
+
+                        {p.has_cds && (
+                          <textarea
+                            value={p.descripcion_cds || ''}
+                            onChange={(e) => updateParticipantState(p.id, 'B', { descripcion_cds: e.target.value })}
+                            placeholder="Lista de CDs activos..."
+                            className="w-full ninja-input p-4 text-xs min-h-[80px] resize-none animate-in slide-in-from-top-2 border-blue-500/20 focus:border-blue-400/40"
                           />
                         )}
                       </div>
@@ -523,8 +553,8 @@ export default function CombatForm({
                 {paConfig && (
                   <div className="w-full md:w-[320px] p-6 bg-black/40 border border-oro/10 ninja-clip-md text-xs font-black uppercase tracking-widest space-y-4">
                     <div className="flex items-center gap-4 border-b border-oro/10 pb-3 opacity-60">
-                      <Info className="w-4 h-4 text-emerald-400" />
-                      <span>TABLA DE PA</span>
+                      <Info className="w-4 h-4 text-oro" />
+                      <span>TABLA DE Puntos de Acción</span>
                     </div>
                     {paConfig.victoria ? (
                       <div className="grid grid-cols-3 gap-y-3 gap-x-2 text-center text-[10px]">
@@ -533,28 +563,28 @@ export default function CombatForm({
                         <div className="text-red-500">Derrota</div>
 
                         <div className="text-left text-oro/30">+2 Sup</div>
-                        <div className="text-emerald-400">+{paConfig.victoria.mas_2}</div>
-                        <div className="text-emerald-400">+{paConfig.derrota.mas_2}</div>
+                        <div className="text-oro">+{paConfig.victoria.mas_2}</div>
+                        <div className="text-oro">+{paConfig.derrota.mas_2}</div>
 
                         <div className="text-left text-oro/30">+1 Sup</div>
-                        <div className="text-emerald-400">+{paConfig.victoria.mas_1}</div>
-                        <div className="text-emerald-400">+{paConfig.derrota.mas_1}</div>
+                        <div className="text-oro">+{paConfig.victoria.mas_1}</div>
+                        <div className="text-oro">+{paConfig.derrota.mas_1}</div>
 
                         <div className="text-left text-oro/30">= Rango</div>
-                        <div className="text-emerald-400">+{paConfig.victoria.igual}</div>
-                        <div className="text-emerald-400">+{paConfig.derrota.igual}</div>
+                        <div className="text-oro">+{paConfig.victoria.igual}</div>
+                        <div className="text-oro">+{paConfig.derrota.igual}</div>
 
                         <div className="text-left text-oro/30">-1 Inf</div>
-                        <div className="text-emerald-400">+{paConfig.victoria.menos_1}</div>
-                        <div className="text-emerald-400">+{paConfig.derrota.menos_1}</div>
+                        <div className="text-oro">+{paConfig.victoria.menos_1}</div>
+                        <div className="text-oro">+{paConfig.derrota.menos_1}</div>
 
                         <div className="text-left text-oro/30">-2 Inf</div>
-                        <div className="text-emerald-400">+{paConfig.victoria.menos_2}</div>
-                        <div className="text-emerald-400">+{paConfig.derrota.menos_2}</div>
+                        <div className="text-oro">+{paConfig.victoria.menos_2}</div>
+                        <div className="text-oro">+{paConfig.derrota.menos_2}</div>
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        <div className="flex justify-between"><span>Victoria</span><span className="text-emerald-400">+{paConfig.ganar} PA</span></div>
+                        <div className="flex justify-between"><span>Victoria</span><span className="text-oro">+{paConfig.ganar} PA</span></div>
                         <div className="flex justify-between"><span>Derrota</span><span className="text-emerald-400">+{paConfig.perder} PA</span></div>
                       </div>
                     )}

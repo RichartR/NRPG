@@ -313,11 +313,60 @@ export default function GlosarioManager() {
       )}
 
       {(showNewForm || editingCat) && activeSection === 'categorias' && (
-        <GenericForm title={editingCat ? 'Editar Categoría' : 'Nueva Categoría'} initialData={editingCat || { nombre: '', slug: '', activo: true }} fields={[{ name: 'nombre', label: 'Nombre' }, { name: 'slug', label: 'Slug' }, { name: 'activo', label: 'Estado', type: 'toggle' }]} onClose={() => { setShowNewForm(false); setEditingCat(null); }} onSave={(cat: any) => AdminService.saveGlosarioCategoria(cat).then(fetchData).finally(() => { setShowNewForm(false); setEditingCat(null); })} loading={saving} />
+        <GenericForm
+          title={editingCat ? 'Editar Categoría' : 'Nueva Categoría'}
+          initialData={editingCat || { nombre: '', slug: '', activo: true }}
+          fields={[
+            { name: 'nombre', label: 'Nombre' },
+            { name: 'slug', label: 'Slug' },
+            { name: 'activo', label: 'Estado', type: 'toggle' }
+          ]}
+          onClose={() => { setShowNewForm(false); setEditingCat(null); }}
+          onSave={async (cat: any) => {
+            setSaving(true);
+            try {
+              await AdminService.saveGlosarioCategoria(cat);
+              addToast('Categoría guardada correctamente', 'success');
+              await fetchData();
+              setShowNewForm(false);
+              setEditingCat(null);
+            } catch (err: any) {
+              addToast(err?.message || 'Error al guardar la categoría', 'error');
+            } finally {
+              setSaving(false);
+            }
+          }}
+          loading={saving}
+        />
       )}
 
       {(showNewForm || editingSub) && activeSection === 'subcategorias' && (
-        <GenericForm title={editingSub ? 'Editar Subcategoría' : 'Nueva Subcategoría'} initialData={editingSub || { nombre: '', slug: '', categoria_id: 0, activo: true }} fields={[{ name: 'nombre', label: 'Nombre' }, { name: 'slug', label: 'Slug' }, { name: 'categoria_id', label: 'Categoría Padre', type: 'select', options: categorias }, { name: 'activo', label: 'Estado', type: 'toggle' }]} onClose={() => { setShowNewForm(false); setEditingSub(null); }} onSave={(sub: any) => AdminService.saveGlosarioSubcategoria(sub).then(fetchData).finally(() => { setShowNewForm(false); setEditingSub(null); })} loading={saving} />
+        <GenericForm
+          title={editingSub ? 'Editar Subcategoría' : 'Nueva Subcategoría'}
+          initialData={editingSub || { nombre: '', slug: '', categoria_id: 0, activo: true }}
+          fields={[
+            { name: 'nombre', label: 'Nombre' },
+            { name: 'slug', label: 'Slug' },
+            { name: 'categoria_id', label: 'Categoría Padre', type: 'select', options: categorias },
+            { name: 'activo', label: 'Estado', type: 'toggle' }
+          ]}
+          onClose={() => { setShowNewForm(false); setEditingSub(null); }}
+          onSave={async (sub: any) => {
+            setSaving(true);
+            try {
+              await AdminService.saveGlosarioSubcategoria(sub);
+              addToast('Subcategoría guardada correctamente', 'success');
+              await fetchData();
+              setShowNewForm(false);
+              setEditingSub(null);
+            } catch (err: any) {
+              addToast(err?.message || 'Error al guardar la subcategoría', 'error');
+            } finally {
+              setSaving(false);
+            }
+          }}
+          loading={saving}
+        />
       )}
     </div>
   );

@@ -545,17 +545,16 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                   <div className={`grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] ${isCompact ? 'gap-4 lg:gap-8' : 'gap-10 lg:gap-16'} items-center`}>
                     <div className={isCompact ? 'space-y-2' : 'space-y-4'}>
                       {registro.data.equipo_a?.map((p: any) => (
-                        <div key={p.id} className={`${isCompact ? 'py-2 px-3' : 'p-4'} bg-black/40 border border-oro/5 ninja-clip-xs ${p.has_estado_alterado && p.descripcion_estado ? 'space-y-2' : ''}`}>
+                        <div key={p.id} className={`${isCompact ? 'py-2 px-3' : 'p-4'} bg-black/40 border border-oro/5 ninja-clip-xs space-y-2`}>
                           <div className="flex justify-between items-center">
                             <div className="flex items-center gap-3">
                               <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
                               <span className="text-[10px] font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">+{calculateParticipantXP('A', p.huye)} EXP</span>
-                              {RewardLogic.calculateCombatPA(registro, p.id) > 0 && (
-                                <span className="text-[10px] font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-emerald-500/10">+{RewardLogic.calculateCombatPA(registro, p.id)} PA</span>
-                              )}
+                              <span className="text-[10px] font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-emerald-500/10">+{RewardLogic.calculateCombatPA(registro, p.id)} PA</span>
                             </div>
                             <div className="flex items-center gap-3">
                               {p.has_estado_alterado && <span className="px-2 py-0.5 bg-oro/20 text-oro text-[9px] font-black uppercase ninja-clip-xs border border-oro/40">ESTADO ALTERADO</span>}
+                              {p.has_cds && <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-[9px] font-black uppercase ninja-clip-xs border border-blue-400/40">CDs</span>}
                               {p.huye && <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[9px] font-black uppercase ninja-clip-xs border border-orange-500/40">HUYE</span>}
                               <span className="text-[10px] font-black text-oro/70 uppercase">{p.estado_nombre || 'SIN ESTADO'}</span>
                             </div>
@@ -563,6 +562,11 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                           {p.has_estado_alterado && p.descripcion_estado && (
                             <div className="p-3 bg-oro/5 border-l-2 border-oro/20 italic text-[11px] text-oro/60">
                               "{p.descripcion_estado}"
+                            </div>
+                          )}
+                          {p.has_cds && p.descripcion_cds && (
+                            <div className="p-3 bg-blue-500/5 border-l-2 border-blue-400/30 italic text-[11px] text-blue-300/70">
+                              "{p.descripcion_cds}"
                             </div>
                           )}
                         </div>
@@ -583,17 +587,16 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
 
                     <div className={isCompact ? 'space-y-2' : 'space-y-4'}>
                       {registro.data.equipo_b?.map((p: any) => (
-                        <div key={p.id} className={`${isCompact ? 'py-2 px-3' : 'p-4'} bg-black/40 border border-oro/5 ninja-clip-xs ${p.has_estado_alterado && p.descripcion_estado ? 'space-y-2' : ''}`}>
+                        <div key={p.id} className={`${isCompact ? 'py-2 px-3' : 'p-4'} bg-black/40 border border-oro/5 ninja-clip-xs space-y-2`}>
                           <div className="flex justify-between items-center lg:flex-row-reverse">
                             <div className="flex items-center gap-3 lg:flex-row-reverse">
                               <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
                               <span className="text-[10px] font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">+{calculateParticipantXP('B', p.huye)} EXP</span>
-                              {RewardLogic.calculateCombatPA(registro, p.id) > 0 && (
-                                <span className="text-[10px] font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-emerald-500/10">+{RewardLogic.calculateCombatPA(registro, p.id)} PA</span>
-                              )}
+                              <span className="text-[10px] font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-emerald-500/10">+{RewardLogic.calculateCombatPA(registro, p.id)} PA</span>
                             </div>
                             <div className="flex items-center gap-3 lg:flex-row-reverse">
                               {p.has_estado_alterado && <span className="px-2 py-0.5 bg-oro/20 text-oro text-[9px] font-black uppercase ninja-clip-xs border border-oro/40">ESTADO ALTERADO</span>}
+                              {p.has_cds && <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-[9px] font-black uppercase ninja-clip-xs border border-blue-400/40">CDs</span>}
                               {p.huye && <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[9px] font-black uppercase ninja-clip-xs border border-orange-500/40">HUYE</span>}
                               <span className="text-[10px] font-black text-oro/70 uppercase">{p.estado_nombre || 'SIN ESTADO'}</span>
                             </div>
@@ -601,6 +604,11 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                           {p.has_estado_alterado && p.descripcion_estado && (
                             <div className="p-3 bg-oro/5 border-r-2 border-oro/20 italic text-[11px] text-oro/60 lg:text-right">
                               "{p.descripcion_estado}"
+                            </div>
+                          )}
+                          {p.has_cds && p.descripcion_cds && (
+                            <div className="p-3 bg-blue-500/5 border-r-2 border-blue-400/30 italic text-[11px] text-blue-300/70 lg:text-right">
+                              "{p.descripcion_cds}"
                             </div>
                           )}
                         </div>
