@@ -455,12 +455,20 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                             <span className="text-[10px] font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">
                               +{calculateParticipantXP(selectedCombat, 'A', p.huye)} EXP
                             </span>
+                            <span className="text-[10px] font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-emerald-500/10">
+                              +{RewardLogic.calculateCombatPA(selectedCombat, p.id)} PA
+                            </span>
                           </div>
 
                           <div className="flex items-center gap-3">
                             {p.has_estado_alterado && (
                               <span className="px-2 py-0.5 bg-oro/20 text-oro text-[9px] font-black uppercase ninja-clip-xs border border-oro/40">
                                 ESTADO ALTERADO
+                              </span>
+                            )}
+                            {p.has_cds && (
+                              <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-[9px] font-black uppercase ninja-clip-xs border border-blue-400/40">
+                                CDs
                               </span>
                             )}
                             {p.huye && (
@@ -476,6 +484,11 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                         {p.has_estado_alterado && p.descripcion_estado && (
                           <div className="p-3 bg-oro/5 border-l-2 border-oro/20 italic text-[11px] text-oro/60">
                             "{p.descripcion_estado}"
+                          </div>
+                        )}
+                        {p.has_cds && p.descripcion_cds && (
+                          <div className="p-3 bg-blue-500/5 border-l-2 border-blue-400/30 italic text-[11px] text-blue-300/70">
+                            "{p.descripcion_cds}"
                           </div>
                         )}
                       </div>
@@ -515,12 +528,20 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                             <span className="text-[10px] font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">
                               +{calculateParticipantXP(selectedCombat, 'B', p.huye)} EXP
                             </span>
+                            <span className="text-[10px] font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-emerald-500/10">
+                              +{RewardLogic.calculateCombatPA(selectedCombat, p.id)} PA
+                            </span>
                           </div>
 
                           <div className="flex items-center gap-3 lg:flex-row-reverse">
                             {p.has_estado_alterado && (
                               <span className="px-2 py-0.5 bg-oro/20 text-oro text-[9px] font-black uppercase ninja-clip-xs border border-oro/40">
                                 ESTADO ALTERADO
+                              </span>
+                            )}
+                            {p.has_cds && (
+                              <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-[9px] font-black uppercase ninja-clip-xs border border-blue-400/40">
+                                CDs
                               </span>
                             )}
                             {p.huye && (
@@ -536,6 +557,11 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                         {p.has_estado_alterado && p.descripcion_estado && (
                           <div className="p-3 bg-oro/5 border-r-2 border-oro/20 italic text-[11px] text-oro/60 lg:text-right">
                             "{p.descripcion_estado}"
+                          </div>
+                        )}
+                        {p.has_cds && p.descripcion_cds && (
+                          <div className="p-3 bg-blue-500/5 border-r-2 border-blue-400/30 italic text-[11px] text-blue-300/70 lg:text-right">
+                            "{p.descripcion_cds}"
                           </div>
                         )}
                       </div>
