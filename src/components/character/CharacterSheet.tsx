@@ -189,7 +189,7 @@ export default function CharacterSheet() {
           </div>
         )}
         <div className="flex flex-col 2xl:flex-row justify-between items-center 2xl:items-start gap-6 w-full">
-          <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left min-w-0 w-full 2xl:w-auto overflow-hidden">
+          <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left min-w-0 w-full 2xl:w-auto">
             <div className="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0">
               <div className="relative w-full h-full bg-black/40 overflow-hidden flex items-center justify-center ninja-clip-md">
                 {activeCharacter.url_img ? (
@@ -203,17 +203,27 @@ export default function CharacterSheet() {
                 )}
               </div>
             </div>
-            <div className="flex-1 min-w-0 overflow-hidden">
+            <div className="flex-1 min-w-0 w-full">
               <h2 className="ninja-title text-2xl sm:text-4xl xl:text-5xl mb-2 break-words leading-tight">
                 {nombre_ninja}
               </h2>
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 sm:gap-4 mt-4">
-                <span className="px-4 sm:px-5 py-1.5 text-[10px] sm:text-xs xl:text-sm font-black bg-rojo-sangre text-oro uppercase tracking-[0.2em] whitespace-nowrap">
+              {/* Rango (Solo en móvil, centrado y arriba) */}
+              <div className="flex sm:hidden justify-center mb-3">
+                <span className="px-4 py-1.5 text-[10px] font-black bg-rojo-sangre text-oro uppercase tracking-[0.2em] whitespace-nowrap">
                   Rango {rango}
                 </span>
-                <span className="text-oro/80 text-[10px] sm:text-xs xl:text-base font-bold uppercase tracking-widest whitespace-nowrap">{xp} EXP</span>
-                <span className="text-oro/80 text-[10px] sm:text-xs xl:text-base font-bold uppercase tracking-widest whitespace-nowrap">{ryous} Ryos</span>
-                <span className="text-emerald-400 text-[10px] sm:text-xs xl:text-base font-bold uppercase tracking-widest whitespace-nowrap">{activeCharacter.puntos_aprendizaje || 0} PA</span>
+              </div>
+              <div className="flex flex-nowrap items-center justify-center sm:justify-start gap-3 sm:gap-4 mt-2 sm:mt-4 overflow-x-auto sm:overflow-visible scrollbar-none max-w-full sm:max-w-none py-1 pr-6">
+                {/* Rango (Solo en desktop/tablet, integrado en la fila) */}
+                <span className="hidden sm:inline-block px-4 sm:px-5 py-1.5 text-[10px] sm:text-xs xl:text-sm font-black bg-rojo-sangre text-oro uppercase tracking-[0.2em] whitespace-nowrap">
+                  Rango {rango}
+                </span>
+                <span className="text-oro/80 text-[10px] sm:text-xs xl:text-base font-bold uppercase tracking-widest whitespace-nowrap">{xp || 0} EXP</span>
+                <span className="text-oro/80 text-[10px] sm:text-xs xl:text-base font-bold uppercase tracking-widest whitespace-nowrap">{ryous || 0} Ryos</span>
+                <span className="text-oro/80 text-[10px] sm:text-xs xl:text-base font-bold uppercase tracking-widest whitespace-nowrap">{activeCharacter.puntos_aprendizaje || 0} PA</span>
+                {activeCharacter.moneda_evento !== undefined && (
+                  <span className="text-oro/80 text-[10px] sm:text-xs xl:text-base font-bold uppercase tracking-widest whitespace-nowrap">{activeCharacter.moneda_evento || 0} M. Evento</span>
+                )}
               </div>
             </div>
           </div>

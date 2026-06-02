@@ -221,6 +221,11 @@ export default function NotificationBell() {
                                 +{rewards.ryous} R
                               </span>
                             )}
+                            {rewards.pa > 0 && (
+                              <span className="text-[9px] font-black text-emerald-600 bg-emerald-500/5 border border-emerald-500/15 px-1.5 py-0.5 tracking-wider ninja-clip-xs block">
+                                +{rewards.pa} PA
+                              </span>
+                            )}
                           </div>
                         </div>
 
