@@ -122,6 +122,8 @@ export interface Glosario {
   inicial?: boolean;
   es_tienda_exp?: boolean;
   descripcion?: string;
+  rango?: string | null;
+  obligatoria_ascenso?: boolean;
   // Joins opcionales
   info_glosario_categorias?: GlosarioCategoria;
   info_glosario_subcategorias?: GlosarioSubcategoria;

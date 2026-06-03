@@ -402,6 +402,8 @@ function ElementoCard({ elemento, categorias, subcategorias, onEdit, onDelete }:
           <span className="bg-oro/10 text-oro border border-oro/20 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter">{cat?.nombre || 'Sin Cat'}</span>
           {sub && <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter">{sub.nombre}</span>}
           {elem && <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter">⚡ {elem.nombre_esp}</span>}
+          {elemento.rango && <span className="bg-zinc-800 text-zinc-300 border border-zinc-700 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter">Rango: {elemento.rango}</span>}
+          {elemento.obligatoria_ascenso && <span className="bg-red-500/10 text-red-400 border border-red-500/20 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter flex items-center gap-1">🔺 Obligatoria Ascenso</span>}
           {elemento.inicial && <span className="bg-oro text-black px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter flex items-center gap-1"><Star size={10} className="fill-black" /> Inicial</span>}
         </div>
         <h3 className="text-white font-black text-xl uppercase tracking-tight group-hover:text-oro transition-colors">{elemento.nombre_es}</h3><p className="text-oro/50 font-medium italic text-sm">{elemento.nombre_jp || '-'}</p>
@@ -449,6 +451,8 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
         coste_ryous: 0,
         activo: true,
         inicial: false,
+        rango: null,
+        obligatoria_ascenso: false,
         requisitos: defaultRequisitos
       };
     }
@@ -460,6 +464,8 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
       elemento_id: initialData.elemento_id ?? null,
       coste_ryous: initialData.coste_ryous || 0,
       inicial: initialData.inicial || false,
+      rango: initialData.rango ?? null,
+      obligatoria_ascenso: initialData.obligatoria_ascenso || false,
       requisitos: { ...defaultRequisitos, ...initialData.requisitos }
     };
   });
@@ -628,6 +634,27 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                   <button onClick={() => setFormData({ ...formData, inicial: !formData.inicial })} className={`w-full flex items-center justify-between p-5 rounded-2xl border transition-all ${formData.inicial ? 'bg-oro text-black shadow-lg shadow-oro/10 border-oro' : 'bg-black/60 border-oro/5 text-oro/40'}`}>
                     <span className="font-black text-xs uppercase tracking-widest ml-2">{formData.inicial ? 'Inicial' : 'No Inicial'}</span>
                     {formData.inicial ? <Star size={20} className="fill-black text-black" /> : <Plus size={20} />}
+                  </button>
+                </div>
+                <div className="space-y-4 pt-4 border-t border-oro/10">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">Rango del Elemento</label>
+                    <div className="flex gap-1 bg-black p-1 rounded-xl border border-oro/10">
+                      {RANGOS.map(r => (
+                        <button type="button" key={r} onClick={() => {
+                          const newReqs = { ...formData.requisitos, rango: r };
+                          setFormData({ ...formData, rango: r, requisitos: newReqs });
+                        }} className={`flex-1 py-3 rounded-lg font-black text-xs transition-all ${formData.rango === r ? 'bg-oro text-black' : 'text-oro/40 hover:bg-oro/5'}`}>{r}</button>
+                      ))}
+                      <button type="button" onClick={() => {
+                        const newReqs = { ...formData.requisitos, rango: null };
+                        setFormData({ ...formData, rango: null, requisitos: newReqs });
+                      }} className={`flex-1 py-3 rounded-lg font-black text-[9px] transition-all ${formData.rango === null ? 'bg-zinc-800 text-white' : 'text-oro/40 hover:bg-oro/5'}`}>Ninguno</button>
+                    </div>
+                  </div>
+                  <button type="button" onClick={() => setFormData({ ...formData, obligatoria_ascenso: !formData.obligatoria_ascenso })} className={`w-full flex items-center justify-between p-5 rounded-2xl border transition-all ${formData.obligatoria_ascenso ? 'bg-red-500/10 border-red-500/20 text-red-400 shadow-lg' : 'bg-black/60 border-oro/5 text-oro/40'}`}>
+                    <span className="font-black text-xs uppercase tracking-widest ml-2">{formData.obligatoria_ascenso ? 'Obligatoria para Ascenso' : 'No es obligatoria para Ascenso'}</span>
+                    {formData.obligatoria_ascenso ? <Check size={20} /> : <X size={20} />}
                   </button>
                 </div>
               </div>
