@@ -190,6 +190,7 @@ export interface Character {
   activo: boolean;
   eliminado_voluntario?: boolean;
   archived_at?: string | null;
+  aldea_updated_at?: string;
   apariencia_msg_id?: string;
   historia_msg_id?: string;
   url_img?: string | null;
@@ -315,6 +316,8 @@ export interface PersonajeRama {
   sub_especialidad_id: number | null;
   slot: number;
   elemento_principal_id?: number | null;
+  created_at?: string;
+  updated_at?: string;
   elemento_secundario_id?: number | null;
   elemento_terciario_id?: number | null;
   // Joins
