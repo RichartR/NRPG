@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client';
-import { Aldea, RamaClan, SubEspecialidad, DocumentoSistema, DocumentoCombate, ConfiguracionSistema, Glosario, GlosarioCategoria, GlosarioSubcategoria, Entrenamiento, MisionMaster, Tienda, TiendaObjeto, Elemento, RamaElemento } from '@/domain/types';
+import { Aldea, RamaClan, SubEspecialidad, DocumentoSistema, DocumentoCombate, ConfiguracionSistema, Glosario, GlosarioCategoria, GlosarioSubcategoria, Entrenamiento, MisionMaster, Tienda, TiendaObjeto, Elemento, RamaElemento, Rasgo } from '@/domain/types';
 import { RewardLogic } from '@/domain/character/logic';
 import { RegistrosService } from './registros.service';
 
@@ -566,6 +566,58 @@ export const AdminService = {
   async deleteRamaElemento(id: number) {
     const supabase = createClient();
     const { error } = await supabase.from('info_rama_elementos').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // --- Rasgos ---
+  async getRasgos(): Promise<Rasgo[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('info_rasgos')
+      .select('*')
+      .order('id', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async saveRasgo(rasgo: Partial<Rasgo>): Promise<Rasgo> {
+    const supabase = createClient();
+    const { id, created_at, ...cleanData } = rasgo;
+    
+    // Convert characters (personajes) array to json if it's sent as an array or string
+    let personajesJSON = cleanData.personajes;
+    if (typeof personajesJSON === 'string') {
+      try {
+        personajesJSON = JSON.parse(personajesJSON);
+      } catch {
+        personajesJSON = [];
+      }
+    }
+    const payload = { ...cleanData, personajes: personajesJSON || [] };
+
+    if (id) {
+      const { data, error } = await supabase
+        .from('info_rasgos')
+        .update(payload)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    } else {
+      const { data, error } = await supabase
+        .from('info_rasgos')
+        .insert([payload])
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    }
+  },
+
+  async deleteRasgo(id: number) {
+    const supabase = createClient();
+    const { error } = await supabase.from('info_rasgos').delete().eq('id', id);
     if (error) throw error;
   },
 };

@@ -56,6 +56,7 @@ export interface RamaClan {
   es_especial?: boolean;
   es_repetible?: boolean;
   url_imagen?: string;
+  rasgo_id?: number | null;
 }
 
 export interface SubEspecialidad {
@@ -198,6 +199,7 @@ export interface Character {
   personajes_tecnicas?: PersonajeTecnica[];
   personajes_ramas?: PersonajeRama[];
   personajes_entrenamientos?: PersonajeEntrenamiento[];
+  personajes_rasgos?: PersonajeRasgo[];
   registros_autor?: Registro[];
   registros_participante?: RegistroParticipante[];
   
@@ -284,6 +286,25 @@ export interface PersonajeEntrenamiento {
   rama_id: number;
   entrenamiento_id: number;
   info_entrenamientos?: Entrenamiento;
+}
+
+export interface Rasgo {
+  id: number;
+  nombre: string;
+  categoria: 'Físico' | 'Psicológico' | 'Habilidad';
+  rango: string;
+  activo: boolean;
+  especial: boolean;
+  personajes: number[]; // Array of character IDs who can choose this special trait
+  stat?: string | null; // e.g. NIN, TAI, GEN...
+  created_at?: string;
+}
+
+export interface PersonajeRasgo {
+  id?: number;
+  personaje_id: number;
+  rasgo_id: number;
+  info_rasgos?: Rasgo;
 }
 
 export interface PersonajeRama {
