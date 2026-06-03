@@ -1883,7 +1883,7 @@ export function CharacterSheetView({
                         .map((t: any) => {
                           const subData = t.info_glosario_subcategorias;
                           const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'PASIVA';
-                          const pcCostText = ` / ${t.requisitos?.combates || 0} PC`;
+                          const pcCostText = ` / ${t.requisitos?.combates || 0} PA`;
                           return {
                             label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${pcCostText}`,
                             value: t.id
@@ -2015,7 +2015,7 @@ export function CharacterSheetView({
                         .map((t: any) => {
                           const subData = t.info_glosario_subcategorias;
                           const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'KUCHIYOSE';
-                          const pcCostText = ` / ${t.requisitos?.combates || 0} PC`;
+                          const pcCostText = ` / ${t.requisitos?.combates || 0} PA`;
                           return {
                             label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${pcCostText}`,
                             value: t.id

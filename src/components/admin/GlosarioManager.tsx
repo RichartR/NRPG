@@ -409,7 +409,7 @@ function ElementoCard({ elemento, categorias, subcategorias, onEdit, onDelete }:
       <div className="flex flex-wrap gap-4">
         <div className="bg-black/40 px-6 py-4 rounded-2xl border border-oro/10 text-center min-w-[100px]"><p className="text-[10px] font-black text-oro/40 uppercase tracking-widest mb-1">Coste EXP</p><p className="text-oro font-black text-lg">{elemento.coste_exp?.toLocaleString()}</p></div>
         <div className="bg-black/40 px-6 py-4 rounded-2xl border border-oro/10 text-center min-w-[100px]"><p className="text-[10px] font-black text-oro/40 uppercase tracking-widest mb-1">Coste Ryo</p><p className="text-amber-500 font-black text-lg">{elemento.coste_ryous?.toLocaleString()}</p></div>
-        <div className="bg-black/40 px-6 py-4 rounded-2xl border border-oro/10 text-center min-w-[100px]"><p className="text-[10px] font-black text-oro/40 uppercase tracking-widest mb-1">Coste P.C.</p><p className="text-blue-400 font-black text-lg">{elemento.requisitos?.combates || 0}</p></div>
+        <div className="bg-black/40 px-6 py-4 rounded-2xl border border-oro/10 text-center min-w-[100px]"><p className="text-[10px] font-black text-oro/40 uppercase tracking-widest mb-1">Req. PA</p><p className="text-blue-400 font-black text-lg">{elemento.requisitos?.combates || 0}</p></div>
       </div>
       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
         <button onClick={onEdit} className="p-4 bg-oro/5 border border-oro/10 hover:bg-oro hover:text-black rounded-xl text-oro transition-all">
@@ -672,7 +672,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1"><Swords size={12} />Puntos de Combate</label>
+                      <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1"><Swords size={12} />Puntos de Aprendizaje (PA) requeridos</label>
                       <input type="number" min="0" value={formData.requisitos?.combates ?? 0} onChange={(e) => updateReq('combates', Number(e.target.value))} className="ninja-input w-full px-6 py-4 text-white bg-black/60 font-bold" placeholder="0" />
                     </div>
                   </div>

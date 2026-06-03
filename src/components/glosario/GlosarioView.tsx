@@ -184,7 +184,7 @@ export default function GlosarioView({
     if (reqs.combates) {
       elements.push(
         <span key="combates" className="text-emerald-700 font-black">
-          P. COMBATE: <span className="text-emerald-950">{reqs.combates}</span>
+          PA: <span className="text-emerald-950">{reqs.combates}</span>
         </span>
       );
     }
