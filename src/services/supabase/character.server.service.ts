@@ -9,7 +9,7 @@ export const CharacterServerService = {
   async getCharacterById(supabase: SupabaseClient, id: string | number): Promise<Character | null> {
     const { data, error } = await supabase
       .from('reg_characters')
-      .select('*, personajes_ramas:reg_personajes_ramas(*, rama:info_ramas_clanes(nombre), sub_especialidad:info_sub_especialidades(nombre)), personajes_entrenamientos:reg_personajes_entrenamientos(*, info_entrenamientos(*))')
+      .select('*, personajes_ramas:reg_personajes_ramas(*, rama:info_ramas_clanes(nombre), sub_especialidad:info_sub_especialidades(nombre)), personajes_entrenamientos:reg_personajes_entrenamientos(*, info_entrenamientos(*)), personajes_rasgos:reg_personajes_rasgos(*, info_rasgos(*))')
       .eq('id', id)
       .single();
     if (error) return null;
@@ -134,6 +134,18 @@ export const CharacterServerService = {
         entrenamiento_id: e.entrenamiento_id
       }));
       const { error } = await supabase.from('reg_personajes_entrenamientos').insert(mapped);
+      if (error) throw error;
+    }
+  },
+
+  async bulkUpdateRasgos(supabase: SupabaseClient, characterId: string | number, rasgos: any[]) {
+    await supabase.from('reg_personajes_rasgos').delete().eq('personaje_id', characterId);
+    if (rasgos && rasgos.length > 0) {
+      const mapped = rasgos.map(r => ({
+        personaje_id: characterId,
+        rasgo_id: r.rasgo_id
+      }));
+      const { error } = await supabase.from('reg_personajes_rasgos').insert(mapped);
       if (error) throw error;
     }
   },

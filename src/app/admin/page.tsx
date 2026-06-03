@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Settings, BookOpen, Map, GitBranch, Sword, ChevronRight, ScrollText, ShieldAlert, ShoppingBag } from 'lucide-react';
+import { Settings, BookOpen, Map, GitBranch, Sword, ChevronRight, ScrollText, ShieldAlert, ShoppingBag, Shield } from 'lucide-react';
 
 export default function AdminPage() {
   const modules = [
@@ -98,6 +98,15 @@ export default function AdminPage() {
       desc: 'Recuperar fichas inactivas o archivadas por los usuarios.',
       icon: ShieldAlert,
       href: '/admin/fichas',
+      color: 'text-oro',
+      bgColor: 'bg-oro/10',
+      borderColor: 'hover:border-oro/50'
+    },
+    {
+      title: 'Rasgos Shinobi',
+      desc: 'Gestionar rasgos físicos, psicológicos y de habilidad.',
+      icon: Shield,
+      href: '/admin/rasgos',
       color: 'text-oro',
       bgColor: 'bg-oro/10',
       borderColor: 'hover:border-oro/50'

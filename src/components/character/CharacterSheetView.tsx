@@ -18,7 +18,7 @@ import { ProfileService } from '@/services/supabase/profile.service';
 import { MasterService } from '@/services/supabase/master.service';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { DataField, SelectField, SearchableSelect, FormEditContext } from '@/components/ui/Fields';
-import { Character, CharacterStats, Glosario, PersonajeItem, PersonajeTecnica, Registro } from '@/domain/types';
+import { Character, CharacterStats, Glosario, PersonajeItem, PersonajeTecnica, Registro, Rasgo, PersonajeRasgo } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
 import RegistroCard from '@/components/registros/RegistroCard';
 import MissionTable from '@/components/registros/MissionTable';
@@ -83,6 +83,8 @@ export function CharacterSheetView({
   const [mounted, setMounted] = useState(false);
   const [eventCoinName, setEventCoinName] = useState('Monedas de Evento');
 
+  const [rasgosList, setRasgosList] = useState<Rasgo[]>([]);
+
   useEffect(() => {
     setMounted(true);
     const fetchEventCoinName = async () => {
@@ -93,8 +95,78 @@ export function CharacterSheetView({
         console.error("Error fetching event coin name in CharacterSheetView:", err);
       }
     };
+    const fetchRasgos = async () => {
+      try {
+        const data = await CharacterService.getRasgos();
+        setRasgosList(data);
+      } catch (err) {
+        console.error("Error fetching rasgos in CharacterSheetView:", err);
+      }
+    };
     fetchEventCoinName();
+    fetchRasgos();
   }, []);
+
+  // Synchronize auto-assigned traits based on character's branches, clans, and rank
+  useEffect(() => {
+    if (!rasgosList || rasgosList.length === 0 || !masters.ramas || !character) return;
+
+    // 1. Calculate active clan/rama traits
+    const activeRamaIds = (character.personajes_ramas || []).map((pr: any) => pr.rama_id).filter(Boolean);
+    const autoTraits: Rasgo[] = [];
+    activeRamaIds.forEach(id => {
+      const rama = masters.ramas.find((r: any) => r.id === id);
+      if (rama && rama.rasgo_id) {
+        const rasgo = rasgosList.find(r => r.id === rama.rasgo_id);
+        if (rasgo) autoTraits.push(rasgo);
+      }
+    });
+
+    // 2. Filter autoTraits based on character rank limits
+    const rankOrder = masters.rankOrder || { "D": 1, "C": 2, "B": 3, "A": 4, "S": 5 };
+    const charRankVal = rankOrder[character.rango] || 1;
+
+    const validAutoTraits = autoTraits.filter(t => {
+      const reqRankVal = rankOrder[t.rango] || 1;
+      return charRankVal >= reqRankVal;
+    });
+
+    // 3. Make sure all validAutoTraits are present in character.personajes_rasgos
+    const currentRasgos = character.personajes_rasgos || [];
+    let updatedRasgos = [...currentRasgos];
+    let hasChanges = false;
+
+    // Add missing auto-assigned traits
+    validAutoTraits.forEach(at => {
+      if (!updatedRasgos.some(ur => Number(ur.rasgo_id) === Number(at.id))) {
+        updatedRasgos.push({
+          personaje_id: character.id,
+          rasgo_id: at.id,
+          info_rasgos: at
+        });
+        hasChanges = true;
+      }
+    });
+
+    // Remove auto-assigned traits that are no longer valid (e.g. branch removed or rank too low)
+    const allAutoTraitIds = masters.ramas.map((r: any) => r.rasgo_id).filter(Boolean);
+
+    updatedRasgos = updatedRasgos.filter(ur => {
+      const isAutoInSystem = allAutoTraitIds.includes(ur.rasgo_id);
+      if (isAutoInSystem) {
+        const isValid = validAutoTraits.some(at => Number(at.id) === Number(ur.rasgo_id));
+        if (!isValid) {
+          hasChanges = true;
+          return false;
+        }
+      }
+      return true;
+    });
+
+    if (hasChanges) {
+      onUpdateField('personajes_rasgos', updatedRasgos);
+    }
+  }, [character?.personajes_ramas, character?.rango, rasgosList, masters.ramas]);
 
   const [occupancy, setOccupancy] = useState<{
     countByAldea: Record<number, number>;
@@ -1426,13 +1498,14 @@ export function CharacterSheetView({
                   />
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 xl:gap-20">
-                  <div className="lg:col-span-7 space-y-10">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-10">
+                  {/* Estadísticas Base */}
+                  <div className="lg:col-span-5 space-y-10">
                     <div className="flex items-center gap-4 mb-8">
                       <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45" />
                       <h3 className="text-xs xl:text-sm font-black text-oro/60 uppercase tracking-[0.4em]">Estadísticas Base</h3>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {['NIN', 'GEN', 'TAI', 'SM', 'FUE', 'AGI', 'EST', 'INT'].map((s) => {
                         const val = character.stats_base[s as keyof CharacterStats] || 0;
                         const max = masters.rangoRules?.[character.rango]?.stat_max || 10;
@@ -1488,12 +1561,13 @@ export function CharacterSheetView({
                     </div>
                   </div>
 
-                  <div className="lg:col-span-5 space-y-10 lg:border-l lg:border-oro/5 lg:pl-12 xl:pl-20">
+                  {/* Atributos Calculados */}
+                  <div className="lg:col-span-3 space-y-10 lg:border-l lg:border-oro/5 lg:pl-6 xl:pl-10">
                     <div className="flex items-center gap-4 mb-8">
                       <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45" />
-                      <h3 className="text-xs xl:text-sm font-black text-oro/60 uppercase tracking-[0.4em]">Atributos Calculados</h3>
+                      <h3 className="text-xs xl:text-sm font-black text-oro/60 uppercase tracking-[0.4em]">Atributos</h3>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3">
                       {[
                         { label: 'VIT', val: character.atributos_derivados.VIT, color: 'text-red-600' },
                         { label: 'CH', val: character.atributos_derivados.CH, color: 'text-blue-500' },
@@ -1502,13 +1576,186 @@ export function CharacterSheetView({
                         { label: 'VR', val: character.atributos_derivados.VR, color: 'text-oro/60' },
                         { label: 'DET', val: character.atributos_derivados.DET, color: 'text-oro/40' },
                       ].map(attr => (
-                        <div key={attr.label} className="bg-black/60 border border-oro/10 p-6 flex justify-between items-center group hover:border-oro/40 transition-all" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}>
+                        <div key={attr.label} className="bg-black/60 border border-oro/10 p-5 flex justify-between items-center group hover:border-oro/40 transition-all" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}>
                           <span className="text-xs font-black text-oro/40 uppercase tracking-[0.2em]">{attr.label}</span>
-                          <span className={`text-2xl xl:text-3xl font-black ${attr.color} italic leading-none`}>
+                          <span className={`text-2xl font-black ${attr.color} italic leading-none`}>
                             {String(attr.val || 0)}
                           </span>
                         </div>
                       ))}
+                    </div>
+                  </div>
+
+                  {/* Panel de Rasgos */}
+                  <div className="lg:col-span-4 space-y-10 lg:border-l lg:border-oro/5 lg:pl-6 xl:pl-10">
+                    <div className="flex items-center gap-4 mb-8">
+                      <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45" />
+                      <h3 className="text-xs xl:text-sm font-black text-oro/60 uppercase tracking-[0.4em]">Rasgos</h3>
+                    </div>
+
+                    <div className="space-y-6">
+                      {(() => {
+                        const rankOrder = masters.rankOrder || { "D": 1, "C": 2, "B": 3, "A": 4, "S": 5 };
+                        const charRankVal = rankOrder[character.rango] || 1;
+
+                        // Find auto-assigned traits from branches/clans
+                        const activeRamaIds = (character.personajes_ramas || []).map((pr: any) => pr.rama_id).filter(Boolean);
+                        const autoTraits: Rasgo[] = [];
+                        if (masters.ramas) {
+                          activeRamaIds.forEach((id: number) => {
+                            const rama = masters.ramas.find((r: any) => r.id === id);
+                            if (rama && rama.rasgo_id) {
+                              const rasgo = rasgosList.find(r => r.id === rama.rasgo_id);
+                              if (rasgo) autoTraits.push(rasgo);
+                            }
+                          });
+                        }
+
+                        // Helper to find if a slot has a clan/rama trait assigned
+                        const getForcedTrait = (category: string, rank: string) => {
+                          return autoTraits.find(t => t.categoria === category && t.rango === rank && charRankVal >= (rankOrder[t.rango] || 1));
+                        };
+
+                        // Helper to get selected trait for a slot
+                        const getSelectedTrait = (category: string, rank: string) => {
+                          const pjRasgos = character.personajes_rasgos || [];
+                          return pjRasgos.find((r: any) => r.info_rasgos?.categoria === category && r.info_rasgos?.rango === rank)?.info_rasgos;
+                        };
+
+                        // Single choice slots
+                        const slots = [
+                          { label: 'Físico D', category: 'Físico', rank: 'D', available: rasgosList.filter(r => r.categoria === 'Físico' && r.rango === 'D' && (!r.especial || r.personajes?.includes(character.id))) },
+                          { label: 'Psicológico D', category: 'Psicológico', rank: 'D', available: rasgosList.filter(r => r.categoria === 'Psicológico' && r.rango === 'D' && (!r.especial || r.personajes?.includes(character.id))) },
+                          { label: 'Psicológico C', category: 'Psicológico', rank: 'C', available: rasgosList.filter(r => r.categoria === 'Psicológico' && r.rango === 'C' && (!r.especial || r.personajes?.includes(character.id))), minRank: 'C' },
+                          { label: 'Psicológico B', category: 'Psicológico', rank: 'B', available: rasgosList.filter(r => r.categoria === 'Psicológico' && r.rango === 'B' && (!r.especial || r.personajes?.includes(character.id))), minRank: 'B' }
+                        ];
+
+                        const selectSingle = (category: string, rank: string, rasgoIdStr: string) => {
+                          const current = character.personajes_rasgos || [];
+                          const newId = rasgoIdStr ? Number(rasgoIdStr) : null;
+                          let filtered = current.filter((r: any) => !(r.info_rasgos?.categoria === category && r.info_rasgos?.rango === rank));
+                          if (newId) {
+                            const selected = rasgosList.find(r => r.id === newId);
+                            if (selected) {
+                              filtered.push({ personaje_id: character.id, rasgo_id: selected.id, info_rasgos: selected });
+                            }
+                          }
+                          onUpdateField('personajes_rasgos', filtered);
+                        };
+
+                        const toggleHabilidad = (rasgo: Rasgo, active: boolean) => {
+                          const current = character.personajes_rasgos || [];
+                          if (active) {
+                            onUpdateField('personajes_rasgos', [...current, { personaje_id: character.id, rasgo_id: rasgo.id, info_rasgos: rasgo }]);
+                          } else {
+                            onUpdateField('personajes_rasgos', current.filter((r: any) => Number(r.rasgo_id) !== Number(rasgo.id)));
+                          }
+                        };
+
+                        return (
+                          <div className="space-y-4">
+                            {slots.map((slot) => {
+                              const isUnlocked = !slot.minRank || charRankVal >= (rankOrder[slot.minRank] || 1);
+                              if (!isUnlocked) return null;
+
+                              const forced = getForcedTrait(slot.category, slot.rank);
+                              const selected = getSelectedTrait(slot.category, slot.rank);
+
+                              return (
+                                <div key={slot.label} className="bg-black/30 border border-oro/10 p-4 relative" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                                  <div className="flex justify-between items-center mb-1">
+                                    <span className="text-[10px] font-black text-oro/60 uppercase tracking-widest">{slot.label}</span>
+                                    {forced && (
+                                      <span className="text-[8px] font-black text-rojo-sangre uppercase tracking-wider bg-rojo-sangre/10 px-2 py-0.5">Automático (Clan)</span>
+                                    )}
+                                  </div>
+
+                                  {isEditing ? (
+                                    forced ? (
+                                      <div className="text-sm font-black text-oro italic uppercase mt-1">{forced.nombre}</div>
+                                    ) : (
+                                      <select
+                                        value={selected?.id || ''}
+                                        onChange={(e) => selectSingle(slot.category, slot.rank, e.target.value)}
+                                        className="w-full bg-black/40 border border-oro/10 py-2 px-3 text-[10px] sm:text-xs font-black text-oro focus:border-oro/40 outline-none uppercase tracking-widest mt-1"
+                                      >
+                                        <option value="" className="bg-black">-- SIN RASGO --</option>
+                                        {slot.available.map(r => (
+                                          <option key={r.id} value={r.id} className="bg-black">{r.nombre}</option>
+                                        ))}
+                                      </select>
+                                    )
+                                  ) : (
+                                    <div className="text-sm font-black text-oro italic uppercase mt-1">
+                                      {forced?.nombre || selected?.nombre || <span className="text-oro/20 text-xs">SIN RASGO</span>}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+
+                            {/* Habilidad Rango A */}
+                            {charRankVal >= (rankOrder['A'] || 4) && (
+                              <div className="border-t border-oro/10 pt-4 mt-4 space-y-4">
+                                <span className="text-[10px] font-black text-oro/60 uppercase tracking-widest block">Rasgos de Habilidad (Rango A)</span>
+                                
+                                {(() => {
+                                  // Find Habilidad rasgos
+                                  const habRasgos = rasgosList.filter(r => r.categoria === 'Habilidad' && r.rango === 'A' && (!r.especial || r.personajes?.includes(character.id)));
+                                  if (habRasgos.length === 0) {
+                                    return <p className="text-[9px] text-oro/20 font-black uppercase tracking-wider">No hay rasgos de habilidad creados</p>;
+                                  }
+
+                                  return (
+                                    <div className="space-y-2">
+                                      {habRasgos.map(r => {
+                                        const assocStat = r.stat;
+                                        const statVal = assocStat ? (character.stats_base[assocStat as keyof CharacterStats] || 0) : 0;
+                                        const isStatUnlocked = statVal >= 6;
+                                        const forced = autoTraits.some(at => at.id === r.id);
+                                        const checked = forced || (character.personajes_rasgos || []).some((pjR: any) => Number(pjR.rasgo_id) === Number(r.id));
+                                        const canToggle = isEditing && !forced && isStatUnlocked;
+
+                                        return (
+                                          <div key={r.id} className={`flex items-center justify-between p-3 bg-black/40 border ${checked ? 'border-oro/35' : 'border-oro/5'} transition-all`} style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                                            <div className="flex flex-col min-w-0">
+                                              <span className={`text-xs font-black uppercase tracking-wider ${checked ? 'text-oro' : 'text-oro/40'}`}>{r.nombre}</span>
+                                              <span className="text-[8px] font-black text-oro/30 uppercase tracking-widest mt-0.5">
+                                                Requisito: {assocStat} &gt;= 6 (Tienes: {statVal})
+                                              </span>
+                                            </div>
+
+                                            {forced ? (
+                                              <span className="text-[8px] font-black text-rojo-sangre uppercase tracking-wider bg-rojo-sangre/10 px-2 py-0.5">Automático</span>
+                                            ) : isEditing ? (
+                                              <label className="flex items-center cursor-pointer">
+                                                <input
+                                                  type="checkbox"
+                                                  disabled={!canToggle}
+                                                  checked={checked}
+                                                  onChange={(e) => toggleHabilidad(r, e.target.checked)}
+                                                  className="hidden"
+                                                />
+                                                <div className={`w-8 h-4 transition-all relative ${checked ? 'bg-oro/20 border-oro/40' : 'bg-black/40 border-oro/10'} border ${!isStatUnlocked ? 'opacity-30 cursor-not-allowed' : ''}`}>
+                                                  <div className={`absolute top-[2px] w-2.5 h-2.5 transition-all ${checked ? 'right-[2px] bg-oro shadow-[0_0_10px_rgba(255,230,159,0.5)]' : 'left-[2px] bg-oro/10'}`} />
+                                                </div>
+                                              </label>
+                                            ) : (
+                                              <span className={`text-[9px] font-black uppercase tracking-widest ${checked ? 'text-oro' : 'text-oro/10'}`}>
+                                                {checked ? 'ADQUIRIDO' : 'BLOQUEADO'}
+                                              </span>
+                                            )}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>

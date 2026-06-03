@@ -215,6 +215,11 @@ export async function PATCH(
           updatePromises.push(CharacterServerService.replaceTecnicas(adminClient, characterId, data.personajes_tecnicas));
         }
 
+        // Rasgos
+        if (data.personajes_rasgos) {
+          updatePromises.push(CharacterServerService.bulkUpdateRasgos(adminClient, characterId, data.personajes_rasgos));
+        }
+
         await Promise.all(updatePromises);
         break;
 

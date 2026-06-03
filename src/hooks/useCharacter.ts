@@ -419,6 +419,41 @@ export function useCharacter(characterId: string) {
           });
         }
 
+        // Check new traits (rasgos)
+        const currentRasgos = character.personajes_rasgos || [];
+        const oldRasgos = originalCharacter?.personajes_rasgos || [];
+        
+        const newRasgosList = currentRasgos.filter(cr => !oldRasgos.some(or => Number(or.rasgo_id) === Number(cr.rasgo_id)));
+        const deletedRasgosList = oldRasgos.filter(or => !currentRasgos.some(cr => Number(cr.rasgo_id) === Number(or.rasgo_id)));
+
+        if (newRasgosList.length > 0) {
+          const rasgoNames = newRasgosList.map(nr => nr.info_rasgos?.nombre || 'Rasgo').join(', ');
+          await RegistrosService.createRegistro({
+            tipo: 'accion',
+            autor_id: Number(characterId),
+            participantes_ids: [Number(characterId)],
+            data: {
+              titulo: `${character.nombre_ninja} obtiene el rasgo: ${rasgoNames}`,
+              tipo_accion: 'obtencion_rasgos',
+              rasgos: newRasgosList.map(nr => ({ id: nr.rasgo_id, nombre: nr.info_rasgos?.nombre }))
+            }
+          });
+        }
+
+        if (deletedRasgosList.length > 0) {
+          const rasgoNames = deletedRasgosList.map(dr => dr.info_rasgos?.nombre || 'Rasgo').join(', ');
+          await RegistrosService.createRegistro({
+            tipo: 'accion',
+            autor_id: Number(characterId),
+            participantes_ids: [Number(characterId)],
+            data: {
+              titulo: `${character.nombre_ninja} pierde/elimina el rasgo: ${rasgoNames}`,
+              tipo_accion: 'eliminacion_rasgos',
+              rasgos: deletedRasgosList.map(dr => ({ id: dr.rasgo_id, nombre: dr.info_rasgos?.nombre }))
+            }
+          });
+        }
+
         // Check Profile Image change
         const currentProfile = Array.isArray(character.profiles) ? character.profiles[0] : character.profiles;
         const originalProfile = Array.isArray(originalCharacter?.profiles) ? originalCharacter?.profiles[0] : originalCharacter?.profiles;
