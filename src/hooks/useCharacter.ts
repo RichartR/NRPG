@@ -8,6 +8,7 @@ import { useMasterStore } from '@/store/useMasterStore';
 import { AuthService } from '@/services/supabase/auth.service';
 import { ProfileService } from '@/services/supabase/profile.service';
 import { useToastStore } from '@/components/ui/Toast';
+import { MasterService } from '@/services/supabase/master.service';
 
 export function useCharacter(characterId: string) {
   const { confirm: confirmAction } = useConfirmStore();
@@ -20,6 +21,7 @@ export function useCharacter(characterId: string) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
+  const [glosarioCompleto, setGlosarioCompleto] = useState<any[]>([]);
 
   // Master data from Store
   const masters = useMasterStore();
@@ -36,10 +38,11 @@ export function useCharacter(characterId: string) {
     try {
       setLoading(true);
       
-      // 1. Carga inicial en paralelo (User, Character, Master Store)
-      const [userRes, char] = await Promise.all([
+      // 1. Carga inicial en paralelo (User, Character, Master Store, Glosario Completo)
+      const [userRes, char, allGlosario] = await Promise.all([
         AuthService.getUser(),
         CharacterService.getCharacterById(Number(characterId)),
+        MasterService.getGlosarios(),
         masters.initialized ? Promise.resolve() : masters.initialize()
       ]);
 
@@ -66,6 +69,7 @@ export function useCharacter(characterId: string) {
       const fullChar = { ...char, apariencia: aparienciaTexto, historia: historiaTexto };
       setCharacter(fullChar);
       setOriginalCharacter(JSON.parse(JSON.stringify(fullChar)));
+      setGlosarioCompleto(allGlosario);
     } catch (err: any) {
       addToast(`Error al cargar: ${err.message}`, 'error');
     } finally {
@@ -114,11 +118,17 @@ export function useCharacter(characterId: string) {
   useEffect(() => {
     if (!character || !masters.rangoRules) return;
     
-    const newRango = StatsLogic.calculateAutoRank(character.puntos_stats, masters.rangoRules);
+    const newRango = StatsLogic.calculateAutoRank(
+      character.puntos_stats,
+      masters.rangoRules,
+      character.personajes_tecnicas || [],
+      character.personajes_ramas || [],
+      glosarioCompleto
+    );
     if (newRango !== character.rango) {
       setCharacter(prev => prev ? { ...prev, rango: newRango } : null);
     }
-  }, [character?.puntos_stats, masters.rangoRules]);
+  }, [character?.puntos_stats, character?.personajes_tecnicas, character?.personajes_ramas, masters.rangoRules, glosarioCompleto]);
 
   const updateField = (field: keyof Character, value: any) => {
     setCharacter(prev => prev ? { ...prev, [field]: value } : null);

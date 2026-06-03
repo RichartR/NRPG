@@ -16,18 +16,71 @@ export const StatsLogic = {
     };
   },
 
-  calculateAutoRank(puntos_stats: number, rules: RangoRules): string {
+  calculateAutoRank(
+    puntos_stats: number,
+    rules: RangoRules,
+    tecnicasPersonaje: any[] = [],
+    ramasPersonaje: any[] = [],
+    glosarioTecnicas: any[] = []
+  ): string {
     const rulesEntries = Object.entries(rules);
+    // Sort ranks by min threshold ascending (D, C, B, A, S, etc.)
+    const sortedRanks = rulesEntries.sort((a: any, b: any) => (Number(a[1].min) || 0) - (Number(b[1].min) || 0));
+    
     let newRango = 'D';
-    let maxThresholdFound = -1;
 
-    rulesEntries.forEach(([r, rule]: any) => {
+    for (const [r, rule] of sortedRanks) {
       const threshold = Number(rule.min) || 0;
-      if (puntos_stats >= threshold && threshold >= maxThresholdFound) {
-        maxThresholdFound = threshold;
-        newRango = r;
+      if (puntos_stats < threshold) {
+        break; // Stats don't meet requirements for this or higher ranks
       }
-    });
+
+      // If we are trying to go from the current newRango to the next rank r,
+      // we must verify that all mandatory techniques of newRango are acquired.
+      if (newRango !== r && glosarioTecnicas.length > 0) {
+        const currentRankCheck = newRango;
+        const playerBranches = ramasPersonaje.map(rp => Number(rp.rama_id));
+        const playerSubSpecs = ramasPersonaje.map(rp => rp.sub_especialidad_id ? Number(rp.sub_especialidad_id) : null).filter(Boolean);
+        const playerElements = ramasPersonaje.reduce((acc: number[], rp) => {
+          if (rp.elemento_principal_id) acc.push(Number(rp.elemento_principal_id));
+          if (rp.elemento_secundario_id) acc.push(Number(rp.elemento_secundario_id));
+          if (rp.elemento_terciario_id) acc.push(Number(rp.elemento_terciario_id));
+          return acc;
+        }, []);
+
+        // Filter master techniques of currentRankCheck that are mandatory for advancement
+        const mandatoryTechs = glosarioTecnicas.filter(t => {
+          const tRank = t.rango || t.requisitos?.rango;
+          const isMandatory = t.obligatoria_ascenso || t.requisitos?.obligatoria_ascenso;
+          if (!isMandatory || tRank !== currentRankCheck) return false;
+
+          // Check if it belongs to the player's branches/specs/elements.
+          // If the technique has no branch, spec, or element, it is general.
+          const hasBranch = t.rama_clan_id !== null && t.rama_clan_id !== undefined;
+          const hasSubSpec = t.sub_especialidad_id !== null && t.sub_especialidad_id !== undefined;
+          const hasElement = t.elemento_id !== null && t.elemento_id !== undefined;
+
+          if (!hasBranch && !hasSubSpec && !hasElement) return true; // General technique of this rank
+
+          const matchBranch = hasBranch && playerBranches.includes(Number(t.rama_clan_id));
+          const matchSubSpec = hasSubSpec && playerSubSpecs.includes(Number(t.sub_especialidad_id));
+          const matchElement = hasElement && playerElements.includes(Number(t.elemento_id));
+
+          return matchBranch || matchSubSpec || matchElement;
+        });
+
+        // Verify player has all of these mandatory techniques
+        const playerTechIds = tecnicasPersonaje.map(pt => Number(pt.tecnica_id));
+        const hasAllMandatory = mandatoryTechs.every(mt => playerTechIds.includes(mt.id));
+
+        if (!hasAllMandatory) {
+          break; // Blocked: player hasn't purchased all mandatory techniques of currentRankCheck
+        }
+      }
+
+      newRango = r;
+    }
+
     return newRango;
   },
 
