@@ -206,7 +206,7 @@ export default async function Home() {
                 <>
                   <Link
                     href="/admin"
-                    className="flex items-center gap-3 px-5 py-2.5 bg-oro/5 text-oro border border-oro/20 hover:bg-oro/10 hover:border-oro/40 transition-all group font-black text-[10px] uppercase tracking-widest cursor-pointer"
+                    className="flex items-center gap-3 px-5 py-2.5 bg-oro/5 text-oro border border-oro/20 hover:bg-oro/10 hover:border-oro/40 transition-all group font-black text-caption uppercase tracking-widest cursor-pointer"
                     style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                   >
                     PANEL ADMIN
@@ -332,7 +332,7 @@ export default async function Home() {
                       titleText = `¡Un nuevo shinobi llega al mundo ninja: ${event.data?.nombre || 'Shinobi'}!`;
                       iconElement = <UserPlus className="w-4 h-4 text-green-400/60" />;
                       rewardElement = (
-                        <span className="text-[10px] xl:text-xs font-black text-oro/80 uppercase tracking-widest px-3 py-1 bg-oro/10 border border-oro/10 ninja-clip-xs">
+                        <span className="text-caption xl:text-xs font-black text-oro/80 uppercase tracking-widest px-3 py-1 bg-oro/10 border border-oro/10 ninja-clip-xs">
                           {event.data?.aldea || 'Renegado'}
                         </span>
                       );
@@ -368,7 +368,7 @@ export default async function Home() {
 
                       if (rewardParts.length > 0) {
                         rewardElement = (
-                          <div className="flex flex-wrap items-center gap-2.5 text-[10px] xl:text-xs font-bold text-oro/60">
+                          <div className="flex flex-wrap items-center gap-2.5 text-caption xl:text-xs font-bold text-oro/60">
                             {rewardParts}
                           </div>
                         );
@@ -381,7 +381,7 @@ export default async function Home() {
                       iconElement = <ScrollText className="w-4 h-4 text-oro/60" />;
                       if (event.data?.recompensa_xp || event.data?.recompensa_ryous) {
                         rewardElement = (
-                          <div className="flex items-center gap-3 text-[10px] xl:text-xs font-bold text-oro/60">
+                          <div className="flex items-center gap-3 text-caption xl:text-xs font-bold text-oro/60">
                             {event.data.recompensa_xp > 0 && <span className="flex items-center gap-1">+{event.data.recompensa_xp} EXP</span>}
                             {event.data.recompensa_ryous > 0 && <span className="flex items-center gap-1">+{event.data.recompensa_ryous} RYOUS</span>}
                           </div>
@@ -419,7 +419,7 @@ export default async function Home() {
 
                       if (rewardPartsNarr.length > 0) {
                         rewardElement = (
-                          <div className="flex flex-wrap items-center gap-2.5 text-[10px] xl:text-xs font-bold text-oro/60">
+                          <div className="flex flex-wrap items-center gap-2.5 text-caption xl:text-xs font-bold text-oro/60">
                             {rewardPartsNarr}
                           </div>
                         );
@@ -466,7 +466,7 @@ export default async function Home() {
 
                       if (costParts.length > 0) {
                         rewardElement = (
-                          <div className="flex flex-wrap items-center gap-2.5 text-[10px] xl:text-xs font-bold text-oro/60">
+                          <div className="flex flex-wrap items-center gap-2.5 text-caption xl:text-xs font-bold text-oro/60">
                             {costParts}
                           </div>
                         );
@@ -524,7 +524,7 @@ export default async function Home() {
 
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 border ${typeColor}`}>
+                            <span className={`text-caption font-black uppercase tracking-wider px-2 py-0.5 border ${typeColor}`}>
                               {typeLabel}
                             </span>
                             <span className="text-xs font-bold text-oro/80 truncate font-ninja uppercase tracking-widest block">
@@ -532,15 +532,15 @@ export default async function Home() {
                             </span>
                           </div>
                           {event.tipo === 'nuevo_personaje' ? (
-                            <p className="text-[10px] text-gris-texto/60 font-black uppercase tracking-wider">
+                            <p className="text-caption text-gris-texto/60 font-black uppercase tracking-wider">
                               <span className="text-oro/60">Publicado:</span> {timeStr}
                             </p>
                           ) : (event.tipo === 'noticia' || event.tipo === 'parche' || event.tipo === 'evento') ? (
-                            <p className="text-[10px] text-gris-texto/60 font-black uppercase tracking-wider">
+                            <p className="text-caption text-gris-texto/60 font-black uppercase tracking-wider">
                               Publicado en <span className="text-oro/60">{authorName}</span> <span className="text-oro/20">•</span> {timeStr}
                             </p>
                           ) : (
-                            <p className="text-[10px] text-gris-texto/60 font-black uppercase tracking-wider">
+                            <p className="text-caption text-gris-texto/60 font-black uppercase tracking-wider">
                               Por <span className="text-oro/60">{authorName}</span> <span className="text-oro/20">•</span> {timeStr}
                             </p>
                           )}

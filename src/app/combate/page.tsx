@@ -35,13 +35,12 @@ export default function CombateMenu() {
             <Swords className="w-10 h-10 text-rojo-sangre" />
           </div>
           <h1 className="ninja-title text-4xl xl:text-6xl text-center">CAMPO DE BATALLA</h1>
-          <p className="text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] mt-4 text-center">FORJA TU SALA O ÚNETE A LA LUCHA</p>
+          <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.4em] mt-4 text-center">FORJA TU SALA O ÚNETE A LA LUCHA</p>
         </div>
 
         <button
           onClick={handleCreate}
-          className="w-full flex items-center justify-center gap-4 bg-oro text-rojo-sangre py-5 px-6 font-black uppercase tracking-[0.2em] text-xs xl:text-sm transition-all mb-10 hover:brightness-110 active:scale-95"
-          style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
+          className="w-full flex items-center justify-center gap-4 bg-oro text-rojo-sangre py-5 px-6 font-black uppercase tracking-[0.2em] text-xs xl:text-sm transition-all mb-10 hover:brightness-110 active:scale-95 ninja-clip-md"
         >
           <Plus className="w-5 h-5" />
           INICIAR NUEVO DUELO
@@ -51,7 +50,7 @@ export default function CombateMenu() {
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-oro/10"></div>
           </div>
-          <div className="relative flex justify-center text-[10px] xl:text-xs">
+          <div className="relative flex justify-center text-caption xl:text-xs">
             <span className="bg-black/80 px-6 text-oro/30 font-black uppercase tracking-[0.3em]">O RECLAMA TU LUGAR</span>
           </div>
         </div>
@@ -71,8 +70,7 @@ export default function CombateMenu() {
           </div>
           <button
             type="submit"
-            className="w-full bg-rojo-sangre text-oro font-black py-5 px-6 transition-all flex items-center justify-center gap-4 uppercase tracking-[0.3em] text-xs xl:text-sm hover:brightness-125 active:scale-95 shadow-lg shadow-rojo-sangre/20"
-            style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
+            className="w-full bg-rojo-sangre text-oro font-black py-5 px-6 transition-all flex items-center justify-center gap-4 uppercase tracking-[0.3em] text-xs xl:text-sm hover:brightness-125 active:scale-95 shadow-lg shadow-rojo-sangre/20 ninja-clip-md"
           >
             <LogIn className="w-5 h-5" />
             ENTRAR A LA SALA
@@ -80,7 +78,7 @@ export default function CombateMenu() {
         </form>
 
         <div className="mt-12 text-center">
-          <Link href="/" className="text-[10px] xl:text-xs font-black text-oro/40 hover:text-oro uppercase tracking-[0.4em] transition-all border-b border-oro/10 pb-1">
+          <Link href="/" className="text-caption xl:text-xs font-black text-oro/40 hover:text-oro uppercase tracking-[0.4em] transition-all border-b border-oro/10 pb-1">
             RETROCEDER AL DASHBOARD
           </Link>
         </div>

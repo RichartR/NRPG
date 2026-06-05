@@ -576,7 +576,7 @@ export default function TiendaDetallePage() {
             <div className="pt-8 flex flex-col md:flex-row justify-between items-center gap-6 animate-in slide-in-from-top-1 duration-500">
               <div className="flex flex-col sm:flex-row items-center gap-6 w-full md:w-auto">
                 <div className="space-y-3 text-center sm:text-left flex flex-col">
-                  <span className="text-[10px] font-black text-oro/40 uppercase tracking-widest">Shinobi Comprador</span>
+                  <span className="text-caption font-black text-oro/40 uppercase tracking-widest">Shinobi Comprador</span>
                   {charLoading ? (
                     <Loader2 className="w-5 h-5 animate-spin text-oro" />
                   ) : characters.length > 0 ? (
@@ -602,18 +602,18 @@ export default function TiendaDetallePage() {
                 <div className="flex flex-wrap justify-center sm:justify-end items-center gap-8 w-full md:w-auto">
                   {/* Ryous */}
                   <div className="text-center bg-zinc-950/40 px-6 py-2 border border-oro/5" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
-                    <span className="block text-[9px] font-black text-oro/40 uppercase tracking-widest">Fondos de Ryous</span>
+                    <span className="block text-caption font-black text-oro/40 uppercase tracking-widest">Fondos de Ryous</span>
                     <span className="text-lg font-black text-oro tracking-wider">{selectedChar.ryous.toLocaleString()} Ryous</span>
                   </div>
                   {/* EXP */}
                   <div className="text-center bg-zinc-950/40 px-6 py-2 border border-oro/5" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
-                    <span className="block text-[9px] font-black text-oro/40 uppercase tracking-widest">Puntos de EXP</span>
+                    <span className="block text-caption font-black text-oro/40 uppercase tracking-widest">Puntos de EXP</span>
                     <span className="text-lg font-black text-oro tracking-wider">{selectedChar.xp.toLocaleString()} EXP</span>
                   </div>
                   {/* Moneda Evento */}
                   {tienda.es_evento && (
                     <div className="text-center bg-zinc-950/40 px-6 py-2 border border-oro/5" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
-                      <span className="block text-[9px] font-black text-oro/40 uppercase tracking-widest">
+                      <span className="block text-caption font-black text-oro/40 uppercase tracking-widest">
                         {tienda.nombre_moneda || eventCoinName}
                       </span>
                       <span className="text-lg font-black text-oro tracking-wider">
@@ -696,16 +696,16 @@ export default function TiendaDetallePage() {
                               <h2 className="text-lg sm:text-xl font-black text-oro uppercase tracking-widest">
                                 Consola de Compra de Stats
                               </h2>
-                              <p className="text-[10px] text-gris-texto uppercase tracking-widest font-black">
+                              <p className="text-caption text-gris-texto uppercase tracking-widest font-black">
                                 1 Punto de Stat = Aumento permanente en tu ficha
                               </p>
                             </div>
                           </div>
 
                           {/* Progression Display */}
-                          <div className="grid grid-cols-3 gap-4 items-center bg-zinc-950/60 p-6 border border-oro/5" style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}>
+                          <div className="grid grid-cols-3 gap-4 items-center bg-zinc-950/60 p-6 border border-oro/5 ninja-clip-md">
                             <div className="text-center">
-                              <span className="block text-[8px] font-black text-oro/40 uppercase tracking-widest mb-1">Actual</span>
+                              <span className="block text-caption font-black text-oro/40 uppercase tracking-widest mb-1">Actual</span>
                               <div className="inline-flex items-center justify-center w-14 h-14 rounded-none border border-oro/20 bg-zinc-900 text-2xl font-black text-oro">
                                 {selectedChar.puntos_stats || 0}
                               </div>
@@ -716,7 +716,7 @@ export default function TiendaDetallePage() {
                             </div>
 
                             <div className="text-center">
-                              <span className="block text-[8px] font-black text-oro/40 uppercase tracking-widest mb-1">Objetivo</span>
+                              <span className="block text-caption font-black text-oro/40 uppercase tracking-widest mb-1">Objetivo</span>
                               <div className="inline-flex items-center justify-center w-14 h-14 rounded-none border-2 border-oro bg-zinc-900 text-2xl font-black text-oro shadow-[0_0_15px_rgba(212,175,55,0.15)] animate-pulse">
                                 {(selectedChar.puntos_stats || 0) + statPointsToBuy}
                               </div>
@@ -779,7 +779,7 @@ export default function TiendaDetallePage() {
                               <button
                                 type="button"
                                 onClick={handleSelectMax}
-                                className="w-full sm:w-auto ninja-btn-ghost py-3.5 px-6 text-[10px] font-black uppercase tracking-widest"
+                                className="w-full sm:w-auto ninja-btn-ghost py-3.5 px-6 text-caption font-black uppercase tracking-widest"
                               >
                                 Calcular Máximo Posible
                               </button>
@@ -797,7 +797,7 @@ export default function TiendaDetallePage() {
                                 <div className="p-5 bg-zinc-950/80 border border-oro/10 space-y-4" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
                                   <div className="flex justify-between items-center pb-3 border-b border-oro/5">
                                     <span className="text-xs font-black text-oro/60 uppercase tracking-widest">Resumen de Compra</span>
-                                    <span className="text-[10px] font-black text-oro/30 uppercase tracking-widest">+{statPointsToBuy} Puntos</span>
+                                    <span className="text-caption font-black text-oro/30 uppercase tracking-widest">+{statPointsToBuy} Puntos</span>
                                   </div>
 
                                   <div className="space-y-2 text-xs">
@@ -823,7 +823,7 @@ export default function TiendaDetallePage() {
                                   </div>
 
                                   {!canAfford && !isLevelBlocked && (
-                                    <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider text-right">
+                                    <p className="text-caption text-red-400 font-bold uppercase tracking-wider text-right">
                                       Experiencia insuficiente (te faltan {(total - selectedChar.xp).toLocaleString()} EXP)
                                     </p>
                                   )}
@@ -855,7 +855,7 @@ export default function TiendaDetallePage() {
                               Tabla de Costes de Estadísticas
                             </h3>
                           </div>
-                          <p className="text-[10px] text-gris-texto mb-4 uppercase tracking-wider font-bold">
+                          <p className="text-caption text-gris-texto mb-4 uppercase tracking-wider font-bold">
                             Lista oficial de costes de EXP según los puntos de stat objetivo del Shinobi:
                           </p>
 
@@ -891,14 +891,13 @@ export default function TiendaDetallePage() {
                                 return (
                                   <div
                                     key={lvl}
-                                    className={`flex justify-between items-center p-3 border transition-all text-xs font-bold ${isTargeted
+                                    className={`ninja-clip-sm flex justify-between items-center p-3 border transition-all text-xs font-bold ${isTargeted
                                       ? 'border-oro/30 bg-zinc-900/80 shadow-md shadow-oro/5'
                                       : 'border-oro/5 bg-zinc-950/20'
                                       }`}
-                                    style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
                                   >
                                     <div className="flex items-center gap-3">
-                                      <span className={`w-8 text-center text-[10px] font-black py-0.5 px-1 border ${isTargeted ? 'border-oro text-oro bg-black' : 'border-oro/15 text-oro/70 bg-black/40'
+                                      <span className={`w-8 text-center text-caption font-black py-0.5 px-1 border ${isTargeted ? 'border-oro text-oro bg-black' : 'border-oro/15 text-oro/70 bg-black/40'
                                         }`}>
                                         {lvl}
                                       </span>
@@ -907,7 +906,7 @@ export default function TiendaDetallePage() {
                                       </span>
                                     </div>
 
-                                    <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 border ${badgeColor}`}>
+                                    <span className={`text-caption font-black uppercase tracking-widest px-2 py-0.5 border ${badgeColor}`}>
                                       {badgeText}
                                     </span>
                                   </div>
@@ -940,7 +939,7 @@ export default function TiendaDetallePage() {
                             {/* Item Card Header */}
                             <div className="flex justify-between items-start gap-4">
                               <div>
-                                <span className="text-[9px] font-black text-oro/40 uppercase tracking-widest">
+                                <span className="text-caption font-black text-oro/40 uppercase tracking-widest">
                                   {isTecnica ? 'TÉCNICA SHINOBI' : 'ARTÍCULO / MEJORA'}
                                 </span>
                                 <h3 className="text-lg sm:text-xl font-black text-oro uppercase tracking-wider">
@@ -952,7 +951,7 @@ export default function TiendaDetallePage() {
                               {isAdmin && (
                                 <button
                                   onClick={() => handleDeleteCatalogItem(obj.id)}
-                                  className="p-2 border border-red-500/20 hover:border-red-500 hover:bg-red-500/10 text-red-400 transition-all"
+                                  className="p-2 border border-error-text/20 hover:border-error-text hover:bg-red-500/10 text-red-400 transition-all"
                                   style={{ clipPath: 'polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px)' }}
                                   title="Retirar del catálogo"
                                 >
@@ -971,7 +970,7 @@ export default function TiendaDetallePage() {
 
                               return (
                                 <div className="p-4 sm:p-5 bg-black/60 border border-oro/10 space-y-3" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
-                                  <span className="block text-[10px] font-black text-oro/60 uppercase tracking-widest">
+                                  <span className="block text-caption font-black text-oro/60 uppercase tracking-widest">
                                     Requisitos de Adquisición
                                   </span>
 
@@ -1037,7 +1036,7 @@ export default function TiendaDetallePage() {
 
                           <div className="mt-6 pt-6 border-t border-oro/10 flex items-center justify-between gap-6">
                             <div className="space-y-1">
-                              <span className="block text-[8px] font-black text-oro/30 uppercase tracking-widest">Precio</span>
+                              <span className="block text-caption font-black text-oro/30 uppercase tracking-widest">Precio</span>
                               <div className="flex flex-wrap gap-x-4 gap-y-1">
                                 {obj.coste_ryous > 0 && (
                                   <span className="text-sm font-black text-oro">{obj.coste_ryous.toLocaleString()} Ryous</span>
@@ -1102,7 +1101,7 @@ export default function TiendaDetallePage() {
               className="p-4 bg-zinc-950/80 border border-oro/5 space-y-2 text-left mb-6 text-xs text-oro/80"
               style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
             >
-              <span className="block text-[8px] font-black text-oro/30 uppercase tracking-widest mb-1.5">Deducciones de Recursos</span>
+              <span className="block text-caption font-black text-oro/30 uppercase tracking-widest mb-1.5">Deducciones de Recursos</span>
               {isBuyConfirmOpen.coste_ryous > 0 && (
                 <div className="flex justify-between font-bold">
                   <span>Coste en Ryous:</span>
@@ -1167,7 +1166,7 @@ export default function TiendaDetallePage() {
                   className="p-4 bg-zinc-950/80 border border-oro/5 space-y-2 text-left mb-6 text-xs text-oro/80"
                   style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                 >
-                  <span className="block text-[8px] font-black text-oro/30 uppercase tracking-widest mb-1.5">Progreso y Deducción</span>
+                  <span className="block text-caption font-black text-oro/30 uppercase tracking-widest mb-1.5">Progreso y Deducción</span>
                   <div className="flex justify-between font-bold">
                     <span>Stats Actuales:</span>
                     <span className="text-oro">{current} Puntos</span>
@@ -1331,7 +1330,7 @@ export default function TiendaDetallePage() {
                     <span className="block text-xs font-black text-oro/80 uppercase tracking-widest">Requisitos del Objeto Puente</span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="block text-[10px] font-black text-oro/60 uppercase tracking-widest">Rango Requerido</label>
+                        <label className="block text-caption font-black text-oro/60 uppercase tracking-widest">Rango Requerido</label>
                         <NinjaSelect
                           value={formCustomGlosario.requisitos.rango || ''}
                           onChange={(val) => setFormCustomGlosario({
@@ -1343,7 +1342,7 @@ export default function TiendaDetallePage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="block text-[10px] font-black text-oro/60 uppercase tracking-widest">Puntos de Combate</label>
+                        <label className="block text-caption font-black text-oro/60 uppercase tracking-widest">Puntos de Combate</label>
                         <input
                           type="number"
                           value={formCustomGlosario.requisitos.combates}
@@ -1427,7 +1426,7 @@ export default function TiendaDetallePage() {
                         <span className="block text-xs font-black text-oro/80 uppercase tracking-widest">Configurar Requisitos de Compra Personalizados</span>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <label className="block text-[10px] font-black text-oro/60 uppercase tracking-widest">Rango Shinobi</label>
+                            <label className="block text-caption font-black text-oro/60 uppercase tracking-widest">Rango Shinobi</label>
                             <NinjaSelect
                               value={formObjeto.requisitos_personalizados?.rango || ''}
                               onChange={(val) => setFormObjeto({
@@ -1442,7 +1441,7 @@ export default function TiendaDetallePage() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <label className="block text-[10px] font-black text-oro/60 uppercase tracking-widest">Puntos de Combate</label>
+                            <label className="block text-caption font-black text-oro/60 uppercase tracking-widest">Puntos de Combate</label>
                             <input
                               type="number"
                               value={formObjeto.requisitos_personalizados?.combates || 0}

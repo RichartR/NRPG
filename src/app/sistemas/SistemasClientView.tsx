@@ -88,7 +88,7 @@ export default function SistemasClientView({
                 </div>
                 <div>
                   <h1 className="ninja-title text-4xl xl:text-5xl italic">REGLAS DE SISTEMA</h1>
-                  <p className="text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] mt-2">CONFIGURACIÓN DE MECÁNICAS Y MANUALES</p>
+                  <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.4em] mt-2">CONFIGURACIÓN DE MECÁNICAS Y MANUALES</p>
                 </div>
               </div>
             </header>

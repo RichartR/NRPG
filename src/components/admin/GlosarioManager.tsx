@@ -133,7 +133,7 @@ export default function GlosarioManager() {
           <div className="absolute inset-0 border-4 border-t-oro rounded-full animate-spin shadow-[0_0_15px_rgba(212,175,55,0.2)]" />
           <Sparkles className="absolute inset-0 m-auto text-oro w-6 h-6 animate-pulse" />
         </div>
-        <span className="text-oro font-black uppercase tracking-[0.3em] text-[10px] text-center">Sincronizando Glosario Ancestral...</span>
+        <span className="text-oro font-black uppercase tracking-[0.3em] text-caption text-center">Sincronizando Glosario Ancestral...</span>
       </div>
     );
   }
@@ -142,7 +142,7 @@ export default function GlosarioManager() {
     return (
       <div className="max-w-[1750px] space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <header className="ninja-card-oro p-8 xl:p-10">
-          <Link href="/admin" className="flex items-center gap-3 text-oro/40 hover:text-oro transition-all mb-8 text-[10px] font-black uppercase tracking-[0.3em] group">
+          <Link href="/admin" className="flex items-center gap-3 text-oro/40 hover:text-oro transition-all mb-8 text-caption font-black uppercase tracking-[0.3em] group">
             <div className="w-1.5 h-1.5 bg-oro/20 group-hover:bg-oro rotate-45 transition-colors" />
             VOLVER AL PANEL CENTRAL
           </Link>
@@ -153,7 +153,7 @@ export default function GlosarioManager() {
             </div>
             <div>
               <h1 className="ninja-title text-4xl xl:text-5xl italic">GLOSARIO MAESTRO</h1>
-              <p className="text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] mt-2">CONTROL CENTRAL DE TÉCNICAS, OBJETOS Y PASIVAS</p>
+              <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.4em] mt-2">CONTROL CENTRAL DE TÉCNICAS, OBJETOS Y PASIVAS</p>
             </div>
           </div>
         </header>
@@ -170,14 +170,13 @@ export default function GlosarioManager() {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div
-        className="space-y-8 ninja-card-oro p-8 md:p-12 mb-8"
-        style={{ clipPath: 'polygon(30px 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%, 0 30px)' }}
+        className="space-y-8 ninja-card-oro p-8 md:p-12 mb-8 ninja-clip-lg"
       >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-oro/10 pb-6 mb-6">
           <div className="flex flex-col gap-2">
             <button
               onClick={() => setActiveSection('hub')}
-              className="flex items-center gap-3 text-oro/60 hover:text-oro transition-all mb-4 text-[10px] font-black uppercase tracking-[0.3em] group cursor-pointer bg-transparent border-none p-0 outline-none align-middle"
+              className="flex items-center gap-3 text-oro/60 hover:text-oro transition-all mb-4 text-caption font-black uppercase tracking-[0.3em] group cursor-pointer bg-transparent border-none p-0 outline-none align-middle"
             >
               <div className="w-1.5 h-1.5 bg-oro/40 group-hover:bg-oro rotate-45 transition-colors" />
               VOLVER AL MENÚ DE GLOSARIO
@@ -188,8 +187,8 @@ export default function GlosarioManager() {
           </div>
           <div className="flex items-center gap-4">
             <div className="flex bg-black/60 p-1.5 rounded-2xl border border-oro/10 backdrop-blur-md">
-              <button onClick={() => setViewStatus('active')} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${viewStatus === 'active' ? 'bg-oro text-black shadow-lg shadow-oro/10' : 'text-oro/40 hover:text-oro/80'}`}><Eye size={14} /> Activas</button>
-              <button onClick={() => setViewStatus('archived')} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${viewStatus === 'archived' ? 'bg-zinc-800 text-zinc-300 shadow-lg' : 'text-oro/40 hover:text-oro/80'}`}><Archive size={14} /> Archivadas</button>
+              <button onClick={() => setViewStatus('active')} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-caption uppercase tracking-widest transition-all ${viewStatus === 'active' ? 'bg-oro text-black shadow-lg shadow-oro/10' : 'text-oro/40 hover:text-oro/80'}`}><Eye size={14} /> Activas</button>
+              <button onClick={() => setViewStatus('archived')} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-caption uppercase tracking-widest transition-all ${viewStatus === 'archived' ? 'bg-zinc-800 text-zinc-300 shadow-lg' : 'text-oro/40 hover:text-oro/80'}`}><Archive size={14} /> Archivadas</button>
             </div>
             <button onClick={() => setShowNewForm(true)} className="ninja-btn-oro px-6 py-4 text-xs font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 shadow-2xl"><Plus size={16} strokeWidth={3} /> Nuevo Registro</button>
           </div>
@@ -261,7 +260,7 @@ export default function GlosarioManager() {
                   </div>
                 </div>
                 <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">{c.nombre}</h3>
-                <div className="flex items-center gap-3"><code className="text-[10px] font-mono text-oro/50 bg-black/60 px-2 py-1 rounded">/{c.slug}</code>{!c.activo && <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest border border-zinc-800 px-2 py-0.5 rounded-full">Archivado</span>}</div>
+                <div className="flex items-center gap-3"><code className="text-caption font-mono text-oro/50 bg-black/60 px-2 py-1 rounded">/{c.slug}</code>{!c.activo && <span className="text-caption font-black text-zinc-500 uppercase tracking-widest border border-zinc-800 px-2 py-0.5 rounded-full">Archivado</span>}</div>
               </div>
             ))}
           </div>
@@ -288,8 +287,8 @@ export default function GlosarioManager() {
                     }} className="p-2 text-oro/60 hover:text-red-500 transition-colors"><Trash2 size={18} /></button>
                   </div>
                 </div>
-                <div className="space-y-1 mb-4"><span className="text-[10px] font-black text-oro uppercase tracking-widest">{categorias.find(c => c.id === s.categoria_id)?.nombre || 'Sin Padre'}</span><h3 className="text-xl font-black text-white uppercase tracking-tight">{s.nombre}</h3></div>
-                <div className="flex items-center gap-3"><code className="text-[10px] font-mono text-oro/50 bg-black/60 px-2 py-1 rounded">/{s.slug}</code>{!s.activo && <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest border border-zinc-800 px-2 py-0.5 rounded-full">Archivado</span>}</div>
+                <div className="space-y-1 mb-4"><span className="text-caption font-black text-oro uppercase tracking-widest">{categorias.find(c => c.id === s.categoria_id)?.nombre || 'Sin Padre'}</span><h3 className="text-xl font-black text-white uppercase tracking-tight">{s.nombre}</h3></div>
+                <div className="flex items-center gap-3"><code className="text-caption font-mono text-oro/50 bg-black/60 px-2 py-1 rounded">/{s.slug}</code>{!s.activo && <span className="text-caption font-black text-zinc-500 uppercase tracking-widest border border-zinc-800 px-2 py-0.5 rounded-full">Archivado</span>}</div>
               </div>
             ))}
           </div>
@@ -381,7 +380,7 @@ function HubCard({ title, desc, icon, count, onClick }: any) {
     >
       <div className="mb-8 p-6 rounded-2xl bg-oro/5 border border-oro/10 text-oro w-fit group-hover:scale-110 transition-transform">{icon}</div>
       <div className="space-y-3 mb-10"><h3 className="text-3xl font-black text-white uppercase tracking-tight">{title}</h3><p className="text-oro/40 text-sm leading-relaxed">{desc}</p></div>
-      <div className="flex items-center justify-between"><div className="flex items-center gap-3 bg-black/60 px-5 py-2.5 rounded-xl border border-oro/10"><span className="text-oro font-black text-lg leading-none">{count}</span><span className="text-oro/30 font-black text-[10px] uppercase tracking-widest">Activos</span></div><div className="w-12 h-12 rounded-full bg-oro/5 border border-oro/10 text-oro flex items-center justify-center group-hover:bg-oro group-hover:text-black transition-all"><ArrowRight size={20} /></div></div>
+      <div className="flex items-center justify-between"><div className="flex items-center gap-3 bg-black/60 px-5 py-2.5 rounded-xl border border-oro/10"><span className="text-oro font-black text-lg leading-none">{count}</span><span className="text-oro/30 font-black text-caption uppercase tracking-widest">Activos</span></div><div className="w-12 h-12 rounded-full bg-oro/5 border border-oro/10 text-oro flex items-center justify-center group-hover:bg-oro group-hover:text-black transition-all"><ArrowRight size={20} /></div></div>
     </button>
   );
 }
@@ -396,28 +395,28 @@ function ElementoCard({ elemento, categorias, subcategorias, onEdit, onDelete }:
       className={`group border rounded-none p-8 flex flex-col md:flex-row items-center gap-8 transition-all ninja-card-oro ${elemento.activo ? 'bg-black/30 border-oro/10 hover:border-oro/30 hover:bg-black/50' : 'bg-black/80 border-oro/5 opacity-50'}`}
       style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' }}
     >
-      <div className="flex flex-col items-center gap-2"><div className={`w-3 h-3 rounded-full ${elemento.activo ? 'bg-oro shadow-[0_0_12px_rgba(212,175,55,0.6)]' : 'bg-zinc-800'}`} /><span className="text-oro/30 font-black text-[10px] uppercase">ID: {elemento.id}</span></div>
+      <div className="flex flex-col items-center gap-2"><div className={`w-3 h-3 rounded-full ${elemento.activo ? 'bg-oro shadow-[0_0_12px_rgba(212,175,55,0.6)]' : 'bg-zinc-800'}`} /><span className="text-oro/30 font-black text-caption uppercase">ID: {elemento.id}</span></div>
       <div className="flex-1 text-center md:text-left space-y-1">
         <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-2">
-          <span className="bg-oro/10 text-oro border border-oro/20 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter">{cat?.nombre || 'Sin Cat'}</span>
-          {sub && <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter">{sub.nombre}</span>}
-          {elem && <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter">⚡ {elem.nombre_esp}</span>}
-          {elemento.rango && <span className="bg-zinc-800 text-zinc-300 border border-zinc-700 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter">Rango: {elemento.rango}</span>}
-          {elemento.obligatoria_ascenso && <span className="bg-red-500/10 text-red-400 border border-red-500/20 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter flex items-center gap-1">🔺 Obligatoria Ascenso</span>}
-          {elemento.inicial && <span className="bg-oro text-black px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter flex items-center gap-1"><Star size={10} className="fill-black" /> Inicial</span>}
+          <span className="bg-oro/10 text-oro border border-oro/20 px-3 py-1 rounded-full text-caption font-black uppercase tracking-tighter">{cat?.nombre || 'Sin Cat'}</span>
+          {sub && <span className="bg-emerald-500/10 text-emerald-400 border border-success-text/20 px-3 py-1 rounded-full text-caption font-black uppercase tracking-tighter">{sub.nombre}</span>}
+          {elem && <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1 rounded-full text-caption font-black uppercase tracking-tighter">⚡ {elem.nombre_esp}</span>}
+          {elemento.rango && <span className="bg-zinc-800 text-zinc-300 border border-zinc-700 px-3 py-1 rounded-full text-caption font-black uppercase tracking-tighter">Rango: {elemento.rango}</span>}
+          {elemento.obligatoria_ascenso && <span className="bg-red-500/10 text-red-400 border border-error-text/20 px-3 py-1 rounded-full text-caption font-black uppercase tracking-tighter flex items-center gap-1">🔺 Obligatoria Ascenso</span>}
+          {elemento.inicial && <span className="bg-oro text-black px-3 py-1 rounded-full text-caption font-black uppercase tracking-tighter flex items-center gap-1"><Star size={10} className="fill-black" /> Inicial</span>}
         </div>
         <h3 className="text-white font-black text-xl uppercase tracking-tight group-hover:text-oro transition-colors">{elemento.nombre_es}</h3><p className="text-oro/50 font-medium italic text-sm">{elemento.nombre_jp || '-'}</p>
       </div>
       <div className="flex flex-wrap gap-4">
-        <div className="bg-black/40 px-6 py-4 rounded-2xl border border-oro/10 text-center min-w-[100px]"><p className="text-[10px] font-black text-oro/40 uppercase tracking-widest mb-1">Coste EXP</p><p className="text-oro font-black text-lg">{elemento.coste_exp?.toLocaleString()}</p></div>
-        <div className="bg-black/40 px-6 py-4 rounded-2xl border border-oro/10 text-center min-w-[100px]"><p className="text-[10px] font-black text-oro/40 uppercase tracking-widest mb-1">Coste Ryo</p><p className="text-amber-500 font-black text-lg">{elemento.coste_ryous?.toLocaleString()}</p></div>
-        <div className="bg-black/40 px-6 py-4 rounded-2xl border border-oro/10 text-center min-w-[100px]"><p className="text-[10px] font-black text-oro/40 uppercase tracking-widest mb-1">Req. PA</p><p className="text-blue-400 font-black text-lg">{elemento.requisitos?.combates || 0}</p></div>
+        <div className="bg-black/40 px-6 py-4 rounded-2xl border border-oro/10 text-center min-w-[100px]"><p className="text-caption font-black text-oro/40 uppercase tracking-widest mb-1">Coste EXP</p><p className="text-oro font-black text-lg">{elemento.coste_exp?.toLocaleString()}</p></div>
+        <div className="bg-black/40 px-6 py-4 rounded-2xl border border-oro/10 text-center min-w-[100px]"><p className="text-caption font-black text-oro/40 uppercase tracking-widest mb-1">Coste Ryo</p><p className="text-amber-500 font-black text-lg">{elemento.coste_ryous?.toLocaleString()}</p></div>
+        <div className="bg-black/40 px-6 py-4 rounded-2xl border border-oro/10 text-center min-w-[100px]"><p className="text-caption font-black text-oro/40 uppercase tracking-widest mb-1">Req. PA</p><p className="text-blue-400 font-black text-lg">{elemento.requisitos?.combates || 0}</p></div>
       </div>
       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
         <button onClick={onEdit} className="p-4 bg-oro/5 border border-oro/10 hover:bg-oro hover:text-black rounded-xl text-oro transition-all">
           <Save size={18} />
         </button>
-        <button onClick={onDelete} className="p-4 bg-red-950/20 border border-red-500/20 hover:bg-red-500 hover:text-black rounded-xl text-red-400 transition-all">
+        <button onClick={onDelete} className="p-4 bg-red-950/20 border border-error-text/20 hover:bg-red-500 hover:text-black rounded-xl text-red-400 transition-all">
           <Trash2 size={18} />
         </button>
       </div>
@@ -509,7 +508,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={onClose} />
       <div
-        className="relative bg-[#0A0A0A] border border-oro/20 w-full max-w-5xl h-[90vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200 ninja-card-oro"
+        className="relative bg-neutral-800 border border-oro/20 w-full max-w-5xl h-[90vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200 ninja-card-oro"
         style={{ 
           clipPath: 'polygon(30px 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%, 0 30px)',
           overflow: 'hidden'
@@ -532,16 +531,16 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                 <h3 className="flex items-center gap-3 text-sm font-black text-oro/60 uppercase tracking-widest mb-4"><Box size={16} /> Información Base</h3>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">Nombre Español</label>
+                    <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">Nombre Español</label>
                     <input type="text" value={formData.nombre_es} onChange={(e) => setFormData({ ...formData, nombre_es: e.target.value })} className="ninja-input w-full px-6 py-4 text-white bg-black/60 font-bold" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">Nombre Japonés</label>
+                    <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">Nombre Japonés</label>
                     <input type="text" value={formData.nombre_jp || ''} onChange={(e) => setFormData({ ...formData, nombre_jp: e.target.value })} className="ninja-input w-full px-6 py-4 text-white bg-black/60 font-bold" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">Categoría</label>
+                      <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">Categoría</label>
                       <NinjaSelect
                         value={formData.categoria_id || ''}
                         onChange={(val) => setFormData({ ...formData, categoria_id: Number(val), subcategoria_id: undefined })}
@@ -550,7 +549,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">Subcategoría</label>
+                      <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">Subcategoría</label>
                       <NinjaSelect
                         value={formData.subcategoria_id || ''}
                         onChange={(val) => setFormData({ ...formData, subcategoria_id: val ? Number(val) : undefined })}
@@ -562,10 +561,10 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
 
                   {/* Casillas de Jerarquía */}
                   <div className="pt-4 border-t border-oro/10 space-y-4">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-oro ml-1">Jerarquía de Visualización</label>
+                    <label className="text-caption font-black uppercase tracking-widest text-oro ml-1">Jerarquía de Visualización</label>
                     <div className="grid grid-cols-1 gap-4">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">Aldea / Nación</label>
+                        <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">Aldea / Nación</label>
                         <NinjaSelect
                           value={formData.aldea_id || ''}
                           onChange={(val) => setFormData({ ...formData, aldea_id: val ? Number(val) : null, rama_clan_id: null, sub_especialidad_id: null, elemento_id: null })}
@@ -576,7 +575,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">Rama / Clan</label>
+                          <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">Rama / Clan</label>
                           <NinjaSelect
                             value={formData.rama_clan_id || ''}
                             onChange={(val) => setFormData({ ...formData, rama_clan_id: val ? Number(val) : null, sub_especialidad_id: null, elemento_id: null })}
@@ -586,7 +585,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                         </div>
                         {isNinjutsuElemental ? (
                           <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">Elemento Asociado</label>
+                            <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">Elemento Asociado</label>
                             <NinjaSelect
                               value={formData.elemento_id || ''}
                               onChange={(val) => setFormData({ ...formData, elemento_id: val ? Number(val) : null, sub_especialidad_id: null })}
@@ -596,7 +595,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                           </div>
                         ) : (
                           <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">Subespecialidad</label>
+                            <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">Subespecialidad</label>
                             <NinjaSelect
                               value={formData.sub_especialidad_id || ''}
                               onChange={(val) => setFormData({ ...formData, sub_especialidad_id: val ? Number(val) : null, elemento_id: null })}
@@ -618,11 +617,11 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                 <h3 className="flex items-center gap-3 text-sm font-black text-oro/60 uppercase tracking-widest mb-4"><Star size={16} /> Costes y Estado</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">Coste EXP</label>
+                    <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">Coste EXP</label>
                     <input type="number" min="0" value={formData.coste_exp} onChange={(e) => setFormData({ ...formData, coste_exp: Math.max(0, Number(e.target.value)) })} className="ninja-input w-full px-6 py-4 text-white bg-black/60 font-bold" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">Coste Ryo</label>
+                    <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">Coste Ryo</label>
                     <input type="number" min="0" value={formData.coste_ryous} onChange={(e) => setFormData({ ...formData, coste_ryous: Math.max(0, Number(e.target.value)) })} className="ninja-input w-full px-6 py-4 text-white bg-black/60 font-bold" />
                   </div>
                 </div>
@@ -638,7 +637,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                 </div>
                 <div className="space-y-4 pt-4 border-t border-oro/10">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">Rango del Elemento</label>
+                    <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">Rango del Elemento</label>
                     <div className="flex gap-1 bg-black p-1 rounded-xl border border-oro/10">
                       {RANGOS.map(r => (
                         <button type="button" key={r} onClick={() => {
@@ -649,10 +648,10 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                       <button type="button" onClick={() => {
                         const newReqs = { ...formData.requisitos, rango: null };
                         setFormData({ ...formData, rango: null, requisitos: newReqs });
-                      }} className={`flex-1 py-3 rounded-lg font-black text-[9px] transition-all ${formData.rango === null ? 'bg-zinc-800 text-white' : 'text-oro/40 hover:bg-oro/5'}`}>Ninguno</button>
+                      }} className={`flex-1 py-3 rounded-lg font-black text-caption transition-all ${formData.rango === null ? 'bg-zinc-800 text-white' : 'text-oro/40 hover:bg-oro/5'}`}>Ninguno</button>
                     </div>
                   </div>
-                  <button type="button" onClick={() => setFormData({ ...formData, obligatoria_ascenso: !formData.obligatoria_ascenso })} className={`w-full flex items-center justify-between p-5 rounded-2xl border transition-all ${formData.obligatoria_ascenso ? 'bg-red-500/10 border-red-500/20 text-red-400 shadow-lg' : 'bg-black/60 border-oro/5 text-oro/40'}`}>
+                  <button type="button" onClick={() => setFormData({ ...formData, obligatoria_ascenso: !formData.obligatoria_ascenso })} className={`w-full flex items-center justify-between p-5 rounded-2xl border transition-all ${formData.obligatoria_ascenso ? 'bg-red-500/10 border-error-text/20 text-red-400 shadow-lg' : 'bg-black/60 border-oro/5 text-oro/40'}`}>
                     <span className="font-black text-xs uppercase tracking-widest ml-2">{formData.obligatoria_ascenso ? 'Obligatoria para Ascenso' : 'No es obligatoria para Ascenso'}</span>
                     {formData.obligatoria_ascenso ? <Check size={20} /> : <X size={20} />}
                   </button>
@@ -668,11 +667,11 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                 <div className="flex items-center justify-between"><h3 className="flex items-center gap-3 text-lg font-black text-white uppercase tracking-tighter"><ScrollText size={20} className="text-oro" /> Requisitos del Sistema</h3></div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-4">
-                    <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1"><Swords size={12} /> Atributos Necesarios</label>
+                    <label className="flex items-center gap-2 text-caption font-black uppercase tracking-widest text-oro/40 ml-1"><Swords size={12} /> Atributos Necesarios</label>
                     <div className="grid grid-cols-1 gap-2">
                       {STATS_LIST.map(s => (
                         <div key={s.key} className="flex items-center justify-between bg-black/60 p-2 pl-4 rounded-xl border border-oro/10 group hover:border-oro/30 transition-all">
-                          <span className="text-[10px] font-bold text-oro/50 uppercase tracking-widest">{s.label}</span>
+                          <span className="text-caption font-bold text-oro/50 uppercase tracking-widest">{s.label}</span>
                           <input type="number" min="0" value={formData.requisitos?.stats?.[s.key] ?? ''} placeholder="0" onChange={(e) => updateNestedReq('stats', s.key, e.target.value)} className="w-16 bg-black border border-oro/20 rounded-lg px-2 py-1.5 text-center text-oro font-black text-xs outline-none focus:border-oro transition-all" />
                         </div>
                       ))}
@@ -680,7 +679,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                   </div>
                   <div className="space-y-8">
                     <div className="space-y-4">
-                      <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1"><Star size={12} /> Rango Mínimo</label>
+                      <label className="flex items-center gap-2 text-caption font-black uppercase tracking-widest text-oro/40 ml-1"><Star size={12} /> Rango Mínimo</label>
                       <div className="flex gap-1 bg-black p-1 rounded-xl border border-oro/10">
                         {RANGOS.map(r => (
                           <button key={r} onClick={() => updateReq('rango', formData.requisitos?.rango === r ? null : r)} className={`flex-1 py-3 rounded-lg font-black text-xs transition-all ${formData.requisitos?.rango === r ? 'bg-oro text-black' : 'text-oro/40 hover:bg-oro/5'}`}>{r}</button>
@@ -688,18 +687,18 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                       </div>
                     </div>
                     <div className="space-y-4">
-                      <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1"><Trophy size={12} /> Misiones por Rango</label>
+                      <label className="flex items-center gap-2 text-caption font-black uppercase tracking-widest text-oro/40 ml-1"><Trophy size={12} /> Misiones por Rango</label>
                       <div className="grid grid-cols-5 gap-2">
                         {RANGOS.map(r => (
                           <div key={`mis-${r}`} className="space-y-1">
-                            <span className="block text-center text-[9px] font-black text-oro/40">{r}</span>
+                            <span className="block text-center text-caption font-black text-oro/40">{r}</span>
                             <input type="number" min="0" value={formData.requisitos?.misiones?.[r] ?? 0} onChange={(e) => updateNestedReq('misiones', r, e.target.value)} className="w-full bg-black border border-oro/20 rounded-lg py-2 text-center text-oro font-black text-xs outline-none focus:border-oro transition-all" />
                           </div>
                         ))}
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1"><Swords size={12} />Puntos de Aprendizaje (PA) requeridos</label>
+                      <label className="flex items-center gap-2 text-caption font-black uppercase tracking-widest text-oro/40 ml-1"><Swords size={12} />Puntos de Aprendizaje (PA) requeridos</label>
                       <input type="number" min="0" value={formData.requisitos?.combates ?? 0} onChange={(e) => updateReq('combates', Number(e.target.value))} className="ninja-input w-full px-6 py-4 text-white bg-black/60 font-bold" placeholder="0" />
                     </div>
                   </div>
@@ -763,7 +762,7 @@ function SearchableSelect({ label, icon, options, value, onChange }: any) {
 
   return (
     <div className="relative space-y-2" ref={containerRef}>
-      <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">{icon} {label}</label>
+      <label className="flex items-center gap-2 text-caption font-black uppercase tracking-widest text-oro/40 ml-1">{icon} {label}</label>
       <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between bg-black/60 border border-oro/10 rounded-2xl px-6 py-4 text-white font-bold outline-none hover:border-oro/30 transition-all text-left">
         <span className={selectedOption ? 'text-white' : 'text-oro/30'}>{selectedOption ? selectedOption.label : 'Seleccionar...'}</span>
         <ChevronDown size={16} className={`text-oro/40 transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -777,11 +776,11 @@ function SearchableSelect({ label, icon, options, value, onChange }: any) {
             </div>
           </div>
           <div className="max-h-48 overflow-y-auto">
-            <button onClick={() => { onChange(null); setOpen(false); }} className="w-full text-left px-4 py-3 text-[10px] font-black text-oro/40 hover:bg-oro/5 uppercase tracking-widest">Ninguno / Quitar selección</button>
+            <button onClick={() => { onChange(null); setOpen(false); }} className="w-full text-left px-4 py-3 text-caption font-black text-oro/40 hover:bg-oro/5 uppercase tracking-widest">Ninguno / Quitar selección</button>
             {filteredOptions.map((o: any) => (
               <button key={o.id} onClick={() => { onChange(o.id); setOpen(false); }} className={`w-full text-left px-4 py-3 text-xs font-bold transition-all hover:bg-oro hover:text-black ${o.id === value ? 'bg-oro/10 text-oro' : 'text-white'}`}>{o.label}</button>
             ))}
-            {filteredOptions.length === 0 && <div className="px-4 py-8 text-center text-[10px] font-black text-oro/30 uppercase">Sin resultados</div>}
+            {filteredOptions.length === 0 && <div className="px-4 py-8 text-center text-caption font-black text-oro/30 uppercase">Sin resultados</div>}
           </div>
         </div>
       )}
@@ -824,7 +823,7 @@ function SearchableMultiSelect({ label, icon, options, value, onChange }: any) {
 
   return (
     <div className="relative space-y-2 text-left" ref={containerRef}>
-      <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">{icon} {label}</label>
+      <label className="flex items-center gap-2 text-caption font-black uppercase tracking-widest text-oro/40 ml-1">{icon} {label}</label>
       <button
         type="button"
         onClick={() => setOpen(!open)}
@@ -839,7 +838,7 @@ function SearchableMultiSelect({ label, icon, options, value, onChange }: any) {
       {selectedOptions.length > 0 && (
         <div className="flex flex-wrap gap-2 mt-2">
           {selectedOptions.map((o: any) => (
-            <span key={o.id} className="inline-flex items-center gap-1.5 bg-oro/10 border border-oro/20 text-oro text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-xl">
+            <span key={o.id} className="inline-flex items-center gap-1.5 bg-oro/10 border border-oro/20 text-oro text-caption font-black uppercase tracking-wider px-2.5 py-1 rounded-xl">
               {o.label}
               <button
                 type="button"
@@ -862,7 +861,7 @@ function SearchableMultiSelect({ label, icon, options, value, onChange }: any) {
             </div>
           </div>
           <div className="max-h-48 overflow-y-auto">
-            <button type="button" onClick={() => { onChange(null); setOpen(false); }} className="w-full text-left px-4 py-3 text-[10px] font-black text-oro/40 hover:bg-oro/5 uppercase tracking-widest">Ninguno / Quitar todos</button>
+            <button type="button" onClick={() => { onChange(null); setOpen(false); }} className="w-full text-left px-4 py-3 text-caption font-black text-oro/40 hover:bg-oro/5 uppercase tracking-widest">Ninguno / Quitar todos</button>
             {filteredOptions.map((o: any) => {
               const isSelected = selectedIds.includes(Number(o.id));
               return (
@@ -877,7 +876,7 @@ function SearchableMultiSelect({ label, icon, options, value, onChange }: any) {
                 </button>
               );
             })}
-            {filteredOptions.length === 0 && <div className="px-4 py-8 text-center text-[10px] font-black text-oro/30 uppercase">Sin resultados</div>}
+            {filteredOptions.length === 0 && <div className="px-4 py-8 text-center text-caption font-black text-oro/30 uppercase">Sin resultados</div>}
           </div>
         </div>
       )}
@@ -896,7 +895,7 @@ function GenericForm({ title, initialData, fields, onClose, onSave, loading }: a
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={onClose} />
       <div
-        className="relative bg-[#0A0A0A] border border-oro/20 w-full max-w-lg rounded-none shadow-2xl animate-in zoom-in-95 ninja-card-oro"
+        className="relative bg-neutral-800 border border-oro/20 w-full max-w-lg rounded-none shadow-2xl animate-in zoom-in-95 ninja-card-oro"
         style={{ clipPath: 'polygon(24px 0, 100% 0, 100% calc(100% - 24px), calc(100% - 24px) 100%, 0 100%, 0 24px)' }}
       >
         <div className="p-10 space-y-8">
@@ -904,7 +903,7 @@ function GenericForm({ title, initialData, fields, onClose, onSave, loading }: a
           <div className="space-y-5">
             {fields.map((f: any) => (
               <div key={f.name} className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">{f.label}</label>
+                <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">{f.label}</label>
                 {f.type === 'select' ? (
                   <NinjaSelect
                     value={formData[f.name] || ''}
@@ -913,7 +912,7 @@ function GenericForm({ title, initialData, fields, onClose, onSave, loading }: a
                     options={f.options.map((o: any) => ({ label: o.nombre, value: o.id }))}
                   />
                 ) : f.type === 'toggle' ? (
-                  <button onClick={() => handleFieldChange(f.name, !formData[f.name])} className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all ${formData[f.name] ? 'bg-oro/10 border-oro/20 text-oro shadow-lg' : 'bg-black/60 border-oro/5 text-oro/40'}`}><span className="font-black text-[10px] uppercase tracking-widest ml-2">{formData[f.name] ? 'Activo' : 'Archivado'}</span>{formData[f.name] ? <Check size={18} /> : <X size={18} />}</button>
+                  <button onClick={() => handleFieldChange(f.name, !formData[f.name])} className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all ${formData[f.name] ? 'bg-oro/10 border-oro/20 text-oro shadow-lg' : 'bg-black/60 border-oro/5 text-oro/40'}`}><span className="font-black text-caption uppercase tracking-widest ml-2">{formData[f.name] ? 'Activo' : 'Archivado'}</span>{formData[f.name] ? <Check size={18} /> : <X size={18} />}</button>
                 ) : (
                   <input type="text" value={formData[f.name]} onChange={(e) => handleFieldChange(f.name, e.target.value)} className="ninja-input w-full px-6 py-4 text-white bg-black/60 font-bold" />
                 )}

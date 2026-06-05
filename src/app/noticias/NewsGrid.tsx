@@ -202,7 +202,7 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
             <button
               key={cat.value}
               onClick={() => setSelectedCategory(cat.value)}
-              className={`px-6 py-2.5 font-black uppercase tracking-[0.2em] transition-all text-[9px] sm:text-[10px] xl:text-xs select-none ${selectedCategory === cat.value
+              className={`px-6 py-2.5 font-black uppercase tracking-[0.2em] transition-all text-caption sm:text-caption xl:text-xs select-none ${selectedCategory === cat.value
                 ? 'bg-oro text-rojo-sangre shadow-lg'
                 : 'bg-black/40 text-oro/40 hover:text-oro hover:bg-black/60 border border-oro/10'
                 }`}
@@ -242,18 +242,18 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
           <button
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-            className="ninja-btn-oro px-8 py-3 disabled:opacity-30 disabled:scale-100 active:scale-95 text-[10px] sm:text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2"
+            className="ninja-btn-oro px-8 py-3 disabled:opacity-30 disabled:scale-100 active:scale-95 text-caption sm:text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2"
             style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
           >
             Anterior
           </button>
-          <span className="text-oro/70 font-black uppercase tracking-[0.2em] text-[10px] sm:text-xs">
+          <span className="text-oro/70 font-black uppercase tracking-[0.2em] text-caption sm:text-xs">
             PÁGINA {currentPage} DE {totalPages}
           </span>
           <button
             disabled={currentPage === totalPages || totalPages === 0}
             onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-            className="ninja-btn-oro px-8 py-3 disabled:opacity-30 disabled:scale-100 active:scale-95 text-[10px] sm:text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2"
+            className="ninja-btn-oro px-8 py-3 disabled:opacity-30 disabled:scale-100 active:scale-95 text-caption sm:text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2"
             style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
           >
             Siguiente
@@ -295,7 +295,7 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
               </button>
 
               <div className="absolute bottom-8 left-8 right-8 z-10 flex flex-col items-start gap-1">
-                <span className="px-4 py-1.5 text-xs font-black bg-rojo-sangre text-oro uppercase tracking-[0.3em] inline-block" style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}>
+                <span className="px-4 py-1.5 text-xs font-black bg-rojo-sangre text-oro uppercase tracking-[0.3em] inline-block ninja-clip-sm">
                   {activeNews.categoria || 'Noticia'}
                 </span>
                 <h2 className="block ninja-title text-2xl sm:text-4xl md:text-5xl leading-tight uppercase font-ninja">
@@ -308,12 +308,12 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
             <div className="h-px bg-oro/20 flex-shrink-0" />
 
             {/* Contenido en Scroll (Con Lazy Load) */}
-            <div className="p-8 sm:p-12 overflow-y-auto flex-1 custom-scrollbar bg-[#050309]">
+            <div className="p-8 sm:p-12 overflow-y-auto flex-1 custom-scrollbar bg-neutral-900">
               {loadingMsg ? (
                 /* Spinner de Carga Premium */
                 <div className="flex flex-col items-center justify-center py-20 gap-4">
                   <RefreshCw className="w-10 h-10 text-oro animate-spin" />
-                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-oro/40 italic">CONECTANDO CON DISCORD...</p>
+                  <p className="text-caption font-black uppercase tracking-[0.4em] text-oro/40 italic">CONECTANDO CON DISCORD...</p>
                 </div>
               ) : (
                 <>
@@ -348,7 +348,7 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
                               setEditingRegistry(null);
                               setIsRewardFormOpen(true);
                             }}
-                            className="px-6 py-2.5 bg-rojo-sangre hover:brightness-125 text-oro font-black text-[10px] xl:text-xs uppercase tracking-widest transition-all shadow-md select-none self-start sm:self-auto"
+                            className="px-6 py-2.5 bg-rojo-sangre hover:brightness-125 text-oro font-black text-caption xl:text-xs uppercase tracking-widest transition-all shadow-md select-none self-start sm:self-auto"
                             style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                           >
                             Repartir Premios
@@ -359,11 +359,11 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
                       {loadingRegistries ? (
                         <div className="flex justify-center items-center py-10 gap-2">
                           <RefreshCw className="w-5 h-5 text-oro animate-spin" />
-                          <span className="text-[10px] font-black uppercase tracking-widest text-oro/40">Cargando registros...</span>
+                          <span className="text-caption font-black uppercase tracking-widest text-oro/40">Cargando registros...</span>
                         </div>
                       ) : eventRegistries.length === 0 ? (
                         <div className="p-8 text-center bg-black/20 border border-oro/5">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-oro/30 italic">No se han repartido premios en este evento todavía</p>
+                          <p className="text-caption font-black uppercase tracking-widest text-oro/30 italic">No se han repartido premios en este evento todavía</p>
                         </div>
                       ) : (
                         <div className="space-y-6">

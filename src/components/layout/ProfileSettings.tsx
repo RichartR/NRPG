@@ -64,7 +64,7 @@ export default function ProfileSettings({ profile, userId }: ProfileSettingsProp
           <span className="block text-sm xl:text-lg 2xl:text-xl font-black text-oro uppercase tracking-widest group-hover:text-white transition-colors">
             {profile?.username}
           </span>
-          <span className="block text-[8px] font-black text-oro/30 uppercase tracking-[0.3em]">Ajustes de Perfil</span>
+          <span className="block text-caption font-black text-oro/30 uppercase tracking-[0.3em]">Ajustes de Perfil</span>
         </div>
       </button>
 
@@ -72,8 +72,7 @@ export default function ProfileSettings({ profile, userId }: ProfileSettingsProp
       {isOpen && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
           <div
-            className="w-full max-w-lg ninja-card-oro p-8 xl:p-12 relative animate-in fade-in zoom-in duration-300"
-            style={{ clipPath: 'polygon(30px 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%, 0 30px)' }}
+            className="w-full max-w-lg ninja-card-oro p-8 xl:p-12 relative animate-in fade-in zoom-in duration-300 ninja-clip-lg"
           >
             <button
               onClick={() => setIsOpen(false)}
@@ -89,18 +88,17 @@ export default function ProfileSettings({ profile, userId }: ProfileSettingsProp
 
             <div className="space-y-8">
               <div className="space-y-4">
-                <label className="text-[10px] font-black text-oro/40 uppercase tracking-[0.4em] ml-2">URL de Imagen de Perfil</label>
+                <label className="text-caption font-black text-oro/40 uppercase tracking-[0.4em] ml-2">URL de Imagen de Perfil</label>
                 <div className="relative">
                   <input
                     type="text"
                     value={urlImg}
                     onChange={(e) => setUrlImg(e.target.value)}
-                    className="w-full bg-black/60 border border-oro/20 py-5 px-8 text-oro font-bold outline-none focus:border-oro/60 transition-all placeholder:text-oro/10"
+                    className="w-full bg-black/60 border border-oro/20 py-5 px-8 text-oro font-bold outline-none focus:border-oro/60 transition-all placeholder:text-oro/10 ninja-clip-md"
                     placeholder="https://..."
-                    style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
                   />
                 </div>
-                <p className="text-[9px] text-oro/20 italic ml-2">Recomendado: 400x400px o superior. Formatos JPG, PNG, WEBP.</p>
+                <p className="text-caption text-oro/20 italic ml-2">Recomendado: 400x400px o superior. Formatos JPG, PNG, WEBP.</p>
               </div>
 
               {/* Preview */}

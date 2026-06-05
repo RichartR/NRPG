@@ -13,7 +13,7 @@ export function VitalBar({ label, current, max, color, icon: Icon }: VitalBarPro
   return (
     <div className="space-y-3">
       <div className="flex justify-between items-end">
-        <span className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${color === 'red' ? 'text-red-400' : 'text-blue-400'}`}>
+        <span className={`text-caption font-black uppercase tracking-widest flex items-center gap-2 ${color === 'red' ? 'text-red-400' : 'text-blue-400'}`}>
           <Icon className="w-4 h-4" /> {label}
         </span>
         <span className="text-sm font-mono font-bold text-white">{current} <span className="text-zinc-600">/ {max}</span></span>

@@ -45,8 +45,8 @@ export function ToastContainer() {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`pointer-events-auto flex items-center gap-4 px-6 py-4 rounded-2xl border backdrop-blur-xl shadow-2xl animate-in slide-in-from-right-full transition-all ${toast.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-              toast.type === 'error' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
+          className={`pointer-events-auto flex items-center gap-4 px-6 py-4 rounded-2xl border backdrop-blur-xl shadow-2xl animate-in slide-in-from-right-full transition-all ${toast.type === 'success' ? 'bg-emerald-500/10 border-success-text/20 text-emerald-400' :
+              toast.type === 'error' ? 'bg-red-500/10 border-error-text/20 text-red-400' :
                 'bg-blue-500/10 border-blue-500/20 text-blue-400'
             }`}
         >

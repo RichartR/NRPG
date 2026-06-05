@@ -20,7 +20,7 @@ const CustomTooltip = ({ active, payload }: any) => {
         className="bg-black/95 border border-oro/30 px-4 py-2.5 shadow-[0_0_20px_rgba(223,184,87,0.2)] backdrop-blur-md text-center rounded-sm"
         style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
       >
-        <p className="text-[9px] font-black text-oro/40 tracking-[0.2em] uppercase mb-1">
+        <p className="text-caption font-black text-oro/40 tracking-[0.2em] uppercase mb-1">
           {data.subject} ({data.kanji})
         </p>
         <p className="text-xl font-black text-oro italic leading-none">

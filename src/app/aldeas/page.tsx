@@ -55,7 +55,7 @@ export default async function AldeasPage() {
               title={aldea.abreviatura || aldea.nombre_jap}
               titleClassName={getTitleFontSize(aldea.abreviatura || aldea.nombre_jap)}
               category={aldea.nombre_español}
-              categoryClassName="text-[10px] sm:text-xs md:text-sm lg:text-base xl:text-lg tracking-[0.2em] sm:tracking-[0.4em]"
+              categoryClassName="text-caption sm:text-xs md:text-sm lg:text-base xl:text-lg tracking-[0.2em] sm:tracking-[0.4em]"
               imageUrl={aldea.url_imagen}
               description={aldea.descripcion}
               actionText="Explorar Lore"
@@ -68,7 +68,7 @@ export default async function AldeasPage() {
             title="RENEGADOS"
             titleClassName={getTitleFontSize('RENEGADOS')}
             category="Shinobis sin afiliación"
-            categoryClassName="text-[10px] sm:text-xs md:text-sm lg:text-base xl:text-lg tracking-[0.2em] sm:tracking-[0.4em]"
+            categoryClassName="text-caption sm:text-xs md:text-sm lg:text-base xl:text-lg tracking-[0.2em] sm:tracking-[0.4em]"
             imageUrl="/assets/images/renegados.jpg"
             description="Guerreros sin aldea oculta, exiliados o ronin que operan fuera del control de las grandes naciones."
             actionText="Ver censo"

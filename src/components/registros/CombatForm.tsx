@@ -286,7 +286,7 @@ export default function CombatForm({
                   {searchResults.length > 0 && searchTargetTeam === 'A' && (
                     <div className="absolute z-50 w-full mt-2 bg-black border border-oro/20 shadow-2xl animate-in fade-in zoom-in duration-200">
                       {searchResults.map(p => (
-                        <button key={p.id} onClick={() => addParticipant(p)} className="w-full px-6 py-5 text-left text-[10px] font-black text-oro/60 hover:bg-oro/10 hover:text-oro flex items-center gap-3 transition-all border-b border-oro/5 last:border-0 uppercase tracking-widest">
+                        <button key={p.id} onClick={() => addParticipant(p)} className="w-full px-6 py-5 text-left text-caption font-black text-oro/60 hover:bg-oro/10 hover:text-oro flex items-center gap-3 transition-all border-b border-oro/5 last:border-0 uppercase tracking-widest">
                           <UserPlus className="w-4 h-4" /> {p.nombre_ninja} {p.hobba_name ? `(${p.hobba_name})` : ''}
                         </button>
                       ))}
@@ -306,11 +306,11 @@ export default function CombatForm({
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="flex items-center gap-2 px-3 py-1 bg-oro/10 border border-oro/20 ninja-clip-xs">
-                            <span className="text-[10px] font-black text-oro">+{calculateXP('A', p.huye)} EXP</span>
+                            <span className="text-caption font-black text-oro">+{calculateXP('A', p.huye)} EXP</span>
                           </div>
                           {calculatePA('A', p.huye) > 0 && (
-                            <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 ninja-clip-xs">
-                              <span className="text-[10px] font-black text-emerald-400">+{calculatePA('A', p.huye)} PA</span>
+                            <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-success-text/20 ninja-clip-xs">
+                              <span className="text-caption font-black text-emerald-400">+{calculatePA('A', p.huye)} PA</span>
                             </div>
                           )}
                           <button onClick={() => removeParticipant(p.id, 'A')} className="opacity-0 group-hover/item:opacity-100 p-2 text-oro/20 hover:text-rojo-sangre transition-all">
@@ -330,19 +330,19 @@ export default function CombatForm({
                         <div className="flex flex-wrap gap-3">
                           <button
                             onClick={() => updateParticipantState(p.id, 'A', { has_estado_alterado: !p.has_estado_alterado })}
-                            className={`px-4 py-2 border text-[10px] font-black uppercase tracking-widest transition-all ${p.has_estado_alterado ? 'bg-oro/20 border-oro/40 text-oro' : 'bg-black/20 border-oro/5 text-oro/20'}`}
+                            className={`px-4 py-2 border text-caption font-black uppercase tracking-widest transition-all ${p.has_estado_alterado ? 'bg-oro/20 border-oro/40 text-oro' : 'bg-black/20 border-oro/5 text-oro/20'}`}
                           >
                             ESTADO ALTERADO
                           </button>
                           <button
                             onClick={() => updateParticipantState(p.id, 'A', { has_cds: !p.has_cds })}
-                            className={`px-4 py-2 border text-[10px] font-black uppercase tracking-widest transition-all ${p.has_cds ? 'bg-blue-500/20 border-blue-400/40 text-blue-300' : 'bg-black/20 border-oro/5 text-oro/20'}`}
+                            className={`px-4 py-2 border text-caption font-black uppercase tracking-widest transition-all ${p.has_cds ? 'bg-blue-500/20 border-blue-400/40 text-blue-300' : 'bg-black/20 border-oro/5 text-oro/20'}`}
                           >
                             CDs
                           </button>
                           <button
                             onClick={() => updateParticipantState(p.id, 'A', { huye: !p.huye })}
-                            className={`px-4 py-2 border text-[10px] font-black uppercase tracking-widest transition-all ${p.huye ? 'bg-rojo-sangre/20 border-rojo-sangre/40 text-rojo-sangre' : 'bg-black/20 border-oro/5 text-oro/20'}`}
+                            className={`px-4 py-2 border text-caption font-black uppercase tracking-widest transition-all ${p.huye ? 'bg-rojo-sangre/20 border-rojo-sangre/40 text-rojo-sangre' : 'bg-black/20 border-oro/5 text-oro/20'}`}
                           >
                             HUYE
                           </button>
@@ -392,7 +392,7 @@ export default function CombatForm({
                   {searchResults.length > 0 && searchTargetTeam === 'B' && (
                     <div className="absolute z-50 w-full mt-2 bg-black border border-oro/20 shadow-2xl animate-in fade-in zoom-in duration-200">
                       {searchResults.map(p => (
-                        <button key={p.id} onClick={() => addParticipant(p)} className="w-full px-6 py-5 text-left text-[10px] font-black text-oro/60 hover:bg-oro/10 hover:text-oro flex items-center gap-3 transition-all border-b border-oro/5 last:border-0 uppercase tracking-widest">
+                        <button key={p.id} onClick={() => addParticipant(p)} className="w-full px-6 py-5 text-left text-caption font-black text-oro/60 hover:bg-oro/10 hover:text-oro flex items-center gap-3 transition-all border-b border-oro/5 last:border-0 uppercase tracking-widest">
                           <UserPlus className="w-4 h-4" /> {p.nombre_ninja} {p.hobba_name ? `(${p.hobba_name})` : ''}
                         </button>
                       ))}
@@ -412,11 +412,11 @@ export default function CombatForm({
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="flex items-center gap-2 px-3 py-1 bg-oro/10 border border-oro/20 ninja-clip-xs">
-                            <span className="text-[10px] font-black text-oro">+{calculateXP('B', p.huye)} EXP</span>
+                            <span className="text-caption font-black text-oro">+{calculateXP('B', p.huye)} EXP</span>
                           </div>
                           {calculatePA('B', p.huye) > 0 && (
-                            <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 ninja-clip-xs">
-                              <span className="text-[10px] font-black text-emerald-400">+{calculatePA('B', p.huye)} PA</span>
+                            <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-success-text/20 ninja-clip-xs">
+                              <span className="text-caption font-black text-emerald-400">+{calculatePA('B', p.huye)} PA</span>
                             </div>
                           )}
                           <button onClick={() => removeParticipant(p.id, 'B')} className="opacity-0 group-hover/item:opacity-100 p-2 text-oro/20 hover:text-rojo-sangre transition-all">
@@ -436,19 +436,19 @@ export default function CombatForm({
                         <div className="flex flex-wrap gap-3">
                           <button
                             onClick={() => updateParticipantState(p.id, 'B', { has_estado_alterado: !p.has_estado_alterado })}
-                            className={`px-4 py-2 border text-[10px] font-black uppercase tracking-widest transition-all ${p.has_estado_alterado ? 'bg-oro/20 border-oro/40 text-oro' : 'bg-black/20 border-oro/5 text-oro/20'}`}
+                            className={`px-4 py-2 border text-caption font-black uppercase tracking-widest transition-all ${p.has_estado_alterado ? 'bg-oro/20 border-oro/40 text-oro' : 'bg-black/20 border-oro/5 text-oro/20'}`}
                           >
                             ESTADO ALTERADO
                           </button>
                           <button
                             onClick={() => updateParticipantState(p.id, 'B', { has_cds: !p.has_cds })}
-                            className={`px-4 py-2 border text-[10px] font-black uppercase tracking-widest transition-all ${p.has_cds ? 'bg-blue-500/20 border-blue-400/40 text-blue-300' : 'bg-black/20 border-oro/5 text-oro/20'}`}
+                            className={`px-4 py-2 border text-caption font-black uppercase tracking-widest transition-all ${p.has_cds ? 'bg-blue-500/20 border-blue-400/40 text-blue-300' : 'bg-black/20 border-oro/5 text-oro/20'}`}
                           >
                             CDs
                           </button>
                           <button
                             onClick={() => updateParticipantState(p.id, 'B', { huye: !p.huye })}
-                            className={`px-4 py-2 border text-[10px] font-black uppercase tracking-widest transition-all ${p.huye ? 'bg-rojo-sangre/20 border-rojo-sangre/40 text-rojo-sangre' : 'bg-black/20 border-oro/5 text-oro/20'}`}
+                            className={`px-4 py-2 border text-caption font-black uppercase tracking-widest transition-all ${p.huye ? 'bg-rojo-sangre/20 border-rojo-sangre/40 text-rojo-sangre' : 'bg-black/20 border-oro/5 text-oro/20'}`}
                           >
                             HUYE
                           </button>
@@ -513,7 +513,7 @@ export default function CombatForm({
                       <span>TABLA DE EXP</span>
                     </div>
                     {combatConfig.victoria ? (
-                      <div className="grid grid-cols-3 gap-y-3 gap-x-2 text-center text-[10px]">
+                      <div className="grid grid-cols-3 gap-y-3 gap-x-2 text-center text-caption">
                         <div className="text-left text-oro/40">Diferencia</div>
                         <div className="text-green-500">Victoria</div>
                         <div className="text-red-500">Derrota</div>
@@ -544,7 +544,7 @@ export default function CombatForm({
                         <div className="flex justify-between"><span>Derrota</span><span className="text-oro">+{combatConfig.perder} EXP</span></div>
                       </div>
                     )}
-                    <div className="text-[9px] text-oro/30 border-t border-oro/5 pt-2 text-center normal-case font-bold">
+                    <div className="text-caption text-oro/30 border-t border-oro/5 pt-2 text-center normal-case font-bold">
                       El empate siempre otorga 0 EXP.
                     </div>
                   </div>
@@ -557,7 +557,7 @@ export default function CombatForm({
                       <span>TABLA DE Puntos de Acción</span>
                     </div>
                     {paConfig.victoria ? (
-                      <div className="grid grid-cols-3 gap-y-3 gap-x-2 text-center text-[10px]">
+                      <div className="grid grid-cols-3 gap-y-3 gap-x-2 text-center text-caption">
                         <div className="text-left text-oro/40">Diferencia</div>
                         <div className="text-green-500">Victoria</div>
                         <div className="text-red-500">Derrota</div>
@@ -588,7 +588,7 @@ export default function CombatForm({
                         <div className="flex justify-between"><span>Derrota</span><span className="text-emerald-400">+{paConfig.perder} PA</span></div>
                       </div>
                     )}
-                    <div className="text-[9px] text-oro/30 border-t border-oro/5 pt-2 text-center normal-case font-bold">
+                    <div className="text-caption text-oro/30 border-t border-oro/5 pt-2 text-center normal-case font-bold">
                       El empate siempre otorga 0 PA.
                     </div>
                   </div>

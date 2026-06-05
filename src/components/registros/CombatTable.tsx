@@ -93,7 +93,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
 
   const getRankBadgeStyle = (r: string) => {
     switch (r?.toUpperCase()) {
-      case 'S': return 'bg-red-500/10 border-red-500/30 text-red-400';
+      case 'S': return 'bg-red-500/10 border-error-text/30 text-red-400';
       case 'A': return 'bg-orange-500/10 border-orange-500/30 text-orange-400';
       case 'B': return 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400';
       case 'C': return 'bg-blue-500/10 border-blue-500/30 text-blue-400';
@@ -108,7 +108,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
       <div className="hidden lg:block overflow-x-auto scrollbar-hide">
         <table className="w-full text-left border-collapse min-w-[700px] table-fixed">
           <thead>
-            <tr className="border-b border-oro/10 text-oro/70 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em]">
+            <tr className="border-b border-oro/10 text-oro/70 text-caption xl:text-xs font-black uppercase tracking-[0.3em]">
               <th className="py-6 px-8 w-[18%]">Fecha</th>
               <th className="py-6 px-8 w-[42%]">Bandos</th>
               <th className="py-6 px-8 w-[15%] w-36">Resultado</th>
@@ -147,21 +147,21 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                         <span className="text-[11px] font-black text-oro/80 uppercase tracking-wider">
                           {new Date(m.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </span>
-                        <span className="text-[9px] font-bold text-oro/30 uppercase tracking-widest mt-0.5">
+                        <span className="text-caption font-bold text-oro/30 uppercase tracking-widest mt-0.5">
                           {new Date(m.fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
 
                       {/* Fecha de Modificación */}
                       {m.data.fecha_modificacion && (
-                        <div className="flex flex-col border-t border-red-500/30 pt-1.5">
+                        <div className="flex flex-col border-t border-error-text/30 pt-1.5">
                           <span className="text-[7px] font-black text-red-500/60 uppercase tracking-widest">
                             MODIFICADO
                           </span>
-                          <span className="text-[10px] font-black text-red-400 uppercase tracking-wider mt-0.5">
+                          <span className="text-caption font-black text-red-400 uppercase tracking-wider mt-0.5">
                             {new Date(m.data.fecha_modificacion).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                           </span>
-                          <span className="text-[8px] font-bold text-red-500/60 uppercase tracking-widest mt-0.5">
+                          <span className="text-caption font-bold text-red-500/60 uppercase tracking-widest mt-0.5">
                             {new Date(m.data.fecha_modificacion).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
@@ -183,7 +183,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
 
                         {/* VS Tag */}
                         <div className="flex items-center gap-1 px-2 py-0.5 bg-oro/10 border border-oro/20 rounded-[3px] shadow-[0_0_8px_rgba(239,68,68,0.1)]">
-                          <span className="font-ninja text-[9px] text-oro italic font-black uppercase tracking-wider">VS</span>
+                          <span className="font-ninja text-caption text-oro italic font-black uppercase tracking-wider">VS</span>
                         </div>
 
                         {/* Bando Enemigo */}
@@ -199,7 +199,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
 
                       {/* Optional metadata description below if exists */}
                       {m.data.descripcion_combate && (
-                        <p className="text-[10px] text-oro/40 italic mt-0.5 line-clamp-1">
+                        <p className="text-caption text-oro/40 italic mt-0.5 line-clamp-1">
                           "{m.data.descripcion_combate}"
                         </p>
                       )}
@@ -209,15 +209,15 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                   {/* Resultado */}
                   <td className="py-6 px-8">
                     {isEmpate ? (
-                      <span className="inline-block text-[9px] font-black text-oro border border-oro/30 px-2.5 py-0.5 ninja-clip-xs bg-oro/5 tracking-widest shadow-[0_0_8px_rgba(223,184,87,0.08)]">
+                      <span className="inline-block text-caption font-black text-oro border border-oro/30 px-2.5 py-0.5 ninja-clip-xs bg-oro/5 tracking-widest shadow-[0_0_8px_rgba(223,184,87,0.08)]">
                         EMPATE
                       </span>
                     ) : won ? (
-                      <span className="inline-block text-[9px] font-black text-[#a7f3d0] border border-emerald-500/30 px-2.5 py-0.5 ninja-clip-xs bg-[#064e3b]/80 tracking-widest shadow-[0_0_10px_rgba(52,211,153,0.12)]">
+                      <span className="inline-block text-caption font-black text-success-text border border-success-text/30 px-2.5 py-0.5 ninja-clip-xs bg-success-bg/80 tracking-widest shadow-[0_0_10px_rgba(52,211,153,0.12)]">
                         VICTORIA
                       </span>
                     ) : (
-                      <span className="inline-block text-[9px] font-black text-[#fecaca] border border-red-500/30 px-2.5 py-0.5 ninja-clip-xs bg-[#7f1d1d]/80 tracking-widest shadow-[0_0_10px_rgba(239,68,68,0.12)]">
+                      <span className="inline-block text-caption font-black text-error-text border border-error-text/30 px-2.5 py-0.5 ninja-clip-xs bg-error-bg/80 tracking-widest shadow-[0_0_10px_rgba(239,68,68,0.12)]">
                         DERROTA
                       </span>
                     )}
@@ -226,11 +226,11 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                   {/* Recompensa */}
                   <td className="py-6 px-8">
                     <div className="flex flex-col gap-1 items-start">
-                      <span className="inline-block text-[10px] xl:text-xs font-black text-[#a7f3d0] tracking-wider bg-[#064e3b]/30 border border-emerald-500/20 py-1 px-3 ninja-clip-xs shadow-[0_0_10px_rgba(52,211,153,0.05)] text-center w-full">
+                      <span className="inline-block text-caption xl:text-xs font-black text-success-text tracking-wider bg-success-bg/30 border border-success-text/20 py-1 px-3 ninja-clip-xs shadow-[0_0_10px_rgba(52,211,153,0.05)] text-center w-full">
                         +{xpGained} EXP
                       </span>
                       {pcGained > 0 && (
-                        <span className="inline-block text-[9px] font-black text-[#a7f3d0]/90 tracking-wider bg-[#064e3b]/30 border border-emerald-500/20 py-0.5 px-2 ninja-clip-xs mt-1 w-full text-center">
+                        <span className="inline-block text-caption font-black text-success-text/90 tracking-wider bg-success-bg/30 border border-success-text/20 py-0.5 px-2 ninja-clip-xs mt-1 w-full text-center">
                           +{pcGained} PA
                         </span>
                       )}
@@ -260,7 +260,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                           <button
                             onClick={() => handleDelete(m.id)}
                             disabled={loadingId === m.id}
-                            className="p-2 bg-red-600/10 border border-red-600/40 hover:border-red-500 hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
+                            className="p-2 bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
                             title="Eliminar Registro"
                           >
                             {loadingId === m.id ? (
@@ -310,21 +310,21 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                   <span className="text-[11px] font-black text-oro/80 uppercase tracking-wider">
                     {new Date(m.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </span>
-                  <span className="text-[9px] font-bold text-oro/30 uppercase tracking-widest mt-0.5">
+                  <span className="text-caption font-bold text-oro/30 uppercase tracking-widest mt-0.5">
                     {new Date(m.fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
                 <div>
                   {isEmpate ? (
-                    <span className="inline-block text-[9px] font-black text-oro border border-oro/30 px-2.5 py-0.5 ninja-clip-xs bg-oro/5 tracking-widest">
+                    <span className="inline-block text-caption font-black text-oro border border-oro/30 px-2.5 py-0.5 ninja-clip-xs bg-oro/5 tracking-widest">
                       EMPATE
                     </span>
                   ) : won ? (
-                    <span className="inline-block text-[9px] font-black text-[#a7f3d0] border border-emerald-500/30 px-2.5 py-0.5 ninja-clip-xs bg-[#064e3b]/80 tracking-widest">
+                    <span className="inline-block text-caption font-black text-success-text border border-success-text/30 px-2.5 py-0.5 ninja-clip-xs bg-success-bg/80 tracking-widest">
                       VICTORIA
                     </span>
                   ) : (
-                    <span className="inline-block text-[9px] font-black text-[#fecaca] border border-red-500/30 px-2.5 py-0.5 ninja-clip-xs bg-[#7f1d1d]/80 tracking-widest">
+                    <span className="inline-block text-caption font-black text-error-text border border-error-text/30 px-2.5 py-0.5 ninja-clip-xs bg-error-bg/80 tracking-widest">
                       DERROTA
                     </span>
                   )}
@@ -338,9 +338,9 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                   {allies.length > 0 && allies.map((name: string, i: number) => (
                     <span key={i} className="text-oro/70 font-semibold before:content-['+'] before:mr-1">{name}</span>
                   ))}
-                  <div className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-red-600/10 border border-red-500/20 rounded-[3px] scale-90">
+                  <div className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-red-600/10 border border-error-text/20 rounded-[3px] scale-90">
                     <Swords className="w-2.5 h-2.5 text-red-400" />
-                    <span className="font-ninja text-[8px] text-red-400 italic font-black uppercase tracking-wider">VS</span>
+                    <span className="font-ninja text-caption text-red-400 italic font-black uppercase tracking-wider">VS</span>
                   </div>
                   {enemies.map((name: string, i: number) => (
                     <React.Fragment key={i}>
@@ -350,7 +350,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                   ))}
                 </div>
                 {m.data.descripcion_combate && (
-                  <p className="text-[10px] text-oro/40 italic mt-1.5">
+                  <p className="text-caption text-oro/40 italic mt-1.5">
                     "{m.data.descripcion_combate}"
                   </p>
                 )}
@@ -359,11 +359,11 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
               {/* Row 3: Rewards & Action buttons */}
               <div className="flex justify-between items-center gap-4 mt-1">
                 <div className="flex gap-2">
-                  <span className="inline-block text-[10px] font-black text-[#a7f3d0] tracking-wider bg-[#064e3b]/30 border border-emerald-500/20 py-0.5 px-2 ninja-clip-xs">
+                  <span className="inline-block text-caption font-black text-success-text tracking-wider bg-success-bg/30 border border-success-text/20 py-0.5 px-2 ninja-clip-xs">
                     +{xpGained} EXP
                   </span>
                   {pcGained > 0 && (
-                    <span className="inline-block text-[9px] font-black text-[#a7f3d0]/90 tracking-wider bg-[#064e3b]/30 border border-emerald-500/20 py-0.5 px-2 ninja-clip-xs">
+                    <span className="inline-block text-caption font-black text-success-text/90 tracking-wider bg-success-bg/30 border border-success-text/20 py-0.5 px-2 ninja-clip-xs">
                       +{pcGained} PA
                     </span>
                   )}
@@ -389,7 +389,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                       <button
                         onClick={() => handleDelete(m.id)}
                         disabled={loadingId === m.id}
-                        className="p-2 bg-red-600/10 border border-red-600/40 hover:border-red-500 hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
+                        className="p-2 bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
                         title="Eliminar Registro"
                       >
                         {loadingId === m.id ? (
@@ -414,14 +414,14 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
             className="fixed inset-0 bg-black/85 backdrop-blur-md transition-all duration-500 animate-in fade-in"
             onClick={() => setSelectedCombat(null)}
           />
-          <div className="relative w-full max-w-5xl max-h-[90vh] flex flex-col bg-[#1a1a1c] border border-oro/20 shadow-[0_0_80px_rgba(0,0,0,0.9)] animate-in zoom-in slide-in-from-bottom-8 duration-500 overflow-hidden" style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}>
+          <div className="relative w-full max-w-5xl max-h-[90vh] flex flex-col bg-neutral-700 border border-oro/20 shadow-[0_0_80px_rgba(0,0,0,0.9)] animate-in zoom-in slide-in-from-bottom-8 duration-500 overflow-hidden ninja-clip-md">
 
             {/* Modal Header */}
-            <div className="flex-none p-6 border-b border-oro/15 flex justify-between items-center bg-[#222226]">
+            <div className="flex-none p-6 border-b border-oro/15 flex justify-between items-center bg-neutral-700">
               <div className="flex items-center gap-4">
                 <div>
                   <h3 className="ninja-title text-lg sm:text-xl tracking-[0.1em] sm:tracking-[0.2em]">INFORME DE COMBATE</h3>
-                  <p className="text-[9px] text-oro/40 uppercase tracking-widest font-black">Archivo ninja oficial</p>
+                  <p className="text-caption text-oro/40 uppercase tracking-widest font-black">Archivo ninja oficial</p>
                 </div>
               </div>
               <button
@@ -441,42 +441,42 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                   <div className="flex items-center gap-3 border-b border-oro/10 pb-4">
                     <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Bando A</span>
                     {selectedCombat.data.ganador === 'A' && (
-                      <span className="text-[9px] font-black text-oro bg-oro/10 px-2 py-0.5 ninja-clip-xs border border-oro/20">
+                      <span className="text-caption font-black text-oro bg-oro/10 px-2 py-0.5 ninja-clip-xs border border-oro/20">
                         GANADOR
                       </span>
                     )}
                   </div>
                   <div className="space-y-4">
                     {selectedCombat.data.equipo_a?.map((p: any) => (
-                      <div key={p.id} className="p-4 bg-[#26262b]/70 border border-oro/15 hover:border-oro/30 hover:bg-[#26262b]/95 transition-all ninja-clip-xs space-y-3 shadow-md shadow-black/10">
+                      <div key={p.id} className="p-4 bg-neutral-600/70 border border-oro/15 hover:border-oro/30 hover:bg-neutral-600/95 transition-all ninja-clip-xs space-y-3 shadow-md shadow-black/10">
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-3">
                             <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
-                            <span className="text-[10px] font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">
+                            <span className="text-caption font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">
                               +{calculateParticipantXP(selectedCombat, 'A', p.huye)} EXP
                             </span>
-                            <span className="text-[10px] font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-emerald-500/10">
+                            <span className="text-caption font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-success-text/10">
                               +{RewardLogic.calculateCombatPA(selectedCombat, p.id)} PA
                             </span>
                           </div>
 
                           <div className="flex items-center gap-3">
                             {p.has_estado_alterado && (
-                              <span className="px-2 py-0.5 bg-oro/20 text-oro text-[9px] font-black uppercase ninja-clip-xs border border-oro/40">
+                              <span className="px-2 py-0.5 bg-oro/20 text-oro text-caption font-black uppercase ninja-clip-xs border border-oro/40">
                                 ESTADO ALTERADO
                               </span>
                             )}
                             {p.has_cds && (
-                              <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-[9px] font-black uppercase ninja-clip-xs border border-blue-400/40">
+                              <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-caption font-black uppercase ninja-clip-xs border border-blue-400/40">
                                 CDs
                               </span>
                             )}
                             {p.huye && (
-                              <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[9px] font-black uppercase ninja-clip-xs border border-orange-500/40">
+                              <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-caption font-black uppercase ninja-clip-xs border border-orange-500/40">
                                 HUYE
                               </span>
                             )}
-                            <span className="text-[10px] font-black text-oro/70 uppercase">
+                            <span className="text-caption font-black text-oro/70 uppercase">
                               {p.estado_nombre || 'SIN ESTADO'}
                             </span>
                           </div>
@@ -514,42 +514,42 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                   <div className="flex items-center lg:flex-row-reverse gap-3 border-b border-oro/10 pb-4">
                     <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Bando B</span>
                     {selectedCombat.data.ganador === 'B' && (
-                      <span className="text-[9px] font-black text-oro bg-oro/10 px-2 py-0.5 ninja-clip-xs border border-oro/20">
+                      <span className="text-caption font-black text-oro bg-oro/10 px-2 py-0.5 ninja-clip-xs border border-oro/20">
                         GANADOR
                       </span>
                     )}
                   </div>
                   <div className="space-y-4">
                     {selectedCombat.data.equipo_b?.map((p: any) => (
-                      <div key={p.id} className="p-4 bg-[#26262b]/70 border border-oro/15 hover:border-oro/30 hover:bg-[#26262b]/95 transition-all ninja-clip-xs space-y-3 shadow-md shadow-black/10">
+                      <div key={p.id} className="p-4 bg-neutral-600/70 border border-oro/15 hover:border-oro/30 hover:bg-neutral-600/95 transition-all ninja-clip-xs space-y-3 shadow-md shadow-black/10">
                         <div className="flex justify-between items-center lg:flex-row-reverse">
                           <div className="flex items-center gap-3 lg:flex-row-reverse">
                             <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
-                            <span className="text-[10px] font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">
+                            <span className="text-caption font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">
                               +{calculateParticipantXP(selectedCombat, 'B', p.huye)} EXP
                             </span>
-                            <span className="text-[10px] font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-emerald-500/10">
+                            <span className="text-caption font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-success-text/10">
                               +{RewardLogic.calculateCombatPA(selectedCombat, p.id)} PA
                             </span>
                           </div>
 
                           <div className="flex items-center gap-3 lg:flex-row-reverse">
                             {p.has_estado_alterado && (
-                              <span className="px-2 py-0.5 bg-oro/20 text-oro text-[9px] font-black uppercase ninja-clip-xs border border-oro/40">
+                              <span className="px-2 py-0.5 bg-oro/20 text-oro text-caption font-black uppercase ninja-clip-xs border border-oro/40">
                                 ESTADO ALTERADO
                               </span>
                             )}
                             {p.has_cds && (
-                              <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-[9px] font-black uppercase ninja-clip-xs border border-blue-400/40">
+                              <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-caption font-black uppercase ninja-clip-xs border border-blue-400/40">
                                 CDs
                               </span>
                             )}
                             {p.huye && (
-                              <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[9px] font-black uppercase ninja-clip-xs border border-orange-500/40">
+                              <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-caption font-black uppercase ninja-clip-xs border border-orange-500/40">
                                 HUYE
                               </span>
                             )}
-                            <span className="text-[10px] font-black text-oro/70 uppercase">
+                            <span className="text-caption font-black text-oro/70 uppercase">
                               {p.estado_nombre || 'SIN ESTADO'}
                             </span>
                           </div>
@@ -574,7 +574,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
               {/* Visual Evidence / Images if exists */}
               {selectedCombat.data.urls_imagenes && selectedCombat.data.urls_imagenes.length > 0 && (
                 <div className="mt-8 border-t border-oro/10 pt-6">
-                  <span className="text-[10px] font-black text-oro/40 uppercase tracking-[0.2em] mb-4 block">
+                  <span className="text-caption font-black text-oro/40 uppercase tracking-[0.2em] mb-4 block">
                     PRUEBAS VISUALES DEL ENCUENTRO:
                   </span>
                   <div className="flex flex-wrap gap-4">
@@ -584,7 +584,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                         href={url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-4 py-2.5 bg-oro/10 border border-oro/20 hover:border-oro/40 hover:bg-oro/20 text-[10px] font-black text-oro/60 hover:text-oro uppercase tracking-wider transition-all ninja-clip-xs shadow-sm"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-oro/10 border border-oro/20 hover:border-oro/40 hover:bg-oro/20 text-caption font-black text-oro/60 hover:text-oro uppercase tracking-wider transition-all ninja-clip-xs shadow-sm"
                       >
                         <span>ENLACE DE PRUEBA {i + 1}</span>
                       </a>
@@ -595,7 +595,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
             </div>
 
             {/* Modal Footer */}
-            <div className="flex-none p-6 border-t border-oro/15 bg-[#1d1d21] text-center">
+            <div className="flex-none p-6 border-t border-oro/15 bg-neutral-700 text-center">
               <button
                 onClick={() => setSelectedCombat(null)}
                 className="px-8 py-3 ninja-btn-oro text-xs font-black tracking-widest uppercase"

@@ -156,7 +156,7 @@ export default function NotificationBell() {
         <Bell className={`w-5 h-5 transition-all ${notifications.length > 0 ? 'text-oro animate-pulse' : 'text-oro/40 group-hover:text-oro'}`} />
       </button>
       {notifications.length > 0 && (
-        <span className="absolute -top-1 -right-1 w-5 h-5 bg-rojo-sangre text-oro text-[10px] font-black flex items-center justify-center border border-oro/40 shadow-[0_0_10px_rgba(103,9,9,0.8)] animate-in zoom-in pointer-events-none z-10">
+        <span className="absolute -top-1 -right-1 w-5 h-5 bg-rojo-sangre text-oro text-caption font-black flex items-center justify-center border border-oro/40 shadow-[0_0_10px_rgba(103,9,9,0.8)] animate-in zoom-in pointer-events-none z-10">
           {notifications.length}
         </span>
       )}
@@ -178,7 +178,7 @@ export default function NotificationBell() {
               <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45 shadow-[0_0_6px_rgba(103,9,9,0.3)]" />
               Notificaciones
             </h3>
-            <span className="text-[9px] font-black text-rojo-sangre/80 bg-rojo-sangre/5 border border-rojo-sangre/20 px-2 py-0.5 ninja-clip-xs tracking-wider">
+            <span className="text-caption font-black text-rojo-sangre/80 bg-rojo-sangre/5 border border-rojo-sangre/20 px-2 py-0.5 ninja-clip-xs tracking-wider">
               {notifications.length} PENDIENTES
             </span>
           </div>
@@ -187,7 +187,7 @@ export default function NotificationBell() {
             {notifications.length === 0 ? (
               <div className="p-12 text-center">
                 <Bell className="w-12 h-12 text-rojo-sangre/15 mx-auto mb-4 animate-pulse" />
-                <p className="text-rojo-sangre/40 text-[10px] font-black uppercase tracking-[0.2em] italic">Todo en orden, ninja</p>
+                <p className="text-rojo-sangre/40 text-caption font-black uppercase tracking-[0.2em] italic">Todo en orden, ninja</p>
               </div>
             ) : (
               <div className="divide-y divide-black/5">
@@ -198,31 +198,31 @@ export default function NotificationBell() {
                       <div className="flex flex-col gap-4">
                         <div className="flex justify-between items-start gap-4">
                           <div className="min-w-0 flex-1">
-                            <span className="text-[8px] font-black uppercase px-2 py-0.5 bg-rojo-sangre text-oro border border-oro/20 mb-2 inline-block tracking-wider ninja-clip-xs">
+                            <span className="text-caption font-black uppercase px-2 py-0.5 bg-rojo-sangre text-oro border border-oro/20 mb-2 inline-block tracking-wider ninja-clip-xs">
                               {n.registro.tipo}
                             </span>
                             <h4 className="text-xs font-black text-black/85 uppercase tracking-wider group-hover:text-rojo-sangre group-hover:translate-x-0.5 transition-all duration-300">
                               {n.registro.autor?.nombre_ninja} puso un registro
                             </h4>
                             {n.registro.tipo !== 'combate' && (
-                              <span className="text-[10px] text-black/50 font-semibold line-clamp-1 italic mt-1 block">
+                              <span className="text-caption text-black/50 font-semibold line-clamp-1 italic mt-1 block">
                                 "{n.registro.data?.titulo || 'Sin título'}"
                               </span>
                             )}
                           </div>
                           <div className="text-right flex flex-col items-end gap-1 shrink-0">
                             {rewards.xp > 0 && (
-                              <span className="text-[9px] font-black text-rojo-sangre bg-rojo-sangre/5 border border-rojo-sangre/15 px-1.5 py-0.5 tracking-wider ninja-clip-xs block">
+                              <span className="text-caption font-black text-rojo-sangre bg-rojo-sangre/5 border border-rojo-sangre/15 px-1.5 py-0.5 tracking-wider ninja-clip-xs block">
                                 +{rewards.xp} EXP
                               </span>
                             )}
                             {rewards.ryous > 0 && (
-                              <span className="text-[9px] font-black text-black/75 bg-black/5 border border-black/10 px-1.5 py-0.5 tracking-wider ninja-clip-xs block">
+                              <span className="text-caption font-black text-black/75 bg-black/5 border border-black/10 px-1.5 py-0.5 tracking-wider ninja-clip-xs block">
                                 +{rewards.ryous} R
                               </span>
                             )}
                             {rewards.pa > 0 && (
-                              <span className="text-[9px] font-black text-emerald-600 bg-emerald-500/5 border border-emerald-500/15 px-1.5 py-0.5 tracking-wider ninja-clip-xs block">
+                              <span className="text-caption font-black text-emerald-600 bg-emerald-500/5 border border-success-text/15 px-1.5 py-0.5 tracking-wider ninja-clip-xs block">
                                 +{rewards.pa} PA
                               </span>
                             )}
@@ -235,14 +235,14 @@ export default function NotificationBell() {
                               placeholder="¿Por qué rechazas este registro?"
                               value={comment}
                               onChange={(e) => setComment(e.target.value)}
-                              className="w-full bg-white/50 border border-black/10 p-3 text-[10px] text-black focus:border-rojo-sangre/40 outline-none min-h-[65px] placeholder:text-black/30 ninja-clip-xs font-medium"
+                              className="w-full bg-white/50 border border-black/10 p-3 text-caption text-black focus:border-rojo-sangre/40 outline-none min-h-[65px] placeholder:text-black/30 ninja-clip-xs font-medium"
                               style={{ textTransform: 'none' }}
                             />
                             <div className="flex gap-2">
                               <button
                                 onClick={() => handleAction(n.registro_id, 'rechazar')}
                                 disabled={!comment.trim() || loading}
-                                className="flex-1 py-2 bg-rojo-sangre text-oro text-[9px] font-black uppercase tracking-widest hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-40 cursor-pointer ninja-clip-xs"
+                                className="flex-1 py-2 bg-rojo-sangre text-oro text-caption font-black uppercase tracking-widest hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-40 cursor-pointer ninja-clip-xs"
                               >
                                 Enviar Disputa
                               </button>
@@ -259,13 +259,13 @@ export default function NotificationBell() {
                             <button
                               onClick={() => handleAction(n.registro_id, 'aceptar')}
                               disabled={loading}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-oro text-rojo-sangre text-[9px] font-black uppercase tracking-widest hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer shadow-[0_3px_10px_rgba(165,87,11,0.15)] ninja-clip-xs border border-oro-soft"
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-oro text-rojo-sangre text-caption font-black uppercase tracking-widest hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer shadow-[0_3px_10px_rgba(165,87,11,0.15)] ninja-clip-xs border border-oro-soft"
                             >
                               <Check className="w-3.5 h-3.5 stroke-[3]" /> Aceptar
                             </button>
                             <button
                               onClick={() => setRejectingId(n.registro_id)}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-rojo-sangre/10 text-rojo-sangre border border-rojo-sangre/20 text-[9px] font-black uppercase tracking-widest hover:bg-rojo-sangre hover:text-oro active:scale-[0.98] transition-all cursor-pointer ninja-clip-xs"
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-rojo-sangre/10 text-rojo-sangre border border-rojo-sangre/20 text-caption font-black uppercase tracking-widest hover:bg-rojo-sangre hover:text-oro active:scale-[0.98] transition-all cursor-pointer ninja-clip-xs"
                             >
                               <X className="w-3.5 h-3.5 stroke-[3]" /> Rechazar
                             </button>
@@ -289,7 +289,7 @@ export default function NotificationBell() {
           <div className="p-3 bg-transparent border-t border-black/10 text-center">
             <button
               onClick={() => setIsOpen(false)}
-              className="text-[9px] font-black text-rojo-sangre/70 hover:text-rojo-sangre uppercase tracking-[0.35em] transition-all hover:letter-spacing duration-300 flex items-center justify-center gap-2 mx-auto cursor-pointer"
+              className="text-caption font-black text-rojo-sangre/70 hover:text-rojo-sangre uppercase tracking-[0.35em] transition-all hover:letter-spacing duration-300 flex items-center justify-center gap-2 mx-auto cursor-pointer"
             >
               <div className="w-1.5 h-1.5 bg-rojo-sangre/40 rotate-45" />
               Cerrar Panel

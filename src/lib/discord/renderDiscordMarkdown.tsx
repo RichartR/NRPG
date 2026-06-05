@@ -114,7 +114,7 @@ export function renderDiscordMarkdown(content: string): React.ReactNode {
       nodes.push(
         <div key={i} className="relative my-4">
           {lang && (
-            <span className="absolute top-0 right-0 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-oro/40 bg-black/60 border-l border-b border-oro/10">
+            <span className="absolute top-0 right-0 px-3 py-1 text-caption font-black uppercase tracking-widest text-oro/40 bg-black/60 border-l border-b border-oro/10">
               {lang}
             </span>
           )}
@@ -210,7 +210,7 @@ export function renderDiscordMarkdown(content: string): React.ReactNode {
         const itemText = lines[i].replace(/^\d+\. /, '');
         listItems.push(
           <li key={i} className="flex items-start gap-3 mb-2">
-            <span className="flex-shrink-0 w-6 h-6 bg-oro/10 border border-oro/20 text-oro text-[10px] font-black flex items-center justify-center" style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}>
+            <span className="flex-shrink-0 w-6 h-6 bg-oro/10 border border-oro/20 text-oro text-caption font-black flex items-center justify-center ninja-clip-sm">
               {num++}
             </span>
             <span>{renderInline(itemText, `${i}`)}</span>

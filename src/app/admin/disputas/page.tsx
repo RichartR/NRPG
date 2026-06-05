@@ -95,7 +95,7 @@ export default function AdminDisputePage() {
     <>
       <div className="max-w-[1750px]">
         <header className="mb-6 ninja-card-oro p-8 xl:p-10">
-          <Link href="/admin" className="flex items-center gap-3 text-oro/40 hover:text-oro transition-all mb-8 text-[10px] font-black uppercase tracking-[0.3em] group">
+          <Link href="/admin" className="flex items-center gap-3 text-oro/40 hover:text-oro transition-all mb-8 text-caption font-black uppercase tracking-[0.3em] group">
             <div className="w-1.5 h-1.5 bg-oro/20 group-hover:bg-oro rotate-45 transition-colors" />
             VOLVER AL PANEL CENTRAL
           </Link>
@@ -106,7 +106,7 @@ export default function AdminDisputePage() {
             </div>
             <div>
               <h1 className="ninja-title text-4xl xl:text-5xl italic">CENTRO DE DISPUTAS</h1>
-              <p className="text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] mt-2">REVISIÓN DE RECHAZOS Y RESOLUCIÓN DE CONFLICTOS</p>
+              <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.4em] mt-2">REVISIÓN DE RECHAZOS Y RESOLUCIÓN DE CONFLICTOS</p>
             </div>
           </div>
         </header>
@@ -139,25 +139,25 @@ export default function AdminDisputePage() {
                       <div>
                         <h3 className="text-oro font-black text-xl uppercase tracking-wider italic flex items-center gap-2">{d.personaje?.nombre_ninja}</h3>
                         {d.registro_id === null ? (
-                          <span className="text-[10px] text-oro/40 font-bold uppercase tracking-[0.2em] mt-0.5 block">
+                          <span className="text-caption text-oro/40 font-bold uppercase tracking-[0.2em] mt-0.5 block">
                             Apelación de Shinobi
                           </span>
                         ) : (
-                          <span className="text-[10px] text-oro/40 font-bold uppercase tracking-[0.2em] mt-0.5 block">
+                          <span className="text-caption text-oro/40 font-bold uppercase tracking-[0.2em] mt-0.5 block">
                             Rechazó: <span className="text-oro/70">"{d.registro?.data?.titulo || 'Registro sin título'}"</span>
                           </span>
                         )}
                       </div>
                     </div>
 
-                    <div className="p-6 bg-black/60 border border-rojo-sangre/20 relative shadow-inner" style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}>
+                    <div className="p-6 bg-black/60 border border-rojo-sangre/20 relative shadow-inner ninja-clip-md">
                       <MessageSquare className="absolute -top-3.5 -left-3.5 w-8 h-8 text-rojo-sangre/10 rotate-6 pointer-events-none" />
                       <p className="text-oro/85 text-sm leading-relaxed italic font-medium">"{d.mensaje}"</p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-8 pt-2">
                       <div className="flex flex-col">
-                        <span className="text-[8px] font-black text-oro/30 uppercase tracking-[0.2em]">
+                        <span className="text-caption font-black text-oro/30 uppercase tracking-[0.2em]">
                           {d.registro_id === null ? 'Tipo de Caso' : 'Tipo de Registro'}
                         </span>
                         <span className="text-xs font-black text-oro uppercase mt-0.5 tracking-wider bg-rojo-sangre/20 border border-rojo-sangre/30 px-2.5 py-0.5 ninja-clip-xs">
@@ -165,7 +165,7 @@ export default function AdminDisputePage() {
                         </span>
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-[8px] font-black text-oro/30 uppercase tracking-[0.2em]">Fecha de Envío</span>
+                        <span className="text-caption font-black text-oro/30 uppercase tracking-[0.2em]">Fecha de Envío</span>
                         <span className="text-xs font-black text-oro/70 uppercase mt-0.5 tracking-wider">{new Date(d.created_at).toLocaleDateString()} {new Date(d.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                     </div>
@@ -174,14 +174,14 @@ export default function AdminDisputePage() {
                   <div className="flex flex-col gap-4 justify-center min-w-[260px] shrink-0 self-stretch lg:self-center">
                     <button
                       onClick={() => handleResolve(d.id, 'aceptada')}
-                      className="w-full py-3.5 bg-emerald-950/20 border border-emerald-500/25 text-emerald-400 text-[10px] font-black uppercase tracking-[0.25em] hover:bg-emerald-500 hover:text-black transition-all shadow-[0_0_15px_rgba(16,185,129,0.15)] flex items-center justify-center gap-2 cursor-pointer"
+                      className="w-full py-3.5 bg-emerald-950/20 border border-success-text/25 text-emerald-400 text-caption font-black uppercase tracking-[0.25em] hover:bg-emerald-500 hover:text-black transition-all shadow-[0_0_15px_rgba(16,185,129,0.15)] flex items-center justify-center gap-2 cursor-pointer"
                       style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                     >
                       <Check className="w-4 h-4 stroke-[2.5]" /> {d.registro_id === null ? 'ACEPTAR APELACIÓN' : 'ACEPTAR DISPUTA'}
                     </button>
                     <button
                       onClick={() => handleResolve(d.id, 'rechazada')}
-                      className="w-full py-3.5 bg-rojo-sangre/15 border border-rojo-sangre/30 text-red-400 text-[10px] font-black uppercase tracking-[0.25em] hover:bg-rojo-sangre hover:text-oro transition-all shadow-[0_0_15px_rgba(184,32,32,0.15)] flex items-center justify-center gap-2 cursor-pointer"
+                      className="w-full py-3.5 bg-rojo-sangre/15 border border-rojo-sangre/30 text-red-400 text-caption font-black uppercase tracking-[0.25em] hover:bg-rojo-sangre hover:text-oro transition-all shadow-[0_0_15px_rgba(184,32,32,0.15)] flex items-center justify-center gap-2 cursor-pointer"
                       style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                     >
                       <X className="w-4 h-4 stroke-[2.5]" /> {d.registro_id === null ? 'RECHAZAR APELACIÓN' : 'INVALIDAR REGISTRO'}
@@ -189,7 +189,7 @@ export default function AdminDisputePage() {
                     {d.registro_id !== null && (
                       <button
                         onClick={() => setSelectedRegistro(d.registro)}
-                        className="w-full py-3.5 bg-oro text-rojo-sangre text-[10px] font-black uppercase tracking-[0.25em] hover:brightness-110 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_20px_rgba(255,230,159,0.15)]"
+                        className="w-full py-3.5 bg-oro text-rojo-sangre text-caption font-black uppercase tracking-[0.25em] hover:brightness-110 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_20px_rgba(255,230,159,0.15)]"
                         style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                       >
                         <Eye className="w-4 h-4 stroke-[2.5]" /> INSPECCIONAR REGISTRO

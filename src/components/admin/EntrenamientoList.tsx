@@ -69,7 +69,7 @@ export default function EntrenamientoList({ initialEntrenamientos, ramas, subEsp
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Controles Superiores */}
-      <div className="flex flex-col min-[1600px]:flex-row flex-wrap gap-6 justify-between items-stretch min-[1600px]:items-center bg-[#0A0A0A]/40 p-6 sm:p-10 xl:p-12 border border-oro/5 backdrop-blur-md relative overflow-hidden">
+      <div className="flex flex-col min-[1600px]:flex-row flex-wrap gap-6 justify-between items-stretch min-[1600px]:items-center bg-neutral-800/40 p-6 sm:p-10 xl:p-12 border border-oro/5 backdrop-blur-md relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-oro/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
 
         <div className="flex gap-2 p-1.5 bg-black/40 border border-oro/10 ninja-box w-full min-[1600px]:w-auto justify-center">
@@ -77,7 +77,7 @@ export default function EntrenamientoList({ initialEntrenamientos, ramas, subEsp
             <button
               key={tab}
               onClick={() => setActiveTab(tab as any)}
-              className={`flex-1 sm:flex-initial text-center px-4 sm:px-10 py-3 xl:py-4 font-black uppercase tracking-[0.2em] transition-all text-[9px] sm:text-[10px] xl:text-xs ${activeTab === tab
+              className={`flex-1 sm:flex-initial text-center px-4 sm:px-10 py-3 xl:py-4 font-black uppercase tracking-[0.2em] transition-all text-caption sm:text-caption xl:text-xs ${activeTab === tab
                   ? 'bg-oro text-rojo-sangre shadow-lg'
                   : 'text-oro/40 hover:text-oro hover:bg-oro/5'
                 }`}
@@ -97,14 +97,14 @@ export default function EntrenamientoList({ initialEntrenamientos, ramas, subEsp
               placeholder="BUSCAR ENTRENAMIENTO..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-black/20 border border-oro/10 py-3 xl:py-4 pl-14 pr-8 text-[9px] sm:text-[10px] xl:text-xs font-black text-oro focus:border-oro/40 outline-none transition-all placeholder:text-oro/20 uppercase tracking-widest"
+              className="w-full bg-black/20 border border-oro/10 py-3 xl:py-4 pl-14 pr-8 text-caption sm:text-caption xl:text-xs font-black text-oro focus:border-oro/40 outline-none transition-all placeholder:text-oro/20 uppercase tracking-widest"
               style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
             />
           </div>
 
           <button
             onClick={() => setIsAdding(true)}
-            className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-10 py-3 xl:py-4 bg-rojo-sangre hover:brightness-125 text-oro font-black text-[9px] sm:text-[10px] xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-rojo-sangre/20 active:scale-95 whitespace-nowrap"
+            className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-10 py-3 xl:py-4 bg-rojo-sangre hover:brightness-125 text-oro font-black text-caption sm:text-caption xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-rojo-sangre/20 active:scale-95 whitespace-nowrap"
             style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
           >
             <PlusCircle className="w-5 h-5 shrink-0" />
@@ -118,7 +118,7 @@ export default function EntrenamientoList({ initialEntrenamientos, ramas, subEsp
         <div className="overflow-x-auto scrollbar-hide">
           <table className="w-full text-left border-collapse min-w-[800px] table-fixed">
             <thead>
-              <tr className="border-b border-oro/10 text-oro/70 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em] bg-black/20">
+              <tr className="border-b border-oro/10 text-oro/70 text-caption xl:text-xs font-black uppercase tracking-[0.3em] bg-black/20">
                 <th className="py-6 px-8 w-[10%]">Símbolo</th>
                 <th className="py-6 px-8 w-[40%]">Entrenamiento</th>
                 <th className="py-6 px-8 w-[30%]">Vinculación</th>
@@ -145,7 +145,7 @@ export default function EntrenamientoList({ initialEntrenamientos, ramas, subEsp
                     {/* Nombre */}
                     <td className="py-5 px-8">
                       <h3 className="text-base font-black text-oro uppercase italic tracking-tighter leading-none mb-0.5">{ent.nombre_esp}</h3>
-                      <p className="text-oro/40 text-[9px] font-black uppercase tracking-widest mt-1 leading-relaxed">{ent.nombre_jp}</p>
+                      <p className="text-oro/40 text-caption font-black uppercase tracking-widest mt-1 leading-relaxed">{ent.nombre_jp}</p>
                     </td>
 
                     {/* Vinculación */}
@@ -153,14 +153,14 @@ export default function EntrenamientoList({ initialEntrenamientos, ramas, subEsp
                       <div className="flex flex-col gap-1.5 w-fit">
                         {rama && (
                           <span
-                            className="text-[8px] font-black text-oro/60 uppercase tracking-widest bg-oro/5 px-3 py-1 border border-oro/10 inline-block ninja-clip-xs"
+                            className="text-caption font-black text-oro/60 uppercase tracking-widest bg-oro/5 px-3 py-1 border border-oro/10 inline-block ninja-clip-xs"
                           >
                             {rama.nombre}
                           </span>
                         )}
                         {sub && (
                           <span
-                            className="text-[8px] font-black text-oro/40 uppercase tracking-widest bg-black/20 px-3 py-1 border border-oro/5 inline-block ninja-clip-xs"
+                            className="text-caption font-black text-oro/40 uppercase tracking-widest bg-black/20 px-3 py-1 border border-oro/5 inline-block ninja-clip-xs"
                           >
                             {sub.nombre}
                           </span>
@@ -170,7 +170,7 @@ export default function EntrenamientoList({ initialEntrenamientos, ramas, subEsp
 
                     {/* Estado */}
                     <td className="py-5 px-8 text-center">
-                      <span className={`inline-block px-3 py-1 text-[9px] font-black border uppercase tracking-wider ninja-clip-xs ${ent.activo
+                      <span className={`inline-block px-3 py-1 text-caption font-black border uppercase tracking-wider ninja-clip-xs ${ent.activo
                           ? 'bg-oro/10 text-oro border-oro/20'
                           : 'bg-black/60 text-oro/20 border-oro/5'
                         }`}>

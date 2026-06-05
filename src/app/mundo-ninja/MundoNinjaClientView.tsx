@@ -92,7 +92,7 @@ export default function MundoNinjaClientView({
                     title={aldeaTitle}
                     titleClassName={getTitleFontSize(aldeaTitle)}
                     category={aldea.nombre_español}
-                    categoryClassName="text-[10px] sm:text-xs md:text-sm lg:text-base xl:text-lg font-black text-oro/40 uppercase tracking-[0.2em] sm:tracking-[0.4em] break-words"
+                    categoryClassName="text-caption sm:text-xs md:text-sm lg:text-base xl:text-lg font-black text-oro/40 uppercase tracking-[0.2em] sm:tracking-[0.4em] break-words"
                     imageUrl={aldea.url_imagen || undefined}
                     description={aldea.descripcion || 'Sin descripción registrada.'}
                     actionText="Ver censo"
@@ -101,7 +101,7 @@ export default function MundoNinjaClientView({
                         <span className="text-2xl md:text-3xl xl:text-4xl font-black text-oro tabular-nums leading-none">
                           {actuales}/{maxCupos}
                         </span>
-                        <span className="text-[10px] md:text-xs xl:text-sm font-black text-oro/20 uppercase tracking-widest">
+                        <span className="text-caption md:text-xs xl:text-sm font-black text-oro/20 uppercase tracking-widest">
                           SHINOBIS
                         </span>
                       </div>
@@ -117,7 +117,7 @@ export default function MundoNinjaClientView({
                 title="RENEGADOS"
                 titleClassName={getTitleFontSize('RENEGADOS')}
                 category="Shinobis sin afiliación"
-                categoryClassName="text-[10px] sm:text-xs md:text-sm lg:text-base xl:text-lg font-black text-oro/40 uppercase tracking-[0.2em] sm:tracking-[0.4em] break-words"
+                categoryClassName="text-caption sm:text-xs md:text-sm lg:text-base xl:text-lg font-black text-oro/40 uppercase tracking-[0.2em] sm:tracking-[0.4em] break-words"
                 imageUrl="/assets/images/renegados.jpg"
                 description="Guerreros sin aldea oculta, exiliados o ronin que operan fuera del control de las grandes naciones."
                 actionText="Ver censo"
@@ -131,7 +131,7 @@ export default function MundoNinjaClientView({
                     <span className="text-2xl md:text-3xl xl:text-4xl font-black text-oro tabular-nums leading-none">
                       {getCount(null)}
                     </span>
-                    <span className="text-[10px] md:text-xs xl:text-sm font-black text-oro/20 uppercase tracking-widest">
+                    <span className="text-caption md:text-xs xl:text-sm font-black text-oro/20 uppercase tracking-widest">
                       SHINOBIS
                     </span>
                   </div>
@@ -148,7 +148,7 @@ export default function MundoNinjaClientView({
                 </div>
                 <div>
                   <h1 className="ninja-title text-4xl xl:text-5xl italic">Gestión de Aldeas y Organizaciones</h1>
-                  <p className="text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] mt-2">Crea, oculta o elimina aldeas y organizaciones.</p>
+                  <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.4em] mt-2">Crea, oculta o elimina aldeas y organizaciones.</p>
                 </div>
               </div>
             </header>

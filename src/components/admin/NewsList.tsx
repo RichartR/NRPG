@@ -71,7 +71,7 @@ export default function NewsList({ initialDocs }: NewsListProps) {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col min-[1600px]:flex-row flex-wrap gap-6 justify-between items-stretch min-[1600px]:items-center bg-[#0A0A0A]/40 p-6 sm:p-10 xl:p-12 border border-oro/5 backdrop-blur-md relative overflow-hidden">
+      <div className="flex flex-col min-[1600px]:flex-row flex-wrap gap-6 justify-between items-stretch min-[1600px]:items-center bg-neutral-800/40 p-6 sm:p-10 xl:p-12 border border-oro/5 backdrop-blur-md relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-oro/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
 
         {/* Selector de Estado */}
@@ -80,7 +80,7 @@ export default function NewsList({ initialDocs }: NewsListProps) {
             <button
               key={tab}
               onClick={() => setActiveTab(tab as any)}
-              className={`flex-1 sm:flex-initial text-center px-4 sm:px-10 py-3 xl:py-4 font-black uppercase tracking-[0.2em] transition-all text-[9px] sm:text-[10px] xl:text-xs ${activeTab === tab
+              className={`flex-1 sm:flex-initial text-center px-4 sm:px-10 py-3 xl:py-4 font-black uppercase tracking-[0.2em] transition-all text-caption sm:text-caption xl:text-xs ${activeTab === tab
                   ? 'bg-oro text-rojo-sangre shadow-lg'
                   : 'text-oro/40 hover:text-oro hover:bg-oro/5'
                 }`}
@@ -104,7 +104,7 @@ export default function NewsList({ initialDocs }: NewsListProps) {
               placeholder="BUSCAR ANUNCIO POR TÍTULO O ID DE DISCORD..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full bg-black/20 border border-oro/10 py-3 xl:py-4 pl-14 pr-8 text-[9px] sm:text-[10px] xl:text-xs font-black text-oro focus:border-oro/40 outline-none transition-all placeholder:text-oro/20 uppercase tracking-widest"
+              className="w-full bg-black/20 border border-oro/10 py-3 xl:py-4 pl-14 pr-8 text-caption sm:text-caption xl:text-xs font-black text-oro focus:border-oro/40 outline-none transition-all placeholder:text-oro/20 uppercase tracking-widest"
               style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
             />
           </div>
@@ -127,7 +127,7 @@ export default function NewsList({ initialDocs }: NewsListProps) {
           {/* Botón de Creación */}
           <button
             onClick={() => setIsAdding(true)}
-            className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-10 py-3 xl:py-4 bg-rojo-sangre hover:brightness-125 text-oro font-black text-[9px] sm:text-[10px] xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-rojo-sangre/20 active:scale-95 whitespace-nowrap"
+            className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-10 py-3 xl:py-4 bg-rojo-sangre hover:brightness-125 text-oro font-black text-caption sm:text-caption xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-rojo-sangre/20 active:scale-95 whitespace-nowrap"
             style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
           >
             <PlusCircle className="w-5 h-5 shrink-0" />
@@ -142,10 +142,10 @@ export default function NewsList({ initialDocs }: NewsListProps) {
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
               <tr className="border-b border-oro/10">
-                <th className="p-6 text-[10px] font-black uppercase tracking-[0.25em] text-oro/40 w-24">Miniatura</th>
-                <th className="p-6 text-[10px] font-black uppercase tracking-[0.25em] text-oro/40">Título / Categoría</th>
-                <th className="p-6 text-[10px] font-black uppercase tracking-[0.25em] text-oro/40 w-64">ID Mensaje Discord</th>
-                <th className="p-6 text-[10px] font-black uppercase tracking-[0.25em] text-oro/40 w-48 text-right">Operaciones Shinobi</th>
+                <th className="p-6 text-caption font-black uppercase tracking-[0.25em] text-oro/40 w-24">Miniatura</th>
+                <th className="p-6 text-caption font-black uppercase tracking-[0.25em] text-oro/40">Título / Categoría</th>
+                <th className="p-6 text-caption font-black uppercase tracking-[0.25em] text-oro/40 w-64">ID Mensaje Discord</th>
+                <th className="p-6 text-caption font-black uppercase tracking-[0.25em] text-oro/40 w-48 text-right">Operaciones Shinobi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-oro/5">
@@ -166,7 +166,7 @@ export default function NewsList({ initialDocs }: NewsListProps) {
                   <td className="p-6">
                     <div className="space-y-1.5">
                       <p className="text-oro font-black text-sm xl:text-base uppercase tracking-tight leading-snug max-w-2xl">{item.titulo}</p>
-                      <span className="inline-block text-[8px] xl:text-[9px] font-black bg-rojo-sangre text-oro px-2 py-0.5 uppercase tracking-widest" style={{ clipPath: 'polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px)' }}>
+                      <span className="inline-block text-caption xl:text-caption font-black bg-rojo-sangre text-oro px-2 py-0.5 uppercase tracking-widest" style={{ clipPath: 'polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px)' }}>
                         {item.categoria.toUpperCase()}
                       </span>
                     </div>

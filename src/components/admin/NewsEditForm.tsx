@@ -96,13 +96,13 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
               <h2 className="ninja-title text-xl sm:text-3xl xl:text-5xl leading-none">
                 {isCreate ? 'PUBLICAR ANUNCIO' : 'ACTUALIZAR ANUNCIO'}
               </h2>
-              <p className="text-[8px] sm:text-[10px] xl:text-xs font-black text-oro/30 uppercase tracking-[0.4em] mt-3 italic">Muro de Comunicaciones Shinobi</p>
+              <p className="text-caption sm:text-caption xl:text-xs font-black text-oro/30 uppercase tracking-[0.4em] mt-3 italic">Muro de Comunicaciones Shinobi</p>
             </div>
           </div>
 
           <div className="flex items-center justify-between md:justify-end gap-6 sm:gap-8 w-full md:w-auto">
             <label className="flex items-center gap-4 cursor-pointer group bg-black/40 px-4 sm:px-6 py-2.5 sm:py-3 border border-oro/10" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
-              <span className={`text-[8px] sm:text-[10px] font-black uppercase tracking-widest ${formData.activo ? 'text-oro' : 'text-oro/20'}`}>
+              <span className={`text-caption sm:text-caption font-black uppercase tracking-widest ${formData.activo ? 'text-oro' : 'text-oro/20'}`}>
                 {formData.activo ? 'ACTIVO' : 'ARCHIVADO'}
               </span>
               <input
@@ -153,7 +153,7 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
             </div>
             <div className="md:col-span-2">
               <div className="flex flex-col gap-2">
-                <label className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] text-oro/50">
+                <label className="text-caption sm:text-caption font-black uppercase tracking-[0.3em] text-oro/50">
                   DESCRIPCIÓN BREVE <span className="text-oro/30 ml-2">(OPCIONAL · MAX 100 CHARS)</span>
                 </label>
                 <div className="relative">
@@ -166,7 +166,7 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
                     className="w-full bg-black/60 border border-oro/20 hover:border-oro/40 focus:border-oro/60 px-5 py-3 text-xs text-oro/90 font-bold outline-none transition-all placeholder:text-oro/20 uppercase tracking-wider resize-none"
                     style={{ clipPath: 'polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px)' }}
                   />
-                  <span className={`absolute bottom-3 right-4 text-[9px] font-black tabular-nums tracking-widest transition-colors ${(formData.descripcion?.length || 0) >= 90 ? 'text-rojo-sangre' : 'text-oro/30'
+                  <span className={`absolute bottom-3 right-4 text-caption font-black tabular-nums tracking-widest transition-colors ${(formData.descripcion?.length || 0) >= 90 ? 'text-rojo-sangre' : 'text-oro/30'
                     }`}>
                     {formData.descripcion?.length || 0}/100
                   </span>
@@ -177,7 +177,7 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
           </div>
 
           <footer className="flex flex-col-reverse sm:flex-row justify-end items-center gap-6 sm:gap-12 pt-8 sm:pt-12 border-t border-oro/10">
-            <button type="button" onClick={onCancel} className="text-[9px] sm:text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] text-oro/40 hover:text-rojo-sangre transition-colors italic bg-transparent border-none outline-none cursor-pointer">CANCELAR</button>
+            <button type="button" onClick={onCancel} className="text-caption sm:text-caption xl:text-xs font-black uppercase tracking-[0.4em] text-oro/40 hover:text-rojo-sangre transition-colors italic bg-transparent border-none outline-none cursor-pointer">CANCELAR</button>
             <button
               type="submit"
               disabled={loading}

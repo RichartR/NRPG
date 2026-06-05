@@ -83,7 +83,7 @@ export default function RasgoEditForm({ rasgo, onCancel }: RasgoEditFormProps) {
               <h2 className="ninja-title text-xl sm:text-3xl leading-none">
                 {isCreate ? 'CREAR RASGO' : 'EDITAR RASGO'}
               </h2>
-              <p className="text-[10px] font-black text-oro/40 uppercase tracking-[0.2em] mt-2 italic">
+              <p className="text-caption font-black text-oro/40 uppercase tracking-[0.2em] mt-2 italic">
                 Configuración general de rasgo
               </p>
             </div>
@@ -92,7 +92,7 @@ export default function RasgoEditForm({ rasgo, onCancel }: RasgoEditFormProps) {
           <div className="flex items-center gap-4">
             {/* Toggle Activo */}
             <label className="flex items-center gap-3 cursor-pointer bg-oro/5 px-4 py-2 border border-oro/10 hover:border-oro/30 transition-all">
-              <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${formData.activo ? 'text-oro' : 'text-oro/20'}`}>
+              <span className={`text-caption font-black uppercase tracking-widest transition-colors ${formData.activo ? 'text-oro' : 'text-oro/20'}`}>
                 {formData.activo ? 'ACTIVO' : 'OCULTO'}
               </span>
               <input type="checkbox" checked={formData.activo} onChange={(e) => updateField('activo', e.target.checked)} className="hidden" />
@@ -120,7 +120,7 @@ export default function RasgoEditForm({ rasgo, onCancel }: RasgoEditFormProps) {
 
             {/* Categoría */}
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-oro/60 ml-1">Categoría</label>
+              <label className="text-caption font-black uppercase tracking-widest text-oro/60 ml-1">Categoría</label>
               <div className="flex bg-black/40 p-1 border border-oro/10 h-[58px] ninja-clip-sm">
                 {(['Físico', 'Psicológico', 'Habilidad'] as const).map((cat) => (
                   <button
@@ -132,7 +132,7 @@ export default function RasgoEditForm({ rasgo, onCancel }: RasgoEditFormProps) {
                         updateField('stat', null);
                       }
                     }}
-                    className={`flex-1 text-[9px] font-black uppercase tracking-widest transition-all ninja-clip-xs ${formData.categoria === cat ? 'bg-oro text-rojo-sangre shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
+                    className={`flex-1 text-caption font-black uppercase tracking-widest transition-all ninja-clip-xs ${formData.categoria === cat ? 'bg-oro text-rojo-sangre shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
                   >
                     {cat === 'Físico' ? 'Físico' : cat === 'Psicológico' ? 'Psico' : 'Habilidad'}
                   </button>
@@ -142,14 +142,14 @@ export default function RasgoEditForm({ rasgo, onCancel }: RasgoEditFormProps) {
 
             {/* Rango */}
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-oro/60 ml-1">Rango requerido</label>
+              <label className="text-caption font-black uppercase tracking-widest text-oro/60 ml-1">Rango requerido</label>
               <div className="flex bg-black/40 p-1 border border-oro/10 h-[58px] ninja-clip-sm">
                 {(['D', 'C', 'B', 'A'] as const).map((r) => (
                   <button
                     key={r}
                     type="button"
                     onClick={() => updateField('rango', r)}
-                    className={`flex-1 text-[10px] font-black uppercase tracking-widest transition-all ninja-clip-xs ${formData.rango === r ? 'bg-oro text-rojo-sangre shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
+                    className={`flex-1 text-caption font-black uppercase tracking-widest transition-all ninja-clip-xs ${formData.rango === r ? 'bg-oro text-rojo-sangre shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
                   >
                     {r}
                   </button>
@@ -183,8 +183,8 @@ export default function RasgoEditForm({ rasgo, onCancel }: RasgoEditFormProps) {
             {/* Toggle Especial */}
             <div className="sm:col-span-2 flex items-center justify-between p-4 bg-black/40 border border-oro/10 ninja-clip-sm">
               <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase tracking-widest text-oro">Rasgo Especial</span>
-                <span className="text-[8px] font-black text-oro/40 uppercase tracking-wider mt-1">
+                <span className="text-caption font-black uppercase tracking-widest text-oro">Rasgo Especial</span>
+                <span className="text-caption font-black text-oro/40 uppercase tracking-wider mt-1">
                   Solo seleccionable por personajes autorizados explícitamente.
                 </span>
               </div>
@@ -204,7 +204,7 @@ export default function RasgoEditForm({ rasgo, onCancel }: RasgoEditFormProps) {
             {/* Personajes Autorizados (solo si es Especial) */}
             {formData.especial && (
               <div className="sm:col-span-2 space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-oro/60 ml-1">
+                <label className="text-caption font-black uppercase tracking-widest text-oro/60 ml-1">
                   IDs de personajes autorizados (Separados por comas)
                 </label>
                 <textarea

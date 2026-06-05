@@ -625,8 +625,8 @@ export function CharacterSheetView({
   }, [character.personajes_inventario]);
 
   const renderRequisitos = (reqs: any) => {
-    if (!reqs) return <span className="text-[10px] text-oro/30 italic">Sin requisitos</span>;
-    if (typeof reqs === 'string') return <span className="text-[10px] text-oro/60 font-bold uppercase">{reqs}</span>;
+    if (!reqs) return <span className="text-caption text-oro/30 italic">Sin requisitos</span>;
+    if (typeof reqs === 'string') return <span className="text-caption text-oro/60 font-bold uppercase">{reqs}</span>;
 
     const elements: React.ReactNode[] = [];
 
@@ -690,10 +690,10 @@ export function CharacterSheetView({
       );
     });
 
-    if (elements.length === 0) return <span className="text-[10px] text-oro/30 italic">Sin requisitos</span>;
+    if (elements.length === 0) return <span className="text-caption text-oro/30 italic">Sin requisitos</span>;
 
     return (
-      <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] uppercase tracking-tighter leading-tight">
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-caption uppercase tracking-tighter leading-tight">
         {elements.map((el, i) => (
           <Fragment key={i}>
             {i > 0 && <span className="text-oro/20">|</span>}
@@ -777,7 +777,7 @@ export function CharacterSheetView({
           <span className="text-oro font-black -rotate-45 text-lg italic">¥</span>
         </div>
         <div>
-          <p className="text-[9px] font-black text-oro/40 uppercase tracking-[0.3em] mb-1">RYOUS (DISPONIBLE / TOTAL)</p>
+          <p className="text-caption font-black text-oro/40 uppercase tracking-[0.3em] mb-1">RYOUS (DISPONIBLE / TOTAL)</p>
           <p className="text-xl xl:text-2xl font-black text-oro leading-none">
             {new Intl.NumberFormat('es-ES').format(character.ryous || 0)}
             <span className="text-oro/20 mx-3">/</span>
@@ -790,7 +790,7 @@ export function CharacterSheetView({
           <span className="text-rojo-sangre font-black -rotate-45 text-[11px] italic">EXP</span>
         </div>
         <div>
-          <p className="text-[9px] font-black text-oro/40 uppercase tracking-[0.3em] mb-1">
+          <p className="text-caption font-black text-oro/40 uppercase tracking-[0.3em] mb-1">
             {xpLimitUsage ? 'EXPERIENCIA (DISP. / TOTAL / LÍMITE)' : 'EXPERIENCIA (DISPONIBLE / TOTAL)'}
           </p>
           <div className="flex items-center gap-2">
@@ -806,7 +806,7 @@ export function CharacterSheetView({
               )}
             </p>
             {xpLimitUsage && totalExp >= xpLimitUsage && (
-              <span className="px-2 py-0.5 text-[8px] font-black uppercase bg-rojo-sangre/20 border border-rojo-sangre/40 text-rojo-sangre tracking-widest ninja-clip-xs animate-pulse">
+              <span className="px-2 py-0.5 text-caption font-black uppercase bg-rojo-sangre/20 border border-rojo-sangre/40 text-rojo-sangre tracking-widest ninja-clip-xs animate-pulse">
                 LÍMITE
               </span>
             )}
@@ -818,7 +818,7 @@ export function CharacterSheetView({
           <Swords className="w-5 h-5 text-oro -rotate-45" />
         </div>
         <div>
-          <p className="text-[9px] font-black text-oro/40 uppercase tracking-[0.3em] mb-1">P. APRENDIZAJE (DISPONIBLE / TOTAL)</p>
+          <p className="text-caption font-black text-oro/40 uppercase tracking-[0.3em] mb-1">P. APRENDIZAJE (DISPONIBLE / TOTAL)</p>
           <p className="text-xl xl:text-2xl font-black text-oro leading-none">
             {character.puntos_aprendizaje || 0}
             <span className="text-oro/20 mx-3">/</span>
@@ -832,7 +832,7 @@ export function CharacterSheetView({
             <Coins className="w-5 h-5 text-oro -rotate-45" />
           </div>
           <div>
-            <p className="text-[9px] font-black text-oro/40 uppercase tracking-[0.3em] mb-1">
+            <p className="text-caption font-black text-oro/40 uppercase tracking-[0.3em] mb-1">
               {eventCoinName.toUpperCase()}
             </p>
             <p className="text-xl xl:text-2xl font-black text-oro leading-none">
@@ -849,7 +849,7 @@ export function CharacterSheetView({
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-6">
         {Object.entries(counts).map(([rank, count]) => (
           <div key={rank} className="bg-black/40 border border-oro/10 p-6 text-center group hover-ninja transition-all ninja-clip-sm">
-            <p className="text-[10px] font-black text-oro/40 uppercase tracking-widest mb-3">RANGO {rank}</p>
+            <p className="text-caption font-black text-oro/40 uppercase tracking-widest mb-3">RANGO {rank}</p>
             <p className="text-3xl xl:text-5xl font-black text-oro italic leading-none">{count}</p>
           </div>
         ))}
@@ -873,11 +873,11 @@ export function CharacterSheetView({
               <div className="min-w-0">
                 <h3 className="text-oro font-black uppercase tracking-[0.25em] text-sm xl:text-base italic mb-1 flex items-center gap-3">
                   <span>SHINOBI ARCHIVADO / INACTIVO</span>
-                  <span className="px-2 py-0.5 text-[8px] font-black uppercase bg-rojo-sangre text-oro tracking-widest ninja-clip-xs">
+                  <span className="px-2 py-0.5 text-caption font-black uppercase bg-rojo-sangre text-oro tracking-widest ninja-clip-xs">
                     {character.eliminado_voluntario ? 'VOLUNTARIO' : 'INACTIVIDAD'}
                   </span>
                 </h3>
-                <p className="text-oro/60 text-[10px] xl:text-xs font-bold uppercase tracking-widest leading-relaxed">
+                <p className="text-oro/60 text-caption xl:text-xs font-bold uppercase tracking-widest leading-relaxed">
                   Este expediente se encuentra fuera de servicio. {character.archived_at && `Archivado el ${new Date(character.archived_at).toLocaleDateString('es-ES')}.`}
                 </p>
               </div>
@@ -888,14 +888,14 @@ export function CharacterSheetView({
                 <button
                   onClick={() => onRestore?.()}
                   disabled={saving}
-                  className="px-6 py-3 bg-oro text-rojo-sangre hover:bg-oro/80 text-[10px] xl:text-xs font-black uppercase tracking-widest transition-all duration-300 shadow-[0_0_20px_rgba(255,230,159,0.3)] disabled:opacity-50"
+                  className="px-6 py-3 bg-oro text-rojo-sangre hover:bg-oro/80 text-caption xl:text-xs font-black uppercase tracking-widest transition-all duration-300 shadow-[0_0_20px_rgba(255,230,159,0.3)] disabled:opacity-50"
                 >
                   RESTAURAR SHINOBI
                 </button>
                 <button
                   onClick={() => onDelete?.(true)}
                   disabled={saving}
-                  className="px-6 py-3 bg-rojo-sangre/20 border border-rojo-sangre/40 text-rojo-sangre hover:bg-rojo-sangre hover:text-oro text-[10px] xl:text-xs font-black uppercase tracking-widest transition-all duration-300 disabled:opacity-50"
+                  className="px-6 py-3 bg-rojo-sangre/20 border border-rojo-sangre/40 text-rojo-sangre hover:bg-rojo-sangre hover:text-oro text-caption xl:text-xs font-black uppercase tracking-widest transition-all duration-300 disabled:opacity-50"
                 >
                   ELIMINAR DEFINITIVAMENTE
                 </button>
@@ -992,7 +992,7 @@ export function CharacterSheetView({
               <div className="min-w-0 flex-1 flex flex-col items-center md:items-start w-full md:w-auto">
                 <div className="flex items-center gap-3 mb-2 justify-center md:justify-start">
                   <div className="w-2 h-2 bg-rojo-sangre rotate-45" />
-                  <p className="text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.5em]">EXPEDIENTE NINJA</p>
+                  <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.5em]">EXPEDIENTE NINJA</p>
                 </div>
 
                 <h1 className="ninja-title text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl italic break-words leading-tight text-center md:text-left px-2 md:px-0 w-full block">
@@ -1000,7 +1000,7 @@ export function CharacterSheetView({
                 </h1>
 
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 sm:gap-6 mt-4">
-                  <div className="px-5 py-1.5 sm:px-6 sm:py-2 bg-rojo-sangre text-oro text-[10px] sm:text-xs xl:text-sm font-black uppercase tracking-[0.3em] shadow-lg">
+                  <div className="px-5 py-1.5 sm:px-6 sm:py-2 bg-rojo-sangre text-oro text-caption sm:text-xs xl:text-sm font-black uppercase tracking-[0.3em] shadow-lg">
                     RANGO {character.rango}
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
@@ -1074,7 +1074,7 @@ export function CharacterSheetView({
                       <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                         <div className="text-center">
                           <ImageIcon className="w-8 h-8 text-oro mx-auto mb-2" />
-                          <p className="text-[10px] font-black text-oro uppercase tracking-widest">CAMBIAR IMAGEN</p>
+                          <p className="text-caption font-black text-oro uppercase tracking-widest">CAMBIAR IMAGEN</p>
                         </div>
                       </div>
                     )}
@@ -1082,7 +1082,7 @@ export function CharacterSheetView({
                     <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between gap-4 z-20">
                       <div className="min-w-0">
                         <p className="ninja-title text-lg sm:text-2xl mb-1 truncate">{character.nombre_ninja}</p>
-                        <p className="text-[10px] font-black text-oro/40 uppercase tracking-[0.3em]">{character.rango_jerarquico}</p>
+                        <p className="text-caption font-black text-oro/40 uppercase tracking-[0.3em]">{character.rango_jerarquico}</p>
                       </div>
                       {iconUrl && (
                         <div className="shrink-0 transition-transform duration-300 hover:scale-110">
@@ -1122,7 +1122,7 @@ export function CharacterSheetView({
                       )}
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-oro/30 uppercase tracking-widest mb-1">IMAGEN DE JUGADOR</p>
+                      <p className="text-caption font-black text-oro/30 uppercase tracking-widest mb-1">IMAGEN DE JUGADOR</p>
                       <p className="text-xs font-bold text-oro uppercase">
                         {isAdmin ? 'HAGA CLIC PARA CAMBIAR' : 'SINCRONIZADA'}
                       </p>
@@ -1139,7 +1139,7 @@ export function CharacterSheetView({
                       className="ninja-card-oro p-6 flex items-center justify-center gap-4 group cursor-pointer hover:border-oro/40 transition-all"
                     >
                       <ImageIcon className="w-5 h-5 text-oro/40 group-hover:text-oro transition-colors" />
-                      <span className="text-[10px] font-black text-oro/60 uppercase tracking-widest">ASIGNAR IMAGEN DE JUGADOR</span>
+                      <span className="text-caption font-black text-oro/60 uppercase tracking-widest">ASIGNAR IMAGEN DE JUGADOR</span>
                     </div>
                   )
                 )}
@@ -1191,7 +1191,7 @@ export function CharacterSheetView({
                       return (
                         <div key={slot} className="space-y-6 p-8 bg-black/40 border border-oro/10 relative overflow-hidden ninja-clip-md">
                           <div className="absolute top-0 right-0 w-32 h-32 bg-oro/5 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none" />
-                          <h4 className="text-[10px] font-black text-oro/40 uppercase tracking-[0.3em] mb-4">ESPECIALIDAD SLOT {slot}</h4>
+                          <h4 className="text-caption font-black text-oro/40 uppercase tracking-[0.3em] mb-4">ESPECIALIDAD SLOT {slot}</h4>
                           <div className="space-y-6">
                             <SelectField
                               label="RAMA / CLAN"
@@ -1288,7 +1288,7 @@ export function CharacterSheetView({
 
                               return (
                                 <div className="space-y-4 p-4 bg-oro/5 border border-oro/10 ninja-clip-sm animate-in fade-in duration-300">
-                                  <h5 className="text-[9px] font-black text-oro uppercase tracking-[0.2em] mb-2">Elementos de Ninjutsu Elemental</h5>
+                                  <h5 className="text-caption font-black text-oro uppercase tracking-[0.2em] mb-2">Elementos de Ninjutsu Elemental</h5>
 
                                   {/* Selector Principal (Para Ninjutsu I, II y III) */}
                                   <SelectField
@@ -1458,11 +1458,11 @@ export function CharacterSheetView({
                             )}
                           </div>
                           {elem.nombre_jap && (
-                            <span className="text-[10px] font-black text-oro uppercase tracking-widest text-center leading-none">
+                            <span className="text-caption font-black text-oro uppercase tracking-widest text-center leading-none">
                               {elem.nombre_jap}
                             </span>
                           )}
-                          <span className="text-[8px] font-black text-oro/50 uppercase tracking-tighter text-center mt-1">
+                          <span className="text-caption font-black text-oro/50 uppercase tracking-tighter text-center mt-1">
                             {elem.nombre_esp}
                           </span>
                         </div>
@@ -1482,7 +1482,7 @@ export function CharacterSheetView({
                 color="oro"
                 headerAction={
                   <div className="flex flex-col items-end">
-                    <span className="text-[10px] font-black text-oro/40 uppercase tracking-[0.3em] mb-1">Puntos Disponibles</span>
+                    <span className="text-caption font-black text-oro/40 uppercase tracking-[0.3em] mb-1">Puntos Disponibles</span>
                     <span className="text-3xl xl:text-5xl font-black text-oro italic">
                       {puntosLibres}
                       <span className="text-oro/20 text-sm xl:text-lg ml-2">/ {character.puntos_stats}</span>
@@ -1514,7 +1514,7 @@ export function CharacterSheetView({
                             <div className="absolute top-0 right-0 w-12 h-12 bg-oro/5 rotate-45 -mr-6 -mt-6 pointer-events-none" />
                             <div className="flex flex-col items-start relative z-10">
                               <span className="text-xs font-black text-oro/60 uppercase tracking-[0.2em]">{s}</span>
-                              <span className="text-[10px] font-black text-oro/45 mt-0.5 uppercase tracking-wider whitespace-nowrap">LÍMITE: {max}</span>
+                              <span className="text-caption font-black text-oro/45 mt-0.5 uppercase tracking-wider whitespace-nowrap">LÍMITE: {max}</span>
                             </div>
                             <div className="flex items-center gap-1.5 relative z-10">
                               <input
@@ -1664,9 +1664,9 @@ export function CharacterSheetView({
                               return (
                                 <div key={slot.label} className="bg-black/30 border border-oro/10 p-4 relative" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
                                   <div className="flex justify-between items-center mb-1">
-                                    <span className="text-[10px] font-black text-oro/60 uppercase tracking-widest">{slot.label}</span>
+                                    <span className="text-caption font-black text-oro/60 uppercase tracking-widest">{slot.label}</span>
                                     {forced && (
-                                      <span className="text-[8px] font-black text-rojo-sangre uppercase tracking-wider bg-rojo-sangre/10 px-2 py-0.5">Automático (Clan)</span>
+                                      <span className="text-caption font-black text-rojo-sangre uppercase tracking-wider bg-rojo-sangre/10 px-2 py-0.5">Automático (Clan)</span>
                                     )}
                                   </div>
 
@@ -1677,7 +1677,7 @@ export function CharacterSheetView({
                                       <select
                                         value={selected?.id || ''}
                                         onChange={(e) => selectSingle(slot.category, slot.rank, e.target.value)}
-                                        className="w-full bg-black/40 border border-oro/10 py-2 px-3 text-[10px] sm:text-xs font-black text-oro focus:border-oro/40 outline-none uppercase tracking-widest mt-1"
+                                        className="w-full bg-black/40 border border-oro/10 py-2 px-3 text-caption sm:text-xs font-black text-oro focus:border-oro/40 outline-none uppercase tracking-widest mt-1"
                                       >
                                         <option value="" className="bg-black">-- SIN RASGO --</option>
                                         {slot.available.map(r => (
@@ -1697,13 +1697,13 @@ export function CharacterSheetView({
                             {/* Habilidad Rango A */}
                             {charRankVal >= (rankOrder['A'] || 4) && (
                               <div className="border-t border-oro/10 pt-4 mt-4 space-y-4">
-                                <span className="text-[10px] font-black text-oro/60 uppercase tracking-widest block">Rasgos de Habilidad (Rango A)</span>
+                                <span className="text-caption font-black text-oro/60 uppercase tracking-widest block">Rasgos de Habilidad (Rango A)</span>
                                 
                                 {(() => {
                                   // Find Habilidad rasgos
                                   const habRasgos = rasgosList.filter(r => r.categoria === 'Habilidad' && r.rango === 'A' && (!r.especial || r.personajes?.includes(character.id)));
                                   if (habRasgos.length === 0) {
-                                    return <p className="text-[9px] text-oro/20 font-black uppercase tracking-wider">No hay rasgos de habilidad creados</p>;
+                                    return <p className="text-caption text-oro/20 font-black uppercase tracking-wider">No hay rasgos de habilidad creados</p>;
                                   }
 
                                   return (
@@ -1720,13 +1720,13 @@ export function CharacterSheetView({
                                           <div key={r.id} className={`flex items-center justify-between p-3 bg-black/40 border ${checked ? 'border-oro/35' : 'border-oro/5'} transition-all`} style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
                                             <div className="flex flex-col min-w-0">
                                               <span className={`text-xs font-black uppercase tracking-wider ${checked ? 'text-oro' : 'text-oro/40'}`}>{r.nombre}</span>
-                                              <span className="text-[8px] font-black text-oro/30 uppercase tracking-widest mt-0.5">
+                                              <span className="text-caption font-black text-oro/30 uppercase tracking-widest mt-0.5">
                                                 Requisito: {assocStat} &gt;= 6 (Tienes: {statVal})
                                               </span>
                                             </div>
 
                                             {forced ? (
-                                              <span className="text-[8px] font-black text-rojo-sangre uppercase tracking-wider bg-rojo-sangre/10 px-2 py-0.5">Automático</span>
+                                              <span className="text-caption font-black text-rojo-sangre uppercase tracking-wider bg-rojo-sangre/10 px-2 py-0.5">Automático</span>
                                             ) : isEditing ? (
                                               <label className="flex items-center cursor-pointer">
                                                 <input
@@ -1741,7 +1741,7 @@ export function CharacterSheetView({
                                                 </div>
                                               </label>
                                             ) : (
-                                              <span className={`text-[9px] font-black uppercase tracking-widest ${checked ? 'text-oro' : 'text-oro/10'}`}>
+                                              <span className={`text-caption font-black uppercase tracking-widest ${checked ? 'text-oro' : 'text-oro/10'}`}>
                                                 {checked ? 'ADQUIRIDO' : 'BLOQUEADO'}
                                               </span>
                                             )}
@@ -1777,7 +1777,7 @@ export function CharacterSheetView({
                       <div className="space-y-10">
                         {Object.entries(subs).map(([subName, items]: [string, any]) => (
                           <div key={subName} className="space-y-6">
-                            <h4 className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
+                            <h4 className="text-caption xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
                               <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
                               {subName}
                             </h4>
@@ -1785,7 +1785,7 @@ export function CharacterSheetView({
                               <div className="overflow-x-auto scrollbar-hide">
                                 <table className="w-full text-left border-collapse table-fixed min-w-[600px]">
                                   <thead>
-                                    <tr className="border-b border-oro/10 text-oro/70 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em] bg-black/20">
+                                    <tr className="border-b border-oro/10 text-oro/70 text-caption xl:text-xs font-black uppercase tracking-[0.3em] bg-black/20">
                                       <th className="py-6 px-8 w-[40%]">Objeto</th>
                                       <th className="py-6 px-8 w-[45%]">Requisitos</th>
                                       <th className="py-6 px-8 w-[15%] text-center">Acciones</th>
@@ -1799,13 +1799,13 @@ export function CharacterSheetView({
                                             <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
                                               {pi.info_glosario?.nombre_es}
                                               {pi.info_glosario?.es_tienda_exp && (
-                                                <span className="px-1.5 py-0.5 text-[8px] font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
+                                                <span className="px-1.5 py-0.5 text-caption font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
                                                   EXP SHOP
                                                 </span>
                                               )}
                                             </span>
                                             {pi.info_glosario?.nombre_jp && (
-                                              <span className="text-[10px] text-oro/30 uppercase font-black tracking-tighter mt-0.5">
+                                              <span className="text-caption text-oro/30 uppercase font-black tracking-tighter mt-0.5">
                                                 {pi.info_glosario?.nombre_jp}
                                               </span>
                                             )}
@@ -1830,7 +1830,7 @@ export function CharacterSheetView({
                                                   onQuickRemoveItem?.(pi);
                                                 }
                                               }}
-                                              className="p-2 bg-red-600/10 border border-red-600/40 hover:border-red-500 hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
+                                              className="p-2 bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
                                               title="Eliminar Objeto"
                                             >
                                               <Trash2 className="w-4 h-4" />
@@ -1911,7 +1911,7 @@ export function CharacterSheetView({
                   <div className="space-y-10">
                     {Object.entries(tecnicasGrouped).map(([subName, items]: [string, any]) => (
                       <div key={subName} className="space-y-6">
-                        <h4 className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
+                        <h4 className="text-caption xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
                           <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
                           {subName}
                         </h4>
@@ -1919,7 +1919,7 @@ export function CharacterSheetView({
                           <div className="overflow-x-auto scrollbar-hide">
                             <table className="w-full text-left border-collapse table-fixed min-w-[700px]">
                               <thead>
-                                <tr className="border-b border-oro/10 text-oro/70 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em]  bg-black/10">
+                                <tr className="border-b border-oro/10 text-oro/70 text-caption xl:text-xs font-black uppercase tracking-[0.3em]  bg-black/10">
                                   <th className="py-6 px-8 w-[35%]">Técnica</th>
                                   <th className="py-6 px-8 w-[15%] text-center">Rango</th>
                                   <th className="py-6 px-8 w-[35%]">Requisitos</th>
@@ -1934,13 +1934,13 @@ export function CharacterSheetView({
                                         <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
                                           {pt.info_glosario?.nombre_es}
                                           {pt.info_glosario?.es_tienda_exp && (
-                                            <span className="px-1.5 py-0.5 text-[8px] font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
+                                            <span className="px-1.5 py-0.5 text-caption font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
                                               EXP SHOP
                                             </span>
                                           )}
                                         </span>
                                         {pt.info_glosario?.nombre_jp && (
-                                          <span className="text-[10px] text-oro/30 uppercase font-black tracking-tighter mt-0.5">
+                                          <span className="text-caption text-oro/30 uppercase font-black tracking-tighter mt-0.5">
                                             {pt.info_glosario?.nombre_jp}
                                           </span>
                                         )}
@@ -1970,7 +1970,7 @@ export function CharacterSheetView({
                                               onQuickRemoveTechnique?.(pt);
                                             }
                                           }}
-                                          className="p-2 bg-red-600/10 border border-red-600/40 hover:border-red-500 hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
+                                          className="p-2 bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
                                           title="Eliminar Técnica"
                                         >
                                           <Trash2 className="w-4 h-4" />
@@ -2043,7 +2043,7 @@ export function CharacterSheetView({
                   <div className="space-y-10">
                     {Object.entries(pasivasGrouped).map(([subName, items]: [string, any]) => (
                       <div key={subName} className="space-y-6">
-                        <h4 className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
+                        <h4 className="text-caption xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
                           <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
                           {subName}
                         </h4>
@@ -2051,7 +2051,7 @@ export function CharacterSheetView({
                           <div className="overflow-x-auto scrollbar-hide">
                             <table className="w-full text-left border-collapse table-fixed min-w-[700px]">
                               <thead>
-                                <tr className="border-b border-oro/10 text-oro/70 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em] bg-black/10">
+                                <tr className="border-b border-oro/10 text-oro/70 text-caption xl:text-xs font-black uppercase tracking-[0.3em] bg-black/10">
                                   <th className="py-6 px-8 w-[35%]">Habilidad Pasiva</th>
                                   <th className="py-6 px-8 w-[15%] text-center">Rango</th>
                                   <th className="py-6 px-8 w-[35%]">Requisitos</th>
@@ -2066,13 +2066,13 @@ export function CharacterSheetView({
                                         <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
                                           {pt.info_glosario?.nombre_es}
                                           {pt.info_glosario?.es_tienda_exp && (
-                                            <span className="px-1.5 py-0.5 text-[8px] font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
+                                            <span className="px-1.5 py-0.5 text-caption font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
                                               EXP SHOP
                                             </span>
                                           )}
                                         </span>
                                         {pt.info_glosario?.nombre_jp && (
-                                          <span className="text-[10px] text-oro/30 uppercase font-black tracking-tighter mt-0.5">
+                                          <span className="text-caption text-oro/30 uppercase font-black tracking-tighter mt-0.5">
                                             {pt.info_glosario?.nombre_jp}
                                           </span>
                                         )}
@@ -2102,7 +2102,7 @@ export function CharacterSheetView({
                                               onQuickRemoveTechnique?.(pt);
                                             }
                                           }}
-                                          className="p-2 bg-red-600/10 border border-red-600/40 hover:border-red-500 hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
+                                          className="p-2 bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
                                           title="Eliminar Pasiva"
                                         >
                                           <Trash2 className="w-4 h-4" />
@@ -2175,7 +2175,7 @@ export function CharacterSheetView({
                   <div className="space-y-10">
                     {Object.entries(kuchiyosesGrouped).map(([subName, items]: [string, any]) => (
                       <div key={subName} className="space-y-6">
-                        <h4 className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
+                        <h4 className="text-caption xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
                           <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
                           {subName}
                         </h4>
@@ -2183,7 +2183,7 @@ export function CharacterSheetView({
                           <div className="overflow-x-auto scrollbar-hide">
                             <table className="w-full text-left border-collapse table-fixed min-w-[700px]">
                               <thead>
-                                <tr className="border-b border-oro/10 text-oro/70 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em] bg-black/10">
+                                <tr className="border-b border-oro/10 text-oro/70 text-caption xl:text-xs font-black uppercase tracking-[0.3em] bg-black/10">
                                   <th className="py-6 px-8 w-[35%]">Invocación / Kuchiyose</th>
                                   <th className="py-6 px-8 w-[15%] text-center">Rango</th>
                                   <th className="py-6 px-8 w-[35%]">Requisitos</th>
@@ -2198,13 +2198,13 @@ export function CharacterSheetView({
                                         <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
                                           {pt.info_glosario?.nombre_es}
                                           {pt.info_glosario?.es_tienda_exp && (
-                                            <span className="px-1.5 py-0.5 text-[8px] font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
+                                            <span className="px-1.5 py-0.5 text-caption font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
                                               EXP SHOP
                                             </span>
                                           )}
                                         </span>
                                         {pt.info_glosario?.nombre_jp && (
-                                          <span className="text-[10px] text-oro/30 uppercase font-black tracking-tighter mt-0.5">
+                                          <span className="text-caption text-oro/30 uppercase font-black tracking-tighter mt-0.5">
                                             {pt.info_glosario?.nombre_jp}
                                           </span>
                                         )}
@@ -2234,7 +2234,7 @@ export function CharacterSheetView({
                                               onQuickRemoveTechnique?.(pt);
                                             }
                                           }}
-                                          className="p-2 bg-red-600/10 border border-red-600/40 hover:border-red-500 hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
+                                          className="p-2 bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
                                           title="Eliminar Invocación"
                                         >
                                           <Trash2 className="w-4 h-4" />
@@ -2308,7 +2308,7 @@ export function CharacterSheetView({
                 </div>
               </SectionCard>
 
-              <SectionCard title="DESCRIPCIÓN FÍSICA Y APARIENCIA" icon={Sword} color="oro" headerAction={!isNew && canEdit && isEditing && <button onClick={() => onSave('apariencia')} className="px-8 py-3 bg-oro text-rojo-sangre text-[10px] font-black uppercase tracking-widest active:scale-95 shadow-xl shadow-oro/20" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>Guardar Apariencia</button>}>
+              <SectionCard title="DESCRIPCIÓN FÍSICA Y APARIENCIA" icon={Sword} color="oro" headerAction={!isNew && canEdit && isEditing && <button onClick={() => onSave('apariencia')} className="px-8 py-3 bg-oro text-rojo-sangre text-caption font-black uppercase tracking-widest active:scale-95 shadow-xl shadow-oro/20" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>Guardar Apariencia</button>}>
                 <div className="relative">
                   <textarea
                     value={character.apariencia}
@@ -2320,7 +2320,7 @@ export function CharacterSheetView({
                     style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' }}
                   />
                   {(isEditing || isNew) && (
-                    <div className={`flex justify-end mt-2 text-[10px] font-black uppercase tracking-widest tabular-nums transition-colors ${(character.apariencia?.length || 0) >= 1800 ? 'text-rojo-sangre' :
+                    <div className={`flex justify-end mt-2 text-caption font-black uppercase tracking-widest tabular-nums transition-colors ${(character.apariencia?.length || 0) >= 1800 ? 'text-rojo-sangre' :
                       (character.apariencia?.length || 0) >= 1500 ? 'text-oro/60' : 'text-oro/30'
                       }`}>
                       {character.apariencia?.length || 0} / 1800
@@ -2328,7 +2328,7 @@ export function CharacterSheetView({
                   )}
                 </div>
               </SectionCard>
-              <SectionCard title="HISTORIA Y CRÓNICA NINJA" icon={ScrollText} color="oro" headerAction={!isNew && canEdit && isEditing && <button onClick={() => onSave('historia')} className="px-8 py-3 bg-oro text-rojo-sangre text-[10px] font-black uppercase tracking-widest active:scale-95 shadow-xl shadow-oro/20" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>Guardar Historiaa</button>}>
+              <SectionCard title="HISTORIA Y CRÓNICA NINJA" icon={ScrollText} color="oro" headerAction={!isNew && canEdit && isEditing && <button onClick={() => onSave('historia')} className="px-8 py-3 bg-oro text-rojo-sangre text-caption font-black uppercase tracking-widest active:scale-95 shadow-xl shadow-oro/20" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>Guardar Historiaa</button>}>
                 <div className="relative">
                   <textarea
                     value={character.historia}
@@ -2340,7 +2340,7 @@ export function CharacterSheetView({
                     style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' }}
                   />
                   {(isEditing || isNew) && (
-                    <div className={`flex justify-end mt-2 text-[10px] font-black uppercase tracking-widest tabular-nums transition-colors ${(character.historia?.length || 0) >= 1800 ? 'text-rojo-sangre' :
+                    <div className={`flex justify-end mt-2 text-caption font-black uppercase tracking-widest tabular-nums transition-colors ${(character.historia?.length || 0) >= 1800 ? 'text-rojo-sangre' :
                       (character.historia?.length || 0) >= 1500 ? 'text-oro/60' : 'text-oro/30'
                       }`}>
                       {character.historia?.length || 0} / 1800
@@ -2395,7 +2395,7 @@ export function CharacterSheetView({
                   <div className="absolute top-0 right-0 w-8 h-8 bg-oro/5 rotate-45 -mr-4 -mt-4 pointer-events-none" />
 
                   <div className="flex items-center gap-3">
-                    <span className="text-[9px] font-black text-oro/40 uppercase tracking-[0.2em]">DESDE</span>
+                    <span className="text-caption font-black text-oro/40 uppercase tracking-[0.2em]">DESDE</span>
                     <input
                       type="date"
                       value={startDate}
@@ -2408,7 +2408,7 @@ export function CharacterSheetView({
                     />
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-[9px] font-black text-oro/40 uppercase tracking-[0.2em]">HASTA</span>
+                    <span className="text-caption font-black text-oro/40 uppercase tracking-[0.2em]">HASTA</span>
                     <input
                       type="date"
                       value={endDate}
@@ -2427,7 +2427,7 @@ export function CharacterSheetView({
                         setEndDate('');
                         setRecordPage(1);
                       }}
-                      className="text-[9px] font-black text-rojo-sangre uppercase tracking-[0.2em] hover:brightness-125 transition-all border-b border-rojo-sangre/30 pb-0.5"
+                      className="text-caption font-black text-rojo-sangre uppercase tracking-[0.2em] hover:brightness-125 transition-all border-b border-rojo-sangre/30 pb-0.5"
                     >
                       LIMPIAR FILTROS
                     </button>

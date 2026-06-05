@@ -22,7 +22,7 @@ export function DataField({ label, value, onChange, disabled, type = "text", pla
   const showLock = disabled && isEditing;
   return (
     <div className="space-y-3">
-      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-oro/60 ml-1">{label}</label>
+      <label className="text-caption font-black uppercase tracking-[0.2em] text-oro/60 ml-1">{label}</label>
       <div className="relative">
         <input
           type={type}
@@ -164,7 +164,7 @@ export function NinjaSelect({
           }}
           onMouseDown={(e) => e.stopPropagation()}
           role="listbox"
-          className="bg-[#070511] border border-oro/25 shadow-[0_10px_40px_rgba(0,0,0,0.9)] backdrop-blur-md overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+          className="bg-neutral-900 border border-oro/25 shadow-[0_10px_40px_rgba(0,0,0,0.9)] backdrop-blur-md overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         >
           {/* Línea oro superior */}
           <div className="h-[1px] bg-gradient-to-r from-transparent via-oro/40 to-transparent" />
@@ -175,7 +175,7 @@ export function NinjaSelect({
               role="option"
               type="button"
               onClick={() => { onChange?.(''); setIsOpen(false); }}
-              className="w-full text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-oro/30 hover:bg-oro/5 hover:text-oro/50 transition-all border-b border-oro/5"
+              className="w-full text-left px-6 py-3 text-caption font-black uppercase tracking-widest text-oro/30 hover:bg-oro/5 hover:text-oro/50 transition-all border-b border-oro/5"
             >
               {placeholder}
             </button>
@@ -193,7 +193,7 @@ export function NinjaSelect({
                     if (!o.disabled) { onChange?.(String(o.value)); setIsOpen(false); }
                   }}
                   className={`
-                    w-full text-left px-6 py-3 text-[10px] xl:text-xs font-black uppercase tracking-widest
+                    w-full text-left px-6 py-3 text-caption xl:text-xs font-black uppercase tracking-widest
                     transition-all duration-150 border-b border-oro/[0.04] last:border-0
                     flex items-center justify-between gap-4
                     ${o.disabled
@@ -206,8 +206,8 @@ export function NinjaSelect({
                 >
                   {o.label.includes('\n') ? (
                     <div className="flex flex-col text-left py-0.5 min-w-0">
-                      <span className="text-[10px] xl:text-xs font-black text-oro truncate">{o.label.split('\n')[0]}</span>
-                      <span className="text-[8px] xl:text-[9px] font-bold text-oro/40 lowercase tracking-wider mt-0.5 block">{o.label.split('\n')[1]}</span>
+                      <span className="text-caption xl:text-xs font-black text-oro truncate">{o.label.split('\n')[0]}</span>
+                      <span className="text-caption xl:text-caption font-bold text-oro/40 lowercase tracking-wider mt-0.5 block">{o.label.split('\n')[1]}</span>
                     </div>
                   ) : (
                     <span>{o.label}</span>
@@ -249,7 +249,7 @@ export function NinjaSelect({
             selectedOption.label.includes('\n') ? (
               <span className="flex flex-col items-start gap-0.5 leading-tight py-0.5 min-w-0">
                 <span className="text-sm xl:text-base font-black text-oro truncate block w-full">{selectedOption.label.split('\n')[0]}</span>
-                <span className="text-[9px] xl:text-[10px] font-bold text-oro/40 lowercase tracking-wider block">{selectedOption.label.split('\n')[1]}</span>
+                <span className="text-caption xl:text-caption font-bold text-oro/40 lowercase tracking-wider block">{selectedOption.label.split('\n')[1]}</span>
               </span>
             ) : (
               selectedOption.label
@@ -284,7 +284,7 @@ interface SelectFieldProps {
 export function SelectField({ label, value, options, onChange, disabled, placeholder = 'Seleccionar...' }: SelectFieldProps) {
   return (
     <div className="space-y-3">
-      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-oro/60 ml-1">{label}</label>
+      <label className="text-caption font-black uppercase tracking-[0.2em] text-oro/60 ml-1">{label}</label>
       <NinjaSelect
         value={value}
         options={options}
@@ -332,7 +332,7 @@ export function SearchableSelect({ label, value, options, onChange, disabled, pl
 
   return (
     <div className="space-y-3 relative" ref={containerRef}>
-      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-oro/60 ml-1">{label}</label>
+      <label className="text-caption font-black uppercase tracking-[0.2em] text-oro/60 ml-1">{label}</label>
       <div className="relative">
         <button
           type="button"
@@ -345,7 +345,7 @@ export function SearchableSelect({ label, value, options, onChange, disabled, pl
               selectedOption.label.includes('\n') ? (
                 <span className="flex flex-col items-start gap-0.5 leading-tight py-0.5 min-w-0">
                   <span className="text-sm xl:text-base font-black text-oro truncate block w-full">{selectedOption.label.split('\n')[0]}</span>
-                  <span className="text-[9px] xl:text-[10px] font-bold text-oro/40 lowercase tracking-wider block">{selectedOption.label.split('\n')[1]}</span>
+                  <span className="text-caption xl:text-caption font-bold text-oro/40 lowercase tracking-wider block">{selectedOption.label.split('\n')[1]}</span>
                 </span>
               ) : (
                 selectedOption.label
@@ -388,7 +388,7 @@ export function SearchableSelect({ label, value, options, onChange, disabled, pl
                     {o.label.includes('\n') ? (
                       <div className="flex flex-col text-left py-0.5 min-w-0">
                         <span className="text-xs xl:text-sm font-black text-oro truncate block w-full">{o.label.split('\n')[0]}</span>
-                        <span className="text-[8px] xl:text-[9px] font-bold text-oro/40 lowercase tracking-wider mt-0.5 block">{o.label.split('\n')[1]}</span>
+                        <span className="text-caption xl:text-caption font-bold text-oro/40 lowercase tracking-wider mt-0.5 block">{o.label.split('\n')[1]}</span>
                       </div>
                     ) : (
                       o.label
@@ -396,7 +396,7 @@ export function SearchableSelect({ label, value, options, onChange, disabled, pl
                   </button>
                 ))
               ) : (
-                <div className="px-8 py-10 text-[10px] text-oro/20 font-black uppercase tracking-widest text-center italic">Sin resultados</div>
+                <div className="px-8 py-10 text-caption text-oro/20 font-black uppercase tracking-widest text-center italic">Sin resultados</div>
               )}
             </div>
           </div>

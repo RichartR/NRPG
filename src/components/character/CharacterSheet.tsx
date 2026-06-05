@@ -151,18 +151,18 @@ export default function CharacterSheet() {
             <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-rojo-sangre via-oro to-transparent" />
             <div className="flex items-center gap-3 justify-center sm:justify-start">
               <span className="text-rojo-sangre text-base animate-pulse">⚠️</span>
-              <span className="text-oro text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] font-ninja">
+              <span className="text-oro text-caption sm:text-xs font-black uppercase tracking-[0.2em] font-ninja">
                 Shinobi Archivado por Inactividad
               </span>
             </div>
-            <p className="text-gris-texto text-[10px] sm:text-xs font-bold leading-relaxed uppercase tracking-wider text-center sm:text-left">
+            <p className="text-gris-texto text-caption sm:text-xs font-bold leading-relaxed uppercase tracking-wider text-center sm:text-left">
               Tu personaje ha superado los 3 meses sin actividad reglamentaria. Puedes apelar para reactivarlo o archivarlo manualmente de forma definitiva.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 w-full">
               {hasPendingAppeal ? (
                 <button
                   disabled
-                  className="flex-1 py-2.5 bg-black/40 border border-oro/10 text-oro/40 text-[9px] sm:text-xs font-black uppercase tracking-widest cursor-not-allowed text-center"
+                  className="flex-1 py-2.5 bg-black/40 border border-oro/10 text-oro/40 text-caption sm:text-xs font-black uppercase tracking-widest cursor-not-allowed text-center"
                   style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
                 >
                   Apelación Pendiente
@@ -171,7 +171,7 @@ export default function CharacterSheet() {
                 <button
                   onClick={handleAppeal}
                   disabled={checkingAppeal || sendingAppeal}
-                  className="flex-1 py-2.5 bg-oro text-rojo-sangre border border-oro-soft hover:brightness-110 active:scale-[0.98] transition-all text-[9px] sm:text-xs font-black uppercase tracking-widest text-center cursor-pointer disabled:opacity-50"
+                  className="flex-1 py-2.5 bg-oro text-rojo-sangre border border-oro-soft hover:brightness-110 active:scale-[0.98] transition-all text-caption sm:text-xs font-black uppercase tracking-widest text-center cursor-pointer disabled:opacity-50"
                   style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
                 >
                   {sendingAppeal ? 'Enviando...' : 'Apelar Recuperación'}
@@ -180,7 +180,7 @@ export default function CharacterSheet() {
               <button
                 onClick={handleManualArchive}
                 disabled={updating}
-                className="flex-1 py-2.5 bg-rojo-sangre/20 text-red-400 border border-rojo-sangre/30 hover:bg-rojo-sangre hover:text-oro active:scale-[0.98] transition-all text-[9px] sm:text-xs font-black uppercase tracking-widest text-center cursor-pointer disabled:opacity-50"
+                className="flex-1 py-2.5 bg-rojo-sangre/20 text-red-400 border border-rojo-sangre/30 hover:bg-rojo-sangre hover:text-oro active:scale-[0.98] transition-all text-caption sm:text-xs font-black uppercase tracking-widest text-center cursor-pointer disabled:opacity-50"
                 style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
               >
                 {updating ? 'Archivando...' : 'Archivar Definitivamente'}
@@ -209,20 +209,20 @@ export default function CharacterSheet() {
               </h2>
               {/* Rango (Solo en móvil, centrado y arriba) */}
               <div className="flex sm:hidden justify-center mb-3">
-                <span className="px-4 py-1.5 text-[10px] font-black bg-rojo-sangre text-oro uppercase tracking-[0.2em] whitespace-nowrap">
+                <span className="px-4 py-1.5 text-caption font-black bg-rojo-sangre text-oro uppercase tracking-[0.2em] whitespace-nowrap">
                   Rango {rango}
                 </span>
               </div>
               <div className="flex flex-nowrap items-center justify-center sm:justify-start gap-3 sm:gap-4 mt-2 sm:mt-4 overflow-x-auto sm:overflow-visible scrollbar-none max-w-full sm:max-w-none py-1 pr-6">
                 {/* Rango (Solo en desktop/tablet, integrado en la fila) */}
-                <span className="hidden sm:inline-block px-4 sm:px-5 py-1.5 text-[10px] sm:text-xs xl:text-sm font-black bg-rojo-sangre text-oro uppercase tracking-[0.2em] whitespace-nowrap">
+                <span className="hidden sm:inline-block px-4 sm:px-5 py-1.5 text-caption sm:text-xs xl:text-sm font-black bg-rojo-sangre text-oro uppercase tracking-[0.2em] whitespace-nowrap">
                   Rango {rango}
                 </span>
-                <span className="text-oro/80 text-[10px] sm:text-xs xl:text-base font-bold uppercase tracking-widest whitespace-nowrap">{xp || 0} EXP</span>
-                <span className="text-oro/80 text-[10px] sm:text-xs xl:text-base font-bold uppercase tracking-widest whitespace-nowrap">{ryous || 0} Ryos</span>
-                <span className="text-oro/80 text-[10px] sm:text-xs xl:text-base font-bold uppercase tracking-widest whitespace-nowrap">{activeCharacter.puntos_aprendizaje || 0} PA</span>
+                <span className="text-oro/80 text-caption sm:text-xs xl:text-base font-bold uppercase tracking-widest whitespace-nowrap">{xp || 0} EXP</span>
+                <span className="text-oro/80 text-caption sm:text-xs xl:text-base font-bold uppercase tracking-widest whitespace-nowrap">{ryous || 0} Ryos</span>
+                <span className="text-oro/80 text-caption sm:text-xs xl:text-base font-bold uppercase tracking-widest whitespace-nowrap">{activeCharacter.puntos_aprendizaje || 0} PA</span>
                 {activeCharacter.moneda_evento !== undefined && (
-                  <span className="text-oro/80 text-[10px] sm:text-xs xl:text-base font-bold uppercase tracking-widest whitespace-nowrap">{activeCharacter.moneda_evento || 0} M. Evento</span>
+                  <span className="text-oro/80 text-caption sm:text-xs xl:text-base font-bold uppercase tracking-widest whitespace-nowrap">{activeCharacter.moneda_evento || 0} M. Evento</span>
                 )}
               </div>
             </div>
@@ -246,7 +246,7 @@ export default function CharacterSheet() {
 
             <div className="space-y-3.5 w-full min-w-0">
               <div className="space-y-3 w-full min-w-0">
-                <div className="flex justify-between text-[10px] xl:text-sm font-black uppercase tracking-widest w-full gap-2">
+                <div className="flex justify-between text-caption xl:text-sm font-black uppercase tracking-widest w-full gap-2">
                   <span className="text-red-600 flex items-center gap-3 shrink-0">VIT (Vitalidad)</span>
                   <span className="text-oro shrink-0">{atributos_derivados.VIT} / {atributos_derivados.VIT}</span>
                 </div>
@@ -256,7 +256,7 @@ export default function CharacterSheet() {
               </div>
 
               <div className="space-y-3 w-full min-w-0">
-                <div className="flex justify-between text-[10px] xl:text-sm font-black uppercase tracking-widest w-full gap-2">
+                <div className="flex justify-between text-caption xl:text-sm font-black uppercase tracking-widest w-full gap-2">
                   <span className="text-blue-500 flex items-center gap-3 shrink-0">CH (Chakra)</span>
                   <span className="text-oro shrink-0">{atributos_derivados.CH} / {atributos_derivados.CH}</span>
                 </div>
@@ -270,14 +270,14 @@ export default function CharacterSheet() {
               <div className="bg-rojo-sangre/10 border border-oro/20 p-2 sm:p-2.5 flex items-center justify-between px-4 group hover:bg-rojo-sangre/20 transition-all ninja-clip-xs">
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="w-1 h-1 bg-oro/20 rotate-45 group-hover:bg-oro transition-colors shrink-0" />
-                  <span className="text-oro/40 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] truncate">Resistencia</span>
+                  <span className="text-oro/40 text-caption sm:text-caption font-black uppercase tracking-[0.15em] truncate">Resistencia</span>
                 </div>
                 <span className="text-base sm:text-lg font-black text-oro shrink-0">{atributos_derivados.RES}%</span>
               </div>
               <div className="bg-rojo-sangre/10 border border-oro/20 p-2 sm:p-2.5 flex items-center justify-between px-4 group hover:bg-rojo-sangre/20 transition-all ninja-clip-xs">
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="w-1 h-1 bg-oro/20 rotate-45 group-hover:bg-oro transition-colors shrink-0" />
-                  <span className="text-oro/40 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] truncate">Velocidad</span>
+                  <span className="text-oro/40 text-caption sm:text-caption font-black uppercase tracking-[0.15em] truncate">Velocidad</span>
                 </div>
                 <span className="text-base sm:text-lg font-black text-oro shrink-0">{atributos_derivados.VEL}</span>
               </div>
@@ -294,7 +294,7 @@ export default function CharacterSheet() {
                       <div className="absolute top-0 right-0 w-16 h-16 bg-oro/5 rounded-full blur-xl -mr-8 -mt-8 pointer-events-none" />
 
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-oro/40 text-[9px] font-black uppercase tracking-[0.15em] truncate">
+                        <span className="text-oro/40 text-caption font-black uppercase tracking-[0.15em] truncate">
                           Rama / Clan
                         </span>
                       </div>
@@ -304,7 +304,7 @@ export default function CharacterSheet() {
                       </div>
 
                       {rama.info_sub_especialidades && (
-                        <div className="text-[9px] xl:text-[10px] text-red-500 font-bold uppercase tracking-widest mt-0.5 truncate">
+                        <div className="text-caption xl:text-caption text-red-500 font-bold uppercase tracking-widest mt-0.5 truncate">
                           {rama.info_sub_especialidades.nombre}
                         </div>
                       )}
@@ -344,7 +344,7 @@ export default function CharacterSheet() {
                 <div key={stat.label} className="bg-black/40 border border-oro/10 p-2.5 sm:p-3 flex justify-between items-center group hover:border-oro/40 transition-all ninja-clip-xs overflow-hidden">
                   <div className="flex items-center gap-2 min-w-0">
                     <div className="w-1 h-1 bg-oro/20 group-hover:bg-oro transition-colors rotate-45 shrink-0" />
-                    <span className="text-oro/60 text-[9px] sm:text-[10px] font-black uppercase tracking-widest truncate">{stat.label}</span>
+                    <span className="text-oro/60 text-caption sm:text-caption font-black uppercase tracking-widest truncate">{stat.label}</span>
                   </div>
                   <span className="text-base sm:text-lg font-black text-oro shrink-0">{stat.value}</span>
                 </div>

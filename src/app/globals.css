@@ -1,44 +1,104 @@
 @import "tailwindcss";
 
 :root {
-  --background: #050309;
-  --foreground: #d4d4d4;
+  /* ==========================================================================
+     PALETA DE COLORES (SEMÁNTICA)
+     ========================================================================== */
+  
+  /* Sistema Principal (Oro) */
+  --color-primary-300: #ffefd3;
+  --color-primary-400: #ffe6ba;
+  --color-primary-500: #ffe69f;
+  --color-primary-700: #a5570b;
 
-  /* Naruto Mobile Tokens */
-  --oro-principal: #ffe69f;
-  --oro-gradiente-top: #ffefd3;
-  --oro-sombra: #a5570b;
-  --oro-suave: #ffe6ba;
+  /* Sistema Secundario (Rojo Sangre) */
+  --color-secondary-500: #670909;
+  --color-secondary-900: #320d04;
 
-  --rojo-sangre: #670909;
-  --rojo-oscuro: #320d04;
+  /* Neutros */
+  --color-neutral-100: #ffffff;
+  --color-neutral-200: #d4d4d4;
+  --color-neutral-300: #d2d2d2;
+  --color-neutral-600: #26262b;
+  --color-neutral-700: #1a1a1c;
+  --color-neutral-800: #0a0a0a;
+  --color-neutral-900: #050309;
 
-  --negro-primario: #050309;
-  --negro-overlay: rgba(0, 0, 0, 0.7);
+  /* Sistema Semántico */
+  --color-success-bg: #064e3b;
+  --color-success-text: #a7f3d0;
+  --color-error-bg: #7f1d1d;
+  --color-error-text: #fecaca;
+  --color-warning-bg: #92400e;
+  --color-warning-text: #fde68a;
 
-  --gris-texto: #d4d4d4;
-  --gris-borde: #d2d2d2;
-  --sombra-skill: #2b1002;
+  /* ==========================================================================
+     BORDES Y GEOMETRÍA (Clip-paths)
+     ========================================================================== */
+  --radius-sm: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+  --radius-md: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  --radius-lg: polygon(30px 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%, 0 30px);
 
-  /* Clip-path Patterns */
-  --clip-xs: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
-  --clip-sm: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
-  --clip-md: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
-  --clip-lg: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px);
+  /* ==========================================================================
+     SOMBRAS
+     ========================================================================== */
+  --shadow-sutil: 0 0 10px rgba(255, 230, 159, 0.1);
+  --shadow-media: 0 0 20px rgba(255, 230, 159, 0.25);
+  --shadow-fuerte: 0 10px 40px rgba(0, 0, 0, 0.9);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--color-neutral-900);
+  --color-foreground: var(--color-neutral-200);
 
-  --color-oro: var(--oro-principal);
-  --color-oro-soft: var(--oro-suave);
-  --color-rojo-sangre: var(--rojo-sangre);
-  --color-rojo-oscuro: var(--rojo-oscuro);
-  --color-negro-p: var(--negro-primario);
+  /* Mapeo de Tailwind para primary */
+  --color-primary-300: var(--color-primary-300);
+  --color-primary-400: var(--color-primary-400);
+  --color-primary-500: var(--color-primary-500);
+  --color-primary-700: var(--color-primary-700);
+
+  /* Mapeo de Tailwind para secondary */
+  --color-secondary-500: var(--color-secondary-500);
+  --color-secondary-900: var(--color-secondary-900);
+
+  /* Mapeo de Tailwind para neutral */
+  --color-neutral-100: var(--color-neutral-100);
+  --color-neutral-200: var(--color-neutral-200);
+  --color-neutral-300: var(--color-neutral-300);
+  --color-neutral-600: var(--color-neutral-600);
+  --color-neutral-700: var(--color-neutral-700);
+  --color-neutral-800: var(--color-neutral-800);
+  --color-neutral-900: var(--color-neutral-900);
+
+  /* Mapeo de Semánticos */
+  --color-success-bg: var(--color-success-bg);
+  --color-success-text: var(--color-success-text);
+  --color-error-bg: var(--color-error-bg);
+  --color-error-text: var(--color-error-text);
+  --color-warning-bg: var(--color-warning-bg);
+  --color-warning-text: var(--color-warning-text);
+
+  /* Legacy mappings (To be removed after refactor) */
+  --color-oro: var(--color-primary-500);
+  --color-oro-soft: var(--color-primary-400);
+  --color-rojo-sangre: var(--color-secondary-500);
+  --color-rojo-oscuro: var(--color-secondary-900);
+  --color-negro-p: var(--color-neutral-900);
 
   --font-ninja: "Shojumaru", system-ui;
   --font-body: "Noto Sans JP", sans-serif;
+  
+  /* Tipografía Semántica */
+  --font-size-h1: 2rem;
+  --font-size-h2: 1.5rem;
+  --font-size-h3: 1rem;
+  --font-size-body: 0.875rem;
+  --font-size-caption: 0.625rem;
+
+  /* Sombras */
+  --shadow-sutil: var(--shadow-sutil);
+  --shadow-media: var(--shadow-media);
+  --shadow-fuerte: var(--shadow-fuerte);
 }
 
 html {
@@ -46,12 +106,12 @@ html {
 }
 
 body {
-  background-color: var(--negro-primario);
+  background-color: var(--color-neutral-900);
   background-image: url('/assets/ui/bg-list.jpg');
   background-attachment: fixed;
   background-size: cover;
   background-position: center;
-  color: var(--gris-texto);
+  color: var(--color-neutral-200);
   font-family: var(--font-body);
 }
 
@@ -79,7 +139,7 @@ input[type=number] {
 
 @layer utilities {
   .ninja-title {
-    background: linear-gradient(to bottom, var(--oro-gradiente-top), var(--oro-principal));
+    background: linear-gradient(to bottom, var(--color-primary-300), var(--color-primary-500));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     transform: scaleY(1.4);
@@ -88,20 +148,16 @@ input[type=number] {
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
   }
 
-  .ninja-clip-xs {
-    clip-path: var(--clip-xs);
-  }
-
   .ninja-clip-sm {
-    clip-path: var(--clip-sm);
+    clip-path: var(--radius-sm);
   }
 
   .ninja-clip-md {
-    clip-path: var(--clip-md);
+    clip-path: var(--radius-md);
   }
 
   .ninja-clip-lg {
-    clip-path: var(--clip-lg);
+    clip-path: var(--radius-lg);
   }
 
   /* Combined Card Patterns */
@@ -113,15 +169,15 @@ input[type=number] {
   }
 
   .ninja-card-oro {
-    background-color: #050309;
+    background-color: var(--color-neutral-900);
     background-image: radial-gradient(circle at center, rgba(255, 230, 159, 0.05) 0%, transparent 70%),
       linear-gradient(rgba(5, 3, 9, 0.55), rgba(5, 3, 9, 0.55)),
       url('/assets/ui/bg-list.jpg');
     background-size: cover;
     background-position: center;
-    box-shadow: 0 0 30px rgba(255, 230, 159, 0.1);
+    box-shadow: var(--shadow-sutil);
     @apply relative backdrop-blur-md;
-    clip-path: var(--clip-lg);
+    clip-path: var(--radius-lg);
   }
 
   .ninja-card-oro::before {
@@ -129,17 +185,17 @@ input[type=number] {
     position: absolute;
     inset: 0;
     padding: 1px;
-    background: linear-gradient(to bottom right, var(--oro-gradiente-top), var(--oro-principal), var(--oro-sombra));
+    background: linear-gradient(to bottom right, var(--color-primary-300), var(--color-primary-500), var(--color-primary-700));
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
-    clip-path: var(--clip-lg);
+    clip-path: var(--radius-lg);
     pointer-events: none;
     opacity: 0.9;
   }
 
   .ninja-card-rojo {
-    background-color: #050309;
+    background-color: var(--color-neutral-900);
     background-image: radial-gradient(circle at center, rgba(103, 9, 9, 0.1) 0%, transparent 70%),
       linear-gradient(rgba(5, 3, 9, 0.55), rgba(5, 3, 9, 0.55)),
       url('/assets/ui/bg-list.jpg');
@@ -147,7 +203,7 @@ input[type=number] {
     background-position: center;
     box-shadow: 0 0 30px rgba(103, 9, 9, 0.2);
     @apply relative backdrop-blur-md;
-    clip-path: var(--clip-lg);
+    clip-path: var(--radius-lg);
   }
 
   .ninja-card-rojo::before {
@@ -155,11 +211,11 @@ input[type=number] {
     position: absolute;
     inset: 0;
     padding: 1px;
-    background: linear-gradient(to bottom right, var(--rojo-sangre), var(--rojo-oscuro));
+    background: linear-gradient(to bottom right, var(--color-secondary-500), var(--color-secondary-900));
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
-    clip-path: var(--clip-lg);
+    clip-path: var(--radius-lg);
     pointer-events: none;
     opacity: 0.6;
   }
@@ -184,26 +240,26 @@ input[type=number] {
   }
 
   .ninja-btn-oro {
-    @apply font-black uppercase tracking-[0.2em] transition-all active:scale-95 disabled:opacity-30 hover:brightness-110 bg-oro text-rojo-sangre shadow-[0_0_15px_rgba(255,230,159,0.2)];
-    clip-path: var(--clip-md);
+    @apply font-black uppercase tracking-[0.2em] transition-all active:scale-95 disabled:opacity-30 hover:brightness-110 bg-primary-500 text-secondary-500 shadow-media;
+    clip-path: var(--radius-md);
   }
 
   .ninja-btn-rojo {
-    @apply font-black uppercase tracking-[0.2em] transition-all active:scale-95 disabled:opacity-30 hover:brightness-110 bg-rojo-sangre text-oro shadow-[0_0_15px_rgba(103,9,9,0.2)];
-    clip-path: var(--clip-md);
+    @apply font-black uppercase tracking-[0.2em] transition-all active:scale-95 disabled:opacity-30 hover:brightness-110 bg-secondary-500 text-primary-500 shadow-[0_0_15px_rgba(103,9,9,0.2)];
+    clip-path: var(--radius-md);
   }
 
   .ninja-btn-ghost {
-    @apply font-black uppercase tracking-[0.2em] transition-all active:scale-95 disabled:opacity-30 hover:brightness-110 bg-black/40 text-oro/60 border border-oro/10 hover:border-oro/40 hover:text-oro;
-    clip-path: var(--clip-md);
+    @apply font-black uppercase tracking-[0.2em] transition-all active:scale-95 disabled:opacity-30 hover:brightness-110 bg-black/40 text-primary-500/60 border border-primary-500/10 hover:border-primary-500/40 hover:text-primary-500;
+    clip-path: var(--radius-md);
   }
 
   .ninja-input {
-    @apply bg-black/80 border border-oro/20 px-6 py-4 text-oro font-black focus:border-oro/60 focus:bg-black/90 focus:shadow-[0_0_20px_rgba(255,230,159,0.1)] outline-none transition-all uppercase placeholder:text-oro/20;
-    clip-path: var(--clip-xs);
+    @apply bg-neutral-900/80 border border-primary-500/20 px-6 py-4 text-primary-500 font-black focus:border-primary-500/60 focus:bg-neutral-900/90 focus:shadow-sutil outline-none transition-all uppercase placeholder:text-primary-500/20;
+    clip-path: var(--radius-sm);
 
     &:hover {
-      @apply border-oro/40 bg-black/70;
+      @apply border-primary-500/40 bg-neutral-900/70;
     }
   }
 
@@ -220,11 +276,11 @@ input[type=number] {
   }
 
   .custom-scrollbar::-webkit-scrollbar-track {
-    background: var(--negro-primario);
+    background: var(--color-neutral-900);
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: var(--rojo-sangre);
+    background: var(--color-secondary-500);
     border-radius: 0;
   }
 

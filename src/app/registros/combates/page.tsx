@@ -121,7 +121,7 @@ export default function CombatesPage() {
               <div className="space-y-4 flex flex-col justify-between p-4 bg-zinc-950/20 border border-oro/5" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
                 <div>
                   <label className="block text-xs font-black text-oro/60 uppercase tracking-widest mb-1">Estados de Combate</label>
-                  <p className="text-[10px] text-gris-texto mb-2">Configura penalizaciones, duraciones y estados post-combate (Herido, Muerto, etc.).</p>
+                  <p className="text-caption text-gris-texto mb-2">Configura penalizaciones, duraciones y estados post-combate (Herido, Muerto, etc.).</p>
                 </div>
                 <Link
                   href="/admin/combate-estados"
@@ -144,7 +144,7 @@ export default function CombatesPage() {
           <div className="space-y-6">
             <div className="flex flex-wrap items-center gap-6 sm:gap-10 p-6 sm:p-10 ninja-card-rojo animate-in fade-in slide-in-from-top-2 duration-500">
               <div className="flex items-center gap-6">
-                <span className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.3em]">DESDE</span>
+                <span className="text-caption xl:text-xs font-black text-oro/40 uppercase tracking-[0.3em]">DESDE</span>
                 <input
                   type="date"
                   value={startDate}
@@ -153,7 +153,7 @@ export default function CombatesPage() {
                 />
               </div>
               <div className="flex items-center gap-6">
-                <span className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.3em]">HASTA</span>
+                <span className="text-caption xl:text-xs font-black text-oro/40 uppercase tracking-[0.3em]">HASTA</span>
                 <input
                   type="date"
                   value={endDate}
@@ -164,7 +164,7 @@ export default function CombatesPage() {
               {(startDate || endDate) && (
                 <button
                   onClick={() => { setStartDate(''); setEndDate(''); }}
-                  className="text-[10px] xl:text-xs font-black text-rojo-sangre uppercase tracking-[0.3em] hover:brightness-125 transition-all border-b border-rojo-sangre/30 pb-1 italic"
+                  className="text-caption xl:text-xs font-black text-rojo-sangre uppercase tracking-[0.3em] hover:brightness-125 transition-all border-b border-rojo-sangre/30 pb-1 italic"
                 >
                   LIMPIAR FILTROS
                 </button>
@@ -208,7 +208,7 @@ export default function CombatesPage() {
                       </button>
 
                       <div className="flex flex-col items-center">
-                        <span className="text-[10px] font-black text-oro/40 uppercase tracking-[0.4em] mb-1">REGISTROS DE GUERRA</span>
+                        <span className="text-caption font-black text-oro/40 uppercase tracking-[0.4em] mb-1">REGISTROS DE GUERRA</span>
                         <div className="text-sm xl:text-lg font-black text-oro uppercase tracking-[0.2em] italic">
                           PÁGINA <span className="text-white drop-shadow-md">{data.page}</span> / <span className="text-oro/40">{Math.ceil(data.count / 15)}</span>
                         </div>

@@ -72,7 +72,7 @@ export default async function GroupingDetailPage({ params }: { params: Promise<{
               actionText="Leer Pergamino"
               titleClassName="text-2xl sm:text-3xl md:text-4xl"
               headerOverlayRight={
-                <div className="w-10 h-10 bg-black/60 border border-oro/20 flex items-center justify-center" style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}>
+                <div className="w-10 h-10 bg-black/60 border border-oro/20 flex items-center justify-center ninja-clip-sm">
                   <ScrollText className="w-5 h-5 text-oro" />
                 </div>
               }

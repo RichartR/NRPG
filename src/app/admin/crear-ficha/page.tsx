@@ -66,7 +66,7 @@ function CrearFichaAdminContent() {
   return (
     <div className="max-w-[1750px]">
       <header className="mb-6 ninja-card-oro p-8 xl:p-10">
-        <Link href="/admin" className="flex items-center gap-3 text-oro/40 hover:text-oro transition-all mb-8 text-[10px] font-black uppercase tracking-[0.3em] group">
+        <Link href="/admin" className="flex items-center gap-3 text-oro/40 hover:text-oro transition-all mb-8 text-caption font-black uppercase tracking-[0.3em] group">
           <div className="w-1.5 h-1.5 bg-oro/20 group-hover:bg-oro rotate-45 transition-colors" />
           VOLVER AL PANEL CENTRAL
         </Link>
@@ -77,7 +77,7 @@ function CrearFichaAdminContent() {
           </div>
           <div>
             <h1 className="ninja-title text-4xl xl:text-5xl italic">INICIALIZAR SHINOBI</h1>
-            <p className="text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] mt-2">REGISTRO DE NUEVOS PERSONAJES EN EL SISTEMA</p>
+            <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.4em] mt-2">REGISTRO DE NUEVOS PERSONAJES EN EL SISTEMA</p>
           </div>
         </div>
       </header>
@@ -86,27 +86,25 @@ function CrearFichaAdminContent() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-oro/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-[0.4em] text-oro/30 ml-2">Nombre del Personaje</label>
+            <label className="text-caption font-black uppercase tracking-[0.4em] text-oro/30 ml-2">Nombre del Personaje</label>
             <input
               value={character.nombre_ninja}
               onChange={(e) => setCharacter({ ...character, nombre_ninja: e.target.value })}
-              className="w-full bg-black/40 border border-oro/10 py-5 px-8 text-oro font-bold outline-none focus:border-oro/40 transition-all placeholder:text-oro/10 text-sm"
-              style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
+              className="w-full bg-black/40 border border-oro/10 py-5 px-8 text-oro font-bold outline-none focus:border-oro/40 transition-all placeholder:text-oro/10 text-sm ninja-clip-md"
               placeholder="EJ: NARUTO UZUMAKI"
             />
           </div>
           <div className="space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-[0.4em] text-oro/30 ml-2">Usuario Hobba</label>
+            <label className="text-caption font-black uppercase tracking-[0.4em] text-oro/30 ml-2">Usuario Hobba</label>
             <input
               value={character.hobba_name}
               onChange={(e) => setCharacter({ ...character, hobba_name: e.target.value })}
-              className="w-full bg-black/40 border border-oro/10 py-5 px-8 text-oro font-bold outline-none focus:border-oro/40 transition-all placeholder:text-oro/10 text-sm"
-              style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
+              className="w-full bg-black/40 border border-oro/10 py-5 px-8 text-oro font-bold outline-none focus:border-oro/40 transition-all placeholder:text-oro/10 text-sm ninja-clip-md"
               placeholder="EJ: NARUTO99"
             />
           </div>
           <div className="space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-[0.4em] text-oro/30 ml-2">Aldea Inicial</label>
+            <label className="text-caption font-black uppercase tracking-[0.4em] text-oro/30 ml-2">Aldea Inicial</label>
             <NinjaSelect
               value={character.aldea_id}
               onChange={(val) => setCharacter({ ...character, aldea_id: val })}
@@ -115,7 +113,7 @@ function CrearFichaAdminContent() {
             />
           </div>
           <div className="space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-[0.4em] text-oro/30 ml-2">Rango</label>
+            <label className="text-caption font-black uppercase tracking-[0.4em] text-oro/30 ml-2">Rango</label>
             <NinjaSelect
               value={character.rango}
               onChange={(val) => setCharacter({ ...character, rango: val })}
@@ -124,12 +122,11 @@ function CrearFichaAdminContent() {
             />
           </div>
           <div className="space-y-3 md:col-span-2">
-            <label className="text-[10px] font-black uppercase tracking-[0.4em] text-oro/30 ml-2">URL de Imagen del Personaje (OPCIONAL)</label>
+            <label className="text-caption font-black uppercase tracking-[0.4em] text-oro/30 ml-2">URL de Imagen del Personaje (OPCIONAL)</label>
             <input
               value={character.url_img || ''}
               onChange={(e) => setCharacter({ ...character, url_img: e.target.value })}
-              className="w-full bg-black/40 border border-oro/10 py-5 px-8 text-oro font-bold outline-none focus:border-oro/40 transition-all placeholder:text-oro/10 text-sm"
-              style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
+              className="w-full bg-black/40 border border-oro/10 py-5 px-8 text-oro font-bold outline-none focus:border-oro/40 transition-all placeholder:text-oro/10 text-sm ninja-clip-md"
               placeholder="HTTPS://..."
             />
           </div>
@@ -138,8 +135,7 @@ function CrearFichaAdminContent() {
         <button
           onClick={handleCreate}
           disabled={loading}
-          className="w-full py-6 bg-oro text-rojo-sangre font-black uppercase tracking-[0.3em] transition-all shadow-xl shadow-oro/5 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-4 hover:brightness-110"
-          style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}
+          className="w-full py-6 bg-oro text-rojo-sangre font-black uppercase tracking-[0.3em] transition-all shadow-xl shadow-oro/5 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-4 hover:brightness-110 ninja-clip-md"
         >
           {loading ? <RefreshCw className="w-6 h-6 animate-spin" /> : (
             <>

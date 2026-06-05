@@ -88,7 +88,7 @@ export default function MisionesPage() {
                 onClick={() => setShowForm(true)}
                 disabled={!activeCharacter}
                 title={!activeCharacter ? 'Requiere tener un personaje activo en tu ficha shinobi' : undefined}
-                className="flex w-full lg:w-auto items-center justify-center gap-3 px-5 sm:px-6 py-3 ninja-btn-oro text-[10px] sm:text-xs disabled:opacity-30 disabled:cursor-not-allowed uppercase tracking-widest font-black shrink-0"
+                className="flex w-full lg:w-auto items-center justify-center gap-3 px-5 sm:px-6 py-3 ninja-btn-oro text-caption sm:text-xs disabled:opacity-30 disabled:cursor-not-allowed uppercase tracking-widest font-black shrink-0"
               >
                 <Plus className="w-4 h-4" /> NUEVA MISION
               </button>
@@ -119,12 +119,12 @@ export default function MisionesPage() {
                 style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
               >
                 <div className="space-y-2">
-                  <label className="block text-[10px] sm:text-xs font-black text-oro/60 uppercase tracking-[0.22em] sm:tracking-widest">Misiones Maestras</label>
+                  <label className="block text-caption sm:text-xs font-black text-oro/60 uppercase tracking-[0.22em] sm:tracking-widest">Misiones Maestras</label>
                   <p className="text-[11px] sm:text-sm text-gris-texto/70 leading-relaxed">
                     Edita o crea misiones y sus recompensas en Ryous y EXP.
                   </p>
                 </div>
-                <Link href="/admin/misiones" className="ninja-btn-oro py-3 px-5 flex items-center justify-center gap-2 text-[10px] sm:text-xs w-full text-center">
+                <Link href="/admin/misiones" className="ninja-btn-oro py-3 px-5 flex items-center justify-center gap-2 text-caption sm:text-xs w-full text-center">
                   <ScrollText className="w-4 h-4 shrink-0" />
                   <span>Configurar Misiones</span>
                 </Link>
@@ -135,12 +135,12 @@ export default function MisionesPage() {
                 style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
               >
                 <div className="space-y-2">
-                  <label className="block text-[10px] sm:text-xs font-black text-oro/60 uppercase tracking-[0.22em] sm:tracking-widest">Bandeja de Disputas</label>
+                  <label className="block text-caption sm:text-xs font-black text-oro/60 uppercase tracking-[0.22em] sm:tracking-widest">Bandeja de Disputas</label>
                   <p className="text-[11px] sm:text-sm text-gris-texto/70 leading-relaxed">
                     Revisa, aprueba o rechaza disputas sobre recompensas y reportes de misiones.
                   </p>
                 </div>
-                <Link href="/admin/disputas" className="ninja-btn-oro py-3 px-5 flex items-center justify-center gap-2 text-[10px] sm:text-xs w-full text-center">
+                <Link href="/admin/disputas" className="ninja-btn-oro py-3 px-5 flex items-center justify-center gap-2 text-caption sm:text-xs w-full text-center">
                   <ShieldAlert className="w-4 h-4 shrink-0" />
                   <span>Bandeja de Disputas</span>
                 </Link>
@@ -163,7 +163,7 @@ export default function MisionesPage() {
             <div className="ninja-card-oro p-4 sm:p-6 xl:p-8 animate-in fade-in slide-in-from-top-2 duration-500">
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
                 <div className="flex flex-col gap-2 min-w-0">
-                  <span className="text-[10px] sm:text-xs font-black text-oro/40 uppercase tracking-[0.25em] sm:tracking-[0.3em]">DESDE</span>
+                  <span className="text-caption sm:text-xs font-black text-oro/40 uppercase tracking-[0.25em] sm:tracking-[0.3em]">DESDE</span>
                   <input
                     type="date"
                     value={startDate}
@@ -173,7 +173,7 @@ export default function MisionesPage() {
                 </div>
 
                 <div className="flex flex-col gap-2 min-w-0">
-                  <span className="text-[10px] sm:text-xs font-black text-oro/40 uppercase tracking-[0.25em] sm:tracking-[0.3em]">HASTA</span>
+                  <span className="text-caption sm:text-xs font-black text-oro/40 uppercase tracking-[0.25em] sm:tracking-[0.3em]">HASTA</span>
                   <input
                     type="date"
                     value={endDate}
@@ -188,7 +188,7 @@ export default function MisionesPage() {
                       setStartDate('');
                       setEndDate('');
                     }}
-                    className="w-full lg:w-auto justify-self-start text-[10px] sm:text-xs font-black text-rojo-sangre uppercase tracking-[0.25em] sm:tracking-[0.3em] hover:brightness-125 transition-all border-b border-rojo-sangre/30 pb-1 italic"
+                    className="w-full lg:w-auto justify-self-start text-caption sm:text-xs font-black text-rojo-sangre uppercase tracking-[0.25em] sm:tracking-[0.3em] hover:brightness-125 transition-all border-b border-rojo-sangre/30 pb-1 italic"
                   >
                     LIMPIAR FILTROS
                   </button>
@@ -205,7 +205,7 @@ export default function MisionesPage() {
                       <img src="/assets/icons/shuriken.png" className="w-5 h-5 object-contain" alt="Logo" />
                     </div>
                   </div>
-                  <p className="text-center text-oro font-black uppercase tracking-[0.35em] sm:tracking-[0.6em] text-[10px] sm:text-sm animate-pulse">
+                  <p className="text-center text-oro font-black uppercase tracking-[0.35em] sm:tracking-[0.6em] text-caption sm:text-sm animate-pulse">
                     Sincronizando Archivos...
                   </p>
                 </div>
@@ -233,10 +233,10 @@ export default function MisionesPage() {
                       </button>
 
                       <div className="flex flex-col items-center px-3 text-center">
-                        <span className="text-[9px] sm:text-[10px] font-black text-oro/40 uppercase tracking-[0.25em] sm:tracking-[0.4em] mb-1">
+                        <span className="text-caption sm:text-caption font-black text-oro/40 uppercase tracking-[0.25em] sm:tracking-[0.4em] mb-1">
                           REGISTROS DE MISION
                         </span>
-                        <div className="text-[10px] sm:text-sm xl:text-base font-black text-oro uppercase tracking-[0.18em] sm:tracking-[0.2em] italic">
+                        <div className="text-caption sm:text-sm xl:text-base font-black text-oro uppercase tracking-[0.18em] sm:tracking-[0.2em] italic">
                           PAGINA <span className="text-oro/40">{data.page}</span> DE <span className="text-oro/40">{Math.ceil(data.count / 15)}</span>
                         </div>
                       </div>
@@ -254,7 +254,7 @@ export default function MisionesPage() {
               ) : (
                 <div className="py-24 sm:py-40 text-center ninja-card-oro opacity-50">
                   <ScrollText className="w-16 h-16 sm:w-24 sm:h-24 text-oro/10 mx-auto mb-6 sm:mb-8" />
-                  <p className="text-[10px] sm:text-sm xl:text-lg font-black text-oro/20 uppercase tracking-[0.35em] sm:tracking-[0.6em] italic px-6">
+                  <p className="text-caption sm:text-sm xl:text-lg font-black text-oro/20 uppercase tracking-[0.35em] sm:tracking-[0.6em] italic px-6">
                     NO HAY MISIONES REGISTRADAS TODAVIA
                   </p>
                 </div>

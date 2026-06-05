@@ -47,7 +47,7 @@ export default function AdminNavbar() {
             <h1 className="ninja-title text-xl sm:text-3xl tracking-widest leading-none">
               PANEL ADMINISTRATIVO
             </h1>
-            <p className="text-[8px] sm:text-[9px] font-black text-oro/30 uppercase tracking-[0.4em] mt-1.5 italic">
+            <p className="text-caption sm:text-caption font-black text-oro/30 uppercase tracking-[0.4em] mt-1.5 italic">
               SISTEMA DE GESTIÓN SHINOBI
             </p>
           </div>
@@ -55,7 +55,7 @@ export default function AdminNavbar() {
 
         <Link
           href="/"
-          className="flex items-center gap-3 px-6 py-3 bg-rojo-sangre/10 border border-rojo-sangre/20 hover:bg-rojo-sangre hover:text-oro text-rojo-sangre font-black text-[9px] sm:text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 italic"
+          className="flex items-center gap-3 px-6 py-3 bg-rojo-sangre/10 border border-rojo-sangre/20 hover:bg-rojo-sangre hover:text-oro text-rojo-sangre font-black text-caption sm:text-caption uppercase tracking-[0.2em] transition-all active:scale-95 italic"
           style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
         >
           <LogOut className="w-4 h-4 shrink-0" />
@@ -109,7 +109,7 @@ export default function AdminNavbar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-2.5 px-5 py-3.5 font-black text-[10px] xl:text-xs uppercase tracking-widest transition-all relative shrink-0 ${isActive
+              className={`flex items-center gap-2.5 px-5 py-3.5 font-black text-caption xl:text-xs uppercase tracking-widest transition-all relative shrink-0 ${isActive
                   ? 'bg-oro text-rojo-sangre shadow-md shadow-oro/5'
                   : 'bg-black/20 border border-oro/5 text-oro/40 hover:border-oro/20 hover:text-oro hover:bg-oro/5'
                 }`}

@@ -61,7 +61,7 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
       <div className="overflow-x-auto scrollbar-hide">
         <table className="w-full text-left border-collapse min-w-[700px] table-fixed">
           <thead>
-            <tr className="border-b border-oro/10 text-oro/70 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em]">
+            <tr className="border-b border-oro/10 text-oro/70 text-caption xl:text-xs font-black uppercase tracking-[0.3em]">
               <th className="py-6 px-8 w-[16%]">Fecha</th>
               <th className="py-6 px-8 w-[12%]">Código</th>
               <th className="py-6 px-8 w-[12%]">Rango</th>
@@ -88,21 +88,21 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
                         <span className="text-[11px] font-black text-oro/80 uppercase tracking-wider">
                           {new Date(m.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </span>
-                        <span className="text-[9px] font-bold text-oro/30 uppercase tracking-widest mt-0.5">
+                        <span className="text-caption font-bold text-oro/30 uppercase tracking-widest mt-0.5">
                           {new Date(m.fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
 
                       {/* Fecha de Modificación */}
                       {m.data.fecha_modificacion && (
-                        <div className="flex flex-col border-t border-red-500/30 pt-1.5">
+                        <div className="flex flex-col border-t border-error-text/30 pt-1.5">
                           <span className="text-[7px] font-black text-red-500/60 uppercase tracking-widest">
                             MODIFICADO
                           </span>
-                          <span className="text-[10px] font-black text-red-400 uppercase tracking-wider mt-0.5">
+                          <span className="text-caption font-black text-red-400 uppercase tracking-wider mt-0.5">
                             {new Date(m.data.fecha_modificacion).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                           </span>
-                          <span className="text-[8px] font-bold text-red-500/60 uppercase tracking-widest mt-0.5">
+                          <span className="text-caption font-bold text-red-500/60 uppercase tracking-widest mt-0.5">
                             {new Date(m.data.fecha_modificacion).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
@@ -117,7 +117,7 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
 
                   {/* Rango */}
                   <td className="py-6 px-8">
-                    <span className="inline-block px-3 py-1 text-[10px] font-black uppercase border border-oro/30 bg-oro/5 text-oro ninja-clip-xs">
+                    <span className="inline-block px-3 py-1 text-caption font-black uppercase border border-oro/30 bg-oro/5 text-oro ninja-clip-xs">
                       Rango {rankVal}
                     </span>
                   </td>
@@ -128,7 +128,7 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
                       {participants.map((p, idx) => (
                         <span
                           key={idx}
-                          className="text-[10px] font-black text-oro/70 uppercase tracking-widest px-2.5 py-1 bg-oro/5 border border-oro/10 ninja-clip-xs"
+                          className="text-caption font-black text-oro/70 uppercase tracking-widest px-2.5 py-1 bg-oro/5 border border-oro/10 ninja-clip-xs"
                         >
                           {p.nombre_ninja}
                         </span>
@@ -163,7 +163,7 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
                             href={url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-oro/5 border border-oro/10 hover:border-oro/40 hover:bg-oro/10 text-[9px] font-black text-oro/70 hover:text-oro uppercase tracking-widest transition-all ninja-clip-xs"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-oro/5 border border-oro/10 hover:border-oro/40 hover:bg-oro/10 text-caption font-black text-oro/70 hover:text-oro uppercase tracking-widest transition-all ninja-clip-xs"
                             title={url}
                           >
                             <LinkIcon className="w-3 h-3" />
@@ -171,7 +171,7 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
                           </a>
                         ))
                       ) : (
-                        <span className="text-[10px] text-oro/20 uppercase tracking-widest italic">Sin pruebas</span>
+                        <span className="text-caption text-oro/20 uppercase tracking-widest italic">Sin pruebas</span>
                       )}
                     </div>
                   </td>
@@ -190,7 +190,7 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
                         <button
                           onClick={() => handleDelete(m.id)}
                           disabled={loadingId === m.id}
-                          className="p-2 bg-red-600/10 border border-red-600/40 hover:border-red-500 hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
+                          className="p-2 bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
                           title="Eliminar Registro"
                         >
                           {loadingId === m.id ? (
@@ -201,7 +201,7 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
                         </button>
                       </div>
                     ) : (
-                      <span className="text-[10px] text-oro/20 uppercase tracking-widest italic">Sólo lectura</span>
+                      <span className="text-caption text-oro/20 uppercase tracking-widest italic">Sólo lectura</span>
                     )}
                   </td>
                 </tr>

@@ -131,7 +131,7 @@ export default function ElementoEditForm({
               <h2 className="ninja-title text-xl sm:text-3xl leading-none">
                 {isCreate ? 'CREAR ELEMENTO' : 'EDITAR ELEMENTO'}
               </h2>
-              <p className="text-[10px] font-black text-oro/40 uppercase tracking-[0.2em] mt-2 italic">
+              <p className="text-caption font-black text-oro/40 uppercase tracking-[0.2em] mt-2 italic">
                 Configuración de elemento elemental
               </p>
             </div>
@@ -140,7 +140,7 @@ export default function ElementoEditForm({
           <div className="flex items-center gap-4">
             {/* Toggle Activo */}
             <label className="flex items-center gap-3 cursor-pointer bg-oro/5 px-4 py-2 border border-oro/10 hover:border-oro/30 transition-all">
-              <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${formData.activo ? 'text-oro' : 'text-oro/20'}`}>
+              <span className={`text-caption font-black uppercase tracking-widest transition-colors ${formData.activo ? 'text-oro' : 'text-oro/20'}`}>
                 {formData.activo ? 'ACTIVO' : 'INACTIVO'}
               </span>
               <input type="checkbox" checked={formData.activo} onChange={(e) => updateField('activo', e.target.checked)} className="hidden" />
@@ -180,14 +180,14 @@ export default function ElementoEditForm({
 
             {/* Tipo: básico / avanzado */}
             <div className="space-y-2 md:col-span-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-oro/60 ml-1">Tipo de Elemento</label>
+              <label className="text-caption font-black uppercase tracking-widest text-oro/60 ml-1">Tipo de Elemento</label>
               <div className="flex bg-black/40 p-1 border border-oro/10 h-[58px] ninja-clip-sm">
                 {(['basico', 'avanzado'] as const).map((t) => (
                   <button
                     key={t}
                     type="button"
                     onClick={() => updateField('tipo', t)}
-                    className={`flex-1 text-[10px] font-black uppercase tracking-widest transition-all ninja-clip-xs ${formData.tipo === t ? 'bg-oro text-rojo-sangre shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
+                    className={`flex-1 text-caption font-black uppercase tracking-widest transition-all ninja-clip-xs ${formData.tipo === t ? 'bg-oro text-rojo-sangre shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
                   >
                     {t === 'basico' ? 'Básico' : 'Avanzado'}
                   </button>
@@ -200,7 +200,7 @@ export default function ElementoEditForm({
           {formData.url_icono && (
             <div className="flex items-center gap-4 p-4 bg-black/20 border border-oro/10 ninja-clip-sm">
               <img src={formData.url_icono} alt="Preview" className="w-10 h-10 object-contain" />
-              <span className="text-[10px] font-black text-oro/40 uppercase tracking-widest">Vista previa del icono</span>
+              <span className="text-caption font-black text-oro/40 uppercase tracking-widest">Vista previa del icono</span>
             </div>
           )}
 
@@ -218,13 +218,13 @@ export default function ElementoEditForm({
           <div className="mt-10 pt-10 border-t border-oro/10 relative z-10 space-y-6">
             <div className="flex items-center gap-3 mb-4">
               <LinkIcon className="w-4 h-4 text-oro/60" />
-              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-oro/60">Vinculaciones con Ramas / Sub-especialidades</h3>
+              <h3 className="text-caption font-black uppercase tracking-[0.3em] text-oro/60">Vinculaciones con Ramas / Sub-especialidades</h3>
             </div>
 
             {/* Lista de vinculaciones existentes */}
             <div className="space-y-2">
               {vinculaciones.length === 0 && (
-                <p className="text-[9px] text-oro/20 font-black uppercase tracking-widest text-center py-4">
+                <p className="text-caption text-oro/20 font-black uppercase tracking-widest text-center py-4">
                   Sin vinculaciones configuradas
                 </p>
               )}
@@ -234,13 +234,13 @@ export default function ElementoEditForm({
                 return (
                   <div key={v.id} className="flex items-center justify-between gap-4 p-3 bg-black/30 border border-oro/10 ninja-clip-xs">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <span className="text-[9px] font-black text-oro uppercase tracking-wider truncate">
+                      <span className="text-caption font-black text-oro uppercase tracking-wider truncate">
                         {ramaName || subName || `ID ${v.rama_id ?? v.sub_especialidad_id}`}
                       </span>
                       {subName && ramaName && (
-                        <span className="text-[8px] text-oro/40 font-black uppercase tracking-wider">/ {subName}</span>
+                        <span className="text-caption text-oro/40 font-black uppercase tracking-wider">/ {subName}</span>
                       )}
-                      <span className={`shrink-0 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest ninja-clip-xs ${v.tipo === 'fijo' ? 'bg-rojo-sangre text-oro' : 'bg-oro/10 border border-oro/20 text-oro'}`}>
+                      <span className={`shrink-0 px-2 py-0.5 text-caption font-black uppercase tracking-widest ninja-clip-xs ${v.tipo === 'fijo' ? 'bg-rojo-sangre text-oro' : 'bg-oro/10 border border-oro/20 text-oro'}`}>
                         {v.tipo}
                       </span>
                     </div>
@@ -258,7 +258,7 @@ export default function ElementoEditForm({
 
             {/* Nueva vinculación */}
             <div className="p-4 bg-black/20 border border-oro/10 ninja-clip-sm space-y-4">
-              <p className="text-[9px] font-black text-oro/40 uppercase tracking-[0.2em]">Añadir nueva vinculación</p>
+              <p className="text-caption font-black text-oro/40 uppercase tracking-[0.2em]">Añadir nueva vinculación</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <SearchableSelect
                   label="Rama / Clan"
@@ -275,14 +275,14 @@ export default function ElementoEditForm({
                   placeholder="Opcional"
                 />
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-oro/60 ml-1">Tipo</label>
+                  <label className="text-caption font-black uppercase tracking-widest text-oro/60 ml-1">Tipo</label>
                   <div className="flex bg-black/40 p-1 border border-oro/10 h-[58px] ninja-clip-sm">
                     {(['fijo', 'seleccionable'] as const).map((t) => (
                       <button
                         key={t}
                         type="button"
                         onClick={() => setNewVinc((prev) => ({ ...prev, tipo: t }))}
-                        className={`flex-1 text-[9px] font-black uppercase tracking-wider transition-all ninja-clip-xs ${newVinc.tipo === t ? 'bg-oro text-rojo-sangre' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
+                        className={`flex-1 text-caption font-black uppercase tracking-wider transition-all ninja-clip-xs ${newVinc.tipo === t ? 'bg-oro text-rojo-sangre' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
                       >
                         {t}
                       </button>
@@ -295,7 +295,7 @@ export default function ElementoEditForm({
                   type="button"
                   onClick={handleAddVinculacion}
                   disabled={vincLoading}
-                  className="flex items-center gap-2 px-6 py-3 bg-rojo-sangre hover:brightness-125 text-oro font-black text-[9px] uppercase tracking-widest transition-all ninja-clip-xs"
+                  className="flex items-center gap-2 px-6 py-3 bg-rojo-sangre hover:brightness-125 text-oro font-black text-caption uppercase tracking-widest transition-all ninja-clip-xs"
                   style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                 >
                   {vincLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}

@@ -121,7 +121,7 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
       <div className="overflow-x-auto scrollbar-hide">
         <table className="w-full text-left border-collapse min-w-[700px] table-fixed">
           <thead>
-            <tr className="border-b border-oro/10 text-oro/70 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em]">
+            <tr className="border-b border-oro/10 text-oro/70 text-caption xl:text-xs font-black uppercase tracking-[0.3em]">
               <th className="py-6 px-8 w-[18%]">Fecha</th>
               <th className="py-6 px-8 w-[52%]">Acción / Crónica</th>
               <th className="py-6 px-8 w-[15%] w-36">Coste / Recompensa</th>
@@ -169,21 +169,21 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
                         <span className="text-[11px] font-black text-oro/80 uppercase tracking-wider">
                           {new Date(m.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </span>
-                        <span className="text-[9px] font-bold text-oro/30 uppercase tracking-widest mt-0.5">
+                        <span className="text-caption font-bold text-oro/30 uppercase tracking-widest mt-0.5">
                           {new Date(m.fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
 
                       {/* Fecha de Modificación */}
                       {m.data.fecha_modificacion && (
-                        <div className="flex flex-col border-t border-red-500/30 pt-1.5">
+                        <div className="flex flex-col border-t border-error-text/30 pt-1.5">
                           <span className="text-[7px] font-black text-red-500/60 uppercase tracking-widest">
                             MODIFICADO
                           </span>
-                          <span className="text-[10px] font-black text-red-400 uppercase tracking-wider mt-0.5">
+                          <span className="text-caption font-black text-red-400 uppercase tracking-wider mt-0.5">
                             {new Date(m.data.fecha_modificacion).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                           </span>
-                          <span className="text-[8px] font-bold text-red-500/60 uppercase tracking-widest mt-0.5">
+                          <span className="text-caption font-bold text-red-500/60 uppercase tracking-widest mt-0.5">
                             {new Date(m.data.fecha_modificacion).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
@@ -205,12 +205,12 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
                           {ryousObtained > 0 && <div className="text-emerald-400">+{ryousObtained} Ryos</div>}
                           {monedasObtained > 0 && <div className="text-emerald-400">+{monedasObtained} M. Evento</div>}
                           {glosarioObtained.length > 0 && (
-                            <div className="text-[9px] text-oro/50 mt-0.5 font-bold uppercase tracking-wide">
+                            <div className="text-caption text-oro/50 mt-0.5 font-bold uppercase tracking-wide">
                               + {glosarioObtained.map((g: any) => g.nombre_es).join(', ')}
                             </div>
                           )}
                           {xpObtained === 0 && ryousObtained === 0 && monedasObtained === 0 && glosarioObtained.length === 0 && (
-                            <span className="text-[10px] text-oro/20 uppercase tracking-widest italic">-</span>
+                            <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
                           )}
                         </div>
                       ) : (
@@ -231,7 +231,7 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
                             </div>
                           )}
                           {xpSpent === 0 && ryousSpent === 0 && eventCoinsSpent === 0 && (
-                            <span className="text-[10px] text-oro/20 uppercase tracking-widest italic">Gratis</span>
+                            <span className="text-caption text-oro/20 uppercase tracking-widest italic">Gratis</span>
                           )}
                         </>
                       )}
@@ -252,7 +252,7 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
                         <button
                           onClick={() => handleDelete(m.id)}
                           disabled={loadingId === m.id}
-                          className="p-2 bg-red-600/10 border border-red-600/40 hover:border-red-500 hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
+                          className="p-2 bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
                           title="Eliminar Registro"
                         >
                           {loadingId === m.id ? (
@@ -263,7 +263,7 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
                         </button>
                       </div>
                     ) : (
-                      <span className="text-[10px] text-oro/20 uppercase tracking-widest italic">Sólo lectura</span>
+                      <span className="text-caption text-oro/20 uppercase tracking-widest italic">Sólo lectura</span>
                     )}
                   </td>
                 </tr>
