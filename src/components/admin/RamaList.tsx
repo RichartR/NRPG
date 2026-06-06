@@ -7,7 +7,7 @@ import RamaEditForm from './RamaEditForm';
 import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
 
-export default function RamaList({ initialRamas, aldeas }: { initialRamas: any[], aldeas: any[] }) {
+export default function RamaList({ initialRamas, aldeas, rasgos }: { initialRamas: any[], aldeas: any[], rasgos: any[] }) {
   const [editingRama, setEditingRama] = useState<any>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
@@ -203,6 +203,7 @@ export default function RamaList({ initialRamas, aldeas }: { initialRamas: any[]
         <RamaEditForm 
           rama={editingRama} 
           aldeas={aldeas}
+          rasgos={rasgos}
           onCancel={() => {
             setEditingRama(null);
             setIsAdding(false);

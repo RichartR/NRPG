@@ -1,6 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
-import { Map } from 'lucide-react';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import NinjaCard from '@/components/ui/NinjaCard';
@@ -17,16 +16,16 @@ export default async function AldeaDetailPage({ params }: { params: Promise<{ sl
   return (
     <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col">
       <header className="w-full max-w-[1750px] mx-auto flex flex-col md:flex-row justify-between items-center gap-10 mb-10 ninja-card-oro p-8 xl:p-10 z-50">
-        <Breadcrumbs 
+        <Breadcrumbs
           items={[
             { label: 'Inicio', href: '/' },
             { label: 'Biblioteca', href: '/documentos' },
             { label: 'Aldeas y Organizaciones', href: '/aldeas' },
             { label: aldea.abreviatura || aldea.nombre_completo }
-          ]} 
+          ]}
         />
         <div className="flex items-center gap-4">
-          <Map className="w-5 xl:w-7 h-auto text-oro" />
+          <img src="/assets/icons/shuriken.png" className="w-5 xl:w-7 h-auto object-contain" alt="icon" />
           <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
             Archivo de <span className="text-oro/40">Aldea</span>
           </h1>
@@ -34,11 +33,11 @@ export default async function AldeaDetailPage({ params }: { params: Promise<{ sl
       </header>
 
       <main className="w-full max-w-[1750px] mx-auto flex-1">
-        <div className="relative h-[400px] xl:h-[500px] overflow-hidden ninja-card-oro mb-16">
+        <div className="relative h-[400px] xl:h-[500px] overflow-hidden ninja-card-oro mb-10">
           {aldea.url_imagen && (
-            <img 
-              src={aldea.url_imagen} 
-              alt="" 
+            <img
+              src={aldea.url_imagen}
+              alt=""
               className="w-full h-full object-cover opacity-90 transition-all duration-1000"
               referrerPolicy="no-referrer"
             />
@@ -55,10 +54,12 @@ export default async function AldeaDetailPage({ params }: { params: Promise<{ sl
         </div>
 
         <div className="mb-16">
-          <div className="flex items-center gap-4 mb-10">
-            <h2 className="ninja-title text-4xl xl:text-6xl">Clanes y Especialidades</h2>
+          <div className="mb-10 ninja-card-oro p-8 sm:p-10 xl:p-12">
+            <div className="flex items-center gap-6">
+              <h2 className="ninja-title text-4xl xl:text-6xl">Clanes y Especialidades</h2>
+            </div>
           </div>
-          
+
           {clanes && clanes.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 xl:gap-16">
               {clanes.map((clan) => (
@@ -66,17 +67,17 @@ export default async function AldeaDetailPage({ params }: { params: Promise<{ sl
                   key={clan.id}
                   href={`/ramas/${clan.slug}`}
                   title={clan.nombre}
-                  titleClassName="text-2xl sm:text-3xl md:text-4xl"
+                  titleClassName="text-2xl sm:text-3xl md:text-3xl"
                   category={clan.tipo === 'clan' ? 'CLAN' : clan.tipo === 'rama' ? 'RAMA' : 'ESPECIALIDAD'}
-                  imageUrl={clan.url_imagen || 'https://game.gtimg.cn/images/hyrz/web2026/content.jpg'}
+                  imageUrl={clan.url_imagen}
                   description={clan.descripcion}
-                  actionText="Explorar Clan"
+                  actionText="Ver Clan"
                 />
               ))}
             </div>
           ) : (
             <div className="ninja-card-oro p-20 text-center opacity-40">
-               <h3 className="text-oro font-black uppercase tracking-widest text-2xl">Archivos no disponibles</h3>
+              <h3 className="text-oro font-black uppercase tracking-widest text-2xl">Archivos no disponibles</h3>
             </div>
           )}
         </div>

@@ -64,8 +64,8 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
             <tr className="border-b border-oro/10 text-oro/70 text-caption xl:text-xs font-black uppercase tracking-[0.3em]">
               <th className="py-6 px-8 w-[16%]">Fecha</th>
               <th className="py-6 px-8 w-[12%]">Código</th>
-              <th className="py-6 px-8 w-[12%]">Rango</th>
-              <th className="py-6 px-8 w-[22%]">Participantes</th>
+              <th className="py-6 px-8 w-[14%]">Rango</th>
+              <th className="py-6 px-8 w-[20%]">Participantes</th>
               <th className="py-6 px-8 w-[18%]">Recompensa</th>
               <th className="py-6 px-8 w-[20%]">Pruebas</th>
               <th className="py-6 px-8 text-right w-36 w-[10%]">Acciones</th>
@@ -201,7 +201,7 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
                         </button>
                       </div>
                     ) : (
-                      <span className="text-caption text-oro/20 uppercase tracking-widest italic">Sólo lectura</span>
+                      <span className="text-caption text-oro/20 uppercase tracking-widest italic"></span>
                     )}
                   </td>
                 </tr>

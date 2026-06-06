@@ -298,18 +298,20 @@ export function SelectField({ label, value, options, onChange, disabled, placeho
 }
 
 // ─────────────────────────────────────────────
-//  SearchableSelect (sin cambios, ya personalizado)
+//  SearchableSelect (versión con portal)
 // ─────────────────────────────────────────────
 export function SearchableSelect({ label, value, options, onChange, disabled, placeholder = 'Buscar...' }: SelectFieldProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [search, setSearch] = React.useState('');
-  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [dropdownStyle, setDropdownStyle] = React.useState({});
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
   const { isEditing = true } = React.useContext(FormEditContext);
   const showLock = disabled && isEditing;
 
   const normalizedOptions = React.useMemo(() =>
     Array.isArray(options)
-      ? options.map(o => typeof o === 'string' ? { label: o, value: o } : o)
+      ? options.map(o => (typeof o === 'string' ? { label: o, value: o } : o as NinjaSelectOption))
       : [],
     [options]
   );
@@ -318,90 +320,104 @@ export function SearchableSelect({ label, value, options, onChange, disabled, pl
     o.label.toLowerCase().includes(search.toLowerCase())
   );
 
-  const selectedOption = normalizedOptions.find(o => o.value == value);
+  const selectedOption = normalizedOptions.find(o => String(o.value) === String(value));
+
+  const openDropdown = () => {
+    if (disabled || !triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    setDropdownStyle({
+      position: 'fixed',
+      left: rect.left,
+      top: rect.bottom + 4,
+      width: rect.width,
+      zIndex: 9999
+    });
+    setIsOpen(true);
+  };
 
   React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
+    if (!isOpen) return;
+    const handleMouseDown = (e: MouseEvent) => {
+      if (dropdownRef.current?.contains(e.target as Node) || triggerRef.current?.contains(e.target as Node)) return;
+      setIsOpen(false);
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    const handleScroll = () => setIsOpen(false);
+    document.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
+  }, [isOpen]);
 
   return (
-    <div className="space-y-3 relative" ref={containerRef}>
+    <div className="space-y-3 relative">
       <label className="text-caption font-black uppercase tracking-[0.2em] text-oro/60 ml-1">{label}</label>
-      <div className="relative">
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={() => setIsOpen(!isOpen)}
-          className="w-full h-[58px] bg-black/40 border border-oro/10 px-6 py-4 text-left text-oro font-black outline-none focus:border-oro/40 disabled:cursor-default flex justify-between items-center transition-all text-sm xl:text-base ninja-clip-sm"
-        >
-          <span className={`${!selectedOption ? 'text-oro/20' : ''} w-full text-left`}>
-            {selectedOption ? (
-              selectedOption.label.includes('\n') ? (
-                <span className="flex flex-col items-start gap-0.5 leading-tight py-0.5 min-w-0">
-                  <span className="text-sm xl:text-base font-black text-oro truncate block w-full">{selectedOption.label.split('\n')[0]}</span>
-                  <span className="text-caption xl:text-caption font-bold text-oro/40 lowercase tracking-wider block">{selectedOption.label.split('\n')[1]}</span>
-                </span>
-              ) : (
-                selectedOption.label
-              )
-            ) : placeholder}
-          </span>
-          {showLock ? (
-            <Lock className="shrink-0 w-3.5 h-3.5 text-oro/40" />
-          ) : (
-            <div className={`w-[7px] h-[7px] border border-oro/60 rotate-45 transition-transform ${isOpen ? 'scale-125 bg-oro/30' : ''}`} />
-          )}
-        </button>
-
-        {isOpen && (
-          <div className="relative z-[100] w-full mt-4 bg-black/40 border border-oro/20 shadow-[0_10px_30px_rgba(0,0,0,0.5)] overflow-hidden animate-in fade-in zoom-in duration-200 ninja-clip-sm">
-            <div className="p-4 border-b border-oro/10 bg-black/20">
-              <input
-                autoFocus
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Filtrar por nombre..."
-                className="w-full bg-black/40 border border-oro/10 px-4 py-3 text-sm text-oro outline-none focus:border-oro/40 transition-all font-black"
-                onClick={(e) => e.stopPropagation()}
-              />
-            </div>
-            <div className="max-h-80 overflow-y-auto custom-scrollbar bg-black/80 backdrop-blur-md">
-              {filteredOptions.length > 0 ? (
-                filteredOptions.map((o) => (
-                  <button
-                    key={o.value}
-                    type="button"
-                    onClick={() => {
-                      onChange?.(o.value.toString());
-                      setIsOpen(false);
-                      setSearch('');
-                    }}
-                    className={`w-full text-left px-8 py-4 text-xs xl:text-sm font-black uppercase tracking-widest hover:bg-oro/10 hover:text-oro transition-all ${o.value == value ? 'bg-oro/10 text-oro' : 'text-oro/40'}`}
-                  >
-                    {o.label.includes('\n') ? (
-                      <div className="flex flex-col text-left py-0.5 min-w-0">
-                        <span className="text-xs xl:text-sm font-black text-oro truncate block w-full">{o.label.split('\n')[0]}</span>
-                        <span className="text-caption xl:text-caption font-bold text-oro/40 lowercase tracking-wider mt-0.5 block">{o.label.split('\n')[1]}</span>
-                      </div>
-                    ) : (
-                      o.label
-                    )}
-                  </button>
-                ))
-              ) : (
-                <div className="px-8 py-10 text-caption text-oro/20 font-black uppercase tracking-widest text-center italic">Sin resultados</div>
-              )}
-            </div>
-          </div>
+      <button
+        ref={triggerRef}
+        type="button"
+        disabled={disabled}
+        onClick={() => isOpen ? setIsOpen(false) : openDropdown()}
+        className="w-full h-[58px] bg-black/40 border border-oro/10 px-6 py-4 text-left text-oro font-black outline-none focus:border-oro/40 disabled:cursor-default flex justify-between items-center transition-all text-sm xl:text-base ninja-clip-sm"
+      >
+        <span className={`${!selectedOption ? 'text-oro/20' : ''} w-full text-left truncate`}>
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        {showLock ? (
+          <Lock className="shrink-0 w-3.5 h-3.5 text-oro/40" />
+        ) : (
+          <div className={`w-[7px] h-[7px] border border-oro/60 rotate-45 transition-transform ${isOpen ? 'scale-125 bg-oro/30' : ''}`} />
         )}
-      </div>
+      </button>
+
+      {isOpen && createPortal(
+        <div
+          ref={dropdownRef}
+          style={{ ...dropdownStyle }}
+          className="z-[9999] bg-black/95 border border-oro/20 shadow-[0_10px_30px_rgba(0,0,0,0.8)] overflow-hidden animate-in fade-in zoom-in duration-200 ninja-clip-sm backdrop-blur-md"
+        >
+          <div className="p-4 border-b border-oro/10 bg-black/20">
+            <input
+              autoFocus
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Filtrar por nombre..."
+              className="w-full bg-black/40 border border-oro/10 px-4 py-3 text-sm text-oro outline-none focus:border-oro/40 transition-all font-black"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+          <div className="max-h-64 overflow-y-auto custom-scrollbar">
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((o) => (
+                <button
+                  key={String(o.value)}
+                  type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    onChange?.(String(o.value));
+                    setIsOpen(false);
+                    setSearch('');
+                  }}
+                  className={`w-full text-left px-8 py-4 text-xs xl:text-sm font-black uppercase tracking-widest hover:bg-oro/10 hover:text-oro transition-all ${String(o.value) === String(value) ? 'bg-oro/10 text-oro' : 'text-oro/40'}`}
+                >
+                  {o.label.includes('\n') ? (
+                    <div className="flex flex-col text-left py-0.5 min-w-0">
+                      <span className="text-xs xl:text-sm font-black text-oro truncate block w-full">{o.label.split('\n')[0]}</span>
+                      <span className="text-caption xl:text-caption font-bold text-oro/40 lowercase tracking-wider mt-0.5 block">{o.label.split('\n')[1]}</span>
+                    </div>
+                  ) : (
+                    o.label
+                  )}
+                </button>
+              ))
+            ) : (
+              <div className="px-8 py-10 text-caption text-oro/20 font-black uppercase tracking-widest text-center italic">Sin resultados</div>
+            )}
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

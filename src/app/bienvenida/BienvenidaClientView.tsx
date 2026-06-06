@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Zap } from 'lucide-react';
 import NinjaCard from '@/components/ui/NinjaCard';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import DocList from '@/components/admin/DocList';
@@ -51,11 +50,11 @@ export default function BienvenidaClientView({
       <main className="w-full max-w-[1750px] mx-auto flex-1">
         {viewMode === 'player' ? (
           <>
-            <div className="mb-20 ninja-card-oro p-8 sm:p-12 xl:p-16">
+            <div className="mb-10 ninja-card-oro p-8 sm:p-12 xl:p-16">
               <div className="flex items-center gap-6 mb-6">
-                <h1 className="ninja-title text-3xl sm:text-5xl xl:text-8xl uppercase tracking-[0.3em]">BIENVENIDA</h1>
+                <h1 className="ninja-title text-3xl sm:text-5xl xl:text-7xl uppercase tracking-[0.3em]">BIENVENIDA</h1>
               </div>
-              <p className="text-gris-texto text-base sm:text-lg xl:text-2xl max-w-4xl leading-relaxed">Selecciona una sección para obtener más información sobre el mundo ninja y las reglas fundamentales.</p>
+              <p className="text-gris-texto text-base sm:text-lg xl:text-2xl leading-relaxed">Selecciona una sección para obtener más información sobre el mundo ninja y las reglas fundamentales.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10 xl:gap-16">
@@ -64,11 +63,11 @@ export default function BienvenidaClientView({
                   key={doc.id}
                   href={`/docs/${doc.clave}`}
                   title={doc.titulo}
-                  titleClassName="text-2xl sm:text-3xl md:text-4xl"
+                  titleClassName="text-2xl sm:text-3xl md:text-3xl"
                   category="BIENVENIDA"
                   imageUrl={doc.url_imagen}
                   description={doc.descripcion}
-                  actionText="Consultar Guía"
+                  actionText="Ver Guía"
                 />
               ))}
             </div>
@@ -78,11 +77,11 @@ export default function BienvenidaClientView({
             <header className="mb-6 ninja-card-oro p-8 xl:p-10">
               <div className="flex items-center gap-6">
                 <div className="w-12 h-12 bg-oro/[0.03] border border-oro/10 flex items-center justify-center">
-                  <Zap className="w-6 h-6 text-oro" />
+                  <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto" alt="icon" />
                 </div>
                 <div>
                   <h1 className="ninja-title text-4xl xl:text-5xl italic">REGLAS DE BIENVENIDA</h1>
-                  <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.4em] mt-2">CONFIGURACIÓN DE MANUALES DE BIENVENIDA</p>
+                  <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.4em] mt-2">CONFIGURACIÓN DE DOCUMENTOS DE BIENVENIDA</p>
                 </div>
               </div>
             </header>

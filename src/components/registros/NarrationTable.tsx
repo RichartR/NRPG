@@ -189,7 +189,7 @@ export default function NarrationTable({ narraciones, onRefresh, onEdit, isAdmin
                         </button>
                       </div>
                     ) : (
-                      <span className="text-caption text-oro/20 uppercase tracking-widest italic">Sólo lectura</span>
+                      <span className="text-caption text-oro/20 uppercase tracking-widest italic"></span>
                     )}
                   </td>
                 </tr>

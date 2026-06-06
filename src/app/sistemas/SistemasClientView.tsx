@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Zap } from 'lucide-react';
 import NinjaCard from '@/components/ui/NinjaCard';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import DocList from '@/components/admin/DocList';
@@ -35,7 +34,7 @@ export default function SistemasClientView({
         <div className="flex items-center gap-4">
           <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto" alt="icon" />
           <h1 className="text-lg xl:text-2xl font-black text-oro uppercase tracking-[0.3em] pt-1">
-            Sistemas de NRPG
+            Sistemas <span className="text-oro/40">de NRPG</span>
           </h1>
         </div>
       </header>
@@ -53,9 +52,9 @@ export default function SistemasClientView({
           <>
             <div className="mb-10 ninja-card-oro p-8 sm:p-12 xl:p-16">
               <div className="flex items-center gap-6 mb-6">
-                <h1 className="ninja-title text-3xl sm:text-5xl xl:text-8xl">SISTEMAS</h1>
+                <h1 className="ninja-title text-3xl sm:text-5xl xl:text-7xl">SISTEMAS</h1>
               </div>
-              <p className="text-gris-texto text-base sm:text-lg xl:text-2xl max-w-4xl leading-relaxed">Consulta las mecánicas detalladas, tablas de escalado y reglas de combate fundamentales para el desarrollo del rol.</p>
+              <p className="text-gris-texto text-base sm:text-lg xl:text-2xl leading-relaxed">Consulta las mecánicas detalladas, tablas de escalado y reglas de combate fundamentales para el desarrollo del rol.</p>
             </div>
 
             {initialDocs.length === 0 && (
@@ -70,7 +69,7 @@ export default function SistemasClientView({
                   key={doc.id}
                   href={`/docs/${doc.clave}`}
                   title={doc.titulo}
-                  titleClassName="text-2xl sm:text-3xl md:text-4xl"
+                  titleClassName="text-2xl sm:text-3xl md:text-2xl"
                   category="SISTEMA"
                   imageUrl={doc.url_imagen}
                   description={doc.descripcion}
@@ -84,7 +83,7 @@ export default function SistemasClientView({
             <header className="mb-6 ninja-card-oro p-8 xl:p-10">
               <div className="flex items-center gap-6">
                 <div className="w-12 h-12 bg-oro/[0.03] border border-oro/10 flex items-center justify-center">
-                  <Zap className="w-6 h-6 text-oro" />
+                  <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto" alt="icon" />
                 </div>
                 <div>
                   <h1 className="ninja-title text-4xl xl:text-5xl italic">REGLAS DE SISTEMA</h1>

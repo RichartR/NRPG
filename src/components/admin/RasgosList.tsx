@@ -10,9 +10,10 @@ import { Rasgo } from '@/domain/types';
 
 interface RasgosListProps {
   initialRasgos: Rasgo[];
+  characters: any[];
 }
 
-export default function RasgosList({ initialRasgos }: RasgosListProps) {
+export default function RasgosList({ initialRasgos, characters }: RasgosListProps) {
   const [editingRasgo, setEditingRasgo] = useState<Rasgo | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
@@ -197,6 +198,7 @@ export default function RasgosList({ initialRasgos }: RasgosListProps) {
       {(editingRasgo || isAdding) && (
         <RasgoEditForm
           rasgo={editingRasgo ?? undefined}
+          characters={characters}
           onCancel={() => {
             setEditingRasgo(null);
             setIsAdding(false);

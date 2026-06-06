@@ -101,9 +101,9 @@ export default function ProfileSettings({ profile, userId }: ProfileSettingsProp
                 <p className="text-caption text-oro/20 italic ml-2">Recomendado: 400x400px o superior. Formatos JPG, PNG, WEBP.</p>
               </div>
 
-              {/* Preview */}
+               {/* Preview */}
               <div className="flex justify-center py-6">
-                <div className="w-32 h-32 ninja-card-oro border-oro/20 overflow-hidden relative">
+                <div className="w-32 h-32 bg-black/40 border border-oro/20 overflow-hidden relative">
                   {urlImg ? (
                     <img src={urlImg} className="w-full h-full object-cover" alt="Preview" />
                   ) : (

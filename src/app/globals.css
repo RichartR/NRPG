@@ -4,7 +4,7 @@
   /* ==========================================================================
      PALETA DE COLORES (SEMÁNTICA)
      ========================================================================== */
-  
+
   /* Sistema Principal (Oro) */
   --color-primary-300: #ffefd3;
   --color-primary-400: #ffe6ba;
@@ -87,7 +87,7 @@
 
   --font-ninja: "Shojumaru", system-ui;
   --font-body: "Noto Sans JP", sans-serif;
-  
+
   /* Tipografía Semántica */
   --font-size-h1: 2rem;
   --font-size-h2: 1.5rem;
@@ -103,6 +103,7 @@
 
 html {
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 body {
@@ -113,6 +114,7 @@ body {
   background-position: center;
   color: var(--color-neutral-200);
   font-family: var(--font-body);
+  overflow-x: hidden;
 }
 
 select {
@@ -245,7 +247,8 @@ input[type=number] {
   }
 
   .ninja-btn-rojo {
-    @apply font-black uppercase tracking-[0.2em] transition-all active:scale-95 disabled:opacity-30 hover:brightness-110 bg-secondary-500 text-primary-500 shadow-[0_0_15px_rgba(103,9,9,0.2)];
+    @apply font-black uppercase tracking-[0.2em] transition-all active:scale-95 disabled:opacity-30 hover:brightness-110 bg-secondary-500 text-primary-500;
+    box-shadow: 0 0 15px rgba(103, 9, 9, 0.2);
     clip-path: var(--radius-md);
   }
 

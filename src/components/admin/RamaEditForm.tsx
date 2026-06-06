@@ -11,17 +11,19 @@ import { RamaClan, Aldea } from '@/domain/types';
 interface RamaEditFormProps {
   rama?: RamaClan;
   aldeas: Aldea[];
+  rasgos: any[];
   onCancel: () => void;
 }
 
-export default function RamaEditForm({ rama, aldeas, onCancel }: RamaEditFormProps) {
+export default function RamaEditForm({ rama, aldeas, rasgos, onCancel }: RamaEditFormProps) {
   const isCreate = !rama;
   const [formData, setFormData] = useState<Partial<RamaClan>>(() => {
     if (rama) {
       return {
         ...rama,
         es_especial: rama.es_especial ?? false,
-        es_repetible: rama.es_repetible ?? false
+        es_repetible: rama.es_repetible ?? false,
+        rasgo_id: rama.rasgo_id ?? null
       };
     }
     return {
@@ -33,7 +35,8 @@ export default function RamaEditForm({ rama, aldeas, onCancel }: RamaEditFormPro
       activo: true,
       es_especial: false,
       es_repetible: false,
-      url_imagen: ''
+      url_imagen: '',
+      rasgo_id: null
     };
   });
   const [loading, setLoading] = useState(false);
@@ -198,6 +201,15 @@ export default function RamaEditForm({ rama, aldeas, onCancel }: RamaEditFormPro
                 </div>
               </div>
             )}
+            <div className="md:col-span-2">
+              <SearchableSelect
+                label="Rasgo Automático Vinculado"
+                value={formData.rasgo_id}
+                options={rasgos.map(r => ({ label: r.nombre, value: r.id }))}
+                onChange={(v) => updateField('rasgo_id', v ? Number(v) : null)}
+                placeholder="Ningún Rasgo Asignado"
+              />
+            </div>
             <div className="md:col-span-2">
               <DataField
                 label="URL Imagen"

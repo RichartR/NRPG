@@ -10,28 +10,23 @@ import { Rasgo } from '@/domain/types';
 
 interface RasgoEditFormProps {
   rasgo?: Rasgo;
+  characters: any[];
   onCancel: () => void;
 }
 
-export default function RasgoEditForm({ rasgo, onCancel }: RasgoEditFormProps) {
+export default function RasgoEditForm({ rasgo, characters, onCancel }: RasgoEditFormProps) {
   const isCreate = !rasgo;
   const router = useRouter();
   const addToast = useToastStore((s) => s.addToast);
 
   const [formData, setFormData] = useState<Partial<Rasgo>>(() =>
     rasgo
-      ? { ...rasgo }
+      ? { ...rasgo, personajes: rasgo.personajes || [] }
       : { nombre: '', categoria: 'Físico', rango: 'D', activo: true, especial: false, personajes: [], stat: null }
   );
   const [loading, setLoading] = useState(false);
-
-  // For allowed characters, we display them as comma-separated list of IDs
-  const [personajesRaw, setPersonajesRaw] = useState<string>(() => {
-    if (rasgo?.personajes && Array.isArray(rasgo.personajes)) {
-      return rasgo.personajes.join(', ');
-    }
-    return '';
-  });
+  const [charSearch, setCharSearch] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const updateField = (field: keyof Rasgo, value: any) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -45,19 +40,7 @@ export default function RasgoEditForm({ rasgo, onCancel }: RasgoEditFormProps) {
 
     setLoading(true);
     try {
-      // Parse characters IDs
-      const ids = personajesRaw
-        .split(',')
-        .map((p) => p.trim())
-        .filter((p) => p !== '' && !isNaN(Number(p)))
-        .map((p) => Number(p));
-
-      const payload = {
-        ...formData,
-        personajes: ids,
-      };
-
-      await AdminService.saveRasgo(payload);
+      await AdminService.saveRasgo(formData);
       addToast(`Rasgo ${isCreate ? 'creado' : 'actualizado'} con éxito`, 'success');
       router.refresh();
       onCancel();
@@ -203,17 +186,91 @@ export default function RasgoEditForm({ rasgo, onCancel }: RasgoEditFormProps) {
 
             {/* Personajes Autorizados (solo si es Especial) */}
             {formData.especial && (
-              <div className="sm:col-span-2 space-y-2">
+              <div className="sm:col-span-2 space-y-3 relative">
                 <label className="text-caption font-black uppercase tracking-widest text-oro/60 ml-1">
-                  IDs de personajes autorizados (Separados por comas)
+                  Personajes Autorizados
                 </label>
-                <textarea
-                  value={personajesRaw}
-                  onChange={(e) => setPersonajesRaw(e.target.value)}
-                  placeholder="Ej: 1, 25, 42"
-                  className="w-full min-h-[80px] bg-black/40 border border-oro/10 p-4 text-xs font-black text-oro focus:border-oro/40 outline-none transition-all placeholder:text-oro/20 uppercase tracking-widest"
-                  style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
-                />
+                
+                {/* Selected Character Tags */}
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {(formData.personajes || []).map((charId: number) => {
+                    const char = characters.find(c => Number(c.id) === Number(charId));
+                    return (
+                      <span 
+                        key={charId}
+                        className="inline-flex items-center gap-2 px-3 py-1 bg-rojo-sangre/20 border border-rojo-sangre/40 text-oro text-caption font-black uppercase tracking-wider"
+                        style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
+                      >
+                        {char ? char.nombre_ninja : `ID: ${charId}`}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = (formData.personajes || []).filter((id: number) => id !== charId);
+                            updateField('personajes', updated);
+                          }}
+                          className="hover:text-red-400 focus:outline-none ml-1 text-oro/60"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    );
+                  })}
+                  {(formData.personajes || []).length === 0 && (
+                    <span className="text-xs text-oro/20 font-black italic ml-1">Ninguno seleccionado</span>
+                  )}
+                </div>
+
+                {/* Dropdown Input Trigger */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="BUSCAR PERSONAJE PARA AUTORIZAR..."
+                    value={charSearch}
+                    onChange={(e) => {
+                      setCharSearch(e.target.value);
+                      setShowDropdown(true);
+                    }}
+                    onFocus={() => setShowDropdown(true)}
+                    className="w-full h-[58px] bg-black/40 border border-oro/10 px-6 py-4 text-oro font-black outline-none focus:border-oro/40 transition-all placeholder:text-oro/20 text-sm xl:text-base ninja-clip-sm"
+                  />
+
+                  {showDropdown && charSearch.trim().length > 0 && (
+                    <div 
+                      className="absolute z-[110] w-full mt-2 bg-neutral-900 border border-oro/20 shadow-[0_10px_30px_rgba(0,0,0,0.8)] overflow-hidden ninja-clip-sm"
+                      onMouseLeave={() => setShowDropdown(false)}
+                    >
+                      <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                        {characters
+                          .filter(c => c.nombre_ninja.toLowerCase().includes(charSearch.toLowerCase()))
+                          .map(c => {
+                            const isSelected = (formData.personajes || []).includes(c.id);
+                            return (
+                              <button
+                                key={c.id}
+                                type="button"
+                                onClick={() => {
+                                  let updated = [...(formData.personajes || [])];
+                                  if (isSelected) {
+                                    updated = updated.filter(id => id !== c.id);
+                                  } else {
+                                    updated.push(c.id);
+                                  }
+                                  updateField('personajes', updated);
+                                }}
+                                className={`w-full text-left px-6 py-3 text-caption sm:text-xs font-black uppercase tracking-widest transition-all border-b border-oro/[0.04] last:border-0 hover:bg-oro/5 hover:text-oro flex justify-between items-center ${isSelected ? 'bg-oro/10 text-oro' : 'text-oro/40'}`}
+                              >
+                                <span>{c.nombre_ninja}</span>
+                                {isSelected && <div className="w-[5px] h-[5px] bg-oro rotate-45" />}
+                              </button>
+                            );
+                          })}
+                        {characters.filter(c => c.nombre_ninja.toLowerCase().includes(charSearch.toLowerCase())).length === 0 && (
+                          <div className="px-6 py-4 text-caption text-oro/20 font-black uppercase tracking-widest text-center italic">Sin resultados</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>

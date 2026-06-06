@@ -5,6 +5,8 @@ import { MasterServerService } from '@/services/supabase/master.server.service';
 import { CharacterServerService } from '@/services/supabase/character.server.service';
 import { NinjaSearchInput } from '@/components/character/NinjaSearchInput';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
+import { PaginationPageInput } from '@/components/ui/PaginationPageInput';
+import { PaginationContainer } from '@/components/ui/PaginationContainer';
 
 export default async function MundoNinjaPublicVillagePage({
   params,
@@ -151,7 +153,8 @@ export default async function MundoNinjaPublicVillagePage({
           )}
 
           {filteredNinjas.length > 0 ? (
-            <div className={`ninja-card-oro overflow-hidden border ${isRenegado ? 'border-rojo-sangre/20' : 'border-oro/20'} bg-black/40 backdrop-blur-sm`}>
+            <>
+              <div className={`ninja-card-oro overflow-hidden border ${isRenegado ? 'border-rojo-sangre/20' : 'border-oro/20'} bg-black/40 backdrop-blur-sm`}>
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[700px]">
                   <thead>
@@ -203,57 +206,61 @@ export default async function MundoNinjaPublicVillagePage({
                   </tbody>
                 </table>
               </div>
-
-              {/* Controles de Paginación */}
-              {totalPages > 1 && (
-                <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 px-8 py-6 border-t ${isRenegado ? 'border-rojo-sangre/10' : 'border-oro/10'} bg-black/20 text-xs font-black uppercase tracking-widest`}>
-                  <div>
-                    <span className="text-oro/40">
-                      Mostrando {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, totalItems)} de {totalItems} shinobis
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    {currentPage > 1 ? (
-                      <Link
-                        href={`/mundo-ninja/${id}?page=${currentPage - 1}${searchParamSuffix}`}
-                        className={`px-4 py-2 border ${isRenegado ? 'border-rojo-sangre/30 hover:bg-rojo-sangre/20 text-rojo-sangre hover:text-white' : 'border-oro/30 hover:bg-oro/20 text-oro hover:text-white'} transition-all`}
-                        style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
-                      >
-                        Anterior
-                      </Link>
-                    ) : (
-                      <span
-                        className="px-4 py-2 border border-oro/5 text-oro/10 cursor-not-allowed"
-                        style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
-                      >
-                        Anterior
-                      </span>
-                    )}
-
-                    <span className="text-oro font-black">
-                      {currentPage} / {totalPages}
-                    </span>
-
-                    {currentPage < totalPages ? (
-                      <Link
-                        href={`/mundo-ninja/${id}?page=${currentPage + 1}${searchParamSuffix}`}
-                        className={`px-4 py-2 border ${isRenegado ? 'border-rojo-sangre/30 hover:bg-rojo-sangre/20 text-rojo-sangre hover:text-white' : 'border-oro/30 hover:bg-oro/20 text-oro hover:text-white'} transition-all`}
-                        style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
-                      >
-                        Siguiente
-                      </Link>
-                    ) : (
-                      <span
-                        className="px-4 py-2 border border-oro/5 text-oro/10 cursor-not-allowed"
-                        style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
-                      >
-                        Siguiente
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
+
+            {/* Controles de Paginación */}
+            {totalPages > 1 && (
+              <div className="mt-10">
+                <PaginationContainer isRenegado={isRenegado} maxWidthClass="max-w-md">
+                  {currentPage > 1 ? (
+                    <Link
+                      href={`/mundo-ninja/${id}?page=${currentPage - 1}${searchParamSuffix}`}
+                      className={`px-4 py-2 border ${isRenegado ? 'border-rojo-sangre/30 hover:bg-rojo-sangre/20 text-rojo-sangre hover:text-white' : 'border-oro/30 hover:bg-oro/20 text-oro hover:text-white'} transition-all text-xs font-black uppercase tracking-widest`}
+                      style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                    >
+                      Anterior
+                    </Link>
+                  ) : (
+                    <span
+                      className="px-4 py-2 border border-oro/5 text-oro/10 cursor-not-allowed text-xs font-black uppercase tracking-widest"
+                      style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                    >
+                      Anterior
+                    </span>
+                  )}
+
+                  <div className="flex items-center gap-1.5 justify-center">
+                    <PaginationPageInput
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      isRenegado={isRenegado}
+                      urlParamName="page"
+                    />
+                    <span className="text-oro/40 font-black text-xs">
+                      / {totalPages}
+                    </span>
+                  </div>
+
+                  {currentPage < totalPages ? (
+                    <Link
+                      href={`/mundo-ninja/${id}?page=${currentPage + 1}${searchParamSuffix}`}
+                      className={`px-4 py-2 border ${isRenegado ? 'border-rojo-sangre/30 hover:bg-rojo-sangre/20 text-rojo-sangre hover:text-white' : 'border-oro/30 hover:bg-oro/20 text-oro hover:text-white'} transition-all text-xs font-black uppercase tracking-widest`}
+                      style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                    >
+                      Siguiente
+                    </Link>
+                  ) : (
+                    <span
+                      className="px-4 py-2 border border-oro/5 text-oro/10 cursor-not-allowed text-xs font-black uppercase tracking-widest"
+                      style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                    >
+                      Siguiente
+                    </span>
+                  )}
+                </PaginationContainer>
+              </div>
+            )}
+          </>
           ) : ninjas.length > 0 ? (
             /* Filtro vacío (ninjas existen en la aldea pero ninguno coincide) */
             <div className={`py-32 text-center ${isRenegado ? 'ninja-card-rojo' : 'ninja-card-oro'} opacity-75 flex flex-col items-center gap-6`}>

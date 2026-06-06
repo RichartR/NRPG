@@ -364,6 +364,7 @@ export default function GlosarioView({
                                       <th className="py-5 px-8">Requisitos</th>
                                       <th className="py-5 px-8 text-center w-32">Coste EXP</th>
                                       <th className="py-5 px-8 text-center w-32">Coste RYOUS</th>
+                                      <th className="py-5 px-8 text-center w-32">Coste PA</th>
                                     </tr>
                                   </thead>
                                   <tbody className="divide-y divide-zinc-100">
@@ -372,7 +373,7 @@ export default function GlosarioView({
                                         {/* NIVEL 5: SUBCATEGORÍA */}
                                         {subcat.info.nombre !== 'General' && (
                                           <tr className="bg-zinc-50">
-                                            <td colSpan={4} className="py-3 px-8 text-caption font-black text-zinc-600 uppercase tracking-[0.4em] text-center border-y border-zinc-100 italic">
+                                            <td colSpan={5} className="py-3 px-8 text-caption font-black text-zinc-600 uppercase tracking-[0.4em] text-center border-y border-zinc-100 italic">
                                               --- {subcat.info.nombre} ---
                                             </td>
                                           </tr>
@@ -412,6 +413,12 @@ export default function GlosarioView({
                                               <div className="flex flex-col items-center">
                                                 <span className="text-base font-black text-zinc-900">{item.coste_ryous.toLocaleString()}</span>
                                                 <span className="text-[7px] text-zinc-400 uppercase font-black tracking-widest">Ryous</span>
+                                              </div>
+                                            </td>
+                                            <td className="py-3 px-8 text-center">
+                                              <div className="flex flex-col items-center">
+                                                <span className="text-base font-black text-zinc-900">{item.coste_puntos_aprendizaje || 0}</span>
+                                                <span className="text-[7px] text-zinc-400 uppercase font-black tracking-widest">PA</span>
                                               </div>
                                             </td>
                                           </tr>

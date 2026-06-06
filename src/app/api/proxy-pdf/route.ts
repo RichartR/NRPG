@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     return new NextResponse(pdfBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+        'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
         'Content-Disposition': 'inline; filename="document.pdf"',
         'Content-Length': pdfBuffer.length.toString(),
       },

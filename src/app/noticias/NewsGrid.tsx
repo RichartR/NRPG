@@ -7,7 +7,8 @@ import { renderDiscordMarkdown } from '@/lib/discord/renderDiscordMarkdown';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import { createClient } from '@/utils/supabase/client';
 import RegistroCard from '@/components/registros/RegistroCard';
-import EventRewardForm from '@/components/admin/EventRewardForm';
+import { PaginationPageInput } from '@/components/ui/PaginationPageInput';
+import { PaginationContainer } from '@/components/ui/PaginationContainer';
 
 interface NewsItem {
   id?: string;
@@ -86,20 +87,6 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
   useEffect(() => {
     if (!activeNews) return;
     const msgId = activeNews.discord_msg_id;
-
-    // Skip fetching mock or already loaded items
-    if (msgId === '1' || msgId === '2') {
-      setLoadedContent(prev => ({
-        ...prev,
-        [msgId]: {
-          content: msgId === '1'
-            ? "**NOTICIA:** ¡Bienvenidos al nuevo servidor de NRPG! Revisa las secciones para ver las reglas, mapas, sistemas y crear tu primer personaje shinobi."
-            : "**PARCHE:** Ajustes generales de equilibrio, balance de Taijutsu y optimizaciones en la calculadora de combate.",
-          timestamp: new Date().toISOString()
-        }
-      }));
-      return;
-    }
 
     if (loadedContent[msgId]) return;
 
@@ -181,7 +168,7 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
   return (
     <>
       {/* Buscador y Toggles de Categoría */}
-      <div className="flex flex-col xl:flex-row gap-8 justify-between items-stretch xl:items-center ninja-card-oro p-6 sm:p-10 mb-12">
+      <div className="flex flex-col xl:flex-row gap-8 justify-between items-stretch xl:items-center ninja-card-oro overflow-hidden p-6 sm:p-10 mb-10">
         <div className="absolute top-0 right-0 w-64 h-64 bg-oro/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
 
         {/* Buscador */}
@@ -236,9 +223,8 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
         )}
       </div>
 
-      {/* Controles de Paginación */}
       {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-8 mt-16 pb-12">
+        <PaginationContainer className="mt-16" maxWidthClass="max-w-md">
           <button
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
@@ -247,9 +233,16 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
           >
             Anterior
           </button>
-          <span className="text-oro/70 font-black uppercase tracking-[0.2em] text-caption sm:text-xs">
-            PÁGINA {currentPage} DE {totalPages}
-          </span>
+          <div className="flex items-center gap-1.5 min-w-[120px] justify-center">
+            <PaginationPageInput
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onChangePage={setCurrentPage}
+            />
+            <span className="text-oro/40 font-black uppercase tracking-[0.2em] text-caption sm:text-xs">
+              / {totalPages}
+            </span>
+          </div>
           <button
             disabled={currentPage === totalPages || totalPages === 0}
             onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
@@ -258,7 +251,7 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
           >
             Siguiente
           </button>
-        </div>
+        </PaginationContainer>
       )}
 
       {/* Modal Inmersivo con Carga Perezosa */}
@@ -321,11 +314,6 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-oro" />
                       <span>{formatDate(loadedContent[activeNews.discord_msg_id]?.timestamp)}</span>
-                    </div>
-                    <div className="w-1.5 h-1.5 bg-oro/40 rotate-45" />
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-oro" />
-                      <span>Muro de Anuncios</span>
                     </div>
                   </div>
 

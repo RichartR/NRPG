@@ -16,24 +16,10 @@ export async function GET(request: Request) {
 
   const token = process.env.DISCORD_BOT_TOKEN;
 
-  // Interceptar IDs simulados (Mocks) para pruebas locales o bases de datos vacías
-  if (messageId === '1' || messageId === '2') {
-    return NextResponse.json({
-      id: messageId,
-      content: messageId === '1'
-        ? "**NOTICIA:** ¡Bienvenidos al nuevo servidor de NRPG! Revisa las secciones para ver las reglas, mapas, sistemas y crear tu primer personaje shinobi."
-        : "**PARCHE:** Ajustes generales de equilibrio, balance de Taijutsu y optimizaciones en la calculadora de combate.",
-      timestamp: new Date().toISOString(),
-      author: {
-        username: "Sistema",
-        avatar: ""
-      }
-    });
-  }
 
   try {
     const supabase = await createClient();
-    
+
     let configKey = 'discord_history_appearance_channel_id';
     if (categoria === 'noticia') {
       configKey = 'discord_news_channel_id';
@@ -67,7 +53,7 @@ export async function GET(request: Request) {
       return NextResponse.json(discordMsg);
     } catch (discordError: any) {
       console.error(`[Discord API] Error recuperando mensaje ${messageId} en canal ${channelId}:`, discordError.message);
-      
+
       // En lugar de arrojar un error 500, devolvemos un 200 con un texto de fallback amigable para el jugador
       return NextResponse.json({
         content: "Contenido no disponible (canal de Discord incorrecto, privado o mensaje inexistente).",

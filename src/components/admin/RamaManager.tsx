@@ -14,9 +14,10 @@ interface Props {
   initialSubs: SubEspecialidad[];
   initialEntrenamientos: Entrenamiento[];
   aldeas: Aldea[];
+  rasgos: any[];
 }
 
-export default function RamaManager({ initialRamas, initialSubs, initialEntrenamientos, aldeas }: Props) {
+export default function RamaManager({ initialRamas, initialSubs, initialEntrenamientos, aldeas, rasgos }: Props) {
   const [activeSection, setActiveSection] = useState<Section>('hub');
 
   if (activeSection === 'hub') {
@@ -66,7 +67,7 @@ export default function RamaManager({ initialRamas, initialSubs, initialEntrenam
         </div>
       </div>
 
-      {activeSection === 'ramas' && <RamaList initialRamas={initialRamas} aldeas={aldeas} />}
+      {activeSection === 'ramas' && <RamaList initialRamas={initialRamas} aldeas={aldeas} rasgos={rasgos} />}
       {activeSection === 'subs' && <SubEspecialidadList initialSubs={initialSubs} ramas={initialRamas} />}
       {activeSection === 'trainings' && (
         <EntrenamientoList

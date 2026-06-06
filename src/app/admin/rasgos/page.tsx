@@ -9,17 +9,25 @@ export const revalidate = 0;
 export default async function AdminRasgosPage() {
   const supabase = await createClient();
   
-  // Fetch all rasgos
-  const { data, error } = await supabase
-    .from('info_rasgos')
-    .select('*')
-    .order('id', { ascending: true });
+  // Fetch all rasgos and active characters
+  const [{ data: rasgosData, error: rasgosError }, { data: charsData }] = await Promise.all([
+    supabase
+      .from('info_rasgos')
+      .select('*')
+      .order('id', { ascending: true }),
+    supabase
+      .from('reg_characters')
+      .select('id, nombre_ninja')
+      .eq('activo', true)
+      .order('nombre_ninja')
+  ]);
 
-  if (error) {
-    console.error('Error fetching traits:', error);
+  if (rasgosError) {
+    console.error('Error fetching traits:', rasgosError);
   }
 
-  const rasgos: Rasgo[] = (data || []) as any;
+  const rasgos: Rasgo[] = (rasgosData || []) as any;
+  const characters = charsData || [];
 
   return (
     <div className="max-w-[1750px]">
@@ -42,7 +50,7 @@ export default async function AdminRasgosPage() {
         </div>
       </header>
 
-      <RasgosList initialRasgos={rasgos} />
+      <RasgosList initialRasgos={rasgos} characters={characters} />
     </div>
   );
 }

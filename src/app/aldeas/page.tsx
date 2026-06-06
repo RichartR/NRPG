@@ -1,5 +1,4 @@
 import { createClient } from '@/utils/supabase/server';
-import { Map } from 'lucide-react';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import NinjaCard from '@/components/ui/NinjaCard';
@@ -22,15 +21,15 @@ export default async function AldeasPage() {
   return (
     <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col">
       <header className="w-full max-w-[1750px] mx-auto flex flex-col md:flex-row justify-between items-center gap-10 mb-10 ninja-card-oro p-8 xl:p-10 z-50">
-        <Breadcrumbs 
+        <Breadcrumbs
           items={[
             { label: 'Inicio', href: '/' },
             { label: 'Biblioteca', href: '/documentos' },
             { label: 'Aldeas y Organizaciones' }
-          ]} 
+          ]}
         />
         <div className="flex items-center gap-4">
-          <Map className="w-5 xl:w-7 h-auto text-oro" />
+          <img src="/assets/icons/shuriken.png" className="w-5 xl:w-7 h-auto object-contain" alt="icon" />
           <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
             Naciones <span className="text-oro/40">Ocultas</span>
           </h1>
@@ -38,11 +37,11 @@ export default async function AldeasPage() {
       </header>
 
       <main className="w-full max-w-[1750px] mx-auto flex-1">
-        <div className="mb-20 ninja-card-oro p-12 xl:p-16">
+        <div className="mb-10 ninja-card-oro p-12 xl:p-16">
           <div className="flex items-center gap-6 mb-6">
-            <h1 className="ninja-title text-5xl xl:text-8xl uppercase leading-none">Aldeas y Organizaciones</h1>
+            <h1 className="ninja-title text-5xl xl:text-7xl uppercase leading-none">Aldeas y Organizaciones</h1>
           </div>
-          <p className="text-gris-texto text-lg xl:text-2xl max-w-4xl leading-relaxed">
+          <p className="text-gris-texto text-lg xl:text-2xl leading-relaxed">
             Las grandes potencias que mantienen el equilibrio del poder shinobi. Cada aldea posee su propia historia, clanes legendarios y geografía sagrada.
           </p>
         </div>
@@ -58,7 +57,7 @@ export default async function AldeasPage() {
               categoryClassName="text-caption sm:text-xs md:text-sm lg:text-base xl:text-lg tracking-[0.2em] sm:tracking-[0.4em]"
               imageUrl={aldea.url_imagen}
               description={aldea.descripcion}
-              actionText="Explorar Lore"
+              actionText="Ver Información"
             />
           ))}
 
@@ -71,7 +70,7 @@ export default async function AldeasPage() {
             categoryClassName="text-caption sm:text-xs md:text-sm lg:text-base xl:text-lg tracking-[0.2em] sm:tracking-[0.4em]"
             imageUrl="/assets/images/renegados.jpg"
             description="Guerreros sin aldea oculta, exiliados o ronin que operan fuera del control de las grandes naciones."
-            actionText="Ver censo"
+            actionText="Ver Información"
           />
         </div>
       </main>

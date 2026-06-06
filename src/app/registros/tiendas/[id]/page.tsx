@@ -472,9 +472,10 @@ export default function TiendaDetallePage() {
       }
 
       // PA check
-      if (reqs.combates && char.puntos_aprendizaje < reqs.combates) {
+      const costPA = obj.info_glosario?.coste_puntos_aprendizaje || 0;
+      if (costPA > 0 && char.puntos_aprendizaje < costPA) {
         allowed = false;
-        reasons.push(`Puntos de Aprendizaje insuficientes (Se necesitan ${reqs.combates}, tienes ${char.puntos_aprendizaje})`);
+        reasons.push(`Puntos de Aprendizaje insuficientes (Se necesitan ${costPA}, tienes ${char.puntos_aprendizaje})`);
       }
 
       // Stats check
@@ -1342,7 +1343,7 @@ export default function TiendaDetallePage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="block text-caption font-black text-oro/60 uppercase tracking-widest">Puntos de Combate</label>
+                        <label className="block text-caption font-black text-oro/60 uppercase tracking-widest">Puntos de Aprendizaje</label>
                         <input
                           type="number"
                           value={formCustomGlosario.requisitos.combates}
@@ -1441,7 +1442,7 @@ export default function TiendaDetallePage() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <label className="block text-caption font-black text-oro/60 uppercase tracking-widest">Puntos de Combate</label>
+                            <label className="block text-caption font-black text-oro/60 uppercase tracking-widest">Puntos de Aprendizaje</label>
                             <input
                               type="number"
                               value={formObjeto.requisitos_personalizados?.combates || 0}

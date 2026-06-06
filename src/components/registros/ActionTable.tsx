@@ -141,15 +141,15 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
               const actionTitle = m.tipo === 'compra'
                 ? `${selfName} adquirió ${m.data.objeto_nombre || m.data.objeto || 'Equipo Ninja'}${m.data.detalles ? ` (${m.data.detalles})` : ''}`
                 : m.subtipo === 'narracion'
-                ? `Evento de Narración por ${m.data.narrador || 'Narrador'}`
-                : m.data.titulo;
+                  ? `Evento de Narración por ${m.data.narrador || 'Narrador'}`
+                  : m.data.titulo;
 
               // Obtener premios del shinobi si es reparto de evento
               const targetCharId = subjectId || activeCharacter?.id;
               const partPremio = (m.subtipo === 'evento_premios' || m.subtipo === 'narracion')
                 ? m.data.participantes_premios?.find((p: any) => Number(p.personaje_id) === Number(targetCharId))
                 : null;
-              
+
               const globalXp = Number(m.data.global_xp) || 0;
               const globalRyous = Number(m.data.global_ryous) || 0;
               const globalMonedas = Number(m.data.global_monedas_evento) || 0;
@@ -263,7 +263,7 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
                         </button>
                       </div>
                     ) : (
-                      <span className="text-caption text-oro/20 uppercase tracking-widest italic">Sólo lectura</span>
+                      <span className="text-caption text-oro/20 uppercase tracking-widest italic"></span>
                     )}
                   </td>
                 </tr>

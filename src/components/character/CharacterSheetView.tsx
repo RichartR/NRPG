@@ -17,11 +17,13 @@ import { CharacterService } from '@/services/supabase/character.service';
 import { ProfileService } from '@/services/supabase/profile.service';
 import { MasterService } from '@/services/supabase/master.service';
 import { SectionCard } from '@/components/ui/SectionCard';
-import { DataField, SelectField, SearchableSelect, FormEditContext } from '@/components/ui/Fields';
+import { DataField, SelectField, SearchableSelect, NinjaSelect, FormEditContext } from '@/components/ui/Fields';
 import { Character, CharacterStats, Glosario, PersonajeItem, PersonajeTecnica, Registro, Rasgo, PersonajeRasgo } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
 import RegistroCard from '@/components/registros/RegistroCard';
 import MissionTable from '@/components/registros/MissionTable';
+import { PaginationPageInput } from '@/components/ui/PaginationPageInput';
+import { PaginationContainer } from '@/components/ui/PaginationContainer';
 import ActionTable from '@/components/registros/ActionTable';
 import CombatTable from '@/components/registros/CombatTable';
 import MissionForm from '@/components/registros/MissionForm';
@@ -131,7 +133,10 @@ export function CharacterSheetView({
       return charRankVal >= reqRankVal;
     });
 
-    // 3. Make sure all validAutoTraits are present in character.personajes_rasgos
+    // 3. Find authorized special traits
+    const authorizedSpecialTraits = rasgosList.filter(r => r.especial && r.personajes?.includes(character.id));
+
+    // 4. Make sure all validAutoTraits and authorizedSpecialTraits are present in character.personajes_rasgos
     const currentRasgos = character.personajes_rasgos || [];
     let updatedRasgos = [...currentRasgos];
     let hasChanges = false;
@@ -143,6 +148,18 @@ export function CharacterSheetView({
           personaje_id: character.id,
           rasgo_id: at.id,
           info_rasgos: at
+        });
+        hasChanges = true;
+      }
+    });
+
+    // Add missing authorized special traits
+    authorizedSpecialTraits.forEach(st => {
+      if (!updatedRasgos.some(ur => Number(ur.rasgo_id) === Number(st.id))) {
+        updatedRasgos.push({
+          personaje_id: character.id,
+          rasgo_id: st.id,
+          info_rasgos: st
         });
         hasChanges = true;
       }
@@ -160,6 +177,17 @@ export function CharacterSheetView({
           return false;
         }
       }
+
+      // Automatically remove special traits if the character is no longer authorized
+      const isSpecialInDb = ur.info_rasgos?.especial;
+      if (isSpecialInDb) {
+        const isStillAuthorized = authorizedSpecialTraits.some(st => Number(st.id) === Number(ur.rasgo_id));
+        if (!isStillAuthorized) {
+          hasChanges = true;
+          return false;
+        }
+      }
+
       return true;
     });
 
@@ -601,8 +629,8 @@ export function CharacterSheetView({
     const currentRyous = character.ryous || 0;
     const currentPA = character.puntos_aprendizaje || 0;
     return currentExp >= (e.coste_exp || 0) &&
-           currentRyous >= (e.coste_ryous || 0) &&
-           currentPA >= (e.coste_puntos_aprendizaje || 0);
+      currentRyous >= (e.coste_ryous || 0) &&
+      currentPA >= (e.coste_puntos_aprendizaje || 0);
   };
 
   const canAccessTraining = true;
@@ -848,8 +876,8 @@ export function CharacterSheetView({
     <SectionCard title="HISTORIAL DE MISIONES" icon={ScrollText} color="oro">
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-6">
         {Object.entries(counts).map(([rank, count]) => (
-          <div key={rank} className="bg-black/40 border border-oro/10 p-6 text-center group hover-ninja transition-all ninja-clip-sm">
-            <p className="text-caption font-black text-oro/40 uppercase tracking-widest mb-3">RANGO {rank}</p>
+          <div key={rank} className="bg-black/40 border border-oro/10 py-4 px-6 text-center group hover-ninja transition-all ninja-clip-sm">
+            <p className="text-caption font-black text-oro/40 uppercase tracking-widest mb-1">RANGO {rank}</p>
             <p className="text-3xl xl:text-5xl font-black text-oro italic leading-none">{count}</p>
           </div>
         ))}
@@ -860,7 +888,7 @@ export function CharacterSheetView({
 
   return (
     <FormEditContext.Provider value={{ isEditing }}>
-      <div className="min-h-screen p-4 sm:p-8 xl:p-20 flex flex-col">
+      <div className="min-h-screen pt-4 pb-8 px-4 sm:pt-6 sm:pb-12 sm:px-8 xl:pt-10 xl:pb-20 xl:px-20 flex flex-col">
         {character.activo === false && (
           <div className="w-full max-w-[1750px] mx-auto mb-6 ninja-card-oro p-6 border-oro/30 bg-black/80 backdrop-blur-md relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-6 shadow-[0_0_50px_rgba(212,175,55,0.15)] animate-in fade-in slide-in-from-top-6 duration-500">
             <div className="absolute top-0 left-0 w-2 h-full bg-oro"></div>
@@ -904,11 +932,11 @@ export function CharacterSheetView({
           </div>
         )}
 
-        <header className="w-full max-w-[1750px] mx-auto mb-6 sm:mb-8 ninja-card-oro p-4 sm:p-8 xl:p-10 z-50">
-          <div className="flex flex-col gap-6 xl:gap-8 w-full">
+        <header className="w-full max-w-[1750px] mx-auto mb-6 sm:mb-8 ninja-card-oro p-4 sm:p-6 xl:p-8 z-50">
+          <div className="flex flex-col gap-3 w-full">
 
             {/* Fila 1: Navegación/Breadcrumbs y Botones de Acción */}
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-b border-oro/10 pb-4 w-full">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-b border-oro/10 pb-2.5 w-full">
               {/* Breadcrumbs */}
               <div className="w-full sm:w-auto flex-1 min-w-0">
                 <Breadcrumbs
@@ -972,7 +1000,7 @@ export function CharacterSheetView({
             </div>
 
             {/* Fila 2: Banner de Identidad del Personaje (Avatar, Nombre y Rango) */}
-            <div className="flex flex-col md:flex-row items-center gap-6 md:gap-10 justify-center md:justify-start text-center md:text-left py-2 w-full">
+            <div className="flex flex-col md:flex-row items-center gap-6 md:gap-10 justify-center md:justify-start text-center md:text-left pt-1.5 pb-1 w-full">
               {/* Contenedor del Avatar */}
               <div className="w-24 h-24 sm:w-32 sm:h-32 shrink-0 flex items-center justify-center relative">
                 <div className="w-full h-full bg-black/40 overflow-hidden flex items-center justify-center ninja-clip-md shadow-2xl">
@@ -995,7 +1023,10 @@ export function CharacterSheetView({
                   <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.5em]">EXPEDIENTE NINJA</p>
                 </div>
 
-                <h1 className="ninja-title text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl italic break-words leading-tight text-center md:text-left px-2 md:px-0 w-full block">
+                <h1
+                  className="ninja-title text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl italic leading-tight text-center md:text-left px-2 md:px-0 w-full block"
+                  style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}
+                >
                   {character.nombre_ninja || (isNew ? 'NUEVO SHINOBI' : '')}
                 </h1>
 
@@ -1080,8 +1111,13 @@ export function CharacterSheetView({
                     )}
 
                     <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between gap-4 z-20">
-                      <div className="min-w-0">
-                        <p className="ninja-title text-lg sm:text-2xl mb-1 truncate">{character.nombre_ninja}</p>
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className="ninja-title text-lg sm:text-2xl mb-1"
+                          style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}
+                        >
+                          {character.nombre_ninja}
+                        </p>
                         <p className="text-caption font-black text-oro/40 uppercase tracking-[0.3em]">{character.rango_jerarquico}</p>
                       </div>
                       {iconUrl && (
@@ -1122,10 +1158,15 @@ export function CharacterSheetView({
                       )}
                     </div>
                     <div>
-                      <p className="text-caption font-black text-oro/30 uppercase tracking-widest mb-1">IMAGEN DE JUGADOR</p>
-                      <p className="text-xs font-bold text-oro uppercase">
-                        {isAdmin ? 'HAGA CLIC PARA CAMBIAR' : 'SINCRONIZADA'}
+                      <p className="text-caption font-black text-oro/30 uppercase tracking-widest mb-1">Jugador</p>
+                      <p className="text-sm font-bold text-oro uppercase">
+                        {(Array.isArray(character.profiles) ? character.profiles[0]?.username : character.profiles?.username) || 'NO VINCULADO'}
                       </p>
+                      {isAdmin && (
+                        <p className="text-[10px] text-oro/40 font-black uppercase tracking-wider mt-0.5">
+                          HAGA CLIC PARA CAMBIAR IMAGEN
+                        </p>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -1149,7 +1190,7 @@ export function CharacterSheetView({
                 <SectionCard title="INFORMACIÓN DEL JUGADOR" icon={User} color="oro">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <DataField
-                      label="USUARIO DISCORD (PLAYER)"
+                      label="USUARIO DISCORD"
                       value={
                         Array.isArray(character.profiles)
                           ? character.profiles[0]?.username
@@ -1350,18 +1391,18 @@ export function CharacterSheetView({
                                       // Si no se ha seleccionado el primer elemento, solo mostrar entrenamientos genéricos de Ninjutsu
                                       return !e.id_subespecialidad && meetsTrainingRequirements(e);
                                     }
-                                    
+
                                     // Obtener el elemento principal
                                     const mainElement = (masters.elementos || []).find((el: any) => el.id === pr.elemento_principal_id);
-                                    
+
                                     // Buscar la sub-especialidad de elemento que coincida
-                                    const elementSub = mainElement 
-                                      ? (masters.subEspecialidades || []).find((s: any) => 
-                                          s.rama_id === 4 && 
-                                          (s.slug?.toLowerCase() === mainElement.nombre_jap?.toLowerCase() || 
-                                           s.nombre?.toLowerCase() === mainElement.nombre_esp?.toLowerCase() ||
-                                           s.nombre?.toLowerCase() === mainElement.nombre_jap?.toLowerCase())
-                                        )
+                                    const elementSub = mainElement
+                                      ? (masters.subEspecialidades || []).find((s: any) =>
+                                        s.rama_id === 4 &&
+                                        (s.slug?.toLowerCase() === mainElement.nombre_jap?.toLowerCase() ||
+                                          s.nombre?.toLowerCase() === mainElement.nombre_esp?.toLowerCase() ||
+                                          s.nombre?.toLowerCase() === mainElement.nombre_jap?.toLowerCase())
+                                      )
                                       : null;
 
                                     if (!elementSub) {
@@ -1394,7 +1435,7 @@ export function CharacterSheetView({
                                         return { label: `${e.nombre_esp}${costText}`, value: e.id };
                                       });
 
-                                    const selectedTraining = character.personajes_entrenamientos?.find((pe: any) => 
+                                    const selectedTraining = character.personajes_entrenamientos?.find((pe: any) =>
                                       Number(pe.rama_id) === Number(pr.rama_id) &&
                                       eligibleTrainings.some((et: any) => et.id === Number(pe.entrenamiento_id) && (et.rango || 'B').toUpperCase() === rank)
                                     );
@@ -1510,11 +1551,11 @@ export function CharacterSheetView({
                         const val = character.stats_base[s as keyof CharacterStats] || 0;
                         const max = masters.rangoRules?.[character.rango]?.stat_max || 10;
                         return (
-                          <div key={s} className="bg-black/40 border border-oro/10 p-6 flex justify-between items-center relative group hover:border-oro/40 transition-all overflow-hidden" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 0px)' }}>
+                          <div key={s} className="bg-black/40 border border-oro/10 py-3 px-5 flex justify-between items-center relative group hover:border-oro/40 transition-all overflow-hidden" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 0px)' }}>
                             <div className="absolute top-0 right-0 w-12 h-12 bg-oro/5 rotate-45 -mr-6 -mt-6 pointer-events-none" />
                             <div className="flex flex-col items-start relative z-10">
                               <span className="text-xs font-black text-oro/60 uppercase tracking-[0.2em]">{s}</span>
-                              <span className="text-caption font-black text-oro/45 mt-0.5 uppercase tracking-wider whitespace-nowrap">LÍMITE: {max}</span>
+                              <span className="text-caption font-black text-oro/20 mt-0.5 uppercase tracking-wider whitespace-nowrap">LÍMITE: {max}</span>
                             </div>
                             <div className="flex items-center gap-1.5 relative z-10">
                               <input
@@ -1572,7 +1613,6 @@ export function CharacterSheetView({
                         { label: 'VIT', val: character.atributos_derivados.VIT, color: 'text-red-600' },
                         { label: 'CH', val: character.atributos_derivados.CH, color: 'text-blue-500' },
                         { label: 'VEL', val: character.atributos_derivados.VEL, color: 'text-oro' },
-                        { label: 'RES', val: `${character.atributos_derivados.RES}%`, color: 'text-oro/80' },
                         { label: 'VR', val: character.atributos_derivados.VR, color: 'text-oro/60' },
                         { label: 'DET', val: character.atributos_derivados.DET, color: 'text-oro/40' },
                       ].map(attr => (
@@ -1627,7 +1667,8 @@ export function CharacterSheetView({
                           { label: 'Físico D', category: 'Físico', rank: 'D', available: rasgosList.filter(r => r.categoria === 'Físico' && r.rango === 'D' && (!r.especial || r.personajes?.includes(character.id))) },
                           { label: 'Psicológico D', category: 'Psicológico', rank: 'D', available: rasgosList.filter(r => r.categoria === 'Psicológico' && r.rango === 'D' && (!r.especial || r.personajes?.includes(character.id))) },
                           { label: 'Psicológico C', category: 'Psicológico', rank: 'C', available: rasgosList.filter(r => r.categoria === 'Psicológico' && r.rango === 'C' && (!r.especial || r.personajes?.includes(character.id))), minRank: 'C' },
-                          { label: 'Psicológico B', category: 'Psicológico', rank: 'B', available: rasgosList.filter(r => r.categoria === 'Psicológico' && r.rango === 'B' && (!r.especial || r.personajes?.includes(character.id))), minRank: 'B' }
+                          { label: 'Psicológico B', category: 'Psicológico', rank: 'B', available: rasgosList.filter(r => r.categoria === 'Psicológico' && r.rango === 'B' && (!r.especial || r.personajes?.includes(character.id))), minRank: 'B' },
+                          { label: 'Habilidad A', category: 'Habilidad', rank: 'A', available: rasgosList.filter(r => r.categoria === 'Habilidad' && r.rango === 'A' && (!r.especial || r.personajes?.includes(character.id))), minRank: 'A' }
                         ];
 
                         const selectSingle = (category: string, rank: string, rasgoIdStr: string) => {
@@ -1665,29 +1706,25 @@ export function CharacterSheetView({
                                 <div key={slot.label} className="bg-black/30 border border-oro/10 p-4 relative" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
                                   <div className="flex justify-between items-center mb-1">
                                     <span className="text-caption font-black text-oro/60 uppercase tracking-widest">{slot.label}</span>
-                                    {forced && (
-                                      <span className="text-caption font-black text-rojo-sangre uppercase tracking-wider bg-rojo-sangre/10 px-2 py-0.5">Automático (Clan)</span>
-                                    )}
                                   </div>
 
-                                  {isEditing ? (
-                                    forced ? (
-                                      <div className="text-sm font-black text-oro italic uppercase mt-1">{forced.nombre}</div>
-                                    ) : (
-                                      <select
+                                  {forced ? (
+                                    <div className="text-sm font-black text-oro italic uppercase mt-1">
+                                      {forced.nombre}
+                                    </div>
+                                  ) : isEditing ? (
+                                    <div className="mt-2">
+                                      <NinjaSelect
                                         value={selected?.id || ''}
-                                        onChange={(e) => selectSingle(slot.category, slot.rank, e.target.value)}
-                                        className="w-full bg-black/40 border border-oro/10 py-2 px-3 text-caption sm:text-xs font-black text-oro focus:border-oro/40 outline-none uppercase tracking-widest mt-1"
-                                      >
-                                        <option value="" className="bg-black">-- SIN RASGO --</option>
-                                        {slot.available.map(r => (
-                                          <option key={r.id} value={r.id} className="bg-black">{r.nombre}</option>
-                                        ))}
-                                      </select>
-                                    )
+                                        onChange={(val) => selectSingle(slot.category, slot.rank, val)}
+                                        options={slot.available.map(r => ({ label: r.nombre, value: r.id }))}
+                                        placeholder="-- SIN RASGO --"
+                                        variant="inline"
+                                      />
+                                    </div>
                                   ) : (
                                     <div className="text-sm font-black text-oro italic uppercase mt-1">
-                                      {forced?.nombre || selected?.nombre || <span className="text-oro/20 text-xs">SIN RASGO</span>}
+                                      {selected?.nombre || <span className="text-oro/20 text-xs">SIN RASGO</span>}
                                     </div>
                                   )}
                                 </div>
@@ -1698,7 +1735,7 @@ export function CharacterSheetView({
                             {charRankVal >= (rankOrder['A'] || 4) && (
                               <div className="border-t border-oro/10 pt-4 mt-4 space-y-4">
                                 <span className="text-caption font-black text-oro/60 uppercase tracking-widest block">Rasgos de Habilidad (Rango A)</span>
-                                
+
                                 {(() => {
                                   // Find Habilidad rasgos
                                   const habRasgos = rasgosList.filter(r => r.categoria === 'Habilidad' && r.rango === 'A' && (!r.especial || r.personajes?.includes(character.id)));
@@ -1753,6 +1790,34 @@ export function CharacterSheetView({
                                 })()}
                               </div>
                             )}
+
+                            {/* Rasgos Especiales */}
+                            {(() => {
+                              const espRasgos = rasgosList.filter(r => r.especial && r.personajes?.includes(character.id));
+                              if (espRasgos.length === 0) return null;
+
+                              return (
+                                <div className="border-t border-oro/10 pt-4 mt-4 space-y-4">
+                                  <span className="text-caption font-black text-oro/60 uppercase tracking-widest block">Rasgos Especiales</span>
+                                  <div className="space-y-2">
+                                    {espRasgos.map(r => (
+                                      <div
+                                        key={r.id}
+                                        className="flex items-center justify-between p-3 bg-black/40 border border-oro/20 transition-all"
+                                        style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                                      >
+                                        <div className="flex flex-col min-w-0">
+                                          <span className="text-xs font-black uppercase tracking-wider text-oro">{r.nombre}</span>
+                                          <span className="text-[10px] font-black text-oro/30 uppercase tracking-widest mt-0.5">
+                                            Rango: {r.rango} | Categoría: {r.categoria}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </div>
                         );
                       })()}
@@ -1860,7 +1925,8 @@ export function CharacterSheetView({
                         .map((i: any) => {
                           const subData = i.info_glosario_subcategorias;
                           const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'GENERAL';
-                          const paCostText = ` / ${i.coste_puntos_aprendizaje || 0} PA`;
+                          const paEfectivo = i.coste_puntos_aprendizaje || 0;
+                          const paCostText = ` / ${paEfectivo} PA`;
                           return {
                             label: `${i.nombre_es} (${subName}) — ${i.coste_exp} EXP / ${i.coste_ryous} RYOUS${paCostText}`,
                             value: i.id
@@ -1998,7 +2064,8 @@ export function CharacterSheetView({
                         .map((t: any) => {
                           const subData = t.info_glosario_subcategorias;
                           const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'TÉCNICA';
-                          const paCostText = ` / ${t.coste_puntos_aprendizaje || 0} PA`;
+                          const paEfectivoT = t.coste_puntos_aprendizaje || 0;
+                          const paCostText = ` / ${paEfectivoT} PA`;
                           return {
                             label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${paCostText}`,
                             value: t.id
@@ -2130,7 +2197,7 @@ export function CharacterSheetView({
                         .map((t: any) => {
                           const subData = t.info_glosario_subcategorias;
                           const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'PASIVA';
-                          const pcCostText = ` / ${t.requisitos?.combates || 0} PA`;
+                          const pcCostText = ` / ${t.coste_puntos_aprendizaje || 0} PA`;
                           return {
                             label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${pcCostText}`,
                             value: t.id
@@ -2262,7 +2329,7 @@ export function CharacterSheetView({
                         .map((t: any) => {
                           const subData = t.info_glosario_subcategorias;
                           const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'KUCHIYOSE';
-                          const pcCostText = ` / ${t.requisitos?.combates || 0} PA`;
+                          const pcCostText = ` / ${t.coste_puntos_aprendizaje || 0} PA`;
                           return {
                             label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${pcCostText}`,
                             value: t.id
@@ -2479,25 +2546,32 @@ export function CharacterSheetView({
                         />
 
                         {totalPages > 1 && (
-                          <div className="flex justify-center items-center gap-10 pt-10 border-t border-oro/10">
+                          <PaginationContainer className="mt-10" maxWidthClass="max-w-xs">
                             <button
                               onClick={() => setRecordPage(prev => Math.max(1, prev - 1))}
                               disabled={recordPage === 1}
-                              className="p-4 ninja-btn-oro"
+                              className="p-3 ninja-btn-oro"
                             >
-                              <ChevronLeft className="w-6 h-6" />
+                              <ChevronLeft className="w-5 h-5" />
                             </button>
-                            <span className="text-xs xl:text-sm font-black text-oro uppercase tracking-[0.4em] italic">
-                              PÁGINA <span className="text-oro/40">{recordPage}</span> DE <span className="text-oro/40">{totalPages}</span>
-                            </span>
+                            <div className="flex items-center gap-1.5 min-w-[80px] justify-center">
+                              <PaginationPageInput
+                                currentPage={recordPage}
+                                totalPages={totalPages}
+                                onChangePage={setRecordPage}
+                              />
+                              <span className="text-oro/40 font-black uppercase tracking-[0.2em] text-xs">
+                                / {totalPages}
+                              </span>
+                            </div>
                             <button
                               onClick={() => setRecordPage(prev => Math.min(totalPages, prev + 1))}
                               disabled={recordPage === totalPages}
-                              className="p-4 ninja-btn-oro"
+                              className="p-3 ninja-btn-oro"
                             >
-                              <ChevronRight className="w-6 h-6" />
+                              <ChevronRight className="w-5 h-5" />
                             </button>
-                          </div>
+                          </PaginationContainer>
                         )}
                       </div>
                     );
@@ -2516,25 +2590,32 @@ export function CharacterSheetView({
                         />
 
                         {totalPages > 1 && (
-                          <div className="flex justify-center items-center gap-10 pt-10 border-t border-oro/10">
+                          <PaginationContainer className="mt-10" maxWidthClass="max-w-xs">
                             <button
                               onClick={() => setRecordPage(prev => Math.max(1, prev - 1))}
                               disabled={recordPage === 1}
-                              className="p-4 ninja-btn-oro"
+                              className="p-3 ninja-btn-oro"
                             >
-                              <ChevronLeft className="w-6 h-6" />
+                              <ChevronLeft className="w-5 h-5" />
                             </button>
-                            <span className="text-xs xl:text-sm font-black text-oro uppercase tracking-[0.4em] italic">
-                              PÁGINA <span className="text-oro/40">{recordPage}</span> DE <span className="text-oro/40">{totalPages}</span>
-                            </span>
+                            <div className="flex items-center gap-1.5 min-w-[80px] justify-center">
+                              <PaginationPageInput
+                                currentPage={recordPage}
+                                totalPages={totalPages}
+                                onChangePage={setRecordPage}
+                              />
+                              <span className="text-oro/40 font-black uppercase tracking-[0.2em] text-xs">
+                                / {totalPages}
+                              </span>
+                            </div>
                             <button
                               onClick={() => setRecordPage(prev => Math.min(totalPages, prev + 1))}
                               disabled={recordPage === totalPages}
-                              className="p-4 ninja-btn-oro"
+                              className="p-3 ninja-btn-oro"
                             >
-                              <ChevronRight className="w-6 h-6" />
+                              <ChevronRight className="w-5 h-5" />
                             </button>
-                          </div>
+                          </PaginationContainer>
                         )}
                       </div>
                     );
@@ -2553,25 +2634,32 @@ export function CharacterSheetView({
                         />
 
                         {totalPages > 1 && (
-                          <div className="flex justify-center items-center gap-10 pt-10 border-t border-oro/10">
+                          <PaginationContainer className="mt-10" maxWidthClass="max-w-xs">
                             <button
                               onClick={() => setRecordPage(prev => Math.max(1, prev - 1))}
                               disabled={recordPage === 1}
-                              className="p-4 ninja-btn-oro"
+                              className="p-3 ninja-btn-oro"
                             >
-                              <ChevronLeft className="w-6 h-6" />
+                              <ChevronLeft className="w-5 h-5" />
                             </button>
-                            <span className="text-xs xl:text-sm font-black text-oro uppercase tracking-[0.4em] italic">
-                              PÁGINA <span className="text-oro/40">{recordPage}</span> DE <span className="text-oro/40">{totalPages}</span>
-                            </span>
+                            <div className="flex items-center gap-1.5 min-w-[80px] justify-center">
+                              <PaginationPageInput
+                                currentPage={recordPage}
+                                totalPages={totalPages}
+                                onChangePage={setRecordPage}
+                              />
+                              <span className="text-oro/40 font-black uppercase tracking-[0.2em] text-xs">
+                                / {totalPages}
+                              </span>
+                            </div>
                             <button
                               onClick={() => setRecordPage(prev => Math.min(totalPages, prev + 1))}
                               disabled={recordPage === totalPages}
-                              className="p-4 ninja-btn-oro"
+                              className="p-3 ninja-btn-oro"
                             >
-                              <ChevronRight className="w-6 h-6" />
+                              <ChevronRight className="w-5 h-5" />
                             </button>
-                          </div>
+                          </PaginationContainer>
                         )}
                       </div>
                     );
@@ -2593,25 +2681,32 @@ export function CharacterSheetView({
                       </div>
 
                       {totalPages > 1 && (
-                        <div className="flex justify-center items-center gap-10 pt-10 border-t border-oro/10">
+                        <PaginationContainer className="mt-10" maxWidthClass="max-w-xs">
                           <button
                             onClick={() => setRecordPage(prev => Math.max(1, prev - 1))}
                             disabled={recordPage === 1}
-                            className="p-4 ninja-btn-oro"
+                            className="p-3 ninja-btn-oro"
                           >
-                            <ChevronLeft className="w-6 h-6" />
+                            <ChevronLeft className="w-5 h-5" />
                           </button>
-                          <span className="text-xs xl:text-sm font-black text-oro uppercase tracking-[0.4em] italic">
-                            PÁGINA <span className="text-oro/40">{recordPage}</span> DE <span className="text-oro/40">{totalPages}</span>
-                          </span>
+                          <div className="flex items-center gap-1.5 min-w-[80px] justify-center">
+                            <PaginationPageInput
+                              currentPage={recordPage}
+                              totalPages={totalPages}
+                              onChangePage={setRecordPage}
+                            />
+                            <span className="text-oro/40 font-black uppercase tracking-[0.2em] text-xs">
+                              / {totalPages}
+                            </span>
+                          </div>
                           <button
                             onClick={() => setRecordPage(prev => Math.min(totalPages, prev + 1))}
                             disabled={recordPage === totalPages}
-                            className="p-4 ninja-btn-oro"
+                            className="p-3 ninja-btn-oro"
                           >
-                            <ChevronRight className="w-6 h-6" />
+                            <ChevronRight className="w-5 h-5" />
                           </button>
-                        </div>
+                        </PaginationContainer>
                       )}
                     </div>
                   );

@@ -284,7 +284,7 @@ export default async function Home() {
                 <img src="/assets/icons/shuriken.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
                 Mundo Ninja
               </h3>
-              <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Lore, mapa y jerarquía.</p>
+              <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Fichas ninja y gestión de aldeas.</p>
             </Link>
 
             {/* Documentos */}

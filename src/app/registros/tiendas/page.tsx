@@ -14,6 +14,8 @@ import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import NinjaCard from '@/components/ui/NinjaCard';
 import AdminViewSelector from '@/components/admin/AdminViewSelector';
+import { PaginationPageInput } from '@/components/ui/PaginationPageInput';
+import { PaginationContainer } from '@/components/ui/PaginationContainer';
 import { useRouter } from 'next/navigation';
 
 export default function TiendasPage() {
@@ -812,24 +814,32 @@ export default function TiendasPage() {
 
             {/* Pagination */}
             {historyData.list.length > 0 && !historyLoading && (
-              <div className="flex justify-center items-center gap-6 pt-6 border-t border-oro/10 mt-6 bg-transparent">
-                <button
-                  disabled={historyData.page === 1}
-                  onClick={() => fetchHistory(historyData.page - 1)}
-                  className="p-3 ninja-btn-oro"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <span className="text-xs font-black text-oro uppercase tracking-widest italic">
-                  PÁGINA <span className="text-oro/40">{historyData.page}</span> DE <span className="text-oro/40">{Math.ceil(historyData.count / 10)}</span>
-                </span>
-                <button
-                  disabled={historyData.list.length < 10 || historyData.page * 10 >= historyData.count}
-                  onClick={() => fetchHistory(historyData.page + 1)}
-                  className="p-3 ninja-btn-oro"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
+              <div className="pt-6 border-t border-oro/10 mt-6 bg-transparent w-full">
+                <PaginationContainer maxWidthClass="max-w-md">
+                  <button
+                    disabled={historyData.page === 1}
+                    onClick={() => fetchHistory(historyData.page - 1)}
+                    className="p-3 ninja-btn-oro shrink-0"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <div className="flex items-center gap-1.5 justify-center text-xs font-black text-oro uppercase tracking-widest italic">
+                    PÁGINA
+                    <PaginationPageInput
+                      currentPage={historyData.page}
+                      totalPages={Math.ceil(historyData.count / 10) || 1}
+                      onChangePage={(p) => fetchHistory(p)}
+                    />
+                    <span className="text-oro/40">DE {Math.ceil(historyData.count / 10) || 1}</span>
+                  </div>
+                  <button
+                    disabled={historyData.list.length < 10 || historyData.page * 10 >= historyData.count}
+                    onClick={() => fetchHistory(historyData.page + 1)}
+                    className="p-3 ninja-btn-oro shrink-0"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </PaginationContainer>
               </div>
             )}
 

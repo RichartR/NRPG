@@ -12,6 +12,8 @@ import { AuthService } from '@/services/supabase/auth.service';
 import { createClient } from '@/utils/supabase/client';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import AdminViewSelector from '@/components/admin/AdminViewSelector';
+import { PaginationPageInput } from '@/components/ui/PaginationPageInput';
+import { PaginationContainer } from '@/components/ui/PaginationContainer';
 
 export default function CombatesPage() {
   const { activeCharacter, fetchActiveCharacter } = useCharacterStore();
@@ -198,30 +200,36 @@ export default function CombatesPage() {
                   </div>
 
                   <div className="flex justify-center items-center pt-20">
-                    <div className="flex items-center gap-12 px-10 py-6 bg-black/60 border border-oro/20 ninja-clip-md backdrop-blur-md shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
+                    <PaginationContainer maxWidthClass="max-w-md">
                       <button
                         disabled={data.page === 1}
                         onClick={() => fetchData(data.page - 1)}
-                        className="w-14 h-14 flex items-center justify-center bg-oro/20 border-2 border-oro/40 hover:border-oro hover:bg-oro/30 text-white transition-all ninja-clip-xs disabled:opacity-30 disabled:border-oro/10 disabled:bg-black/40 disabled:cursor-not-allowed shadow-xl"
+                        className="w-14 h-14 flex items-center justify-center bg-oro/20 border-2 border-oro/40 hover:border-oro hover:bg-oro/30 text-white transition-all ninja-clip-xs disabled:opacity-30 disabled:border-oro/10 disabled:bg-black/40 disabled:cursor-not-allowed shadow-xl shrink-0"
                       >
                         <ChevronLeft className="w-8 h-8 drop-shadow-[0_0_8px_rgba(255,215,0,0.5)]" />
                       </button>
 
                       <div className="flex flex-col items-center">
                         <span className="text-caption font-black text-oro/40 uppercase tracking-[0.4em] mb-1">REGISTROS DE GUERRA</span>
-                        <div className="text-sm xl:text-lg font-black text-oro uppercase tracking-[0.2em] italic">
-                          PÁGINA <span className="text-white drop-shadow-md">{data.page}</span> / <span className="text-oro/40">{Math.ceil(data.count / 15)}</span>
+                        <div className="flex items-center gap-1.5 justify-center text-sm xl:text-lg font-black text-oro uppercase tracking-[0.2em] italic">
+                          PÁGINA
+                          <PaginationPageInput
+                            currentPage={data.page}
+                            totalPages={Math.ceil(data.count / 15) || 1}
+                            onChangePage={(p) => fetchData(p)}
+                          />
+                          <span className="text-oro/40">/ {Math.ceil(data.count / 15) || 1}</span>
                         </div>
                       </div>
 
                       <button
                         disabled={data.list.length < 15 || data.page * 15 >= data.count}
                         onClick={() => fetchData(data.page + 1)}
-                        className="w-14 h-14 flex items-center justify-center bg-oro/20 border-2 border-oro/40 hover:border-oro hover:bg-oro/30 text-white transition-all ninja-clip-xs disabled:opacity-30 disabled:border-oro/10 disabled:bg-black/40 disabled:cursor-not-allowed shadow-xl"
+                        className="w-14 h-14 flex items-center justify-center bg-oro/20 border-2 border-oro/40 hover:border-oro hover:bg-oro/30 text-white transition-all ninja-clip-xs disabled:opacity-30 disabled:border-oro/10 disabled:bg-black/40 disabled:cursor-not-allowed shadow-xl shrink-0"
                       >
                         <ChevronRight className="w-8 h-8 drop-shadow-[0_0_8px_rgba(255,215,0,0.5)]" />
                       </button>
-                    </div>
+                    </PaginationContainer>
                   </div>
                 </div>
               ) : (
