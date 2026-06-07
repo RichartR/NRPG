@@ -62,26 +62,26 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
         <table className="w-full text-left border-collapse min-w-[700px] table-fixed">
           <thead>
             <tr className="border-b border-oro/10 text-oro/70 text-caption xl:text-xs font-black uppercase tracking-[0.3em]">
-              <th className="py-6 px-8 w-[16%]">Fecha</th>
-              <th className="py-6 px-8 w-[12%]">Código</th>
-              <th className="py-6 px-8 w-[14%]">Rango</th>
-              <th className="py-6 px-8 w-[20%]">Participantes</th>
-              <th className="py-6 px-8 w-[18%]">Recompensa</th>
-              <th className="py-6 px-8 w-[20%]">Pruebas</th>
-              <th className="py-6 px-8 text-right w-36 w-[10%]">Acciones</th>
+              <th className="py-3 px-5 w-[16%]">Fecha</th>
+              <th className="py-3 px-5 w-[12%]">Código</th>
+              <th className="py-3 px-5 w-[14%]">Rango</th>
+              <th className="py-3 px-5 w-[20%]">Participantes</th>
+              <th className="py-3 px-5 w-[18%]">Recompensa</th>
+              <th className="py-3 px-5 w-[20%]">Pruebas</th>
+              <th className="py-3 px-5 text-right w-36 w-[10%]">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-oro/5 bg-black/40">
             {misiones.map((m) => {
-              const participants = getParticipants(m);
-              const isOwner = activeCharacter?.id === m.autor_id;
-              const canManage = isOwner || isAdmin;
-              const rankVal = m.subtipo || 'D';
+               const participants = getParticipants(m);
+               const isOwner = activeCharacter?.id === m.autor_id;
+               const canManage = isOwner || isAdmin;
+               const rankVal = m.subtipo || 'D';
 
-              return (
+               return (
                 <tr key={m.id} className="hover:bg-oro/5 transition-colors group">
                   {/* Fecha */}
-                  <td className="py-6 px-8">
+                  <td className="py-3 px-5">
                     <div className="flex flex-col justify-center gap-2">
                       {/* Fecha de Creación */}
                       <div className="flex flex-col">
@@ -111,19 +111,19 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
                   </td>
 
                   {/* Código */}
-                  <td className="py-6 px-8 font-black text-oro tracking-widest text-sm xl:text-base">
+                  <td className="py-3 px-5 font-black text-oro tracking-widest text-sm xl:text-base">
                     {m.data.codigo_mision || 'M-???'}
                   </td>
 
                   {/* Rango */}
-                  <td className="py-6 px-8">
+                  <td className="py-3 px-5">
                     <span className="inline-block px-3 py-1 text-caption font-black uppercase border border-oro/30 bg-oro/5 text-oro ninja-clip-xs">
                       Rango {rankVal}
                     </span>
                   </td>
 
                   {/* Participantes */}
-                  <td className="py-6 px-8">
+                  <td className="py-3 px-5">
                     <div className="flex flex-wrap gap-2 max-w-[300px]">
                       {participants.map((p, idx) => (
                         <span
@@ -137,7 +137,7 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
                   </td>
 
                   {/* Recompensa */}
-                  <td className="py-6 px-8">
+                  <td className="py-3 px-5">
                     <div className="flex flex-col gap-1.5 justify-center">
                       <div className="flex items-center gap-2 text-xs font-black text-green-700 tracking-wider">
                         <span>+{m.data.recompensa_xp || 0} EXP</span>
@@ -154,7 +154,7 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
                   </td>
 
                   {/* Pruebas */}
-                  <td className="py-6 px-8">
+                  <td className="py-3 px-5">
                     <div className="flex flex-wrap gap-2 max-w-[200px]">
                       {m.data.urls_imagenes && m.data.urls_imagenes.length > 0 ? (
                         m.data.urls_imagenes.map((url: string, idx: number) => (
@@ -177,7 +177,7 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
                   </td>
 
                   {/* Acciones */}
-                  <td className="py-6 px-8 text-right">
+                  <td className="py-3 px-5 text-right">
                     {canManage ? (
                       <div className="flex items-center justify-end gap-2.5">
                         <button

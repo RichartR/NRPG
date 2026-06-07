@@ -61,12 +61,12 @@ export default function NarrationTable({ narraciones, onRefresh, onEdit, isAdmin
         <table className="w-full text-left border-collapse min-w-[700px] table-fixed">
           <thead>
             <tr className="border-b border-oro/10 text-oro/70 text-caption xl:text-xs font-black uppercase tracking-[0.3em]">
-              <th className="py-6 px-8 w-[16%]">Fecha</th>
-              <th className="py-6 px-8 w-[15%]">Narrador</th>
-              <th className="py-6 px-8 w-[22%]">Participantes</th>
-              <th className="py-6 px-8 w-[20%]">Recompensas (Globales)</th>
-              <th className="py-6 px-8 w-[17%]">Pruebas</th>
-              <th className="py-6 px-8 text-right w-[10%]">Acciones</th>
+              <th className="py-3 px-5 w-[16%]">Fecha</th>
+              <th className="py-3 px-5 w-[15%]">Narrador</th>
+              <th className="py-3 px-5 w-[22%]">Participantes</th>
+              <th className="py-3 px-5 w-[20%]">Recompensas (Globales)</th>
+              <th className="py-3 px-5 w-[17%]">Pruebas</th>
+              <th className="py-3 px-5 text-right w-[10%]">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-oro/5 bg-black/40">
@@ -78,7 +78,7 @@ export default function NarrationTable({ narraciones, onRefresh, onEdit, isAdmin
               return (
                 <tr key={n.id} className="hover:bg-oro/5 transition-colors group">
                   {/* Fecha */}
-                  <td className="py-6 px-8">
+                  <td className="py-3 px-5">
                     <div className="flex flex-col justify-center gap-2">
                       <div className="flex flex-col">
                         <span className="text-[11px] font-black text-oro/80 uppercase tracking-wider">
@@ -106,12 +106,12 @@ export default function NarrationTable({ narraciones, onRefresh, onEdit, isAdmin
                   </td>
 
                   {/* Narrador */}
-                  <td className="py-6 px-8 font-black text-oro tracking-widest text-xs uppercase leading-relaxed">
+                  <td className="py-3 px-5 font-black text-oro tracking-widest text-xs uppercase leading-relaxed">
                     {n.data.narrador || 'Sin narrador'}
                   </td>
 
                   {/* Participantes */}
-                  <td className="py-6 px-8">
+                  <td className="py-3 px-5">
                     <div className="flex flex-wrap gap-2 max-w-[300px]">
                       {participants.map((p, idx) => (
                         <span
@@ -125,7 +125,7 @@ export default function NarrationTable({ narraciones, onRefresh, onEdit, isAdmin
                   </td>
 
                   {/* Recompensas Globales */}
-                  <td className="py-6 px-8">
+                  <td className="py-3 px-5">
                     <div className="flex flex-col gap-1.5 justify-center">
                       <div className="flex items-center gap-1.5 text-xs font-black text-green-700 tracking-wider">
                         <span>+{n.data.global_xp || 0} EXP</span>
@@ -142,7 +142,7 @@ export default function NarrationTable({ narraciones, onRefresh, onEdit, isAdmin
                   </td>
 
                   {/* Pruebas */}
-                  <td className="py-6 px-8">
+                  <td className="py-3 px-5">
                     <div className="flex flex-wrap gap-2 max-w-[200px]">
                       {n.data.urls_imagenes && n.data.urls_imagenes.length > 0 ? (
                         n.data.urls_imagenes.map((url: string, idx: number) => (
@@ -165,7 +165,7 @@ export default function NarrationTable({ narraciones, onRefresh, onEdit, isAdmin
                   </td>
 
                   {/* Acciones */}
-                  <td className="py-6 px-8 text-right">
+                  <td className="py-3 px-5 text-right">
                     {canManage ? (
                       <div className="flex items-center justify-end gap-2.5">
                         <button

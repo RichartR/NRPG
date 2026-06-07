@@ -122,10 +122,10 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
         <table className="w-full text-left border-collapse min-w-[700px] table-fixed">
           <thead>
             <tr className="border-b border-oro/10 text-oro/70 text-caption xl:text-xs font-black uppercase tracking-[0.3em]">
-              <th className="py-6 px-8 w-[18%]">Fecha</th>
-              <th className="py-6 px-8 w-[52%]">Acción / Crónica</th>
-              <th className="py-6 px-8 w-[15%] w-36">Coste / Recompensa</th>
-              <th className="py-6 px-8 text-right w-[15%] w-36">Acciones</th>
+              <th className="py-3 px-5 w-[18%]">Fecha</th>
+              <th className="py-3 px-5 w-[52%]">Acción / Crónica</th>
+              <th className="py-3 px-5 w-[15%] w-36">Coste / Recompensa</th>
+              <th className="py-3 px-5 text-right w-[15%] w-36">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-oro/5 bg-black/40">
@@ -162,7 +162,7 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
               return (
                 <tr key={m.id} className="hover:bg-oro/5 transition-colors group">
                   {/* Fecha */}
-                  <td className="py-6 px-8">
+                  <td className="py-3 px-5">
                     <div className="flex flex-col justify-center gap-2">
                       {/* Fecha de Creación */}
                       <div className="flex flex-col">
@@ -192,12 +192,12 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
                   </td>
 
                   {/* Acción / Crónica */}
-                  <td className="py-6 px-8 text-oro/80 text-xs xl:text-sm whitespace-normal break-words">
+                  <td className="py-3 px-5 text-oro/80 text-xs xl:text-sm whitespace-normal break-words">
                     {renderActionTitle(actionTitle, selfName)}
                   </td>
 
                   {/* Coste */}
-                  <td className="py-6 px-8">
+                  <td className="py-3 px-5">
                     <div className="flex flex-col gap-1.5 justify-center">
                       {(m.subtipo === 'evento_premios' || m.subtipo === 'narracion') ? (
                         <div className="flex flex-col gap-1 justify-center text-emerald-400 font-bold text-[11px] tracking-wide">
@@ -239,7 +239,7 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
                   </td>
 
                   {/* Acciones */}
-                  <td className="py-6 px-8 text-right">
+                  <td className="py-3 px-5 text-right">
                     {canManage ? (
                       <div className="flex items-center justify-end gap-2.5">
                         <button
