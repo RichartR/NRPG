@@ -246,7 +246,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
               <h2 className="ninja-title text-xl sm:text-3xl xl:text-5xl leading-none">
                 {editingRegistry ? 'EDITAR REPARTO' : 'REPARTIR PREMIOS'}
               </h2>
-              <p className="text-[8px] sm:text-[10px] xl:text-xs font-black text-oro/30 uppercase tracking-[0.4em] mt-3 italic">
+              <p className="text-caption sm:text-caption xl:text-xs font-black text-oro/30 uppercase tracking-[0.4em] mt-3 italic">
                 {activeNews.titulo}
               </p>
             </div>
@@ -343,7 +343,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
 
             {participants.length === 0 ? (
               <div className="p-10 text-center bg-black/20 border border-oro/5">
-                <p className="text-[10px] font-black uppercase tracking-widest text-oro/30 italic">Añade ninjas usando el buscador superior para repartirles recompensas</p>
+                <p className="text-caption font-black uppercase tracking-widest text-oro/30 italic">Añade ninjas usando el buscador superior para repartirles recompensas</p>
               </div>
             ) : (
               <div className="space-y-6">
@@ -367,7 +367,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">EXP EXTRA INDEPENDIENTE</label>
+                        <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">EXP EXTRA INDEPENDIENTE</label>
                         <input
                           type="number"
                           min="0"
@@ -377,7 +377,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">RYOUS EXTRA INDEPENDIENTES</label>
+                        <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">RYOUS EXTRA INDEPENDIENTES</label>
                         <input
                           type="number"
                           min="0"
@@ -387,7 +387,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">MONEDAS DE EVENTO</label>
+                        <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">MONEDAS DE EVENTO</label>
                         <input
                           type="number"
                           min="0"
@@ -400,7 +400,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
 
                     {/* Glosario Premios del Personaje */}
                     <div className="space-y-3 pt-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1 flex items-center gap-1.5">
+                      <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1 flex items-center gap-1.5">
                         <BookOpen className="w-3.5 h-3.5" /> Recompensas del Glosario (Técnicas, Objetos, etc.)
                       </label>
 
@@ -408,7 +408,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
                         {p.glosario_items?.map((item: any) => (
                           <span
                             key={item.id}
-                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#050309] border border-oro/25 text-[10px] font-black text-oro uppercase tracking-wider ninja-clip-xs"
+                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-neutral-900 border border-oro/25 text-caption font-black text-oro uppercase tracking-wider ninja-clip-xs"
                           >
                             {item.nombre_es}
                             <button
@@ -426,7 +426,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
                             setActiveGlosarioSelector(activeGlosarioSelector === p.id ? null : p.id);
                             setGlosarioSearchQuery('');
                           }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-oro/5 hover:bg-oro hover:text-rojo-sangre border border-oro/15 hover:border-oro text-[10px] font-black text-oro uppercase tracking-wider transition-all ninja-clip-xs"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-oro/5 hover:bg-oro hover:text-rojo-sangre border border-oro/15 hover:border-oro text-caption font-black text-oro uppercase tracking-wider transition-all ninja-clip-xs"
                         >
                           <Plus className="w-3.5 h-3.5" /> Añadir Glosario
                         </button>
@@ -434,7 +434,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
 
                       {/* Dropdown del Selector de Glosario para el personaje */}
                       {activeGlosarioSelector === p.id && (
-                        <div className="mt-3 p-4 bg-[#0A0A0A] border border-oro/20 space-y-4 animate-in zoom-in-95 duration-200">
+                        <div className="mt-3 p-4 bg-neutral-800 border border-oro/20 space-y-4 animate-in zoom-in-95 duration-200">
                           <input
                             type="text"
                             placeholder="FILTRAR GLOSARIO..."
@@ -445,7 +445,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
 
                           {loadingGlosario[p.id] ? (
                             <div className="flex items-center gap-2 py-4 justify-center">
-                              <span className="text-[10px] font-black uppercase text-oro/40">Validando requisitos del jugador...</span>
+                              <span className="text-caption font-black uppercase text-oro/40">Validando requisitos del jugador...</span>
                             </div>
                           ) : (
                             <div className="max-h-48 overflow-y-auto custom-scrollbar divide-y divide-oro/5">
@@ -458,13 +458,13 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
                                     className="w-full text-left py-3 px-4 hover:bg-oro/10 text-xs font-black text-oro/60 hover:text-oro flex justify-between items-center uppercase tracking-widest border-b border-oro/5 last:border-0"
                                   >
                                     <span>{item.nombre_es}</span>
-                                    <span className="text-[9px] font-bold text-oro/30">Cumple requisitos</span>
+                                    <span className="text-caption font-bold text-oro/30">Cumple requisitos</span>
                                   </button>
                                 ))}
 
                               {(validGlosarioItems[p.id] || []).filter(item => item.nombre_es.toLowerCase().includes(glosarioSearchQuery.toLowerCase())).length === 0 && (
                                 <div className="text-center py-6">
-                                  <p className="text-[10px] font-black uppercase text-oro/20 italic">No hay ítems válidos para los requisitos de este personaje</p>
+                                  <p className="text-caption font-black uppercase text-oro/20 italic">No hay ítems válidos para los requisitos de este personaje</p>
                                 </div>
                               )}
                             </div>
@@ -481,7 +481,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
 
         {/* Botones de Operación */}
         <footer className="flex flex-col-reverse sm:flex-row justify-end items-center gap-6 sm:gap-8 p-4 sm:p-6 border-t border-oro/10 relative z-10 bg-black/40 flex-shrink-0">
-          <button type="button" onClick={onClose} className="text-[9px] sm:text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] text-oro/40 hover:text-rojo-sangre transition-colors italic bg-transparent border-none outline-none cursor-pointer">CANCELAR</button>
+          <button type="button" onClick={onClose} className="text-caption sm:text-caption xl:text-xs font-black uppercase tracking-[0.4em] text-oro/40 hover:text-rojo-sangre transition-colors italic bg-transparent border-none outline-none cursor-pointer">CANCELAR</button>
           <button
             onClick={handleSubmit}
             disabled={loading}

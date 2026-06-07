@@ -14,6 +14,8 @@ import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import NinjaCard from '@/components/ui/NinjaCard';
 import AdminViewSelector from '@/components/admin/AdminViewSelector';
+import { PaginationPageInput } from '@/components/ui/PaginationPageInput';
+import { PaginationContainer } from '@/components/ui/PaginationContainer';
 import { useRouter } from 'next/navigation';
 
 export default function TiendasPage() {
@@ -270,7 +272,7 @@ export default function TiendasPage() {
               <div className="space-y-4 flex flex-col justify-between">
                 <div>
                   <label className="block text-xs font-black text-oro/60 uppercase tracking-widest mb-1">Renombrar Divisa de Evento</label>
-                  <p className="text-[10px] text-gris-texto mb-2">Cambia el nombre oficial de la moneda de evento en todo el juego.</p>
+                  <p className="text-caption text-gris-texto mb-2">Cambia el nombre oficial de la moneda de evento en todo el juego.</p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2.5">
                   <input
@@ -295,7 +297,7 @@ export default function TiendasPage() {
               <div className="space-y-4 flex flex-col justify-between">
                 <div>
                   <label className="block text-xs font-black text-oro/60 uppercase tracking-widest mb-1">Restaurar Economía</label>
-                  <p className="text-[10px] text-gris-texto">Reinicia la divisa de evento a 0 de todos los personajes.</p>
+                  <p className="text-caption text-gris-texto">Reinicia la divisa de evento a 0 de todos los personajes.</p>
                 </div>
                 <button
                   onClick={() => {
@@ -313,7 +315,7 @@ export default function TiendasPage() {
               <div className="space-y-4 flex flex-col justify-between md:col-span-2 xl:col-span-1 mt-4 md:mt-0">
                 <div>
                   <label className="block text-xs font-black text-oro/60 uppercase tracking-widest mb-1">Creación y Catálogos</label>
-                  <p className="text-[10px] text-gris-texto">Crea una nueva tienda.</p>
+                  <p className="text-caption text-gris-texto">Crea una nueva tienda.</p>
                 </div>
                 <button
                   onClick={() => {
@@ -377,7 +379,7 @@ export default function TiendasPage() {
                   headerOverlayRight={
                     <div className="flex gap-2 items-center" onClick={(e) => e.stopPropagation()}>
                       {!tienda.activo && (
-                        <span className="px-3 py-1 bg-zinc-950 border border-zinc-500/30 text-zinc-400 text-[9px] font-black uppercase tracking-widest" style={{ clipPath: 'polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px)' }}>
+                        <span className="px-3 py-1 bg-zinc-950 border border-zinc-500/30 text-zinc-400 text-caption font-black uppercase tracking-widest" style={{ clipPath: 'polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px)' }}>
                           Inactiva
                         </span>
                       )}
@@ -397,7 +399,7 @@ export default function TiendasPage() {
                           {!isExperience && (
                             <button
                               onClick={() => setIsDeletingId(tienda.id)}
-                              className="p-1.5 border border-red-500/20 bg-zinc-950/80 hover:border-red-500 hover:bg-red-500/10 text-red-400 transition-all"
+                              className="p-1.5 border border-error-text/20 bg-zinc-950/80 hover:border-error-text hover:bg-red-500/10 text-red-400 transition-all"
                               style={{ clipPath: 'polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px)' }}
                               title="Eliminar Tienda"
                             >
@@ -411,13 +413,13 @@ export default function TiendasPage() {
                   footerRight={
                     tienda.es_evento ? (
                       <div className="border border-oro/10 bg-black/40 py-1.5 px-3" style={{ clipPath: 'polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px)' }}>
-                        <span className="text-[9px] sm:text-xs font-black text-oro/60 uppercase tracking-widest block">
+                        <span className="text-caption sm:text-xs font-black text-oro/60 uppercase tracking-widest block">
                           {tienda.nombre_moneda || eventCoinName}
                         </span>
                       </div>
                     ) : tienda.es_experiencia ? (
                       <div className="border border-oro/10 bg-black/40 py-1.5 px-3" style={{ clipPath: 'polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px)' }}>
-                        <span className="text-[9px] sm:text-xs font-black text-oro/60 uppercase tracking-widest block">
+                        <span className="text-caption sm:text-xs font-black text-oro/60 uppercase tracking-widest block">
                           Experiencia
                         </span>
                       </div>
@@ -657,9 +659,9 @@ export default function TiendasPage() {
             </h2>
 
             {/* Date Filters */}
-            <div className="flex flex-wrap items-center gap-6 p-6 mb-8 border border-oro/10 bg-black/30" style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}>
+            <div className="flex flex-wrap items-center gap-6 p-6 mb-8 border border-oro/10 bg-black/30 ninja-clip-md">
               <div className="flex items-center gap-4">
-                <span className="text-[10px] sm:text-xs font-black text-oro/40 uppercase tracking-widest">DESDE</span>
+                <span className="text-caption sm:text-xs font-black text-oro/40 uppercase tracking-widest">DESDE</span>
                 <input
                   type="date"
                   value={historyStartDate}
@@ -668,7 +670,7 @@ export default function TiendasPage() {
                 />
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-[10px] sm:text-xs font-black text-oro/40 uppercase tracking-widest">HASTA</span>
+                <span className="text-caption sm:text-xs font-black text-oro/40 uppercase tracking-widest">HASTA</span>
                 <input
                   type="date"
                   value={historyEndDate}
@@ -694,11 +696,11 @@ export default function TiendasPage() {
                   <p className="text-oro font-black uppercase tracking-widest text-xs">Cargando registros...</p>
                 </div>
               ) : historyData.list.length > 0 ? (
-                <div className="ninja-card-oro overflow-hidden border border-oro/20 bg-black/40 backdrop-blur-sm" style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}>
+                <div className="ninja-card-oro overflow-hidden border border-oro/20 bg-black/40 backdrop-blur-sm ninja-clip-md">
                   <div className="overflow-x-auto custom-scrollbar">
                     <table className="w-full text-left border-collapse min-w-[900px]">
                       <thead>
-                        <tr className="border-b border-oro/10 text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em]">
+                        <tr className="border-b border-oro/10 text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.3em]">
                           <th className="py-6 px-8">Comprador</th>
                           <th className="py-6 px-8">Fecha/Hora</th>
                           <th className="py-6 px-8">Objeto Adquirido</th>
@@ -728,7 +730,7 @@ export default function TiendasPage() {
                                 <span className="text-xs sm:text-sm font-black text-oro uppercase tracking-widest">{authorName}</span>
                               </td>
                               <td className="py-6 px-8">
-                                <span className="text-[10px] font-bold text-oro/40 uppercase tracking-widest">{formattedDate}</span>
+                                <span className="text-caption font-bold text-oro/40 uppercase tracking-widest">{formattedDate}</span>
                               </td>
                               <td className="py-6 px-8">
                                 <div className="flex flex-col gap-1">
@@ -736,7 +738,7 @@ export default function TiendasPage() {
                                     {reg.data.objeto_nombre || reg.data.objeto || 'Equipo Ninja'}
                                   </span>
                                   {reg.data.detalles && (
-                                    <span className="text-[9px] font-bold text-oro/40 uppercase tracking-wider">
+                                    <span className="text-caption font-bold text-oro/40 uppercase tracking-wider">
                                       {reg.data.detalles}
                                     </span>
                                   )}
@@ -760,7 +762,7 @@ export default function TiendasPage() {
                                     </span>
                                   )}
                                   {(reg.data.coste_exp || 0) === 0 && (reg.data.coste_ryous || 0) === 0 && (reg.data.coste_moneda_evento || 0) === 0 && (
-                                    <span className="text-[10px] text-oro/20 uppercase tracking-widest italic">Gratis</span>
+                                    <span className="text-caption text-oro/20 uppercase tracking-widest italic">Gratis</span>
                                   )}
                                 </div>
                               </td>
@@ -773,14 +775,14 @@ export default function TiendasPage() {
                                         href={url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="flex items-center gap-1.5 px-3 py-1 bg-oro/5 border border-oro/10 hover:border-oro/40 hover:bg-oro/10 text-[9px] font-black text-oro/70 hover:text-oro uppercase tracking-widest transition-all ninja-clip-xs"
+                                        className="flex items-center gap-1.5 px-3 py-1 bg-oro/5 border border-oro/10 hover:border-oro/40 hover:bg-oro/10 text-caption font-black text-oro/70 hover:text-oro uppercase tracking-widest transition-all ninja-clip-xs"
                                       >
                                         <LinkIcon className="w-2.5 h-2.5" />
                                         <span>Prueba {i + 1}</span>
                                       </a>
                                     ))
                                   ) : (
-                                    <span className="text-[9px] font-bold text-oro/20 uppercase tracking-widest italic">Sin pruebas</span>
+                                    <span className="text-caption font-bold text-oro/20 uppercase tracking-widest italic">Sin pruebas</span>
                                   )}
                                 </div>
                               </td>
@@ -788,7 +790,7 @@ export default function TiendasPage() {
                                 <td className="py-6 px-8 text-right">
                                   <button
                                     onClick={() => handleDeleteRegistro(reg.id)}
-                                    className="w-8 h-8 inline-flex items-center justify-center bg-red-600/10 border border-red-600/40 hover:border-red-500 hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs shadow-lg shadow-black/20"
+                                    className="w-8 h-8 inline-flex items-center justify-center bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs shadow-lg shadow-black/20"
                                     title="Eliminar Registro de Compra"
                                   >
                                     <Trash2 className="w-4 h-4" />
@@ -812,24 +814,32 @@ export default function TiendasPage() {
 
             {/* Pagination */}
             {historyData.list.length > 0 && !historyLoading && (
-              <div className="flex justify-center items-center gap-6 pt-6 border-t border-oro/10 mt-6 bg-transparent">
-                <button
-                  disabled={historyData.page === 1}
-                  onClick={() => fetchHistory(historyData.page - 1)}
-                  className="p-3 ninja-btn-oro"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <span className="text-xs font-black text-oro uppercase tracking-widest italic">
-                  PÁGINA <span className="text-oro/40">{historyData.page}</span> DE <span className="text-oro/40">{Math.ceil(historyData.count / 10)}</span>
-                </span>
-                <button
-                  disabled={historyData.list.length < 10 || historyData.page * 10 >= historyData.count}
-                  onClick={() => fetchHistory(historyData.page + 1)}
-                  className="p-3 ninja-btn-oro"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
+              <div className="pt-6 border-t border-oro/10 mt-6 bg-transparent w-full">
+                <PaginationContainer maxWidthClass="max-w-md">
+                  <button
+                    disabled={historyData.page === 1}
+                    onClick={() => fetchHistory(historyData.page - 1)}
+                    className="p-3 ninja-btn-oro shrink-0"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <div className="flex items-center gap-1.5 justify-center text-xs font-black text-oro uppercase tracking-widest italic">
+                    PÁGINA
+                    <PaginationPageInput
+                      currentPage={historyData.page}
+                      totalPages={Math.ceil(historyData.count / 10) || 1}
+                      onChangePage={(p) => fetchHistory(p)}
+                    />
+                    <span className="text-oro/40">DE {Math.ceil(historyData.count / 10) || 1}</span>
+                  </div>
+                  <button
+                    disabled={historyData.list.length < 10 || historyData.page * 10 >= historyData.count}
+                    onClick={() => fetchHistory(historyData.page + 1)}
+                    className="p-3 ninja-btn-oro shrink-0"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </PaginationContainer>
               </div>
             )}
 

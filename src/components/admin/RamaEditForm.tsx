@@ -11,17 +11,19 @@ import { RamaClan, Aldea } from '@/domain/types';
 interface RamaEditFormProps {
   rama?: RamaClan;
   aldeas: Aldea[];
+  rasgos: any[];
   onCancel: () => void;
 }
 
-export default function RamaEditForm({ rama, aldeas, onCancel }: RamaEditFormProps) {
+export default function RamaEditForm({ rama, aldeas, rasgos, onCancel }: RamaEditFormProps) {
   const isCreate = !rama;
   const [formData, setFormData] = useState<Partial<RamaClan>>(() => {
     if (rama) {
       return {
         ...rama,
         es_especial: rama.es_especial ?? false,
-        es_repetible: rama.es_repetible ?? false
+        es_repetible: rama.es_repetible ?? false,
+        rasgo_id: rama.rasgo_id ?? null
       };
     }
     return {
@@ -33,7 +35,8 @@ export default function RamaEditForm({ rama, aldeas, onCancel }: RamaEditFormPro
       activo: true,
       es_especial: false,
       es_repetible: false,
-      url_imagen: ''
+      url_imagen: '',
+      rasgo_id: null
     };
   });
   const [loading, setLoading] = useState(false);
@@ -81,13 +84,13 @@ export default function RamaEditForm({ rama, aldeas, onCancel }: RamaEditFormPro
               <h2 className="ninja-title text-xl sm:text-3xl leading-none">
                 {isCreate ? (formData.tipo === 'rama' ? 'CREAR NUEVA RAMA' : 'CREAR NUEVO CLAN') : 'EDITAR REGISTRO'}
               </h2>
-              <p className="text-[10px] font-black text-oro/40 uppercase tracking-[0.2em] mt-2 italic">Configuración de especialidades ninja</p>
+              <p className="text-caption font-black text-oro/40 uppercase tracking-[0.2em] mt-2 italic">Configuración de especialidades ninja</p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             <label className="flex items-center gap-3 cursor-pointer group bg-oro/5 px-4 py-2 border border-oro/10 hover:border-oro/30 transition-all">
-              <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${formData.activo ? 'text-oro' : 'text-oro/20'}`}>
+              <span className={`text-caption font-black uppercase tracking-widest transition-colors ${formData.activo ? 'text-oro' : 'text-oro/20'}`}>
                 {formData.activo ? 'ACTIVO' : 'INACTIVO'}
               </span>
               <input
@@ -131,7 +134,7 @@ export default function RamaEditForm({ rama, aldeas, onCancel }: RamaEditFormPro
               placeholder="Cualquier Aldea / Ronin"
             />
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-oro/60 ml-1">Tipo de Registro</label>
+              <label className="text-caption font-black uppercase tracking-widest text-oro/60 ml-1">Tipo de Registro</label>
               <div className="flex bg-black/40 p-1 border border-oro/10 h-[58px] ninja-clip-sm">
                 <button
                   type="button"
@@ -139,27 +142,27 @@ export default function RamaEditForm({ rama, aldeas, onCancel }: RamaEditFormPro
                     updateField('tipo', 'rama');
                     updateField('es_especial', false);
                   }}
-                  className={`flex-1 text-[10px] font-black uppercase tracking-widest transition-all ninja-clip-xs ${formData.tipo === 'rama' ? 'bg-oro text-rojo-sangre shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
+                  className={`flex-1 text-caption font-black uppercase tracking-widest transition-all ninja-clip-xs ${formData.tipo === 'rama' ? 'bg-oro text-rojo-sangre shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
                 >
                   Rama
                 </button>
                 <button
                   type="button"
                   onClick={() => updateField('tipo', 'clan')}
-                  className={`flex-1 text-[10px] font-black uppercase tracking-widest transition-all ninja-clip-xs ${formData.tipo === 'clan' ? 'bg-oro text-rojo-sangre shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
+                  className={`flex-1 text-caption font-black uppercase tracking-widest transition-all ninja-clip-xs ${formData.tipo === 'clan' ? 'bg-oro text-rojo-sangre shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
                 >
                   Clan
                 </button>
               </div>
             </div>
             <div className="space-y-2 md:col-span-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-oro/60 ml-1">Repetibilidad</label>
+              <label className="text-caption font-black uppercase tracking-widest text-oro/60 ml-1">Repetibilidad</label>
               <div className="flex bg-black/40 p-4 border border-oro/10 justify-between items-center h-[58px] ninja-clip-sm">
                 <span className="text-[11px] font-black uppercase tracking-widest text-oro/40">
                   ¿Es Rama Repetible en slots del personaje?
                 </span>
                 <label className="flex items-center gap-3 cursor-pointer group">
-                  <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${formData.es_repetible ? 'text-oro' : 'text-oro/20'}`}>
+                  <span className={`text-caption font-black uppercase tracking-widest transition-colors ${formData.es_repetible ? 'text-oro' : 'text-oro/20'}`}>
                     {formData.es_repetible ? 'SÍ' : 'NO'}
                   </span>
                   <input
@@ -176,13 +179,13 @@ export default function RamaEditForm({ rama, aldeas, onCancel }: RamaEditFormPro
             </div>
             {formData.tipo === 'clan' && (
               <div className="space-y-2 md:col-span-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                <label className="text-[10px] font-black uppercase tracking-widest text-oro/60 ml-1">Estatus del Clan</label>
+                <label className="text-caption font-black uppercase tracking-widest text-oro/60 ml-1">Estatus del Clan</label>
                 <div className="flex bg-black/40 p-4 border border-oro/10 justify-between items-center h-[58px] ninja-clip-sm">
                   <span className="text-[11px] font-black uppercase tracking-widest text-oro/40">
                     Clan Especial (Límites reducidos)
                   </span>
                   <label className="flex items-center gap-3 cursor-pointer group">
-                    <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${formData.es_especial ? 'text-oro' : 'text-oro/20'}`}>
+                    <span className={`text-caption font-black uppercase tracking-widest transition-colors ${formData.es_especial ? 'text-oro' : 'text-oro/20'}`}>
                       {formData.es_especial ? 'SÍ' : 'NO'}
                     </span>
                     <input
@@ -199,6 +202,15 @@ export default function RamaEditForm({ rama, aldeas, onCancel }: RamaEditFormPro
               </div>
             )}
             <div className="md:col-span-2">
+              <SearchableSelect
+                label="Rasgo Automático Vinculado"
+                value={formData.rasgo_id}
+                options={rasgos.map(r => ({ label: r.nombre, value: r.id }))}
+                onChange={(v) => updateField('rasgo_id', v ? Number(v) : null)}
+                placeholder="Ningún Rasgo Asignado"
+              />
+            </div>
+            <div className="md:col-span-2">
               <DataField
                 label="URL Imagen"
                 value={formData.url_imagen}
@@ -209,7 +221,7 @@ export default function RamaEditForm({ rama, aldeas, onCancel }: RamaEditFormPro
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-oro/60 ml-1 flex items-center gap-2">
+            <label className="text-caption font-black uppercase tracking-widest text-oro/60 ml-1 flex items-center gap-2">
               <AlignLeft className="w-4 h-4 text-oro/60" /> Descripción / Lore
             </label>
             <textarea

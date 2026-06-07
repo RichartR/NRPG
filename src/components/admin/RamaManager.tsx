@@ -14,9 +14,10 @@ interface Props {
   initialSubs: SubEspecialidad[];
   initialEntrenamientos: Entrenamiento[];
   aldeas: Aldea[];
+  rasgos: any[];
 }
 
-export default function RamaManager({ initialRamas, initialSubs, initialEntrenamientos, aldeas }: Props) {
+export default function RamaManager({ initialRamas, initialSubs, initialEntrenamientos, aldeas, rasgos }: Props) {
   const [activeSection, setActiveSection] = useState<Section>('hub');
 
   if (activeSection === 'hub') {
@@ -55,7 +56,7 @@ export default function RamaManager({ initialRamas, initialSubs, initialEntrenam
         <div className="flex flex-col gap-2 relative z-10">
           <button
             onClick={() => setActiveSection('hub')}
-            className="flex items-center gap-3 text-oro/60 hover:text-oro transition-all mb-6 text-[10px] font-black uppercase tracking-[0.3em] group cursor-pointer bg-transparent border-none p-0 outline-none align-middle"
+            className="flex items-center gap-3 text-oro/60 hover:text-oro transition-all mb-6 text-caption font-black uppercase tracking-[0.3em] group cursor-pointer bg-transparent border-none p-0 outline-none align-middle"
           >
             <div className="w-1.5 h-1.5 bg-oro/40 group-hover:bg-oro rotate-45 transition-colors" />
             VOLVER AL MENÚ DE RAMAS
@@ -66,7 +67,7 @@ export default function RamaManager({ initialRamas, initialSubs, initialEntrenam
         </div>
       </div>
 
-      {activeSection === 'ramas' && <RamaList initialRamas={initialRamas} aldeas={aldeas} />}
+      {activeSection === 'ramas' && <RamaList initialRamas={initialRamas} aldeas={aldeas} rasgos={rasgos} />}
       {activeSection === 'subs' && <SubEspecialidadList initialSubs={initialSubs} ramas={initialRamas} />}
       {activeSection === 'trainings' && (
         <EntrenamientoList
@@ -97,7 +98,7 @@ function HubCard({ title, desc, icon, count, onClick }: any) {
             className="flex items-center gap-2 bg-oro/5 border border-oro/10 px-4 py-1.5 w-fit ninja-clip-xs"
           >
             <span className="text-oro font-black text-sm leading-none">{count}</span>
-            <span className="text-oro/30 font-black text-[9px] uppercase tracking-widest">Activos</span>
+            <span className="text-oro/30 font-black text-caption uppercase tracking-widest">Activos</span>
           </div>
         </div>
 
@@ -105,7 +106,7 @@ function HubCard({ title, desc, icon, count, onClick }: any) {
         <p className="text-gris-texto/60 text-sm leading-relaxed mb-10 max-w-[280px]">{desc}</p>
       </div>
 
-      <div className="flex items-center gap-4 text-[10px] font-black text-oro/30 uppercase tracking-[0.3em] group-hover:text-oro transition-all mt-auto pt-6 border-t border-oro/[0.02]">
+      <div className="flex items-center gap-4 text-caption font-black text-oro/30 uppercase tracking-[0.3em] group-hover:text-oro transition-all mt-auto pt-6 border-t border-oro/[0.02]">
         <span>Administrar</span>
         <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
       </div>

@@ -27,7 +27,7 @@ export default function AdminViewSelector({
       <div className="flex gap-2 p-1.5 bg-black/40 border border-oro/10 ninja-box w-full sm:w-auto sm:inline-flex justify-center">
         <button
           onClick={() => onViewModeChange('player')}
-          className={`flex-1 sm:flex-initial text-center px-4 sm:px-10 py-3 xl:py-4 font-black uppercase tracking-[0.2em] transition-all text-[9px] sm:text-[10px] xl:text-xs ${
+          className={`flex-1 sm:flex-initial text-center px-4 sm:px-10 py-3 xl:py-4 font-black uppercase tracking-[0.2em] transition-all text-caption sm:text-caption xl:text-xs ${
             viewMode === 'player'
               ? 'bg-oro text-rojo-sangre shadow-lg'
               : 'text-oro/40 hover:text-oro hover:bg-oro/5'
@@ -38,7 +38,7 @@ export default function AdminViewSelector({
         </button>
         <button
           onClick={() => onViewModeChange('admin')}
-          className={`flex-1 sm:flex-initial text-center px-4 sm:px-10 py-3 xl:py-4 font-black uppercase tracking-[0.2em] transition-all text-[9px] sm:text-[10px] xl:text-xs ${
+          className={`flex-1 sm:flex-initial text-center px-4 sm:px-10 py-3 xl:py-4 font-black uppercase tracking-[0.2em] transition-all text-caption sm:text-caption xl:text-xs ${
             viewMode === 'admin'
               ? 'bg-oro text-rojo-sangre shadow-lg'
               : 'text-oro/40 hover:text-oro hover:bg-oro/5'

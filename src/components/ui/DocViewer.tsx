@@ -56,7 +56,7 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
             <div className="flex items-center gap-3 sm:gap-6 min-w-0 flex-1 justify-center md:justify-start">
               <Link
                 href={backUrl}
-                className="flex items-center gap-3 px-4 py-2 font-black text-[10px] xl:text-sm uppercase tracking-[0.2em] transition-all active:scale-95 text-oro/60 hover:text-oro group shrink-0"
+                className="flex items-center gap-3 px-4 py-2 font-black text-caption xl:text-sm uppercase tracking-[0.2em] transition-all active:scale-95 text-oro/60 hover:text-oro group shrink-0"
               >
                 <div className="w-2 xl:w-2.5 h-2 xl:h-2.5 bg-rojo-sangre rotate-45 group-hover:bg-oro transition-colors" />
                 <span>VOLVER</span>
@@ -74,7 +74,7 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
             <button onClick={handleZoomOut} className="p-2 md:p-2.5 hover:bg-rojo-sangre/20 transition-all text-oro/40 hover:text-oro">
               <div className="w-3 h-0.5 bg-current" />
             </button>
-            <div className="text-[9px] xl:text-xs font-black w-12 text-center select-none text-oro/80 tabular-nums">
+            <div className="text-caption xl:text-xs font-black w-12 text-center select-none text-oro/80 tabular-nums">
               {Math.round(zoom * 100)}%
             </div>
             <button onClick={handleZoomIn} className="p-2 md:p-2.5 hover:bg-rojo-sangre/20 transition-all text-oro/40 hover:text-oro">
@@ -88,7 +88,7 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
           <a
             href={downloadUrl}
             download
-            className="flex items-center justify-center gap-4 px-6 md:px-8 py-2.5 md:py-3.5 bg-oro text-rojo-sangre font-black text-[10px] xl:text-xs uppercase tracking-[0.2em] transition-all shadow-[0_0_20px_rgba(255,230,159,0.2)] active:scale-95 hover:brightness-110 shrink-0"
+            className="flex items-center justify-center gap-4 px-6 md:px-8 py-2.5 md:py-3.5 bg-oro text-rojo-sangre font-black text-caption xl:text-xs uppercase tracking-[0.2em] transition-all shadow-[0_0_20px_rgba(255,230,159,0.2)] active:scale-95 hover:brightness-110 shrink-0"
             style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
           >
             DESCARGAR PDF

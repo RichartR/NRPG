@@ -121,7 +121,7 @@ export default function AdminPage() {
 
           <div className="flex items-center gap-4 mb-8">
             <div className="w-8 h-px bg-oro/30" />
-            <h1 className="text-oro/40 font-black uppercase tracking-[0.5em] text-[10px] xl:text-xs">CENTRO DE MANDO SUPREMO</h1>
+            <h1 className="text-oro/40 font-black uppercase tracking-[0.5em] text-caption xl:text-xs">CENTRO DE MANDO SUPREMO</h1>
           </div>
           <h2 className="ninja-title text-6xl xl:text-8xl mb-8">ADMINISTRACIÓN</h2>
           <p className="text-gris-texto/60 text-lg xl:text-xl max-w-4xl leading-relaxed italic border-l-2 border-oro/10 pl-10 py-2">
@@ -144,14 +144,14 @@ export default function AdminPage() {
                   <div className="w-10 h-10 bg-oro/[0.03] border border-oro/5 flex items-center justify-center group-hover:bg-oro group-hover:text-black transition-all duration-500">
                     <mod.icon className="w-5 h-5 text-oro/40 group-hover:text-inherit" />
                   </div>
-                  <div className="text-[10px] font-black text-oro/20 uppercase tracking-[0.3em] group-hover:text-oro/40 transition-colors">CONFIG</div>
+                  <div className="text-caption font-black text-oro/20 uppercase tracking-[0.3em] group-hover:text-oro/40 transition-colors">CONFIG</div>
                 </div>
 
                 <h3 className="text-2xl xl:text-3xl font-black text-oro uppercase tracking-widest mb-4 group-hover:translate-x-1 transition-transform">{mod.title}</h3>
                 <p className="text-gris-texto/40 text-sm xl:text-base leading-relaxed mb-10 max-w-[250px]">{mod.desc}</p>
               </div>
 
-              <div className="flex items-center gap-4 text-[10px] font-black text-oro/20 uppercase tracking-[0.3em] group-hover:text-oro transition-all mt-auto pt-6 border-t border-oro/[0.02]">
+              <div className="flex items-center gap-4 text-caption font-black text-oro/20 uppercase tracking-[0.3em] group-hover:text-oro transition-all mt-auto pt-6 border-t border-oro/[0.02]">
                 <span>ACCEDER AL MÓDULO</span>
                 <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
               </div>

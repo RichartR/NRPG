@@ -80,7 +80,7 @@ export default function AdminMisionesPage() {
   return (
     <div className="max-w-[1750px]">
       <header className="mb-6 ninja-card-oro p-8 xl:p-10">
-        <Link href="/admin" className="flex items-center gap-3 text-oro/40 hover:text-oro transition-all mb-8 text-[10px] font-black uppercase tracking-[0.3em] group">
+        <Link href="/admin" className="flex items-center gap-3 text-oro/40 hover:text-oro transition-all mb-8 text-caption font-black uppercase tracking-[0.3em] group">
           <div className="w-1.5 h-1.5 bg-oro/20 group-hover:bg-oro rotate-45 transition-colors" />
           VOLVER AL PANEL CENTRAL
         </Link>
@@ -92,14 +92,13 @@ export default function AdminMisionesPage() {
             </div>
             <div>
               <h1 className="ninja-title text-4xl xl:text-5xl italic">TABLÓN DE MISIONES</h1>
-              <p className="text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] mt-2">CONFIGURACIÓN DE ENCARGOS Y RECOMPENSAS</p>
+              <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.4em] mt-2">CONFIGURACIÓN DE ENCARGOS Y RECOMPENSAS</p>
             </div>
           </div>
 
           <button
             onClick={() => setEditingMision({ rango: 'D', exp: 0, ryous: 0 })}
-            className="flex items-center gap-4 px-10 py-5 bg-rojo-sangre hover:brightness-125 text-oro font-black text-[10px] xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-rojo-sangre/20 active:scale-95"
-            style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
+            className="flex items-center gap-4 px-10 py-5 bg-rojo-sangre hover:brightness-125 text-oro font-black text-caption xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-rojo-sangre/20 active:scale-95 ninja-clip-md"
           >
             <Plus className="w-4 h-4" />
             NUEVA MISIÓN MAESTRA
@@ -108,7 +107,7 @@ export default function AdminMisionesPage() {
       </header>
 
       {editingMision && (
-        <div className="mb-12 p-8 xl:p-12 bg-[#0A0A0A]/60 border border-oro/10 backdrop-blur-md relative overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500" style={{ clipPath: 'polygon(30px 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%, 0 30px)' }}>
+        <div className="mb-12 p-8 xl:p-12 bg-neutral-800/60 border border-oro/10 backdrop-blur-md relative overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500 ninja-clip-lg">
           <div className="absolute top-0 right-0 w-64 h-64 bg-oro/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
           <div className="flex justify-between items-center mb-8">
             <h3 className="text-xl font-black uppercase italic text-white">
@@ -213,8 +212,7 @@ export default function AdminMisionesPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="w-full py-5 bg-oro text-rojo-sangre font-black uppercase tracking-[0.2em] hover:brightness-110 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-4 shadow-xl shadow-oro/5"
-            style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}
+            className="w-full py-5 bg-oro text-rojo-sangre font-black uppercase tracking-[0.2em] hover:brightness-110 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-4 shadow-xl shadow-oro/5 ninja-clip-md"
           >
             <Save className="w-4 h-4" />
             {saving ? 'PROCESANDO...' : 'GUARDAR CONFIGURACIÓN DE MISIÓN'}
@@ -230,11 +228,10 @@ export default function AdminMisionesPage() {
             placeholder="FILTRAR POR CÓDIGO DE MISIÓN..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-[#0A0A0A]/40 border border-oro/10 py-5 pl-16 pr-8 text-[10px] xl:text-xs font-black text-oro outline-none focus:border-oro/40 transition-all placeholder:text-oro/20 uppercase tracking-widest"
-            style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
+            className="w-full bg-neutral-800/40 border border-oro/10 py-5 pl-16 pr-8 text-caption xl:text-xs font-black text-oro outline-none focus:border-oro/40 transition-all placeholder:text-oro/20 uppercase tracking-widest ninja-clip-md"
           />
         </div>
-        <div className="flex items-center gap-4 px-8 bg-[#0A0A0A]/40 border border-oro/10" style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}>
+        <div className="flex items-center gap-4 px-8 bg-neutral-800/40 border border-oro/10 ninja-clip-md">
           <Filter className="w-4 h-4 text-oro/30" />
           <NinjaSelect
             variant="inline"
@@ -263,11 +260,11 @@ export default function AdminMisionesPage() {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-black/20 border-b border-oro/5 text-oro/70">
-                  <th className="px-10 py-8 text-left text-[10px] font-black uppercase tracking-[0.4em]">EXPEDIENTE</th>
-                  <th className="px-10 py-8 text-left text-[10px] font-black uppercase tracking-[0.4em]">RANGO SOCIAL</th>
-                  <th className="px-10 py-8 text-left text-[10px] font-black uppercase tracking-[0.4em]">RECOMPENSA</th>
-                  <th className="px-10 py-8 text-left text-[10px] font-black uppercase tracking-[0.4em]">ARCHIVOS VISUALES</th>
-                  <th className="px-10 py-8 text-right text-[10px] font-black uppercase tracking-[0.4em]">PROTOCOLOS</th>
+                  <th className="px-10 py-8 text-left text-caption font-black uppercase tracking-[0.4em]">EXPEDIENTE</th>
+                  <th className="px-10 py-8 text-left text-caption font-black uppercase tracking-[0.4em]">RANGO SOCIAL</th>
+                  <th className="px-10 py-8 text-left text-caption font-black uppercase tracking-[0.4em]">RECOMPENSA</th>
+                  <th className="px-10 py-8 text-left text-caption font-black uppercase tracking-[0.4em]">ARCHIVOS VISUALES</th>
+                  <th className="px-10 py-8 text-right text-caption font-black uppercase tracking-[0.4em]">PROTOCOLOS</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-800/50">
@@ -281,19 +278,19 @@ export default function AdminMisionesPage() {
                       <span className="font-black text-oro/70 italic">{m.codigo_mision}</span>
                     </td>
                     <td className="px-8 py-6">
-                      <span className="px-3 py-1 bg-oro/5 border border-oro/30 text-oro text-[10px] font-black uppercase tracking-wider ninja-clip-xs">
+                      <span className="px-3 py-1 bg-oro/5 border border-oro/30 text-oro text-caption font-black uppercase tracking-wider ninja-clip-xs">
                         Rango {m.rango}
                       </span>
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex flex-col gap-1">
                         <div className="flex flex-col">
-                          <span className="text-[10px] font-black text-green-500 uppercase tracking-wider">Completada:</span>
+                          <span className="text-caption font-black text-green-500 uppercase tracking-wider">Completada:</span>
                           <span className="text-xs font-bold text-gris-texto">+{m.exp} EXP / +{m.ryous} Ryous / +{m.pa_recompensa || 0} PA</span>
                         </div>
                         {m.se_puede_fallar && (
                           <div className="flex flex-col border-t border-oro/5 pt-1">
-                            <span className="text-[10px] font-black text-red-500 uppercase tracking-wider">Fallada:</span>
+                            <span className="text-caption font-black text-red-500 uppercase tracking-wider">Fallada:</span>
                             <span className="text-xs font-bold text-gris-texto">+{m.exp_fallida} EXP / +{m.ryous_fallida} Ryous / +{m.pa_recompensa_fallida || 0} PA</span>
                           </div>
                         )}

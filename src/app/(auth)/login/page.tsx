@@ -29,7 +29,7 @@ export default function LoginPage() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-oro/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
 
         {/* Volver */}
-        <Link href="/" className="inline-flex items-center gap-2 text-oro/40 hover:text-oro transition-all mb-8 uppercase font-black tracking-widest text-[10px]">
+        <Link href="/" className="inline-flex items-center gap-2 text-oro/40 hover:text-oro transition-all mb-8 uppercase font-black tracking-widest text-caption">
           <ArrowLeft className="w-3 h-3" />
           Volver al Dashboard
         </Link>
@@ -43,7 +43,7 @@ export default function LoginPage() {
           <h1 className="ninja-title text-4xl xl:text-6xl uppercase">
             BIENVENIDO
           </h1>
-          <p className="text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] mt-4">
+          <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.4em] mt-4">
             Acceso exclusivo mediante Discord
           </p>
         </div>
@@ -68,7 +68,7 @@ export default function LoginPage() {
           </button>
 
           <div className="p-6 border border-oro/10 bg-black/40 text-center">
-            <p className="text-oro/40 text-[9px] xl:text-[10px] font-black uppercase tracking-widest leading-relaxed">
+            <p className="text-oro/40 text-caption xl:text-caption font-black uppercase tracking-widest leading-relaxed">
               Al ingresar, aceptas que tu identidad sea vinculada a tu cuenta de Discord para la gestión de tu ficha ninja.
             </p>
           </div>

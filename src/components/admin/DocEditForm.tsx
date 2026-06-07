@@ -87,13 +87,13 @@ export default function DocEditForm({ doc, categories, onCancel, defaultCategory
               <h2 className="ninja-title text-xl sm:text-3xl xl:text-5xl leading-none">
                 {isCreate ? 'REGISTRO TÁCTICO' : 'ACTUALIZAR REGISTRO'}
               </h2>
-              <p className="text-[8px] sm:text-[10px] xl:text-xs font-black text-oro/30 uppercase tracking-[0.4em] mt-3 italic">MÓDULO DE GESTIÓN DE ARCHIVOS SHINOBI</p>
+              <p className="text-caption sm:text-caption xl:text-xs font-black text-oro/30 uppercase tracking-[0.4em] mt-3 italic">MÓDULO DE GESTIÓN DE ARCHIVOS SHINOBI</p>
             </div>
           </div>
 
           <div className="flex items-center justify-between md:justify-end gap-6 sm:gap-8 w-full md:w-auto">
             <label className="flex items-center gap-4 cursor-pointer group bg-black/40 px-4 sm:px-6 py-2.5 sm:py-3 border border-oro/10" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
-              <span className={`text-[8px] sm:text-[10px] font-black uppercase tracking-widest ${formData.activo ? 'text-oro' : 'text-oro/20'}`}>
+              <span className={`text-caption sm:text-caption font-black uppercase tracking-widest ${formData.activo ? 'text-oro' : 'text-oro/20'}`}>
                 {formData.activo ? 'ACTIVO' : 'ARCHIVADO'}
               </span>
               <input
@@ -148,8 +148,8 @@ export default function DocEditForm({ doc, categories, onCancel, defaultCategory
 
           <div className="space-y-4">
             <div className="flex justify-between items-center px-2">
-              <label className="text-[9px] sm:text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] text-oro/30">DESCRIPCIÓN CORTA</label>
-              <span className="text-[9px] sm:text-[10px] xl:text-xs font-black tracking-widest text-oro/30">
+              <label className="text-caption sm:text-caption xl:text-xs font-black uppercase tracking-[0.4em] text-oro/30">DESCRIPCIÓN CORTA</label>
+              <span className="text-caption sm:text-caption xl:text-xs font-black tracking-widest text-oro/30">
                 {(formData.descripcion || '').length} / 100
               </span>
             </div>
@@ -158,14 +158,13 @@ export default function DocEditForm({ doc, categories, onCancel, defaultCategory
               maxLength={100}
               value={formData.descripcion || ''}
               onChange={e => setFormData({ ...formData, descripcion: e.target.value })}
-              className="w-full bg-black/80 border border-oro/20 hover:border-oro/40 focus:border-oro/60 focus:bg-black/90 focus:shadow-[0_0_20px_rgba(255,230,159,0.1)] outline-none transition-all p-6 sm:p-10 text-oro font-black placeholder:text-oro/20 text-base sm:text-lg xl:text-xl italic uppercase tracking-tight"
+              className="ninja-clip-md w-full bg-black/80 border border-oro/20 hover:border-oro/40 focus:border-oro/60 focus:bg-black/90 focus:shadow-[0_0_20px_rgba(255,230,159,0.1)] outline-none transition-all p-6 sm:p-10 text-oro font-black placeholder:text-oro/20 text-base sm:text-lg xl:text-xl italic uppercase tracking-tight"
               placeholder="ESCRIBE UNA PEQUEÑA DESCRIPCIÓN DE ESTE APARTADO..."
-              style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}
             />
           </div>
 
           <footer className="flex flex-col-reverse sm:flex-row justify-end items-center gap-6 sm:gap-12 pt-8 sm:pt-12 border-t border-oro/10">
-            <button type="button" onClick={onCancel} className="text-[9px] sm:text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] text-oro/40 hover:text-rojo-sangre transition-colors italic bg-transparent border-none outline-none cursor-pointer">CANCELAR</button>
+            <button type="button" onClick={onCancel} className="text-caption sm:text-caption xl:text-xs font-black uppercase tracking-[0.4em] text-oro/40 hover:text-rojo-sangre transition-colors italic bg-transparent border-none outline-none cursor-pointer">CANCELAR</button>
             <button
               type="submit"
               disabled={loading}

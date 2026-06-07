@@ -161,7 +161,7 @@ export default function FichasArchivadasList({ initialCharacters }: { initialCha
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${activeTab === tab.id
+              className={`px-5 py-2.5 rounded-xl text-caption font-black uppercase tracking-[0.2em] transition-all duration-300 ${activeTab === tab.id
                   ? 'bg-oro text-rojo-sangre shadow-md shadow-oro/10 font-black'
                   : 'text-oro/40 hover:text-oro/80'
                 }`}
@@ -201,7 +201,7 @@ export default function FichasArchivadasList({ initialCharacters }: { initialCha
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[900px]">
             <thead>
-              <tr className="border-b border-oro/10 text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em]">
+              <tr className="border-b border-oro/10 text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.3em]">
                 <th className="py-6 px-8 w-24 whitespace-nowrap">Apariencia</th>
                 <th className="py-6 px-8 w-[30%] whitespace-nowrap">SHINOBI</th>
                 <th className="py-6 px-8 text-center whitespace-nowrap">MOTIVO</th>
@@ -242,17 +242,17 @@ export default function FichasArchivadasList({ initialCharacters }: { initialCha
                       <p className="ninja-title text-xl xl:text-2xl group-hover:text-white transition-colors leading-tight">
                         {char.nombre_ninja}
                       </p>
-                      <p className="text-[10px] text-oro/30 font-black uppercase tracking-widest mt-1 italic whitespace-nowrap">
+                      <p className="text-caption text-oro/30 font-black uppercase tracking-widest mt-1 italic whitespace-nowrap">
                         @{userStr}
                       </p>
-                      <p className="text-[9px] text-zinc-500 font-bold mt-0.5 uppercase tracking-wider">
+                      <p className="text-caption text-zinc-500 font-bold mt-0.5 uppercase tracking-wider">
                         {char.rango} {char.rango_jerarquico ? `(${char.rango_jerarquico})` : ''}
                       </p>
                     </td>
 
                     {/* Motivo */}
                     <td className="py-5 px-8 text-center whitespace-nowrap">
-                      <span className={`inline-block px-4 py-1.5 text-[9px] font-black border uppercase tracking-widest ninja-clip-xs ${char.eliminado_voluntario
+                      <span className={`inline-block px-4 py-1.5 text-caption font-black border uppercase tracking-widest ninja-clip-xs ${char.eliminado_voluntario
                           ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                           : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
                         }`}>
@@ -274,7 +274,7 @@ export default function FichasArchivadasList({ initialCharacters }: { initialCha
                     {/* Tiempo límite */}
                     <td className="py-5 px-8 text-center whitespace-nowrap">
                       {daysLeft !== null ? (
-                        <span className={`inline-flex items-center gap-2 px-3 py-1.5 text-[10px] font-black border uppercase tracking-wider ninja-clip-xs ${isCritical
+                        <span className={`inline-flex items-center gap-2 px-3 py-1.5 text-caption font-black border uppercase tracking-wider ninja-clip-xs ${isCritical
                             ? 'bg-rojo-sangre/20 text-rojo-sangre border-rojo-sangre/40 animate-pulse'
                             : 'bg-oro/10 text-oro border-oro/20'
                           }`}>
@@ -298,8 +298,7 @@ export default function FichasArchivadasList({ initialCharacters }: { initialCha
                         <button
                           onClick={() => handleRestore(char.id, char.nombre_ninja)}
                           disabled={loadingId === char.id}
-                          className="flex items-center gap-1.5 px-4 py-2 bg-oro hover:bg-oro/80 text-rojo-sangre text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50"
-                          style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
+                          className="flex items-center gap-1.5 px-4 py-2 bg-oro hover:bg-oro/80 text-rojo-sangre text-caption font-black uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 ninja-clip-sm"
                           title="RESTAURAR SHINOBI"
                         >
                           {loadingId === char.id ? (
@@ -313,8 +312,7 @@ export default function FichasArchivadasList({ initialCharacters }: { initialCha
                         <button
                           onClick={() => handleDelete(char.id, char.nombre_ninja)}
                           disabled={loadingId === char.id}
-                          className="p-2.5 bg-rojo-sangre/10 border border-rojo-sangre/30 hover:bg-rojo-sangre hover:text-white text-rojo-sangre transition-all active:scale-95 disabled:opacity-50 shrink-0"
-                          style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
+                          className="p-2.5 bg-rojo-sangre/10 border border-rojo-sangre/30 hover:bg-rojo-sangre hover:text-white text-rojo-sangre transition-all active:scale-95 disabled:opacity-50 shrink-0 ninja-clip-sm"
                           title="ELIMINAR DEFINITIVAMENTE"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

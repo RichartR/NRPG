@@ -5,6 +5,8 @@ import { MasterServerService } from '@/services/supabase/master.server.service';
 import { CharacterServerService } from '@/services/supabase/character.server.service';
 import { NinjaSearchInput } from '@/components/character/NinjaSearchInput';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
+import { PaginationPageInput } from '@/components/ui/PaginationPageInput';
+import { PaginationContainer } from '@/components/ui/PaginationContainer';
 
 export default async function MundoNinjaPublicVillagePage({
   params,
@@ -97,7 +99,7 @@ export default async function MundoNinjaPublicVillagePage({
                   {isRenegado ? 'RENEGADOS' : aldea?.nombre_completo}
                 </h1>
                 <div className="flex items-center gap-4">
-                  <span className={`text-[10px] xl:text-xs font-black ${isRenegado ? 'text-rojo-sangre/60' : 'text-oro/60'} uppercase tracking-[0.3em]`}>
+                  <span className={`text-caption xl:text-xs font-black ${isRenegado ? 'text-rojo-sangre/60' : 'text-oro/60'} uppercase tracking-[0.3em]`}>
                     SHINOBIS REGISTRADOS
                   </span>
                   <div className={`w-1 h-1 ${isRenegado ? 'bg-rojo-sangre/20' : 'bg-oro/20'} rotate-45`} />
@@ -118,11 +120,11 @@ export default async function MundoNinjaPublicVillagePage({
                   <LogIn className="w-5 h-5" /> INICIAR SESIÓN
                 </Link>
               ) : haAlcanzadoLimite ? (
-                <div className="flex items-center gap-4 px-10 py-5 bg-black/20 border border-oro/10 ninja-clip-sm text-[10px] xl:text-xs font-black uppercase tracking-widest text-oro/40 italic backdrop-blur-sm">
+                <div className="flex items-center gap-4 px-10 py-5 bg-black/20 border border-oro/10 ninja-clip-sm text-caption xl:text-xs font-black uppercase tracking-widest text-oro/40 italic backdrop-blur-sm">
                   <User className="w-5 h-5 opacity-20" /> Ya posees un personaje activo
                 </div>
               ) : haAlcanzadoCupoAldea ? (
-                <div className="flex items-center gap-4 px-10 py-5 bg-rojo-sangre/10 border border-rojo-sangre/30 ninja-clip-sm text-[10px] xl:text-xs font-black uppercase tracking-widest text-rojo-sangre/70 italic backdrop-blur-sm shadow-[0_0_15px_rgba(185,28,28,0.15)]">
+                <div className="flex items-center gap-4 px-10 py-5 bg-rojo-sangre/10 border border-rojo-sangre/30 ninja-clip-sm text-caption xl:text-xs font-black uppercase tracking-widest text-rojo-sangre/70 italic backdrop-blur-sm shadow-[0_0_15px_rgba(185,28,28,0.15)]">
                   <User className="w-5 h-5 opacity-40 text-rojo-sangre" /> Cupos agotados en esta aldea
                 </div>
               ) : (
@@ -143,7 +145,7 @@ export default async function MundoNinjaPublicVillagePage({
             <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pb-2">
               <NinjaSearchInput isRenegado={isRenegado} placeholder="Buscar shinobi por nombre..." />
               {searchQuery && (
-                <span className={`text-[10px] font-black ${isRenegado ? 'text-rojo-sangre/40' : 'text-oro/40'} uppercase tracking-[0.2em] italic`}>
+                <span className={`text-caption font-black ${isRenegado ? 'text-rojo-sangre/40' : 'text-oro/40'} uppercase tracking-[0.2em] italic`}>
                   Encontrados {filteredNinjas.length} de {ninjas.length} registrados
                 </span>
               )}
@@ -151,11 +153,12 @@ export default async function MundoNinjaPublicVillagePage({
           )}
 
           {filteredNinjas.length > 0 ? (
-            <div className={`ninja-card-oro overflow-hidden border ${isRenegado ? 'border-rojo-sangre/20' : 'border-oro/20'} bg-black/40 backdrop-blur-sm`}>
+            <>
+              <div className={`ninja-card-oro overflow-hidden border ${isRenegado ? 'border-rojo-sangre/20' : 'border-oro/20'} bg-black/40 backdrop-blur-sm`}>
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[700px]">
                   <thead>
-                    <tr className={`border-b ${isRenegado ? 'border-rojo-sangre/10' : 'border-oro/10'} text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em]`}>
+                    <tr className={`border-b ${isRenegado ? 'border-rojo-sangre/10' : 'border-oro/10'} text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.3em]`}>
                       <th className="py-6 px-8 w-24 whitespace-nowrap">Apariencia</th>
                       <th className="py-6 px-8 w-full whitespace-nowrap">SHINOBI</th>
                       <th className="py-6 px-8 text-center whitespace-nowrap">JERARQUÍA</th>
@@ -183,18 +186,18 @@ export default async function MundoNinjaPublicVillagePage({
                             <p className="ninja-title text-xl xl:text-2xl group-hover:text-white transition-colors leading-tight">
                               {ninja.nombre_ninja}
                             </p>
-                            <p className="text-[10px] text-oro/30 font-black uppercase tracking-widest mt-1 italic whitespace-nowrap">
+                            <p className="text-caption text-oro/30 font-black uppercase tracking-widest mt-1 italic whitespace-nowrap">
                               @{(Array.isArray(ninja.profiles) ? ninja.profiles[0]?.username : ninja.profiles?.username) || ninja.hobba_name}
                             </p>
                           </Link>
                         </td>
                         <td className="py-5 px-8 text-center whitespace-nowrap">
-                          <span className={`text-[10px] xl:text-xs font-black ${isRenegado ? 'text-rojo-sangre/60' : 'text-oro/60'} uppercase tracking-widest whitespace-nowrap`}>
+                          <span className={`text-caption xl:text-xs font-black ${isRenegado ? 'text-rojo-sangre/60' : 'text-oro/60'} uppercase tracking-widest whitespace-nowrap`}>
                             {ninja.rango_jerarquico || 'SIN RANGO'}
                           </span>
                         </td>
                         <td className="py-5 px-8 text-right whitespace-nowrap">
-                          <span className={`inline-block px-4 py-1.5 ${isRenegado ? 'bg-rojo-sangre/20 text-rojo-sangre border-rojo-sangre/40' : 'bg-oro/10 text-oro border-oro/20'} text-[10px] xl:text-xs font-black border uppercase tracking-widest ninja-clip-xs whitespace-nowrap`}>
+                          <span className={`inline-block px-4 py-1.5 ${isRenegado ? 'bg-rojo-sangre/20 text-rojo-sangre border-rojo-sangre/40' : 'bg-oro/10 text-oro border-oro/20'} text-caption xl:text-xs font-black border uppercase tracking-widest ninja-clip-xs whitespace-nowrap`}>
                             RANGO {ninja.rango}
                           </span>
                         </td>
@@ -203,68 +206,72 @@ export default async function MundoNinjaPublicVillagePage({
                   </tbody>
                 </table>
               </div>
-
-              {/* Controles de Paginación */}
-              {totalPages > 1 && (
-                <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 px-8 py-6 border-t ${isRenegado ? 'border-rojo-sangre/10' : 'border-oro/10'} bg-black/20 text-xs font-black uppercase tracking-widest`}>
-                  <div>
-                    <span className="text-oro/40">
-                      Mostrando {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, totalItems)} de {totalItems} shinobis
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    {currentPage > 1 ? (
-                      <Link
-                        href={`/mundo-ninja/${id}?page=${currentPage - 1}${searchParamSuffix}`}
-                        className={`px-4 py-2 border ${isRenegado ? 'border-rojo-sangre/30 hover:bg-rojo-sangre/20 text-rojo-sangre hover:text-white' : 'border-oro/30 hover:bg-oro/20 text-oro hover:text-white'} transition-all`}
-                        style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
-                      >
-                        Anterior
-                      </Link>
-                    ) : (
-                      <span
-                        className="px-4 py-2 border border-oro/5 text-oro/10 cursor-not-allowed"
-                        style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
-                      >
-                        Anterior
-                      </span>
-                    )}
-
-                    <span className="text-oro font-black">
-                      {currentPage} / {totalPages}
-                    </span>
-
-                    {currentPage < totalPages ? (
-                      <Link
-                        href={`/mundo-ninja/${id}?page=${currentPage + 1}${searchParamSuffix}`}
-                        className={`px-4 py-2 border ${isRenegado ? 'border-rojo-sangre/30 hover:bg-rojo-sangre/20 text-rojo-sangre hover:text-white' : 'border-oro/30 hover:bg-oro/20 text-oro hover:text-white'} transition-all`}
-                        style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
-                      >
-                        Siguiente
-                      </Link>
-                    ) : (
-                      <span
-                        className="px-4 py-2 border border-oro/5 text-oro/10 cursor-not-allowed"
-                        style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
-                      >
-                        Siguiente
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
+
+            {/* Controles de Paginación */}
+            {totalPages > 1 && (
+              <div className="mt-10">
+                <PaginationContainer isRenegado={isRenegado} maxWidthClass="max-w-md">
+                  {currentPage > 1 ? (
+                    <Link
+                      href={`/mundo-ninja/${id}?page=${currentPage - 1}${searchParamSuffix}`}
+                      className={`px-4 py-2 border ${isRenegado ? 'border-rojo-sangre/30 hover:bg-rojo-sangre/20 text-rojo-sangre hover:text-white' : 'border-oro/30 hover:bg-oro/20 text-oro hover:text-white'} transition-all text-xs font-black uppercase tracking-widest`}
+                      style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                    >
+                      Anterior
+                    </Link>
+                  ) : (
+                    <span
+                      className="px-4 py-2 border border-oro/5 text-oro/10 cursor-not-allowed text-xs font-black uppercase tracking-widest"
+                      style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                    >
+                      Anterior
+                    </span>
+                  )}
+
+                  <div className="flex items-center gap-1.5 justify-center">
+                    <PaginationPageInput
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      isRenegado={isRenegado}
+                      urlParamName="page"
+                    />
+                    <span className="text-oro/40 font-black text-xs">
+                      / {totalPages}
+                    </span>
+                  </div>
+
+                  {currentPage < totalPages ? (
+                    <Link
+                      href={`/mundo-ninja/${id}?page=${currentPage + 1}${searchParamSuffix}`}
+                      className={`px-4 py-2 border ${isRenegado ? 'border-rojo-sangre/30 hover:bg-rojo-sangre/20 text-rojo-sangre hover:text-white' : 'border-oro/30 hover:bg-oro/20 text-oro hover:text-white'} transition-all text-xs font-black uppercase tracking-widest`}
+                      style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                    >
+                      Siguiente
+                    </Link>
+                  ) : (
+                    <span
+                      className="px-4 py-2 border border-oro/5 text-oro/10 cursor-not-allowed text-xs font-black uppercase tracking-widest"
+                      style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                    >
+                      Siguiente
+                    </span>
+                  )}
+                </PaginationContainer>
+              </div>
+            )}
+          </>
           ) : ninjas.length > 0 ? (
             /* Filtro vacío (ninjas existen en la aldea pero ninguno coincide) */
             <div className={`py-32 text-center ${isRenegado ? 'ninja-card-rojo' : 'ninja-card-oro'} opacity-75 flex flex-col items-center gap-6`}>
               <User className="w-16 h-16 text-oro/10 animate-pulse" />
               <div className="space-y-2">
                 <h3 className="text-lg xl:text-xl font-black text-oro/40 uppercase tracking-[0.3em] italic leading-none">NO SE ENCONTRARON SHINOBIS</h3>
-                <p className="text-[10px] font-black text-oro/20 uppercase tracking-[0.4em]">Ninguna ficha coincide con &quot;{searchQuery}&quot;</p>
+                <p className="text-caption font-black text-oro/20 uppercase tracking-[0.4em]">Ninguna ficha coincide con &quot;{searchQuery}&quot;</p>
               </div>
               <Link
                 href={`/mundo-ninja/${id}`}
-                className={`px-6 py-3 border ${isRenegado ? 'border-rojo-sangre/30 hover:bg-rojo-sangre/20 text-rojo-sangre' : 'border-oro/30 hover:bg-oro/20 text-oro'} text-[10px] xl:text-xs font-black uppercase tracking-widest mt-2`}
+                className={`px-6 py-3 border ${isRenegado ? 'border-rojo-sangre/30 hover:bg-rojo-sangre/20 text-rojo-sangre' : 'border-oro/30 hover:bg-oro/20 text-oro'} text-caption xl:text-xs font-black uppercase tracking-widest mt-2`}
                 style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
               >
                 Limpiar búsqueda
@@ -276,7 +283,7 @@ export default async function MundoNinjaPublicVillagePage({
               <User className="w-24 h-24 text-oro/10" />
               <div className="space-y-2">
                 <h3 className="text-xl xl:text-2xl font-black text-oro/40 uppercase tracking-[0.4em] italic leading-none">AÚN NO HAY SHINOBIS EN ESTA REGIÓN</h3>
-                <p className="text-[10px] xl:text-xs font-black text-oro/20 uppercase tracking-[0.6em]">EL DESTINO AGUARDA A SU PRIMER HÉROE</p>
+                <p className="text-caption xl:text-xs font-black text-oro/20 uppercase tracking-[0.6em]">EL DESTINO AGUARDA A SU PRIMER HÉROE</p>
               </div>
               {puedeCrearFicha && (
                 <Link

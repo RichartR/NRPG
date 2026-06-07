@@ -58,7 +58,7 @@ export default function ElementoList({ initialElementos, ramas, subEspecialidade
   return (
     <div className="space-y-6">
       {/* Controles Superiores */}
-      <div className="flex flex-col min-[1600px]:flex-row flex-wrap gap-6 justify-between items-stretch min-[1600px]:items-center bg-[#0A0A0A]/40 p-6 sm:p-10 xl:p-12 border border-oro/5 backdrop-blur-md relative overflow-hidden">
+      <div className="flex flex-col min-[1600px]:flex-row flex-wrap gap-6 justify-between items-stretch min-[1600px]:items-center bg-neutral-800/40 p-6 sm:p-10 xl:p-12 border border-oro/5 backdrop-blur-md relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-oro/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
 
         {/* Tabs Activo/Archivado */}
@@ -67,7 +67,7 @@ export default function ElementoList({ initialElementos, ramas, subEspecialidade
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 sm:flex-initial text-center px-4 sm:px-8 py-3 xl:py-4 font-black uppercase tracking-[0.2em] transition-all text-[9px] sm:text-[10px] xl:text-xs ${activeTab === tab ? 'bg-oro text-rojo-sangre shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
+              className={`flex-1 sm:flex-initial text-center px-4 sm:px-8 py-3 xl:py-4 font-black uppercase tracking-[0.2em] transition-all text-caption sm:text-caption xl:text-xs ${activeTab === tab ? 'bg-oro text-rojo-sangre shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
               style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
             >
               {tab === 'active' ? 'ACTIVOS' : 'ARCHIVADOS'}{' '}
@@ -86,7 +86,7 @@ export default function ElementoList({ initialElementos, ramas, subEspecialidade
               <button
                 key={t}
                 onClick={() => setActiveType(t)}
-                className={`px-4 py-2 text-[9px] font-black uppercase tracking-widest transition-all ${activeType === t ? 'bg-oro/20 text-oro border border-oro/30' : 'text-oro/30 hover:text-oro'}`}
+                className={`px-4 py-2 text-caption font-black uppercase tracking-widest transition-all ${activeType === t ? 'bg-oro/20 text-oro border border-oro/30' : 'text-oro/30 hover:text-oro'}`}
               >
                 {t === 'todos' ? 'Todos' : t === 'basico' ? 'Básicos' : 'Avanzados'}
               </button>
@@ -100,14 +100,14 @@ export default function ElementoList({ initialElementos, ramas, subEspecialidade
               placeholder="BUSCAR ELEMENTO..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-black/20 border border-oro/10 py-3 xl:py-4 pl-12 pr-6 text-[9px] sm:text-[10px] xl:text-xs font-black text-oro focus:border-oro/40 outline-none transition-all placeholder:text-oro/20 uppercase tracking-widest"
+              className="w-full bg-black/20 border border-oro/10 py-3 xl:py-4 pl-12 pr-6 text-caption sm:text-caption xl:text-xs font-black text-oro focus:border-oro/40 outline-none transition-all placeholder:text-oro/20 uppercase tracking-widest"
               style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
             />
           </div>
 
           <button
             onClick={() => setIsAdding(true)}
-            className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-10 py-3 xl:py-4 bg-rojo-sangre hover:brightness-125 text-oro font-black text-[9px] sm:text-[10px] xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-rojo-sangre/20 active:scale-95 whitespace-nowrap"
+            className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-10 py-3 xl:py-4 bg-rojo-sangre hover:brightness-125 text-oro font-black text-caption sm:text-caption xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-rojo-sangre/20 active:scale-95 whitespace-nowrap"
             style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
           >
             <PlusCircle className="w-5 h-5 shrink-0" />
@@ -121,7 +121,7 @@ export default function ElementoList({ initialElementos, ramas, subEspecialidade
         <div className="overflow-x-auto scrollbar-hide">
           <table className="w-full text-left border-collapse min-w-[700px] table-fixed">
             <thead>
-              <tr className="border-b border-oro/10 text-oro/70 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em] bg-black/20">
+              <tr className="border-b border-oro/10 text-oro/70 text-caption xl:text-xs font-black uppercase tracking-[0.3em] bg-black/20">
                 <th className="py-6 px-8 w-[12%]">Icono</th>
                 <th className="py-6 px-8 w-[28%]">Nombre ESP</th>
                 <th className="py-6 px-8 w-[28%]">Nombre JAP</th>
@@ -155,7 +155,7 @@ export default function ElementoList({ initialElementos, ramas, subEspecialidade
 
                   {/* Tipo */}
                   <td className="py-5 px-8">
-                    <span className={`px-3 py-1 text-[8px] font-black uppercase tracking-widest inline-block ninja-clip-xs ${el.tipo === 'basico' ? 'bg-rojo-sangre text-oro' : 'bg-oro/10 border border-oro/30 text-oro'}`}>
+                    <span className={`px-3 py-1 text-caption font-black uppercase tracking-widest inline-block ninja-clip-xs ${el.tipo === 'basico' ? 'bg-rojo-sangre text-oro' : 'bg-oro/10 border border-oro/30 text-oro'}`}>
                       {el.tipo === 'basico' ? 'BÁSICO' : 'AVANZADO'}
                     </span>
                   </td>

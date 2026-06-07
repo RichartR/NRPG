@@ -278,7 +278,7 @@ export default function NarrationForm({ onCreated, initialData = null }: Narrati
                 <span className="text-xs font-black uppercase tracking-[0.25em] text-oro/50 block">Recompensas Globales (Para todos)</span>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-oro/40 flex items-center gap-1.5">
+                    <label className="text-caption font-black uppercase tracking-[0.2em] text-oro/40 flex items-center gap-1.5">
                       EXP GLOBAL
                     </label>
                     <input
@@ -290,7 +290,7 @@ export default function NarrationForm({ onCreated, initialData = null }: Narrati
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-oro/40 flex items-center gap-1.5">
+                    <label className="text-caption font-black uppercase tracking-[0.2em] text-oro/40 flex items-center gap-1.5">
                       RYOUS GLOBALES
                     </label>
                     <input
@@ -302,7 +302,7 @@ export default function NarrationForm({ onCreated, initialData = null }: Narrati
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-oro/40 flex items-center gap-1.5">
+                    <label className="text-caption font-black uppercase tracking-[0.2em] text-oro/40 flex items-center gap-1.5">
                       MONEDA EVENTO
                     </label>
                     <input
@@ -407,7 +407,7 @@ export default function NarrationForm({ onCreated, initialData = null }: Narrati
 
             {participants.length === 0 ? (
               <div className="p-10 text-center bg-black/20 border border-oro/5 ninja-clip-sm">
-                <p className="text-[10px] font-black uppercase tracking-widest text-oro/30 italic">Busca y añade ninjas arriba para configurar sus recompensas individuales</p>
+                <p className="text-caption font-black uppercase tracking-widest text-oro/30 italic">Busca y añade ninjas arriba para configurar sus recompensas individuales</p>
               </div>
             ) : (
               <div className="space-y-6">
@@ -435,7 +435,7 @@ export default function NarrationForm({ onCreated, initialData = null }: Narrati
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">EXP EXTRA INDEPENDIENTE</label>
+                          <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">EXP EXTRA INDEPENDIENTE</label>
                           <input
                             type="number"
                             min="0"
@@ -445,7 +445,7 @@ export default function NarrationForm({ onCreated, initialData = null }: Narrati
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">RYOUS EXTRA INDEPENDIENTES</label>
+                          <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">RYOUS EXTRA INDEPENDIENTES</label>
                           <input
                             type="number"
                             min="0"
@@ -455,7 +455,7 @@ export default function NarrationForm({ onCreated, initialData = null }: Narrati
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">MONEDAS EVENTO EXTRA</label>
+                          <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">MONEDAS EVENTO EXTRA</label>
                           <input
                             type="number"
                             min="0"
@@ -468,7 +468,7 @@ export default function NarrationForm({ onCreated, initialData = null }: Narrati
 
                       {/* Glosario Premios del Personaje */}
                       <div className="space-y-3 pt-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1 flex items-center gap-1.5">
+                        <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1 flex items-center gap-1.5">
                           <BookOpen className="w-3.5 h-3.5" /> Objetos o Técnicas Especiales (Glosario)
                         </label>
 
@@ -476,7 +476,7 @@ export default function NarrationForm({ onCreated, initialData = null }: Narrati
                           {p.glosario_items?.map((item: any) => (
                             <span
                               key={item.id}
-                              className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#050309] border border-oro/25 text-[10px] font-black text-oro uppercase tracking-wider ninja-clip-xs"
+                              className="inline-flex items-center gap-2 px-3 py-1.5 bg-neutral-900 border border-oro/25 text-caption font-black text-oro uppercase tracking-wider ninja-clip-xs"
                             >
                               {item.nombre_es}
                               <button
@@ -493,7 +493,7 @@ export default function NarrationForm({ onCreated, initialData = null }: Narrati
                               setActiveGlosarioSelector(activeGlosarioSelector === p.id ? null : p.id);
                               setGlosarioSearchQuery('');
                             }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-oro/5 hover:bg-oro hover:text-rojo-sangre border border-oro/15 hover:border-oro text-[10px] font-black text-oro uppercase tracking-wider transition-all ninja-clip-xs"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-oro/5 hover:bg-oro hover:text-rojo-sangre border border-oro/15 hover:border-oro text-caption font-black text-oro uppercase tracking-wider transition-all ninja-clip-xs"
                           >
                             <Plus className="w-3.5 h-3.5" /> Añadir Objeto/Técnica
                           </button>
@@ -501,7 +501,7 @@ export default function NarrationForm({ onCreated, initialData = null }: Narrati
 
                         {/* Dropdown del Selector de Glosario */}
                         {activeGlosarioSelector === p.id && (
-                          <div className="mt-3 p-4 bg-[#0A0A0A] border border-oro/20 space-y-4 animate-in zoom-in-95 duration-200">
+                          <div className="mt-3 p-4 bg-neutral-800 border border-oro/20 space-y-4 animate-in zoom-in-95 duration-200">
                             <input
                               type="text"
                               placeholder="FILTRAR GLOSARIO..."
@@ -512,7 +512,7 @@ export default function NarrationForm({ onCreated, initialData = null }: Narrati
 
                             {loadingGlosario[p.id] ? (
                               <div className="flex items-center gap-2 py-4 justify-center">
-                                <span className="text-[10px] font-black uppercase text-oro/40 animate-pulse">Cargando ítems disponibles...</span>
+                                <span className="text-caption font-black uppercase text-oro/40 animate-pulse">Cargando ítems disponibles...</span>
                               </div>
                             ) : (
                               <div className="max-h-48 overflow-y-auto custom-scrollbar divide-y divide-oro/5">
@@ -525,13 +525,13 @@ export default function NarrationForm({ onCreated, initialData = null }: Narrati
                                       className="w-full text-left py-3 px-4 hover:bg-oro/10 text-xs font-black text-oro/60 hover:text-oro flex justify-between items-center uppercase tracking-widest border-b border-oro/5 last:border-0"
                                     >
                                       <span>{item.nombre_es}</span>
-                                      <span className="text-[9px] font-bold text-oro/30">Cumple requisitos</span>
+                                      <span className="text-caption font-bold text-oro/30">Cumple requisitos</span>
                                     </button>
                                   ))}
 
                                 {(validGlosarioItems[p.id] || []).filter(item => item.nombre_es.toLowerCase().includes(glosarioSearchQuery.toLowerCase())).length === 0 && (
                                   <div className="text-center py-6">
-                                    <p className="text-[10px] font-black uppercase text-oro/20 italic">No hay ítems válidos para los requisitos de este personaje</p>
+                                    <p className="text-caption font-black uppercase text-oro/20 italic">No hay ítems válidos para los requisitos de este personaje</p>
                                   </div>
                                 )}
                               </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Map, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
 import NinjaCard from '@/components/ui/NinjaCard';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import AdminViewSelector from '@/components/admin/AdminViewSelector';
@@ -51,7 +51,7 @@ export default function MundoNinjaClientView({
         <div className="flex items-center gap-4">
           <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto" alt="icon" />
           <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
-            CENSOS <span className="text-oro/40">MUNDIALES</span>
+            INFORMACIÓN <span className="text-oro/40">NINJA</span>
           </h1>
         </div>
       </header>
@@ -71,11 +71,11 @@ export default function MundoNinjaClientView({
               <div className="absolute top-0 right-0 p-12 opacity-[0.02] pointer-events-none group-hover:opacity-[0.05] transition-opacity">
               </div>
               <div className="flex items-center gap-6 mb-3 relative z-10">
-                <h1 className="ninja-title text-3xl sm:text-5xl xl:text-8xl uppercase leading-none">
+                <h1 className="ninja-title text-3xl sm:text-5xl xl:text-7xl uppercase leading-none">
                   Fichas Ninja
                 </h1>
               </div>
-              <p className="text-gris-texto text-base sm:text-lg xl:text-2xl max-w-4xl leading-relaxed relative z-10">
+              <p className="text-gris-texto text-base sm:text-lg xl:text-2xl leading-relaxed relative z-10">
                 Explora el censo oficial de las Naciones y Organizaciones Shinobi. Descubre a los guerreros que
                 forjan la historia y el destino de cada aldea oculta.
               </p>
@@ -92,16 +92,16 @@ export default function MundoNinjaClientView({
                     title={aldeaTitle}
                     titleClassName={getTitleFontSize(aldeaTitle)}
                     category={aldea.nombre_español}
-                    categoryClassName="text-[10px] sm:text-xs md:text-sm lg:text-base xl:text-lg font-black text-oro/40 uppercase tracking-[0.2em] sm:tracking-[0.4em] break-words"
+                    categoryClassName="text-caption sm:text-xs md:text-sm lg:text-base xl:text-lg font-black text-oro/40 uppercase tracking-[0.2em] sm:tracking-[0.4em] break-words"
                     imageUrl={aldea.url_imagen || undefined}
                     description={aldea.descripcion || 'Sin descripción registrada.'}
-                    actionText="Ver censo"
+                    actionText="Ver información"
                     headerOverlayRight={
                       <div className="flex flex-col items-start sm:items-end gap-0.5 shrink-0">
                         <span className="text-2xl md:text-3xl xl:text-4xl font-black text-oro tabular-nums leading-none">
                           {actuales}/{maxCupos}
                         </span>
-                        <span className="text-[10px] md:text-xs xl:text-sm font-black text-oro/20 uppercase tracking-widest">
+                        <span className="text-caption md:text-xs xl:text-sm font-black text-oro/20 uppercase tracking-widest">
                           SHINOBIS
                         </span>
                       </div>
@@ -117,10 +117,10 @@ export default function MundoNinjaClientView({
                 title="RENEGADOS"
                 titleClassName={getTitleFontSize('RENEGADOS')}
                 category="Shinobis sin afiliación"
-                categoryClassName="text-[10px] sm:text-xs md:text-sm lg:text-base xl:text-lg font-black text-oro/40 uppercase tracking-[0.2em] sm:tracking-[0.4em] break-words"
+                categoryClassName="text-caption sm:text-xs md:text-sm lg:text-base xl:text-lg font-black text-oro/40 uppercase tracking-[0.2em] sm:tracking-[0.4em] break-words"
                 imageUrl="/assets/images/renegados.jpg"
-                description="Guerreros sin aldea oculta, exiliados o ronin que operan fuera del control de las grandes naciones."
-                actionText="Ver censo"
+                description="Ninjas sin afiliación o exiliados que actuan fuera del control de las grandes naciones."
+                actionText="Ver información"
                 headerBgIcon={
                   <div className="absolute top-6 right-6 opacity-[0.06] group-hover:opacity-[0.12] transition-opacity pointer-events-none">
                     <Users className="w-32 h-32 text-oro rotate-12" />
@@ -131,7 +131,7 @@ export default function MundoNinjaClientView({
                     <span className="text-2xl md:text-3xl xl:text-4xl font-black text-oro tabular-nums leading-none">
                       {getCount(null)}
                     </span>
-                    <span className="text-[10px] md:text-xs xl:text-sm font-black text-oro/20 uppercase tracking-widest">
+                    <span className="text-caption md:text-xs xl:text-sm font-black text-oro/20 uppercase tracking-widest">
                       SHINOBIS
                     </span>
                   </div>
@@ -144,11 +144,11 @@ export default function MundoNinjaClientView({
             <header className="mb-6 ninja-card-oro p-8 xl:p-10">
               <div className="flex items-center gap-6">
                 <div className="w-12 h-12 bg-oro/[0.03] border border-oro/10 flex items-center justify-center">
-                  <Map className="w-6 h-6 text-oro" />
+                  <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto" alt="icon" />
                 </div>
                 <div>
                   <h1 className="ninja-title text-4xl xl:text-5xl italic">Gestión de Aldeas y Organizaciones</h1>
-                  <p className="text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] mt-2">Crea, oculta o elimina aldeas y organizaciones.</p>
+                  <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.4em] mt-2">Crea, oculta o elimina aldeas y organizaciones.</p>
                 </div>
               </div>
             </header>

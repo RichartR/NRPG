@@ -80,13 +80,13 @@ export default function EntrenamientoEditForm({ entrenamiento, ramas, subEspecia
               <h2 className="ninja-title text-xl sm:text-3xl leading-none">
                 {isCreate ? 'CREAR ENTRENAMIENTO' : 'EDITAR ENTRENAMIENTO'}
               </h2>
-              <p className="text-[10px] font-black text-oro/40 uppercase tracking-[0.2em] mt-2 italic">Configuración de entrenamientos shinobi</p>
+              <p className="text-caption font-black text-oro/40 uppercase tracking-[0.2em] mt-2 italic">Configuración de entrenamientos shinobi</p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             <label className="flex items-center gap-3 cursor-pointer group bg-oro/5 px-4 py-2 border border-oro/10 hover:border-oro/30 transition-all">
-              <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${formData.activo ? 'text-oro' : 'text-oro/20'}`}>
+              <span className={`text-caption font-black uppercase tracking-widest transition-colors ${formData.activo ? 'text-oro' : 'text-oro/20'}`}>
                 {formData.activo ? 'ACTIVO' : 'INACTIVO'}
               </span>
               <input

@@ -1,77 +1,54 @@
-# Sistema de Diseño Visual: Naruto Mobile (web2026)
+# Sistema de Diseño Visual Estándar: NRPG
 
-Este documento es una referencia estética pura para recrear la interfaz en **Next.js** o cualquier framework moderno.
+Este documento define la única fuente de verdad para la interfaz, eliminando discrepancias visuales.
 
 ---
 
 ## 1. Paleta de Colores (Design Tokens)
 
-### Oro y Destacados (Acentos)
-
-- **Oro Principal (Brillante):** `#ffe69f` (Títulos, botones, bordes activos).
-- **Oro Gradiente (Top):** `#ffefd3` (Parte superior de los textos con degradado).
-- **Oro Sombra:** `#a5570b` (Texto de botones de acción).
-- **Oro Suave:** `#ffe6ba` (Bordes de miniaturas).
-
-### Rojos y Alertas
-
-- **Rojo Sangre:** `#670909` (Categorías de noticias, scrollbar).
-- **Rojo Oscuro:** `#320d04` (Fondos de sección Match/Torneo).
-
-### Fondos y Sombras
-
-- **Negro Primario:** `#050309` (Fondo general de secciones).
-- **Negro Overlay:** `rgba(0, 0, 0, 0.7)` (Fondo de menús y diálogos).
-- **Gris Texto:** `#d4d4d4` (Texto de cuerpo).
-- **Gris Borde:** `#d2d2d2` (Bordes de etiquetas).
-- **Sombra Skill:** `#2b1002` (Sombra de los iconos de habilidades).
+| Tipo | Variable Semántica | Valor Hex | Uso Principal |
+| :--- | :--- | :--- | :--- |
+| **Principal** | `--color-primary-500` | `#ffe69f` | Textos destacados, bordes interactivos y botones principales |
+| **Principal (Soft)** | `--color-primary-400` | `#ffe6ba` | Estados hover y brillos |
+| **Principal (Dark)** | `--color-primary-700` | `#a5570b` | Sombras interiores y gradientes |
+| **Secundario** | `--color-secondary-500` | `#670909` | Acentos, botones destructivos o alternativos |
+| **Secundario (Dark)**| `--color-secondary-900` | `#320d04` | Fondos de acento o gradientes oscuros |
+| **Neutro 900** | `--color-neutral-900` | `#050309` | Fondo principal de la aplicación (`body`) |
+| **Neutro 800** | `--color-neutral-800` | `#0a0a0a` | Fondos de tarjetas y contenedores de primer nivel |
+| **Neutro 700** | `--color-neutral-700` | `#1a1a1c` | Fondos de contenedores secundarios (tablas, modales) |
+| **Neutro 600** | `--color-neutral-600` | `#26262b` | Elementos de superficie elevados (dropdowns, tooltips) |
+| **Éxito (Bg/Text)** | `--color-success-bg` / `text` | `#064e3b` / `#a7f3d0` | Alertas positivas, barras de vida altas |
+| **Error (Bg/Text)** | `--color-error-bg` / `text`| `#7f1d1d` / `#fecaca` | Errores crudos, daño, barras de vida críticas |
+| **Warning (Bg/Text)** | `--color-warning-bg` / `text`| `#92400e` / `#fde68a` | Advertencias, alertas medias |
 
 ---
 
 ## 2. Tipografía y Escalas
 
-### Fuentes Clave
+Basado en las fuentes `Shojumaru` (Ninja) y `Noto Sans JP` (Body).
 
-- **Principal:** `syht` (Source Han Sans).
-- **Títulos Ninja:** `fztht` (Grosor pesado, tradicional).
-- **Decoración:** `en` (English Sans).
-
-### Efectos de Texto
-
-- **Títulos Ninja (Oro Gradiente):**
-  ```css
-  background: linear-gradient(to bottom, #ffefd3, #ffe69f);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  transform: scaleY(1.4); /* Efecto de estiramiento vertical */
-  ```
-- **Escala de Rem:** Basada en `1920px`.
-  - Título Grande: `60rem` (60px).
-  - Título Sección: `30rem` (30px).
-  - Texto Cuerpo: `18rem` (18px).
+| Jerarquía | Tamaño | Peso | Altura de Línea | Espaciado (Tracking) | Uso |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **H1** | `32px` (`2rem`) | Black (`900`) | `1.2` | `0.1em` | Títulos principales de páginas |
+| **H2** | `24px` (`1.5rem`) | Black (`900`) | `1.3` | `0.1em` | Títulos de sección o tarjetas grandes |
+| **H3** | `16px` (`1rem`) | Bold (`700`) | `1.4` | `0.1em` | Subtítulos y elementos destacados |
+| **Body** | `14px` (`0.875rem`) | Normal (`400`) | `1.5` | `normal` | Párrafos largos y lecturas generales |
+| **Caption** | `10px` (`0.625rem`) | Black (`900`) | `1.2` | `0.2em` (MAYÚSCULAS) | Etiquetas, métricas de stats, insignias |
 
 ---
 
-## 3. Elementos Poligonales (The Ninja Look)
+## 3. Elementos Poligonales, Bordes y Sombras
 
-### La Caja de Habilidad (Octágono)
+Los `border-radius` están unificados usando el estilo poligonal característico del proyecto.
 
-Para replicar las cajas de skills en Next.js/Tailwind:
-
-- **Clip-Path:**
-  ```css
-  clip-path: polygon(
-    20px 0,
-    calc(100% - 20px) 0,
-    100% 20px,
-    100% calc(100% - 20px),
-    calc(100% - 20px) 100%,
-    20px 100%,
-    0 calc(100% - 20px),
-    0 20px
-  );
-  ```
-- **Borde SVG (Inline):** Se usa una máscara de borde para que el trazo siga la forma octogonal.
+| Nivel | Variable (`clip-path`) / Sombra | Descripción de Uso |
+| :--- | :--- | :--- |
+| **Radius SM** | `--radius-sm` | Inputs, tags y botones pequeños |
+| **Radius MD** | `--radius-md` | Botones principales y tarjetas estándar |
+| **Radius LG** | `--radius-lg` | Modales, paneles grandes y contenedores principales |
+| **Sombra Sutil** | `--shadow-sutil` | Elementos en estado default o inactivos |
+| **Sombra Media** | `--shadow-media` | Elementos con estado Hover / Interacción |
+| **Sombra Fuerte** | `--shadow-fuerte` | Modales y elementos con elevación z-index máxima |
 
 ---
 

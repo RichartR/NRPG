@@ -7,14 +7,16 @@ export default function DocumentosPage() {
     <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col">
       {/* Header id├⌐ntico a Registros */}
       <header className="w-full max-w-[1750px] mx-auto flex flex-col md:flex-row justify-between items-center gap-10 mb-10 ninja-card-oro p-8 xl:p-10 z-50">
-        <Breadcrumbs 
+        <Breadcrumbs
           items={[
             { label: 'Inicio', href: '/' },
             { label: 'Biblioteca' }
-          ]} 
+          ]}
         />
         <div className="flex items-center gap-4">
-          <Swords className="w-5 xl:w-7 h-auto text-oro" />
+          <div className="w-12 h-12 bg-oro/[0.03] border border-oro/10 flex items-center justify-center">
+            <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto" alt="icon" />
+          </div>
           <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
             Biblioteca <span className="text-oro/40">Mundial</span>
           </h1>
@@ -25,10 +27,10 @@ export default function DocumentosPage() {
         {/* Hero Section id├⌐ntico a Registros */}
         <div className="mb-10 ninja-card-oro p-8 sm:p-12 xl:p-16">
           <div className="flex items-center gap-6 mb-6">
-            <h1 className="ninja-title text-3xl sm:text-5xl xl:text-8xl uppercase leading-none">Biblioteca Ninja</h1>
+            <h1 className="ninja-title text-3xl sm:text-5xl xl:text-7xl uppercase leading-none">Biblioteca Ninja</h1>
           </div>
-          <p className="text-gris-texto text-base sm:text-lg xl:text-2xl max-w-4xl leading-relaxed">
-            Toda la sabidur├¡a del Mundo Ninja concentrada en un solo lugar. Geograf├¡a, clanes y las artes de combate.
+          <p className="text-gris-texto text-base sm:text-lg xl:text-2xl leading-relaxed">
+            Toda la sabiduría del Mundo Ninja concentrada en un solo lugar. Geografía, clanes y las artes de combate.
           </p>
         </div>
 
@@ -37,33 +39,33 @@ export default function DocumentosPage() {
           <NinjaCard
             href="/aldeas"
             title="ALDEAS"
-            titleClassName="text-3xl sm:text-4xl md:text-5xl"
+            titleClassName="text-3xl sm:text-3xl md:text-4xl"
             category="BIBLIOTECA"
             imageUrl="https://game.gtimg.cn/images/hyrz/web2026/match.jpg"
-            description="Descubre los secretos de aldeas y organizaciones: su historia, clanes fundadores y geograf├¡a sagrada."
-            actionText="Explorar Mundo"
+            description="Descubre los secretos de aldeas y organizaciones: su historia, clanes fundadores y geografía sagrada."
+            actionText="Ver Aldeas"
           />
 
           {/* Tarjeta Ramas */}
           <NinjaCard
             href="/ramas"
             title="RAMAS"
-            titleClassName="text-3xl sm:text-4xl md:text-5xl"
+            titleClassName="text-3xl sm:text-3xl md:text-4xl"
             category="ESPECIALIDAD"
             imageUrl="https://game.gtimg.cn/images/hyrz/web2026/ninja.jpg"
             description="Especialidades de combate, el despertar de clanes y el funcionamiento de las artes ninja prohibidas."
-            actionText="Ver Especialidades"
+            actionText="Ver Ramas"
           />
 
           {/* Tarjeta Glosario */}
           <NinjaCard
             href="/glosario"
             title="GLOSARIO"
-            titleClassName="text-3xl sm:text-4xl md:text-5xl"
+            titleClassName="text-3xl sm:text-3xl md:text-4xl"
             category="GLOSARIO"
             imageUrl="https://game.gtimg.cn/images/hyrz/web2026/content.jpg"
             description="Consulta el glosario con todo el conocimiento del mundo shinobi."
-            actionText="Consultar Glosario"
+            actionText="Ver Glosario"
           />
         </div>
       </main>

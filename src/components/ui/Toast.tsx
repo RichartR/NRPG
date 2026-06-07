@@ -45,9 +45,9 @@ export function ToastContainer() {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`pointer-events-auto flex items-center gap-4 px-6 py-4 rounded-2xl border backdrop-blur-xl shadow-2xl animate-in slide-in-from-right-full transition-all ${toast.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-              toast.type === 'error' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
-                'bg-blue-500/10 border-blue-500/20 text-blue-400'
+          className={`pointer-events-auto flex items-center gap-4 px-6 py-4 rounded-2xl border shadow-2xl animate-in slide-in-from-right-full transition-all ${toast.type === 'success' ? 'bg-success-bg border-success-text/20 text-success-text' :
+            toast.type === 'error' ? 'bg-error-bg border-error-text/20 text-error-text' :
+              'bg-blue-300 border-blue-800/30 text-blue-800'
             }`}
         >
           {toast.type === 'success' && <CheckCircle className="w-5 h-5" />}

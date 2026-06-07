@@ -75,16 +75,16 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
               <h2 className="ninja-title text-xl sm:text-3xl">
                 {isCreate ? 'Nueva Aldea' : 'Editar Aldea'}
               </h2>
-              <p className="text-[10px] font-black text-oro/40 uppercase tracking-[0.2em] mt-1">Configuración del núcleo geográfico</p>
+              <p className="text-caption font-black text-oro/40 uppercase tracking-[0.2em] mt-1">Configuración del núcleo geográfico</p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             <label className="flex items-center gap-3 cursor-pointer group bg-oro/5 px-4 py-2 border border-oro/10 hover:border-oro/30 transition-all">
-              <span className="text-[9px] font-black uppercase tracking-widest text-oro/40">
+              <span className="text-caption font-black uppercase tracking-widest text-oro/40">
                 TIPO:
               </span>
-              <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${formData.categoria_id === 2 ? 'text-oro' : 'text-oro/70'}`}>
+              <span className={`text-caption font-black uppercase tracking-widest transition-colors ${formData.categoria_id === 2 ? 'text-oro' : 'text-oro/70'}`}>
                 {formData.categoria_id === 2 ? 'ORGANIZACIÓN' : 'ALDEA'}
               </span>
               <input
@@ -99,7 +99,7 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
             </label>
 
             <label className="flex items-center gap-3 cursor-pointer group bg-oro/5 px-4 py-2 border border-oro/10 hover:border-oro/30 transition-all">
-              <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${formData.activo ? 'text-oro' : 'text-oro/20'}`}>
+              <span className={`text-caption font-black uppercase tracking-widest transition-colors ${formData.activo ? 'text-oro' : 'text-oro/20'}`}>
                 {formData.activo ? 'ACTIVA' : 'INACTIVA'}
               </span>
               <input
@@ -121,7 +121,7 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
         <form onSubmit={handleSave} className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">Nombre Japonés</label>
+              <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">Nombre Japonés</label>
               <input
                 type="text"
                 value={formData.nombre_jap}
@@ -131,7 +131,7 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
               />
             </div>
             <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">Abreviatura</label>
+              <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">Abreviatura</label>
               <input
                 type="text"
                 value={formData.abreviatura}
@@ -144,7 +144,7 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
               />
             </div>
             <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">Slug (URL)</label>
+              <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">Slug (URL)</label>
               <input
                 type="text"
                 value={formData.slug}
@@ -154,7 +154,7 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
               />
             </div>
             <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">Nombre en Español</label>
+              <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">Nombre en Español</label>
               <input
                 type="text"
                 value={formData.nombre_español}
@@ -167,7 +167,7 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
 
           <div className="grid grid-cols-1 gap-8">
             <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">Nombre Completo</label>
+              <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">Nombre Completo</label>
               <input
                 type="text"
                 value={formData.nombre_completo}
@@ -177,7 +177,7 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
               />
             </div>
             <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1">URL Imagen / Banner</label>
+              <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">URL Imagen / Banner</label>
               <input
                 type="text"
                 value={formData.url_imagen}
@@ -187,7 +187,7 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
               />
             </div>
             <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1 flex items-center gap-2">
+              <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1 flex items-center gap-2">
                 <ImageIcon className="w-4 h-4" /> URL Icono / Emblema
               </label>
               <div className="flex gap-4 items-start">
@@ -208,7 +208,7 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
           </div>
 
           <div className="space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-widest text-oro/40 ml-1 flex items-center gap-2">
+            <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1 flex items-center gap-2">
               <AlignLeft className="w-4 h-4" /> Descripción Histórica
             </label>
             <textarea
@@ -224,7 +224,7 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
             <button
               type="button"
               onClick={onCancel}
-              className="px-8 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-oro/40 hover:text-oro transition-all italic"
+              className="px-8 py-4 text-caption font-black uppercase tracking-[0.3em] text-oro/40 hover:text-oro transition-all italic"
             >
               Cancelar
             </button>

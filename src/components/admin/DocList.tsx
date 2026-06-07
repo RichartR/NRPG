@@ -62,7 +62,7 @@ export default function DocList({ initialDocs, categories, defaultCategory, show
   }, [initialDocs, activeTab, search, categoryFilter]);
   return (
     <div className="space-y-6">
-      <div className="flex flex-col min-[1600px]:flex-row flex-wrap gap-6 justify-between items-stretch min-[1600px]:items-center bg-[#0A0A0A]/40 p-6 sm:p-10 xl:p-12 border border-oro/5 backdrop-blur-md relative overflow-hidden">
+      <div className="flex flex-col min-[1600px]:flex-row flex-wrap gap-6 justify-between items-stretch min-[1600px]:items-center bg-neutral-800/40 p-6 sm:p-10 xl:p-12 border border-oro/5 backdrop-blur-md relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-oro/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
 
         <div className="flex gap-2 p-1.5 bg-black/40 border border-oro/10 ninja-box w-full min-[1600px]:w-auto justify-center">
@@ -70,7 +70,7 @@ export default function DocList({ initialDocs, categories, defaultCategory, show
             <button
               key={tab}
               onClick={() => setActiveTab(tab as any)}
-              className={`flex-1 sm:flex-initial text-center px-4 sm:px-10 py-3 xl:py-4 font-black uppercase tracking-[0.2em] transition-all text-[9px] sm:text-[10px] xl:text-xs ${activeTab === tab
+              className={`flex-1 sm:flex-initial text-center px-4 sm:px-10 py-3 xl:py-4 font-black uppercase tracking-[0.2em] transition-all text-caption sm:text-caption xl:text-xs ${activeTab === tab
                 ? 'bg-oro text-rojo-sangre shadow-lg'
                 : 'text-oro/40 hover:text-oro hover:bg-oro/5'
                 }`}
@@ -90,7 +90,7 @@ export default function DocList({ initialDocs, categories, defaultCategory, show
               placeholder="BUSCAR EXPEDIENTE..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-black/20 border border-oro/10 py-3 xl:py-4 pl-14 pr-8 text-[9px] sm:text-[10px] xl:text-xs font-black text-oro focus:border-oro/40 outline-none transition-all placeholder:text-oro/20 uppercase tracking-widest"
+              className="w-full bg-black/20 border border-oro/10 py-3 xl:py-4 pl-14 pr-8 text-caption sm:text-caption xl:text-xs font-black text-oro focus:border-oro/40 outline-none transition-all placeholder:text-oro/20 uppercase tracking-widest"
               style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
             />
           </div>
@@ -109,7 +109,7 @@ export default function DocList({ initialDocs, categories, defaultCategory, show
 
           <button
             onClick={() => setIsAdding(true)}
-            className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-10 py-3 xl:py-4 bg-rojo-sangre hover:brightness-125 text-oro font-black text-[9px] sm:text-[10px] xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-rojo-sangre/20 active:scale-95 whitespace-nowrap"
+            className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-10 py-3 xl:py-4 bg-rojo-sangre hover:brightness-125 text-oro font-black text-caption sm:text-caption xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-rojo-sangre/20 active:scale-95 whitespace-nowrap"
             style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
           >
             <PlusCircle className="w-5 h-5 shrink-0" />
@@ -118,13 +118,13 @@ export default function DocList({ initialDocs, categories, defaultCategory, show
         </div>
       </div>
 
-      <div className="bg-[#0A0A0A]/40 border border-oro/5 overflow-x-auto backdrop-blur-md custom-scrollbar">
+      <div className="bg-neutral-800/40 border border-oro/5 overflow-x-auto backdrop-blur-md custom-scrollbar">
         <table className="w-full text-left border-collapse min-w-[800px] xl:min-w-0">
           <thead>
             <tr className="bg-black/20 border-b border-oro/5">
-              <th className="p-6 sm:p-10 text-[9px] sm:text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] text-oro/40">IDENTIFICADOR Y TÍTULO</th>
-              <th className="p-6 sm:p-10 text-[9px] sm:text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] text-oro/40 text-center">CLASIFICACIÓN</th>
-              <th className="p-6 sm:p-10 text-[9px] sm:text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] text-oro/40 text-right">PROTOCOLOS DE MANDO</th>
+              <th className="p-6 sm:p-10 text-caption sm:text-caption xl:text-xs font-black uppercase tracking-[0.4em] text-oro/40">IDENTIFICADOR Y TÍTULO</th>
+              <th className="p-6 sm:p-10 text-caption sm:text-caption xl:text-xs font-black uppercase tracking-[0.4em] text-oro/40 text-center">CLASIFICACIÓN</th>
+              <th className="p-6 sm:p-10 text-caption sm:text-caption xl:text-xs font-black uppercase tracking-[0.4em] text-oro/40 text-right">PROTOCOLOS DE MANDO</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-oro/5">
@@ -132,7 +132,7 @@ export default function DocList({ initialDocs, categories, defaultCategory, show
               <tr key={doc.id} className="hover:bg-oro/5 transition-all group">
                 <td className="p-6 sm:p-10">
                   <div className="flex items-center gap-4 sm:gap-8">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-black/40 border border-oro/10 flex items-center justify-center overflow-hidden shrink-0" style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}>
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-black/40 border border-oro/10 flex items-center justify-center overflow-hidden shrink-0 ninja-clip-md">
                       {doc.url_imagen ? (
                         <img src={doc.url_imagen} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" referrerPolicy="no-referrer" />
                       ) : (
@@ -143,18 +143,18 @@ export default function DocList({ initialDocs, categories, defaultCategory, show
                       <p className="text-lg sm:text-xl xl:text-2xl font-black text-oro uppercase tracking-tight group-hover:text-oro transition-colors italic leading-none">{doc.titulo}</p>
                       <div className="flex items-center gap-2 sm:gap-3 mt-3">
                         <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
-                        <p className="text-[9px] sm:text-[10px] text-oro/30 font-black uppercase tracking-[0.2em]">Sistema: {doc.clave}</p>
+                        <p className="text-caption sm:text-caption text-oro/30 font-black uppercase tracking-[0.2em]">Sistema: {doc.clave}</p>
                       </div>
                     </div>
                   </div>
                 </td>
                 <td className="p-6 sm:p-10">
                   <div className="flex flex-col items-center gap-2 sm:gap-4">
-                    <span className="px-4 sm:px-6 py-1.5 sm:py-2 bg-oro/5 border border-oro/10 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-oro/60" style={{ clipPath: 'polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px)' }}>
+                    <span className="px-4 sm:px-6 py-1.5 sm:py-2 bg-oro/5 border border-oro/10 text-caption sm:text-caption font-black uppercase tracking-[0.2em] text-oro/60" style={{ clipPath: 'polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px)' }}>
                       {doc.categoria}
                     </span>
                     {showSubcategory && doc.subcategoria && (
-                      <span className="text-[8px] text-oro font-black uppercase tracking-[0.3em] bg-oro/10 px-3 sm:px-4 py-1 sm:py-1.5 border border-oro/20" style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}>
+                      <span className="text-caption text-oro font-black uppercase tracking-[0.3em] bg-oro/10 px-3 sm:px-4 py-1 sm:py-1.5 border border-oro/20 ninja-clip-sm">
                         {doc.subcategoria}
                       </span>
                     )}

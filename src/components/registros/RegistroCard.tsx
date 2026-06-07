@@ -165,13 +165,13 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
             <span className="text-sm xl:text-lg font-black uppercase tracking-[0.2em] text-oro leading-none mb-1">
               {authorName}
             </span>
-            <span className="text-[10px] font-bold text-oro/40 uppercase tracking-[0.2em] flex items-center gap-2">
+            <span className="text-caption font-bold text-oro/40 uppercase tracking-[0.2em] flex items-center gap-2">
               {new Date(registro.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
               <span className="w-1 h-1 bg-oro/20 rotate-45" />
               {new Date(registro.fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
             </span>
             {registro.data.fecha_modificacion && (
-              <span className="text-[9px] font-black text-rojo-sangre uppercase tracking-[0.2em] mt-1 flex items-center gap-1.5">
+              <span className="text-caption font-black text-rojo-sangre uppercase tracking-[0.2em] mt-1 flex items-center gap-1.5">
                 MODIFICADO: {new Date(registro.data.fecha_modificacion).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} - {new Date(registro.data.fecha_modificacion).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
               </span>
             )}
@@ -191,7 +191,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
               <button
                 onClick={handleDelete}
                 disabled={loading}
-                className="w-11 h-11 flex items-center justify-center bg-red-600/10 border border-red-600/40 hover:border-red-500 hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs shadow-lg shadow-black/20"
+                className="w-11 h-11 flex items-center justify-center bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs shadow-lg shadow-black/20"
                 title="Eliminar Registro"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin text-oro" /> : <Trash2 className="w-5 h-5" />}
@@ -211,7 +211,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                 <span className="text-lg sm:text-2xl font-black text-oro uppercase tracking-widest">{registro.data.codigo_mision}</span>
               </div>
               <div className="flex flex-wrap gap-3 items-center">
-                <div className="flex items-center gap-2 text-oro/30 text-[10px] font-black uppercase tracking-widest mr-2">
+                <div className="flex items-center gap-2 text-oro/30 text-caption font-black uppercase tracking-widest mr-2">
                   <Users className="w-4 h-4" /> PARTICIPANTES:
                 </div>
                 {participants.map((p, i) => (
@@ -223,7 +223,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
             </div>
             <div className="flex items-center gap-8 sm:gap-12 shrink-0">
               <div className="flex flex-col items-center">
-                <span className="text-[10px] font-black text-oro/30 uppercase tracking-widest mb-2">RECOMPENSA</span>
+                <span className="text-caption font-black text-oro/30 uppercase tracking-widest mb-2">RECOMPENSA</span>
                 <div className="flex items-center gap-6">
                   <div className="flex items-center gap-2 text-oro font-black text-base sm:text-xl tracking-widest">
                     <Sparkles className="w-4 h-4" /> +{registro.data.recompensa_xp || 0}
@@ -256,7 +256,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
               </h4>
             </div>
             <div className="flex flex-col items-center shrink-0">
-              <span className="text-[10px] font-black text-oro/30 uppercase tracking-widest mb-2">INVERSIÓN</span>
+              <span className="text-caption font-black text-oro/30 uppercase tracking-widest mb-2">INVERSIÓN</span>
               <div className="flex items-center gap-2 text-oro font-black text-base sm:text-xl tracking-widest">
                 <Coins className="w-4 h-4" /> {registro.data.coste_ryous || 0} R
               </div>
@@ -269,9 +269,9 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                 <h4 className="text-lg sm:text-xl font-black text-oro uppercase tracking-wider mb-1">
                   {registro.data.titulo || 'Reparto de Premios'}
                 </h4>
-                <p className="text-[10px] font-bold text-oro/40 uppercase tracking-widest">REGISTRO DE PREMIOS DE EVENTO</p>
+                <p className="text-caption font-bold text-oro/40 uppercase tracking-widest">REGISTRO DE PREMIOS DE EVENTO</p>
               </div>
-              <div className="flex flex-wrap items-center gap-4 sm:gap-6 p-3 bg-oro/5 border border-oro/10 ninja-clip-xs shrink-0 text-[10px] sm:text-xs font-black text-oro">
+              <div className="flex flex-wrap items-center gap-4 sm:gap-6 p-3 bg-oro/5 border border-oro/10 ninja-clip-xs shrink-0 text-caption sm:text-xs font-black text-oro">
                 <div className="flex items-center gap-1.5">EXP: +{registro.data.global_xp || 0}</div>
                 <div className="w-px h-4 bg-oro/10" />
                 <div className="flex items-center gap-1.5">RYOUS: +{registro.data.global_ryous || 0}</div>
@@ -285,11 +285,11 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
             </div>
 
             <div className="space-y-4">
-              <span className="text-[9px] font-black text-oro/30 uppercase tracking-[0.25em] block">PREMIOS INDIVIDUALES POR SHINOBI:</span>
+              <span className="text-caption font-black text-oro/30 uppercase tracking-[0.25em] block">PREMIOS INDIVIDUALES POR SHINOBI:</span>
               <div className="overflow-x-auto custom-scrollbar border border-oro/10 ninja-clip-sm bg-black/45">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="border-b border-oro/10 bg-black/40 text-[9px] font-black uppercase tracking-[0.2em] text-oro/50">
+                    <tr className="border-b border-oro/10 bg-black/40 text-caption font-black uppercase tracking-[0.2em] text-oro/50">
                       <th className="py-4 px-6">Shinobi</th>
                       <th className="py-4 px-6 text-center">EXP Extra</th>
                       <th className="py-4 px-6 text-center">Ryous Extra</th>
@@ -326,7 +326,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                           {p.glosario_items && p.glosario_items.length > 0 ? (
                             <div className="flex flex-wrap gap-1.5">
                               {p.glosario_items.map((i: any) => (
-                                <span key={i.id} className="text-[9px] font-black bg-oro/10 border border-oro/20 text-oro px-2.5 py-0.5 ninja-clip-xs">
+                                <span key={i.id} className="text-caption font-black bg-oro/10 border border-oro/20 text-oro px-2.5 py-0.5 ninja-clip-xs">
                                   {i.nombre_es}
                                 </span>
                               ))}
@@ -349,11 +349,11 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                 <h4 className="text-lg sm:text-xl font-black text-oro uppercase tracking-wider mb-1">
                   {registro.data.titulo || 'Registro de Narración'}
                 </h4>
-                <p className="text-[10px] font-bold text-oro/40 uppercase tracking-widest flex items-center gap-2">
+                <p className="text-caption font-bold text-oro/40 uppercase tracking-widest flex items-center gap-2">
                   <span>NARRADOR: {registro.data.narrador || 'Sin especificar'}</span>
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-4 sm:gap-6 p-3 bg-oro/5 border border-oro/10 ninja-clip-xs shrink-0 text-[10px] sm:text-xs font-black text-oro">
+              <div className="flex flex-wrap items-center gap-4 sm:gap-6 p-3 bg-oro/5 border border-oro/10 ninja-clip-xs shrink-0 text-caption sm:text-xs font-black text-oro">
                 <div className="flex items-center gap-1.5">EXP GLOBAL: +{registro.data.global_xp || 0}</div>
                 <div className="w-px h-4 bg-oro/10" />
                 <div className="flex items-center gap-1.5">RYOUS GLOBAL: +{registro.data.global_ryous || 0}</div>
@@ -367,11 +367,11 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
             </div>
 
             <div className="space-y-4">
-              <span className="text-[9px] font-black text-oro/30 uppercase tracking-[0.25em] block">RECOMPENSAS Y PARTICIPANTES:</span>
+              <span className="text-caption font-black text-oro/30 uppercase tracking-[0.25em] block">RECOMPENSAS Y PARTICIPANTES:</span>
               <div className="overflow-x-auto custom-scrollbar border border-oro/10 ninja-clip-sm bg-black/45">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="border-b border-oro/10 bg-black/40 text-[9px] font-black uppercase tracking-[0.2em] text-oro/50">
+                    <tr className="border-b border-oro/10 bg-black/40 text-caption font-black uppercase tracking-[0.2em] text-oro/50">
                       <th className="py-4 px-6">Shinobi</th>
                       <th className="py-4 px-6 text-center">EXP Total</th>
                       <th className="py-4 px-6 text-center">Ryous Total</th>
@@ -401,7 +401,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                             {p.glosario_items && p.glosario_items.length > 0 ? (
                               <div className="flex flex-wrap gap-1.5">
                                 {p.glosario_items.map((i: any) => (
-                                  <span key={i.id} className="text-[9px] font-black bg-oro/10 border border-oro/20 text-oro px-2.5 py-0.5 ninja-clip-xs">
+                                  <span key={i.id} className="text-caption font-black bg-oro/10 border border-oro/20 text-oro px-2.5 py-0.5 ninja-clip-xs">
                                     {i.nombre_es}
                                   </span>
                                 ))}
@@ -428,9 +428,9 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
               </div>
               {participants.filter((p: any) => p.id !== registro.autor_id).length > 0 && (
                 <div className="flex flex-wrap gap-3 items-center">
-                  <span className="text-[9px] font-black text-oro/20 uppercase tracking-widest mr-2">Participantes:</span>
+                  <span className="text-caption font-black text-oro/20 uppercase tracking-widest mr-2">Participantes:</span>
                   {participants.filter((p: any) => p.id !== registro.autor_id).map((p: any, i: number) => (
-                    <span key={i} className="text-[10px] font-black text-oro/40 uppercase tracking-widest px-3 py-1 bg-oro/5 border border-oro/10 ninja-clip-xs">
+                    <span key={i} className="text-caption font-black text-oro/40 uppercase tracking-widest px-3 py-1 bg-oro/5 border border-oro/10 ninja-clip-xs">
                       {p.nombre_ninja}
                     </span>
                   ))}
@@ -439,7 +439,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
             </div>
             {(registro.data.gasto_xp !== undefined || registro.data.gasto_ryous !== undefined) && (
               <div className="flex flex-col items-center shrink-0 p-4 border-l border-oro/10 min-w-[120px]">
-                <span className="text-[10px] font-black text-oro/30 uppercase tracking-widest mb-2">Coste</span>
+                <span className="text-caption font-black text-oro/30 uppercase tracking-widest mb-2">Coste</span>
                 <div className="flex flex-col gap-2 items-end w-full">
                   {registro.data.gasto_xp !== undefined && (
                     <div className="flex items-center gap-2 text-oro font-black text-sm tracking-widest">
@@ -464,12 +464,12 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                     <VS className="w-5 h-5 text-oro/40" />
                     <span className="text-xs font-black text-oro/40 uppercase tracking-[0.3em]">Resumen de Combate</span>
                     {registro.data.ganador === 'Empate' ? (
-                      <span className="text-[10px] font-black text-oro border border-oro/20 px-2 py-0.5">EMPATE</span>
+                      <span className="text-caption font-black text-oro border border-oro/20 px-2 py-0.5">EMPATE</span>
                     ) : (
-                      <span className={`text-[10px] font-black px-2 py-0.5 border ${(registro.data.ganador === 'A' && registro.data.equipo_a?.some((p: any) => p.id === (subjectId || registro.autor_id))) ||
+                      <span className={`text-caption font-black px-2 py-0.5 border ${(registro.data.ganador === 'A' && registro.data.equipo_a?.some((p: any) => p.id === (subjectId || registro.autor_id))) ||
                         (registro.data.ganador === 'B' && registro.data.equipo_b?.some((p: any) => p.id === (subjectId || registro.autor_id)))
-                        ? 'text-[#a7f3d0] border-emerald-500/30 bg-[#064e3b]/80'
-                        : 'text-[#fecaca] border-red-500/30 bg-[#7f1d1d]/80'
+                        ? 'text-success-text border-success-text/30 bg-success-bg/80'
+                        : 'text-error-text border-error-text/30 bg-error-bg/80'
                         }`}>
                         {(registro.data.ganador === 'A' && registro.data.equipo_a?.some((p: any) => p.id === (subjectId || registro.autor_id))) ||
                           (registro.data.ganador === 'B' && registro.data.equipo_b?.some((p: any) => p.id === (subjectId || registro.autor_id)))
@@ -507,7 +507,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
 
                 <button
                   onClick={() => setShowFullDetails(true)}
-                  className="ninja-btn-ghost px-6 py-3 text-[10px] focus:outline-none focus:ring-0"
+                  className="ninja-btn-ghost px-6 py-3 text-caption focus:outline-none focus:ring-0"
                 >
                   Ver registro completo
                 </button>
@@ -519,7 +519,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                     <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Informe Detallado</span>
                     <button
                       onClick={() => setShowFullDetails(false)}
-                      className="text-[10px] font-black text-oro/40 hover:text-oro uppercase tracking-widest border-b border-oro/20 focus:outline-none focus:ring-0"
+                      className="text-caption font-black text-oro/40 hover:text-oro uppercase tracking-widest border-b border-oro/20 focus:outline-none focus:ring-0"
                     >
                       Contraer resumen
                     </button>
@@ -531,13 +531,13 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                   <div className={`grid grid-cols-2 lg:grid-cols-[1fr_auto_1fr] items-center border-b border-oro/10 ${isCompact ? 'pb-2' : 'pb-4'}`}>
                     <div className="flex items-center gap-3">
                       <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Bando A</span>
-                      {registro.data.ganador === 'A' && <span className="text-[9px] font-black text-oro bg-oro/10 px-2 py-0.5 ninja-clip-xs border border-oro/20">GANADOR</span>}
+                      {registro.data.ganador === 'A' && <span className="text-caption font-black text-oro bg-oro/10 px-2 py-0.5 ninja-clip-xs border border-oro/20">GANADOR</span>}
                     </div>
                     {/* Espaciador central invisible en desktop para mantener la rejilla perfectamente alineada */}
                     <div className="hidden lg:block w-[72px]" />
                     <div className="flex items-center lg:flex-row-reverse gap-3 text-right justify-end">
                       <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Bando B</span>
-                      {registro.data.ganador === 'B' && <span className="text-[9px] font-black text-oro bg-oro/10 px-2 py-0.5 ninja-clip-xs border border-oro/20">GANADOR</span>}
+                      {registro.data.ganador === 'B' && <span className="text-caption font-black text-oro bg-oro/10 px-2 py-0.5 ninja-clip-xs border border-oro/20">GANADOR</span>}
                     </div>
                   </div>
 
@@ -549,14 +549,14 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                           <div className="flex justify-between items-center">
                             <div className="flex items-center gap-3">
                               <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
-                              <span className="text-[10px] font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">+{calculateParticipantXP('A', p.huye)} EXP</span>
-                              <span className="text-[10px] font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-emerald-500/10">+{RewardLogic.calculateCombatPA(registro, p.id)} PA</span>
+                              <span className="text-caption font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">+{calculateParticipantXP('A', p.huye)} EXP</span>
+                              <span className="text-caption font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-success-text/10">+{RewardLogic.calculateCombatPA(registro, p.id)} PA</span>
                             </div>
                             <div className="flex items-center gap-3">
-                              {p.has_estado_alterado && <span className="px-2 py-0.5 bg-oro/20 text-oro text-[9px] font-black uppercase ninja-clip-xs border border-oro/40">ESTADO ALTERADO</span>}
-                              {p.has_cds && <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-[9px] font-black uppercase ninja-clip-xs border border-blue-400/40">CDs</span>}
-                              {p.huye && <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[9px] font-black uppercase ninja-clip-xs border border-orange-500/40">HUYE</span>}
-                              <span className="text-[10px] font-black text-oro/70 uppercase">{p.estado_nombre || 'SIN ESTADO'}</span>
+                              {p.has_estado_alterado && <span className="px-2 py-0.5 bg-oro/20 text-oro text-caption font-black uppercase ninja-clip-xs border border-oro/40">ESTADO ALTERADO</span>}
+                              {p.has_cds && <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-caption font-black uppercase ninja-clip-xs border border-blue-400/40">CDs</span>}
+                              {p.huye && <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-caption font-black uppercase ninja-clip-xs border border-orange-500/40">HUYE</span>}
+                              <span className="text-caption font-black text-oro/70 uppercase">{p.estado_nombre || 'SIN ESTADO'}</span>
                             </div>
                           </div>
                           {p.has_estado_alterado && p.descripcion_estado && (
@@ -591,14 +591,14 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                           <div className="flex justify-between items-center lg:flex-row-reverse">
                             <div className="flex items-center gap-3 lg:flex-row-reverse">
                               <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
-                              <span className="text-[10px] font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">+{calculateParticipantXP('B', p.huye)} EXP</span>
-                              <span className="text-[10px] font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-emerald-500/10">+{RewardLogic.calculateCombatPA(registro, p.id)} PA</span>
+                              <span className="text-caption font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">+{calculateParticipantXP('B', p.huye)} EXP</span>
+                              <span className="text-caption font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-success-text/10">+{RewardLogic.calculateCombatPA(registro, p.id)} PA</span>
                             </div>
                             <div className="flex items-center gap-3 lg:flex-row-reverse">
-                              {p.has_estado_alterado && <span className="px-2 py-0.5 bg-oro/20 text-oro text-[9px] font-black uppercase ninja-clip-xs border border-oro/40">ESTADO ALTERADO</span>}
-                              {p.has_cds && <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-[9px] font-black uppercase ninja-clip-xs border border-blue-400/40">CDs</span>}
-                              {p.huye && <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[9px] font-black uppercase ninja-clip-xs border border-orange-500/40">HUYE</span>}
-                              <span className="text-[10px] font-black text-oro/70 uppercase">{p.estado_nombre || 'SIN ESTADO'}</span>
+                              {p.has_estado_alterado && <span className="px-2 py-0.5 bg-oro/20 text-oro text-caption font-black uppercase ninja-clip-xs border border-oro/40">ESTADO ALTERADO</span>}
+                              {p.has_cds && <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-caption font-black uppercase ninja-clip-xs border border-blue-400/40">CDs</span>}
+                              {p.huye && <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-caption font-black uppercase ninja-clip-xs border border-orange-500/40">HUYE</span>}
+                              <span className="text-caption font-black text-oro/70 uppercase">{p.estado_nombre || 'SIN ESTADO'}</span>
                             </div>
                           </div>
                           {p.has_estado_alterado && p.descripcion_estado && (
@@ -623,7 +623,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
 
         {registro.data.urls_imagenes && registro.data.urls_imagenes.length > 0 && (
           <div className="mt-4 flex flex-wrap items-center gap-4 relative z-10">
-            <span className="text-[9px] font-black text-oro/20 uppercase tracking-widest mr-2">PRUEBAS VISUALES:</span>
+            <span className="text-caption font-black text-oro/20 uppercase tracking-widest mr-2">PRUEBAS VISUALES:</span>
             <div className="flex flex-wrap gap-3">
               {registro.data.urls_imagenes.map((url: string, i: number) => (
                 <a
@@ -631,7 +631,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                   href={url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-3 py-1.5 bg-oro/5 border border-oro/10 hover:border-oro/40 hover:bg-oro/10 text-[9px] font-black text-oro/40 hover:text-oro uppercase tracking-widest transition-all ninja-clip-xs"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-oro/5 border border-oro/10 hover:border-oro/40 hover:bg-oro/10 text-caption font-black text-oro/40 hover:text-oro uppercase tracking-widest transition-all ninja-clip-xs"
                 >
                   <LinkIcon className="w-3 h-3" /> PRUEBA {i + 1}
                 </a>

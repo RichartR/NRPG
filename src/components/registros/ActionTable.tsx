@@ -121,11 +121,11 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
       <div className="overflow-x-auto scrollbar-hide">
         <table className="w-full text-left border-collapse min-w-[700px] table-fixed">
           <thead>
-            <tr className="border-b border-oro/10 text-oro/70 text-[10px] xl:text-xs font-black uppercase tracking-[0.3em]">
-              <th className="py-6 px-8 w-[18%]">Fecha</th>
-              <th className="py-6 px-8 w-[52%]">Acción / Crónica</th>
-              <th className="py-6 px-8 w-[15%] w-36">Coste / Recompensa</th>
-              <th className="py-6 px-8 text-right w-[15%] w-36">Acciones</th>
+            <tr className="border-b border-oro/10 text-oro/70 text-caption xl:text-xs font-black uppercase tracking-[0.3em]">
+              <th className="py-3 px-5 w-[18%]">Fecha</th>
+              <th className="py-3 px-5 w-[52%]">Acción / Crónica</th>
+              <th className="py-3 px-5 w-[15%] w-36">Coste / Recompensa</th>
+              <th className="py-3 px-5 text-right w-[15%] w-36">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-oro/5 bg-black/40">
@@ -141,15 +141,15 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
               const actionTitle = m.tipo === 'compra'
                 ? `${selfName} adquirió ${m.data.objeto_nombre || m.data.objeto || 'Equipo Ninja'}${m.data.detalles ? ` (${m.data.detalles})` : ''}`
                 : m.subtipo === 'narracion'
-                ? `Evento de Narración por ${m.data.narrador || 'Narrador'}`
-                : m.data.titulo;
+                  ? `Evento de Narración por ${m.data.narrador || 'Narrador'}`
+                  : m.data.titulo;
 
               // Obtener premios del shinobi si es reparto de evento
               const targetCharId = subjectId || activeCharacter?.id;
               const partPremio = (m.subtipo === 'evento_premios' || m.subtipo === 'narracion')
                 ? m.data.participantes_premios?.find((p: any) => Number(p.personaje_id) === Number(targetCharId))
                 : null;
-              
+
               const globalXp = Number(m.data.global_xp) || 0;
               const globalRyous = Number(m.data.global_ryous) || 0;
               const globalMonedas = Number(m.data.global_monedas_evento) || 0;
@@ -162,28 +162,28 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
               return (
                 <tr key={m.id} className="hover:bg-oro/5 transition-colors group">
                   {/* Fecha */}
-                  <td className="py-6 px-8">
+                  <td className="py-3 px-5">
                     <div className="flex flex-col justify-center gap-2">
                       {/* Fecha de Creación */}
                       <div className="flex flex-col">
                         <span className="text-[11px] font-black text-oro/80 uppercase tracking-wider">
                           {new Date(m.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </span>
-                        <span className="text-[9px] font-bold text-oro/30 uppercase tracking-widest mt-0.5">
+                        <span className="text-caption font-bold text-oro/30 uppercase tracking-widest mt-0.5">
                           {new Date(m.fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
 
                       {/* Fecha de Modificación */}
                       {m.data.fecha_modificacion && (
-                        <div className="flex flex-col border-t border-red-500/30 pt-1.5">
+                        <div className="flex flex-col border-t border-error-text/30 pt-1.5">
                           <span className="text-[7px] font-black text-red-500/60 uppercase tracking-widest">
                             MODIFICADO
                           </span>
-                          <span className="text-[10px] font-black text-red-400 uppercase tracking-wider mt-0.5">
+                          <span className="text-caption font-black text-red-400 uppercase tracking-wider mt-0.5">
                             {new Date(m.data.fecha_modificacion).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                           </span>
-                          <span className="text-[8px] font-bold text-red-500/60 uppercase tracking-widest mt-0.5">
+                          <span className="text-caption font-bold text-red-500/60 uppercase tracking-widest mt-0.5">
                             {new Date(m.data.fecha_modificacion).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
@@ -192,12 +192,12 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
                   </td>
 
                   {/* Acción / Crónica */}
-                  <td className="py-6 px-8 text-oro/80 text-xs xl:text-sm whitespace-normal break-words">
+                  <td className="py-3 px-5 text-oro/80 text-xs xl:text-sm whitespace-normal break-words">
                     {renderActionTitle(actionTitle, selfName)}
                   </td>
 
                   {/* Coste */}
-                  <td className="py-6 px-8">
+                  <td className="py-3 px-5">
                     <div className="flex flex-col gap-1.5 justify-center">
                       {(m.subtipo === 'evento_premios' || m.subtipo === 'narracion') ? (
                         <div className="flex flex-col gap-1 justify-center text-emerald-400 font-bold text-[11px] tracking-wide">
@@ -205,12 +205,12 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
                           {ryousObtained > 0 && <div className="text-emerald-400">+{ryousObtained} Ryos</div>}
                           {monedasObtained > 0 && <div className="text-emerald-400">+{monedasObtained} M. Evento</div>}
                           {glosarioObtained.length > 0 && (
-                            <div className="text-[9px] text-oro/50 mt-0.5 font-bold uppercase tracking-wide">
+                            <div className="text-caption text-oro/50 mt-0.5 font-bold uppercase tracking-wide">
                               + {glosarioObtained.map((g: any) => g.nombre_es).join(', ')}
                             </div>
                           )}
                           {xpObtained === 0 && ryousObtained === 0 && monedasObtained === 0 && glosarioObtained.length === 0 && (
-                            <span className="text-[10px] text-oro/20 uppercase tracking-widest italic">-</span>
+                            <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
                           )}
                         </div>
                       ) : (
@@ -231,7 +231,7 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
                             </div>
                           )}
                           {xpSpent === 0 && ryousSpent === 0 && eventCoinsSpent === 0 && (
-                            <span className="text-[10px] text-oro/20 uppercase tracking-widest italic">Gratis</span>
+                            <span className="text-caption text-oro/20 uppercase tracking-widest italic">Gratis</span>
                           )}
                         </>
                       )}
@@ -239,7 +239,7 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
                   </td>
 
                   {/* Acciones */}
-                  <td className="py-6 px-8 text-right">
+                  <td className="py-3 px-5 text-right">
                     {canManage ? (
                       <div className="flex items-center justify-end gap-2.5">
                         <button
@@ -252,7 +252,7 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
                         <button
                           onClick={() => handleDelete(m.id)}
                           disabled={loadingId === m.id}
-                          className="p-2 bg-red-600/10 border border-red-600/40 hover:border-red-500 hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
+                          className="p-2 bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
                           title="Eliminar Registro"
                         >
                           {loadingId === m.id ? (
@@ -263,7 +263,7 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
                         </button>
                       </div>
                     ) : (
-                      <span className="text-[10px] text-oro/20 uppercase tracking-widest italic">Sólo lectura</span>
+                      <span className="text-caption text-oro/20 uppercase tracking-widest italic"></span>
                     )}
                   </td>
                 </tr>

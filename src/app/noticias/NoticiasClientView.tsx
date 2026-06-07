@@ -32,14 +32,14 @@ export default function NoticiasClientView({
         />
         <div className="flex items-center gap-4">
           <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto" alt="icon" />
-          <h1 className="text-lg xl:text-2xl font-black text-oro uppercase tracking-[0.3em] pt-1">
-            Muro de Anuncios
+          <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
+            MURO <span className="text-oro/40">DE ANUNCIOS</span>
           </h1>
         </div>
       </header>
 
       {/* Selector de Modo Reutilizable (Exclusivo para Admins) */}
-      <AdminViewSelector 
+      <AdminViewSelector
         isAdmin={isAdmin}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
@@ -51,9 +51,9 @@ export default function NoticiasClientView({
           <>
             <div className="mb-10 ninja-card-oro p-8 sm:p-12 xl:p-16">
               <div className="flex items-center gap-6 mb-6">
-                <h1 className="ninja-title text-3xl sm:text-5xl xl:text-8xl">NOTICIAS Y EVENTOS</h1>
+                <h1 className="ninja-title text-3xl sm:text-5xl xl:text-7xl">NOTICIAS Y EVENTOS</h1>
               </div>
-              <p className="text-gris-texto text-base sm:text-lg xl:text-2xl max-w-4xl leading-relaxed">Mantente al día con las últimas actualizaciones del servidor, eventos de rol y parches de equilibrio.</p>
+              <p className="text-gris-texto text-base sm:text-lg xl:text-2xl leading-relaxed">Mantente al día con las últimas actualizaciones del servidor, eventos de rol y parches de equilibrio.</p>
             </div>
 
             <NewsGrid newsList={newsList} isAdmin={isAdmin} />
@@ -67,7 +67,7 @@ export default function NoticiasClientView({
                 </div>
                 <div>
                   <h1 className="ninja-title text-4xl xl:text-5xl italic">REGLAS DE NOTICIAS</h1>
-                  <p className="text-oro/40 text-[10px] xl:text-xs font-black uppercase tracking-[0.4em] mt-2">CONFIGURACIÓN DE ANUNCIOS Y COMUNICADOS</p>
+                  <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.4em] mt-2">CONFIGURACIÓN DE ANUNCIOS Y COMUNICADOS</p>
                 </div>
               </div>
             </header>

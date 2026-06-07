@@ -103,8 +103,7 @@ export default function CombateList({
     <div className="space-y-6">
       <button 
         onClick={startAdding}
-        className="w-full py-8 bg-[#0A0A0A]/40 border-2 border-dashed border-oro/20 hover:border-oro/50 hover:bg-oro/5 text-oro/40 hover:text-oro transition-all font-black uppercase tracking-[0.4em] text-xs flex items-center justify-center gap-4 group"
-        style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}
+        className="w-full py-8 bg-neutral-800/40 border-2 border-dashed border-oro/20 hover:border-oro/50 hover:bg-oro/5 text-oro/40 hover:text-oro transition-all font-black uppercase tracking-[0.4em] text-xs flex items-center justify-center gap-4 group ninja-clip-md"
       >
         <Plus className="w-5 h-5 group-hover:scale-125 transition-transform" /> 
         Añadir Protocolo de Combate
@@ -112,8 +111,7 @@ export default function CombateList({
 
       {(isAdding || editingId) && (
         <div 
-          className="bg-[#0A0A0A]/60 border border-oro/10 p-10 shadow-2xl space-y-6 animate-in slide-in-from-top-4 duration-500 relative overflow-hidden"
-          style={{ clipPath: 'polygon(30px 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%, 0 30px)' }}
+          className="bg-neutral-800/60 border border-oro/10 p-10 shadow-2xl space-y-6 animate-in slide-in-from-top-4 duration-500 relative overflow-hidden ninja-clip-lg"
         >
           <div className="absolute top-0 right-0 w-64 h-64 bg-oro/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
           
@@ -158,19 +156,18 @@ export default function CombateList({
           <DataField label="URL del Manual (Drive)" value={editForm.url_drive} onChange={v => setEditForm({...editForm, url_drive: v})} />
 
           <div className="space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-widest text-oro/30 ml-2">Descripción Técnica</label>
+            <label className="text-caption font-black uppercase tracking-widest text-oro/30 ml-2">Descripción Técnica</label>
             <textarea 
               value={editForm.descripcion} 
               onChange={e => setEditForm({...editForm, descripcion: e.target.value})} 
               rows={3} 
-              className="w-full bg-black/40 border border-oro/10 p-8 text-oro font-bold outline-none focus:border-oro/40 transition-all resize-none placeholder:text-oro/10 text-sm" 
-              style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}
+              className="w-full bg-black/40 border border-oro/10 p-8 text-oro font-bold outline-none focus:border-oro/40 transition-all resize-none placeholder:text-oro/10 text-sm ninja-clip-md"
               placeholder="Detalla los efectos y condiciones de la técnica..."
             />
           </div>
 
           <div className="flex justify-end gap-6 pt-10 border-t border-oro/10">
-            <button onClick={() => {setEditingId(null); setIsAdding(false);}} className="text-[10px] font-black uppercase tracking-widest text-oro/40 hover:text-oro transition-all">Cancelar Operación</button>
+            <button onClick={() => {setEditingId(null); setIsAdding(false);}} className="text-caption font-black uppercase tracking-widest text-oro/40 hover:text-oro transition-all">Cancelar Operación</button>
             <button 
               onClick={handleSave} 
               disabled={loading} 
@@ -188,7 +185,7 @@ export default function CombateList({
         {docs.map((doc) => (
           <div 
             key={doc.id} 
-            className="group flex items-center justify-between p-8 bg-[#0A0A0A]/40 border border-oro/5 hover:border-oro/20 backdrop-blur-sm transition-all relative overflow-hidden"
+            className="group flex items-center justify-between p-8 bg-neutral-800/40 border border-oro/5 hover:border-oro/20 backdrop-blur-sm transition-all relative overflow-hidden"
             style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' }}
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-oro/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-oro/10 transition-all duration-500 pointer-events-none" />
@@ -205,15 +202,13 @@ export default function CombateList({
                   <h4 className="text-xl font-black text-oro uppercase italic tracking-tighter leading-none">{doc.titulo}</h4>
                   <div className="flex items-center gap-2">
                     <span 
-                      className="text-[9px] font-black bg-oro/5 border border-oro/10 px-3 py-1 text-oro/60 uppercase tracking-widest"
-                      style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
+                      className="text-caption font-black bg-oro/5 border border-oro/10 px-3 py-1 text-oro/60 uppercase tracking-widest ninja-clip-sm"
                     >
                       {doc.ramas_clanes?.nombre || 'General'}
                     </span>
                     {doc.sub_especialidades?.nombre && (
                       <span 
-                        className="text-[9px] font-black bg-rojo-sangre/10 border border-rojo-sangre/20 px-3 py-1 text-oro uppercase tracking-widest"
-                        style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
+                        className="text-caption font-black bg-rojo-sangre/10 border border-rojo-sangre/20 px-3 py-1 text-oro uppercase tracking-widest ninja-clip-sm"
                       >
                         {doc.sub_especialidades.nombre}
                       </span>
@@ -245,8 +240,7 @@ export default function CombateList({
 
         {docs.length === 0 && (
           <div 
-            className="py-24 text-center bg-[#0A0A0A]/40 border border-oro/5 backdrop-blur-md"
-            style={{ clipPath: 'polygon(30px 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%, 0 30px)' }}
+            className="py-24 text-center bg-neutral-800/40 border border-oro/5 backdrop-blur-md ninja-clip-lg"
           >
             <p className="text-oro/10 font-black uppercase italic tracking-[0.3em] text-xs">Arsenal vacío</p>
           </div>

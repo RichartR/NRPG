@@ -172,7 +172,7 @@ export default function GlosarioView({
   // Formateador de requisitos visual (ESTILO TABLA COMPACTO - TEMA CLARO)
   const renderRequisitos = (reqs: any) => {
     if (!reqs) return null;
-    if (typeof reqs === 'string') return <span className="text-[9px] text-zinc-600 font-bold">{reqs}</span>;
+    if (typeof reqs === 'string') return <span className="text-caption text-zinc-600 font-bold">{reqs}</span>;
 
     const elements: React.ReactNode[] = [];
 
@@ -207,10 +207,10 @@ export default function GlosarioView({
       elements.push(<span key={key} className="text-zinc-500 font-black">{key.replace('_', ' ').toUpperCase()}: <span className="text-zinc-900">{String(value)}</span></span>);
     });
 
-    if (elements.length === 0) return <span className="text-[9px] text-zinc-600 italic">Sin requisitos técnicos</span>;
+    if (elements.length === 0) return <span className="text-caption text-zinc-600 italic">Sin requisitos técnicos</span>;
 
     return (
-      <div className="flex flex-wrap gap-x-3 gap-y-1 text-[9px] uppercase tracking-tighter leading-tight">
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-caption uppercase tracking-tighter leading-tight">
         {elements.map((el, i) => (
           <React.Fragment key={i}>
             {i > 0 && <span className="text-zinc-300">|</span>}
@@ -269,11 +269,11 @@ export default function GlosarioView({
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="text-[10px] font-black text-oro/40 uppercase tracking-widest whitespace-nowrap">Categorías:</div>
+          <div className="text-caption font-black text-oro/40 uppercase tracking-widest whitespace-nowrap">Categorías:</div>
           <div className="flex gap-3 overflow-x-auto pb-2 w-full custom-scrollbar no-scrollbar items-center">
             <button
               onClick={() => setSelectedCategoria(null)}
-              className={`ninja-btn px-6 py-2 whitespace-nowrap text-[9px] xl:text-xs flex items-center gap-2 ${!selectedCategoria ? 'ninja-btn-oro' : 'ninja-btn-ghost'}`}
+              className={`ninja-btn px-6 py-2 whitespace-nowrap text-caption xl:text-xs flex items-center gap-2 ${!selectedCategoria ? 'ninja-btn-oro' : 'ninja-btn-ghost'}`}
             >
               <Hash className="w-3 h-3" />
               Todos
@@ -282,7 +282,7 @@ export default function GlosarioView({
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategoria(cat.id)}
-                className={`ninja-btn px-6 py-2 whitespace-nowrap text-[9px] xl:text-xs ${selectedCategoria === cat.id ? 'ninja-btn-oro' : 'ninja-btn-ghost'}`}
+                className={`ninja-btn px-6 py-2 whitespace-nowrap text-caption xl:text-xs ${selectedCategoria === cat.id ? 'ninja-btn-oro' : 'ninja-btn-ghost'}`}
               >
                 {cat.nombre}
               </button>
@@ -319,13 +319,13 @@ export default function GlosarioView({
                   {/* NIVEL 2: RAMA / CLAN */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-l-4 border-rojo-sangre pl-6">
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-black text-rojo-sangre/60 uppercase tracking-[0.5em] mb-1 italic">
+                      <span className="text-caption font-black text-rojo-sangre/60 uppercase tracking-[0.5em] mb-1 italic">
                         {ramaGroup.info.tipo === 'clan' ? 'Clan' : 'Rama'}
                       </span>
                       <h3 className="text-3xl xl:text-5xl font-black text-zinc-900 uppercase tracking-widest">
                         {ramaGroup.info.nombre}
                         {ramaGroup.info.tipo === 'clan' && ramaGroup.info.es_especial && (
-                          <span className="ml-3 text-[10px] bg-purple-600/10 border border-purple-500/20 text-purple-600 px-2 py-0.5 font-black tracking-wider uppercase rounded-sm italic align-middle">Especial</span>
+                          <span className="ml-3 text-caption bg-purple-600/10 border border-purple-500/20 text-purple-600 px-2 py-0.5 font-black tracking-wider uppercase rounded-sm italic align-middle">Especial</span>
                         )}
                       </h3>
                     </div>
@@ -359,11 +359,12 @@ export default function GlosarioView({
                               <div className="overflow-x-auto rounded-lg shadow-xl border border-zinc-200">
                                 <table className="w-full text-left border-collapse min-w-[900px] bg-white/60 backdrop-blur-sm">
                                   <thead>
-                                    <tr className="bg-zinc-900 text-[10px] font-black uppercase tracking-[0.2em] text-oro">
+                                    <tr className="bg-zinc-900 text-caption font-black uppercase tracking-[0.2em] text-oro">
                                       <th className="py-5 px-8">Nombre</th>
                                       <th className="py-5 px-8">Requisitos</th>
                                       <th className="py-5 px-8 text-center w-32">Coste EXP</th>
                                       <th className="py-5 px-8 text-center w-32">Coste RYOUS</th>
+                                      <th className="py-5 px-8 text-center w-32">Coste PA</th>
                                     </tr>
                                   </thead>
                                   <tbody className="divide-y divide-zinc-100">
@@ -372,7 +373,7 @@ export default function GlosarioView({
                                         {/* NIVEL 5: SUBCATEGORÍA */}
                                         {subcat.info.nombre !== 'General' && (
                                           <tr className="bg-zinc-50">
-                                            <td colSpan={4} className="py-3 px-8 text-[9px] font-black text-zinc-600 uppercase tracking-[0.4em] text-center border-y border-zinc-100 italic">
+                                            <td colSpan={5} className="py-3 px-8 text-caption font-black text-zinc-600 uppercase tracking-[0.4em] text-center border-y border-zinc-100 italic">
                                               --- {subcat.info.nombre} ---
                                             </td>
                                           </tr>
@@ -391,7 +392,7 @@ export default function GlosarioView({
                                                   )}
                                                 </div>
                                                 {item.nombre_jp && (
-                                                  <span className="text-[10px] font-medium text-zinc-600 uppercase tracking-[0.15em] italic">
+                                                  <span className="text-caption font-medium text-zinc-600 uppercase tracking-[0.15em] italic">
                                                     {item.nombre_es}
                                                   </span>
                                                 )}
@@ -412,6 +413,12 @@ export default function GlosarioView({
                                               <div className="flex flex-col items-center">
                                                 <span className="text-base font-black text-zinc-900">{item.coste_ryous.toLocaleString()}</span>
                                                 <span className="text-[7px] text-zinc-400 uppercase font-black tracking-widest">Ryous</span>
+                                              </div>
+                                            </td>
+                                            <td className="py-3 px-8 text-center">
+                                              <div className="flex flex-col items-center">
+                                                <span className="text-base font-black text-zinc-900">{item.coste_puntos_aprendizaje || 0}</span>
+                                                <span className="text-[7px] text-zinc-400 uppercase font-black tracking-widest">PA</span>
                                               </div>
                                             </td>
                                           </tr>

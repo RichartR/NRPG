@@ -30,7 +30,7 @@ function KeyEditor({ initialKey, onRename }: { initialKey: string, onRename: (ne
           e.currentTarget.blur();
         }
       }}
-      className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white font-bold text-xs outline-none focus:border-emerald-500 transition-all"
+      className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white font-bold text-xs outline-none focus:border-success-text transition-all"
     />
   );
 }
@@ -63,17 +63,17 @@ function ConfigEditor({ path, value, onChange, onRenameKey, onAddProperty, onDel
             return (
               <div key={key} className="flex items-end gap-4 p-4 bg-zinc-900/20 rounded-2xl border border-zinc-900/50 group/prop">
                 <div className="flex-1 space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">Clave</label>
+                  <label className="text-caption font-black uppercase tracking-widest text-zinc-600 ml-1">Clave</label>
                   <KeyEditor initialKey={key} onRename={(newK) => onRenameKey(path, key, newK)} />
                 </div>
                 <div className="flex-[2] space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">Valor</label>
+                  <label className="text-caption font-black uppercase tracking-widest text-zinc-600 ml-1">Valor</label>
                   <input 
                     key={`val-${path.join('-')}-${key}`}
                     type="text"
                     value={val as string | number}
                     onChange={(e) => onChange([...path, key], e.target.value)}
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white font-bold text-xs outline-none focus:border-emerald-500 transition-all"
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white font-bold text-xs outline-none focus:border-success-text transition-all"
                   />
                 </div>
                 <button 
@@ -91,7 +91,7 @@ function ConfigEditor({ path, value, onChange, onRenameKey, onAddProperty, onDel
               <div className="w-full flex items-center justify-between p-6 text-left hover:bg-zinc-900/50 transition-colors">
                 <button 
                   onClick={() => toggleLocal(key)}
-                  className="flex-1 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/70 text-left"
+                  className="flex-1 text-caption font-black uppercase tracking-[0.2em] text-emerald-500/70 text-left"
                 >
                   {key.toUpperCase()}
                 </button>
@@ -128,7 +128,7 @@ function ConfigEditor({ path, value, onChange, onRenameKey, onAddProperty, onDel
         
         <button 
           onClick={() => onAddProperty(path)}
-          className="w-full py-4 border-2 border-dashed border-zinc-900 rounded-[2rem] text-zinc-700 hover:border-emerald-500/30 hover:text-emerald-500 transition-all flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest"
+          className="w-full py-4 border-2 border-dashed border-zinc-900 rounded-[2rem] text-zinc-700 hover:border-success-text/30 hover:text-emerald-500 transition-all flex items-center justify-center gap-2 text-caption font-black uppercase tracking-widest"
         >
           <Plus className="w-4 h-4" /> Añadir Propiedad a esta sección
         </button>
@@ -139,17 +139,17 @@ function ConfigEditor({ path, value, onChange, onRenameKey, onAddProperty, onDel
   return (
     <div className="flex items-end gap-6 w-full">
       <div className="flex-1 space-y-2">
-        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">Valor Principal</label>
+        <label className="text-caption font-black uppercase tracking-widest text-zinc-600 ml-1">Valor Principal</label>
         <input 
           type="text"
           value={value as string | number}
           onChange={(e) => onChange(path, e.target.value)}
-          className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-emerald-500 transition-all"
+          className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-success-text transition-all"
         />
       </div>
       <button 
         onClick={() => onAddProperty(path)}
-        className="px-6 py-4 bg-zinc-900 border border-zinc-800 rounded-2xl text-zinc-500 hover:text-emerald-500 hover:border-emerald-500/30 transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
+        className="px-6 py-4 bg-zinc-900 border border-zinc-800 rounded-2xl text-zinc-500 hover:text-emerald-500 hover:border-success-text/30 transition-all flex items-center gap-2 text-caption font-black uppercase tracking-widest"
         title="Convertir en sección y añadir sub-propiedad"
       >
         <Plus className="w-4 h-4" /> Crear Subsección
@@ -369,7 +369,7 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
             placeholder="Buscar configuración..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-zinc-950 border border-zinc-900 rounded-[2rem] px-10 py-6 text-white font-bold outline-none focus:border-emerald-500 transition-all placeholder:text-zinc-800"
+            className="w-full bg-zinc-950 border border-zinc-900 rounded-[2rem] px-10 py-6 text-white font-bold outline-none focus:border-success-text transition-all placeholder:text-zinc-800"
           />
         </div>
         <button 
@@ -381,7 +381,7 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
       </div>
 
       {isAddingNew && (
-        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-[3rem] p-10 mb-10 space-y-8 animate-in zoom-in-95 duration-300">
+        <div className="bg-emerald-500/10 border border-success-text/30 rounded-[3rem] p-10 mb-10 space-y-8 animate-in zoom-in-95 duration-300">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-black text-emerald-500 uppercase tracking-tighter italic">Crear Nuevo Parámetro</h2>
             <button onClick={() => setIsAddingNew(false)} className="text-zinc-500 hover:text-white transition-colors">Cancelar</button>
@@ -395,7 +395,7 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
             
             <div className="md:col-span-2 bg-zinc-900/50 p-6 rounded-[2rem] border border-zinc-800/50 space-y-4">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-emerald-500/50">Configuración Inicial</h3>
+                <h3 className="text-caption font-black uppercase tracking-widest text-emerald-500/50">Configuración Inicial</h3>
                 <button 
                   onClick={() => {
                     const currentVal = newConfig.valor;
@@ -407,7 +407,7 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
                       valor: { ...newVal, [`nueva_propiedad_${Date.now().toString().slice(-4)}`]: "" }
                     });
                   }}
-                  className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-500 rounded-full text-[9px] font-black uppercase tracking-widest hover:bg-emerald-500/20 transition-all border border-emerald-500/20"
+                  className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-500 rounded-full text-caption font-black uppercase tracking-widest hover:bg-emerald-500/20 transition-all border border-success-text/20"
                 >
                   <Plus className="w-3 h-3" /> Añadir Propiedad / Subsección
                 </button>
@@ -501,7 +501,7 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
           return (
             <div 
               key={config.id} 
-              className={`bg-zinc-950 border transition-all overflow-hidden ${isExpanded ? 'border-emerald-500/50 rounded-[3rem]' : 'border-zinc-900 rounded-[2rem] hover:border-zinc-800'}`}
+              className={`bg-zinc-950 border transition-all overflow-hidden ${isExpanded ? 'border-success-text/50 rounded-[3rem]' : 'border-zinc-900 rounded-[2rem] hover:border-zinc-800'}`}
             >
               <div className="w-full flex items-center justify-between p-8 text-left group">
                 <button 
