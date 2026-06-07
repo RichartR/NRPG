@@ -7,6 +7,7 @@ import { renderDiscordMarkdown } from '@/lib/discord/renderDiscordMarkdown';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import { createClient } from '@/utils/supabase/client';
 import RegistroCard from '@/components/registros/RegistroCard';
+import EventRewardForm from '@/components/admin/EventRewardForm';
 import { PaginationPageInput } from '@/components/ui/PaginationPageInput';
 import { PaginationContainer } from '@/components/ui/PaginationContainer';
 
