@@ -21,6 +21,7 @@ export function useCharacter(characterId: string) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
+  const [freeResetPeriod, setFreeResetPeriod] = useState<boolean>(false);
   const [glosarioCompleto, setGlosarioCompleto] = useState<any[]>([]);
 
   // Master data from Store
@@ -38,15 +39,17 @@ export function useCharacter(characterId: string) {
     try {
       setLoading(true);
       
-      // 1. Carga inicial en paralelo (User, Character, Master Store, Glosario Completo)
-      const [userRes, char, allGlosario] = await Promise.all([
+      // 1. Carga inicial en paralelo (User, Character, Master Store, Glosario Completo, Config)
+      const [userRes, char, allGlosario, isFree] = await Promise.all([
         AuthService.getUser(),
         CharacterService.getCharacterById(Number(characterId)),
         MasterService.getGlosarios(),
+        MasterService.getSystemConfig('periodo_reseteos_gratuitos'),
         masters.initialized ? Promise.resolve() : masters.initialize()
       ]);
 
       const user = userRes.data.user;
+      setFreeResetPeriod(isFree === true || String(isFree) === 'true');
 
       // 2. Cargas secundarias en paralelo (Profile para Admin, y Discord para contenido)
       const [profile, aparienciaMsg, historiaMsg] = await Promise.all([
@@ -662,6 +665,27 @@ export function useCharacter(characterId: string) {
     }
   };
 
+  const reiniciarPersonaje = async () => {
+    if (!character) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/characters/${characterId}/reset`, {
+        method: 'POST'
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Error al reiniciar el personaje');
+      }
+      addToast('¡Personaje reiniciado con éxito!', 'success');
+      setIsEditing(false);
+      await loadData();
+    } catch (err: any) {
+      addToast(err.message || 'Error al reiniciar', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return {
     character,
     originalCharacter: originalCharacter || character,
@@ -675,6 +699,7 @@ export function useCharacter(characterId: string) {
     setActiveTab,
     masters,
     glosarioFiltrado,
+    freeResetPeriod,
     updateField,
     updateStat,
     save,
@@ -682,7 +707,6 @@ export function useCharacter(characterId: string) {
     remove,
     restore,
     refresh: loadData,
-    quickRemoveItem,
-    quickRemoveTechnique
+    reiniciarPersonaje
   };
 }

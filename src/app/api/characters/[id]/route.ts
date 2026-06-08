@@ -127,6 +127,138 @@ export async function PATCH(
           }
         }
 
+        // Calcular reembolsos si el periodo de reseteos gratuitos está activo
+        let refundXp = 0;
+        let refundRyous = 0;
+        let refundPa = 0;
+        let refundMonedaEvento = 0;
+
+        const { data: configReset } = await adminClient
+          .from('sys_configuracion_sistema')
+          .select('valor')
+          .eq('clave', 'periodo_reseteos_gratuitos')
+          .single();
+        const isFreeReset = configReset?.valor === true || String(configReset?.valor) === 'true';
+
+        if (isFreeReset) {
+          // Devolución de Inventario (Objetos)
+          const oldItems = character.personajes_inventario || [];
+          const newItems = data.personajes_inventario || [];
+          const deletedItems = oldItems.filter(oi => !newItems.some((ni: any) => Number(ni.item_id) === Number(oi.item_id)));
+
+          const refundedItemsInfo = [];
+          for (const item of deletedItems) {
+            const { data: res } = await adminClient.rpc('calcular_reembolso_glosario', {
+              p_personaje_id: Number(characterId),
+              p_glosario_id: Number(item.item_id)
+            });
+            if (res) {
+              const rxp = Number(res.xp || 0);
+              const rryous = Number(res.ryous || 0);
+              const rpa = Number(res.pa || 0);
+              const rme = Number(res.moneda_evento || 0);
+              refundXp += rxp;
+              refundRyous += rryous;
+              refundPa += rpa;
+              refundMonedaEvento += rme;
+              if (rxp > 0 || rryous > 0 || rpa > 0 || rme > 0) {
+                refundedItemsInfo.push({ id: item.item_id, nombre: item.info_glosario?.nombre_es || 'Objeto', xp: rxp, ryous: rryous, pa: rpa, moneda_evento: rme });
+              }
+            }
+          }
+
+          // Devolución de Técnicas
+          const oldTecs = character.personajes_tecnicas || [];
+          const newTecs = data.personajes_tecnicas || [];
+          const deletedTecs = oldTecs.filter(ot => !newTecs.some((nt: any) => Number(nt.tecnica_id) === Number(ot.tecnica_id)));
+
+          const refundedTecsInfo = [];
+          for (const tec of deletedTecs) {
+            const { data: res } = await adminClient.rpc('calcular_reembolso_glosario', {
+              p_personaje_id: Number(characterId),
+              p_glosario_id: Number(tec.tecnica_id)
+            });
+            if (res) {
+              const rxp = Number(res.xp || 0);
+              const rryous = Number(res.ryous || 0);
+              const rpa = Number(res.pa || 0);
+              const rme = Number(res.moneda_evento || 0);
+              refundXp += rxp;
+              refundRyous += rryous;
+              refundPa += rpa;
+              refundMonedaEvento += rme;
+              if (rxp > 0 || rryous > 0 || rpa > 0 || rme > 0) {
+                refundedTecsInfo.push({ id: tec.tecnica_id, nombre: tec.info_glosario?.nombre_es || 'Técnica', xp: rxp, ryous: rryous, pa: rpa, moneda_evento: rme });
+              }
+            }
+          }
+
+          // Devolución de Entrenamientos
+          const oldTrainings = character.personajes_entrenamientos || [];
+          const newTrainings = data.personajes_entrenamientos || [];
+          const deletedTrainings = oldTrainings.filter(ot => !newTrainings.some((nt: any) => Number(nt.entrenamiento_id) === Number(ot.entrenamiento_id)));
+
+          const refundedTrainingsInfo = [];
+          for (const tr of deletedTrainings) {
+            const { data: res } = await adminClient.rpc('calcular_reembolso_entrenamiento', {
+              p_personaje_id: Number(characterId),
+              p_entrenamiento_id: Number(tr.entrenamiento_id)
+            });
+            if (res) {
+              const rxp = Number(res.xp || 0);
+              const rryous = Number(res.ryous || 0);
+              const rpa = Number(res.pa || 0);
+              refundXp += rxp;
+              refundRyous += rryous;
+              refundPa += rpa;
+              if (rxp > 0 || rryous > 0 || rpa > 0) {
+                refundedTrainingsInfo.push({ id: tr.entrenamiento_id, nombre: tr.info_entrenamientos?.nombre_esp || 'Entrenamiento', xp: rxp, ryous: rryous, pa: rpa });
+              }
+            }
+          }
+
+          // Registrar las devoluciones
+          if (refundXp > 0 || refundRyous > 0 || refundPa > 0 || refundMonedaEvento > 0) {
+            const itemsList = refundedItemsInfo.map(i => i.nombre).join(', ');
+            const tecsList = refundedTecsInfo.map(t => t.nombre).join(', ');
+            const trsList = refundedTrainingsInfo.map(t => t.nombre).join(', ');
+            
+            const refundText = [
+              refundXp > 0 && `${refundXp} EXP`,
+              refundRyous > 0 && `${refundRyous} Ryous`,
+              refundPa > 0 && `${refundPa} PA`,
+              refundMonedaEvento > 0 && `${refundMonedaEvento} Monedas de Evento`
+            ].filter(Boolean).join(', ');
+
+            let details = '';
+            if (itemsList) details += `Objetos devueltos: ${itemsList}. `;
+            if (tecsList) details += `Técnicas devueltas: ${tecsList}. `;
+            if (trsList) details += `Entrenamientos devueltos: ${trsList}. `;
+
+            const { data: registro } = await adminClient.from('reg_registros').insert({
+              tipo: 'accion',
+              autor_id: characterId,
+              data: {
+                titulo: `${character.nombre_ninja} devuelve elementos y recibe reembolso: +${refundText}`,
+                subtitulo: details,
+                tipo_accion: 'reembolso_devoluciones',
+                refund_xp: refundXp,
+                refund_ryous: refundRyous,
+                refund_pa: refundPa,
+                refund_moneda_evento: refundMonedaEvento
+              }
+            }).select().single();
+
+            if (registro) {
+              await adminClient.from('reg_registros_participantes').insert({
+                registro_id: registro.id,
+                personaje_id: characterId,
+                estado: 'aceptado'
+              });
+            }
+          }
+        }
+
         updateData = {
           hobba_name: data.hobba_name,
           nombre_ninja: data.nombre_ninja,
@@ -136,9 +268,10 @@ export async function PATCH(
           stats_base: data.stats_base,
           atributos_derivados: data.atributos_derivados,
           puntos_stats: data.puntos_stats,
-          xp: data.xp,
-          ryous: data.ryous,
-          puntos_aprendizaje: data.puntos_aprendizaje,
+          xp: Number(data.xp || 0) + refundXp,
+          ryous: Number(data.ryous || 0) + refundRyous,
+          puntos_aprendizaje: Number(data.puntos_aprendizaje || 0) + refundPa,
+          moneda_evento: Number(data.moneda_evento || 0) + refundMonedaEvento,
           tiempo_rpg: data.tiempo_rpg,
           edad: data.edad,
           sexo: data.sexo,

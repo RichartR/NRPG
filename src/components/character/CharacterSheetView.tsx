@@ -20,6 +20,7 @@ import { SectionCard } from '@/components/ui/SectionCard';
 import { DataField, SelectField, SearchableSelect, NinjaSelect, FormEditContext } from '@/components/ui/Fields';
 import { Character, CharacterStats, Glosario, PersonajeItem, PersonajeTecnica, Registro, Rasgo, PersonajeRasgo } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
+import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import RegistroCard from '@/components/registros/RegistroCard';
 import MissionTable from '@/components/registros/MissionTable';
 import { PaginationPageInput } from '@/components/ui/PaginationPageInput';
@@ -53,8 +54,8 @@ interface CharacterSheetViewProps {
   onBack: () => void;
   onRefresh?: () => void;
   setIsEditing?: (val: boolean) => void;
-  onQuickRemoveItem?: (item: PersonajeItem) => Promise<void>;
-  onQuickRemoveTechnique?: (tec: PersonajeTecnica) => Promise<void>;
+  freeResetPeriod?: boolean;
+  onResetCharacter?: () => Promise<void>;
 }
 
 export function CharacterSheetView({
@@ -78,10 +79,32 @@ export function CharacterSheetView({
   onBack,
   onRefresh,
   setIsEditing,
-  onQuickRemoveItem,
-  onQuickRemoveTechnique
+  freeResetPeriod = false,
+  onResetCharacter
 }: CharacterSheetViewProps) {
   const addToast = useToastStore(state => state.addToast);
+  const { confirm: confirmAction } = useConfirmStore();
+
+  const handleResetClick = async () => {
+    if (!onResetCharacter) return;
+    
+    const message = freeResetPeriod 
+      ? '¿ESTÁS SEGURO? Estás en periodo de RESETEO GRATUITO. Empezarás desde 0 pero mantendrás el 100% de tus recursos (Experiencia, Ryous, PA y Monedas de Evento). Los clanes, técnicas, entrenamientos y aldea se resetearán.'
+      : '¿ESTÁS SEGURO? El reseteo tiene un COSTE DEL 25% DE LOS RECURSOS. Perderás el 25% de tu Experiencia, Ryous, PA y Monedas de Evento. Los clanes, técnicas, entrenamientos y aldea se resetearán. Esta acción es irreversible.';
+
+    const ok = await confirmAction({
+      title: 'Reiniciar Personaje',
+      message,
+      variant: 'danger',
+      confirmLabel: 'Reiniciar Personaje',
+      requireValidation: true,
+      validationWord: 'Reiniciar'
+    });
+
+    if (ok) {
+      await onResetCharacter();
+    }
+  };
   const [mounted, setMounted] = useState(false);
   const [eventCoinName, setEventCoinName] = useState('Monedas de Evento');
 
@@ -1020,6 +1043,16 @@ export function CharacterSheetView({
                   </button>
                 )}
 
+                {!isNew && canEdit && isEditing && onResetCharacter && (
+                  <button
+                    onClick={handleResetClick}
+                    disabled={saving}
+                    className="px-5 sm:px-8 py-2.5 text-xs sm:text-sm font-black uppercase tracking-widest transition-all ninja-btn-rojo disabled:opacity-50"
+                  >
+                    REINICIAR PERSONAJE
+                  </button>
+                )}
+
                 {(!isNew && canEdit) && (
                   <button
                     onClick={() => isEditing ? onCancel() : setIsEditing?.(true)}
@@ -1935,16 +1968,12 @@ export function CharacterSheetView({
                                                   <button
                                                     onClick={() => {
                                                       const isNewlyAdded = !pi.id;
-                                                      if (isEditing || isNew) {
-                                                        if (isNewlyAdded) {
-                                                          if (pi.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pi.info_glosario.coste_exp);
-                                                          if (pi.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pi.info_glosario.coste_ryous);
-                                                          if (pi.info_glosario?.coste_puntos_aprendizaje) onUpdateField('puntos_aprendizaje', (character.puntos_aprendizaje || 0) + pi.info_glosario.coste_puntos_aprendizaje);
-                                                        }
-                                                        onUpdateField('personajes_inventario', character.personajes_inventario?.filter((i: PersonajeItem) => i.item_id !== pi.item_id));
-                                                      } else {
-                                                        onQuickRemoveItem?.(pi);
+                                                      if (isNewlyAdded) {
+                                                        if (pi.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pi.info_glosario.coste_exp);
+                                                        if (pi.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pi.info_glosario.coste_ryous);
+                                                        if (pi.info_glosario?.coste_puntos_aprendizaje) onUpdateField('puntos_aprendizaje', (character.puntos_aprendizaje || 0) + pi.info_glosario.coste_puntos_aprendizaje);
                                                       }
+                                                      onUpdateField('personajes_inventario', character.personajes_inventario?.filter((i: PersonajeItem) => i.item_id !== pi.item_id));
                                                     }}
                                                     className="p-2 bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
                                                     title="Eliminar Objeto"
@@ -2124,16 +2153,12 @@ export function CharacterSheetView({
                                                         <button
                                                           onClick={() => {
                                                             const isNewlyAdded = !pt.id;
-                                                            if (isEditing || isNew) {
-                                                              if (isNewlyAdded) {
-                                                                if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
-                                                                if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
-                                                                if (pt.info_glosario?.coste_puntos_aprendizaje) onUpdateField('puntos_aprendizaje', (character.puntos_aprendizaje || 0) + pt.info_glosario.coste_puntos_aprendizaje);
-                                                              }
-                                                              onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
-                                                            } else {
-                                                              onQuickRemoveTechnique?.(pt);
+                                                            if (isNewlyAdded) {
+                                                              if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
+                                                              if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
+                                                              if (pt.info_glosario?.coste_puntos_aprendizaje) onUpdateField('puntos_aprendizaje', (character.puntos_aprendizaje || 0) + pt.info_glosario.coste_puntos_aprendizaje);
                                                             }
+                                                            onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
                                                           }}
                                                           className="p-2 bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
                                                           title="Eliminar Técnica"
@@ -2285,16 +2310,12 @@ export function CharacterSheetView({
                                                         <button
                                                           onClick={() => {
                                                             const isNewlyAdded = !pt.id;
-                                                            if (isEditing || isNew) {
-                                                              if (isNewlyAdded) {
-                                                                if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
-                                                                if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
-                                                                if (pt.info_glosario?.coste_puntos_aprendizaje) onUpdateField('puntos_aprendizaje', (character.puntos_aprendizaje || 0) + pt.info_glosario.coste_puntos_aprendizaje);
-                                                              }
-                                                              onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
-                                                            } else {
-                                                              onQuickRemoveTechnique?.(pt);
-                                                            }
+                                                            if (isNewlyAdded) {
+                                                               if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
+                                                               if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
+                                                               if (pt.info_glosario?.coste_puntos_aprendizaje) onUpdateField('puntos_aprendizaje', (character.puntos_aprendizaje || 0) + pt.info_glosario.coste_puntos_aprendizaje);
+                                                             }
+                                                             onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
                                                           }}
                                                           className="p-2 bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
                                                           title="Eliminar Pasiva"
@@ -2445,16 +2466,12 @@ export function CharacterSheetView({
                                                         <button
                                                           onClick={() => {
                                                             const isNewlyAdded = !pt.id;
-                                                            if (isEditing || isNew) {
-                                                              if (isNewlyAdded) {
-                                                                if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
-                                                                if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
-                                                                if (pt.info_glosario?.coste_puntos_aprendizaje) onUpdateField('puntos_aprendizaje', (character.puntos_aprendizaje || 0) + pt.info_glosario.coste_puntos_aprendizaje);
-                                                              }
-                                                              onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
-                                                            } else {
-                                                              onQuickRemoveTechnique?.(pt);
-                                                            }
+                                                            if (isNewlyAdded) {
+                                                               if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
+                                                               if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
+                                                               if (pt.info_glosario?.coste_puntos_aprendizaje) onUpdateField('puntos_aprendizaje', (character.puntos_aprendizaje || 0) + pt.info_glosario.coste_puntos_aprendizaje);
+                                                             }
+                                                             onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
                                                           }}
                                                           className="p-2 bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
                                                           title="Eliminar Invocación"

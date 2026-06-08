@@ -6,6 +6,8 @@ import NinjaCard from '@/components/ui/NinjaCard';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import AdminViewSelector from '@/components/admin/AdminViewSelector';
 import AldeaList from '@/components/admin/AldeaList';
+import { AdminService } from '@/services/supabase/admin.service';
+import { useToastStore } from '@/components/ui/Toast';
 
 interface MundoNinjaClientViewProps {
   aldeas: any[];
@@ -13,6 +15,7 @@ interface MundoNinjaClientViewProps {
   maxCupos: number;
   isAdmin: boolean;
   adminAldeas: any[];
+  initialConfigReseteo?: any;
 }
 
 function getTitleFontSize(name: string) {
@@ -32,8 +35,34 @@ export default function MundoNinjaClientView({
   maxCupos,
   isAdmin,
   adminAldeas,
+  initialConfigReseteo,
 }: MundoNinjaClientViewProps) {
   const [viewMode, setViewMode] = useState<'player' | 'admin'>('player');
+  const [configReseteo, setConfigReseteo] = useState<any>(initialConfigReseteo);
+  const [updatingReseteo, setUpdatingReseteo] = useState(false);
+  const addToast = useToastStore((state) => state.addToast);
+
+  const configReseteoValue = configReseteo?.valor === true || String(configReseteo?.valor) === 'true';
+
+  const handleToggleReseteos = async () => {
+    if (!configReseteo) return;
+    setUpdatingReseteo(true);
+    try {
+      const newValue = !configReseteoValue;
+      const updated = await AdminService.updateConfig(configReseteo.id, newValue);
+      setConfigReseteo(updated);
+      addToast(
+        newValue
+          ? 'Periodo de reseteos gratuitos ACTIVADO con éxito.'
+          : 'Periodo de reseteos gratuitos DESACTIVADO (reseteos con coste del 25%).',
+        'success'
+      );
+    } catch (err: any) {
+      addToast(err.message || 'Error al actualizar la configuración', 'error');
+    } finally {
+      setUpdatingReseteo(false);
+    }
+  };
 
   const getCount = (id: number | null) => {
     return id ? countsMap[id] || 0 : countsMap['renegados'] || 0;
@@ -152,6 +181,37 @@ export default function MundoNinjaClientView({
                 </div>
               </div>
             </header>
+
+            {configReseteo && (
+              <div className="mb-6 ninja-card-oro p-8 xl:p-10 relative overflow-hidden group">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
+                  <div className="space-y-2">
+                    <h2 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-3">
+                      <span className={`w-2.5 h-2.5 rounded-full ${configReseteoValue ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
+                      {configReseteo.titulo}
+                    </h2>
+                    <p className="text-sm text-oro/60 max-w-2xl font-semibold leading-relaxed">
+                      {configReseteo.descripcion}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-6 shrink-0">
+                    <span className={`text-xs font-black uppercase tracking-[0.2em] ${configReseteoValue ? 'text-emerald-400' : 'text-rojo-sangre'}`}>
+                      {configReseteoValue ? 'GRATUITOS ACTIVADOS' : 'COSTE 25% ACTIVO'}
+                    </span>
+                    <button
+                      onClick={handleToggleReseteos}
+                      disabled={updatingReseteo}
+                      className={`px-6 py-3 text-xs sm:text-sm font-black uppercase tracking-widest transition-all ${configReseteoValue
+                        ? 'ninja-btn-rojo'
+                        : 'ninja-btn-oro'
+                        }`}
+                    >
+                      {updatingReseteo ? 'ACTUALIZANDO...' : configReseteoValue ? 'DESACTIVAR' : 'ACTIVAR'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <AldeaList initialAldeas={adminAldeas} />
           </div>
