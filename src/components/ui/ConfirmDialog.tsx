@@ -12,6 +12,7 @@ interface ConfirmOptions {
   cancelLabel?: string;
   variant?: 'danger' | 'primary';
   requireValidation?: boolean;
+  validationWord?: string;
 }
 
 interface ConfirmState {
@@ -48,7 +49,8 @@ export function ConfirmContainer() {
 
   if (!isOpen || !options) return null;
 
-  const isInvalid = options.requireValidation && inputValue.toLowerCase() !== 'borrar';
+  const validWord = (options.validationWord || 'borrar').toLowerCase();
+  const isInvalid = options.requireValidation && inputValue.toLowerCase() !== validWord;
   const isDanger = options.variant === 'danger';
 
   return (
@@ -114,7 +116,7 @@ export function ConfirmContainer() {
           {options.requireValidation && (
             <div className="mb-10 space-y-4 animate-in slide-in-from-top-2 duration-500">
               <label className="text-caption font-black uppercase tracking-[0.2em] text-[#050309]/60 ml-1 block">
-                Escribe <span className={`${isDanger ? 'text-rojo-sangre' : 'text-oro-sombra'} font-black`}>borrar</span> para continuar
+                Escribe <span className={`${isDanger ? 'text-rojo-sangre' : 'text-oro-sombra'} font-black`}>{options.validationWord || 'borrar'}</span> para continuar
               </label>
               <input 
                 type="text" 

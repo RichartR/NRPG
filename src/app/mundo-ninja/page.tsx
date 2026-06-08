@@ -25,8 +25,18 @@ export default async function MundoNinjaSelectionPage() {
 
   // 4. Load admin-only villages (all active and inactive) if user is admin
   let adminAldeas: any[] = [];
+  let initialConfigReseteo: any = null;
   if (isAdmin) {
-    adminAldeas = await MasterServerService.getAdminAldeas(supabase);
+    const [aldeasData, reseteoData] = await Promise.all([
+      MasterServerService.getAdminAldeas(supabase),
+      supabase
+        .from('sys_configuracion_sistema')
+        .select('*')
+        .eq('clave', 'periodo_reseteos_gratuitos')
+        .maybeSingle()
+    ]);
+    adminAldeas = aldeasData;
+    initialConfigReseteo = reseteoData.data;
   }
 
   return (
@@ -36,6 +46,7 @@ export default async function MundoNinjaSelectionPage() {
       maxCupos={maxCupos}
       isAdmin={isAdmin}
       adminAldeas={adminAldeas}
+      initialConfigReseteo={initialConfigReseteo}
     />
   );
 }

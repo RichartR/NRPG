@@ -29,8 +29,8 @@ export default function FichaPublicPage() {
     restore,
     refresh,
     glosarioFiltrado,
-    quickRemoveItem,
-    quickRemoveTechnique
+    freeResetPeriod,
+    reiniciarPersonaje
   } = useCharacter(id);
 
   if (loading || !character) {
@@ -65,8 +65,8 @@ export default function FichaPublicPage() {
       onSetActiveTab={setActiveTab}
       onBack={() => router.back()}
       setIsEditing={setIsEditing}
-      onQuickRemoveItem={quickRemoveItem}
-      onQuickRemoveTechnique={quickRemoveTechnique}
+      freeResetPeriod={freeResetPeriod}
+      onResetCharacter={reiniciarPersonaje}
     />
   );
 }
