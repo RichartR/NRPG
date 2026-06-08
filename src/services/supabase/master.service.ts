@@ -205,5 +205,54 @@ export const MasterService = {
       if (!aIsMain && bIsMain) return 1;
       return a.id - b.id;
     });
+  },
+
+  async getEquiposAldea(aldeaId: number): Promise<any[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('reg_equipos_ninja')
+      .select(`
+        *,
+        lider:lider_id(id, nombre_ninja, profiles:user_id(username)),
+        integrante_1:integrante_1_id(id, nombre_ninja, profiles:user_id(username)),
+        integrante_2:integrante_2_id(id, nombre_ninja, profiles:user_id(username)),
+        integrante_3:integrante_3_id(id, nombre_ninja, profiles:user_id(username))
+      `)
+      .eq('aldea_id', aldeaId)
+      .eq('activo', true)
+      .order('fecha_creacion', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async crearEquipo(nombreEquipo: string, aldeaId: number, liderId: number, int1Id: number, int2Id: number | null, int3Id: number | null): Promise<any> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('reg_equipos_ninja')
+      .insert({
+        nombre_equipo: nombreEquipo,
+        aldea_id: aldeaId,
+        lider_id: liderId,
+        integrante_1_id: int1Id,
+        integrante_2_id: int2Id,
+        integrante_3_id: int3Id,
+        activo: true
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async disolverEquipo(equipoId: number): Promise<any> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('reg_equipos_ninja')
+      .update({ activo: false, fecha_disolucion: new Date().toISOString() })
+      .eq('id', equipoId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
   }
 };

@@ -412,5 +412,22 @@ export const MasterServerService = {
       .order('created_at', { ascending: false });
     if (error) throw error;
     return data || [];
+  },
+
+  async getEquiposAldea(supabase: SupabaseClient, aldeaId: number): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('reg_equipos_ninja')
+      .select(`
+        *,
+        lider:lider_id(id, nombre_ninja, profiles:user_id(username)),
+        integrante_1:integrante_1_id(id, nombre_ninja, profiles:user_id(username)),
+        integrante_2:integrante_2_id(id, nombre_ninja, profiles:user_id(username)),
+        integrante_3:integrante_3_id(id, nombre_ninja, profiles:user_id(username))
+      `)
+      .eq('aldea_id', aldeaId)
+      .eq('activo', true)
+      .order('fecha_creacion', { ascending: false });
+    if (error) throw error;
+    return data || [];
   }
 };
