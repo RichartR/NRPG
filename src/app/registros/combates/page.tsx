@@ -86,7 +86,7 @@ export default function CombatesPage() {
                 onClick={() => setShowForm(true)}
                 disabled={!activeCharacter}
                 title={!activeCharacter ? "Requiere tener un personaje activo en tu ficha shinobi" : undefined}
-                className="flex items-center gap-3 px-6 py-2.5 ninja-btn-rojo w-full sm:w-auto justify-center text-xs disabled:opacity-30 disabled:cursor-not-allowed uppercase tracking-widest font-black shrink-0"
+                className="flex items-center gap-3 px-6 py-2.5 ninja-btn-oro w-full sm:w-auto justify-center text-xs disabled:opacity-30 disabled:cursor-not-allowed uppercase tracking-widest font-black shrink-0"
               >
                 <Plus className="w-4 h-4" /> NUEVO COMBATE
               </button>

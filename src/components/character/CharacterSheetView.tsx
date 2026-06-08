@@ -9,7 +9,8 @@ import {
   Coins,
   ChevronUp,
   ChevronDown,
-  Flame
+  Flame,
+  Shield
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
@@ -32,6 +33,7 @@ import CombatForm from '@/components/registros/CombatForm';
 import { CharacterRadarChart } from './CharacterRadarChart';
 import { useState, useMemo, useEffect, Fragment } from 'react';
 import { resolveAldeaIcono } from '@/utils/aldea-icon';
+import { createClient } from '@/utils/supabase/client';
 
 interface CharacterSheetViewProps {
   character: Character;
@@ -87,8 +89,8 @@ export function CharacterSheetView({
 
   const handleResetClick = async () => {
     if (!onResetCharacter) return;
-    
-    const message = freeResetPeriod 
+
+    const message = freeResetPeriod
       ? '¿ESTÁS SEGURO? Estás en periodo de RESETEO GRATUITO. Empezarás desde 0 pero mantendrás el 100% de tus recursos (Experiencia, Ryous, PA y Monedas de Evento). Los clanes, técnicas, entrenamientos y aldea se resetearán.'
       : '¿ESTÁS SEGURO? El reseteo tiene un COSTE DEL 25% DE LOS RECURSOS. Perderás el 25% de tu Experiencia, Ryous, PA y Monedas de Evento. Los clanes, técnicas, entrenamientos y aldea se resetearán. Esta acción es irreversible.';
 
@@ -109,9 +111,12 @@ export function CharacterSheetView({
   const [eventCoinName, setEventCoinName] = useState('Monedas de Evento');
 
   const [rasgosList, setRasgosList] = useState<Rasgo[]>([]);
+  const [activeTeam, setActiveTeam] = useState<any>(null);
 
   useEffect(() => {
     setMounted(true);
+    const supabase = createClient();
+
     const fetchEventCoinName = async () => {
       try {
         const val = await MasterService.getSystemConfig('moneda_evento_nombre');
@@ -128,9 +133,35 @@ export function CharacterSheetView({
         console.error("Error fetching rasgos in CharacterSheetView:", err);
       }
     };
+    const fetchActiveTeam = async () => {
+      if (!character?.id) return;
+      try {
+        const { data, error } = await supabase
+          .from('reg_equipos_ninja')
+          .select(`
+            id,
+            nombre_equipo,
+            fecha_creacion,
+            lider:lider_id(nombre_ninja),
+            integrante_1:integrante_1_id(nombre_ninja),
+            integrante_2:integrante_2_id(nombre_ninja),
+            integrante_3:integrante_3_id(nombre_ninja)
+          `)
+          .eq('activo', true)
+          .or(`lider_id.eq.${character.id},integrante_1_id.eq.${character.id},integrante_2_id.eq.${character.id},integrante_3_id.eq.${character.id}`)
+          .maybeSingle();
+
+        if (error) throw error;
+        setActiveTeam(data || null);
+      } catch (err) {
+        console.error("Error fetching active team in CharacterSheetView:", err);
+      }
+    };
+
     fetchEventCoinName();
     fetchRasgos();
-  }, []);
+    fetchActiveTeam();
+  }, [character?.id]);
 
   // Synchronize auto-assigned traits based on character's branches, clans, and rank
   useEffect(() => {
@@ -1296,6 +1327,37 @@ export function CharacterSheetView({
                       disabled={!isEditing && !isNew}
                       onChange={(v) => onUpdateField('rango_jerarquico', v)}
                     />
+                    {activeTeam && (
+                      <div className="md:col-span-2 bg-black/40 border border-oro/10 p-5 rounded ninja-clip-sm flex flex-col gap-2 mt-4">
+                        <div className="flex items-center gap-2 text-oro font-black uppercase text-xs tracking-widest">
+                          Equipo Ninja: <span className="text-oro uppercase normal-case font-bold">{activeTeam.nombre_equipo}</span>
+                        </div>
+                        <div className="text-xs text-oro/60 flex flex-col sm:flex-row sm:gap-6 gap-2 mt-1">
+                          <div>
+                            <span className="font-black text-oro/40 uppercase tracking-wider">Líder: </span>
+                            <span className="text-oro uppercase font-bold">{activeTeam.lider?.nombre_ninja || 'SIN LÍDER'}</span>
+                          </div>
+                          <div>
+                            <span className="font-black text-oro/40 uppercase tracking-wider">Miembros: </span>
+                            <span className="text-oro uppercase font-bold">
+                              {[
+                                activeTeam.integrante_1?.nombre_ninja,
+                                activeTeam.integrante_2?.nombre_ninja,
+                                activeTeam.integrante_3?.nombre_ninja
+                              ].filter(Boolean).join(', ')}
+                            </span>
+                          </div>
+                          {activeTeam.fecha_creacion && (
+                            <div>
+                              <span className="font-black text-oro/40 uppercase tracking-wider">Creado: </span>
+                              <span className="text-oro uppercase font-bold">
+                                {new Date(activeTeam.fecha_creacion).toLocaleDateString('es-ES')}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </SectionCard>
 
@@ -2060,11 +2122,10 @@ export function CharacterSheetView({
                     <button
                       key={tab}
                       onClick={() => setTecnicasSubTab(tab)}
-                      className={`px-8 sm:px-16 py-4 text-[11px] xl:text-sm font-black uppercase tracking-widest transition-all duration-300 border ninja-clip-sm shrink-0 relative group flex items-center gap-4 ${
-                        isActive
-                          ? 'bg-oro text-rojo-sangre border-oro shadow-[0_0_30px_rgba(255,230,159,0.5)]'
-                          : 'bg-black/60 text-oro/30 border-oro/10 hover:border-oro/60 hover:text-oro hover:bg-black/90'
-                      }`}
+                      className={`px-8 sm:px-16 py-4 text-[11px] xl:text-sm font-black uppercase tracking-widest transition-all duration-300 border ninja-clip-sm shrink-0 relative group flex items-center gap-4 ${isActive
+                        ? 'bg-oro text-rojo-sangre border-oro shadow-[0_0_30px_rgba(255,230,159,0.5)]'
+                        : 'bg-black/60 text-oro/30 border-oro/10 hover:border-oro/60 hover:text-oro hover:bg-black/90'
+                        }`}
                     >
                       <span>{label}</span>
                       {!isActive && (
@@ -2311,11 +2372,11 @@ export function CharacterSheetView({
                                                           onClick={() => {
                                                             const isNewlyAdded = !pt.id;
                                                             if (isNewlyAdded) {
-                                                               if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
-                                                               if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
-                                                               if (pt.info_glosario?.coste_puntos_aprendizaje) onUpdateField('puntos_aprendizaje', (character.puntos_aprendizaje || 0) + pt.info_glosario.coste_puntos_aprendizaje);
-                                                             }
-                                                             onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
+                                                              if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
+                                                              if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
+                                                              if (pt.info_glosario?.coste_puntos_aprendizaje) onUpdateField('puntos_aprendizaje', (character.puntos_aprendizaje || 0) + pt.info_glosario.coste_puntos_aprendizaje);
+                                                            }
+                                                            onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
                                                           }}
                                                           className="p-2 bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
                                                           title="Eliminar Pasiva"
@@ -2467,11 +2528,11 @@ export function CharacterSheetView({
                                                           onClick={() => {
                                                             const isNewlyAdded = !pt.id;
                                                             if (isNewlyAdded) {
-                                                               if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
-                                                               if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
-                                                               if (pt.info_glosario?.coste_puntos_aprendizaje) onUpdateField('puntos_aprendizaje', (character.puntos_aprendizaje || 0) + pt.info_glosario.coste_puntos_aprendizaje);
-                                                             }
-                                                             onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
+                                                              if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
+                                                              if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
+                                                              if (pt.info_glosario?.coste_puntos_aprendizaje) onUpdateField('puntos_aprendizaje', (character.puntos_aprendizaje || 0) + pt.info_glosario.coste_puntos_aprendizaje);
+                                                            }
+                                                            onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
                                                           }}
                                                           className="p-2 bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
                                                           title="Eliminar Invocación"
