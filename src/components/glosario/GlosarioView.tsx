@@ -390,6 +390,11 @@ export default function GlosarioView({
                                                   {item.inicial && (
                                                     <span className="text-[7px] bg-rojo-sangre text-white px-1.5 py-0.5 font-black uppercase tracking-widest rounded-sm">Inic.</span>
                                                   )}
+                                                  {item.basica !== undefined && (
+                                                    <span className={`text-[7px] ${item.basica ? 'bg-sky-600 text-white' : 'bg-purple-600 text-white'} px-1.5 py-0.5 font-black uppercase tracking-widest rounded-sm`}>
+                                                      {item.basica ? 'Básica' : 'Avanzada'}
+                                                    </span>
+                                                  )}
                                                 </div>
                                                 {item.nombre_jp && (
                                                   <span className="text-caption font-medium text-zinc-600 uppercase tracking-[0.15em] italic">

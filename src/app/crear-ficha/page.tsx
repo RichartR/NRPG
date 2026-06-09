@@ -153,12 +153,29 @@ function CrearFichaContent() {
         return true;
       };
 
+      const ninjutsuRama = form.personajes_ramas.find((r: any) => Number(r.rama_id) === 4);
+      let isNinIIorIII = false;
+      if (ninjutsuRama && ninjutsuRama.sub_especialidad_id) {
+        const sub = (masters.subEspecialidades || []).find((s: any) => s.id === ninjutsuRama.sub_especialidad_id);
+        if (sub && (sub.slug === 'ninjutsu-ii' || sub.slug === 'ninjutsu-iii')) {
+          isNinIIorIII = true;
+        }
+      }
+
       const initialItems = masters.glosario
         .filter((i: any) => i.inicial && i.categoria_id === 2 && meetsAllReqs(i))
         .map((i: any) => ({ item_id: i.id, cantidad: 1, info_glosario: i }));
       
       const initialTecs = masters.glosario
-        .filter((t: any) => t.inicial && t.categoria_id !== 2 && meetsAllReqs(t))
+        .filter((t: any) => {
+          if (t.inicial && t.categoria_id !== 2 && meetsAllReqs(t)) {
+            if (isNinIIorIII && Number(t.rama_clan_id) === 4) {
+              return false;
+            }
+            return true;
+          }
+          return false;
+        })
         .map((t: any) => ({ tecnica_id: t.id, info_glosario: t }));
 
       setForm((prev: any) => ({
@@ -167,7 +184,7 @@ function CrearFichaContent() {
         personajes_tecnicas: initialTecs
       }));
     }
-  }, [masters.initialized, masters.glosario, equipedRamaIdsStr, initialReqsStr]);
+  }, [masters.initialized, masters.glosario, equipedRamaIdsStr, initialReqsStr, form.personajes_ramas]);
 
   // Recalcular atributos derivados cuando cambian los stats
   useEffect(() => {

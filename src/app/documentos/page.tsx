@@ -1,4 +1,3 @@
-import { Swords } from 'lucide-react';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import NinjaCard from '@/components/ui/NinjaCard';
 

@@ -45,6 +45,32 @@ export async function PATCH(
     // 2. Lógica por secciones
     switch (section) {
       case 'all':
+        // Validar límites de Ninjutsu Elemental
+        {
+          const techIds = (data.personajes_tecnicas || []).map((t: any) => Number(t.tecnica_id)).filter(Boolean);
+          let techDetails: any[] = [];
+          if (techIds.length > 0) {
+            const { data: fetchedTechs } = await supabase
+              .from('info_glosario')
+              .select('*')
+              .in('id', techIds);
+            techDetails = fetchedTechs || [];
+          }
+          const { data: subSpecs } = await supabase
+            .from('info_sub_especialidades')
+            .select('*');
+
+          const { NinjutsuLogic } = await import('@/domain/character/logic');
+          const validation = NinjutsuLogic.validateNinjutsuLimits(
+            data.personajes_ramas || character.personajes_ramas || [],
+            techDetails,
+            subSpecs || []
+          );
+          if (!validation.valid) {
+            return NextResponse.json({ error: validation.error }, { status: 400 });
+          }
+        }
+
         // Validar cupos máximos de la aldea/organización si cambia y el personaje está activo
         if (character.activo && !character.eliminado_voluntario) {
           if (data.aldea_id && Number(data.aldea_id) !== Number(character.aldea_id)) {
@@ -406,6 +432,30 @@ export async function PATCH(
 
       case 'tecnicas':
         if (data.personajes_tecnicas) {
+          // Validar límites de Ninjutsu Elemental
+          const techIds = (data.personajes_tecnicas || []).map((t: any) => Number(t.tecnica_id)).filter(Boolean);
+          let techDetails: any[] = [];
+          if (techIds.length > 0) {
+            const { data: fetchedTechs } = await supabase
+              .from('info_glosario')
+              .select('*')
+              .in('id', techIds);
+            techDetails = fetchedTechs || [];
+          }
+          const { data: subSpecs } = await supabase
+            .from('info_sub_especialidades')
+            .select('*');
+
+          const { NinjutsuLogic } = await import('@/domain/character/logic');
+          const validation = NinjutsuLogic.validateNinjutsuLimits(
+            character.personajes_ramas || [],
+            techDetails,
+            subSpecs || []
+          );
+          if (!validation.valid) {
+            return NextResponse.json({ error: validation.error }, { status: 400 });
+          }
+
           await CharacterServerService.replaceTecnicas(adminClient, characterId, data.personajes_tecnicas);
         }
         break;

@@ -649,6 +649,33 @@ export function CharacterSheetView({
       }
     }
 
+    // Restricciones de Rango de Ninjutsu Elemental II y III basado en los slots de los elementos
+    const ninjutsuRama = (character.personajes_ramas || []).find((pr: any) => Number(pr.rama_id) === 4);
+    if (ninjutsuRama && ninjutsuRama.sub_especialidad_id) {
+      const sub = (masters.subEspecialidades || []).find((s: any) => s.id === ninjutsuRama.sub_especialidad_id);
+      if (sub && (sub.slug === 'ninjutsu-ii' || sub.slug === 'ninjutsu-iii')) {
+        const reqElementId = item.elemento_id || req.elemento_id;
+        if (reqElementId) {
+          const elementId = Number(reqElementId);
+          const rank = (item.rango || req.rango || 'D').toUpperCase();
+
+          // Elemento secundario: Máximo rango B (bloquear A y S)
+          if (ninjutsuRama.elemento_secundario_id && Number(ninjutsuRama.elemento_secundario_id) === elementId) {
+            if (rank === 'A' || rank === 'S') {
+              return false;
+            }
+          }
+
+          // Elemento terciario (solo para Nin III): Máximo rango C (bloquear B, A y S)
+          if (sub.slug === 'ninjutsu-iii' && ninjutsuRama.elemento_terciario_id && Number(ninjutsuRama.elemento_terciario_id) === elementId) {
+            if (rank === 'B' || rank === 'A' || rank === 'S') {
+              return false;
+            }
+          }
+        }
+      }
+    }
+
     return true;
   };
 
@@ -2268,6 +2295,47 @@ export function CharacterSheetView({
                             const current = character.personajes_tecnicas || [];
 
                             if (tec && !current.some((t: any) => t.tecnica_id === tec.id)) {
+                              const ninjutsuRama = (character.personajes_ramas || []).find((pr: any) => Number(pr.rama_id) === 4);
+                              let isNinIIorIII = false;
+                              if (ninjutsuRama && ninjutsuRama.sub_especialidad_id) {
+                                const sub = (masters.subEspecialidades || []).find((s: any) => s.id === ninjutsuRama.sub_especialidad_id);
+                                if (sub && (sub.slug === 'ninjutsu-ii' || sub.slug === 'ninjutsu-iii')) {
+                                  isNinIIorIII = true;
+                                }
+                              }
+
+                              if (isNinIIorIII && Number(tec.rama_clan_id) === 4 && tec.basica === true) {
+                                const basicNinjutsu = current.filter((pt: any) => {
+                                  const info = pt.info_glosario;
+                                  return info && Number(info.rama_clan_id) === 4 && info.basica === true;
+                                });
+
+                                if (basicNinjutsu.length >= 8) {
+                                  addToast("LÍMITE ALCANZADO: El límite máximo de técnicas de Ninjutsu Básico es de 8.", "error");
+                                  return;
+                                }
+
+                                const tecRank = (tec.rango || 'D').toUpperCase();
+                                const rankCount = basicNinjutsu.filter((pt: any) => (pt.info_glosario?.rango || 'D').toUpperCase() === tecRank).length;
+
+                                if (tecRank === 'D' && rankCount >= 3) {
+                                  addToast("LÍMITE ALCANZADO: Solo se permiten hasta 3 técnicas de Rango D de Ninjutsu Básico.", "error");
+                                  return;
+                                }
+                                if (tecRank === 'C' && rankCount >= 3) {
+                                  addToast("LÍMITE ALCANZADO: Solo se permiten hasta 3 técnicas de Rango C de Ninjutsu Básico.", "error");
+                                  return;
+                                }
+                                if (tecRank === 'B' && rankCount >= 2) {
+                                  addToast("LÍMITE ALCANZADO: Solo se permiten hasta 2 técnicas de Rango B de Ninjutsu Básico.", "error");
+                                  return;
+                                }
+                                if (tecRank === 'A' || tecRank === 'S') {
+                                  addToast("LÍMITE ALCANZADO: No se permiten técnicas de Rango A o S de Ninjutsu Básico.", "error");
+                                  return;
+                                }
+                              }
+
                               const costExp = tec.coste_exp || 0;
                               const costRyous = tec.coste_ryous || 0;
                               const costPA = tec.coste_puntos_aprendizaje || 0;

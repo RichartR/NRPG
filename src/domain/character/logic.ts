@@ -250,3 +250,78 @@ export const RewardLogic = {
     return Number(section.menos_2) || 0;
   }
 };
+
+export const NinjutsuLogic = {
+  validateNinjutsuLimits(
+    ramas: any[],
+    tecnicas: any[],
+    subEspecialidades: any[]
+  ): { valid: boolean; error?: string } {
+    const ninjutsuRama = ramas.find(r => Number(r.rama_id) === 4);
+    if (!ninjutsuRama || !ninjutsuRama.sub_especialidad_id) {
+      return { valid: true };
+    }
+
+    const sub = subEspecialidades.find(s => Number(s.id) === Number(ninjutsuRama.sub_especialidad_id));
+    if (!sub || (sub.slug !== 'ninjutsu-ii' && sub.slug !== 'ninjutsu-iii')) {
+      return { valid: true };
+    }
+
+    const subSlug = sub.slug;
+
+    // Filter basic Ninjutsu techniques (category_id = 1)
+    const basicNinjutsu = tecnicas.filter(t => {
+      const info = t.info_glosario || t;
+      return info && Number(info.rama_clan_id) === 4 && info.basica === true && Number(info.categoria_id || 1) === 1;
+    });
+
+    if (basicNinjutsu.length > 8) {
+      return { valid: false, error: "LÍMITE ALCANZADO: El límite máximo de técnicas de Ninjutsu Básico es de 8." };
+    }
+
+    const counts: Record<string, number> = { D: 0, C: 0, B: 0, A: 0, S: 0 };
+    for (const t of basicNinjutsu) {
+      const info = t.info_glosario || t;
+      const r = (info.rango || 'D').toUpperCase();
+      counts[r] = (counts[r] || 0) + 1;
+    }
+
+    if (counts.D > 3) {
+      return { valid: false, error: "LÍMITE ALCANZADO: Solo se permiten hasta 3 técnicas de Rango D de Ninjutsu Básico." };
+    }
+    if (counts.C > 3) {
+      return { valid: false, error: "LÍMITE ALCANZADO: Solo se permiten hasta 3 técnicas de Rango C de Ninjutsu Básico." };
+    }
+    if (counts.B > 2) {
+      return { valid: false, error: "LÍMITE ALCANZADO: Solo se permiten hasta 2 técnicas de Rango B de Ninjutsu Básico." };
+    }
+    if (counts.A > 0 || counts.S > 0) {
+      return { valid: false, error: "LÍMITE ALCANZADO: No se permiten técnicas de Rango A o S de Ninjutsu Básico." };
+    }
+
+    // Validar restricciones de rango por slot
+    for (const t of tecnicas) {
+      const info = t.info_glosario || t;
+      if (info && info.elemento_id && Number(info.categoria_id || 1) === 1) {
+        const elementId = Number(info.elemento_id);
+        const rank = (info.rango || 'D').toUpperCase();
+
+        // Elemento secundario: Máximo rango B
+        if (ninjutsuRama.elemento_secundario_id && Number(ninjutsuRama.elemento_secundario_id) === elementId) {
+          if (rank === 'A' || rank === 'S') {
+            return { valid: false, error: `Restricción de Elemento Secundario: La técnica ${info.nombre_es || ('ID ' + info.id)} no puede ser superior a Rango B.` };
+          }
+        }
+
+        // Elemento terciario: Máximo rango C
+        if (subSlug === 'ninjutsu-iii' && ninjutsuRama.elemento_terciario_id && Number(ninjutsuRama.elemento_terciario_id) === elementId) {
+          if (rank === 'B' || rank === 'A' || rank === 'S') {
+            return { valid: false, error: `Restricción de Elemento Terciario: La técnica ${info.nombre_es || ('ID ' + info.id)} no puede ser superior a Rango C.` };
+          }
+        }
+      }
+    }
+
+    return { valid: true };
+  }
+};
