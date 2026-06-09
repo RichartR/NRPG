@@ -741,7 +741,7 @@ export default function MundoNinjaVillageClientView({
                               {equipos.length} {equipos.length === 1 ? 'EQUIPO' : 'EQUIPOS'}
                             </span>
                           </div>
-                          <div className="ninja-card-oro overflow-hidden border border-oro/20 bg-neutral-900/80 backdrop-blur-sm">
+                          <div className="ninja-card-oro clip-only-br overflow-hidden border border-oro/20 bg-neutral-900/80 backdrop-blur-sm">
                             <div className="overflow-x-auto">
                               <table className="w-full text-left border-collapse min-w-[700px]">
                                 <thead>
@@ -908,7 +908,7 @@ export default function MundoNinjaVillageClientView({
                     )}
 
                     {/* Tabla de equipos */}
-                    <div className="ninja-card-oro overflow-hidden border border-oro/20 bg-neutral-900/80 backdrop-blur-sm">
+                    <div className="ninja-card-oro clip-only-br overflow-hidden border border-oro/20 bg-neutral-900/80 backdrop-blur-sm">
                       <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse min-w-[700px]">
                           <thead>
@@ -928,7 +928,7 @@ export default function MundoNinjaVillageClientView({
                               const canDisolve = userRole?.isAdmin || isLider || isMember;
 
                               return (
-                                <tr key={equipo.id} className="hover:bg-oro/5 transition-colors bg-neutral-700/45">
+                                <tr key={equipo.id} className="hover:bg-oro/5 transition-colors bg-neutral-600/35">
                                   <td className="py-5 px-8">
                                     <p className="ninja-title text-xl xl:text-2xl leading-tight">{equipo.nombre_equipo}</p>
                                   </td>

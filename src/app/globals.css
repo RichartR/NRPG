@@ -222,6 +222,13 @@ input[type=number] {
     opacity: 0.6;
   }
 
+  .clip-only-br {
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%) !important;
+  }
+  .clip-only-br::before {
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%) !important;
+  }
+
   /* Premium Table Styling (Sepia Charcoal Theme) */
   .ninja-table-container {
     background-color: rgba(255, 230, 159, 0.02);
