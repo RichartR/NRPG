@@ -76,7 +76,7 @@ function CrearFichaAdminContent() {
             <UserPlus className="w-6 h-6 text-oro" />
           </div>
           <div>
-            <h1 className="ninja-title text-4xl xl:text-5xl italic">INICIALIZAR SHINOBI</h1>
+            <h1 className="ninja-title text-4xl xl:text-5xl italic">CREAR SHINOBI</h1>
             <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.4em] mt-2">REGISTRO DE NUEVOS PERSONAJES EN EL SISTEMA</p>
           </div>
         </div>
@@ -140,7 +140,7 @@ function CrearFichaAdminContent() {
           {loading ? <RefreshCw className="w-6 h-6 animate-spin" /> : (
             <>
               <UserPlus className="w-5 h-5" />
-              <span>INICIALIZAR REGISTRO NINJA</span>
+              <span>CREAR REGISTRO NINJA</span>
             </>
           )}
         </button>

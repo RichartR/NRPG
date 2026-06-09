@@ -99,11 +99,12 @@ export function NinjaSelect({
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
     const openUp = spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
+    const maxW = Math.max(rect.width, Math.min(350, window.innerWidth - rect.left - 16));
 
     setDropdownStyle(
       openUp
-        ? { position: 'fixed', left: rect.left, bottom: window.innerHeight - rect.top + 4, width: rect.width, zIndex: 9999 }
-        : { position: 'fixed', left: rect.left, top: rect.bottom + 4, width: rect.width, zIndex: 9999 }
+        ? { position: 'fixed', left: rect.left, bottom: window.innerHeight - rect.top + 4, minWidth: rect.width, width: 'max-content', maxWidth: maxW, zIndex: 9999 }
+        : { position: 'fixed', left: rect.left, top: rect.bottom + 4, minWidth: rect.width, width: 'max-content', maxWidth: maxW, zIndex: 9999 }
     );
     setIsOpen(true);
   };
@@ -169,7 +170,7 @@ export function NinjaSelect({
           {/* Línea oro superior */}
           <div className="h-[1px] bg-gradient-to-r from-transparent via-oro/40 to-transparent" />
 
-          <div className="max-h-64 overflow-y-auto custom-scrollbar">
+          <div className="max-h-64 overflow-y-auto overflow-x-hidden custom-scrollbar">
             {/* Opción vacía/placeholder */}
             <button
               role="option"
@@ -325,13 +326,17 @@ export function SearchableSelect({ label, value, options, onChange, disabled, pl
   const openDropdown = () => {
     if (disabled || !triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
-    setDropdownStyle({
-      position: 'fixed',
-      left: rect.left,
-      top: rect.bottom + 4,
-      width: rect.width,
-      zIndex: 9999
-    });
+    const estimatedHeight = 330;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const openUp = spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
+    const maxW = Math.max(rect.width, Math.min(350, window.innerWidth - rect.left - 16));
+
+    setDropdownStyle(
+      openUp
+        ? { position: 'fixed', left: rect.left, bottom: window.innerHeight - rect.top + 4, minWidth: rect.width, width: 'max-content', maxWidth: maxW, zIndex: 9999 }
+        : { position: 'fixed', left: rect.left, top: rect.bottom + 4, minWidth: rect.width, width: 'max-content', maxWidth: maxW, zIndex: 9999 }
+    );
     setIsOpen(true);
   };
 
@@ -387,7 +392,7 @@ export function SearchableSelect({ label, value, options, onChange, disabled, pl
               onClick={(e) => e.stopPropagation()}
             />
           </div>
-          <div className="max-h-64 overflow-y-auto custom-scrollbar">
+          <div className="max-h-64 overflow-y-auto overflow-x-hidden custom-scrollbar">
             {filteredOptions.length > 0 ? (
               filteredOptions.map((o) => (
                 <button

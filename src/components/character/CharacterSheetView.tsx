@@ -1125,7 +1125,7 @@ export function CharacterSheetView({
                     disabled={saving}
                     className={`px-6 sm:px-10 py-2.5 sm:py-3.5 text-xs sm:text-sm font-black uppercase tracking-widest transition-all ${isNew ? 'ninja-btn-oro' : 'ninja-btn-rojo'}`}
                   >
-                    {isNew ? 'INICIALIZAR' : 'GUARDAR'}
+                    {isNew ? 'CREAR' : 'GUARDAR'}
                   </button>
                 )}
               </div>
@@ -1355,33 +1355,43 @@ export function CharacterSheetView({
                       onChange={(v) => onUpdateField('rango_jerarquico', v)}
                     />
                     {activeTeam && (
-                      <div className="md:col-span-2 bg-black/40 border border-oro/10 p-5 rounded ninja-clip-sm flex flex-col gap-2 mt-4">
-                        <div className="flex items-center gap-2 text-oro font-black uppercase text-xs tracking-widest">
-                          Equipo Ninja: <span className="text-oro uppercase normal-case font-bold">{activeTeam.nombre_equipo}</span>
-                        </div>
-                        <div className="text-xs text-oro/60 flex flex-col sm:flex-row sm:gap-6 gap-2 mt-1">
-                          <div>
-                            <span className="font-black text-oro/40 uppercase tracking-wider">Líder: </span>
-                            <span className="text-oro uppercase font-bold">{activeTeam.lider?.nombre_ninja || 'SIN LÍDER'}</span>
+                      <div className="md:col-span-2 space-y-3">
+                        <label className="text-caption font-black uppercase tracking-[0.2em] text-oro/60 ml-1">
+                          EQUIPO NINJA
+                        </label>
+                        <div className="bg-black/40 border border-oro/10 p-5 rounded ninja-clip-sm flex flex-col gap-2">
+                          <div className="text-sm xl:text-base text-oro font-black uppercase tracking-[0.15em]">
+                            {activeTeam.nombre_equipo}
                           </div>
-                          <div>
-                            <span className="font-black text-oro/40 uppercase tracking-wider">Miembros: </span>
-                            <span className="text-oro uppercase font-bold">
-                              {[
-                                activeTeam.integrante_1?.nombre_ninja,
-                                activeTeam.integrante_2?.nombre_ninja,
-                                activeTeam.integrante_3?.nombre_ninja
-                              ].filter(Boolean).join(', ')}
-                            </span>
-                          </div>
-                          {activeTeam.fecha_creacion && (
+                          <div className="text-xs text-oro/60 flex flex-col sm:flex-row sm:gap-6 gap-2 mt-1">
                             <div>
-                              <span className="font-black text-oro/40 uppercase tracking-wider">Creado: </span>
+                              <span className="font-black text-oro/40 uppercase tracking-wider">Líder: </span>
+                              <span className="text-oro uppercase font-bold">{activeTeam.lider?.nombre_ninja || 'SIN LÍDER'}</span>
+                            </div>
+                            <div>
+                              <span className="font-black text-oro/40 uppercase tracking-wider">Miembros: </span>
                               <span className="text-oro uppercase font-bold">
-                                {new Date(activeTeam.fecha_creacion).toLocaleDateString('es-ES')}
+                                {(() => {
+                                  const miembros = [
+                                    activeTeam.integrante_1?.nombre_ninja,
+                                    activeTeam.integrante_2?.nombre_ninja,
+                                    activeTeam.integrante_3?.nombre_ninja
+                                  ].filter(Boolean);
+                                  return miembros.length > 1
+                                    ? miembros.slice(0, -1).join(', ') + ' y ' + miembros[miembros.length - 1]
+                                    : miembros[0] || '';
+                                })()}
                               </span>
                             </div>
-                          )}
+                            {activeTeam.fecha_creacion && (
+                              <div>
+                                <span className="font-black text-oro/40 uppercase tracking-wider">Creado: </span>
+                                <span className="text-oro uppercase font-bold">
+                                  {new Date(activeTeam.fecha_creacion).toLocaleDateString('es-ES')}
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )}

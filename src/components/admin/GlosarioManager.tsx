@@ -652,7 +652,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                 </div>
                 <div className="space-y-4 pt-4 border-t border-oro/10">
                   <div className="space-y-2">
-                    <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">Rango del Elemento</label>
+                    <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">Rango de la Técnica / Objeto</label>
                     <div className="flex gap-1 bg-black p-1 rounded-xl border border-oro/10">
                       {RANGOS.map(r => (
                         <button type="button" key={r} onClick={() => {
