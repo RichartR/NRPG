@@ -21,7 +21,8 @@ export const StatsLogic = {
     rules: RangoRules,
     tecnicasPersonaje: any[] = [],
     ramasPersonaje: any[] = [],
-    glosarioTecnicas: any[] = []
+    glosarioTecnicas: any[] = [],
+    subEspecialidades: any[] = []
   ): string {
     const rulesEntries = Object.entries(rules);
     // Sort ranks by min threshold ascending (D, C, B, A, S, etc.)
@@ -48,11 +49,25 @@ export const StatsLogic = {
           return acc;
         }, []);
 
+        const ninjutsuRama = ramasPersonaje.find(rp => Number(rp.rama_id) === 4);
+        let isNinIIorIII = false;
+        if (ninjutsuRama && ninjutsuRama.sub_especialidad_id) {
+          const sub = subEspecialidades.find((s: any) => Number(s.id) === Number(ninjutsuRama.sub_especialidad_id));
+          if (sub && (sub.slug === 'ninjutsu-ii' || sub.slug === 'ninjutsu-iii')) {
+            isNinIIorIII = true;
+          }
+        }
+
         // Filter master techniques of currentRankCheck that are mandatory for advancement
         const mandatoryTechs = glosarioTecnicas.filter(t => {
           const tRank = t.rango || t.requisitos?.rango;
           const isMandatory = t.obligatoria_ascenso || t.requisitos?.obligatoria_ascenso;
           if (!isMandatory || tRank !== currentRankCheck) return false;
+
+          // If Ninjutsu II or III is active, exclude basic Ninjutsu techniques from mandatory check
+          if (isNinIIorIII && Number(t.rama_clan_id) === 4 && t.basica === true) {
+            return false;
+          }
 
           // Check if it belongs to the player's branches/specs/elements.
           // If the technique has no branch, spec, or element, it is general.

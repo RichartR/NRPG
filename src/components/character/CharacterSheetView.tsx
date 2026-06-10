@@ -737,7 +737,18 @@ export function CharacterSheetView({
       const ramaId = glosario.rama_clan_id || glosario.rama_id;
       if (ramaId) {
         const rama = (masters.ramas || []).find((r: any) => Number(r.id) === Number(ramaId));
-        if (rama) ramaName = rama.nombre;
+        if (rama) {
+          ramaName = rama.nombre;
+          if (Number(ramaId) === 4 && glosario.elemento_id) {
+            const el = (masters.elementos || []).find((e: any) => Number(e.id) === Number(glosario.elemento_id));
+            if (el) {
+              const elName = el.nombre_jap 
+                ? `${el.nombre_jap} (${el.nombre_esp})` 
+                : el.nombre_esp;
+              ramaName = `${rama.nombre} — ${elName.toUpperCase()}`;
+            }
+          }
+        }
       }
 
       // 3. Subcategory
@@ -1346,9 +1357,9 @@ export function CharacterSheetView({
                       placeholder="SIN ALDEA"
                       onChange={(v) => onUpdateField('aldea_id', v ? Number(v) : null)}
                     />
-                    <DataField label="RANGO ACTUAL" value={`RANGO ${character.rango}`} disabled={true} />
+                    <DataField label="RANGO DE PODER" value={`RANGO ${character.rango}`} disabled={true} />
                     <SelectField
-                      label="POSICIÓN JERÁRQUICA"
+                      label="RANGO JERÁRQUICO"
                       value={character.rango_jerarquico}
                       options={masters.rangosJerarquicos || ["ESTUDIANTE", "GENIN", "CHUNIN", "JONIN"]}
                       disabled={!isEditing && !isNew}
@@ -1885,7 +1896,7 @@ export function CharacterSheetView({
                                     <div className="text-sm font-black text-oro italic uppercase mt-1">
                                       {forced.nombre}
                                     </div>
-                                  ) : isEditing ? (
+                                  ) : (isEditing || isNew) ? (
                                     <div className="mt-2">
                                       <NinjaSelect
                                         value={selected?.id || ''}
@@ -1924,7 +1935,7 @@ export function CharacterSheetView({
                                         const isStatUnlocked = statVal >= 6;
                                         const forced = autoTraits.some(at => at.id === r.id);
                                         const checked = forced || (character.personajes_rasgos || []).some((pjR: any) => Number(pjR.rasgo_id) === Number(r.id));
-                                        const canToggle = isEditing && !forced && isStatUnlocked;
+                                        const canToggle = (isEditing || isNew) && !forced && isStatUnlocked;
 
                                         return (
                                           <div key={r.id} className={`flex items-center justify-between p-3 bg-black/40 border ${checked ? 'border-oro/35' : 'border-oro/5'} transition-all`} style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
@@ -1937,7 +1948,7 @@ export function CharacterSheetView({
 
                                             {forced ? (
                                               <span className="text-caption font-black text-rojo-sangre uppercase tracking-wider bg-rojo-sangre/10 px-2 py-0.5">Automático</span>
-                                            ) : isEditing ? (
+                                            ) : (isEditing || isNew) ? (
                                               <label className="flex items-center cursor-pointer">
                                                 <input
                                                   type="checkbox"
@@ -2288,7 +2299,41 @@ export function CharacterSheetView({
                           label="APRENDER NUEVA TÉCNICA"
                           placeholder="BUSCAR JUTSU EN EL GLOSARIO..."
                           options={(glosarioFiltrado || [])
-                            .filter((i: Glosario) => i.categoria_id === 1 && meetsRequirements(i) && !(character.personajes_tecnicas || []).some((pt: PersonajeTecnica) => pt.tecnica_id === i.id))
+                             .filter((i: Glosario) => {
+                               if (i.categoria_id !== 1) return false;
+                               if (!meetsRequirements(i)) return false;
+                               const current = character.personajes_tecnicas || [];
+                               if (current.some((pt: PersonajeTecnica) => pt.tecnica_id === i.id)) return false;
+
+                               // Validar límites de técnicas básicas de Ninjutsu II y III
+                               const ninjutsuRama = (character.personajes_ramas || []).find((pr: any) => Number(pr.rama_id) === 4);
+                               let isNinIIorIII = false;
+                               if (ninjutsuRama && ninjutsuRama.sub_especialidad_id) {
+                                 const sub = (masters.subEspecialidades || []).find((s: any) => s.id === ninjutsuRama.sub_especialidad_id);
+                                 if (sub && (sub.slug === 'ninjutsu-ii' || sub.slug === 'ninjutsu-iii')) {
+                                   isNinIIorIII = true;
+                                 }
+                               }
+
+                               if (isNinIIorIII && Number(i.rama_clan_id) === 4 && i.basica === true) {
+                                 const basicNinjutsu = current.filter((pt: any) => {
+                                   const info = pt.info_glosario;
+                                   return info && Number(info.rama_clan_id) === 4 && info.basica === true;
+                                 });
+
+                                 if (basicNinjutsu.length >= 8) return false;
+
+                                 const tecRank = (i.rango || 'D').toUpperCase();
+                                 const rankCount = basicNinjutsu.filter((pt: any) => (pt.info_glosario?.rango || 'D').toUpperCase() === tecRank).length;
+
+                                 if (tecRank === 'D' && rankCount >= 3) return false;
+                                 if (tecRank === 'C' && rankCount >= 3) return false;
+                                 if (tecRank === 'B' && rankCount >= 2) return false;
+                                 if (tecRank === 'A' || tecRank === 'S') return false;
+                               }
+
+                               return true;
+                             })
                             .map((t: any) => {
                               const subData = t.info_glosario_subcategorias;
                               const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'TÉCNICA';

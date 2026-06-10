@@ -126,12 +126,13 @@ export function useCharacter(characterId: string) {
       masters.rangoRules,
       character.personajes_tecnicas || [],
       character.personajes_ramas || [],
-      glosarioCompleto
+      glosarioCompleto,
+      masters.subEspecialidades || []
     );
     if (newRango !== character.rango) {
       setCharacter(prev => prev ? { ...prev, rango: newRango } : null);
     }
-  }, [character?.puntos_stats, character?.personajes_tecnicas, character?.personajes_ramas, masters.rangoRules, glosarioCompleto]);
+  }, [character?.puntos_stats, character?.personajes_tecnicas, character?.personajes_ramas, masters.rangoRules, glosarioCompleto, masters.subEspecialidades]);
 
   const updateField = (field: keyof Character, value: any) => {
     setCharacter(prev => prev ? { ...prev, [field]: value } : null);
