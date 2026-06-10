@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { CharacterService } from '@/services/supabase/character.service';
 import { RegistrosService } from '@/services/supabase/registros.service';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
-import { StatsLogic } from '@/domain/character/logic';
+import { StatsLogic, NinjutsuLogic } from '@/domain/character/logic';
 import { Character, CharacterStats } from '@/domain/types';
 import { useMasterStore } from '@/store/useMasterStore';
 import { AuthService } from '@/services/supabase/auth.service';
@@ -126,12 +126,13 @@ export function useCharacter(characterId: string) {
       masters.rangoRules,
       character.personajes_tecnicas || [],
       character.personajes_ramas || [],
-      glosarioCompleto
+      glosarioCompleto,
+      masters.subEspecialidades || []
     );
     if (newRango !== character.rango) {
       setCharacter(prev => prev ? { ...prev, rango: newRango } : null);
     }
-  }, [character?.puntos_stats, character?.personajes_tecnicas, character?.personajes_ramas, masters.rangoRules, glosarioCompleto]);
+  }, [character?.puntos_stats, character?.personajes_tecnicas, character?.personajes_ramas, masters.rangoRules, glosarioCompleto, masters.subEspecialidades]);
 
   const updateField = (field: keyof Character, value: any) => {
     setCharacter(prev => prev ? { ...prev, [field]: value } : null);
@@ -163,6 +164,18 @@ export function useCharacter(characterId: string) {
     if (!character) return;
     setSaving(true);
     try {
+      if (!section) {
+        // VALIDAR LÍMITES DE TÉCNICAS BÁSICAS DE NINJUTSU II Y III ANTES DE GUARDAR
+        const validation = NinjutsuLogic.validateNinjutsuLimits(
+          character.personajes_ramas || [],
+          character.personajes_tecnicas || [],
+          masters.subEspecialidades || []
+        );
+        if (!validation.valid) {
+          throw new Error(validation.error);
+        }
+      }
+
       if (section) {
         const content = section === 'apariencia' ? character.apariencia : character.historia;
         const res = await fetch(`/api/characters/${characterId}`, {

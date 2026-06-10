@@ -133,7 +133,7 @@ export default function GlosarioManager() {
           <div className="absolute inset-0 border-4 border-t-oro rounded-full animate-spin shadow-[0_0_15px_rgba(212,175,55,0.2)]" />
           <Sparkles className="absolute inset-0 m-auto text-oro w-6 h-6 animate-pulse" />
         </div>
-        <span className="text-oro font-black uppercase tracking-[0.3em] text-caption text-center">Sincronizando Glosario Ancestral...</span>
+        <span className="text-oro font-black uppercase tracking-[0.3em] text-caption text-center">Sincronizando Glosario...</span>
       </div>
     );
   }
@@ -146,7 +146,7 @@ export default function GlosarioManager() {
             <div className="w-1.5 h-1.5 bg-oro/20 group-hover:bg-oro rotate-45 transition-colors" />
             VOLVER AL PANEL CENTRAL
           </Link>
-          
+
           <div className="flex items-center gap-6">
             <div className="w-12 h-12 bg-oro/[0.03] border border-oro/10 flex items-center justify-center">
               <Box className="w-6 h-6 text-oro" />
@@ -404,6 +404,11 @@ function ElementoCard({ elemento, categorias, subcategorias, onEdit, onDelete }:
           {elemento.rango && <span className="bg-zinc-800 text-zinc-300 border border-zinc-700 px-3 py-1 rounded-full text-caption font-black uppercase tracking-tighter">Rango: {elemento.rango}</span>}
           {elemento.obligatoria_ascenso && <span className="bg-red-500/10 text-red-400 border border-error-text/20 px-3 py-1 rounded-full text-caption font-black uppercase tracking-tighter flex items-center gap-1">🔺 Obligatoria Ascenso</span>}
           {elemento.inicial && <span className="bg-oro text-black px-3 py-1 rounded-full text-caption font-black uppercase tracking-tighter flex items-center gap-1"><Star size={10} className="fill-black" /> Inicial</span>}
+          {elemento.basica ? (
+            <span className="bg-sky-500/10 text-sky-400 border border-sky-500/20 px-3 py-1 rounded-full text-caption font-black uppercase tracking-tighter">Básica</span>
+          ) : (
+            <span className="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-3 py-1 rounded-full text-caption font-black uppercase tracking-tighter">Avanzada</span>
+          )}
         </div>
         <h3 className="text-white font-black text-xl uppercase tracking-tight group-hover:text-oro transition-colors">{elemento.nombre_es}</h3><p className="text-oro/50 font-medium italic text-sm">{elemento.nombre_jp || '-'}</p>
       </div>
@@ -450,6 +455,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
         coste_ryous: 0,
         activo: true,
         inicial: false,
+        basica: true,
         rango: null,
         obligatoria_ascenso: false,
         requisitos: defaultRequisitos
@@ -463,6 +469,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
       elemento_id: initialData.elemento_id ?? null,
       coste_ryous: initialData.coste_ryous || 0,
       inicial: initialData.inicial || false,
+      basica: initialData.basica !== undefined ? initialData.basica : true,
       rango: initialData.rango ?? null,
       obligatoria_ascenso: initialData.obligatoria_ascenso || false,
       requisitos: { ...defaultRequisitos, ...initialData.requisitos }
@@ -509,7 +516,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
       <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={onClose} />
       <div
         className="relative bg-neutral-800 border border-oro/20 w-full max-w-5xl h-[90vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200 ninja-card-oro"
-        style={{ 
+        style={{
           clipPath: 'polygon(30px 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%, 0 30px)',
           overflow: 'hidden'
         }}
@@ -629,19 +636,23 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                     <input type="number" min="0" value={(formData as any).coste_puntos_aprendizaje ?? 0} onChange={(e) => setFormData({ ...formData, coste_puntos_aprendizaje: Math.max(0, Number(e.target.value)) } as any)} className="ninja-input w-full px-6 py-4 text-blue-400 bg-black/60 font-bold" />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <button onClick={() => setFormData({ ...formData, activo: !formData.activo })} className={`w-full flex items-center justify-between p-5 rounded-2xl border transition-all ${formData.activo ? 'bg-oro/10 border-oro/20 text-oro shadow-lg' : 'bg-black/60 border-oro/5 text-oro/40'}`}>
-                    <span className="font-black text-xs uppercase tracking-widest ml-2">{formData.activo ? 'Activo' : 'Archivado'}</span>
-                    {formData.activo ? <Check size={20} /> : <Archive size={20} />}
+                <div className="grid grid-cols-3 gap-4">
+                  <button onClick={() => setFormData({ ...formData, activo: !formData.activo })} className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all ${formData.activo ? 'bg-oro/10 border-oro/20 text-oro shadow-lg' : 'bg-black/60 border-oro/5 text-oro/40'}`}>
+                    <span className="font-black text-[10px] uppercase tracking-wider ml-1">{formData.activo ? 'Activo' : 'Archivado'}</span>
+                    {formData.activo ? <Check size={16} /> : <Archive size={16} />}
                   </button>
-                  <button onClick={() => setFormData({ ...formData, inicial: !formData.inicial })} className={`w-full flex items-center justify-between p-5 rounded-2xl border transition-all ${formData.inicial ? 'bg-oro text-black shadow-lg shadow-oro/10 border-oro' : 'bg-black/60 border-oro/5 text-oro/40'}`}>
-                    <span className="font-black text-xs uppercase tracking-widest ml-2">{formData.inicial ? 'Inicial' : 'No Inicial'}</span>
-                    {formData.inicial ? <Star size={20} className="fill-black text-black" /> : <Plus size={20} />}
+                  <button onClick={() => setFormData({ ...formData, inicial: !formData.inicial })} className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all ${formData.inicial ? 'bg-oro text-black shadow-lg shadow-oro/10 border-oro' : 'bg-black/60 border-oro/5 text-oro/40'}`}>
+                    <span className="font-black text-[10px] uppercase tracking-wider ml-1">{formData.inicial ? 'Inicial' : 'No Inicial'}</span>
+                    {formData.inicial ? <Star size={16} className="fill-black text-black" /> : <Plus size={16} />}
+                  </button>
+                  <button onClick={() => setFormData({ ...formData, basica: !formData.basica })} className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all ${formData.basica ? 'bg-oro/10 border-oro/20 text-oro shadow-lg' : 'bg-black/60 border-oro/5 text-oro/40'}`}>
+                    <span className="font-black text-[10px] uppercase tracking-wider ml-1">{formData.basica ? 'Básica' : 'Avanzada'}</span>
+                    {formData.basica ? <Star size={16} className="fill-oro text-oro" /> : <Sparkles size={16} />}
                   </button>
                 </div>
                 <div className="space-y-4 pt-4 border-t border-oro/10">
                   <div className="space-y-2">
-                    <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">Rango del Elemento</label>
+                    <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">Rango de la Técnica / Objeto</label>
                     <div className="flex gap-1 bg-black p-1 rounded-xl border border-oro/10">
                       {RANGOS.map(r => (
                         <button type="button" key={r} onClick={() => {

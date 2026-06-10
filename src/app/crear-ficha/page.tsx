@@ -7,6 +7,7 @@ import { useMasterStore } from '@/store/useMasterStore';
 import { CharacterSheetView } from '@/components/character/CharacterSheetView';
 import { CharacterStats } from '@/domain/types';
 import { StatsLogic } from '@/domain/character/logic';
+import { MasterService } from '@/services/supabase/master.service';
 
 function CrearFichaContent() {
   const router = useRouter();
@@ -17,13 +18,14 @@ function CrearFichaContent() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
+  const [glosarioCompleto, setGlosarioCompleto] = useState<any[]>([]);
   
   const [form, setForm] = useState<any>({
     nombre_ninja: '',
     hobba_name: '',
     aldea_id: searchParams.get('aldea_id') ? Number(searchParams.get('aldea_id')) : null,
     rango: '',
-    rango_jerarquico: '',
+    rango_jerarquico: 'Genin',
     puntos_stats: 0,
     xp: 0,
     ryous: 0,
@@ -60,17 +62,24 @@ function CrearFichaContent() {
       // Cargar configuración inicial del sistema
       try {
         const { AdminService } = await import('@/services/supabase/admin.service');
-        const config = await AdminService.getConfigByClave('datos_inicio_ficha');
+        const [config, fullGlosario] = await Promise.all([
+          AdminService.getConfigByClave('datos_inicio_ficha'),
+          MasterService.getGlosarios()
+        ]);
         if (config && config.valor) {
           setForm((prev: any) => ({
             ...prev,
             ...config.valor,
+            rango_jerarquico: config.valor.rango_jerarquico || prev.rango_jerarquico || 'Genin',
             stats_base: config.valor.stats_base || prev.stats_base,
             atributos_derivados: config.valor.atributos_derivados || prev.atributos_derivados
           }));
         }
+        if (fullGlosario) {
+          setGlosarioCompleto(fullGlosario);
+        }
       } catch (err) {
-        console.error('Error loading initial config:', err);
+        console.error('Error loading initial config or glossary:', err);
       } finally {
         setInitialDataLoaded(true);
       }
@@ -94,7 +103,7 @@ function CrearFichaContent() {
   });
 
   useEffect(() => {
-    if (masters.initialized && masters.glosario) {
+    if (initialDataLoaded && glosarioCompleto.length > 0) {
       const equipedRamaIds = form.personajes_ramas
         .map((r: any) => r.rama_id ? Number(r.rama_id) : null)
         .filter(Boolean);
@@ -153,12 +162,29 @@ function CrearFichaContent() {
         return true;
       };
 
-      const initialItems = masters.glosario
+      const ninjutsuRama = form.personajes_ramas.find((r: any) => Number(r.rama_id) === 4);
+      let isNinIIorIII = false;
+      if (ninjutsuRama && ninjutsuRama.sub_especialidad_id) {
+        const sub = (masters.subEspecialidades || []).find((s: any) => s.id === ninjutsuRama.sub_especialidad_id);
+        if (sub && (sub.slug === 'ninjutsu-ii' || sub.slug === 'ninjutsu-iii')) {
+          isNinIIorIII = true;
+        }
+      }
+
+      const initialItems = glosarioCompleto
         .filter((i: any) => i.inicial && i.categoria_id === 2 && meetsAllReqs(i))
         .map((i: any) => ({ item_id: i.id, cantidad: 1, info_glosario: i }));
       
-      const initialTecs = masters.glosario
-        .filter((t: any) => t.inicial && t.categoria_id !== 2 && meetsAllReqs(t))
+      const initialTecs = glosarioCompleto
+        .filter((t: any) => {
+          if (t.inicial && t.categoria_id !== 2 && meetsAllReqs(t)) {
+            if (isNinIIorIII && Number(t.rama_clan_id) === 4) {
+              return false;
+            }
+            return true;
+          }
+          return false;
+        })
         .map((t: any) => ({ tecnica_id: t.id, info_glosario: t }));
 
       setForm((prev: any) => ({
@@ -167,7 +193,7 @@ function CrearFichaContent() {
         personajes_tecnicas: initialTecs
       }));
     }
-  }, [masters.initialized, masters.glosario, equipedRamaIdsStr, initialReqsStr]);
+  }, [initialDataLoaded, glosarioCompleto, equipedRamaIdsStr, initialReqsStr, form.personajes_ramas]);
 
   // Recalcular atributos derivados cuando cambian los stats
   useEffect(() => {
@@ -289,7 +315,7 @@ function CrearFichaContent() {
     <CharacterSheetView 
       character={form}
       masters={masters}
-      glosarioFiltrado={masters.glosario || []}
+      glosarioFiltrado={glosarioCompleto}
       isEditing={false}
       canEdit={true}
       activeTab={activeTab}

@@ -120,6 +120,7 @@ export interface Glosario {
   coste_puntos_aprendizaje: number;
   activo: boolean;
   inicial?: boolean;
+  basica?: boolean;
   es_tienda_exp?: boolean;
   descripcion?: string;
   rango?: string | null;

@@ -649,6 +649,33 @@ export function CharacterSheetView({
       }
     }
 
+    // Restricciones de Rango de Ninjutsu Elemental II y III basado en los slots de los elementos
+    const ninjutsuRama = (character.personajes_ramas || []).find((pr: any) => Number(pr.rama_id) === 4);
+    if (ninjutsuRama && ninjutsuRama.sub_especialidad_id) {
+      const sub = (masters.subEspecialidades || []).find((s: any) => s.id === ninjutsuRama.sub_especialidad_id);
+      if (sub && (sub.slug === 'ninjutsu-ii' || sub.slug === 'ninjutsu-iii')) {
+        const reqElementId = item.elemento_id || req.elemento_id;
+        if (reqElementId) {
+          const elementId = Number(reqElementId);
+          const rank = (item.rango || req.rango || 'D').toUpperCase();
+
+          // Elemento secundario: Máximo rango B (bloquear A y S)
+          if (ninjutsuRama.elemento_secundario_id && Number(ninjutsuRama.elemento_secundario_id) === elementId) {
+            if (rank === 'A' || rank === 'S') {
+              return false;
+            }
+          }
+
+          // Elemento terciario (solo para Nin III): Máximo rango C (bloquear B, A y S)
+          if (sub.slug === 'ninjutsu-iii' && ninjutsuRama.elemento_terciario_id && Number(ninjutsuRama.elemento_terciario_id) === elementId) {
+            if (rank === 'B' || rank === 'A' || rank === 'S') {
+              return false;
+            }
+          }
+        }
+      }
+    }
+
     return true;
   };
 
@@ -710,7 +737,18 @@ export function CharacterSheetView({
       const ramaId = glosario.rama_clan_id || glosario.rama_id;
       if (ramaId) {
         const rama = (masters.ramas || []).find((r: any) => Number(r.id) === Number(ramaId));
-        if (rama) ramaName = rama.nombre;
+        if (rama) {
+          ramaName = rama.nombre;
+          if (Number(ramaId) === 4 && glosario.elemento_id) {
+            const el = (masters.elementos || []).find((e: any) => Number(e.id) === Number(glosario.elemento_id));
+            if (el) {
+              const elName = el.nombre_jap 
+                ? `${el.nombre_jap} (${el.nombre_esp})` 
+                : el.nombre_esp;
+              ramaName = `${rama.nombre} — ${elName.toUpperCase()}`;
+            }
+          }
+        }
       }
 
       // 3. Subcategory
@@ -1098,7 +1136,7 @@ export function CharacterSheetView({
                     disabled={saving}
                     className={`px-6 sm:px-10 py-2.5 sm:py-3.5 text-xs sm:text-sm font-black uppercase tracking-widest transition-all ${isNew ? 'ninja-btn-oro' : 'ninja-btn-rojo'}`}
                   >
-                    {isNew ? 'INICIALIZAR' : 'GUARDAR'}
+                    {isNew ? 'CREAR' : 'GUARDAR'}
                   </button>
                 )}
               </div>
@@ -1319,42 +1357,52 @@ export function CharacterSheetView({
                       placeholder="SIN ALDEA"
                       onChange={(v) => onUpdateField('aldea_id', v ? Number(v) : null)}
                     />
-                    <DataField label="RANGO ACTUAL" value={`RANGO ${character.rango}`} disabled={true} />
+                    <DataField label="RANGO DE PODER" value={`RANGO ${character.rango}`} disabled={true} />
                     <SelectField
-                      label="POSICIÓN JERÁRQUICA"
+                      label="RANGO JERÁRQUICO"
                       value={character.rango_jerarquico}
                       options={masters.rangosJerarquicos || ["ESTUDIANTE", "GENIN", "CHUNIN", "JONIN"]}
                       disabled={!isEditing && !isNew}
                       onChange={(v) => onUpdateField('rango_jerarquico', v)}
                     />
                     {activeTeam && (
-                      <div className="md:col-span-2 bg-black/40 border border-oro/10 p-5 rounded ninja-clip-sm flex flex-col gap-2 mt-4">
-                        <div className="flex items-center gap-2 text-oro font-black uppercase text-xs tracking-widest">
-                          Equipo Ninja: <span className="text-oro uppercase normal-case font-bold">{activeTeam.nombre_equipo}</span>
-                        </div>
-                        <div className="text-xs text-oro/60 flex flex-col sm:flex-row sm:gap-6 gap-2 mt-1">
-                          <div>
-                            <span className="font-black text-oro/40 uppercase tracking-wider">Líder: </span>
-                            <span className="text-oro uppercase font-bold">{activeTeam.lider?.nombre_ninja || 'SIN LÍDER'}</span>
+                      <div className="md:col-span-2 space-y-3">
+                        <label className="text-caption font-black uppercase tracking-[0.2em] text-oro/60 ml-1">
+                          EQUIPO NINJA
+                        </label>
+                        <div className="bg-black/40 border border-oro/10 p-5 rounded ninja-clip-sm flex flex-col gap-2">
+                          <div className="text-sm xl:text-base text-oro font-black uppercase tracking-[0.15em]">
+                            {activeTeam.nombre_equipo}
                           </div>
-                          <div>
-                            <span className="font-black text-oro/40 uppercase tracking-wider">Miembros: </span>
-                            <span className="text-oro uppercase font-bold">
-                              {[
-                                activeTeam.integrante_1?.nombre_ninja,
-                                activeTeam.integrante_2?.nombre_ninja,
-                                activeTeam.integrante_3?.nombre_ninja
-                              ].filter(Boolean).join(', ')}
-                            </span>
-                          </div>
-                          {activeTeam.fecha_creacion && (
+                          <div className="text-xs text-oro/60 flex flex-col sm:flex-row sm:gap-6 gap-2 mt-1">
                             <div>
-                              <span className="font-black text-oro/40 uppercase tracking-wider">Creado: </span>
+                              <span className="font-black text-oro/40 uppercase tracking-wider">Líder: </span>
+                              <span className="text-oro uppercase font-bold">{activeTeam.lider?.nombre_ninja || 'SIN LÍDER'}</span>
+                            </div>
+                            <div>
+                              <span className="font-black text-oro/40 uppercase tracking-wider">Miembros: </span>
                               <span className="text-oro uppercase font-bold">
-                                {new Date(activeTeam.fecha_creacion).toLocaleDateString('es-ES')}
+                                {(() => {
+                                  const miembros = [
+                                    activeTeam.integrante_1?.nombre_ninja,
+                                    activeTeam.integrante_2?.nombre_ninja,
+                                    activeTeam.integrante_3?.nombre_ninja
+                                  ].filter(Boolean);
+                                  return miembros.length > 1
+                                    ? miembros.slice(0, -1).join(', ') + ' y ' + miembros[miembros.length - 1]
+                                    : miembros[0] || '';
+                                })()}
                               </span>
                             </div>
-                          )}
+                            {activeTeam.fecha_creacion && (
+                              <div>
+                                <span className="font-black text-oro/40 uppercase tracking-wider">Creado: </span>
+                                <span className="text-oro uppercase font-bold">
+                                  {new Date(activeTeam.fecha_creacion).toLocaleDateString('es-ES')}
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )}
@@ -1848,7 +1896,7 @@ export function CharacterSheetView({
                                     <div className="text-sm font-black text-oro italic uppercase mt-1">
                                       {forced.nombre}
                                     </div>
-                                  ) : isEditing ? (
+                                  ) : (isEditing || isNew) ? (
                                     <div className="mt-2">
                                       <NinjaSelect
                                         value={selected?.id || ''}
@@ -1887,7 +1935,7 @@ export function CharacterSheetView({
                                         const isStatUnlocked = statVal >= 6;
                                         const forced = autoTraits.some(at => at.id === r.id);
                                         const checked = forced || (character.personajes_rasgos || []).some((pjR: any) => Number(pjR.rasgo_id) === Number(r.id));
-                                        const canToggle = isEditing && !forced && isStatUnlocked;
+                                        const canToggle = (isEditing || isNew) && !forced && isStatUnlocked;
 
                                         return (
                                           <div key={r.id} className={`flex items-center justify-between p-3 bg-black/40 border ${checked ? 'border-oro/35' : 'border-oro/5'} transition-all`} style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
@@ -1900,7 +1948,7 @@ export function CharacterSheetView({
 
                                             {forced ? (
                                               <span className="text-caption font-black text-rojo-sangre uppercase tracking-wider bg-rojo-sangre/10 px-2 py-0.5">Automático</span>
-                                            ) : isEditing ? (
+                                            ) : (isEditing || isNew) ? (
                                               <label className="flex items-center cursor-pointer">
                                                 <input
                                                   type="checkbox"
@@ -2251,7 +2299,41 @@ export function CharacterSheetView({
                           label="APRENDER NUEVA TÉCNICA"
                           placeholder="BUSCAR JUTSU EN EL GLOSARIO..."
                           options={(glosarioFiltrado || [])
-                            .filter((i: Glosario) => i.categoria_id === 1 && meetsRequirements(i) && !(character.personajes_tecnicas || []).some((pt: PersonajeTecnica) => pt.tecnica_id === i.id))
+                             .filter((i: Glosario) => {
+                               if (i.categoria_id !== 1) return false;
+                               if (!meetsRequirements(i)) return false;
+                               const current = character.personajes_tecnicas || [];
+                               if (current.some((pt: PersonajeTecnica) => pt.tecnica_id === i.id)) return false;
+
+                               // Validar límites de técnicas básicas de Ninjutsu II y III
+                               const ninjutsuRama = (character.personajes_ramas || []).find((pr: any) => Number(pr.rama_id) === 4);
+                               let isNinIIorIII = false;
+                               if (ninjutsuRama && ninjutsuRama.sub_especialidad_id) {
+                                 const sub = (masters.subEspecialidades || []).find((s: any) => s.id === ninjutsuRama.sub_especialidad_id);
+                                 if (sub && (sub.slug === 'ninjutsu-ii' || sub.slug === 'ninjutsu-iii')) {
+                                   isNinIIorIII = true;
+                                 }
+                               }
+
+                               if (isNinIIorIII && Number(i.rama_clan_id) === 4 && i.basica === true) {
+                                 const basicNinjutsu = current.filter((pt: any) => {
+                                   const info = pt.info_glosario;
+                                   return info && Number(info.rama_clan_id) === 4 && info.basica === true;
+                                 });
+
+                                 if (basicNinjutsu.length >= 8) return false;
+
+                                 const tecRank = (i.rango || 'D').toUpperCase();
+                                 const rankCount = basicNinjutsu.filter((pt: any) => (pt.info_glosario?.rango || 'D').toUpperCase() === tecRank).length;
+
+                                 if (tecRank === 'D' && rankCount >= 3) return false;
+                                 if (tecRank === 'C' && rankCount >= 3) return false;
+                                 if (tecRank === 'B' && rankCount >= 2) return false;
+                                 if (tecRank === 'A' || tecRank === 'S') return false;
+                               }
+
+                               return true;
+                             })
                             .map((t: any) => {
                               const subData = t.info_glosario_subcategorias;
                               const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'TÉCNICA';
@@ -2268,6 +2350,47 @@ export function CharacterSheetView({
                             const current = character.personajes_tecnicas || [];
 
                             if (tec && !current.some((t: any) => t.tecnica_id === tec.id)) {
+                              const ninjutsuRama = (character.personajes_ramas || []).find((pr: any) => Number(pr.rama_id) === 4);
+                              let isNinIIorIII = false;
+                              if (ninjutsuRama && ninjutsuRama.sub_especialidad_id) {
+                                const sub = (masters.subEspecialidades || []).find((s: any) => s.id === ninjutsuRama.sub_especialidad_id);
+                                if (sub && (sub.slug === 'ninjutsu-ii' || sub.slug === 'ninjutsu-iii')) {
+                                  isNinIIorIII = true;
+                                }
+                              }
+
+                              if (isNinIIorIII && Number(tec.rama_clan_id) === 4 && tec.basica === true) {
+                                const basicNinjutsu = current.filter((pt: any) => {
+                                  const info = pt.info_glosario;
+                                  return info && Number(info.rama_clan_id) === 4 && info.basica === true;
+                                });
+
+                                if (basicNinjutsu.length >= 8) {
+                                  addToast("LÍMITE ALCANZADO: El límite máximo de técnicas de Ninjutsu Básico es de 8.", "error");
+                                  return;
+                                }
+
+                                const tecRank = (tec.rango || 'D').toUpperCase();
+                                const rankCount = basicNinjutsu.filter((pt: any) => (pt.info_glosario?.rango || 'D').toUpperCase() === tecRank).length;
+
+                                if (tecRank === 'D' && rankCount >= 3) {
+                                  addToast("LÍMITE ALCANZADO: Solo se permiten hasta 3 técnicas de Rango D de Ninjutsu Básico.", "error");
+                                  return;
+                                }
+                                if (tecRank === 'C' && rankCount >= 3) {
+                                  addToast("LÍMITE ALCANZADO: Solo se permiten hasta 3 técnicas de Rango C de Ninjutsu Básico.", "error");
+                                  return;
+                                }
+                                if (tecRank === 'B' && rankCount >= 2) {
+                                  addToast("LÍMITE ALCANZADO: Solo se permiten hasta 2 técnicas de Rango B de Ninjutsu Básico.", "error");
+                                  return;
+                                }
+                                if (tecRank === 'A' || tecRank === 'S') {
+                                  addToast("LÍMITE ALCANZADO: No se permiten técnicas de Rango A o S de Ninjutsu Básico.", "error");
+                                  return;
+                                }
+                              }
+
                               const costExp = tec.coste_exp || 0;
                               const costRyous = tec.coste_ryous || 0;
                               const costPA = tec.coste_puntos_aprendizaje || 0;

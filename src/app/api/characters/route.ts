@@ -87,6 +87,30 @@ export async function POST(request: Request) {
       }
     }
 
+    // Validar límites de Ninjutsu Elemental
+    const techIds = (data.personajes_tecnicas || []).map((t: any) => Number(t.tecnica_id)).filter(Boolean);
+    let techDetails: any[] = [];
+    if (techIds.length > 0) {
+      const { data: fetchedTechs } = await supabase
+        .from('info_glosario')
+        .select('*')
+        .in('id', techIds);
+      techDetails = fetchedTechs || [];
+    }
+    const { data: subSpecs } = await supabase
+      .from('info_sub_especialidades')
+      .select('*');
+
+    const { NinjutsuLogic } = await import('@/domain/character/logic');
+    const validation = NinjutsuLogic.validateNinjutsuLimits(
+      data.personajes_ramas || [],
+      techDetails,
+      subSpecs || []
+    );
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
     // 1. Crear el personaje base
     const character = await CharacterServerService.createCharacter(supabase, {
       user_id: user.id,
