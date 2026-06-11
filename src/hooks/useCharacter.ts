@@ -100,6 +100,10 @@ export function useCharacter(characterId: string) {
   }, [isEditing, characterId]);
 
   // Derived Stats Effect
+  const statsBaseSignature = JSON.stringify(character?.stats_base || {});
+  const escaladoRulesSignature = JSON.stringify(masters.escaladoRules || {});
+  const rangoRulesSignature = JSON.stringify(masters.rangoRules || {});
+
   useEffect(() => {
     if (!character || !masters.escaladoRules || !masters.rangoRules) return;
     
@@ -115,9 +119,14 @@ export function useCharacter(characterId: string) {
     if (JSON.stringify(newDerivados) !== JSON.stringify(character.atributos_derivados)) {
       setCharacter(prev => prev ? { ...prev, atributos_derivados: newDerivados } : null);
     }
-  }, [character?.stats_base, character?.rango, masters.escaladoRules, masters.rangoRules]);
+  }, [statsBaseSignature, character?.rango, escaladoRulesSignature, rangoRulesSignature]);
 
   // Auto Rank Effect
+  const tecsSignature = JSON.stringify(character?.personajes_tecnicas?.map(t => t.tecnica_id) || []);
+  const ramasSignature = JSON.stringify(character?.personajes_ramas?.map(r => [r.rama_id, r.sub_especialidad_id, r.elemento_principal_id, r.elemento_secundario_id, r.elemento_terciario_id]) || []);
+  const subEspecialidadesSignature = JSON.stringify(masters.subEspecialidades || []);
+  const glosarioLength = glosarioCompleto?.length || 0;
+
   useEffect(() => {
     if (!character || !masters.rangoRules) return;
     
@@ -132,7 +141,7 @@ export function useCharacter(characterId: string) {
     if (newRango !== character.rango) {
       setCharacter(prev => prev ? { ...prev, rango: newRango } : null);
     }
-  }, [character?.puntos_stats, character?.personajes_tecnicas, character?.personajes_ramas, masters.rangoRules, glosarioCompleto, masters.subEspecialidades]);
+  }, [character?.puntos_stats, rangoRulesSignature, tecsSignature, ramasSignature, glosarioLength, subEspecialidadesSignature]);
 
   const updateField = (field: keyof Character, value: any) => {
     setCharacter(prev => prev ? { ...prev, [field]: value } : null);
