@@ -199,7 +199,7 @@ export default function CharacterSheet() {
               </span>
             </div>
             <p className="text-gris-texto text-caption sm:text-xs font-bold leading-relaxed uppercase tracking-wider text-center sm:text-left">
-              Tu personaje ha superado los 3 meses sin actividad reglamentaria. Puedes apelar para reactivarlo o archivarlo manualmente de forma definitiva.
+              Tu personaje ha superado los 3 meses sin actividad. Puedes apelar para reactivarlo o archivarlo manualmente de forma definitiva.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 w-full">
               {hasPendingAppeal ? (
@@ -247,7 +247,7 @@ export default function CharacterSheet() {
               </div>
             </div>
             <div className="flex-1 min-w-0 w-full">
-              <h2 
+              <h2
                 className="ninja-title text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl mb-2 leading-tight"
                 style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}
               >
