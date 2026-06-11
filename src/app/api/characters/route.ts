@@ -105,7 +105,8 @@ export async function POST(request: Request) {
     const validation = NinjutsuLogic.validateNinjutsuLimits(
       data.personajes_ramas || [],
       techDetails,
-      subSpecs || []
+      subSpecs || [],
+      data.eleccion_tecnicas_clan
     );
     if (!validation.valid) {
       return NextResponse.json({ error: validation.error }, { status: 400 });

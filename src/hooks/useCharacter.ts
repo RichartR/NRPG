@@ -180,7 +180,8 @@ export function useCharacter(characterId: string) {
         const validation = NinjutsuLogic.validateNinjutsuLimits(
           character.personajes_ramas || [],
           character.personajes_tecnicas || [],
-          masters.subEspecialidades || []
+          masters.subEspecialidades || [],
+          character.eleccion_tecnicas_clan
         );
         if (!validation.valid) {
           throw new Error(validation.error);
