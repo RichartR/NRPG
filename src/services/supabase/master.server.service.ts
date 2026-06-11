@@ -1,5 +1,10 @@
-import { SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient, createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { Aldea, RamaClan, SubEspecialidad, DocumentoSistema, DocumentoCombate, ConfiguracionSistema, Glosario, GlosarioCategoria, GlosarioSubcategoria, Entrenamiento } from '@/domain/types';
+import { unstable_cache } from 'next/cache';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const publicClient = createSupabaseClient(supabaseUrl, supabaseAnonKey);
 
 // Extended RamaClan with joined aldea for slug/abreviatura navigation
 export interface RamaConAldea extends RamaClan {
@@ -7,6 +12,139 @@ export interface RamaConAldea extends RamaClan {
 }
 
 export const MasterServerService = {
+  getCachedAldeasActivas: unstable_cache(
+    async () => {
+      const { data, error } = await publicClient
+        .from('info_aldeas')
+        .select('*')
+        .eq('activo', true);
+      if (error) throw error;
+      if (!data) return [];
+
+      const mainIds = [1, 2, 3, 4, 5];
+      return data.sort((a, b) => {
+        const aIsMain = mainIds.includes(a.id);
+        const bIsMain = mainIds.includes(b.id);
+        if (aIsMain && !bIsMain) return -1;
+        if (!aIsMain && bIsMain) return 1;
+        return a.id - b.id;
+      });
+    },
+    ['master-aldeas-activas'],
+    { revalidate: 300 }
+  ),
+
+  getCachedRamasGlobales: unstable_cache(
+    async () => {
+      const { data, error } = await publicClient
+        .from('info_ramas_clanes')
+        .select('*')
+        .eq('tipo', 'rama')
+        .eq('activo', true)
+        .is('aldea_id', null)
+        .order('nombre', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    ['master-ramas-globales'],
+    { revalidate: 300 }
+  ),
+
+  getCachedDocumentosSistemas: unstable_cache(
+    async () => {
+      const { data, error } = await publicClient
+        .from('info_documentos_sistemas')
+        .select('*')
+        .eq('categoria', 'sistemas')
+        .eq('activo', true)
+        .order('titulo', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    ['master-documentos-sistemas'],
+    { revalidate: 300 }
+  ),
+
+  getCachedGlosarioCategorias: unstable_cache(
+    async () => {
+      const { data, error } = await publicClient
+        .from('info_glosario_categorias')
+        .select('*')
+        .order('nombre', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    ['master-glosario-categorias'],
+    { revalidate: 300 }
+  ),
+
+  getCachedGlosarioSubcategorias: unstable_cache(
+    async () => {
+      const { data, error } = await publicClient
+        .from('info_glosario_subcategorias')
+        .select('*')
+        .order('nombre', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    ['master-glosario-subcategorias'],
+    { revalidate: 300 }
+  ),
+
+  getCachedGlosarios: unstable_cache(
+    async () => {
+      const { data, error } = await publicClient
+        .from('info_glosario')
+        .select('*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre)')
+        .eq('activo', true)
+        .order('nombre_es', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    ['master-glosarios-todos'],
+    { revalidate: 300 }
+  ),
+
+  getCachedAdminEntrenamientos: unstable_cache(
+    async () => {
+      const { data, error } = await publicClient
+        .from('info_entrenamientos')
+        .select('*, info_ramas_clanes(id, nombre), info_sub_especialidades(id, nombre)')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    ['master-admin-entrenamientos'],
+    { revalidate: 300 }
+  ),
+
+  getCachedSubEspecialidades: unstable_cache(
+    async () => {
+      const { data, error } = await publicClient
+        .from('info_sub_especialidades')
+        .select('*')
+        .eq('activo', true)
+        .order('nombre', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    ['master-subespecialidades-activas'],
+    { revalidate: 300 }
+  ),
+
+  getCachedRamas: unstable_cache(
+    async () => {
+      const { data, error } = await publicClient
+        .from('info_ramas_clanes')
+        .select('*')
+        .eq('activo', true)
+        .order('nombre', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    ['master-ramas-todas-activas'],
+    { revalidate: 300 }
+  ),
   async getAldeas(supabase: SupabaseClient): Promise<Aldea[]> {
     const { data, error } = await supabase
       .from('info_aldeas')

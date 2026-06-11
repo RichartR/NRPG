@@ -4,8 +4,7 @@ import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import NinjaCard from '@/components/ui/NinjaCard';
 
 export default async function RamasPage() {
-  const supabase = await createClient();
-  const ramas = await MasterServerService.getRamasGlobales(supabase);
+  const ramas = await MasterServerService.getCachedRamasGlobales();
 
   return (
     <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col">

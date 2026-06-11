@@ -15,8 +15,7 @@ function getTitleFontSize(name: string) {
 }
 
 export default async function AldeasPage() {
-  const supabase = await createClient();
-  const aldeas = await MasterServerService.getAldeasActivas(supabase);
+  const aldeas = await MasterServerService.getCachedAldeasActivas();
 
   return (
     <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col">

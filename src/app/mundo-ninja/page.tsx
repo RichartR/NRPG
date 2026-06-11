@@ -7,7 +7,7 @@ export default async function MundoNinjaSelectionPage() {
   const supabase = await createClient();
 
   const [aldeas, { data: { user } }] = await Promise.all([
-    MasterServerService.getAldeasActivas(supabase),
+    MasterServerService.getCachedAldeasActivas(),
     supabase.auth.getUser()
   ]);
 

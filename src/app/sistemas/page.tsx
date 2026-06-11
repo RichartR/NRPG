@@ -8,7 +8,7 @@ export default async function SistemasPage() {
   
   // 1. Obtener documentos normales de la categoría 'sistemas' y sesión del usuario en paralelo
   const [docs, userRes] = await Promise.all([
-    MasterServerService.getDocumentosSistemas(supabase),
+    MasterServerService.getCachedDocumentosSistemas(),
     supabase.auth.getUser()
   ]);
 

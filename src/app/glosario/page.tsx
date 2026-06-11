@@ -22,13 +22,13 @@ export default async function GlosarioPage() {
     limitAldeaRaw,
     limitOrganizacionRaw
   ] = await Promise.all([
-    MasterServerService.getGlosarioCategorias(supabase),
-    MasterServerService.getGlosarioSubcategorias(supabase),
-    MasterServerService.getGlosarios(supabase),
-    MasterServerService.getRamas(supabase),
-    MasterServerService.getAldeasActivas(supabase),
-    MasterServerService.getSubEspecialidades(supabase),
-    MasterServerService.getAdminEntrenamientos(supabase),
+    MasterServerService.getCachedGlosarioCategorias(),
+    MasterServerService.getCachedGlosarioSubcategorias(),
+    MasterServerService.getCachedGlosarios(),
+    MasterServerService.getCachedRamas(),
+    MasterServerService.getCachedAldeasActivas(),
+    MasterServerService.getCachedSubEspecialidades(),
+    MasterServerService.getCachedAdminEntrenamientos(),
     supabase
       .from('reg_characters')
       .select('id, aldea_id, reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(rama_id)')
