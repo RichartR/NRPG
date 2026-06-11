@@ -12,8 +12,19 @@ interface AldeaEditFormProps {
   onCancel: () => void;
 }
 
+const generateSlug = (name: string) => {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-');
+};
+
 export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
   const isCreate = !aldea;
+  const [isSlugEdited, setIsSlugEdited] = useState(false);
   const [formData, setFormData] = useState<Partial<Aldea>>(() => {
     if (aldea) {
       return {
@@ -45,7 +56,7 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
     try {
       const payload = {
         ...formData,
-        slug: formData.slug || formData.abreviatura?.toLowerCase().replace(/\s+/g, '-')
+        slug: generateSlug(formData.slug || formData.abreviatura || '')
       };
 
       await AdminService.saveAldea(payload);
@@ -137,7 +148,9 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
                 value={formData.abreviatura}
                 onChange={(e) => {
                   updateField('abreviatura', e.target.value);
-                  if (!formData.slug) updateField('slug', e.target.value.toLowerCase().trim().replace(/\s+/g, '-'));
+                  if (!isSlugEdited && isCreate) {
+                    updateField('slug', generateSlug(e.target.value));
+                  }
                 }}
                 placeholder="Ej: Konoha"
                 className="w-full ninja-input py-4"
@@ -148,7 +161,10 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
               <input
                 type="text"
                 value={formData.slug}
-                onChange={(e) => updateField('slug', e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                onChange={(e) => {
+                  setIsSlugEdited(true);
+                  updateField('slug', generateSlug(e.target.value));
+                }}
                 placeholder="ej-konoha"
                 className="w-full ninja-input py-4"
               />

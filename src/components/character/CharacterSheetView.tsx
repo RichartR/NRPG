@@ -283,8 +283,27 @@ export function CharacterSheetView({
 
     let hasChanges = false;
     const newRamas = character.personajes_ramas.map((pr: any) => {
-      if (Number(pr.rama_id) === 4 && pr.sub_especialidad_id) {
-        const subEsp = masters.subEspecialidades.find((s: any) => s.id === pr.sub_especialidad_id);
+      const clanInfo = pr ? (pr.info_ramas_clanes || (masters.ramas || []).find((r: any) => r.id === Number(pr.rama_id))) : null;
+      const isClanElemental = clanInfo?.config_iniciales?.clan_elemental === true;
+      const clanEleccion = character.eleccion_tecnicas_clan;
+
+      const hasNinjutsu = Number(pr.rama_id) === 4 && pr.sub_especialidad_id;
+      const hasClanNinjutsu = isClanElemental && clanEleccion && Number(clanEleccion.rama_id) === 4 && clanEleccion.sub_especialidad_id;
+
+      if (hasNinjutsu || hasClanNinjutsu) {
+        let subEspecialidadId = pr.sub_especialidad_id;
+        if (Number(pr.rama_id) === 4 && clanEleccion && Number(clanEleccion.rama_id) === 4 && clanEleccion.sub_especialidad_id) {
+          const mainSub = masters.subEspecialidades.find((s: any) => s.id === pr.sub_especialidad_id);
+          const clanSub = masters.subEspecialidades.find((s: any) => s.id === clanEleccion.sub_especialidad_id);
+          const getVal = (slug: string) => slug === 'ninjutsu-iii' ? 3 : slug === 'ninjutsu-ii' ? 2 : slug === 'ninjutsu-i' ? 1 : 0;
+          if (clanSub && getVal(clanSub.slug || '') > getVal(mainSub?.slug || '')) {
+            subEspecialidadId = clanEleccion.sub_especialidad_id;
+          }
+        } else if (!hasNinjutsu && hasClanNinjutsu) {
+          subEspecialidadId = clanEleccion?.sub_especialidad_id;
+        }
+
+        const subEsp = masters.subEspecialidades.find((s: any) => s.id === subEspecialidadId);
         if (!subEsp) return pr;
 
         const isNinI = subEsp.slug === 'ninjutsu-i';
@@ -294,16 +313,23 @@ export function CharacterSheetView({
         const S = isNinI ? 1 : isNinII ? 2 : isNinIII ? 3 : 0;
         if (S === 0) return pr;
 
-        // Calcular elementos fijos de la otra rama/clan
+        // Calcular elementos fijos de la otra rama/clan o de este clan si es elemental
         const otherSlot = Number(pr.slot) === 1 ? 2 : 1;
         const otherPr = character.personajes_ramas?.find((r: any) => Number(r.slot) === otherSlot);
         let poolFijoBasico: any[] = [];
-        if (otherPr && masters.ramaElementos) {
+        if (masters.ramaElementos) {
           poolFijoBasico = masters.ramaElementos
             .filter((re: any) =>
               re.tipo === 'fijo' &&
               re.info_elementos?.tipo === 'basico' &&
-              ((otherPr.rama_id && re.rama_id === otherPr.rama_id) || (otherPr.sub_especialidad_id && re.sub_especialidad_id === otherPr.sub_especialidad_id))
+              (
+                // Elemento fijo de la rama de este slot (ej: si es clan elemental)
+                re.rama_id === Number(pr.rama_id) ||
+                // Elemento fijo de la otra rama
+                (otherPr && re.rama_id === Number(otherPr.rama_id)) ||
+                // Elemento fijo por elección de clan
+                (clanEleccion && re.rama_id === Number(clanEleccion.rama_id))
+              )
             )
             .map((re: any) => re.info_elementos)
             .filter(Boolean);
@@ -315,53 +341,115 @@ export function CharacterSheetView({
         let expectedSecundario = pr.elemento_secundario_id || null;
         let expectedTerciario = pr.elemento_terciario_id || null;
 
-        if (S >= N) {
-          // Los primeros N slots se auto-rellenan con los elementos del clan
-          if (N >= 1) {
-            const firstElemId = poolFijoBasico[0]?.id || null;
-            if (expectedPrincipal !== firstElemId) {
-              expectedPrincipal = firstElemId;
+        if (S === 1) {
+          if (N === 1) {
+            const fixedId = poolFijoBasico[0]?.id || null;
+            if (expectedPrincipal !== fixedId) {
+              expectedPrincipal = fixedId;
               hasChanges = true;
             }
-          }
-          if (N >= 2) {
-            const secondElemId = poolFijoBasico[1]?.id || null;
-            if (expectedSecundario !== secondElemId) {
-              expectedSecundario = secondElemId;
+          } else if (N > 1) {
+            const poolIds = poolFijoBasico.map((el: any) => el.id);
+            if (!expectedPrincipal || !poolIds.includes(expectedPrincipal)) {
+              expectedPrincipal = poolIds[0];
               hasChanges = true;
             }
-          }
-          if (N >= 3) {
-            const thirdElemId = poolFijoBasico[2]?.id || null;
-            if (expectedTerciario !== thirdElemId) {
-              expectedTerciario = thirdElemId;
-              hasChanges = true;
-            }
-          }
-
-          // Si el slot excede el número de fijos, y el valor actual no cumple con las restricciones, limpiarlo
-          if (S === 2 && N === 1) {
-            if (expectedSecundario === expectedPrincipal) {
-              expectedSecundario = null;
-              hasChanges = true;
-            }
-          }
-          if (S === 3) {
-            if (N === 1) {
-              if (expectedSecundario === expectedPrincipal) { expectedSecundario = null; hasChanges = true; }
-              if (expectedTerciario === expectedPrincipal || expectedTerciario === expectedSecundario) { expectedTerciario = null; hasChanges = true; }
-            } else if (N === 2) {
-              if (expectedTerciario === expectedPrincipal || expectedTerciario === expectedSecundario) { expectedTerciario = null; hasChanges = true; }
-            }
-          }
-        } else {
-          // S < N: El jugador elige libremente de entre los N fijos
-          if (expectedPrincipal && !poolFijoBasico.some((e: any) => e.id === expectedPrincipal)) {
-            expectedPrincipal = null;
-            hasChanges = true;
           }
           expectedSecundario = null;
           expectedTerciario = null;
+        } else if (S === 2) {
+          expectedTerciario = null;
+          if (N === 1) {
+            // Si solo tiene 1 fijo, se pone sí o sí como principal
+            const fixedId = poolFijoBasico[0]?.id || null;
+            if (expectedPrincipal !== fixedId) {
+              expectedPrincipal = fixedId;
+              hasChanges = true;
+            }
+            if (expectedSecundario === expectedPrincipal && expectedSecundario !== null) {
+              expectedSecundario = null;
+              hasChanges = true;
+            }
+          } else if (N === 2) {
+            // Si tiene 2 fijos, ambos deben ser elegidos pero el orden entre ellos es libre
+            const fixed1 = poolFijoBasico[0]?.id || null;
+            const fixed2 = poolFijoBasico[1]?.id || null;
+            if (expectedPrincipal !== fixed1 && expectedPrincipal !== fixed2) {
+              expectedPrincipal = fixed1;
+              expectedSecundario = fixed2;
+              hasChanges = true;
+            } else {
+              const otherFixed = expectedPrincipal === fixed1 ? fixed2 : fixed1;
+              if (expectedSecundario !== otherFixed) {
+                expectedSecundario = otherFixed;
+                hasChanges = true;
+              }
+            }
+          } else if (N > 2) {
+            const poolIds = poolFijoBasico.map((el: any) => el.id);
+            const pInPool = expectedPrincipal && poolIds.includes(expectedPrincipal);
+            const sInPool = expectedSecundario && poolIds.includes(expectedSecundario);
+            const areDistinct = expectedPrincipal !== expectedSecundario;
+            if (pInPool && sInPool && areDistinct) {
+              // Keep
+            } else {
+              expectedPrincipal = poolIds[0];
+              expectedSecundario = poolIds[1];
+              hasChanges = true;
+            }
+          }
+        } else if (S === 3) {
+          if (N === 1) {
+            // Si solo tiene 1 fijo, se pone sí o sí como principal
+            const fixedId = poolFijoBasico[0]?.id || null;
+            if (expectedPrincipal !== fixedId) {
+              expectedPrincipal = fixedId;
+              hasChanges = true;
+            }
+            if (expectedSecundario === expectedPrincipal && expectedSecundario !== null) {
+              expectedSecundario = null;
+              hasChanges = true;
+            }
+            if (expectedTerciario === expectedPrincipal || expectedTerciario === expectedSecundario) {
+              expectedTerciario = null;
+              hasChanges = true;
+            }
+          } else if (N === 2) {
+            // Caso de Nin III con 2 fijos: los fijos pueden elegirse en Principal o Secundario (orden libre entre ellos)
+            const fixed1 = poolFijoBasico[0]?.id || null;
+            const fixed2 = poolFijoBasico[1]?.id || null;
+            if (expectedPrincipal !== fixed1 && expectedPrincipal !== fixed2) {
+              expectedPrincipal = fixed1;
+              expectedSecundario = fixed2;
+              hasChanges = true;
+            } else {
+              const otherFixed = expectedPrincipal === fixed1 ? fixed2 : fixed1;
+              if (expectedSecundario !== otherFixed) {
+                expectedSecundario = otherFixed;
+                hasChanges = true;
+              }
+            }
+
+            // El tercero es libre
+            if (expectedTerciario === fixed1 || expectedTerciario === fixed2) {
+              expectedTerciario = null;
+              hasChanges = true;
+            }
+          } else if (N >= 3) {
+            const poolIds = poolFijoBasico.map((el: any) => el.id);
+            const pInPool = expectedPrincipal && poolIds.includes(expectedPrincipal);
+            const sInPool = expectedSecundario && poolIds.includes(expectedSecundario);
+            const tInPool = expectedTerciario && poolIds.includes(expectedTerciario);
+            const areDistinct = expectedPrincipal !== expectedSecundario && expectedPrincipal !== expectedTerciario && expectedSecundario !== expectedTerciario;
+            if (pInPool && sInPool && tInPool && areDistinct) {
+              // Keep
+            } else {
+              expectedPrincipal = poolIds[0];
+              expectedSecundario = poolIds[1];
+              expectedTerciario = poolIds[2];
+              hasChanges = true;
+            }
+          }
         }
 
         if (
@@ -537,13 +625,37 @@ export function CharacterSheetView({
       }
     });
 
-    // 2. Elementos seleccionados en el Ninjutsu Elemental (rama_id = 4)
-    const ninjutsuRama = charRamas.find((pr: any) => Number(pr.rama_id) === 4);
-    if (ninjutsuRama) {
-      if (ninjutsuRama.elemento_principal_id) fijosSet.add(Number(ninjutsuRama.elemento_principal_id));
-      if (ninjutsuRama.elemento_secundario_id) fijosSet.add(Number(ninjutsuRama.elemento_secundario_id));
-      if (ninjutsuRama.elemento_terciario_id) fijosSet.add(Number(ninjutsuRama.elemento_terciario_id));
+    // Elementos fijos de la elección del clan
+    const clanEleccion = character.eleccion_tecnicas_clan;
+    if (clanEleccion) {
+      if (clanEleccion.rama_id) {
+        masters.ramaElementos
+          .filter((re: any) => Number(re.rama_id) === Number(clanEleccion.rama_id) && re.tipo === 'fijo')
+          .forEach((re: any) => {
+            if (re.elemento_id) fijosSet.add(Number(re.elemento_id));
+          });
+      }
+      if (clanEleccion.sub_especialidad_id) {
+        masters.ramaElementos
+          .filter((re: any) => Number(re.sub_especialidad_id) === Number(clanEleccion.sub_especialidad_id) && re.tipo === 'fijo')
+          .forEach((re: any) => {
+            if (re.elemento_id) fijosSet.add(Number(re.elemento_id));
+          });
+      }
     }
+
+    // 2. Elementos seleccionados en el Ninjutsu Elemental (rama_id = 4) o Clan Elemental
+    charRamas.forEach((pr: any) => {
+      const clanInfo = pr.info_ramas_clanes || (masters.ramas || []).find((r: any) => r.id === Number(pr.rama_id));
+      const isClanElemental = clanInfo?.config_iniciales?.clan_elemental === true;
+      const isNinjutsu = Number(pr.rama_id) === 4;
+
+      if (isNinjutsu || isClanElemental) {
+        if (pr.elemento_principal_id) fijosSet.add(Number(pr.elemento_principal_id));
+        if (pr.elemento_secundario_id) fijosSet.add(Number(pr.elemento_secundario_id));
+        if (pr.elemento_terciario_id) fijosSet.add(Number(pr.elemento_terciario_id));
+      }
+    });
 
     // 3. Mapear a objetos Elemento completos
     return Array.from(fijosSet)
@@ -623,9 +735,35 @@ export function CharacterSheetView({
     if (req.rama_id) {
       const reqRamaId = Number(req.rama_id);
       if (!isNaN(reqRamaId) && reqRamaId > 0) {
-        const charRamaIds = (character.personajes_ramas || []).map(r => Number(r.rama_id));
+        const charRamaIds = (character.personajes_ramas || []).map((r: any) => Number(r.rama_id));
+
+        // Incluir la rama elegida como técnica de clan (y el padre si fue una subcategoría)
+        const clanEleccion = character.eleccion_tecnicas_clan;
+        if (clanEleccion?.rama_id) charRamaIds.push(Number(clanEleccion.rama_id));
+        if (clanEleccion?.sub_especialidad_id) {
+          const subEsp = (masters.subEspecialidades || []).find((s: any) => s.id === Number(clanEleccion.sub_especialidad_id));
+          if (subEsp?.rama_id) charRamaIds.push(Number(subEsp.rama_id));
+        }
+
         if (!charRamaIds.includes(reqRamaId)) return false;
       }
+    }
+
+    // Check de Sub-especialidad/Subcategoría
+    const subEspId = item.sub_especialidad_id || (item as any).id_subespecialidad;
+    if (subEspId) {
+      const reqSubId = Number(subEspId);
+      const charSubIds = (character.personajes_ramas || [])
+        .map((r: any) => r.sub_especialidad_id)
+        .filter(Boolean)
+        .map(Number);
+
+      const clanEleccion = character.eleccion_tecnicas_clan;
+      if (clanEleccion?.sub_especialidad_id) {
+        charSubIds.push(Number(clanEleccion.sub_especialidad_id));
+      }
+
+      if (!charSubIds.includes(reqSubId)) return false;
     }
 
     // 6. Exclusividad
@@ -651,26 +789,38 @@ export function CharacterSheetView({
 
     // Restricciones de Rango de Ninjutsu Elemental II y III basado en los slots de los elementos
     const ninjutsuRama = (character.personajes_ramas || []).find((pr: any) => Number(pr.rama_id) === 4);
+    let sub = null;
     if (ninjutsuRama && ninjutsuRama.sub_especialidad_id) {
-      const sub = (masters.subEspecialidades || []).find((s: any) => s.id === ninjutsuRama.sub_especialidad_id);
-      if (sub && (sub.slug === 'ninjutsu-ii' || sub.slug === 'ninjutsu-iii')) {
-        const reqElementId = item.elemento_id || req.elemento_id;
-        if (reqElementId) {
-          const elementId = Number(reqElementId);
-          const rank = (item.rango || req.rango || 'D').toUpperCase();
+      const mainSub = (masters.subEspecialidades || []).find((s: any) => s.id === ninjutsuRama.sub_especialidad_id);
+      const clanEleccion = character.eleccion_tecnicas_clan;
+      let clanSub = null;
+      if (clanEleccion && Number(clanEleccion.rama_id) === 4 && clanEleccion.sub_especialidad_id) {
+        clanSub = (masters.subEspecialidades || []).find((s: any) => s.id === clanEleccion.sub_especialidad_id);
+      }
+      const getVal = (slug: string) => slug === 'ninjutsu-iii' ? 3 : slug === 'ninjutsu-ii' ? 2 : slug === 'ninjutsu-i' ? 1 : 0;
+      if (clanSub && getVal(clanSub.slug || '') > getVal(mainSub?.slug || '')) {
+        sub = clanSub;
+      } else {
+        sub = mainSub;
+      }
+    }
+    if (sub && (sub.slug === 'ninjutsu-ii' || sub.slug === 'ninjutsu-iii')) {
+      const reqElementId = item.elemento_id || req.elemento_id;
+      if (reqElementId) {
+        const elementId = Number(reqElementId);
+        const rank = (item.rango || req.rango || 'D').toUpperCase();
 
-          // Elemento secundario: Máximo rango B (bloquear A y S)
-          if (ninjutsuRama.elemento_secundario_id && Number(ninjutsuRama.elemento_secundario_id) === elementId) {
-            if (rank === 'A' || rank === 'S') {
-              return false;
-            }
+        // Elemento secundario: Máximo rango B (bloquear A y S)
+        if (ninjutsuRama?.elemento_secundario_id && Number(ninjutsuRama.elemento_secundario_id) === elementId) {
+          if (rank === 'A' || rank === 'S') {
+            return false;
           }
+        }
 
-          // Elemento terciario (solo para Nin III): Máximo rango C (bloquear B, A y S)
-          if (sub.slug === 'ninjutsu-iii' && ninjutsuRama.elemento_terciario_id && Number(ninjutsuRama.elemento_terciario_id) === elementId) {
-            if (rank === 'B' || rank === 'A' || rank === 'S') {
-              return false;
-            }
+        // Elemento terciario (solo para Nin III): Máximo rango C (bloquear B, A y S)
+        if (sub.slug === 'ninjutsu-iii' && ninjutsuRama?.elemento_terciario_id && Number(ninjutsuRama.elemento_terciario_id) === elementId) {
+          if (rank === 'B' || rank === 'A' || rank === 'S') {
+            return false;
           }
         }
       }
@@ -699,7 +849,7 @@ export function CharacterSheetView({
     const reqRank = rankOrder[reqR] ?? 0;
     if (charRank < reqRank) return false;
     if (e.requisitos) {
-      return meetsRequirements({ requisitos: e.requisitos } as any);
+      return meetsRequirements({ ...e, requisitos: e.requisitos } as any);
     }
     return true;
   };
@@ -742,8 +892,8 @@ export function CharacterSheetView({
           if (Number(ramaId) === 4 && glosario.elemento_id) {
             const el = (masters.elementos || []).find((e: any) => Number(e.id) === Number(glosario.elemento_id));
             if (el) {
-              const elName = el.nombre_jap 
-                ? `${el.nombre_jap} (${el.nombre_esp})` 
+              const elName = el.nombre_jap
+                ? `${el.nombre_jap} (${el.nombre_esp})`
                 : el.nombre_esp;
               ramaName = `${rama.nombre} — ${elName.toUpperCase()}`;
             }
@@ -1435,15 +1585,45 @@ export function CharacterSheetView({
                                   }
                                 }
 
-                                const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { slot, rama_id: Number(v), sub_especialidad_id: null, id_entrenamiento: null, elemento_principal_id: null, elemento_secundario_id: null, elemento_terciario_id: null }];
+                                // Quitar técnicas de la elección anterior de clan si existía y estamos editando el slot del clan
+                                const currentRama = (masters.ramas || []).find((r: any) => r.id === Number(pr?.rama_id));
+                                const isChangingClan = currentRama?.tipo === 'clan';
+                                const choice = character.eleccion_tecnicas_clan;
+                                let updatedTecs = character.personajes_tecnicas || [];
+                                if (isChangingClan && choice) {
+                                  const prevTechIds = choice.tecnicas_ids || [];
+                                  updatedTecs = updatedTecs.filter(
+                                    (pt: any) => !prevTechIds.includes(Number(pt.tecnica_id))
+                                  );
+                                  onUpdateField('eleccion_tecnicas_clan', null);
+                                }
+
+                                const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { slot, rama_id: v ? Number(v) : null, sub_especialidad_id: null, id_entrenamiento: null, elemento_principal_id: null, elemento_secundario_id: null, elemento_terciario_id: null }];
                                 onUpdateField('personajes_ramas', newRamas);
+                                onUpdateField('personajes_tecnicas', updatedTecs);
                               }}
                             />
                             {masters.subEspecialidades.some((s: any) => s.rama_id === pr?.rama_id) && (
                               <SelectField
                                 label="SUB-ESPECIALIDAD"
                                 value={pr?.sub_especialidad_id}
-                                options={masters.subEspecialidades.filter((s: any) => s.rama_id === pr?.rama_id && (Number(pr?.rama_id) !== 4 || s.slug?.startsWith('ninjutsu-'))).map((s: any) => ({ label: s.nombre, value: s.id }))}
+                                options={masters.subEspecialidades
+                                  .filter((s: any) => {
+                                    if (s.rama_id !== pr?.rama_id) return false;
+                                    if (Number(pr?.rama_id) === 4) {
+                                      if (!s.slug?.startsWith('ninjutsu-')) return false;
+                                      const clanEleccion = character.eleccion_tecnicas_clan;
+                                      if (clanEleccion && Number(clanEleccion.rama_id) === 4 && clanEleccion.sub_especialidad_id) {
+                                        const clanSub = (masters.subEspecialidades || []).find((cs: any) => cs.id === Number(clanEleccion.sub_especialidad_id));
+                                        if (clanSub && (clanSub.slug === 'ninjutsu-ii' || clanSub.slug === 'ninjutsu-iii')) {
+                                          return s.slug === 'ninjutsu-i';
+                                        }
+                                      }
+                                    }
+                                    return true;
+                                  })
+                                  .map((s: any) => ({ label: s.nombre, value: s.id }))
+                                }
                                 disabled={!isEditing && !isNew}
                                 onChange={(v) => {
                                   // Validar repetibilidad en sub-especialidad
@@ -1463,9 +1643,123 @@ export function CharacterSheetView({
                               />
                             )}
 
+                            {/* Selección de Especialización Inicial de Clan */}
+                            {(() => {
+                              const clanInfo = pr ? (pr.info_ramas_clanes || (masters.ramas || []).find((r: any) => r.id === Number(pr.rama_id))) : null;
+                              const clanOptions = clanInfo?.config_iniciales?.opciones || [];
+                              if (clanOptions.length === 0) return null;
+
+                              const choice = character.eleccion_tecnicas_clan;
+                              const currentValue = choice !== undefined && choice !== null ? choice.option_index : '';
+
+                              const optionLabel = (opt: any) => {
+                                const rama = (masters.ramas || []).find((r: any) => r.id === opt.rama_id);
+                                const sub = (masters.subEspecialidades || []).find((s: any) => s.id === opt.sub_especialidad_id);
+                                if (sub) return `${rama?.nombre ?? '?'} › ${sub.nombre}`;
+                                if (rama) return rama.nombre;
+                                return 'Opción de clan';
+                              };
+
+                              const selectOptions = clanOptions.map((opt: any, idx: number) => ({
+                                label: optionLabel(opt),
+                                value: idx
+                              }));
+
+                              return (
+                                <SelectField
+                                  label="COMPATIBILIDAD"
+                                  value={currentValue}
+                                  options={selectOptions}
+                                  disabled={!isEditing && !isNew}
+                                  onChange={async (v) => {
+                                    const idx = v !== '' ? Number(v) : null;
+                                    const isClanElemental = clanInfo?.config_iniciales?.clan_elemental === true;
+
+                                    // 1. Quitar las técnicas del clan de la opción anterior del inventario
+                                    const prevTechIds = choice?.tecnicas_ids || [];
+                                    let updatedTecs = (character.personajes_tecnicas || []).filter(
+                                      (pt: any) => !prevTechIds.includes(Number(pt.tecnica_id))
+                                    );
+
+                                    // Limpiar elementos de este slot al cambiar de compatibilidad
+                                    const updatedRamas = (character.personajes_ramas || []).map((r: any) => {
+                                      if (Number(r.slot) === slot) {
+                                        return {
+                                          ...r,
+                                          elemento_principal_id: null,
+                                          elemento_secundario_id: null,
+                                          elemento_terciario_id: null
+                                        };
+                                      }
+                                      return r;
+                                    });
+                                    onUpdateField('personajes_ramas', updatedRamas);
+
+                                    if (idx === null) {
+                                      onUpdateField('personajes_tecnicas', updatedTecs);
+                                      onUpdateField('eleccion_tecnicas_clan', null);
+                                    } else {
+                                      const opt = clanOptions[idx];
+
+                                      if (isClanElemental) {
+                                        // Para clan elemental, las técnicas no se añaden automáticamente. Solo limpiamos las previas.
+                                        onUpdateField('personajes_tecnicas', updatedTecs);
+                                      } else {
+                                        // 2. Añadir las nuevas técnicas de la opción seleccionada buscando localmente o en Supabase (clan normal)
+                                        const fetchedTechs = await Promise.all(
+                                          opt.tecnicas_ids.map(async (tid: number) => {
+                                            let tecData = (glosarioFiltrado || []).find(g => g.id === tid) ||
+                                              (masters.glosario || []).find((g: any) => g.id === tid);
+
+                                            if (!tecData) {
+                                              try {
+                                                const supabase = createClient();
+                                                const { data, error } = await supabase
+                                                  .from('info_glosario')
+                                                  .select('*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre)')
+                                                  .eq('id', tid)
+                                                  .single();
+                                                if (data && !error) {
+                                                  tecData = data;
+                                                }
+                                              } catch (err) {
+                                                console.error("Error fetching technique from supabase:", err);
+                                              }
+                                            }
+                                            return { tecnica_id: tid, info_glosario: tecData };
+                                          })
+                                        );
+
+                                        onUpdateField('personajes_tecnicas', [...updatedTecs, ...fetchedTechs]);
+                                      }
+
+                                      // 3. Guardar la elección
+                                      onUpdateField('eleccion_tecnicas_clan', {
+                                        option_index: idx,
+                                        rama_id: opt.rama_id,
+                                        sub_especialidad_id: opt.sub_especialidad_id,
+                                        tecnicas_ids: opt.tecnicas_ids
+                                      });
+                                    }
+                                  }}
+                                  placeholder="Seleccionar especialización..."
+                                />
+                              );
+                            })()}
+
                             {/* RENDERIZADO DINÁMICO DE SELECTORES DE ELEMENTOS PARA NINJUTSU ELEMENTAL */}
-                            {Number(pr?.rama_id) === 4 && pr?.sub_especialidad_id && (() => {
-                              const subEsp = masters.subEspecialidades.find((s: any) => s.id === pr.sub_especialidad_id);
+                            {(() => {
+                              const clanInfo = pr ? (pr.info_ramas_clanes || (masters.ramas || []).find((r: any) => r.id === Number(pr.rama_id))) : null;
+                              const isClanElemental = clanInfo?.config_iniciales?.clan_elemental === true;
+                              const clanEleccion = character.eleccion_tecnicas_clan;
+
+                              const hasNinjutsu = Number(pr?.rama_id) === 4 && pr?.sub_especialidad_id;
+                              const hasClanNinjutsu = isClanElemental && clanEleccion && Number(clanEleccion.rama_id) === 4 && clanEleccion.sub_especialidad_id;
+
+                              if (!hasNinjutsu && !hasClanNinjutsu) return null;
+
+                              const subEspecialidadId = hasNinjutsu ? pr.sub_especialidad_id : clanEleccion?.sub_especialidad_id;
+                              const subEsp = masters.subEspecialidades.find((s: any) => s.id === subEspecialidadId);
                               if (!subEsp) return null;
 
                               const isNinI = subEsp.slug === 'ninjutsu-i';
@@ -1474,17 +1768,21 @@ export function CharacterSheetView({
 
                               if (!isNinI && !isNinII && !isNinIII) return null;
 
-                              // Calcular pool condicionado: elementos fijos básicos del otro slot
+                              // Calcular pool condicionado: elementos fijos básicos
                               const otherSlot = slot === 1 ? 2 : 1;
                               const otherPr = character.personajes_ramas?.find((r: any) => Number(r.slot) === otherSlot);
 
                               let poolFijoBasico: any[] = [];
-                              if (otherPr && masters.ramaElementos) {
+                              if (masters.ramaElementos) {
                                 poolFijoBasico = masters.ramaElementos
                                   .filter((re: any) =>
                                     re.tipo === 'fijo' &&
                                     re.info_elementos?.tipo === 'basico' &&
-                                    ((otherPr.rama_id && re.rama_id === otherPr.rama_id) || (otherPr.sub_especialidad_id && re.sub_especialidad_id === otherPr.sub_especialidad_id))
+                                    (
+                                      re.rama_id === Number(pr?.rama_id) ||
+                                      (otherPr && re.rama_id === Number(otherPr.rama_id)) ||
+                                      (clanEleccion && re.rama_id === Number(clanEleccion.rama_id))
+                                    )
                                   )
                                   .map((re: any) => re.info_elementos)
                                   .filter(Boolean);
@@ -1495,7 +1793,7 @@ export function CharacterSheetView({
 
                               // Opciones para selectors
                               const getOptionsForSelector = (selectorSlot: number, currentVal: number | null, otherVals: (number | null)[]) => {
-                                const isRestricted = N >= selectorSlot;
+                                const isRestricted = (N >= 2 && selectorSlot <= 2) || (N === 1 && selectorSlot === 1);
                                 const baseList = isRestricted ? poolFijoBasico : todosBasicos;
                                 return baseList.map((e: any) => {
                                   const isSelectedElsewhere = otherVals.includes(e.id);
@@ -1504,7 +1802,7 @@ export function CharacterSheetView({
                                       ? `${e.nombre_jap.toUpperCase()} (${e.nombre_esp.toUpperCase()})`
                                       : e.nombre_esp.toUpperCase(),
                                     value: e.id,
-                                    disabled: isSelectedElsewhere && e.id !== currentVal
+                                    disabled: isSelectedElsewhere && e.id !== currentVal && !(N >= 2 && selectorSlot <= 2)
                                   };
                                 });
                               };
@@ -1520,7 +1818,7 @@ export function CharacterSheetView({
                                     label="ELEMENTO PRINCIPAL"
                                     value={pr?.elemento_principal_id ?? null}
                                     options={getOptionsForSelector(1, pr?.elemento_principal_id ?? null, [pr?.elemento_secundario_id ?? null, pr?.elemento_terciario_id ?? null])}
-                                    disabled={!isEditing && !isNew || (S >= N && N >= 1)}
+                                    disabled={!isEditing && !isNew || N === 1}
                                     onChange={(v) => {
                                       const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { ...pr, elemento_principal_id: v ? Number(v) : null }];
                                       onUpdateField('personajes_ramas', newRamas);
@@ -1533,7 +1831,7 @@ export function CharacterSheetView({
                                       label="ELEMENTO SECUNDARIO"
                                       value={pr?.elemento_secundario_id ?? null}
                                       options={getOptionsForSelector(2, pr?.elemento_secundario_id ?? null, [pr?.elemento_principal_id ?? null, pr?.elemento_terciario_id ?? null])}
-                                      disabled={!isEditing && !isNew || (S >= N && N >= 2)}
+                                      disabled={!isEditing && !isNew}
                                       onChange={(v) => {
                                         const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { ...pr, elemento_secundario_id: v ? Number(v) : null }];
                                         onUpdateField('personajes_ramas', newRamas);
@@ -1550,7 +1848,7 @@ export function CharacterSheetView({
                                         label="ELEMENTO TERCIARIO"
                                         value={pr?.elemento_terciario_id ?? null}
                                         options={optionsLibres}
-                                        disabled={!isEditing && !isNew || (S >= N && N >= 3)}
+                                        disabled={!isEditing && !isNew}
                                         onChange={(v) => {
                                           const newRamas = [...(character.personajes_ramas?.filter((r: any) => Number(r.slot) !== slot) || []), { ...pr, elemento_terciario_id: v ? Number(v) : null }];
                                           onUpdateField('personajes_ramas', newRamas);
@@ -2155,7 +2453,6 @@ export function CharacterSheetView({
               </SectionCard>
             </div>
           )}
-
           {activeTab === 'tecnicas' && (
             <div className="space-y-8 animate-fade-in">
               <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} totalPuntosCombate={totalPuntosCombate} xpLimitUsage={masters?.xpLimitUsage} />
@@ -2299,41 +2596,65 @@ export function CharacterSheetView({
                           label="APRENDER NUEVA TÉCNICA"
                           placeholder="BUSCAR JUTSU EN EL GLOSARIO..."
                           options={(glosarioFiltrado || [])
-                             .filter((i: Glosario) => {
-                               if (i.categoria_id !== 1) return false;
-                               if (!meetsRequirements(i)) return false;
-                               const current = character.personajes_tecnicas || [];
-                               if (current.some((pt: PersonajeTecnica) => pt.tecnica_id === i.id)) return false;
+                            .filter((i: Glosario) => {
+                              if (i.categoria_id !== 1) return false;
+                              if (!meetsRequirements(i)) return false;
+                              const current = character.personajes_tecnicas || [];
+                              if (current.some((pt: PersonajeTecnica) => pt.tecnica_id === i.id)) return false;
 
-                               // Validar límites de técnicas básicas de Ninjutsu II y III
-                               const ninjutsuRama = (character.personajes_ramas || []).find((pr: any) => Number(pr.rama_id) === 4);
-                               let isNinIIorIII = false;
-                               if (ninjutsuRama && ninjutsuRama.sub_especialidad_id) {
-                                 const sub = (masters.subEspecialidades || []).find((s: any) => s.id === ninjutsuRama.sub_especialidad_id);
-                                 if (sub && (sub.slug === 'ninjutsu-ii' || sub.slug === 'ninjutsu-iii')) {
-                                   isNinIIorIII = true;
-                                 }
-                               }
+                              // Validar límites de técnicas básicas de Ninjutsu II y III
+                              const ninjutsuRama = (character.personajes_ramas || []).find((pr: any) => Number(pr.rama_id) === 4);
+                              let isNinIIorIIIInBranch = false;
+                              if (ninjutsuRama && ninjutsuRama.sub_especialidad_id) {
+                                const sub = (masters.subEspecialidades || []).find((s: any) => s.id === ninjutsuRama.sub_especialidad_id);
+                                if (sub && (sub.slug === 'ninjutsu-ii' || sub.slug === 'ninjutsu-iii')) {
+                                  isNinIIorIIIInBranch = true;
+                                }
+                              }
+                              const clanEleccion = character.eleccion_tecnicas_clan;
+                              let isNinIIorIIIInClan = false;
+                              if (clanEleccion?.sub_especialidad_id && Number(clanEleccion.rama_id) === 4) {
+                                const sub = (masters.subEspecialidades || []).find((s: any) => s.id === Number(clanEleccion.sub_especialidad_id));
+                                if (sub && (sub.slug === 'ninjutsu-ii' || sub.slug === 'ninjutsu-iii')) {
+                                  isNinIIorIIIInClan = true;
+                                }
+                              }
+                              const isNinIIorIII = isNinIIorIIIInBranch || isNinIIorIIIInClan;
+                              const isFromClan = !isNinIIorIIIInBranch && isNinIIorIIIInClan;
 
-                               if (isNinIIorIII && Number(i.rama_clan_id) === 4 && i.basica === true) {
-                                 const basicNinjutsu = current.filter((pt: any) => {
-                                   const info = pt.info_glosario;
-                                   return info && Number(info.rama_clan_id) === 4 && info.basica === true;
-                                 });
+                              const isNinjutsuOrClanElementalTech = (info: any) => {
+                                if (isFromClan) {
+                                  const clanIds = (character.personajes_ramas || []).map((r: any) => Number(r.rama_id)).filter((id: number) => id !== 4 && id > 0);
+                                  return Number(info.rama_clan_id) === 4 || clanIds.includes(Number(info.rama_clan_id));
+                                } else {
+                                  return Number(info.rama_clan_id) === 4;
+                                }
+                              };
 
-                                 if (basicNinjutsu.length >= 8) return false;
+                              if (isNinIIorIII && isNinjutsuOrClanElementalTech(i) && i.basica === true) {
+                                const basicNinjutsu = current.filter((pt: any) => {
+                                  const info = pt.info_glosario;
+                                  return info && isNinjutsuOrClanElementalTech(info) && info.basica === true;
+                                });
 
-                                 const tecRank = (i.rango || 'D').toUpperCase();
-                                 const rankCount = basicNinjutsu.filter((pt: any) => (pt.info_glosario?.rango || 'D').toUpperCase() === tecRank).length;
+                                const limitTotal = isFromClan ? 6 : 8;
+                                const maxD = 3;
+                                const maxC = isFromClan ? 2 : 3;
+                                const maxB = isFromClan ? 1 : 2;
 
-                                 if (tecRank === 'D' && rankCount >= 3) return false;
-                                 if (tecRank === 'C' && rankCount >= 3) return false;
-                                 if (tecRank === 'B' && rankCount >= 2) return false;
-                                 if (tecRank === 'A' || tecRank === 'S') return false;
-                               }
+                                if (basicNinjutsu.length >= limitTotal) return false;
 
-                               return true;
-                             })
+                                const tecRank = (i.rango || 'D').toUpperCase();
+                                const rankCount = basicNinjutsu.filter((pt: any) => (pt.info_glosario?.rango || 'D').toUpperCase() === tecRank).length;
+
+                                if (tecRank === 'D' && rankCount >= maxD) return false;
+                                if (tecRank === 'C' && rankCount >= maxC) return false;
+                                if (tecRank === 'B' && rankCount >= maxB) return false;
+                                if (tecRank === 'A' || tecRank === 'S') return false;
+                              }
+
+                              return true;
+                            })
                             .map((t: any) => {
                               const subData = t.info_glosario_subcategorias;
                               const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'TÉCNICA';
@@ -2351,38 +2672,62 @@ export function CharacterSheetView({
 
                             if (tec && !current.some((t: any) => t.tecnica_id === tec.id)) {
                               const ninjutsuRama = (character.personajes_ramas || []).find((pr: any) => Number(pr.rama_id) === 4);
-                              let isNinIIorIII = false;
+                              let isNinIIorIIIInBranch = false;
                               if (ninjutsuRama && ninjutsuRama.sub_especialidad_id) {
                                 const sub = (masters.subEspecialidades || []).find((s: any) => s.id === ninjutsuRama.sub_especialidad_id);
                                 if (sub && (sub.slug === 'ninjutsu-ii' || sub.slug === 'ninjutsu-iii')) {
-                                  isNinIIorIII = true;
+                                  isNinIIorIIIInBranch = true;
                                 }
                               }
+                              const clanEleccion = character.eleccion_tecnicas_clan;
+                              let isNinIIorIIIInClan = false;
+                              if (clanEleccion?.sub_especialidad_id && Number(clanEleccion.rama_id) === 4) {
+                                const sub = (masters.subEspecialidades || []).find((s: any) => s.id === Number(clanEleccion.sub_especialidad_id));
+                                if (sub && (sub.slug === 'ninjutsu-ii' || sub.slug === 'ninjutsu-iii')) {
+                                  isNinIIorIIIInClan = true;
+                                }
+                              }
+                              const isNinIIorIII = isNinIIorIIIInBranch || isNinIIorIIIInClan;
+                              const isFromClan = !isNinIIorIIIInBranch && isNinIIorIIIInClan;
 
-                              if (isNinIIorIII && Number(tec.rama_clan_id) === 4 && tec.basica === true) {
+                              const isNinjutsuOrClanElementalTech = (info: any) => {
+                                if (isFromClan) {
+                                  const clanIds = (character.personajes_ramas || []).map((r: any) => Number(r.rama_id)).filter((id: number) => id !== 4 && id > 0);
+                                  return Number(info.rama_clan_id) === 4 || clanIds.includes(Number(info.rama_clan_id));
+                                } else {
+                                  return Number(info.rama_clan_id) === 4;
+                                }
+                              };
+
+                              if (isNinIIorIII && isNinjutsuOrClanElementalTech(tec) && tec.basica === true) {
                                 const basicNinjutsu = current.filter((pt: any) => {
                                   const info = pt.info_glosario;
-                                  return info && Number(info.rama_clan_id) === 4 && info.basica === true;
+                                  return info && isNinjutsuOrClanElementalTech(info) && info.basica === true;
                                 });
 
-                                if (basicNinjutsu.length >= 8) {
-                                  addToast("LÍMITE ALCANZADO: El límite máximo de técnicas de Ninjutsu Básico es de 8.", "error");
+                                const limitTotal = isFromClan ? 6 : 8;
+                                const maxD = 3;
+                                const maxC = isFromClan ? 2 : 3;
+                                const maxB = isFromClan ? 1 : 2;
+
+                                if (basicNinjutsu.length >= limitTotal) {
+                                  addToast(`LÍMITE ALCANZADO: El límite máximo de técnicas de Ninjutsu Básico es de ${limitTotal}.`, "error");
                                   return;
                                 }
 
                                 const tecRank = (tec.rango || 'D').toUpperCase();
                                 const rankCount = basicNinjutsu.filter((pt: any) => (pt.info_glosario?.rango || 'D').toUpperCase() === tecRank).length;
 
-                                if (tecRank === 'D' && rankCount >= 3) {
-                                  addToast("LÍMITE ALCANZADO: Solo se permiten hasta 3 técnicas de Rango D de Ninjutsu Básico.", "error");
+                                if (tecRank === 'D' && rankCount >= maxD) {
+                                  addToast(`LÍMITE ALCANZADO: Solo se permiten hasta ${maxD} técnicas de Rango D de Ninjutsu Básico.`, "error");
                                   return;
                                 }
-                                if (tecRank === 'C' && rankCount >= 3) {
-                                  addToast("LÍMITE ALCANZADO: Solo se permiten hasta 3 técnicas de Rango C de Ninjutsu Básico.", "error");
+                                if (tecRank === 'C' && rankCount >= maxC) {
+                                  addToast(`LÍMITE ALCANZADO: Solo se permiten hasta ${maxC} técnicas de Rango C de Ninjutsu Básico.`, "error");
                                   return;
                                 }
-                                if (tecRank === 'B' && rankCount >= 2) {
-                                  addToast("LÍMITE ALCANZADO: Solo se permiten hasta 2 técnicas de Rango B de Ninjutsu Básico.", "error");
+                                if (tecRank === 'B' && rankCount >= maxB) {
+                                  addToast(`LÍMITE ALCANZADO: Solo se permiten hasta ${maxB} técnicas de Rango B de Ninjutsu Básico.`, "error");
                                   return;
                                 }
                                 if (tecRank === 'A' || tecRank === 'S') {

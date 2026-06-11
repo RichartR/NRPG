@@ -64,7 +64,8 @@ export async function PATCH(
           const validation = NinjutsuLogic.validateNinjutsuLimits(
             data.personajes_ramas || character.personajes_ramas || [],
             techDetails,
-            subSpecs || []
+            subSpecs || [],
+            data.eleccion_tecnicas_clan !== undefined ? data.eleccion_tecnicas_clan : character.eleccion_tecnicas_clan
           );
           if (!validation.valid) {
             return NextResponse.json({ error: validation.error }, { status: 400 });
@@ -303,6 +304,7 @@ export async function PATCH(
           sexo: data.sexo,
           url_img: data.url_img,
           stats_updated_at: new Date().toISOString(),
+          eleccion_tecnicas_clan: data.eleccion_tecnicas_clan,
         };
 
         // 3. Ejecutar actualizaciones en paralelo
@@ -450,7 +452,8 @@ export async function PATCH(
           const validation = NinjutsuLogic.validateNinjutsuLimits(
             character.personajes_ramas || [],
             techDetails,
-            subSpecs || []
+            subSpecs || [],
+            character.eleccion_tecnicas_clan
           );
           if (!validation.valid) {
             return NextResponse.json({ error: validation.error }, { status: 400 });

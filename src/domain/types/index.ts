@@ -57,6 +57,14 @@ export interface RamaClan {
   es_repetible?: boolean;
   url_imagen?: string;
   rasgo_id?: number | null;
+  config_iniciales?: {
+    clan_elemental?: boolean;
+    opciones: Array<{
+      rama_id?: number;            // Rama real del catálogo
+      sub_especialidad_id?: number; // Subcategoría real (alternativa o complemento)
+      tecnicas_ids: number[];
+    }>;
+  } | null;
 }
 
 export interface SubEspecialidad {
@@ -195,6 +203,12 @@ export interface Character {
   apariencia_msg_id?: string;
   historia_msg_id?: string;
   url_img?: string | null;
+  eleccion_tecnicas_clan?: {
+    option_index: number;
+    rama_id?: number;            // Rama elegida (para contar en requisitos avanzados)
+    sub_especialidad_id?: number; // Sub-especialidad elegida (idem)
+    tecnicas_ids: number[];
+  } | null;
   
   // Relations
   profiles?: Profile | Profile[];
