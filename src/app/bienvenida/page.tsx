@@ -6,10 +6,12 @@ import BienvenidaClientView from './BienvenidaClientView';
 export default async function BienvenidaPage() {
   const supabase = await createClient();
 
-  const docs = await MasterServerService.getDocumentosByCategoria(supabase, 'bienvenida');
+  const [docs, { data: { user } }] = await Promise.all([
+    MasterServerService.getDocumentosByCategoria(supabase, 'bienvenida'),
+    supabase.auth.getUser()
+  ]);
 
-  const { data: { user } } = await supabase.auth.getUser();
-  const profile = user ? await ProfileService.getProfile(user.id) : null;
+  const profile = user ? await ProfileService.getProfile(user.id, supabase) : null;
   const isAdmin = profile?.role === 'admin';
 
   let adminDocs: any[] = [];

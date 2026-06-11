@@ -2,8 +2,8 @@ import { Profile } from '@/domain/types';
 import { createClient } from '@/utils/supabase/client';
 
 export const ProfileService = {
-  async getProfile(userId: string) {
-    const supabase = createClient();
+  async getProfile(userId: string, client?: any) {
+    const supabase = client || createClient();
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -13,8 +13,8 @@ export const ProfileService = {
     return data;
   },
 
-  async getActiveCharacterId(userId: string): Promise<number | null> {
-    const supabase = createClient();
+  async getActiveCharacterId(userId: string, client?: any): Promise<number | null> {
+    const supabase = client || createClient();
     const { data, error } = await supabase
       .from('profiles')
       .select('active_char_id')
@@ -24,8 +24,8 @@ export const ProfileService = {
     return data?.active_char_id;
   },
 
-  async updateProfile(userId: string, updates: Partial<Profile>) {
-    const supabase = createClient();
+  async updateProfile(userId: string, updates: Partial<Profile>, client?: any) {
+    const supabase = client || createClient();
     
     // Intentamos la actualización normal
     const { error } = await supabase
