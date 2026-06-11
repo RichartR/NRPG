@@ -276,7 +276,7 @@ export default async function Home() {
                 <img src="/assets/icons/shuriken.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
                 Tiendas y Registros
               </h3>
-              <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Historial de misiones y combates.</p>
+              <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Historial de misiones, compras y combates.</p>
             </Link>
 
             {/* Mundo Ninja */}
