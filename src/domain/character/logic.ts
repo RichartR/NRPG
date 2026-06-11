@@ -58,13 +58,30 @@ export const StatsLogic = {
           }
         }
 
+        // A) If isNinIIorIII, check if they have enough basic Ninjutsu techniques of the current rank
+        const rankRule = rules[currentRankCheck] as any;
+        const reqBasicas = rankRule?.basicas_requeridas || 0;
+        if (isNinIIorIII && reqBasicas > 0) {
+          const playerTechIds = tecnicasPersonaje.map(pt => Number(pt.tecnica_id));
+          
+          // Count learned techniques of currentRankCheck that are basic Ninjutsu
+          const basicCount = glosarioTecnicas.filter(t => {
+            const tRank = t.rango || t.requisitos?.rango;
+            return t.basica === true && Number(t.rama_clan_id) === 4 && tRank === currentRankCheck && playerTechIds.includes(t.id);
+          }).length;
+
+          if (basicCount < reqBasicas) {
+            break; // Blocked: doesn't have the maximum basic techniques allowed/required
+          }
+        }
+
         // Filter master techniques of currentRankCheck that are mandatory for advancement
         const mandatoryTechs = glosarioTecnicas.filter(t => {
           const tRank = t.rango || t.requisitos?.rango;
           const isMandatory = t.obligatoria_ascenso || t.requisitos?.obligatoria_ascenso;
           if (!isMandatory || tRank !== currentRankCheck) return false;
 
-          // If Ninjutsu II or III is active, exclude basic Ninjutsu techniques from mandatory check
+          // If Ninjutsu II or III is active, exclude basic Ninjutsu techniques from mandatory check (already validated above)
           if (isNinIIorIII && Number(t.rama_clan_id) === 4 && t.basica === true) {
             return false;
           }
