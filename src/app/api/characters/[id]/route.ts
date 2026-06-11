@@ -303,6 +303,7 @@ export async function PATCH(
           sexo: data.sexo,
           url_img: data.url_img,
           stats_updated_at: new Date().toISOString(),
+          eleccion_tecnicas_clan: data.eleccion_tecnicas_clan,
         };
 
         // 3. Ejecutar actualizaciones en paralelo

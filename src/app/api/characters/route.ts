@@ -127,7 +127,8 @@ export async function POST(request: Request) {
       ryous: data.ryous,
       edad: data.edad,
       sexo: data.sexo,
-      rasgos: data.rasgos
+      rasgos: data.rasgos,
+      eleccion_tecnicas_clan: data.eleccion_tecnicas_clan
     });
 
     const characterId = character.id;

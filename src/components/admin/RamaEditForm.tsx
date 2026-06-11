@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Save, X, GitBranch, AlignLeft, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AdminService } from '@/services/supabase/admin.service';
+import { MasterService } from '@/services/supabase/master.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { DataField, SearchableSelect } from '@/components/ui/Fields';
-import { RamaClan, Aldea } from '@/domain/types';
+import { RamaClan, Aldea, Glosario, SubEspecialidad, Elemento } from '@/domain/types';
 
 interface RamaEditFormProps {
   rama?: RamaClan;
@@ -15,15 +16,27 @@ interface RamaEditFormProps {
   onCancel: () => void;
 }
 
+const generateSlug = (name: string) => {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-');
+};
+
 export default function RamaEditForm({ rama, aldeas, rasgos, onCancel }: RamaEditFormProps) {
   const isCreate = !rama;
+  const [isSlugEdited, setIsSlugEdited] = useState(false);
   const [formData, setFormData] = useState<Partial<RamaClan>>(() => {
     if (rama) {
       return {
         ...rama,
         es_especial: rama.es_especial ?? false,
         es_repetible: rama.es_repetible ?? false,
-        rasgo_id: rama.rasgo_id ?? null
+        rasgo_id: rama.rasgo_id ?? null,
+        config_iniciales: rama.config_iniciales ?? { opciones: [] }
       };
     }
     return {
@@ -36,9 +49,27 @@ export default function RamaEditForm({ rama, aldeas, rasgos, onCancel }: RamaEdi
       es_especial: false,
       es_repetible: false,
       url_imagen: '',
-      rasgo_id: null
+      rasgo_id: null,
+      config_iniciales: { opciones: [] }
     };
   });
+  const [glosario, setGlosario] = useState<Glosario[]>([]);
+  const [ramasActivas, setRamasActivas] = useState<RamaClan[]>([]);
+  const [subEsps, setSubEsps] = useState<SubEspecialidad[]>([]);
+  const [elementos, setElementos] = useState<Elemento[]>([]);
+  useEffect(() => {
+    Promise.all([
+      MasterService.getGlosarios({ categoriaId: 1 }),
+      MasterService.getAdminRamasActivas(),
+      MasterService.getSubEspecialidades(),
+      MasterService.getElementos()
+    ]).then(([glos, ramas, subs, elems]) => {
+      setGlosario(glos);
+      setRamasActivas(ramas);
+      setSubEsps(subs);
+      setElementos(elems);
+    }).catch(console.error);
+  }, []);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const addToast = useToastStore(state => state.addToast);
@@ -50,7 +81,7 @@ export default function RamaEditForm({ rama, aldeas, rasgos, onCancel }: RamaEdi
     try {
       const payload = {
         ...formData,
-        slug: formData.slug || formData.nombre?.toLowerCase().replace(/\s+/g, '-')
+        slug: generateSlug(formData.slug || formData.nombre || '')
       };
 
       await AdminService.saveRamaClan(payload);
@@ -116,14 +147,19 @@ export default function RamaEditForm({ rama, aldeas, rasgos, onCancel }: RamaEdi
               value={formData.nombre}
               onChange={(v) => {
                 updateField('nombre', v);
-                if (!formData.slug) updateField('slug', v.toLowerCase().trim().replace(/\s+/g, '-'));
+                if (!isSlugEdited && isCreate) {
+                  updateField('slug', generateSlug(v));
+                }
               }}
               placeholder="Ej: Clan Uchiha"
             />
             <DataField
               label="Slug (URL)"
               value={formData.slug}
-              onChange={(v) => updateField('slug', v.toLowerCase().replace(/\s+/g, '-'))}
+              onChange={(v) => {
+                setIsSlugEdited(true);
+                updateField('slug', generateSlug(v));
+              }}
               placeholder="clan-uchiha"
             />
             <SearchableSelect
@@ -218,6 +254,199 @@ export default function RamaEditForm({ rama, aldeas, rasgos, onCancel }: RamaEdi
                 placeholder="https://ejemplo.com/imagen.jpg"
               />
             </div>
+            {formData.tipo === 'clan' && (
+              <div className="space-y-6 md:col-span-2 border-t border-oro/10 pt-6">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-sm font-black text-oro uppercase tracking-[0.2em]">Técnicas Iniciales Opcionales del Clan</h3>
+                    <p className="text-[11px] text-oro/40 font-bold uppercase mt-1">
+                      Cada opción se vincula a una rama o subcategoría real. El jugador elige una al crear el personaje.
+                    </p>
+                    <div className="flex items-center gap-3 mt-4">
+                      <input
+                        type="checkbox"
+                        id="clan_elemental"
+                        checked={formData.config_iniciales?.clan_elemental === true}
+                        onChange={(e) => {
+                          const currentConfig = formData.config_iniciales || {};
+                          updateField('config_iniciales', {
+                            ...currentConfig,
+                            clan_elemental: e.target.checked
+                          });
+                        }}
+                        className="w-4 h-4 rounded border-oro/20 bg-black text-oro focus:ring-oro"
+                      />
+                      <label htmlFor="clan_elemental" className="text-xs font-black text-oro uppercase tracking-wider select-none cursor-pointer">
+                        ¿Es un Clan Elemental? (El jugador elige entre Nin II o III y las técnicas son aprendibles)
+                      </label>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const current = formData.config_iniciales?.opciones || [];
+                      updateField('config_iniciales', {
+                        ...formData.config_iniciales,
+                        opciones: [...current, { rama_id: undefined, sub_especialidad_id: undefined, tecnicas_ids: [] }]
+                      });
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-oro/5 hover:bg-oro/10 border border-oro/20 hover:border-oro/30 text-oro text-[11px] font-black uppercase tracking-widest transition-all"
+                  >
+                    + Añadir Opción
+                  </button>
+                </div>
+        <div className="space-y-6">
+                  {formData.config_iniciales?.opciones?.map((opt, oIdx) => {
+                    const ramaElegida = ramasActivas.find(r => r.id === opt.rama_id);
+                    const subElegida = subEsps.find(s => s.id === opt.sub_especialidad_id);
+                    const subOpts = opt.rama_id
+                      ? subEsps.filter(s => {
+                          if (s.rama_id !== opt.rama_id) return false;
+                          if (Number(opt.rama_id) === 4) {
+                            const isElemental = formData.config_iniciales?.clan_elemental === true;
+                            const isNinIIorIII = s.slug === 'ninjutsu-ii' || s.slug === 'ninjutsu-iii';
+                            return isElemental ? isNinIIorIII : !s.slug?.toLowerCase().startsWith('ninjutsu-');
+                          }
+                          return true;
+                        })
+                      : [];
+                    const optLabel = subElegida
+                      ? `${ramaElegida?.nombre || '?'} › ${subElegida.nombre}`
+                      : ramaElegida?.nombre || 'Sin configurar';
+
+                    return (
+                      <div key={oIdx} className="bg-black/20 p-6 border border-oro/10 space-y-4">
+                        <div className="flex justify-between items-center gap-4">
+                          <span className="text-xs font-black text-oro uppercase tracking-widest">
+                            Opción {oIdx + 1}: <span className="text-oro/60">{optLabel}</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newOpciones = (formData.config_iniciales?.opciones || []).filter((_, idx) => idx !== oIdx);
+                              updateField('config_iniciales', { ...formData.config_iniciales, opciones: newOpciones });
+                            }}
+                            className="text-rojo-sangre hover:text-white text-[11px] font-black uppercase tracking-widest px-3 py-1.5 border border-rojo-sangre/20 hover:bg-rojo-sangre/10 transition-all"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+
+                        {/* Selector de Rama */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-black uppercase tracking-widest text-oro/40">Rama / Clan</label>
+                            <SearchableSelect
+                              label=""
+                              value={opt.rama_id ?? ''}
+                              options={ramasActivas.map(r => ({ label: r.nombre, value: r.id }))}
+                              onChange={(v) => {
+                                 const newOpciones = [...(formData.config_iniciales?.opciones || [])];
+                                 newOpciones[oIdx] = { ...newOpciones[oIdx], rama_id: v ? Number(v) : undefined, sub_especialidad_id: undefined };
+                                 updateField('config_iniciales', { ...formData.config_iniciales, opciones: newOpciones });
+                               }}
+                              placeholder="Seleccionar rama..."
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-black uppercase tracking-widest text-oro/40">Subcategoría (opcional)</label>
+                            <SearchableSelect
+                              label=""
+                              value={opt.sub_especialidad_id ?? ''}
+                              options={subOpts.map(s => ({ label: s.nombre, value: s.id }))}
+                              onChange={(v) => {
+                                 const newOpciones = [...(formData.config_iniciales?.opciones || [])];
+                                 newOpciones[oIdx] = { ...newOpciones[oIdx], sub_especialidad_id: v ? Number(v) : undefined };
+                                 updateField('config_iniciales', { ...formData.config_iniciales, opciones: newOpciones });
+                               }}
+                              placeholder={opt.rama_id ? 'Toda la rama (sin subcategoría)' : 'Elige primero una rama'}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-[11px] font-black uppercase tracking-widest text-oro/40">Técnicas en esta opción</label>
+                          <div className="flex flex-wrap gap-2">
+                            {opt.tecnicas_ids.map((tid) => {
+                              const tec = glosario.find(t => t.id === tid);
+                              return (
+                                <div key={tid} className="flex items-center gap-2 bg-black/40 border border-oro/10 px-3 py-1.5 text-xs text-oro">
+                                  <span>{tec ? tec.nombre_es : `ID: ${tid}`}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                       const newOpciones = [...(formData.config_iniciales?.opciones || [])];
+                                       newOpciones[oIdx] = {
+                                         ...newOpciones[oIdx],
+                                         tecnicas_ids: newOpciones[oIdx].tecnicas_ids.filter(id => id !== tid)
+                                       };
+                                       updateField('config_iniciales', { ...formData.config_iniciales, opciones: newOpciones });
+                                     }}
+                                    className="text-rojo-sangre hover:text-white font-bold ml-1"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              );
+                            })}
+                            {opt.tecnicas_ids.length === 0 && (
+                              <span className="text-oro/20 text-xs italic">Ninguna técnica agregada</span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="w-full">
+                          {!opt.rama_id ? (
+                            <p className="text-[11px] font-black uppercase tracking-widest text-oro/30 italic py-2">
+                              Elige primero una rama para filtrar las técnicas disponibles.
+                            </p>
+                          ) : (
+                            <SearchableSelect
+                              label="Agregar Técnica"
+                              value=""
+                              options={glosario
+                                .filter(t => {
+                                  if (opt.tecnicas_ids.includes(t.id)) return false;
+                                  if (t.rama_clan_id !== opt.rama_id) return false;
+                                  if (opt.rama_id === 4 && opt.sub_especialidad_id) {
+                                    const sub = subEsps.find(s => s.id === Number(opt.sub_especialidad_id));
+                                    if (sub) {
+                                      const elem = elementos.find((el: any) =>
+                                        sub.slug?.toLowerCase() === el.nombre_jap?.toLowerCase() ||
+                                        sub.nombre?.toLowerCase() === el.nombre_esp?.toLowerCase() ||
+                                        sub.nombre?.toLowerCase() === el.nombre_jap?.toLowerCase()
+                                      );
+                                      if (elem) {
+                                        return Number(t.elemento_id) === Number(elem.id);
+                                      }
+                                    }
+                                  }
+                                  const tSubId = t.sub_especialidad_id ? Number(t.sub_especialidad_id) : null;
+                                  const optSubId = opt.sub_especialidad_id ? Number(opt.sub_especialidad_id) : null;
+                                  if (tSubId !== optSubId) return false;
+                                  return true;
+                                })
+                                .map(t => ({ label: `${t.nombre_es}${t.basica ? '' : ' ▲'}`, value: t.id }))}
+                              onChange={(v) => {
+                                if (!v) return;
+                                const tId = Number(v);
+                                 const newOpciones = [...(formData.config_iniciales?.opciones || [])];
+                                 newOpciones[oIdx] = {
+                                   ...newOpciones[oIdx],
+                                   tecnicas_ids: [...newOpciones[oIdx].tecnicas_ids, tId]
+                                 };
+                                 updateField('config_iniciales', { ...formData.config_iniciales, opciones: newOpciones });
+                               }}
+                              placeholder="Buscar técnica de la rama..."
+                            />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">

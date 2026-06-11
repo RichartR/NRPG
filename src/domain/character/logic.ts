@@ -22,7 +22,9 @@ export const StatsLogic = {
     tecnicasPersonaje: any[] = [],
     ramasPersonaje: any[] = [],
     glosarioTecnicas: any[] = [],
-    subEspecialidades: any[] = []
+    subEspecialidades: any[] = [],
+    eleccionClan: any = null,
+    elementos: any[] = []
   ): string {
     const rulesEntries = Object.entries(rules);
     // Sort ranks by min threshold ascending (D, C, B, A, S, etc.)
@@ -40,14 +42,45 @@ export const StatsLogic = {
       // we must verify that all mandatory techniques of newRango are acquired.
       if (newRango !== r && glosarioTecnicas.length > 0) {
         const currentRankCheck = newRango;
-        const playerBranches = ramasPersonaje.map(rp => Number(rp.rama_id));
-        const playerSubSpecs = ramasPersonaje.map(rp => rp.sub_especialidad_id ? Number(rp.sub_especialidad_id) : null).filter(Boolean);
+        
+        // Incluir ramas reales y las de elección del clan
+        const playerBranches = [
+          ...ramasPersonaje.map(rp => Number(rp.rama_id)),
+          ...(eleccionClan?.rama_id ? [Number(eleccionClan.rama_id)] : [])
+        ];
+        if (eleccionClan?.sub_especialidad_id) {
+          const subEsp = subEspecialidades.find((s: any) => s.id === Number(eleccionClan.sub_especialidad_id));
+          if (subEsp?.rama_id && !playerBranches.includes(Number(subEsp.rama_id))) {
+            playerBranches.push(Number(subEsp.rama_id));
+          }
+        }
+
+        const playerSubSpecs = [
+          ...ramasPersonaje.map(rp => rp.sub_especialidad_id ? Number(rp.sub_especialidad_id) : null).filter(Boolean),
+          ...(eleccionClan?.sub_especialidad_id ? [Number(eleccionClan.sub_especialidad_id)] : [])
+        ];
+
         const playerElements = ramasPersonaje.reduce((acc: number[], rp) => {
           if (rp.elemento_principal_id) acc.push(Number(rp.elemento_principal_id));
           if (rp.elemento_secundario_id) acc.push(Number(rp.elemento_secundario_id));
           if (rp.elemento_terciario_id) acc.push(Number(rp.elemento_terciario_id));
           return acc;
         }, []);
+
+        // Mapear elementos de la elección de clan
+        if (eleccionClan?.sub_especialidad_id && elementos.length > 0) {
+          const sub = subEspecialidades.find((s: any) => s.id === Number(eleccionClan.sub_especial_id || eleccionClan.sub_especialidad_id));
+          if (sub) {
+            const elem = elementos.find((el: any) =>
+              sub.slug?.toLowerCase() === el.nombre_jap?.toLowerCase() ||
+              sub.nombre?.toLowerCase() === el.nombre_esp?.toLowerCase() ||
+              sub.nombre?.toLowerCase() === el.nombre_jap?.toLowerCase()
+            );
+            if (elem) {
+              playerElements.push(Number(elem.id));
+            }
+          }
+        }
 
         const ninjutsuRama = ramasPersonaje.find(rp => Number(rp.rama_id) === 4);
         let isNinIIorIII = false;

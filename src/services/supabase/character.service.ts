@@ -54,7 +54,8 @@ export const CharacterService = {
       sexo: character.sexo,
       edad: character.edad,
       url_img: character.url_img || null,
-      activo: true
+      activo: true,
+      eleccion_tecnicas_clan: character.eleccion_tecnicas_clan || null
     }).select().single();
 
     if (charError) throw charError;
@@ -107,7 +108,8 @@ export const CharacterService = {
         edad: updates.edad,
         sexo: updates.sexo,
         url_img: updates.url_img,
-        activo: updates.activo
+        activo: updates.activo,
+        eleccion_tecnicas_clan: updates.eleccion_tecnicas_clan
       })
       .eq('id', id);
 

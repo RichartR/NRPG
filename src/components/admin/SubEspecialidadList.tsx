@@ -8,6 +8,15 @@ import { useToastStore } from '@/components/ui/Toast';
 import { DataField, SearchableSelect } from '@/components/ui/Fields';
 import { SubEspecialidad, RamaClan } from '@/domain/types';
 
+const generateSlug = (text: string): string =>
+  text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-');
+
 export default function SubEspecialidadList({ initialSubs, ramas }: { initialSubs: SubEspecialidad[], ramas: RamaClan[] }) {
   const [subs, setSubs] = useState<SubEspecialidad[]>(initialSubs);
   const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
@@ -36,7 +45,7 @@ export default function SubEspecialidadList({ initialSubs, ramas }: { initialSub
     try {
       const payload = {
         ...newSub,
-        slug: newSub.slug || newSub.nombre.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '')
+        slug: newSub.slug || generateSlug(newSub.nombre)
       };
 
       const data = await AdminService.saveSubEspecialidad(payload);
@@ -59,7 +68,7 @@ export default function SubEspecialidadList({ initialSubs, ramas }: { initialSub
     try {
       const payload = {
         ...editForm,
-        slug: editForm.slug || editForm.nombre?.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '')
+        slug: editForm.slug || generateSlug(editForm.nombre ?? '')
       };
 
       const data = await AdminService.saveSubEspecialidad(payload);
@@ -173,7 +182,7 @@ export default function SubEspecialidadList({ initialSubs, ramas }: { initialSub
                   label="Nombre"
                   value={newSub.nombre || ''}
                   onChange={v => {
-                    setNewSub({ ...newSub, nombre: v, slug: v.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '') });
+                    setNewSub({ ...newSub, nombre: v, slug: generateSlug(v) });
                   }}
                 />
                 <DataField label="Slug (URL)" value={newSub.slug || ''} onChange={v => setNewSub({ ...newSub, slug: v.toLowerCase().replace(/\s+/g, '-') })} />
@@ -278,7 +287,7 @@ export default function SubEspecialidadList({ initialSubs, ramas }: { initialSub
                   label="Nombre"
                   value={editForm.nombre || ''}
                   onChange={v => {
-                    setEditForm({ ...editForm, nombre: v, slug: v.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '') });
+                    setEditForm({ ...editForm, nombre: v, slug: generateSlug(v) });
                   }}
                 />
                 <DataField label="Slug (URL)" value={editForm.slug || ''} onChange={v => setEditForm({ ...editForm, slug: v.toLowerCase().replace(/\s+/g, '-') })} />

@@ -8,6 +8,7 @@ import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { DataField, SearchableSelect } from '@/components/ui/Fields';
 import { Elemento, RamaClan, SubEspecialidad, RamaElemento } from '@/domain/types';
+import { useMasterStore } from '@/store/useMasterStore';
 
 interface ElementoEditFormProps {
   elemento?: Elemento;
@@ -56,6 +57,7 @@ export default function ElementoEditForm({
     setLoading(true);
     try {
       await AdminService.saveElemento(formData);
+      await useMasterStore.getState().refresh();
       addToast(`Elemento ${isCreate ? 'creado' : 'actualizado'} con éxito`, 'success');
       router.refresh();
       onCancel();
@@ -84,6 +86,7 @@ export default function ElementoEditForm({
         tipo: newVinc.tipo,
         activo: true,
       });
+      await useMasterStore.getState().refresh();
       addToast('Vinculación añadida', 'success');
       setNewVinc({ rama_id: null, sub_especialidad_id: null, tipo: 'fijo' });
       router.refresh();
@@ -104,6 +107,7 @@ export default function ElementoEditForm({
     if (!ok) return;
     try {
       await AdminService.deleteRamaElemento(id);
+      await useMasterStore.getState().refresh();
       addToast('Vinculación eliminada', 'success');
       router.refresh();
     } catch (err: any) {

@@ -136,12 +136,14 @@ export function useCharacter(characterId: string) {
       character.personajes_tecnicas || [],
       character.personajes_ramas || [],
       glosarioCompleto,
-      masters.subEspecialidades || []
+      masters.subEspecialidades || [],
+      character.eleccion_tecnicas_clan,
+      masters.elementos || []
     );
     if (newRango !== character.rango) {
       setCharacter(prev => prev ? { ...prev, rango: newRango } : null);
     }
-  }, [character?.puntos_stats, rangoRulesSignature, tecsSignature, ramasSignature, glosarioLength, subEspecialidadesSignature]);
+  }, [character?.puntos_stats, rangoRulesSignature, tecsSignature, ramasSignature, glosarioLength, subEspecialidadesSignature, character?.eleccion_tecnicas_clan, masters.elementos]);
 
   const updateField = (field: keyof Character, value: any) => {
     setCharacter(prev => prev ? { ...prev, [field]: value } : null);
