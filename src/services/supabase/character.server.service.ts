@@ -150,11 +150,11 @@ export const CharacterServerService = {
     }
   },
 
-  async replaceInventario(supabase: SupabaseClient, characterId: string | number, items: { item_id: number; cantidad: number }[]) {
+  async replaceInventario(supabase: SupabaseClient, characterId: string | number, items: { item_id: number; equipado?: boolean }[]) {
     await supabase.from('reg_personajes_inventario').delete().eq('personaje_id', characterId);
     if (items.length > 0) {
       const { error } = await supabase.from('reg_personajes_inventario').insert(
-        items.map(i => ({ personaje_id: characterId, item_id: i.item_id }))
+        items.map(i => ({ personaje_id: characterId, item_id: i.item_id, equipado: i.equipado || false }))
       );
       if (error) throw error;
     }

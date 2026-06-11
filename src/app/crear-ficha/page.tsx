@@ -169,7 +169,13 @@ function CrearFichaContent() {
           if (reqs.combates && charPA < Number(reqs.combates)) return false;
 
           // Validar Misiones
-          if (reqs.misiones && charMisiones < Number(reqs.misiones)) return false;
+          if (reqs.misiones && typeof reqs.misiones === 'object') {
+            for (const [rank, count] of Object.entries(reqs.misiones)) {
+              const reqCount = Number(count);
+              if (isNaN(reqCount) || reqCount <= 0) continue;
+              if (charMisiones < reqCount) return false;
+            }
+          }
 
           // Validar Stats
           if (reqs.stats) {

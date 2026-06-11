@@ -133,6 +133,8 @@ export interface Glosario {
   descripcion?: string;
   rango?: string | null;
   obligatoria_ascenso?: boolean;
+  zona_equipable?: 'Cabeza' | 'Cuerpo' | 'Especial' | null;
+  ocupa_espacio?: boolean;
   // Joins opcionales
   info_glosario_categorias?: GlosarioCategoria;
   info_glosario_subcategorias?: GlosarioSubcategoria;
@@ -288,6 +290,7 @@ export interface PersonajeItem {
   id?: number;
   personaje_id: number;
   item_id: number;
+  equipado?: boolean;
   info_glosario?: Glosario;
 }
 

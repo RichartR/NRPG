@@ -11,8 +11,8 @@ export const CharacterService = {
         *, 
         profiles!user_id(username, url_avatar, url_img),
         info_aldeas(*), 
-        reg_personajes_inventario!reg_personajes_inventario_personaje_id_fkey(*, info_glosario(*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre))), 
-        reg_personajes_tecnicas!reg_personajes_tecnicas_personaje_id_fkey(*, info_glosario(*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre))), 
+        reg_personajes_inventario!reg_personajes_inventario_personaje_id_fkey(*, info_glosario(*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre, slug))), 
+        reg_personajes_tecnicas!reg_personajes_tecnicas_personaje_id_fkey(*, info_glosario(*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre, slug))), 
         reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(*, info_ramas_clanes(*), info_sub_especialidades(*)),
         reg_personajes_entrenamientos!reg_personajes_entrenamientos_personaje_id_fkey(*, info_entrenamientos(*)),
         reg_personajes_rasgos!reg_personajes_rasgos_personaje_id_fkey(*, info_rasgos(*)),
@@ -154,7 +154,8 @@ export const CharacterService = {
       const { error } = await supabase.from('reg_personajes_inventario').insert(
         items.map(i => ({ 
           personaje_id: id, 
-          item_id: i.item_id
+          item_id: i.item_id,
+          equipado: i.equipado || false
         }))
       );
       if (error) throw error;

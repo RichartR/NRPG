@@ -400,6 +400,11 @@ function ElementoCard({ elemento, categorias, subcategorias, onEdit, onDelete }:
         <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-2">
           <span className="bg-oro/10 text-oro border border-oro/20 px-3 py-1 rounded-full text-caption font-black uppercase tracking-tighter">{cat?.nombre || 'Sin Cat'}</span>
           {sub && <span className="bg-emerald-500/10 text-emerald-400 border border-success-text/20 px-3 py-1 rounded-full text-caption font-black uppercase tracking-tighter">{sub.nombre}</span>}
+          {elemento.zona_equipable && (
+            <span className="bg-oro/10 text-oro border border-oro/20 px-3 py-1 rounded-full text-caption font-black uppercase tracking-tighter">
+              🛡️ {elemento.zona_equipable} ({elemento.ocupa_espacio !== false ? 'Ocupa' : 'Sin Hueco'})
+            </span>
+          )}
           {elem && <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1 rounded-full text-caption font-black uppercase tracking-tighter">⚡ {elem.nombre_esp}</span>}
           {elemento.rango && <span className="bg-zinc-800 text-zinc-300 border border-zinc-700 px-3 py-1 rounded-full text-caption font-black uppercase tracking-tighter">Rango: {elemento.rango}</span>}
           {elemento.obligatoria_ascenso && <span className="bg-red-500/10 text-red-400 border border-error-text/20 px-3 py-1 rounded-full text-caption font-black uppercase tracking-tighter flex items-center gap-1">🔺 Obligatoria Ascenso</span>}
@@ -458,6 +463,8 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
         basica: true,
         rango: null,
         obligatoria_ascenso: false,
+        zona_equipable: null,
+        ocupa_espacio: true,
         requisitos: defaultRequisitos
       };
     }
@@ -472,11 +479,14 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
       basica: initialData.basica !== undefined ? initialData.basica : true,
       rango: initialData.rango ?? null,
       obligatoria_ascenso: initialData.obligatoria_ascenso || false,
+      zona_equipable: initialData.zona_equipable ?? null,
+      ocupa_espacio: initialData.ocupa_espacio !== undefined ? initialData.ocupa_espacio : true,
       requisitos: { ...defaultRequisitos, ...initialData.requisitos }
     };
   });
 
   const filteredSubs = subcategorias.filter((s: any) => s.categoria_id === formData.categoria_id);
+  const selectedSub = subcategorias.find((s: any) => s.id === formData.subcategoria_id);
   const filteredRamas = ramas.filter((r: any) => {
     const rAldea = r.aldea_id === null || r.aldea_id === undefined ? null : Number(r.aldea_id);
     const fAldea = formData.aldea_id === null || formData.aldea_id === undefined ? null : Number(formData.aldea_id);
@@ -565,6 +575,38 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                       />
                     </div>
                   </div>
+
+                  {selectedSub?.slug === 'equipo' && formData.categoria_id === 2 && (
+                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-oro/10 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <div className="space-y-2">
+                        <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">Zona Equipable</label>
+                        <NinjaSelect
+                          value={formData.zona_equipable || ''}
+                          onChange={(val) => setFormData({ ...formData, zona_equipable: (val || null) as any })}
+                          placeholder="Ninguna"
+                          options={[
+                            { label: 'Cabeza', value: 'Cabeza' },
+                            { label: 'Cuerpo', value: 'Cuerpo' },
+                            { label: 'Especial', value: 'Especial' }
+                          ]}
+                        />
+                      </div>
+                      <div className="space-y-2 flex flex-col justify-end">
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, ocupa_espacio: !formData.ocupa_espacio })}
+                          className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all ${
+                            formData.ocupa_espacio !== false ? 'bg-oro/10 border-oro/20 text-oro shadow-lg' : 'bg-black/60 border-oro/5 text-oro/40'
+                          }`}
+                        >
+                          <span className="font-black text-[10px] uppercase tracking-wider ml-1">
+                            {formData.ocupa_espacio !== false ? 'Ocupa Espacio' : 'No Ocupa Espacio'}
+                          </span>
+                          {formData.ocupa_espacio !== false ? <Check size={16} /> : <X size={16} />}
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Casillas de Jerarquía */}
                   <div className="pt-4 border-t border-oro/10 space-y-4">
