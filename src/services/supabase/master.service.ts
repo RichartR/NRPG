@@ -149,7 +149,7 @@ export const MasterService = {
     const supabase = createClient();
     let query = supabase
       .from('info_glosario')
-      .select('*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre)')
+      .select('*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre, slug)')
       .eq('activo', true)
       .order('nombre_es', { ascending: true });
     

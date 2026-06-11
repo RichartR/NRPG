@@ -95,7 +95,7 @@ export const MasterServerService = {
     async () => {
       const { data, error } = await publicClient
         .from('info_glosario')
-        .select('*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre)')
+        .select('*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre, slug)')
         .eq('activo', true)
         .order('nombre_es', { ascending: true });
       if (error) throw error;
@@ -526,7 +526,7 @@ export const MasterServerService = {
   async getGlosarios(supabase: SupabaseClient, options?: { categoriaId?: number, onlyInitial?: boolean }): Promise<Glosario[]> {
     let query = supabase
       .from('info_glosario')
-      .select('*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre)')
+      .select('*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre, slug)')
       .eq('activo', true)
       .order('nombre_es', { ascending: true });
     

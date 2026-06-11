@@ -829,6 +829,81 @@ export function CharacterSheetView({
     return true;
   };
 
+  // AUTO-ALIGN INITIAL TECHNIQUES WHEN BRANCHES/ELEMENTS CHANGE DURING EDIT OR CREATION
+  useEffect(() => {
+    if (!(isEditing || isNew)) return;
+    if (!character || !glosarioFiltrado || !masters.subEspecialidades) return;
+
+    // 1. Encontrar si el personaje tiene Ninjutsu II o III en sus ramas
+    const ninjutsuSlot = (character.personajes_ramas || []).find((r: any) => Number(r.rama_id) === 4);
+    let isNinIIorIII = false;
+    if (ninjutsuSlot?.sub_especialidad_id) {
+      const sub = masters.subEspecialidades.find((s: any) => s.id === ninjutsuSlot.sub_especialidad_id);
+      if (sub && (sub.slug === 'ninjutsu-ii' || sub.slug === 'ninjutsu-iii')) {
+        isNinIIorIII = true;
+      }
+    }
+
+    // 2. Obtener todas las técnicas iniciales que el personaje cumple requisitos
+    const matchingInitialTecs = (glosarioFiltrado || [])
+      .filter((t: any) => {
+        if (!t.inicial || t.categoria_id === 2) return false;
+        if (Number(t.rama_clan_id) === 4 && isNinIIorIII) {
+          return false;
+        }
+        return meetsRequirements(t);
+      });
+
+    // 3. Obtener las técnicas actuales
+    const currentTecs = character.personajes_tecnicas || [];
+
+    // 4. Ver si necesitamos añadir alguna técnica inicial que cumpla requisitos y no esté ya añadida
+    const tecsToAdd = matchingInitialTecs.filter(
+      (it: any) => !currentTecs.some((ct: any) => Number(ct.tecnica_id) === Number(it.id))
+    );
+
+    // 5. Ver si hay alguna técnica inicial que el personaje ya no cumple requisitos o es de Ninjutsu y ahora tiene Nin II/III
+    const tecsToRemove = currentTecs.filter((ct: any) => {
+      const t = ct.info_glosario;
+      if (!t || !t.inicial || t.categoria_id === 2) return false;
+      if (Number(t.rama_clan_id) === 4 && isNinIIorIII) return true;
+      return !meetsRequirements(t);
+    });
+
+    if (tecsToAdd.length > 0 || tecsToRemove.length > 0) {
+      let updatedTecs = [...currentTecs];
+      
+      if (tecsToRemove.length > 0) {
+        const removeIds = tecsToRemove.map((r: any) => Number(r.tecnica_id));
+        updatedTecs = updatedTecs.filter((ct: any) => !removeIds.includes(Number(ct.tecnica_id)));
+      }
+
+      if (tecsToAdd.length > 0) {
+        updatedTecs = [
+          ...updatedTecs,
+          ...tecsToAdd.map((it: any) => ({
+            personaje_id: Number(character.id || 0),
+            tecnica_id: it.id,
+            info_glosario: it
+          }))
+        ];
+      }
+
+      onUpdateField('personajes_tecnicas', updatedTecs);
+    }
+  }, [
+    isEditing,
+    isNew,
+    character.personajes_ramas, 
+    glosarioFiltrado, 
+    masters.subEspecialidades,
+    JSON.stringify((character.personajes_ramas || []).map((r: any) => ({
+      p: r.elemento_principal_id,
+      s: r.elemento_secundario_id,
+      t: r.elemento_terciario_id
+    })))
+  ]);
+
   const { puntosGastados, puntosLibres } = useMemo(() => {
     const pg = Object.values(character.stats_base || {}).reduce((acc: number, val: any) => acc + (Number(val) || 0), 0);
     return {
@@ -947,10 +1022,31 @@ export function CharacterSheetView({
     return sortedStructure;
   };
 
-  // Memoizar el inventario agrupado
+  // Memoizar el inventario agrupado (excluyendo objetos equipables/de la subcategoría equipo)
   const groupedInventory = useMemo(() => {
-    return groupItemsByHierarchy(character.personajes_inventario || []);
+    const list = (character.personajes_inventario || []).filter((pi: PersonajeItem) => {
+      const subData = pi.info_glosario?.info_glosario_subcategorias;
+      const subSlug = (Array.isArray(subData) ? subData[0]?.slug : subData?.slug) || '';
+      const isEquipment = pi.info_glosario?.zona_equipable || subSlug === 'equipo';
+      return !isEquipment;
+    });
+    return groupItemsByHierarchy(list);
   }, [character.personajes_inventario, masters.aldeas, masters.ramas]);
+
+  // Memoizar el equipamiento en propiedad (ordenando los equipados arriba)
+  const possessedEquipment = useMemo(() => {
+    return (character.personajes_inventario || [])
+      .filter((pi: PersonajeItem) => {
+        const subData = pi.info_glosario?.info_glosario_subcategorias;
+        const subSlug = (Array.isArray(subData) ? subData[0]?.slug : subData?.slug) || '';
+        return pi.info_glosario?.zona_equipable || subSlug === 'equipo';
+      })
+      .sort((a, b) => {
+        const aEq = a.equipado ? 1 : 0;
+        const bEq = b.equipado ? 1 : 0;
+        return bEq - aEq;
+      });
+  }, [character.personajes_inventario]);
 
   const renderRequisitos = (reqs: any) => {
     if (!reqs) return <span className="text-caption text-oro/30 italic">Sin requisitos</span>;
@@ -1061,6 +1157,7 @@ export function CharacterSheetView({
   const [editingRegistro, setEditingRegistro] = useState<Registro | null>(null);
   const [registroTab, setRegistroTab] = useState<'mision' | 'accion' | 'combate'>('mision');
   const [tecnicasSubTab, setTecnicasSubTab] = useState<'jutsus' | 'pasivas' | 'kuchiyoses'>('jutsus');
+  const [inventarioSubTab, setInventarioSubTab] = useState<'mochila' | 'equipo'>('mochila');
   const [recordPage, setRecordPage] = useState(1);
   const recordsPerPage = 10;
   const [startDate, setStartDate] = useState<string>('');
@@ -1346,7 +1443,7 @@ export function CharacterSheetView({
 
         <main className="w-full max-w-[1750px] mx-auto flex-1">
           <div className="flex flex-nowrap gap-4 xl:gap-8 mb-4 sm:mb-4 justify-start sm:justify-center overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-            {['general', 'ninja', 'inventario', 'tecnicas', 'onrol', 'registros'].map((tab) => {
+            {['general', 'ninja', 'equipamiento', 'tecnicas', 'onrol', 'registros'].map((tab) => {
               const isActive = activeTab === tab;
               return (
                 <button
@@ -1716,7 +1813,7 @@ export function CharacterSheetView({
                                                 const supabase = createClient();
                                                 const { data, error } = await supabase
                                                   .from('info_glosario')
-                                                  .select('*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre)')
+                                                  .select('*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre, slug)')
                                                   .eq('id', tid)
                                                   .single();
                                                 if (data && !error) {
@@ -2309,148 +2406,435 @@ export function CharacterSheetView({
               </SectionCard>
             </div>
           )}
-          {activeTab === 'inventario' && (
+          {activeTab === 'equipamiento' && (
             <div className="space-y-8 animate-fade-in">
               <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} totalPuntosCombate={totalPuntosCombate} xpLimitUsage={masters?.xpLimitUsage} />
-              <SectionCard title="MOCHILA Y PERTENENCIAS" icon={Briefcase} color="oro">
-                <div className="space-y-16">
-                  {Object.entries(groupedInventory).map(([aldeaName, ramas]: [string, any]) => (
-                    <div key={aldeaName} className="space-y-10">
-                      <div className="flex items-center gap-6">
-                        <h3 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.2em]">{aldeaName}</h3>
-                        <div className="flex-1 h-px bg-oro/10" />
-                      </div>
 
-                      <div className="space-y-8 pl-4 border-l border-oro/5">
-                        {Object.entries(ramas).map(([ramaName, subs]: [string, any]) => (
-                          <div key={ramaName} className="space-y-6">
-                            <h4 className="text-base xl:text-lg font-black text-oro/70 uppercase tracking-widest flex items-center gap-2">
-                              <div className="w-1.5 h-1.5 bg-oro rotate-45" />
-                              {ramaName}
-                            </h4>
+              {/* Submenu for Inventario */}
+              <div className="flex flex-nowrap gap-4 overflow-x-auto pb-2 lg:pb-0 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+                {(['mochila', 'equipo'] as const).map(tab => {
+                  const isActive = inventarioSubTab === tab;
+                  const label = tab === 'mochila' ? 'INVENTARIO' : 'EQUIPO';
 
-                            <div className="space-y-6">
-                              {Object.entries(subs).map(([subName, items]: [string, any]) => (
-                                <div key={subName} className="space-y-4">
-                                  {subName !== '' && (
-                                    <h5 className="text-caption xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
-                                      <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
-                                      {subName}
-                                    </h5>
-                                  )}
-                                  <div className="ninja-card-oro p-1 overflow-hidden border border-oro/10">
-                                    <div className="overflow-x-auto scrollbar-hide">
-                                      <table className="w-full text-left border-collapse table-fixed min-w-[600px]">
-                                        <thead>
-                                          <tr className="border-b border-oro/10 text-oro/70 text-caption xl:text-xs font-black uppercase tracking-[0.3em] bg-black/20">
-                                            <th className="py-3 px-5 w-[40%]">Objeto</th>
-                                            <th className="py-3 px-5 w-[45%]">Requisitos</th>
-                                            <th className="py-3 px-5 w-[15%] text-center">Acciones</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-oro/5 bg-black/40">
-                                          {items.map((pi: PersonajeItem, idx: number) => (
-                                            <tr key={`${pi.item_id}-${idx}`} className="hover:bg-oro/5 transition-colors group">
-                                              <td className="py-3 px-5">
-                                                <div className="flex flex-col">
-                                                  <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
-                                                    {pi.info_glosario?.nombre_es}
-                                                    {pi.info_glosario?.es_tienda_exp && (
-                                                      <span className="px-1.5 py-0.5 text-caption font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
-                                                        EXP SHOP
+                  return (
+                    <button
+                      key={tab}
+                      onClick={() => setInventarioSubTab(tab)}
+                      className={`px-8 sm:px-16 py-4 text-[11px] xl:text-sm font-black uppercase tracking-widest transition-all duration-300 border ninja-clip-sm shrink-0 relative group flex items-center gap-4 ${isActive
+                        ? 'bg-oro text-rojo-sangre border-oro shadow-[0_0_30px_rgba(255,230,159,0.5)]'
+                        : 'bg-black/60 text-oro/30 border-oro/10 hover:border-oro/60 hover:text-oro hover:bg-black/90'
+                        }`}
+                    >
+                      <span>{label}</span>
+                      {!isActive && (
+                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-oro transition-all duration-300 group-hover:w-[80%]" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {inventarioSubTab === 'mochila' && (
+                <SectionCard title="MOCHILA Y PERTENENCIAS" icon={Briefcase} color="oro">
+                  <div className="space-y-16">
+                    {Object.entries(groupedInventory).map(([aldeaName, ramas]: [string, any]) => (
+                      <div key={aldeaName} className="space-y-10">
+                        <div className="flex items-center gap-6">
+                          <h3 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.2em]">{aldeaName}</h3>
+                          <div className="flex-1 h-px bg-oro/10" />
+                        </div>
+
+                        <div className="space-y-8 pl-4 border-l border-oro/5">
+                          {Object.entries(ramas).map(([ramaName, subs]: [string, any]) => (
+                            <div key={ramaName} className="space-y-6">
+                              <h4 className="text-base xl:text-lg font-black text-oro/70 uppercase tracking-widest flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 bg-oro rotate-45" />
+                                {ramaName}
+                              </h4>
+
+                              <div className="space-y-6">
+                                {Object.entries(subs).map(([subName, items]: [string, any]) => (
+                                  <div key={subName} className="space-y-4">
+                                    {subName !== '' && (
+                                      <h5 className="text-caption xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
+                                        <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
+                                        {subName}
+                                      </h5>
+                                    )}
+                                    <div className="ninja-card-oro p-1 overflow-hidden border border-oro/10">
+                                      <div className="overflow-x-auto scrollbar-hide">
+                                        <table className="w-full text-left border-collapse table-fixed min-w-[600px]">
+                                          <thead>
+                                            <tr className="border-b border-oro/10 text-oro/70 text-caption xl:text-xs font-black uppercase tracking-[0.3em] bg-black/20">
+                                              <th className="py-3 px-5 w-[40%]">Objeto</th>
+                                              <th className="py-3 px-5 w-[45%]">Requisitos</th>
+                                              <th className="py-3 px-5 w-[15%] text-center">Acciones</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody className="divide-y divide-oro/5 bg-black/40">
+                                            {items.map((pi: PersonajeItem, idx: number) => (
+                                              <tr key={`${pi.item_id}-${idx}`} className="hover:bg-oro/5 transition-colors group">
+                                                <td className="py-3 px-5">
+                                                  <div className="flex flex-col">
+                                                    <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
+                                                      {pi.info_glosario?.nombre_es}
+                                                      {pi.info_glosario?.es_tienda_exp && (
+                                                        <span className="px-1.5 py-0.5 text-caption font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
+                                                          EXP SHOP
+                                                        </span>
+                                                      )}
+                                                      {pi.info_glosario?.zona_equipable && (
+                                                        <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-oro/10 border border-oro/30 text-oro tracking-widest rounded-sm">
+                                                          {pi.info_glosario.zona_equipable}
+                                                        </span>
+                                                      )}
+                                                    </span>
+                                                    {pi.info_glosario?.nombre_jp && (
+                                                      <span className="text-caption text-oro/30 uppercase font-black tracking-tighter mt-0.5">
+                                                        {pi.info_glosario?.nombre_jp}
                                                       </span>
                                                     )}
-                                                  </span>
-                                                  {pi.info_glosario?.nombre_jp && (
-                                                    <span className="text-caption text-oro/30 uppercase font-black tracking-tighter mt-0.5">
-                                                      {pi.info_glosario?.nombre_jp}
-                                                    </span>
+                                                  </div>
+                                                </td>
+                                                <td className="py-3 px-5">
+                                                  {renderRequisitos(pi.info_glosario?.requisitos)}
+                                                </td>
+                                                <td className="py-3 px-5 text-center">
+                                                  {(isEditing || isNew) && (
+                                                    <button
+                                                      onClick={() => {
+                                                        const isNewlyAdded = !pi.id;
+                                                        if (isNewlyAdded) {
+                                                          if (pi.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pi.info_glosario.coste_exp);
+                                                          if (pi.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pi.info_glosario.coste_ryous);
+                                                          if (pi.info_glosario?.coste_puntos_aprendizaje) onUpdateField('puntos_aprendizaje', (character.puntos_aprendizaje || 0) + pi.info_glosario.coste_puntos_aprendizaje);
+                                                        }
+                                                        onUpdateField('personajes_inventario', character.personajes_inventario?.filter((i: PersonajeItem) => i.item_id !== pi.item_id));
+                                                      }}
+                                                      className="p-2 bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
+                                                      title="Eliminar Objeto"
+                                                    >
+                                                      <Trash2 className="w-4 h-4" />
+                                                    </button>
                                                   )}
-                                                </div>
-                                              </td>
-                                              <td className="py-3 px-5">
-                                                {renderRequisitos(pi.info_glosario?.requisitos)}
-                                              </td>
-                                              <td className="py-3 px-5 text-center">
-                                                {(isEditing || isNew) && (
-                                                  <button
-                                                    onClick={() => {
-                                                      const isNewlyAdded = !pi.id;
-                                                      if (isNewlyAdded) {
-                                                        if (pi.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pi.info_glosario.coste_exp);
-                                                        if (pi.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pi.info_glosario.coste_ryous);
-                                                        if (pi.info_glosario?.coste_puntos_aprendizaje) onUpdateField('puntos_aprendizaje', (character.puntos_aprendizaje || 0) + pi.info_glosario.coste_puntos_aprendizaje);
-                                                      }
-                                                      onUpdateField('personajes_inventario', character.personajes_inventario?.filter((i: PersonajeItem) => i.item_id !== pi.item_id));
-                                                    }}
-                                                    className="p-2 bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
-                                                    title="Eliminar Objeto"
-                                                  >
-                                                    <Trash2 className="w-4 h-4" />
-                                                  </button>
-                                                )}
-                                              </td>
-                                            </tr>
-                                          ))}
-                                        </tbody>
-                                      </table>
+                                                </td>
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                        </table>
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              ))}
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-
-                {(canEdit || isNew) && (isEditing || isNew) && (
-                  <div className="mt-20 pt-12 border-t border-oro/10">
-                    <SearchableSelect
-                      label="ADQUIRIR NUEVO OBJETO"
-                      placeholder="BUSCAR EN EL GLOSARIO DE EQUIPO..."
-                      options={(glosarioFiltrado || [])
-                        .filter((i: Glosario) => i.categoria_id === 2 && meetsRequirements(i) && !(character.personajes_inventario || []).some((pi: PersonajeItem) => pi.item_id === i.id))
-                        .map((i: any) => {
-                          const subData = i.info_glosario_subcategorias;
-                          const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'GENERAL';
-                          const paEfectivo = i.coste_puntos_aprendizaje || 0;
-                          const paCostText = ` / ${paEfectivo} PA`;
-                          return {
-                            label: `${i.nombre_es} (${subName}) — ${i.coste_exp} EXP / ${i.coste_ryous} RYOUS${paCostText}`,
-                            value: i.id
-                          };
-                        })
-                      }
-                      onChange={(v) => {
-                        const it = (glosarioFiltrado || []).find((i: any) => i.id === Number(v));
-                        const current = character.personajes_inventario || [];
-
-                        if (it && !current.some((i: any) => i.item_id === it.id)) {
-                          const costExp = it.coste_exp || 0;
-                          const costRyous = it.coste_ryous || 0;
-                          const costPA = it.coste_puntos_aprendizaje || 0;
-                          const currentExp = character.xp || 0;
-                          const currentRyous = character.ryous || 0;
-                          const currentPA = character.puntos_aprendizaje || 0;
-
-                          if (currentExp < costExp || currentRyous < costRyous || currentPA < costPA) {
-                            addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP, ${costRyous} RYOUS Y ${costPA} PA.`, "error");
-                            return;
-                          }
-
-                          onUpdateField('personajes_inventario', [...current, { item_id: it.id, info_glosario: it }]);
-                          if (costExp > 0) onUpdateField('xp', currentExp - costExp);
-                          if (costRyous > 0) onUpdateField('ryous', currentRyous - costRyous);
-                          if (costPA > 0) onUpdateField('puntos_aprendizaje', currentPA - costPA);
-                        }
-                      }}
-                    />
+                    ))}
                   </div>
-                )}
-              </SectionCard>
+
+                  {(canEdit || isNew) && (isEditing || isNew) && (
+                    <div className="mt-20 pt-12 border-t border-oro/10">
+                      <SearchableSelect
+                        label="ADQUIRIR NUEVO OBJETO"
+                        placeholder="BUSCAR EN EL GLOSARIO DE OBJETOS..."
+                        options={(glosarioFiltrado || [])
+                          .filter((i: Glosario) => {
+                            const subData = i.info_glosario_subcategorias;
+                            const subSlug = (Array.isArray(subData) ? subData[0]?.slug : subData?.slug) || '';
+                            const isEquipment = i.zona_equipable || subSlug === 'equipo';
+                            return i.categoria_id === 2 && !isEquipment && meetsRequirements(i) && !(character.personajes_inventario || []).some((pi: PersonajeItem) => pi.item_id === i.id);
+                          })
+                          .map((i: any) => {
+                            const subData = i.info_glosario_subcategorias;
+                            const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'GENERAL';
+                            const paEfectivo = i.coste_puntos_aprendizaje || 0;
+                            const paCostText = ` / ${paEfectivo} PA`;
+                            return {
+                              label: `${i.nombre_es} (${subName}) — ${i.coste_exp} EXP / ${i.coste_ryous} RYOUS${paCostText}`,
+                              value: i.id
+                            };
+                          })
+                        }
+                        onChange={(v) => {
+                          const it = (glosarioFiltrado || []).find((i: any) => i.id === Number(v));
+                          const current = character.personajes_inventario || [];
+
+                          if (it && !current.some((i: any) => i.item_id === it.id)) {
+                            const costExp = it.coste_exp || 0;
+                            const costRyous = it.coste_ryous || 0;
+                            const costPA = it.coste_puntos_aprendizaje || 0;
+                            const currentExp = character.xp || 0;
+                            const currentRyous = character.ryous || 0;
+                            const currentPA = character.puntos_aprendizaje || 0;
+
+                            if (currentExp < costExp || currentRyous < costRyous || currentPA < costPA) {
+                              addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP, ${costRyous} RYOUS Y ${costPA} PA.`, "error");
+                              return;
+                            }
+
+                            onUpdateField('personajes_inventario', [...current, { item_id: it.id, info_glosario: it, equipado: false }]);
+                            if (costExp > 0) onUpdateField('xp', currentExp - costExp);
+                            if (costRyous > 0) onUpdateField('ryous', currentRyous - costRyous);
+                            if (costPA > 0) onUpdateField('puntos_aprendizaje', currentPA - costPA);
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
+                </SectionCard>
+              )}
+
+              {inventarioSubTab === 'equipo' && (
+                <SectionCard title="EQUIPO DE COMBATE" color="oro">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {(['Cabeza', 'Cuerpo', 'Especial'] as const).map(zone => {
+                      const allEquippedItems = (character.personajes_inventario || []).filter(
+                        pi => pi.info_glosario?.zona_equipable === zone && pi.equipado
+                      );
+                      const nonOccupyingEquipped = allEquippedItems.filter(
+                        pi => pi.info_glosario?.ocupa_espacio === false
+                      );
+                      const occupyingEquipped = allEquippedItems.filter(
+                        pi => pi.info_glosario?.ocupa_espacio !== false
+                      );
+
+                      // Max slots available for this category = 1 base + number of non-occupying items currently equipped
+                      const totalSlots = 1 + nonOccupyingEquipped.length;
+
+                      // Available items from backpack that belong to this zone and are NOT currently equipped
+                      const availableToEquip = (character.personajes_inventario || []).filter(
+                        pi => pi.info_glosario?.zona_equipable === zone && !pi.equipado
+                      );
+
+                      // Match each slot index with equipped items.
+                      // Since non-occupying items take their own slots, let's list occupied items first,
+                      // then let the user assign item to each slot.
+                      // We can build an array representing the current state of each slot.
+                      const slots: Array<PersonajeItem | null> = [];
+                      for (let i = 0; i < totalSlots; i++) {
+                        const equippedAtSlot = allEquippedItems[i] || null;
+                        slots.push(equippedAtSlot);
+                      }
+
+                      return (
+                        <div key={zone} className="space-y-4 bg-black/30 p-5 border border-oro/10 rounded-lg">
+                          <h4 className="text-base font-black text-oro uppercase tracking-wider border-b border-oro/15 pb-2 flex justify-between items-center">
+                            <span>{zone}</span>
+                            <span className="text-[10px] text-oro/40 font-bold uppercase tracking-widest">
+                              {nonOccupyingEquipped.length > 0 ? `+${nonOccupyingEquipped.length} Libres` : ''}
+                            </span>
+                          </h4>
+
+                          <div className="space-y-4">
+                            {slots.map((equippedItem, slotIdx) => {
+                              return (
+                                <div key={slotIdx} className="space-y-2">
+                                  <span className="text-[10px] font-black text-oro/40 uppercase tracking-widest block">
+                                    Ranura {slotIdx + 1}
+                                  </span>
+
+                                  {isEditing || isNew ? (
+                                    <div className="flex gap-2">
+                                      <NinjaSelect
+                                        value={equippedItem ? String(equippedItem.item_id) : ''}
+                                        onChange={(val) => {
+                                          const prevItemId = equippedItem?.item_id;
+                                          const nextItemId = val ? Number(val) : null;
+
+                                          let updatedList = [...(character.personajes_inventario || [])];
+
+                                          // Unequip previous item if any
+                                          if (prevItemId) {
+                                            updatedList = updatedList.map(item =>
+                                              item.item_id === prevItemId ? { ...item, equipado: false } : item
+                                            );
+                                          }
+
+                                          // Equip next item if any
+                                          if (nextItemId) {
+                                            updatedList = updatedList.map(item =>
+                                              item.item_id === nextItemId ? { ...item, equipado: true } : item
+                                            );
+                                          }
+
+                                          onUpdateField('personajes_inventario', updatedList);
+                                        }}
+                                        options={[
+                                          ...(equippedItem ? [{ label: equippedItem.info_glosario?.nombre_es || '', value: String(equippedItem.item_id) }] : []),
+                                          ...availableToEquip.map(item => ({
+                                            label: `${item.info_glosario?.nombre_es || ''}${item.info_glosario?.ocupa_espacio === false ? ' (Sin Hueco)' : ''}`,
+                                            value: String(item.item_id)
+                                          }))
+                                        ]}
+                                        placeholder="-- VACÍO --"
+                                        variant="inline"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className="min-h-[42px] flex items-center justify-between px-4 py-2 bg-black/40 border border-oro/5">
+                                      {equippedItem ? (
+                                        <div className="flex flex-col">
+                                          <span className="text-xs font-black text-oro uppercase tracking-wider">
+                                            {equippedItem.info_glosario?.nombre_es}
+                                          </span>
+                                          {equippedItem.info_glosario?.ocupa_espacio === false && (
+                                            <span className="text-[9px] font-black text-amber-400 uppercase tracking-widest">
+                                              No ocupa espacio
+                                            </span>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <span className="text-xs font-black text-oro/20 uppercase tracking-wider">
+                                          Vacío
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Baúl de Equipamiento */}
+                  <div className="mt-12 space-y-6">
+                    <h4 className="text-base xl:text-lg font-black text-oro/70 uppercase tracking-widest flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-oro rotate-45" />
+                      Baúl de Equipamiento
+                    </h4>
+
+                    {possessedEquipment.length === 0 ? (
+                      <div className="py-8 text-center rounded-[4px] border border-oro/10 bg-black/20 text-xs font-black text-oro/30 uppercase tracking-[0.25em]">
+                        No tienes equipamiento en tu mochila
+                      </div>
+                    ) : (
+                      <div className="ninja-card-oro p-1 overflow-hidden border border-oro/10">
+                        <div className="overflow-x-auto scrollbar-hide">
+                          <table className="w-full text-left border-collapse table-fixed min-w-[600px]">
+                            <thead>
+                              <tr className="border-b border-oro/10 text-oro/70 text-caption xl:text-xs font-black uppercase tracking-[0.3em] bg-black/20">
+                                <th className="py-3 px-5 w-[35%]">Objeto de Equipo</th>
+                                <th className="py-3 px-5 w-[20%] text-center">Zona</th>
+                                <th className="py-3 px-5 w-[30%]">Estado</th>
+                                <th className="py-3 px-5 w-[15%] text-center">Acciones</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-oro/5 bg-black/40">
+                              {possessedEquipment.map((pi: PersonajeItem, idx: number) => (
+                                <tr key={`${pi.item_id}-${idx}`} className="hover:bg-oro/5 transition-colors group">
+                                  <td className="py-3 px-5">
+                                    <div className="flex flex-col">
+                                      <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
+                                        {pi.info_glosario?.nombre_es}
+                                        {pi.info_glosario?.ocupa_espacio === false && (
+                                          <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 tracking-widest rounded-sm">
+                                            Sin Hueco
+                                          </span>
+                                        )}
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="py-3 px-5 text-center">
+                                    <span className="inline-block px-2.5 py-1 bg-oro/10 border border-oro/20 text-oro text-xs font-black rounded-sm uppercase">
+                                      {pi.info_glosario?.zona_equipable || 'General'}
+                                    </span>
+                                  </td>
+                                  <td className="py-3 px-5">
+                                    {pi.equipado ? (
+                                      <span className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-600 uppercase tracking-widest bg-emerald-500/10 border border-emerald-500/30 px-2 py-1 rounded-sm">
+                                        Equipado
+                                      </span>
+                                    ) : (
+                                      <span className="text-xs font-black text-oro/30 uppercase tracking-widest">
+                                        En Mochila
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="py-3 px-5 text-center">
+                                    {(isEditing || isNew) && (
+                                      <button
+                                        onClick={() => {
+                                          const isNewlyAdded = !pi.id;
+                                          if (isNewlyAdded) {
+                                            if (pi.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pi.info_glosario.coste_exp);
+                                            if (pi.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pi.info_glosario.coste_ryous);
+                                            if (pi.info_glosario?.coste_puntos_aprendizaje) onUpdateField('puntos_aprendizaje', (character.puntos_aprendizaje || 0) + pi.info_glosario.coste_puntos_aprendizaje);
+                                          }
+                                          onUpdateField('personajes_inventario', character.personajes_inventario?.filter((i: PersonajeItem) => i.item_id !== pi.item_id));
+                                        }}
+                                        className="p-2 bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
+                                        title="Eliminar Objeto"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {(canEdit || isNew) && (isEditing || isNew) && (
+                    <div className="mt-12 pt-12 border-t border-oro/10">
+                      <SearchableSelect
+                        label="ADQUIRIR NUEVO EQUIPAMIENTO"
+                        placeholder="BUSCAR EN EL GLOSARIO DE EQUIPO..."
+                        options={(glosarioFiltrado || [])
+                          .filter((i: Glosario) => {
+                            const subData = i.info_glosario_subcategorias;
+                            const subSlug = (Array.isArray(subData) ? subData[0]?.slug : subData?.slug) || '';
+                            const isEquipment = i.zona_equipable || subSlug === 'equipo';
+                            return i.categoria_id === 2 && isEquipment && meetsRequirements(i) && !(character.personajes_inventario || []).some((pi: PersonajeItem) => pi.item_id === i.id);
+                          })
+                          .map((i: any) => {
+                            const subData = i.info_glosario_subcategorias;
+                            const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'EQUIPO';
+                            const paEfectivo = i.coste_puntos_aprendizaje || 0;
+                            const paCostText = ` / ${paEfectivo} PA`;
+                            const zoneText = i.zona_equipable ? ` [${i.zona_equipable}]` : '';
+                            return {
+                              label: `${i.nombre_es}${zoneText} (${subName}) — ${i.coste_exp} EXP / ${i.coste_ryous} RYOUS${paCostText}`,
+                              value: i.id
+                            };
+                          })
+                        }
+                        onChange={(v) => {
+                          const it = (glosarioFiltrado || []).find((i: any) => i.id === Number(v));
+                          const current = character.personajes_inventario || [];
+
+                          if (it && !current.some((i: any) => i.item_id === it.id)) {
+                            const costExp = it.coste_exp || 0;
+                            const costRyous = it.coste_ryous || 0;
+                            const costPA = it.coste_puntos_aprendizaje || 0;
+                            const currentExp = character.xp || 0;
+                            const currentRyous = character.ryous || 0;
+                            const currentPA = character.puntos_aprendizaje || 0;
+
+                            if (currentExp < costExp || currentRyous < costRyous || currentPA < costPA) {
+                              addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP, ${costRyous} RYOUS Y ${costPA} PA.`, "error");
+                              return;
+                            }
+
+                            onUpdateField('personajes_inventario', [...current, { item_id: it.id, info_glosario: it, equipado: false }]);
+                            if (costExp > 0) onUpdateField('xp', currentExp - costExp);
+                            if (costRyous > 0) onUpdateField('ryous', currentRyous - costRyous);
+                            if (costPA > 0) onUpdateField('puntos_aprendizaje', currentPA - costPA);
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
+                </SectionCard>
+              )}
             </div>
           )}
           {activeTab === 'tecnicas' && (
