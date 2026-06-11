@@ -49,23 +49,32 @@ function CrearFichaContent() {
   useEffect(() => {
     if (!masters.initialized) masters.initialize();
     
-    // Cargar perfil del usuario logueado para mostrar su Discord
+    // Cargar perfil del usuario logueado para mostrar su Discord, configuración inicial y glosario en paralelo
     const loadData = async () => {
-      const { data: { user } } = await (await import('@/services/supabase/auth.service')).AuthService.getUser();
-      if (user) {
-        const profile = await (await import('@/services/supabase/profile.service')).ProfileService.getProfile(user.id);
-        if (profile) {
-          setForm((prev: any) => ({ ...prev, profiles: { username: profile.username } }));
-        }
-      }
-
-      // Cargar configuración inicial del sistema
       try {
-        const { AdminService } = await import('@/services/supabase/admin.service');
-        const [config, fullGlosario] = await Promise.all([
+        const [
+          { AuthService },
+          { AdminService }
+        ] = await Promise.all([
+          import('@/services/supabase/auth.service'),
+          import('@/services/supabase/admin.service')
+        ]);
+
+        const [userRes, config, fullGlosario] = await Promise.all([
+          AuthService.getUser(),
           AdminService.getConfigByClave('datos_inicio_ficha'),
           MasterService.getGlosarios()
         ]);
+
+        const user = userRes.data?.user;
+        if (user) {
+          const { ProfileService } = await import('@/services/supabase/profile.service');
+          const profile = await ProfileService.getProfile(user.id);
+          if (profile) {
+            setForm((prev: any) => ({ ...prev, profiles: { username: profile.username } }));
+          }
+        }
+
         if (config && config.valor) {
           setForm((prev: any) => ({
             ...prev,

@@ -75,28 +75,28 @@ export const MasterServerService = {
   },
 
   async getCharacterCountsByAldea(supabase: SupabaseClient, aldeaIds: number[]): Promise<Record<string, number>> {
+    const { data, error } = await supabase
+      .from('reg_characters')
+      .select('aldea_id')
+      .eq('activo', true);
+      
+    if (error) throw error;
+
     const countsMap: Record<string, number> = {};
+    aldeaIds.forEach(id => {
+      countsMap[id] = 0;
+    });
+    countsMap['renegados'] = 0;
 
-    const countPromises = [
-      ...aldeaIds.map(async (id) => {
-        const { count } = await supabase
-          .from('reg_characters')
-          .select('*', { count: 'exact', head: true })
-          .eq('aldea_id', id)
-          .eq('activo', true);
-        countsMap[id] = count || 0;
-      }),
-      (async () => {
-        const { count } = await supabase
-          .from('reg_characters')
-          .select('*', { count: 'exact', head: true })
-          .is('aldea_id', null)
-          .eq('activo', true);
-        countsMap['renegados'] = count || 0;
-      })()
-    ];
+    (data || []).forEach(char => {
+      const aid = char.aldea_id;
+      if (aid === null || aid === undefined) {
+        countsMap['renegados']++;
+      } else {
+        countsMap[aid] = (countsMap[aid] || 0) + 1;
+      }
+    });
 
-    await Promise.all(countPromises);
     return countsMap;
   },
 

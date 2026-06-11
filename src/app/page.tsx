@@ -99,15 +99,16 @@ function formatRelativeTime(dateString: string) {
 
 export default async function Home() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
 
-  const profile = user ? await ProfileService.getProfile(user.id) : null;
-
-  const [registros, characters, noticias] = await Promise.all([
+  const [userRes, registros, characters, noticias] = await Promise.all([
+    supabase.auth.getUser(),
     getCachedRegistros(),
     getCachedCharacters(),
     getCachedNoticias()
   ]);
+
+  const user = userRes.data?.user;
+  const profile = user ? await ProfileService.getProfile(user.id, supabase) : null;
 
   // Merge and sort chronologically
   const events: any[] = [];
@@ -292,9 +293,9 @@ export default async function Home() {
               <div className="relative z-10">
                 <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4 tracking-widest">
                   <img src="/assets/icons/shuriken.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
-                  Documentos
+                  Documentos y Glosario
                 </h3>
-                <p className="text-gris-texto leading-relaxed text-sm xl:text-base max-w-2xl">Manuales y normativa oficial del juego.</p>
+                <p className="text-gris-texto leading-relaxed text-sm xl:text-base max-w-2xl">Consulta los documentos de las ramas, clanes y el glosario.</p>
               </div>
             </Link>
 

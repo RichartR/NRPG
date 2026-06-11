@@ -6,16 +6,39 @@ import Breadcrumbs from '@/components/ui/Breadcrumbs';
 export default async function GlosarioPage() {
   const supabase = await createClient();
 
-  // Fetch data in parallel
-  const [categorias, subcategorias, glosarios, ramas, aldeas, subespecialidades, entrenamientos] = await Promise.all([
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+  // Fetch all data in parallel
+  const [
+    categorias,
+    subcategorias,
+    glosarios,
+    ramas,
+    aldeas,
+    subespecialidades,
+    entrenamientos,
+    charactersRes,
+    limitAldeaRaw,
+    limitOrganizacionRaw
+  ] = await Promise.all([
     MasterServerService.getGlosarioCategorias(supabase),
     MasterServerService.getGlosarioSubcategorias(supabase),
     MasterServerService.getGlosarios(supabase),
     MasterServerService.getRamas(supabase),
     MasterServerService.getAldeasActivas(supabase),
     MasterServerService.getSubEspecialidades(supabase),
-    MasterServerService.getAdminEntrenamientos(supabase)
+    MasterServerService.getAdminEntrenamientos(supabase),
+    supabase
+      .from('reg_characters')
+      .select('id, aldea_id, reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(rama_id)')
+      .eq('eliminado_voluntario', false)
+      .or(`activo.eq.true,and(activo.eq.false,archived_at.gt.${sixMonthsAgo.toISOString()})`),
+    MasterServerService.getConfiguracion(supabase, 'cupos_maximos_aldea'),
+    MasterServerService.getConfiguracion(supabase, 'cupos_maximos_organizacion')
   ]);
+
+  const charactersInCupos = charactersRes?.data || [];
 
   // Mapear entrenamientos a la estructura de Glosario
   const mappedEntrenamientos = (entrenamientos || [])
@@ -36,17 +59,7 @@ export default async function GlosarioPage() {
       activo: true
     }));
 
-  const combinedGlosarios = [...glosarios, ...mappedEntrenamientos];
-
-  // 1. Obtener personajes que ocupan cupo (activos OR inactivos por inactividad de menos de 6 meses)
-  const sixMonthsAgo = new Date();
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-  const { data: charactersInCupos } = await supabase
-    .from('reg_characters')
-    .select('id, aldea_id, reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(rama_id)')
-    .eq('eliminado_voluntario', false)
-    .or(`activo.eq.true,and(activo.eq.false,archived_at.gt.${sixMonthsAgo.toISOString()})`);
+  const combinedGlosarios = [...(glosarios || []), ...mappedEntrenamientos];
 
   const countByAldea: Record<number, number> = {};
   const countByClan: Record<number, number> = {};
@@ -67,10 +80,6 @@ export default async function GlosarioPage() {
       countByClan[rId] = (countByClan[rId] || 0) + 1;
     }
   });
-
-  // 3. Obtener límites de configuración
-  const limitAldeaRaw = await MasterServerService.getConfiguracion(supabase, 'cupos_maximos_aldea');
-  const limitOrganizacionRaw = await MasterServerService.getConfiguracion(supabase, 'cupos_maximos_organizacion');
 
   const cuposMaximosAldea = limitAldeaRaw != null && limitAldeaRaw !== '' ? Number(limitAldeaRaw) : 10;
   const cuposMaximosOrganizacion = limitOrganizacionRaw != null && limitOrganizacionRaw !== '' ? Number(limitOrganizacionRaw) : 10;

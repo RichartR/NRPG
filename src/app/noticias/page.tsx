@@ -22,19 +22,19 @@ const getCachedAllNews = unstable_cache(
 
 export default async function NoticiasPage() {
   let allNews: any[] = [];
-  try {
-    allNews = await getCachedAllNews();
-  } catch (error) {
-    console.error("Error fetching news index:", error);
-    return <div className="p-8 text-red-500">Error cargando el índice de noticias.</div>;
-  }
-
-  // Si no hay noticias, ponemos unas de prueba en la UI por si la DB está vacía
   const mockNews = [
     { id: 1, discord_msg_id: '1', titulo: '¡Bienvenidos a NRPG!', categoria: 'Noticia', url_imagen: 'https://game.gtimg.cn/images/hyrz/web2026/kv.jpg' },
     { id: 2, discord_msg_id: '2', titulo: 'Parche 1.0.1: Balance de Taijutsu', categoria: 'Parche', url_imagen: 'https://game.gtimg.cn/images/hyrz/web2026/match.jpg' }
   ];
 
+  // 2. Verificar rol de administrador de forma segura
+  const supabase = await createClient();
+  const [userRes, cachedNews] = await Promise.all([
+    supabase.auth.getUser(),
+    getCachedAllNews()
+  ]);
+
+  allNews = cachedNews || [];
   const rawNewsList = allNews && allNews.length > 0 ? allNews : mockNews;
 
   // Filter active news for players: any news that doesn't have `activo` explicitly set to false is active.
@@ -42,10 +42,8 @@ export default async function NoticiasPage() {
   const playerNewsList = rawNewsList.filter((n: any) => n.activo !== false);
   const adminNewsList = rawNewsList;
 
-  // 2. Verificar rol de administrador de forma segura
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const profile = user ? await ProfileService.getProfile(user.id) : null;
+  const user = userRes.data?.user;
+  const profile = user ? await ProfileService.getProfile(user.id, supabase) : null;
   const isAdmin = profile?.role === 'admin';
 
   return (

@@ -6,11 +6,15 @@ import MundoNinjaClientView from './MundoNinjaClientView';
 export default async function MundoNinjaSelectionPage() {
   const supabase = await createClient();
 
-  const aldeas = await MasterServerService.getAldeasActivas(supabase);
+  const [aldeas, { data: { user } }] = await Promise.all([
+    MasterServerService.getAldeasActivas(supabase),
+    supabase.auth.getUser()
+  ]);
 
-  const [countsMap, maxCuposRaw] = await Promise.all([
+  const [countsMap, maxCuposRaw, profile] = await Promise.all([
     MasterServerService.getCharacterCountsByAldea(supabase, aldeas.map((a) => a.id)),
     MasterServerService.getConfiguracion(supabase, 'cupos_maximos_aldea'),
+    user ? ProfileService.getProfile(user.id, supabase) : Promise.resolve(null)
   ]);
 
   const maxCupos =
@@ -18,9 +22,6 @@ export default async function MundoNinjaSelectionPage() {
       ? Number(maxCuposRaw)
       : 30;
 
-  // 3. Verify administrator role safely on the server
-  const { data: { user } } = await supabase.auth.getUser();
-  const profile = user ? await ProfileService.getProfile(user.id) : null;
   const isAdmin = profile?.role === 'admin';
 
   // 4. Load admin-only villages (all active and inactive) if user is admin

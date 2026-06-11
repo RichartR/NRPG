@@ -6,12 +6,15 @@ import SistemasClientView from './SistemasClientView';
 export default async function SistemasPage() {
   const supabase = await createClient();
   
-  // 1. Obtener documentos normales de la categoría 'sistemas' para el jugador
-  const docs = await MasterServerService.getDocumentosSistemas(supabase);
+  // 1. Obtener documentos normales de la categoría 'sistemas' y sesión del usuario en paralelo
+  const [docs, userRes] = await Promise.all([
+    MasterServerService.getDocumentosSistemas(supabase),
+    supabase.auth.getUser()
+  ]);
 
   // 2. Verificar rol de administrador de forma segura en el servidor
-  const { data: { user } } = await supabase.auth.getUser();
-  const profile = user ? await ProfileService.getProfile(user.id) : null;
+  const user = userRes.data?.user;
+  const profile = user ? await ProfileService.getProfile(user.id, supabase) : null;
   const isAdmin = profile?.role === 'admin';
 
   // 3. Cargar datos administrativos adicionales solo si es admin
