@@ -40,8 +40,8 @@ export default function DocumentosPage() {
             title="ALDEAS"
             titleClassName="text-3xl sm:text-3xl md:text-4xl"
             category="BIBLIOTECA"
-            imageUrl="https://game.gtimg.cn/images/hyrz/web2026/match.jpg"
-            description="Descubre los secretos de aldeas y organizaciones: su historia, clanes fundadores y geografía sagrada."
+            imageUrl="/assets/images/aldeas.webp"
+            description="Descubre los secretos de aldeas y organizaciones: sus habilidades, técnicas y objetos más utilizados."
             actionText="Ver Aldeas"
           />
 
@@ -51,8 +51,8 @@ export default function DocumentosPage() {
             title="RAMAS"
             titleClassName="text-3xl sm:text-3xl md:text-4xl"
             category="ESPECIALIDAD"
-            imageUrl="https://game.gtimg.cn/images/hyrz/web2026/ninja.jpg"
-            description="Especialidades de combate, el despertar de clanes y el funcionamiento de las artes ninja prohibidas."
+            imageUrl="/assets/images/ramas.png"
+            description="Consulta todas las ramas ninja disponibles para tu personaje."
             actionText="Ver Ramas"
           />
 
@@ -62,7 +62,7 @@ export default function DocumentosPage() {
             title="GLOSARIO"
             titleClassName="text-3xl sm:text-3xl md:text-4xl"
             category="GLOSARIO"
-            imageUrl="https://game.gtimg.cn/images/hyrz/web2026/content.jpg"
+            imageUrl="/assets/images/glosario.jpg"
             description="Consulta el glosario con todo el conocimiento del mundo shinobi."
             actionText="Ver Glosario"
           />
