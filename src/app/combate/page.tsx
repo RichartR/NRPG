@@ -7,6 +7,7 @@ import Link from 'next/link';
 
 export default function CombateMenu() {
   const [roomId, setRoomId] = useState('');
+  const [roomMode, setRoomMode] = useState<'normal' | 'event'>('normal');
   const router = useRouter();
 
   const handleJoin = (e: React.FormEvent) => {
@@ -18,7 +19,11 @@ export default function CombateMenu() {
 
   const handleCreate = () => {
     const newRoom = Math.random().toString(36).substring(2, 8).toUpperCase();
-    router.push(`/combate/${newRoom}`);
+    if (roomMode === 'event') {
+      router.push(`/combate/${newRoom}?mode=event`);
+    } else {
+      router.push(`/combate/${newRoom}`);
+    }
   };
 
   return (
@@ -33,6 +38,31 @@ export default function CombateMenu() {
         <div className="flex flex-col items-center mb-12">
           <h1 className="ninja-title text-4xl xl:text-6xl text-center">CAMPO DE BATALLA</h1>
           <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.3em] mt-4 text-center">CREA TU SALA O ÚNETE A LA UNA YA CREADA</p>
+        </div>
+
+        <div className="flex gap-4 mb-6">
+          <button
+            type="button"
+            onClick={() => setRoomMode('normal')}
+            className={`flex-1 py-3 px-4 text-xs font-black uppercase tracking-widest border transition-all ${roomMode === 'normal'
+                ? 'bg-oro text-black border-oro shadow-md shadow-oro/5'
+                : 'border-oro/10 text-oro/60 hover:text-oro bg-black/20'
+              }`}
+            style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+          >
+            Combate Normal
+          </button>
+          <button
+            type="button"
+            onClick={() => setRoomMode('event')}
+            className={`flex-1 py-3 px-4 text-xs font-black uppercase tracking-widest border transition-all ${roomMode === 'event'
+                ? 'bg-oro text-black border-oro shadow-md shadow-oro/5'
+                : 'border-oro/10 text-oro/60 hover:text-oro bg-black/20'
+              }`}
+            style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+          >
+            Combate de Evento
+          </button>
         </div>
 
         <button
