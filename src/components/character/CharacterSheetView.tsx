@@ -3875,7 +3875,7 @@ export function CharacterSheetView({
                   <button
                     onClick={async () => {
                       const finalVal = imageUrlInput.trim() || null;
-                      if (isEditing) {
+                      if (isEditing || isNew) {
                         if (editingImageKey === 'character') {
                           onUpdateField('url_img', finalVal);
                         } else {
