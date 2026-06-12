@@ -226,7 +226,7 @@ export default function CombatForm({
 
     setLoading(true);
     try {
-      if (initialData) {
+      if (initialData && initialData.id) {
         await RegistrosService.updateRegistro(initialData.id, payload);
         addToast('Registro actualizado correctamente', 'success');
       } else {
@@ -253,7 +253,7 @@ export default function CombatForm({
           <div className="flex justify-between items-start border-b border-oro/10 pb-10">
             <div className="space-y-2">
               <h3 className="ninja-title text-2xl sm:text-4xl md:text-5xl xl:text-6xl text-oro">
-                {initialData ? 'EDITAR CRÓNICA' : 'CRÓNICA DE GUERRA'}
+                {initialData ? 'CREAR REGISTRO' : 'REGISTRO DE COMBATE'}
               </h3>
               <p className="text-xs sm:text-sm font-black text-oro/40 uppercase tracking-[0.4em]">Sincronizando con el archivo histórico de combate</p>
             </div>

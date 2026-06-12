@@ -258,25 +258,40 @@ export default function CharacterSheet() {
                 <span className="px-4 py-1.5 text-caption font-black bg-rojo-sangre text-oro uppercase tracking-[0.2em] whitespace-nowrap">
                   Rango {rango}
                 </span>
-                <Link
-                  href={`/ficha/${activeCharacter.id}`}
-                  className="ninja-btn-oro px-6 py-2.5 text-xs text-center w-full"
-                >
-                  Ver Ficha
-                </Link>
+                <div className="flex gap-2 w-full">
+                  <Link
+                    href={`/ficha/${activeCharacter.id}`}
+                    className="ninja-btn-oro px-4 py-2.5 text-xs text-center flex-1"
+                  >
+                    Ver Ficha
+                  </Link>
+                  <Link
+                    href="/combate"
+                    className="ninja-btn-oro px-4 py-2.5 text-xs text-center flex-1"
+                  >
+                    Combatir
+                  </Link>
+                </div>
               </div>
 
-              {/* Fila Rango + Botón Ficha (En desktop/tablet alineados a la misma altura) */}
-              <div className="hidden sm:flex items-center gap-4 mt-2 sm:mt-4">
-                <span className="px-4 sm:px-5 py-1.5 text-caption sm:text-xs xl:text-sm font-black bg-rojo-sangre text-oro uppercase tracking-[0.2em] whitespace-nowrap">
+              {/* Fila Rango + Botón Ficha (En desktop/tablet alineados a la misma altura, con flex-wrap para evitar desbordes) */}
+              <div className="hidden sm:flex flex-wrap items-center gap-2 sm:gap-3 mt-3">
+                <span className="px-3.5 py-1 text-caption sm:text-xs xl:text-sm font-black bg-rojo-sangre text-oro uppercase tracking-[0.2em] whitespace-nowrap">
                   Rango {rango}
                 </span>
                 <Link
                   href={`/ficha/${activeCharacter.id}`}
-                  className="ninja-btn-oro px-6 py-1.5 text-xs xl:text-sm text-center font-black uppercase tracking-widest shrink-0"
+                  className="ninja-btn-oro px-4 sm:px-5 py-1 text-xs xl:text-sm text-center font-black uppercase tracking-widest shrink-0"
                   style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
                 >
                   Ver Ficha
+                </Link>
+                <Link
+                  href="/combate"
+                  className="ninja-btn-oro px-4 sm:px-5 py-1 text-xs xl:text-sm text-center font-black uppercase tracking-widest shrink-0"
+                  style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                >
+                  Combatir
                 </Link>
               </div>
             </div>
