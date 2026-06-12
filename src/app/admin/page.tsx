@@ -110,6 +110,15 @@ export default function AdminPage() {
       color: 'text-oro',
       bgColor: 'bg-oro/10',
       borderColor: 'hover:border-oro/50'
+    },
+    {
+      title: 'Control de Usuarios',
+      desc: 'Buscar usuarios, ver personajes, Discord y gestionar baneos temporales de cuentas e IPs.',
+      icon: ShieldAlert,
+      href: '/admin/usuarios',
+      color: 'text-rojo-sangre',
+      bgColor: 'bg-rojo-sangre/10',
+      borderColor: 'hover:border-rojo-sangre/50'
     }
   ];
 

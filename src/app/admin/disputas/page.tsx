@@ -58,19 +58,32 @@ export default function AdminDisputePage() {
 
   const handleResolve = async (id: string, action: 'aceptada' | 'rechazada') => {
     const dispute = disputes.find(d => d.id === id);
-    const isAppeal = dispute ? dispute.registro_id === null : false;
+    const isCloneAlert = dispute ? (dispute.registro_id === null && dispute.personaje_id === null) : false;
+    const isAppeal = dispute ? (dispute.registro_id === null && dispute.personaje_id !== null) : false;
+
+    let title = '';
+    let message = '';
+
+    if (isCloneAlert) {
+      title = action === 'aceptada' ? 'Aceptar Apelación de IP' : 'Desestimar Alerta de Clon';
+      message = action === 'aceptada'
+        ? '¿Estás seguro de que quieres aceptar la apelación de esta IP? Se añadirá la dirección IP de conexión a la lista blanca para evitar futuros avisos de duplicados de estos usuarios.'
+        : '¿Estás seguro de desestimar esta alerta? Se marcará el aviso como resuelto sin añadir la IP a la lista blanca.';
+    } else if (isAppeal) {
+      title = action === 'aceptada' ? 'Aceptar Apelación' : 'Rechazar Apelación';
+      message = action === 'aceptada'
+        ? '¿Estás seguro de que quieres aceptar la apelación? Se restaurará la ficha de este shinobi.'
+        : '¿Estás seguro de que quieres rechazar la apelación? La ficha seguirá archivada.';
+    } else {
+      title = action === 'aceptada' ? 'Aceptar Disputa' : 'Invalidar Registro';
+      message = action === 'aceptada'
+        ? '¿Estás seguro de que quieres aceptar la disputa? Se darán las recompensas correspondientes al jugador.'
+        : '¿Estás seguro de que quieres invalidar el registro? Se retirarán las recompensas de todos los implicados.';
+    }
 
     const ok = await confirmAction({
-      title: isAppeal
-        ? (action === 'aceptada' ? 'Aceptar Apelación' : 'Rechazar Apelación')
-        : (action === 'aceptada' ? 'Aceptar Disputa' : 'Invalidar Registro'),
-      message: isAppeal
-        ? (action === 'aceptada'
-          ? '¿Estás seguro de que quieres aceptar la apelación? Se restaurará la ficha de este shinobi.'
-          : '¿Estás seguro de que quieres rechazar la apelación? La ficha seguirá archivada.')
-        : (action === 'aceptada'
-          ? '¿Estás seguro de que quieres aceptar la disputa? Se darán las recompensas correspondientes al jugador.'
-          : '¿Estás seguro de que quieres invalidar el registro? Se retirarán las recompensas de todos los implicados.'),
+      title,
+      message,
       variant: action === 'aceptada' ? 'primary' : 'danger'
     });
 
@@ -78,12 +91,15 @@ export default function AdminDisputePage() {
 
     try {
       await AdminService.resolveDispute(id, action);
-      addToast(
-        isAppeal
-          ? (action === 'aceptada' ? 'Apelación aceptada y ficha restaurada' : 'Apelación rechazada')
-          : (action === 'aceptada' ? 'Disputa resuelta a favor del jugador' : 'Registro invalidado y recompensas revertidas'),
-        'success'
-      );
+      let successMsg = '';
+      if (isCloneAlert) {
+        successMsg = action === 'aceptada' ? 'IP añadida a lista blanca con éxito' : 'Alerta de clon resuelta y archivada';
+      } else if (isAppeal) {
+        successMsg = action === 'aceptada' ? 'Apelación aceptada y ficha restaurada' : 'Apelación de ficha rechazada';
+      } else {
+        successMsg = action === 'aceptada' ? 'Disputa resuelta a favor del jugador' : 'Registro invalidado y recompensas revertidas';
+      }
+      addToast(successMsg, 'success');
       fetchDisputes();
       router.refresh();
     } catch (err: any) {
