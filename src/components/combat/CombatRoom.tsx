@@ -57,22 +57,27 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   const [isSubscribed, setIsSubscribed] = useState(false);
 
   // Console Inputs
-  const [damageInput, setDamageInput] = useState<number | ''>('');
-  const [healInput, setHealInput] = useState<number | ''>('');
+  const [vitInput, setVitInput] = useState<number | ''>('');
+  const [chInput, setChInput] = useState<number | ''>('');
   const [dadoInput, setDadoInput] = useState(100);
-  const [chakraSpendInput, setChakraSpendInput] = useState<number | ''>('');
-  const [chakraRecoverInput, setChakraRecoverInput] = useState<number | ''>('');
 
   // Technique Console Inputs
   const [selectedTecnicaId, setSelectedTecnicaId] = useState<number | null>(null);
-  const [customChCost, setCustomChCost] = useState<number>(10);
+  const [customChCost, setCustomChCost] = useState<number>(0);
   const [customCdRounds, setCustomCdRounds] = useState<number>(1);
   const [tecnicaSearch, setTecnicaSearch] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCdDropdownOpen, setIsCdDropdownOpen] = useState(false);
+  const [bgNumber, setBgNumber] = useState<number>(1);
 
   const supabase = createClient();
   const channelRef = useRef<any>(null);
+
+  useEffect(() => {
+    // We have 3 combat backgrounds
+    const randomNum = Math.floor(Math.random() * 12) + 1;
+    setBgNumber(randomNum);
+  }, []);
 
   useEffect(() => {
     fetchActiveCharacter();
@@ -370,34 +375,34 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
 
   // Local actions for VIT & CH
   const handleApplyDamage = () => {
-    if (!localState || damageInput === '' || damageInput <= 0) return;
+    if (!localState || vitInput === '' || vitInput <= 0) return;
     const currentRes = activeCharacter?.atributos_derivados.RES || 0;
-    const reduced = Math.max(1, Math.floor(damageInput * (1 - currentRes / 100)));
+    const reduced = Math.max(1, Math.floor(vitInput * (1 - currentRes / 100)));
     const newVit = Math.max(0, localState.vit - reduced);
 
     const updated = { ...localState, vit: newVit };
     setLocalState(updated);
-    addLog(`**${activeCharacter?.nombre_ninja}** recibe ${damageInput} de daño (${reduced} tras resistencia). VIT: ${newVit}/${localState.maxVit}.`);
-    setDamageInput('');
+    addLog(`**${activeCharacter?.nombre_ninja}** recibe ${vitInput} de daño (${reduced} tras resistencia). VIT: ${newVit}/${localState.maxVit}.`);
+    setVitInput('');
   };
 
   const handleApplyHeal = () => {
-    if (!localState || healInput === '' || healInput <= 0) return;
-    const newVit = Math.min(localState.maxVit, localState.vit + healInput);
+    if (!localState || vitInput === '' || vitInput <= 0) return;
+    const newVit = Math.min(localState.maxVit, localState.vit + vitInput);
 
     const updated = { ...localState, vit: newVit };
     setLocalState(updated);
-    addLog(`**${activeCharacter?.nombre_ninja}** se cura +${healInput} VIT. VIT: ${newVit}/${localState.maxVit}.`);
-    setHealInput('');
+    addLog(`**${activeCharacter?.nombre_ninja}** se cura +${vitInput} VIT. VIT: ${newVit}/${localState.maxVit}.`);
+    setVitInput('');
   };
 
   const handleSpendChakra = () => {
-    if (!localState || chakraSpendInput === '' || chakraSpendInput <= 0) return;
-    const newCh = Math.max(0, localState.ch - chakraSpendInput);
+    if (!localState || chInput === '' || chInput <= 0) return;
+    const newCh = Math.max(0, localState.ch - chInput);
     const updated = { ...localState, ch: newCh };
     setLocalState(updated);
-    addLog(`**${activeCharacter?.nombre_ninja}** gasta ${chakraSpendInput} de CH. CH: ${newCh}/${localState.maxCh}.`);
-    setChakraSpendInput('');
+    addLog(`**${activeCharacter?.nombre_ninja}** gasta ${chInput} de CH. CH: ${newCh}/${localState.maxCh}.`);
+    setChInput('');
 
     const percentage = (newCh / localState.maxCh) * 100;
     if (percentage < 10) {
@@ -408,17 +413,17 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   };
 
   const handleRecoverChakra = () => {
-    if (!localState || chakraRecoverInput === '' || chakraRecoverInput <= 0) return;
-    const newCh = Math.min(localState.maxCh, localState.ch + chakraRecoverInput);
+    if (!localState || chInput === '' || chInput <= 0) return;
+    const newCh = Math.min(localState.maxCh, localState.ch + chInput);
     const updated = { ...localState, ch: newCh };
     setLocalState(updated);
-    addLog(`**${activeCharacter?.nombre_ninja}** recupera +${chakraRecoverInput} CH. CH: ${newCh}/${localState.maxCh}.`);
-    setChakraRecoverInput('');
+    addLog(`**${activeCharacter?.nombre_ninja}** recupera +${chInput} CH. CH: ${newCh}/${localState.maxCh}.`);
+    setChInput('');
   };
 
   const rollDice = () => {
     const result = Math.floor(Math.random() * dadoInput) + 1;
-    addLog(`**${activeCharacter?.nombre_ninja}** tira un D${dadoInput} y saca: **${result}**`);
+    addLog(`**${activeCharacter?.nombre_ninja}** realiza una Tirada de Cansancio (D${dadoInput}) y saca: **${result}**`);
   };
 
   // Change Bando selection
@@ -510,12 +515,18 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     };
 
     return (
-      <div
-        className="min-h-screen bg-cover bg-center flex flex-col relative text-oro p-4 lg:p-8"
-        style={{ backgroundImage: "url('/assets/ui/bg-combat.png')" }}
-      >
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-none" />
-        <div className="w-full max-w-[1400px] mx-auto relative z-10 py-6">
+      <div className="min-h-screen flex flex-col relative text-oro p-4 lg:p-8 overflow-hidden">
+        {/* Subtle blurred background layer to prevent pixelation */}
+        <div
+          className="absolute inset-0 bg-cover bg-center pointer-events-none z-0"
+          style={{
+            backgroundImage: `url('/assets/ui/bg-combat/bg-combat-${bgNumber}.png')`,
+            filter: 'blur(4px)',
+            transform: 'scale(1.03)'
+          }}
+        />
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-none z-10" />
+        <div className="w-full max-w-[1400px] mx-auto relative z-20 py-6">
           <CombatForm
             onCreated={() => setShowRegisterForm(false)}
             initialData={prefilledData as any}
@@ -533,11 +544,16 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   const isMyTurn = combatStarted && turnQueue.length > 0 && turnQueue[currentTurnIndex] === String(activeCharacter.id);
 
   return (
-    <div
-      className="min-h-screen bg-cover bg-center flex flex-col relative text-oro selection:bg-oro/20"
-      style={{ backgroundImage: "url('/assets/ui/bg-combat.png')" }}
-    >
-      {/* No dark tint overlay to keep background fully visible */}
+    <div className="min-h-screen flex flex-col relative text-oro selection:bg-oro/20 overflow-hidden">
+      {/* Subtle blurred background layer to prevent pixelation */}
+      <div
+        className="absolute inset-0 bg-cover bg-center pointer-events-none z-0"
+        style={{
+          backgroundImage: `url('/assets/ui/bg-combat/bg-combat-${bgNumber}.png')`,
+          filter: 'blur(3px)',
+          transform: 'scale(1.03)'
+        }}
+      />
 
       {/* Main room wrapper */}
       <div className="relative z-10 w-full max-w-[1800px] mx-auto p-4 lg:p-8 flex flex-col flex-1 gap-6">
@@ -1067,77 +1083,57 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
               </h3>
 
               <div className="space-y-4">
-                <div className="flex gap-3">
+                {/* Adjust Life (VIT) */}
+                <div className="flex gap-2">
                   <input
                     type="number"
                     min="0"
-                    placeholder="Daño Recibido"
-                    value={damageInput}
-                    onChange={(e) => setDamageInput(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full bg-black/50 border border-oro/20 text-oro px-4 py-2 text-xs font-black outline-none focus:border-oro transition-all"
+                    placeholder="Vida (Cant.)"
+                    value={vitInput}
+                    onChange={(e) => setVitInput(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="w-1/3 bg-black/50 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all"
                   />
                   <button
                     onClick={handleApplyDamage}
-                    className="ninja-btn-rojo px-6 py-2 text-xs"
+                    className="ninja-btn-rojo flex-1 py-2 text-xs text-center font-black"
                   >
-                    Daño
+                    Dañar
                   </button>
-                </div>
-
-                <div className="flex gap-3">
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="Curación Recibida"
-                    value={healInput}
-                    onChange={(e) => setHealInput(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full bg-black/50 border border-oro/20 text-oro px-4 py-2 text-xs font-black outline-none focus:border-oro transition-all"
-                  />
                   <button
                     onClick={handleApplyHeal}
-                    className="ninja-btn-oro px-6 py-2 text-xs"
+                    className="ninja-btn-oro flex-1 py-2 text-xs text-center font-black"
                   >
-                    Curar
+                    Sanar
                   </button>
                 </div>
 
-                <div className="flex gap-3 pt-3 border-t border-oro/10">
+                {/* Adjust Chakra (CH) */}
+                <div className="flex gap-2 pt-3 border-t border-oro/10">
                   <input
                     type="number"
                     min="0"
-                    placeholder="Chakra a Gastar"
-                    value={chakraSpendInput}
-                    onChange={(e) => setChakraSpendInput(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full bg-black/50 border border-oro/20 text-oro px-4 py-2 text-xs font-black outline-none focus:border-oro transition-all"
+                    placeholder="Chakra (Cant.)"
+                    value={chInput}
+                    onChange={(e) => setChInput(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="w-1/3 bg-black/50 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all"
                   />
                   <button
                     onClick={handleSpendChakra}
-                    className="ninja-btn-rojo px-6 py-2 text-xs"
+                    className="ninja-btn-rojo flex-1 py-2 text-xs text-center font-black"
                   >
                     Gastar
                   </button>
-                </div>
-
-                <div className="flex gap-3">
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="Chakra a Recuperar"
-                    value={chakraRecoverInput}
-                    onChange={(e) => setChakraRecoverInput(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full bg-black/50 border border-oro/20 text-oro px-4 py-2 text-xs font-black outline-none focus:border-oro transition-all"
-                  />
                   <button
                     onClick={handleRecoverChakra}
-                    className="ninja-btn-oro px-6 py-2 text-xs"
+                    className="ninja-btn-oro flex-1 py-2 text-xs text-center font-black"
                   >
                     Recuperar
                   </button>
                 </div>
 
-                <div className="flex gap-3 pt-3 border-t border-oro/10">
-                  <div className="flex items-center w-full bg-black/50 border border-oro/20 px-4 focus-within:border-oro transition-all">
-                    <span className="text-oro/40 font-mono text-xs mr-2">D</span>
+                <div className="flex gap-2 pt-3 border-t border-oro/10">
+                  <div className="flex items-center w-2/3 bg-black/50 border border-oro/20 px-3 focus-within:border-oro transition-all">
+                    <span className="text-oro/40 font-mono text-xs mr-2 whitespace-nowrap">Cansancio (D)</span>
                     <input
                       type="number"
                       value={dadoInput}
@@ -1147,7 +1143,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                   </div>
                   <button
                     onClick={rollDice}
-                    className="ninja-btn-oro px-6 py-2 text-xs flex items-center gap-2 shrink-0"
+                    className="ninja-btn-oro flex-1 py-2 text-xs flex items-center justify-center gap-2 font-black"
                   >
                     <Dices className="w-4 h-4 text-rojo-sangre" /> Tirar
                   </button>
@@ -1198,63 +1194,71 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
 
                       {/* Options list */}
                       <div className="overflow-y-auto max-h-[240px]">
-                        {(activeCharacter.personajes_tecnicas || [])
-                          .filter(pt => {
-                            const name = pt.info_glosario?.nombre_es || '';
-                            const isMatch = name.toLowerCase().includes(tecnicaSearch.toLowerCase());
-                            const isCD = myCooldowns[pt.tecnica_id] && getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) > 0;
-                            return isMatch && !isCD; // Ready techniques only
-                          })
-                          .map(pt => {
-                            const isSelected = selectedTecnicaId === pt.tecnica_id;
+                        {tecnicaSearch.trim() === '' ? (
+                          <div className="px-4 py-4 text-xs text-oro/40 italic text-center">
+                            Escribe para buscar una técnica...
+                          </div>
+                        ) : (
+                          <>
+                            {(activeCharacter.personajes_tecnicas || [])
+                              .filter(pt => {
+                                const name = pt.info_glosario?.nombre_es || '';
+                                const isMatch = name.toLowerCase().includes(tecnicaSearch.toLowerCase());
+                                const isCD = myCooldowns[pt.tecnica_id] && getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) > 0;
+                                return isMatch && !isCD; // Ready techniques only
+                              })
+                              .map(pt => {
+                                const isSelected = selectedTecnicaId === pt.tecnica_id;
 
-                            const handleSelect = () => {
-                              setSelectedTecnicaId(pt.tecnica_id);
-                              setIsDropdownOpen(false);
-                              setTecnicaSearch('');
+                                const handleSelect = () => {
+                                  setSelectedTecnicaId(pt.tecnica_id);
+                                  setIsDropdownOpen(false);
+                                  setTecnicaSearch('');
 
-                              if (pt.info_glosario) {
-                                const desc = pt.info_glosario.descripcion?.toLowerCase() || '';
-                                const chMatch = desc.match(/(\d+)\s*(?:ch|chakra|puntos de chakra)/);
-                                if (chMatch) {
-                                  setCustomChCost(Number(chMatch[1]));
-                                } else {
-                                  setCustomChCost(15);
-                                }
+                                  if (pt.info_glosario) {
+                                    const desc = pt.info_glosario.descripcion?.toLowerCase() || '';
+                                    const chMatch = desc.match(/(\d+)\s*(?:ch|chakra|puntos de chakra)/);
+                                    if (chMatch) {
+                                      setCustomChCost(Number(chMatch[1]));
+                                    } else {
+                                      setCustomChCost(0);
+                                    }
 
-                                const cdMatch = desc.match(/(\d+)\s*(?:ronda|rondas|cd|cooldown)/);
-                                if (cdMatch) {
-                                  setCustomCdRounds(Number(cdMatch[1]));
-                                } else {
-                                  setCustomCdRounds(1);
-                                }
-                              }
-                            };
+                                    const cdMatch = desc.match(/(\d+)\s*(?:ronda|rondas|cd|cooldown)/);
+                                    if (cdMatch) {
+                                      setCustomCdRounds(Number(cdMatch[1]));
+                                    } else {
+                                      setCustomCdRounds(1);
+                                    }
+                                  }
+                                };
 
-                            return (
-                              <div
-                                key={pt.tecnica_id}
-                                onClick={handleSelect}
-                                className={`px-4 py-2.5 text-xs font-black border-b border-oro/5 last:border-b-0 flex justify-between items-center transition-all text-white/80 hover:bg-oro/10 hover:text-oro cursor-pointer ${isSelected ? 'bg-oro/20 text-oro border-l-2 border-oro' : ''
-                                  }`}
-                              >
-                                <span className="truncate pr-2">{pt.info_glosario?.nombre_es}</span>
-                                <span className="text-[9px] text-oro/40 font-mono shrink-0">Disponible</span>
-                              </div>
-                            );
-                          })}
+                                return (
+                                  <div
+                                    key={pt.tecnica_id}
+                                    onClick={handleSelect}
+                                    className={`px-4 py-2.5 text-xs font-black border-b border-oro/5 last:border-b-0 flex justify-between items-center transition-all text-white/80 hover:bg-oro/10 hover:text-oro cursor-pointer ${isSelected ? 'bg-oro/20 text-oro border-l-2 border-oro' : ''
+                                      }`}
+                                  >
+                                    <span className="truncate pr-2">{pt.info_glosario?.nombre_es}</span>
+                                    <span className="text-[9px] text-oro/40 font-mono shrink-0">Disponible</span>
+                                  </div>
+                                );
+                              })}
 
-                        {/* No results */}
-                        {(activeCharacter.personajes_tecnicas || []).filter(pt => {
-                          const name = pt.info_glosario?.nombre_es || '';
-                          const isMatch = name.toLowerCase().includes(tecnicaSearch.toLowerCase());
-                          const isCD = myCooldowns[pt.tecnica_id] && getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) > 0;
-                          return isMatch && !isCD;
-                        }).length === 0 && (
-                            <div className="px-4 py-4 text-xs text-oro/30 italic text-center">
-                              No hay técnicas disponibles
-                            </div>
-                          )}
+                            {/* No results */}
+                            {(activeCharacter.personajes_tecnicas || []).filter(pt => {
+                              const name = pt.info_glosario?.nombre_es || '';
+                              const isMatch = name.toLowerCase().includes(tecnicaSearch.toLowerCase());
+                              const isCD = myCooldowns[pt.tecnica_id] && getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) > 0;
+                              return isMatch && !isCD;
+                            }).length === 0 && (
+                                <div className="px-4 py-4 text-xs text-oro/30 italic text-center">
+                                  No hay técnicas disponibles
+                                </div>
+                              )}
+                          </>
+                        )}
                       </div>
                     </div>
                   )}
