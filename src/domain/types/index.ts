@@ -6,6 +6,7 @@ export interface Profile {
   active_char_id?: number | null;
   url_avatar?: string;
   url_img?: string | null;
+  last_ip?: string | null;
 }
 
 export interface Aldea {

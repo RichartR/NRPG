@@ -350,7 +350,20 @@ export const AdminService = {
       throw new Error('Esta disputa ya ha sido resuelta por otro administrador.');
     }
 
-    if (notif.registro_id === null) {
+    if (notif.registro_id === null && notif.personaje_id === null) {
+      // Es una alerta de IP duplicada (cuenta clon)
+      if (resolucion === 'aceptada') {
+        // Auto-whitelist de la IP al aceptar la apelación/alerta
+        const ipMatch = notif.mensaje.match(/\(([^)]+)\)$/);
+        if (ipMatch && ipMatch[1]) {
+          const ip = ipMatch[1];
+          await supabase.from('sys_whitelisted_ips').upsert({
+            ip,
+            description: `Auto-whitelist por aprobación de alerta de IP`
+          });
+        }
+      }
+    } else if (notif.registro_id === null) {
       // Es una apelación de shinobi archivado por inactividad
       if (resolucion === 'aceptada') {
         // 1. Obtener datos del personaje para saber el user_id
