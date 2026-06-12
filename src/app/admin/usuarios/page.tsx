@@ -4,14 +4,18 @@ import { useState, useEffect } from 'react';
 import { ProfileService } from '@/services/supabase/profile.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
-import { ShieldAlert, Search, UserCheck, ShieldOff, Calendar, AlertCircle, ArrowLeft } from 'lucide-react';
+import { ShieldAlert, Search, UserCheck, ShieldOff, Calendar, AlertCircle, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { PaginationContainer } from '@/components/ui/PaginationContainer';
+import { PaginationPageInput } from '@/components/ui/PaginationPageInput';
 
 export default function AdminUsuariosPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   
   // Modal State
   const [banModalOpen, setBanModalOpen] = useState(false);
@@ -50,6 +54,7 @@ export default function AdminUsuariosPage() {
       return usernameMatch || discordMatch || charMatch || ipMatch;
     });
     setFilteredUsers(filtered);
+    setCurrentPage(1);
   }, [searchTerm, users]);
 
   const handleOpenBan = (user: any) => {
@@ -148,6 +153,12 @@ export default function AdminUsuariosPage() {
     );
   };
 
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage) || 1;
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
     <div className="max-w-[1750px]">
       <header className="mb-6 ninja-card-oro p-8 xl:p-10">
@@ -190,7 +201,8 @@ export default function AdminUsuariosPage() {
           <p className="text-oro/40 font-black uppercase italic tracking-[0.3em] text-sm">NO SE ENCONTRARON USUARIOS</p>
         </div>
       ) : (
-        <div className="ninja-card-oro p-6 overflow-x-auto">
+        <>
+          <div className="ninja-card-oro p-6 overflow-x-auto">
           <table className="w-full min-w-[1000px] text-left border-collapse">
             <thead>
               <tr className="border-b border-oro/10 text-caption font-black uppercase tracking-widest text-oro/40">
@@ -203,7 +215,7 @@ export default function AdminUsuariosPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-oro/5 text-sm font-bold">
-              {filteredUsers.map((u) => {
+              {paginatedUsers.map((u) => {
                 const isBanned = u.banned_until && new Date(u.banned_until) > new Date();
                 return (
                   <tr key={u.id} className="hover:bg-oro/5 transition-all duration-300">
@@ -275,7 +287,44 @@ export default function AdminUsuariosPage() {
             </tbody>
           </table>
         </div>
-      )}
+
+        {totalPages > 1 && (
+          <div className="mt-8 flex justify-center w-full">
+            <PaginationContainer maxWidthClass="max-w-md">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => prev - 1)}
+                className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center ninja-btn-oro shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-6 h-6 sm:w-7 sm:h-7" />
+              </button>
+
+              <div className="flex flex-col items-center px-3 text-center">
+                <span className="text-caption font-black text-oro/40 uppercase tracking-[0.25em] mb-1">
+                  PÁGINA
+                </span>
+                <div className="flex items-center gap-1.5 justify-center text-caption sm:text-sm xl:text-base font-black text-oro uppercase tracking-[0.18em] italic">
+                  <PaginationPageInput
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onChangePage={(p) => setCurrentPage(p)}
+                  />
+                  <span className="text-oro/40">DE {totalPages}</span>
+                </div>
+              </div>
+
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(prev => prev + 1)}
+                className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center ninja-btn-oro shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7" />
+              </button>
+            </PaginationContainer>
+          </div>
+        )}
+      </>
+    )}
 
       {/* Modal de Baneo */}
       {banModalOpen && selectedUser && (

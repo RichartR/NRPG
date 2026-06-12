@@ -9,10 +9,10 @@ import {
   Coins,
   ChevronUp,
   ChevronDown,
-  Flame,
-  Shield
+  Flame
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import Link from 'next/link';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import { CharacterService } from '@/services/supabase/character.service';
 import { ProfileService } from '@/services/supabase/profile.service';
@@ -872,7 +872,7 @@ export function CharacterSheetView({
 
     if (tecsToAdd.length > 0 || tecsToRemove.length > 0) {
       let updatedTecs = [...currentTecs];
-      
+
       if (tecsToRemove.length > 0) {
         const removeIds = tecsToRemove.map((r: any) => Number(r.tecnica_id));
         updatedTecs = updatedTecs.filter((ct: any) => !removeIds.includes(Number(ct.tecnica_id)));
@@ -894,8 +894,8 @@ export function CharacterSheetView({
   }, [
     isEditing,
     isNew,
-    character.personajes_ramas, 
-    glosarioFiltrado, 
+    character.personajes_ramas,
+    glosarioFiltrado,
     masters.subEspecialidades,
     JSON.stringify((character.personajes_ramas || []).map((r: any) => ({
       p: r.elemento_principal_id,
@@ -2070,7 +2070,7 @@ export function CharacterSheetView({
                           className="flex flex-col items-center justify-center p-6 bg-black/40 border border-oro/10 hover:border-oro/30 transition-all group relative overflow-hidden ninja-clip-sm"
                         >
                           <div className="absolute top-0 right-0 w-16 h-16 bg-oro/5 rounded-full blur-xl pointer-events-none" />
-                          <div className="w-14 h-14 rounded-none border border-oro/20 bg-black/60 flex items-center justify-center group-hover:scale-110 group-hover:border-oro/50 transition-all duration-500 shadow-lg shadow-black/80 relative mb-4">
+                          <div className="w-14 h-14 rounded-none flex items-center justify-center group-hover:scale-110 group-hover:border-oro/50 transition-all duration-500  relative mb-4">
                             {elem.url_icono ? (
                               <img src={elem.url_icono} alt={elem.nombre_esp} className="w-10 h-10 object-contain" />
                             ) : (
@@ -2101,12 +2101,23 @@ export function CharacterSheetView({
                 icon={Heart}
                 color="oro"
                 headerAction={
-                  <div className="flex flex-col items-end">
-                    <span className="text-caption font-black text-oro/40 uppercase tracking-[0.3em] mb-1">Puntos Disponibles</span>
-                    <span className="text-3xl xl:text-5xl font-black text-oro italic">
-                      {puntosLibres}
-                      <span className="text-oro/20 text-sm xl:text-lg ml-2">/ {character.puntos_stats}</span>
-                    </span>
+                  <div className="flex flex-col items-end gap-2">
+                    <div className="flex flex-col items-end">
+                      <span className="text-caption font-black text-oro/40 uppercase tracking-[0.3em] mb-1">Puntos Disponibles</span>
+                      <span className="text-3xl xl:text-5xl font-black text-oro italic">
+                        {puntosLibres}
+                        <span className="text-oro/20 text-sm xl:text-lg ml-2">/ {character.puntos_stats}</span>
+                      </span>
+                    </div>
+                    {!isEditing && (
+                      <Link
+                        href="/registros/tiendas/1"
+                        className="ninja-btn-oro py-3.5 px-6 text-xs xl:text-sm font-black uppercase tracking-widest text-center w-full min-w-[130px] shrink-0"
+                        style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                      >
+                        Tienda EXP
+                      </Link>
+                    )}
                   </div>
                 }
               >

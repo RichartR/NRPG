@@ -74,7 +74,7 @@ export const useMasterStore = create<MasterState>((set, get) => ({
         ramaElementosRes,
         configsRes
       ] = await Promise.allSettled([
-        MasterService.getAldeas(),
+        MasterService.getAldeasActivas(),
         MasterService.getRamas(),
         MasterService.getSubEspecialidades(),
         MasterService.getEntrenamientos(),

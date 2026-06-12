@@ -156,8 +156,8 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
     if (isCloneAlert) {
       title = action === 'aceptada' ? 'Aceptar Apelación de IP' : 'Desestimar Alerta de Clon';
       message = action === 'aceptada'
-        ? '¿Estás seguro de que quieres aceptar la apelación de esta IP? Se añadirá la dirección IP de conexión a la lista blanca para evitar futuros avisos de duplicados de estos usuarios.'
-        : '¿Estás seguro de desestimar esta alerta? Se marcará el aviso como resuelto sin añadir la IP a la lista blanca.';
+        ? '¿Estás seguro de que quieres aceptar la apelación de esta IP? Se añadirá la dirección IP de conexión a la white list para evitar futuros avisos de duplicados de estos usuarios.'
+        : '¿Estás seguro de desestimar esta alerta? Se marcará el aviso como resuelto sin añadir la IP a la white list.';
     } else if (isAppeal) {
       title = action === 'aceptada' ? 'Aceptar Apelación' : 'Rechazar Apelación';
       message = action === 'aceptada'
@@ -182,7 +182,7 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
       await AdminService.resolveDispute(id, action);
       let successMsg = '';
       if (isCloneAlert) {
-        successMsg = action === 'aceptada' ? 'IP añadida a lista blanca con éxito' : 'Alerta de clon resuelta y archivada';
+        successMsg = action === 'aceptada' ? 'IP añadida a white list con éxito' : 'Alerta de clon resuelta y archivada';
       } else if (isAppeal) {
         successMsg = action === 'aceptada' ? 'Apelación aceptada y ficha restaurada' : 'Apelación rechazada';
       } else {
@@ -300,8 +300,8 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
                           </div>
 
                           {d.registro_id === null ? (
-                            <span className="text-caption text-black/45 font-semibold tracking-wide">
-                              {d.personaje_id === null ? 'Apelación de IP para añadir a lista blanca.' : 'Apelación para reactivar cuenta archivada.'}
+                            <span className="text-caption text-red-600 font-semibold tracking-wide">
+                              {d.personaje_id === null ? 'Apelación de IP para añadir a white list.' : 'Apelación para reactivar cuenta archivada.'}
                             </span>
                           ) : (
                             <span className="text-caption text-black/45 font-semibold tracking-wide">

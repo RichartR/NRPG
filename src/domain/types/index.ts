@@ -149,6 +149,7 @@ export interface RangoRules {
     ch_base: number;
     vel_base: number;
     min: number; // Para el cálculo de auto-rango
+    max?: number;
   };
 }
 

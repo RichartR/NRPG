@@ -26,7 +26,7 @@ export const ProfileService = {
 
   async updateProfile(userId: string, updates: Partial<Profile>, client?: any) {
     const supabase = client || createClient();
-    
+
     // Intentamos la actualización normal
     const { error } = await supabase
       .from('profiles')
@@ -61,7 +61,7 @@ export const ProfileService = {
     }
 
     try {
-      // 2. Comprobar si la IP está en la lista blanca
+      // 2. Comprobar si la IP está en la white list
       const { data: whitelisted, error: whiteError } = await supabase
         .from('sys_whitelisted_ips')
         .select('ip')
@@ -151,14 +151,14 @@ export const ProfileService = {
 
   async banUser(userId: string, reason: string, bannedUntil: string | null, client?: any) {
     const supabase = client || createClient();
-    
+
     // 1. Obtener la IP actual del perfil
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('last_ip')
       .eq('id', userId)
       .single();
-    
+
     if (profileError) throw profileError;
 
     // 2. Suspender cuenta en profiles
@@ -169,7 +169,7 @@ export const ProfileService = {
         ban_reason: reason
       })
       .eq('id', userId);
-    
+
     if (banError) throw banError;
 
     // 3. Bloquear IP si existe
@@ -195,7 +195,7 @@ export const ProfileService = {
       .select('last_ip')
       .eq('id', userId)
       .single();
-    
+
     if (profileError) throw profileError;
 
     // 2. Levantar suspensión de cuenta
@@ -206,7 +206,7 @@ export const ProfileService = {
         ban_reason: null
       })
       .eq('id', userId);
-    
+
     if (banError) throw banError;
 
     // 3. Desbloquear IP si existe
