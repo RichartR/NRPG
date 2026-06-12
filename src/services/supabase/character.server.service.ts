@@ -269,17 +269,18 @@ export const CharacterServerService = {
     const targetIdStr = String(characterId);
     const targetIdNum = Number(characterId);
 
-    // 1. Traer todos los elementos del glosario que tengan requisitos
+    // 1. Traer solo los elementos del glosario que tengan requisitos con personaje_id configurado (evita cargar toda la tabla)
     const { data: items, error: getError } = await supabase
       .from('info_glosario')
-      .select('id, requisitos');
+      .select('id, requisitos')
+      .not('requisitos->>personaje_id', 'is', null);
 
     if (getError) throw getError;
-    if (!items) return;
+    if (!items || items.length === 0) return;
+
+    const updatePromises: PromiseLike<void>[] = [];
 
     for (const item of items) {
-      if (!item.requisitos) continue;
-
       let req = typeof item.requisitos === 'string' ? JSON.parse(item.requisitos) : item.requisitos;
       if (!req || req.personaje_id === undefined || req.personaje_id === null) continue;
 
@@ -312,12 +313,20 @@ export const CharacterServerService = {
       }
 
       if (changed) {
-        const { error: updateError } = await supabase
-          .from('info_glosario')
-          .update({ requisitos: req })
-          .eq('id', item.id);
-        if (updateError) throw updateError;
+        updatePromises.push(
+          supabase
+            .from('info_glosario')
+            .update({ requisitos: req })
+            .eq('id', item.id)
+            .then(({ error: updateError }) => {
+              if (updateError) throw updateError;
+            })
+        );
       }
+    }
+
+    if (updatePromises.length > 0) {
+      await Promise.all(updatePromises);
     }
   },
 
