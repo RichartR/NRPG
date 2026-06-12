@@ -40,7 +40,7 @@ export async function proxy(request: NextRequest) {
 
     if (supabaseUrl && supabaseAnonKey) {
       const now = new Date().toISOString();
-      const url = `${supabaseUrl}/rest/v1/sys_blocked_ips?ip=eq.${encodeURIComponent(ip)}&or=(blocked_until.is.null,blocked_until.gt.${now})&select=ip`;
+      const url = `${supabaseUrl}/rest/v1/sys_blocked_ips?ip=eq.${encodeURIComponent(ip)}&or=(blocked_until.is.null,blocked_until.gt.${now})&select=ip,reason`;
       const res = await fetch(url, {
         headers: {
           'apikey': supabaseAnonKey,
@@ -52,7 +52,11 @@ export async function proxy(request: NextRequest) {
       if (res.ok) {
         const data = await res.json();
         if (data && data.length > 0) {
-          // IP bloqueada, redirigir a /blocked
+          const blockRecord = data[0];
+          // Si el motivo contiene baneo de cuenta, redirigir a /banned
+          if (blockRecord.reason?.includes('Baneo de cuenta del usuario')) {
+            return NextResponse.redirect(new URL('/banned', request.url));
+          }
           return NextResponse.redirect(new URL('/blocked', request.url));
         }
       }
