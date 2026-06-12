@@ -27,8 +27,8 @@ CREATE POLICY "Permitir gestión de IPs bloqueadas solo a administradores" ON pu
   FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
 
 -- Políticas para sys_whitelisted_ips
-CREATE POLICY "Permitir lectura de lista blanca a todos" ON public.sys_whitelisted_ips
+CREATE POLICY "Permitir lectura de white list a todos" ON public.sys_whitelisted_ips
   FOR SELECT USING (true);
 
-CREATE POLICY "Permitir gestión de lista blanca solo a administradores" ON public.sys_whitelisted_ips
+CREATE POLICY "Permitir gestión de white list solo a administradores" ON public.sys_whitelisted_ips
   FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());

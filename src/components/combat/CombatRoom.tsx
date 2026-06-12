@@ -623,7 +623,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                 BANDO A
               </h2>
               {/* Bando Selector for Self */}
-              {myBando !== 'A' && (
+              {myIsInCombat && myBando !== 'A' && (
                 <button
                   onClick={() => selectBando('A')}
                   className="ninja-btn-oro py-1.5 px-4 text-xs text-center"
@@ -631,7 +631,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                   Unirse
                 </button>
               )}
-              <span className="text-caption font-black bg-emerald-950/40 border border-emerald-500/20 text-emerald-400 px-2.5 py-0.5 rounded-sm shrink-0">
+              <span className="text-caption font-black bg-oro/10 border border-oro/30 text-oro px-2.5 py-0.5 rounded-sm shrink-0">
                 {bandoAParticipants.length} ninjas
               </span>
             </div>
@@ -724,7 +724,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
           <div className="lg:col-span-2 flex flex-col gap-6">
 
             {/* TURN QUEUE CONTAINER */}
-            <div className="ninja-card-oro p-6 relative overflow-hidden">
+            <div className="ninja-card-oro p-4 relative overflow-hidden">
               <div className="flex flex-col sm:flex-row justify-between sm:items-center border-b border-oro/10 pb-4 mb-4 gap-3">
                 <div className="flex items-center gap-3">
                   <h2 className="font-black text-sm uppercase tracking-[0.2em]">ORDEN DE TURNOS</h2>
@@ -743,7 +743,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                     : 'ninja-btn-oro'
                     }`}
                 >
-                  {myIsInCombat ? 'Retirarse de Combate' : 'Unirse al Combate'}
+                  {myIsInCombat ? 'Salir del Combate' : 'Unirse al Combate'}
                 </button>
 
                 {!combatStarted ? (
@@ -844,7 +844,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
             </div>
 
             {/* COMBAT LOGS */}
-            <div className="ninja-card-oro p-6 flex-1 flex flex-col relative overflow-hidden min-h-[300px]">
+            <div className="ninja-card-oro p-6 flex flex-col relative overflow-hidden h-[500px] min-h-[300px] max-h-[500px]">
               <h3 className="font-black text-sm uppercase tracking-[0.2em] border-b border-oro/10 pb-4 mb-4">
                 REGISTRO DE COMBATE
               </h3>
@@ -876,7 +876,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                 BANDO B
               </h2>
               {/* Bando Selector for Self */}
-              {myBando !== 'B' && (
+              {myIsInCombat && myBando !== 'B' && (
                 <button
                   onClick={() => selectBando('B')}
                   className="ninja-btn-rojo py-1.5 px-4 text-xs text-center"
@@ -884,7 +884,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                   Unirse
                 </button>
               )}
-              <span className="text-caption font-black bg-red-950/40 border border-red-500/20 text-red-400 px-2.5 py-0.5 rounded-sm shrink-0">
+              <span className="text-caption font-black bg-oro/10 border border-oro/30 text-oro px-2.5 py-0.5 rounded-sm shrink-0">
                 {bandoBParticipants.length} ninjas
               </span>
             </div>
@@ -1097,7 +1097,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                     onClick={handleApplyDamage}
                     className="ninja-btn-rojo flex-1 py-2 text-xs text-center font-black"
                   >
-                    Dañar
+                    Recibir
                   </button>
                   <button
                     onClick={handleApplyHeal}

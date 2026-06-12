@@ -18,7 +18,8 @@ import {
   ArrowRight,
   MessageSquare,
   UserPlus,
-  BookOpen
+  BookOpen,
+  RefreshCw
 } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -38,7 +39,7 @@ const getCachedRegistros = unstable_cache(
         autor_id,
         autor: reg_characters!reg_registros_autor_id_fkey(nombre_ninja, url_img)
       `)
-      .or("tipo.in.(mision,combate,compra),subtipo.eq.evento_premios,subtipo.eq.narracion")
+      .or("tipo.in.(mision,combate,compra),subtipo.eq.evento_premios,subtipo.eq.narracion,subtipo.eq.reseteo")
       .order('fecha', { ascending: false })
       .range(0, 19);
     return data || [];
@@ -114,7 +115,7 @@ export default async function Home() {
   const events: any[] = [];
 
   registros.forEach((reg: any) => {
-    if (reg.tipo === 'accion' && reg.subtipo !== 'evento_premios' && reg.subtipo !== 'narracion') return;
+    if (reg.tipo === 'accion' && reg.subtipo !== 'evento_premios' && reg.subtipo !== 'narracion' && reg.subtipo !== 'reseteo') return;
 
     let targetLink = '/registros';
     if (reg.tipo === 'mision') {
@@ -125,11 +126,13 @@ export default async function Home() {
       targetLink = '/registros/tiendas';
     } else if (reg.subtipo === 'narracion') {
       targetLink = '/registros/narracion';
+    } else if (reg.subtipo === 'reseteo') {
+      targetLink = `/ficha/${reg.autor_id}`;
     }
 
     events.push({
       id: `reg-${reg.id}`,
-      tipo: reg.subtipo === 'evento_premios' ? 'evento_premios' : reg.subtipo === 'narracion' ? 'narracion' : reg.tipo,
+      tipo: reg.subtipo === 'evento_premios' ? 'evento_premios' : reg.subtipo === 'narracion' ? 'narracion' : reg.subtipo === 'reseteo' ? 'reseteo' : reg.tipo,
       fecha: reg.fecha,
       timestamp: new Date(reg.fecha).getTime(),
       data: reg.data,
@@ -487,6 +490,12 @@ export default async function Home() {
                       titleText = event.data?.titulo || 'Anuncio Oficial';
                       iconElement = <MessageSquare className="w-4 h-4 text-purple-400/60" />;
                       break;
+                    case 'reseteo':
+                      typeLabel = 'Reseteo';
+                      typeColor = 'border-amber-600/40 text-amber-500 bg-amber-950/20';
+                      titleText = event.data?.titulo || 'Reseteo de personaje';
+                      iconElement = <RefreshCw className="w-4 h-4 text-amber-500/60" />;
+                      break;
                     default:
                       typeLabel = 'Actividad';
                       typeColor = 'border-oro/30 text-oro bg-oro/5';
@@ -519,6 +528,7 @@ export default async function Home() {
                             {event.tipo === 'combate' && <Swords className="w-2.5 h-2.5 text-red-500" />}
                             {event.tipo === 'compra' && <ShoppingBag className="w-2.5 h-2.5 text-amber-500" />}
                             {event.tipo === 'narracion' && <BookOpen className="w-2.5 h-2.5 text-purple-400" />}
+                            {event.tipo === 'reseteo' && <RefreshCw className="w-2.5 h-2.5 text-amber-500" />}
                             {(event.tipo === 'noticia' || event.tipo === 'parche' || event.tipo === 'evento') && <MessageSquare className="w-2.5 h-2.5 text-purple-400" />}
                           </div>
                         </div>

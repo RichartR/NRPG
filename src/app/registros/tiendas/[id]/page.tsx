@@ -12,6 +12,8 @@ import { NinjaSelect } from '@/components/ui/Fields';
 import { Character, Tienda, TiendaObjeto, Glosario } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
+import { useMasterStore } from '@/store/useMasterStore';
+import { StatsLogic } from '@/domain/character/logic';
 
 export default function TiendaDetallePage() {
   const { id } = useParams();
@@ -77,6 +79,12 @@ export default function TiendaDetallePage() {
   const [isStatBuyConfirmOpen, setIsStatBuyConfirmOpen] = useState(false);
   const [isSubmittingStatBuy, setIsSubmittingStatBuy] = useState(false);
 
+  const masters = useMasterStore();
+
+  useEffect(() => {
+    masters.initialize();
+  }, []);
+
   useEffect(() => {
     if (id) {
       fetchShopData();
@@ -116,7 +124,11 @@ export default function TiendaDetallePage() {
 
       const { data, error } = await supabase
         .from('reg_characters')
-        .select('*')
+        .select(`
+          *,
+          personajes_tecnicas:reg_personajes_tecnicas!reg_personajes_tecnicas_personaje_id_fkey(*),
+          personajes_ramas:reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(*)
+        `)
         .eq('user_id', user.id)
         .eq('activo', true)
         .eq('eliminado_voluntario', false);
@@ -134,6 +146,27 @@ export default function TiendaDetallePage() {
     } finally {
       setCharLoading(false);
     }
+  };
+
+  const getCandidateRank = (statPoints: number) => {
+    if (!selectedChar || !masters.rangoRules) return selectedChar?.rango || 'D';
+    return StatsLogic.calculateAutoRank(
+      statPoints,
+      masters.rangoRules,
+      selectedChar.personajes_tecnicas || [],
+      selectedChar.personajes_ramas || [],
+      glosarioActivo,
+      masters.subEspecialidades || [],
+      selectedChar.eleccion_tecnicas_clan,
+      masters.elementos || []
+    );
+  };
+
+  const isStatIncreaseAllowed = (newStatPoints: number) => {
+    if (!selectedChar || !masters.rangoRules) return true;
+    const candidateRank = getCandidateRank(newStatPoints);
+    const rule = masters.rangoRules[candidateRank];
+    return rule ? newStatPoints <= (Number(rule.max || rule.stat_max) || 999) : true;
   };
 
   const fetchShopData = async () => {
@@ -365,17 +398,21 @@ export default function TiendaDetallePage() {
   const handleIncrement = () => {
     if (!selectedChar) return;
     const currentStat = Number(selectedChar.puntos_stats) || 0;
-    setStatPointsToBuy(prev => {
-      const next = prev + 1;
-      const { total, isLevelBlocked } = calculateTotalExpCost(currentStat, next);
-      if (isLevelBlocked) {
-        return prev;
-      }
-      if (total <= selectedChar.xp) {
-        return next;
-      }
-      return prev;
-    });
+    const next = statPointsToBuy + 1;
+    const targetStatPoints = currentStat + next;
+    
+    if (!isStatIncreaseAllowed(targetStatPoints)) {
+      addToast('No puedes comprar más puntos de stat. Has alcanzado el límite máximo para tu rango actual y necesitas dominar las técnicas obligatorias para ascender.', 'error');
+      return;
+    }
+    
+    const { total, isLevelBlocked } = calculateTotalExpCost(currentStat, next);
+    if (isLevelBlocked) {
+      return;
+    }
+    if (total <= selectedChar.xp) {
+      setStatPointsToBuy(next);
+    }
   };
 
   const handleDecrement = () => {
@@ -389,6 +426,9 @@ export default function TiendaDetallePage() {
     let total = 0;
     while (true) {
       const nextLevel = current + qty + 1;
+      if (!isStatIncreaseAllowed(nextLevel)) {
+        break;
+      }
       const cost = expCosts[String(nextLevel)];
       if (cost === undefined || cost === null) {
         break;
@@ -406,6 +446,10 @@ export default function TiendaDetallePage() {
   const handleExecuteStatPurchase = async () => {
     if (!selectedChar) return;
     const currentStat = Number(selectedChar.puntos_stats) || 0;
+    if (!isStatIncreaseAllowed(currentStat + statPointsToBuy)) {
+      addToast('No puedes superar el límite máximo de stats de tu rango sin cumplir los requisitos de técnicas obligatorias para ascender.', 'error');
+      return;
+    }
     const { total: totalCost, isLevelBlocked } = calculateTotalExpCost(currentStat, statPointsToBuy);
 
     if (isLevelBlocked) {
@@ -745,15 +789,26 @@ export default function TiendaDetallePage() {
                                   onChange={(e) => {
                                     const val = Math.max(1, Number(e.target.value) || 1);
                                     const currentStat = Number(selectedChar.puntos_stats) || 0;
-                                    const { total } = calculateTotalExpCost(currentStat, val);
+                                    
+                                    // Limit the value to what is allowed by the rank and techniques
+                                    let allowedVal = val;
+                                    for (let v = 1; v <= val; v++) {
+                                      if (!isStatIncreaseAllowed(currentStat + v)) {
+                                        allowedVal = v - 1;
+                                        break;
+                                      }
+                                    }
+                                    
+                                    const { total } = calculateTotalExpCost(currentStat, allowedVal);
                                     if (total <= selectedChar.xp) {
-                                      setStatPointsToBuy(val);
+                                      setStatPointsToBuy(Math.max(1, allowedVal));
                                     } else {
                                       // Set to maximum they can afford
                                       let qty = 0;
                                       let accum = 0;
                                       while (true) {
                                         const next = currentStat + qty + 1;
+                                        if (!isStatIncreaseAllowed(next)) break;
                                         const cost = expCosts[String(next)];
                                         if (cost === undefined || cost === null) break;
                                         if (accum + cost <= selectedChar.xp) {
@@ -920,157 +975,178 @@ export default function TiendaDetallePage() {
                   )}
                 </div>
               ) : (
-                /* Normal Catalog Grid */
-                filteredObjetos.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {filteredObjetos.map(obj => {
-                      const glosario = obj.info_glosario;
-                      if (!glosario) return null;
-                      const { allowed, reasons } = validateRequirements(obj, selectedChar);
-                      const isTecnica = glosario.categoria_id === 1;
-                      const itemReqs = obj.mantener_requisitos ? glosario.requisitos : obj.requisitos_personalizados;
+                           filteredObjetos.length > 0 ? (
+                  <div className="ninja-card-oro p-6 xl:p-8 overflow-hidden">
+                    <div className="overflow-x-auto scrollbar-thin">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="border-b border-oro/10">
+                            <th className="pb-4 pt-2 px-3 text-caption font-black text-oro/50 uppercase tracking-[0.25em]">Artículo / Técnica</th>
+                            <th className="pb-4 pt-2 px-3 text-caption font-black text-oro/50 uppercase tracking-[0.25em]">Descripción</th>
+                            <th className="pb-4 pt-2 px-3 text-caption font-black text-oro/50 uppercase tracking-[0.25em]">Requisitos</th>
+                            <th className="pb-4 pt-2 px-3 text-caption font-black text-oro/50 uppercase tracking-[0.25em]">Precio</th>
+                            <th className="pb-4 pt-2 px-3 text-right text-caption font-black text-oro/50 uppercase tracking-[0.25em]">Acción</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredObjetos.map(obj => {
+                            const glosario = obj.info_glosario;
+                            if (!glosario) return null;
+                            const { allowed, reasons } = validateRequirements(obj, selectedChar);
+                            const isTecnica = glosario.categoria_id === 1;
+                            const itemReqs = obj.mantener_requisitos ? glosario.requisitos : obj.requisitos_personalizados;
 
-                      return (
-                        <div
-                          key={obj.id}
-                          className={`ninja-card-oro p-6 xl:p-8 flex flex-col justify-between transition-all duration-300 hover:shadow-oro/5 hover:-translate-y-0.5 ${allowed ? '' : 'opacity-80 hover:opacity-100'
-                            }`}
-                        >
-                          <div className="space-y-4">
-                            {/* Item Card Header */}
-                            <div className="flex justify-between items-start gap-4">
-                              <div>
-                                <span className="text-caption font-black text-oro/40 uppercase tracking-widest">
-                                  {isTecnica ? 'TÉCNICA SHINOBI' : 'ARTÍCULO / MEJORA'}
-                                </span>
-                                <h3 className="text-lg sm:text-xl font-black text-oro uppercase tracking-wider">
-                                  {glosario.nombre_es} {glosario.nombre_jp && <span className="text-xs text-oro/55 font-normal">({glosario.nombre_jp})</span>}
-                                </h3>
-                              </div>
-
-                              {/* Admin actions inside card */}
-                              {isAdmin && (
-                                <button
-                                  onClick={() => handleDeleteCatalogItem(obj.id)}
-                                  className="p-2 border border-error-text/20 hover:border-error-text hover:bg-red-500/10 text-red-400 transition-all"
-                                  style={{ clipPath: 'polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px)' }}
-                                  title="Retirar del catálogo"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              )}
-                            </div>
-
-                            {/* Requirements panel if any */}
-                            {itemReqs && (() => {
-                              const hasRango = !!itemReqs.rango;
-                              const hasCombates = itemReqs.combates > 0;
-                              const hasStats = itemReqs.stats && Object.values(itemReqs.stats).some((v: any) => v > 0);
-
-                              if (!hasRango && !hasCombates && !hasStats) return null;
-
-                              return (
-                                <div className="p-4 sm:p-5 bg-black/60 border border-oro/10 space-y-3" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
-                                  <span className="block text-caption font-black text-oro/60 uppercase tracking-widest">
-                                    Requisitos de Adquisición
-                                  </span>
-
-                                  <div className="flex flex-wrap gap-2">
-                                    {hasRango && (() => {
-                                      const ranges = ['D', 'C', 'B', 'A', 'S'];
-                                      const charRangeIdx = selectedChar ? ranges.indexOf(selectedChar.rango) : -1;
-                                      const reqRangeIdx = ranges.indexOf(itemReqs.rango);
-                                      const isMet = !selectedChar || charRangeIdx >= reqRangeIdx;
-
-                                      return (
-                                        <span
-                                          className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-sm border transition-colors ${isMet
-                                            ? 'bg-black/40 border-oro/10 text-oro/80'
-                                            : 'bg-rojo-oscuro/20 border-rojo-sangre/30 text-rojo-sangre'
-                                            }`}
-                                        >
-                                          <span>Rango: <strong className="font-black text-oro">{itemReqs.rango}</strong></span>
-                                        </span>
-                                      );
-                                    })()}
-
-                                    {hasCombates && (() => {
-                                      const isMet = !selectedChar || selectedChar.puntos_aprendizaje >= itemReqs.combates;
-
-                                      return (
-                                        <span
-                                          className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-sm border transition-colors ${isMet
-                                            ? 'bg-black/40 border-oro/10 text-oro/80'
-                                            : 'bg-rojo-oscuro/20 border-rojo-sangre/30 text-rojo-sangre'
-                                            }`}
-                                        >
-                                          <span>PA: <strong className="font-black text-oro">{itemReqs.combates}</strong></span>
-                                        </span>
-                                      );
-                                    })()}
-
-                                    {hasStats && Object.entries(itemReqs.stats)
-                                      .filter(([_, v]: any) => v > 0)
-                                      .map(([k, v]: any) => {
-                                        const charStats = selectedChar?.stats_base || {};
-                                        const charVal = charStats[k.toUpperCase() as keyof typeof charStats] || 0;
-                                        const isMet = !selectedChar || charVal >= v;
-
-                                        return (
-                                          <span
-                                            key={k}
-                                            className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-sm border transition-colors ${isMet
-                                              ? 'bg-black/40 border-oro/10 text-oro/80'
-                                              : 'bg-rojo-oscuro/20 border-rojo-sangre/30 text-rojo-sangre'
-                                              }`}
-                                          >
-                                            <span>{k.toUpperCase()}: <strong className="font-black text-oro">{v}</strong></span>
-                                          </span>
-                                        );
-                                      })
-                                    }
+                            return (
+                              <tr 
+                                key={obj.id} 
+                                className={`border-b border-oro/5 hover:bg-oro/5 transition-colors duration-200 align-middle ${allowed ? '' : 'opacity-85'}`}
+                              >
+                                {/* Artículo Name */}
+                                <td className="py-4 px-3 min-w-[200px]">
+                                  <div className="space-y-1">
+                                    <span className="inline-block px-2 py-0.5 text-[9px] font-black border border-oro/20 text-oro/70 uppercase tracking-widest bg-black/40 rounded-sm">
+                                      {isTecnica ? 'Técnica' : 'Artículo'}
+                                    </span>
+                                    <h4 className="text-sm font-black text-oro uppercase tracking-wider">
+                                      {glosario.nombre_es}
+                                    </h4>
+                                    {glosario.nombre_jp && (
+                                      <p className="text-xs text-oro/50 font-normal italic">
+                                        {glosario.nombre_jp}
+                                      </p>
+                                    )}
                                   </div>
-                                </div>
-                              );
-                            })()}
-                          </div>
+                                </td>
 
-                          <div className="mt-6 pt-6 border-t border-oro/10 flex items-center justify-between gap-6">
-                            <div className="space-y-1">
-                              <span className="block text-caption font-black text-oro/30 uppercase tracking-widest">Precio</span>
-                              <div className="flex flex-wrap gap-x-4 gap-y-1">
-                                {obj.coste_ryous > 0 && (
-                                  <span className="text-sm font-black text-oro">{obj.coste_ryous.toLocaleString()} Ryous</span>
-                                )}
-                                {obj.coste_exp > 0 && (
-                                  <span className="text-sm font-black text-oro">{obj.coste_exp.toLocaleString()} EXP</span>
-                                )}
-                                {tienda.es_evento && obj.coste_moneda_evento > 0 && (
-                                  <span className="text-sm font-black text-oro">
-                                    {obj.coste_moneda_evento.toLocaleString()} {tienda.nombre_moneda || eventCoinName}
-                                  </span>
-                                )}
-                                {obj.coste_ryous === 0 && obj.coste_exp === 0 && (!tienda.es_evento || obj.coste_moneda_evento === 0) && (
-                                  <span className="text-sm font-black text-emerald-400">Gratuito</span>
-                                )}
-                              </div>
-                            </div>
+                                {/* Descripción */}
+                                <td className="py-4 px-3 text-xs text-gris-texto/80 max-w-[250px] whitespace-normal leading-relaxed">
+                                  {glosario.descripcion || 'Sin descripción.'}
+                                </td>
 
-                            <button
-                              disabled={!allowed}
-                              onClick={() => setIsBuyConfirmOpen(obj)}
-                              className={`px-5 py-3 font-black text-xs uppercase tracking-widest text-center transition-all ${allowed
-                                ? 'ninja-btn-oro'
-                                : 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700/50 bg-black/20'
-                                }`}
-                              style={!allowed ? { clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' } : undefined}
-                            >
-                              <span>Comprar</span>
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
+                                {/* Requisitos */}
+                                <td className="py-4 px-3 min-w-[220px]">
+                                  {itemReqs && (() => {
+                                    const hasRango = !!itemReqs.rango;
+                                    const hasCombates = itemReqs.combates > 0;
+                                    const hasStats = itemReqs.stats && Object.values(itemReqs.stats).some((v: any) => v > 0);
+
+                                    if (!hasRango && !hasCombates && !hasStats) {
+                                      return <span className="text-xs text-oro/40 italic font-bold">Ninguno</span>;
+                                    }
+
+                                    return (
+                                      <div className="flex flex-wrap gap-1.5 max-w-[300px]">
+                                        {hasRango && (() => {
+                                          const ranges = ['D', 'C', 'B', 'A', 'S'];
+                                          const charRangeIdx = selectedChar ? ranges.indexOf(selectedChar.rango) : -1;
+                                          const reqRangeIdx = ranges.indexOf(itemReqs.rango);
+                                          const isMet = !selectedChar || charRangeIdx >= reqRangeIdx;
+
+                                          return (
+                                            <span
+                                              className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-sm border ${isMet
+                                                ? 'bg-black/40 border-oro/10 text-oro/80'
+                                                : 'bg-rojo-oscuro/20 border-rojo-sangre/30 text-rojo-sangre'
+                                                }`}
+                                            >
+                                              Rango: <strong className="font-black text-oro">{itemReqs.rango}</strong>
+                                            </span>
+                                          );
+                                        })()}
+
+                                        {hasCombates && (() => {
+                                          const isMet = !selectedChar || selectedChar.puntos_aprendizaje >= itemReqs.combates;
+
+                                          return (
+                                            <span
+                                              className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-sm border ${isMet
+                                                ? 'bg-black/40 border-oro/10 text-oro/80'
+                                                : 'bg-rojo-oscuro/20 border-rojo-sangre/30 text-rojo-sangre'
+                                                }`}
+                                            >
+                                              PA: <strong className="font-black text-oro">{itemReqs.combates}</strong>
+                                            </span>
+                                          );
+                                        })()}
+
+                                        {hasStats && Object.entries(itemReqs.stats)
+                                          .filter(([_, v]: any) => v > 0)
+                                          .map(([k, v]: any) => {
+                                            const charStats = selectedChar?.stats_base || {};
+                                            const charVal = charStats[k.toUpperCase() as keyof typeof charStats] || 0;
+                                            const isMet = !selectedChar || charVal >= v;
+
+                                            return (
+                                              <span
+                                                key={k}
+                                                className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-sm border ${isMet
+                                                  ? 'bg-black/40 border-oro/10 text-oro/80'
+                                                  : 'bg-rojo-oscuro/20 border-rojo-sangre/30 text-rojo-sangre'
+                                                  }`}
+                                              >
+                                                {k.toUpperCase()}: <strong className="font-black text-oro">{v}</strong>
+                                              </span>
+                                            );
+                                          })
+                                        }
+                                      </div>
+                                    );
+                                  })()}
+                                </td>
+
+                                {/* Precio */}
+                                <td className="py-4 px-3 min-w-[150px]">
+                                  <div className="flex flex-col gap-0.5 text-xs">
+                                    {obj.coste_ryous > 0 && (
+                                      <span className="font-black text-oro">{obj.coste_ryous.toLocaleString()} Ryous</span>
+                                    )}
+                                    {obj.coste_exp > 0 && (
+                                      <span className="font-black text-oro">{obj.coste_exp.toLocaleString()} EXP</span>
+                                    )}
+                                    {tienda.es_evento && obj.coste_moneda_evento > 0 && (
+                                      <span className="font-black text-oro">
+                                        {obj.coste_moneda_evento.toLocaleString()} {tienda.nombre_moneda || eventCoinName}
+                                      </span>
+                                    )}
+                                    {obj.coste_ryous === 0 && obj.coste_exp === 0 && (!tienda.es_evento || obj.coste_moneda_evento === 0) && (
+                                      <span className="font-black text-emerald-400">Gratuito</span>
+                                    )}
+                                  </div>
+                                </td>
+
+                                {/* Acciones */}
+                                <td className="py-4 px-3 text-right">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <button
+                                      disabled={!allowed}
+                                      onClick={() => setIsBuyConfirmOpen(obj)}
+                                      className={`px-4 py-2 font-black text-[11px] uppercase tracking-widest text-center transition-all shrink-0 ${allowed
+                                        ? 'ninja-btn-oro'
+                                        : 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700/50 bg-black/20'
+                                        }`}
+                                      style={!allowed ? { clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' } : undefined}
+                                    >
+                                      Comprar
+                                    </button>
+
+                                    {isAdmin && (
+                                      <button
+                                        onClick={() => handleDeleteCatalogItem(obj.id)}
+                                        className="p-2 border border-error-text/20 hover:border-error-text hover:bg-red-500/10 text-red-400 transition-all shrink-0"
+                                        style={{ clipPath: 'polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px)' }}
+                                        title="Retirar del catálogo"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 ) : (
                   <div className="py-40 text-center ninja-card-oro border-dashed opacity-60">

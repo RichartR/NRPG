@@ -67,8 +67,8 @@ export default function AdminDisputePage() {
     if (isCloneAlert) {
       title = action === 'aceptada' ? 'Aceptar Apelación de IP' : 'Desestimar Alerta de Clon';
       message = action === 'aceptada'
-        ? '¿Estás seguro de que quieres aceptar la apelación de esta IP? Se añadirá la dirección IP de conexión a la lista blanca para evitar futuros avisos de duplicados de estos usuarios.'
-        : '¿Estás seguro de desestimar esta alerta? Se marcará el aviso como resuelto sin añadir la IP a la lista blanca.';
+        ? '¿Estás seguro de que quieres aceptar la apelación de esta IP? Se añadirá la dirección IP de conexión a la white list para evitar futuros avisos de duplicados de estos usuarios.'
+        : '¿Estás seguro de desestimar esta alerta? Se marcará el aviso como resuelto sin añadir la IP a la white list.';
     } else if (isAppeal) {
       title = action === 'aceptada' ? 'Aceptar Apelación' : 'Rechazar Apelación';
       message = action === 'aceptada'
@@ -93,7 +93,7 @@ export default function AdminDisputePage() {
       await AdminService.resolveDispute(id, action);
       let successMsg = '';
       if (isCloneAlert) {
-        successMsg = action === 'aceptada' ? 'IP añadida a lista blanca con éxito' : 'Alerta de clon resuelta y archivada';
+        successMsg = action === 'aceptada' ? 'IP añadida a white list con éxito' : 'Alerta de clon resuelta y archivada';
       } else if (isAppeal) {
         successMsg = action === 'aceptada' ? 'Apelación aceptada y ficha restaurada' : 'Apelación de ficha rechazada';
       } else {
@@ -193,14 +193,14 @@ export default function AdminDisputePage() {
                       className="w-full py-3.5 bg-emerald-950/20 border border-success-text/25 text-emerald-400 text-caption font-black uppercase tracking-[0.25em] hover:bg-emerald-500 hover:text-black transition-all shadow-[0_0_15px_rgba(16,185,129,0.15)] flex items-center justify-center gap-2 cursor-pointer"
                       style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                     >
-                      <Check className="w-4 h-4 stroke-[2.5]" /> {d.registro_id === null ? 'ACEPTAR APELACIÓN' : 'ACEPTAR DISPUTA'}
+                      <Check className="w-4 h-4 stroke-[2.5]" /> {d.registro_id === null && d.personaje_id === null ? 'Añadir a Whitelist' : (d.registro_id === null ? 'ACEPTAR APELACIÓN' : 'ACEPTAR DISPUTA')}
                     </button>
                     <button
                       onClick={() => handleResolve(d.id, 'rechazada')}
                       className="w-full py-3.5 bg-rojo-sangre/15 border border-rojo-sangre/30 text-red-400 text-caption font-black uppercase tracking-[0.25em] hover:bg-rojo-sangre hover:text-oro transition-all shadow-[0_0_15px_rgba(184,32,32,0.15)] flex items-center justify-center gap-2 cursor-pointer"
                       style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                     >
-                      <X className="w-4 h-4 stroke-[2.5]" /> {d.registro_id === null ? 'RECHAZAR APELACIÓN' : 'INVALIDAR REGISTRO'}
+                      <X className="w-4 h-4 stroke-[2.5]" /> {d.registro_id === null && d.personaje_id === null ? 'Archivar' : (d.registro_id === null ? 'RECHAZAR APELACIÓN' : 'INVALIDAR REGISTRO')}
                     </button>
                     {d.registro_id !== null && (
                       <button

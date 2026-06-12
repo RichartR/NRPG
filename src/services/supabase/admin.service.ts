@@ -354,7 +354,7 @@ export const AdminService = {
       // Es una alerta de IP duplicada (cuenta clon)
       if (resolucion === 'aceptada') {
         // Auto-whitelist de la IP al aceptar la apelación/alerta
-        const ipMatch = notif.mensaje.match(/\(([^)]+)\)$/);
+        const ipMatch = notif.mensaje.match(/\(([^)]+)\)\.?$/);
         if (ipMatch && ipMatch[1]) {
           const ip = ipMatch[1];
           await supabase.from('sys_whitelisted_ips').upsert({

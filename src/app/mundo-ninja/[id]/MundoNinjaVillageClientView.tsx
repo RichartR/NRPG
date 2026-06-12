@@ -837,6 +837,16 @@ export default function MundoNinjaVillageClientView({
                             </button>
                           </div>
 
+                          <div className="bg-red-500/10 border border-red-500/30 p-4 ninja-clip-xs text-xs flex items-start gap-3">
+                            <div className="w-1.5 h-1.5 bg-red-500 rounded-full mt-1.5 animate-pulse shrink-0" />
+                            <div>
+                              <p className="font-black uppercase tracking-wider mb-1 text-red-500 text-[11px]">Aviso de Registro</p>
+                              <p className="text-white/60 leading-relaxed">
+                                El equipo no aparecerá registrado en la lista hasta que como mínimo una persona más acepte la invitación de unión.
+                              </p>
+                            </div>
+                          </div>
+
                           <div className="space-y-4">
                             <div>
                               <label className="block text-caption font-black text-oro/60 uppercase tracking-widest mb-2">Nombre del Equipo</label>
