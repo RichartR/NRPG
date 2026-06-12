@@ -38,8 +38,6 @@ export default async function RootLayout({
 
   // Evitar bucles de redirección en las páginas de bloqueo
   const isBlockedPage = pathname === '/blocked' || pathname === '/banned';
-  
-  console.log("LAYOUT DEBUG -> pathname:", pathname, "isBlockedPage:", isBlockedPage, "ip:", ip);
 
   let shouldRedirect = false;
 

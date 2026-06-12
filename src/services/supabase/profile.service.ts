@@ -108,11 +108,11 @@ export const ProfileService = {
             .select('id')
             .eq('estado', 'pendiente')
             .or(`mensaje.like.${searchPattern},mensaje.like.${searchPatternReverse}`)
-            .maybeSingle();
+            .limit(1);
 
           if (notifCheckError) throw notifCheckError;
 
-          if (!existingNotif) {
+          if (!existingNotif || existingNotif.length === 0) {
             // Insertar la alerta en sys_notificaciones_admin
             const { error: insertError } = await supabase
               .from('sys_notificaciones_admin')

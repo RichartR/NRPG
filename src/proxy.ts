@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Inyectar cabecera x-pathname para que los Server Layouts conozcan la ruta actual
@@ -58,7 +58,7 @@ export async function middleware(request: NextRequest) {
       }
     }
   } catch (error) {
-    console.error('Error checking blocked IP in middleware:', error);
+    console.error('Error checking blocked IP in proxy:', error);
   }
 
   return NextResponse.next({
