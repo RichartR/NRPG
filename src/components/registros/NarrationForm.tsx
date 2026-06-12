@@ -11,9 +11,10 @@ import { X, Search, UserPlus, User, Trash2, Coins, Sparkles, Plus, BookOpen, Lin
 interface NarrationFormProps {
   onCreated: () => void;
   initialData?: Registro | null;
+  initialParticipants?: { id: number; nombre_ninja: string }[];
 }
 
-export default function NarrationForm({ onCreated, initialData = null }: NarrationFormProps) {
+export default function NarrationForm({ onCreated, initialData = null, initialParticipants = [] }: NarrationFormProps) {
   const { activeCharacter, fetchActiveCharacter } = useCharacterStore();
   const addToast = useToastStore(state => state.addToast);
   const [loading, setLoading] = useState(false);
@@ -70,6 +71,19 @@ export default function NarrationForm({ onCreated, initialData = null }: Narrati
       initialParts.forEach(p => {
         loadValidGlosarioItems(p.id);
       });
+    } else if (initialParticipants && initialParticipants.length > 0) {
+      const parts = initialParticipants.map(p => ({
+        id: p.id,
+        nombre_ninja: p.nombre_ninja,
+        xp_extra: 0,
+        ryous_extra: 0,
+        monedas_evento: 0,
+        glosario_items: []
+      }));
+      setParticipants(parts);
+      parts.forEach(p => {
+        loadValidGlosarioItems(p.id);
+      });
     } else if (activeCharacter) {
       // Add author automatically as participant
       addParticipant({
@@ -77,7 +91,7 @@ export default function NarrationForm({ onCreated, initialData = null }: Narrati
         nombre_ninja: activeCharacter.nombre_ninja
       });
     }
-  }, [initialData, activeCharacter?.id]);
+  }, [initialData, activeCharacter?.id, initialParticipants]);
 
   const loadValidGlosarioItems = async (personajeId: number) => {
     if (validGlosarioItems[personajeId]) return;

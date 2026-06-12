@@ -6,11 +6,14 @@ import { useCharacterStore } from '@/store/useCharacterStore';
 import {
   Dices, Activity, Users, Play,
   RotateCcw, ChevronUp, ChevronDown, Zap,
-  BookOpen, Trash2, Copy
+  BookOpen, Trash2, Copy, ShieldAlert, Sparkles
 } from 'lucide-react';
 import { useToastStore } from '@/components/ui/Toast';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import CombatForm from '@/components/registros/CombatForm';
+import NarrationForm from '@/components/registros/NarrationForm';
+import { CharacterStats } from '@/domain/types';
 
 interface CombatState {
   vit: number;
@@ -20,6 +23,7 @@ interface CombatState {
   vel: number;
   kawarimi: number;
   maxKawarimi: number;
+  usedTraits?: Record<number, boolean>;
 }
 
 interface Participant {
@@ -30,11 +34,15 @@ interface Participant {
   bando: 'A' | 'B' | null;
   isInCombat: boolean;
   cooldowns?: Record<number, number>; // tecnicaId -> reusableAtRound
+  rasgos?: Array<{ id: number; nombre: string; usado: boolean }>;
+  equipo?: Array<{ id: number; nombre: string }>;
 }
 
 export default function CombatRoom({ roomId }: { roomId: string }) {
   const { activeCharacter, fetchActiveCharacter } = useCharacterStore();
   const addToast = useToastStore(state => state.addToast);
+  const searchParams = useSearchParams();
+  const isEventMode = searchParams ? searchParams.get('mode') === 'event' : false;
 
   // Participant presence records
   const [participants, setParticipants] = useState<Record<string, Participant>>({});
@@ -44,6 +52,26 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   const [myBando, setMyBando] = useState<'A' | 'B' | null>(null);
   const [myIsInCombat, setMyIsInCombat] = useState(false);
   const [myCooldowns, setMyCooldowns] = useState<Record<number, number>>({});
+
+  // Roll Mode state (Normal, Advantage, Disadvantage)
+  const [rollMode, setRollMode] = useState<'normal' | 'advantage' | 'disadvantage'>('normal');
+
+  const getStatModifier = (statVal: number) => {
+    const clamped = Math.max(1, Math.min(10, statVal));
+    const mods: Record<number, number> = {
+      1: -2,
+      2: -1,
+      3: 0,
+      4: 0,
+      5: 1,
+      6: 1,
+      7: 2,
+      8: 3,
+      9: 4,
+      10: 5
+    };
+    return mods[clamped] ?? 0;
+  };
 
   // Global Combat state (synced via Broadcast)
   const [turnQueue, setTurnQueue] = useState<string[]>([]);
@@ -60,6 +88,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   const [vitInput, setVitInput] = useState<number | ''>('');
   const [chInput, setChInput] = useState<number | ''>('');
   const [dadoInput, setDadoInput] = useState(100);
+  const [tempModifier, setTempModifier] = useState<number>(0);
 
   // Technique Console Inputs
   const [selectedTecnicaId, setSelectedTecnicaId] = useState<number | null>(null);
@@ -87,20 +116,38 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   useEffect(() => {
     if (activeCharacter) {
       if (!localState) {
+        let vit = activeCharacter.atributos_derivados.VIT;
+        let maxVit = activeCharacter.atributos_derivados.VIT;
+
+        if (isEventMode) {
+          const rankVal = (activeCharacter.rango || 'D').toUpperCase();
+          const rankVits: Record<string, number> = {
+            'D': 15,
+            'C': 25,
+            'B': 50,
+            'A': 80,
+            'S': 100
+          };
+          const evVit = rankVits[rankVal] ?? 15;
+          vit = evVit;
+          maxVit = evVit;
+        }
+
         setLocalState({
-          vit: activeCharacter.atributos_derivados.VIT,
-          maxVit: activeCharacter.atributos_derivados.VIT,
+          vit: vit,
+          maxVit: maxVit,
           ch: activeCharacter.atributos_derivados.CH,
           maxCh: activeCharacter.atributos_derivados.CH,
           vel: activeCharacter.atributos_derivados.VEL || 0,
           kawarimi: 0,
           maxKawarimi: 1,
+          usedTraits: {},
         });
       } else if (localState.vel !== activeCharacter.atributos_derivados.VEL) {
         setLocalState(prev => prev ? { ...prev, vel: activeCharacter.atributos_derivados.VEL || 0 } : null);
       }
     }
-  }, [activeCharacter, localState?.vel]);
+  }, [activeCharacter, localState?.vel, isEventMode]);
 
   // Refs to avoid feedback loops and channel recreation on state updates
   const turnQueueRef = useRef(turnQueue);
@@ -230,12 +277,30 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         estado: localState,
         bando: myBando,
         isInCombat: myIsInCombat,
-        cooldowns: myCooldowns
+        cooldowns: myCooldowns,
+        rasgos: activeCharacter.personajes_rasgos?.map(r => ({
+          id: r.info_rasgos?.id || r.rasgo_id,
+          nombre: r.info_rasgos?.nombre || 'Rasgo',
+          usado: localState.usedTraits?.[r.info_rasgos?.id || r.rasgo_id] || false
+        })) || [],
+        equipo: activeCharacter.personajes_inventario?.filter(pi => pi.equipado).map(pi => ({
+          id: pi.info_glosario?.id || pi.item_id,
+          nombre: pi.info_glosario?.nombre_es || 'Objeto'
+        })) || []
       };
       console.log("REACTIVELY TRACKING PRESENCE PAYLOAD:", payload);
       channelRef.current.track(payload);
     }
-  }, [isSubscribed, activeCharacter?.id, localState, myBando, myIsInCombat, myCooldowns]);
+  }, [
+    isSubscribed,
+    activeCharacter?.id,
+    activeCharacter?.personajes_rasgos,
+    activeCharacter?.personajes_inventario,
+    localState,
+    myBando,
+    myIsInCombat,
+    myCooldowns
+  ]);
 
   const addLog = async (message: string) => {
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -422,8 +487,63 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   };
 
   const rollDice = () => {
-    const result = Math.floor(Math.random() * dadoInput) + 1;
-    addLog(`**${activeCharacter?.nombre_ninja}** realiza una Tirada de Cansancio (D${dadoInput}) y saca: **${result}**`);
+    if (isEventMode) {
+      const roll1 = Math.floor(Math.random() * dadoInput) + 1;
+      const roll2 = Math.floor(Math.random() * dadoInput) + 1;
+
+      let finalResult = roll1;
+      let formulaText = `**${activeCharacter?.nombre_ninja}** realiza una Tirada (D${dadoInput})`;
+
+      if (rollMode === 'advantage') {
+        finalResult = Math.max(roll1, roll2);
+        formulaText += ` con **VENTAJA** [Dados: ${roll1}, ${roll2}] y saca: **${finalResult}**`;
+      } else if (rollMode === 'disadvantage') {
+        finalResult = Math.min(roll1, roll2);
+        formulaText += ` con **DESVENTAJA** [Dados: ${roll1}, ${roll2}] y saca: **${finalResult}**`;
+      } else {
+        formulaText += ` y saca: **${finalResult}**`;
+      }
+
+      addLog(formulaText);
+    } else {
+      const result = Math.floor(Math.random() * dadoInput) + 1;
+      addLog(`**${activeCharacter?.nombre_ninja}** realiza una Tirada de Cansancio (D${dadoInput}) y saca: **${result}**`);
+    }
+  };
+
+  const rollStat = (statName: string) => {
+    if (!activeCharacter) return;
+    const statVal = Number(activeCharacter.stats_base[statName as keyof CharacterStats]) || 1;
+    const baseMod = getStatModifier(statVal);
+    const mod = baseMod + tempModifier;
+
+    const modSign = mod >= 0 ? `+${mod}` : `${mod}`;
+    const baseModSign = baseMod >= 0 ? `+${baseMod}` : `${baseMod}`;
+    const tempModSign = tempModifier >= 0 ? `+${tempModifier}` : `${tempModifier}`;
+    const modExplanationText = tempModifier !== 0 ? ` (${baseModSign} base ${tempModSign} temp)` : '';
+
+    const roll1 = Math.floor(Math.random() * 20) + 1;
+    const roll2 = Math.floor(Math.random() * 20) + 1;
+
+    let finalDice = roll1;
+    let formulaText = `**${activeCharacter.nombre_ninja}** tira **${statName}** (d20${modSign})${modExplanationText}`;
+
+    if (rollMode === 'advantage') {
+      finalDice = Math.max(roll1, roll2);
+      formulaText += ` con **VENTAJA** [Dados: ${roll1}, ${roll2}]`;
+    } else if (rollMode === 'disadvantage') {
+      finalDice = Math.min(roll1, roll2);
+      formulaText += ` con **DESVENTAJA** [Dados: ${roll1}, ${roll2}]`;
+    }
+
+    const finalResult = finalDice + mod;
+    formulaText += `: **${finalResult}** (d20: ${finalDice} ${modSign})`;
+
+    if (finalDice === 20) {
+      formulaText += ` **¡CRÍTICO!**`;
+    }
+
+    addLog(formulaText);
   };
 
   // Change Bando selection
@@ -448,7 +568,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     const techWrapper = activeCharacter.personajes_tecnicas?.find(t => t.tecnica_id === selectedTecnicaId);
     const techName = techWrapper?.info_glosario?.nombre_es || 'Técnica';
 
-    if (localState.ch < customChCost) {
+    if (!isEventMode && localState.ch < customChCost) {
       addToast("Chakra insuficiente para realizar esta técnica.", "error");
       return;
     }
@@ -461,7 +581,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     }
 
     // Subtract Chakra
-    const newCh = Math.max(0, localState.ch - customChCost);
+    const newCh = isEventMode ? localState.ch : Math.max(0, localState.ch - customChCost);
     const newCooldowns = { ...myCooldowns };
     if (customCdRounds > 0) {
       newCooldowns[selectedTecnicaId] = rondaActual + customCdRounds + 1;
@@ -471,15 +591,67 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     setLocalState(updatedState);
     setMyCooldowns(newCooldowns);
 
-    // Logging
-    addLog(`**${activeCharacter.nombre_ninja}** usa **${techName}** (Coste: ${customChCost} CH | CD: ${customCdRounds} rondas). CH restante: ${newCh}/${localState.maxCh}.`);
+    // Logging & Roll resolution for event mode
+    let rollText = '';
+    if (isEventMode) {
+      let matchedStats: string[] = [];
+      const desc = techWrapper?.info_glosario?.descripcion?.toUpperCase() || '';
+      ['NIN', 'TAI', 'GEN', 'INT', 'FUE', 'AGI', 'EST', 'SM'].forEach(s => {
+        if (desc.includes(s)) {
+          matchedStats.push(s);
+        }
+      });
 
-    // Automatic Exhaustion Checks
-    const percentage = (newCh / localState.maxCh) * 100;
-    if (percentage < 10) {
-      addLog(`**¡CRÍTICO!** Chakra de **${activeCharacter.nombre_ninja}** es menor al 10%. Requiere Tirada de Cansancio Avanzado.`);
-    } else if (percentage < 20) {
-      addLog(`**¡ADVERTENCIA!** Chakra de **${activeCharacter.nombre_ninja}** es menor al 20%. Requiere Tirada de Cansancio.`);
+      if (matchedStats.length === 0) {
+        matchedStats.push('NIN');
+      }
+
+      let bestStat = matchedStats[0];
+      let bestVal = Number(activeCharacter.stats_base[bestStat as keyof CharacterStats]) || 1;
+      matchedStats.forEach(s => {
+        const val = Number(activeCharacter.stats_base[s as keyof CharacterStats]) || 1;
+        if (val > bestVal) {
+          bestVal = val;
+          bestStat = s;
+        }
+      });
+
+      const baseMod = getStatModifier(bestVal);
+      const mod = baseMod + tempModifier;
+      const modSign = mod >= 0 ? `+${mod}` : `${mod}`;
+      const baseModSign = baseMod >= 0 ? `+${baseMod}` : `${baseMod}`;
+      const tempModSign = tempModifier >= 0 ? `+${tempModifier}` : `${tempModifier}`;
+      const modExplanationText = tempModifier !== 0 ? ` (${baseModSign} base ${tempModSign} temp)` : '';
+
+      const roll1 = Math.floor(Math.random() * 20) + 1;
+      const roll2 = Math.floor(Math.random() * 20) + 1;
+
+      let finalDice = roll1;
+      let advantageText = '';
+
+      if (rollMode === 'advantage') {
+        finalDice = Math.max(roll1, roll2);
+        advantageText = ` con **VENTAJA** [Dados: ${roll1}, ${roll2}]`;
+      } else if (rollMode === 'disadvantage') {
+        finalDice = Math.min(roll1, roll2);
+        advantageText = ` con **DESVENTAJA** [Dados: ${roll1}, ${roll2}]`;
+      }
+
+      const finalResult = finalDice + mod;
+      rollText = ` | Daño / Tirada (${bestStat}): **${finalResult}** (d20: ${finalDice}${advantageText} ${modSign}${modExplanationText})${finalDice === 20 ? ' **¡CRÍTICO!**' : ''}`;
+    }
+
+    if (isEventMode) {
+      addLog(`**${activeCharacter.nombre_ninja}** usa **${techName}** (CD: ${customCdRounds} rondas)${rollText}.`);
+    } else {
+      addLog(`**${activeCharacter.nombre_ninja}** usa **${techName}** (Coste: ${customChCost} CH | CD: ${customCdRounds} rondas). CH restante: ${newCh}/${localState.maxCh}.`);
+
+      const percentage = (newCh / localState.maxCh) * 100;
+      if (percentage < 10) {
+        addLog(`**¡CRÍTICO!** Chakra de **${activeCharacter.nombre_ninja}** es menor al 10%. Requiere Tirada de Cansancio Avanzado.`);
+      } else if (percentage < 20) {
+        addLog(`**¡ADVERTENCIA!** Chakra de **${activeCharacter.nombre_ninja}** es menor al 20%. Requiere Tirada de Cansancio.`);
+      }
     }
   };
 
@@ -495,6 +667,33 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   }
 
   if (showRegisterForm) {
+    if (isEventMode) {
+      const activeParticipantsList = Object.values(participants).map(p => ({
+        id: Number(p.user_id),
+        nombre_ninja: p.nombre
+      }));
+
+      return (
+        <div className="min-h-screen flex flex-col relative text-oro p-4 lg:p-8 overflow-hidden">
+          <div
+            className="absolute inset-0 bg-cover bg-center pointer-events-none z-0"
+            style={{
+              backgroundImage: `url('/assets/ui/bg-combat/bg-combat-${bgNumber}.png')`,
+              filter: 'blur(4px)',
+              transform: 'scale(1.03)'
+            }}
+          />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-none z-10" />
+          <div className="w-full max-w-[1400px] mx-auto relative z-20 py-6">
+            <NarrationForm
+              onCreated={() => setShowRegisterForm(false)}
+              initialParticipants={activeParticipantsList}
+            />
+          </div>
+        </div>
+      );
+    }
+
     const bandoAParticipants = Object.values(participants).filter(p => p.bando === 'A' && p.isInCombat);
     const bandoBParticipants = Object.values(participants).filter(p => p.bando === 'B' && p.isInCombat);
 
@@ -562,7 +761,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         <header className="flex flex-col md:flex-row justify-between items-center ninja-card-oro p-6 backdrop-blur-md relative gap-4" style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}>
           <div className="flex items-center flex-wrap gap-x-4 gap-y-2">
             <h1 className="ninja-title text-2xl xl:text-3xl italic tracking-widest">
-              SALA DE COMBATE:{" "}
+              {isEventMode ? 'SALA DE COMBATE DE EVENTOS: ' : 'SALA DE COMBATE: '}
               <span
                 onClick={() => {
                   navigator.clipboard.writeText(roomId);
@@ -601,7 +800,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
               className="ninja-btn-oro px-6 py-2.5 text-xs text-center"
               style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
             >
-              Registrar Combate
+              {isEventMode ? 'Registrar Narración' : 'Registrar Combate'}
             </button>
             <Link
               href="/combate"
@@ -666,51 +865,114 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                         <div className="h-full bg-red-500 transition-all duration-300" style={{ width: `${(p.estado?.vit / p.estado?.maxVit) * 100}%` }} />
                       </div>
                     </div>
-                    <div>
-                      <div className="flex justify-between text-[10px] font-black mb-1">
-                        <span className="text-blue-400">CH</span>
-                        <span>{p.estado?.ch} / {p.estado?.maxCh}</span>
+                    {!isEventMode && (
+                      <div>
+                        <div className="flex justify-between text-[10px] font-black mb-1">
+                          <span className="text-blue-400">CH</span>
+                          <span>{p.estado?.ch} / {p.estado?.maxCh}</span>
+                        </div>
+                        <div className="h-2 bg-black/60 border border-oro/5 rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${(p.estado?.ch / p.estado?.maxCh) * 100}%` }} />
+                        </div>
                       </div>
-                      <div className="h-2 bg-black/60 border border-oro/5 rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${(p.estado?.ch / p.estado?.maxCh) * 100}%` }} />
-                      </div>
-                    </div>
+                    )}
                     {/* Speed & Kawarimi */}
                     <div className="flex justify-between items-center text-[10px] font-black pt-2 border-t border-oro/10 mt-1">
                       <div className="flex items-center gap-1">
                         <span className="text-amber-500 uppercase tracking-wider">VEL:</span>
                         <span className="text-white">{p.estado?.vel ?? 0}</span>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-emerald-400 uppercase tracking-wider">KAWARIMI:</span>
-                        <div className="flex gap-1">
-                          {Array.from({ length: p.estado?.maxKawarimi || 1 }, (_, i) => i + 1).map((num) => {
-                            const isUsed = (p.estado?.kawarimi ?? 0) >= num;
-                            const isSelf = String(activeCharacter?.id) === p.user_id;
-                            return (
-                              <button
-                                key={num}
-                                disabled={!isSelf}
-                                onClick={() => {
-                                  if (!isSelf || !localState) return;
-                                  const newKawarimi = localState.kawarimi === num ? num - 1 : num;
-                                  const updated = { ...localState, kawarimi: newKawarimi };
-                                  setLocalState(updated);
-                                  addLog(`**${activeCharacter.nombre_ninja}** marca Kawarimi ${newKawarimi >= num ? 'usado' : 'recuperado'} (${newKawarimi}/${localState.maxKawarimi}).`);
-                                }}
-                                className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center text-[8px] transition-all font-black ${isUsed
-                                  ? 'bg-red-500/20 border-red-500 text-red-500'
-                                  : 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30'
-                                  } ${isSelf ? 'cursor-pointer' : 'cursor-default'}`}
-                                title={isSelf ? `Marcar Kawarimi ${num} como ${isUsed ? 'disponible' : 'usado'}` : `Kawarimi ${num}`}
-                              >
-                                {isUsed ? '✕' : '✓'}
-                              </button>
-                            );
-                          })}
+                      {!isEventMode && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-emerald-400 uppercase tracking-wider">KAWARIMI:</span>
+                          <div className="flex gap-1">
+                            {Array.from({ length: p.estado?.maxKawarimi || 1 }, (_, i) => i + 1).map((num) => {
+                              const isUsed = (p.estado?.kawarimi ?? 0) >= num;
+                              const isSelf = String(activeCharacter?.id) === p.user_id;
+                              return (
+                                <button
+                                  key={num}
+                                  disabled={!isSelf}
+                                  onClick={() => {
+                                    if (!isSelf || !localState) return;
+                                    const newKawarimi = localState.kawarimi === num ? num - 1 : num;
+                                    const updated = { ...localState, kawarimi: newKawarimi };
+                                    setLocalState(updated);
+                                    addLog(`**${activeCharacter.nombre_ninja}** marca Kawarimi ${newKawarimi >= num ? 'usado' : 'recuperado'} (${newKawarimi}/${localState.maxKawarimi}).`);
+                                  }}
+                                  className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center text-[8px] transition-all font-black ${isUsed
+                                    ? 'bg-red-500/20 border-red-500 text-red-500'
+                                    : 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30'
+                                    } ${isSelf ? 'cursor-pointer' : 'cursor-default'}`}
+                                  title={isSelf ? `Marcar Kawarimi ${num} como ${isUsed ? 'disponible' : 'usado'}` : `Kawarimi ${num}`}
+                                >
+                                  {isUsed ? '✕' : '✓'}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {isEventMode && (
+                      <div className="space-y-2.5 pt-2 border-t border-oro/10 mt-1 animate-in fade-in duration-300">
+                        {/* Traits (Rasgos) */}
+                        <div className="space-y-1">
+                          <span className="text-[9px] text-oro/40 uppercase font-black block tracking-wider">Rasgos:</span>
+                          {p.rasgos && p.rasgos.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {p.rasgos.map((r: any) => {
+                                const isSelf = String(activeCharacter?.id) === p.user_id;
+                                return (
+                                  <button
+                                    key={r.id}
+                                    disabled={!isSelf}
+                                    onClick={() => {
+                                      if (!isSelf || !localState) return;
+                                      const currentUsed = localState.usedTraits || {};
+                                      const updatedUsed = { ...currentUsed, [r.id]: !currentUsed[r.id] };
+                                      const updated = { ...localState, usedTraits: updatedUsed };
+                                      setLocalState(updated);
+                                      addLog(`**${activeCharacter.nombre_ninja}** marca el rasgo **${r.nombre}** como ${updatedUsed[r.id] ? 'usado' : 'disponible'}.`);
+                                    }}
+                                    className={`px-1.5 py-0.5 border text-[9px] font-black transition-all flex items-center gap-1 rounded-sm ${r.usado
+                                        ? 'bg-red-500/10 border-red-500/30 text-red-400 line-through'
+                                        : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
+                                      } ${isSelf ? 'cursor-pointer' : 'cursor-default'}`}
+                                    title={isSelf ? `Haga clic para cambiar estado de ${r.nombre}` : r.nombre}
+                                  >
+                                    <span>{r.nombre}</span>
+                                    <span>{r.usado ? '✕' : '✓'}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <span className="text-[9px] text-oro/20 italic block">Sin rasgos</span>
+                          )}
+                        </div>
+
+                        {/* Equipment (Equipo) */}
+                        <div className="space-y-1">
+                          <span className="text-[9px] text-oro/40 uppercase font-black block tracking-wider">Equipo Equipado:</span>
+                          {p.equipo && p.equipo.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {p.equipo.map((eq: any) => (
+                                <span
+                                  key={eq.id}
+                                  className="px-1.5 py-0.5 bg-black/40 border border-oro/10 text-[9px] font-black text-oro/70 rounded-sm"
+                                >
+                                  {eq.nombre}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-[9px] text-oro/20 italic block">Sin equipo equipado</span>
+                          )}
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -919,51 +1181,114 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                         <div className="h-full bg-red-500 transition-all duration-300" style={{ width: `${(p.estado?.vit / p.estado?.maxVit) * 100}%` }} />
                       </div>
                     </div>
-                    <div>
-                      <div className="flex justify-between text-[10px] font-black mb-1">
-                        <span className="text-blue-400">CH</span>
-                        <span>{p.estado?.ch} / {p.estado?.maxCh}</span>
+                    {!isEventMode && (
+                      <div>
+                        <div className="flex justify-between text-[10px] font-black mb-1">
+                          <span className="text-blue-400">CH</span>
+                          <span>{p.estado?.ch} / {p.estado?.maxCh}</span>
+                        </div>
+                        <div className="h-2 bg-black/60 border border-oro/5 rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${(p.estado?.ch / p.estado?.maxCh) * 100}%` }} />
+                        </div>
                       </div>
-                      <div className="h-2 bg-black/60 border border-oro/5 rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${(p.estado?.ch / p.estado?.maxCh) * 100}%` }} />
-                      </div>
-                    </div>
+                    )}
                     {/* Speed & Kawarimi */}
                     <div className="flex justify-between items-center text-[10px] font-black pt-2 border-t border-oro/10 mt-1">
                       <div className="flex items-center gap-1">
                         <span className="text-amber-500 uppercase tracking-wider">VEL:</span>
                         <span className="text-white">{p.estado?.vel ?? 0}</span>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-emerald-400 uppercase tracking-wider">KAWARIMI:</span>
-                        <div className="flex gap-1">
-                          {Array.from({ length: p.estado?.maxKawarimi || 1 }, (_, i) => i + 1).map((num) => {
-                            const isUsed = (p.estado?.kawarimi ?? 0) >= num;
-                            const isSelf = String(activeCharacter?.id) === p.user_id;
-                            return (
-                              <button
-                                key={num}
-                                disabled={!isSelf}
-                                onClick={() => {
-                                  if (!isSelf || !localState) return;
-                                  const newKawarimi = localState.kawarimi === num ? num - 1 : num;
-                                  const updated = { ...localState, kawarimi: newKawarimi };
-                                  setLocalState(updated);
-                                  addLog(`**${activeCharacter.nombre_ninja}** marca Kawarimi ${newKawarimi >= num ? 'usado' : 'recuperado'} (${newKawarimi}/${localState.maxKawarimi}).`);
-                                }}
-                                className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center text-[8px] transition-all font-black ${isUsed
-                                  ? 'bg-red-500/20 border-red-500 text-red-500'
-                                  : 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30'
-                                  } ${isSelf ? 'cursor-pointer' : 'cursor-default'}`}
-                                title={isSelf ? `Marcar Kawarimi ${num} como ${isUsed ? 'disponible' : 'usado'}` : `Kawarimi ${num}`}
-                              >
-                                {isUsed ? '✕' : '✓'}
-                              </button>
-                            );
-                          })}
+                      {!isEventMode && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-emerald-400 uppercase tracking-wider">KAWARIMI:</span>
+                          <div className="flex gap-1">
+                            {Array.from({ length: p.estado?.maxKawarimi || 1 }, (_, i) => i + 1).map((num) => {
+                              const isUsed = (p.estado?.kawarimi ?? 0) >= num;
+                              const isSelf = String(activeCharacter?.id) === p.user_id;
+                              return (
+                                <button
+                                  key={num}
+                                  disabled={!isSelf}
+                                  onClick={() => {
+                                    if (!isSelf || !localState) return;
+                                    const newKawarimi = localState.kawarimi === num ? num - 1 : num;
+                                    const updated = { ...localState, kawarimi: newKawarimi };
+                                    setLocalState(updated);
+                                    addLog(`**${activeCharacter.nombre_ninja}** marca Kawarimi ${newKawarimi >= num ? 'usado' : 'recuperado'} (${newKawarimi}/${localState.maxKawarimi}).`);
+                                  }}
+                                  className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center text-[8px] transition-all font-black ${isUsed
+                                    ? 'bg-red-500/20 border-red-500 text-red-500'
+                                    : 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30'
+                                    } ${isSelf ? 'cursor-pointer' : 'cursor-default'}`}
+                                  title={isSelf ? `Marcar Kawarimi ${num} como ${isUsed ? 'disponible' : 'usado'}` : `Kawarimi ${num}`}
+                                >
+                                  {isUsed ? '✕' : '✓'}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {isEventMode && (
+                      <div className="space-y-2.5 pt-2 border-t border-oro/10 mt-1 animate-in fade-in duration-300">
+                        {/* Traits (Rasgos) */}
+                        <div className="space-y-1">
+                          <span className="text-[9px] text-oro/40 uppercase font-black block tracking-wider">Rasgos:</span>
+                          {p.rasgos && p.rasgos.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {p.rasgos.map((r: any) => {
+                                const isSelf = String(activeCharacter?.id) === p.user_id;
+                                return (
+                                  <button
+                                    key={r.id}
+                                    disabled={!isSelf}
+                                    onClick={() => {
+                                      if (!isSelf || !localState) return;
+                                      const currentUsed = localState.usedTraits || {};
+                                      const updatedUsed = { ...currentUsed, [r.id]: !currentUsed[r.id] };
+                                      const updated = { ...localState, usedTraits: updatedUsed };
+                                      setLocalState(updated);
+                                      addLog(`**${activeCharacter.nombre_ninja}** marca el rasgo **${r.nombre}** como ${updatedUsed[r.id] ? 'usado' : 'disponible'}.`);
+                                    }}
+                                    className={`px-1.5 py-0.5 border text-[9px] font-black transition-all flex items-center gap-1 rounded-sm ${r.usado
+                                        ? 'bg-red-500/10 border-red-500/30 text-red-400 line-through'
+                                        : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
+                                      } ${isSelf ? 'cursor-pointer' : 'cursor-default'}`}
+                                    title={isSelf ? `Haga clic para cambiar estado de ${r.nombre}` : r.nombre}
+                                  >
+                                    <span>{r.nombre}</span>
+                                    <span>{r.usado ? '✕' : '✓'}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <span className="text-[9px] text-oro/20 italic block">Sin rasgos</span>
+                          )}
+                        </div>
+
+                        {/* Equipment (Equipo) */}
+                        <div className="space-y-1">
+                          <span className="text-[9px] text-oro/40 uppercase font-black block tracking-wider">Equipo Equipado:</span>
+                          {p.equipo && p.equipo.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {p.equipo.map((eq: any) => (
+                                <span
+                                  key={eq.id}
+                                  className="px-1.5 py-0.5 bg-black/40 border border-oro/10 text-[9px] font-black text-oro/70 rounded-sm"
+                                >
+                                  {eq.nombre}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-[9px] text-oro/20 italic block">Sin equipo equipado</span>
+                          )}
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -1010,15 +1335,17 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                     </div>
                   </div>
 
-                  <div>
-                    <div className="flex justify-between text-xs font-black mb-1.5">
-                      <span className="text-blue-400">CHAKRA (CH)</span>
-                      <span>{localState.ch} / {localState.maxCh}</span>
+                  {!isEventMode && (
+                    <div>
+                      <div className="flex justify-between text-xs font-black mb-1.5">
+                        <span className="text-blue-400">CHAKRA (CH)</span>
+                        <span>{localState.ch} / {localState.maxCh}</span>
+                      </div>
+                      <div className="h-4 bg-black/60 border border-oro/15 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-blue-600 to-blue-500 transition-all duration-300" style={{ width: `${(localState.ch / localState.maxCh) * 100}%` }} />
+                      </div>
                     </div>
-                    <div className="h-4 bg-black/60 border border-oro/15 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-blue-600 to-blue-500 transition-all duration-300" style={{ width: `${(localState.ch / localState.maxCh) * 100}%` }} />
-                    </div>
-                  </div>
+                  )}
 
                   {/* VEL and KAWARIMI FOR SELF */}
                   <div className="flex justify-between items-center text-xs font-black pt-3 border-t border-oro/10">
@@ -1108,32 +1435,34 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                 </div>
 
                 {/* Adjust Chakra (CH) */}
-                <div className="flex gap-2 pt-3 border-t border-oro/10">
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="Chakra (Cant.)"
-                    value={chInput}
-                    onChange={(e) => setChInput(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-1/3 bg-black/50 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all"
-                  />
-                  <button
-                    onClick={handleSpendChakra}
-                    className="ninja-btn-rojo flex-1 py-2 text-xs text-center font-black"
-                  >
-                    Gastar
-                  </button>
-                  <button
-                    onClick={handleRecoverChakra}
-                    className="ninja-btn-oro flex-1 py-2 text-xs text-center font-black"
-                  >
-                    Recuperar
-                  </button>
-                </div>
+                {!isEventMode && (
+                  <div className="flex gap-2 pt-3 border-t border-oro/10">
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="Chakra (Cant.)"
+                      value={chInput}
+                      onChange={(e) => setChInput(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-1/3 bg-black/50 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all"
+                    />
+                    <button
+                      onClick={handleSpendChakra}
+                      className="ninja-btn-rojo flex-1 py-2 text-xs text-center font-black"
+                    >
+                      Gastar
+                    </button>
+                    <button
+                      onClick={handleRecoverChakra}
+                      className="ninja-btn-oro flex-1 py-2 text-xs text-center font-black"
+                    >
+                      Recuperar
+                    </button>
+                  </div>
+                )}
 
                 <div className="flex gap-2 pt-3 border-t border-oro/10">
                   <div className="flex items-center w-2/3 bg-black/50 border border-oro/20 px-3 focus-within:border-oro transition-all">
-                    <span className="text-oro/40 font-mono text-xs mr-2 whitespace-nowrap">Cansancio (D)</span>
+                    <span className="text-oro/40 font-mono text-xs mr-2 whitespace-nowrap">{isEventMode ? "Dados (D)" : "Cansancio (D)"}</span>
                     <input
                       type="number"
                       value={dadoInput}
@@ -1148,6 +1477,92 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                     <Dices className="w-4 h-4 text-rojo-sangre" /> Tirar
                   </button>
                 </div>
+
+                {isEventMode && (
+                  <>
+                    <div className="flex gap-2 pt-3 border-t border-oro/10 justify-between">
+                      <button
+                        onClick={() => setRollMode('normal')}
+                        className={`flex-1 py-1.5 px-3 text-[10px] font-black uppercase tracking-widest transition-all border ${rollMode === 'normal'
+                            ? 'bg-oro text-black border-oro shadow-md shadow-oro/5'
+                            : 'border-oro/10 text-oro/60 bg-black/20'
+                          }`}
+                        style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
+                      >
+                        Normal
+                      </button>
+                      <button
+                        onClick={() => setRollMode('advantage')}
+                        className={`flex-1 py-1.5 px-3 text-[10px] font-black uppercase tracking-widest transition-all border ${rollMode === 'advantage'
+                            ? 'bg-oro text-black border-oro shadow-md shadow-oro/5'
+                            : 'border-oro/10 text-oro/60 bg-black/20'
+                          }`}
+                        style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
+                      >
+                        Ventaja
+                      </button>
+                      <button
+                        onClick={() => setRollMode('disadvantage')}
+                        className={`flex-1 py-1.5 px-3 text-[10px] font-black uppercase tracking-widest transition-all border ${rollMode === 'disadvantage'
+                            ? 'bg-oro text-black border-oro shadow-md shadow-oro/5'
+                            : 'border-oro/10 text-oro/60 bg-black/20'
+                          }`}
+                        style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
+                      >
+                        Desventaja
+                      </button>
+                    </div>
+
+                    {/* Bonificador Temporal */}
+                    <div className="flex items-center justify-between gap-3 pt-3 border-t border-oro/10 animate-in fade-in duration-300">
+                      <span className="text-[10px] font-black text-oro/40 uppercase tracking-wider whitespace-nowrap">Modificador Temporal:</span>
+                      <div className="flex items-center bg-black/50 border border-oro/20 rounded-sm overflow-hidden w-28 px-2 focus-within:border-oro transition-all">
+                        <button
+                          onClick={() => setTempModifier(prev => prev - 1)}
+                          className="text-oro hover:text-white font-black px-1.5 py-1 text-xs select-none"
+                          type="button"
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          value={tempModifier}
+                          onChange={(e) => setTempModifier(Number(e.target.value) || 0)}
+                          className="bg-transparent text-center text-white text-xs font-black w-full outline-none py-1 border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                        <button
+                          onClick={() => setTempModifier(prev => prev + 1)}
+                          className="text-oro hover:text-white font-black px-1.5 py-1 text-xs select-none"
+                          type="button"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-oro/10 space-y-2 animate-in fade-in duration-300">
+                      <span className="text-[10px] font-black text-oro/40 block uppercase ml-1">Tiradas de Atributos (d20)</span>
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {['NIN', 'TAI', 'GEN', 'INT', 'FUE', 'AGI', 'EST', 'SM'].map((s) => {
+                          const val = activeCharacter.stats_base[s as keyof CharacterStats] || 1;
+                          const mod = getStatModifier(val);
+                          const modSign = mod >= 0 ? `+${mod}` : `${mod}`;
+                          return (
+                            <button
+                              key={s}
+                              onClick={() => rollStat(s)}
+                              className="bg-black/40 border border-oro/15 hover:border-oro py-1 text-[10px] font-black text-oro hover:bg-oro/10 transition-all flex flex-col items-center justify-center rounded-sm"
+                              title={`Tirar D20 + Modificador de ${s} (${modSign})`}
+                            >
+                              <span className="text-white/80">{s}</span>
+                              <span className="text-[9px] text-oro/60 font-bold">{modSign}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
