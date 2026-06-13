@@ -3,10 +3,11 @@
 import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useCharacterStore } from '@/store/useCharacterStore';
+import { ProfileService } from '@/services/supabase/profile.service';
 import {
-  Dices, Activity, Users, Play,
-  RotateCcw, ChevronUp, ChevronDown, Zap,
-  BookOpen, Trash2, Copy, ShieldAlert, Sparkles
+  Dices, Users, Play,
+  RotateCcw, ChevronUp, ChevronDown,
+  Trash2, Copy, Sparkles
 } from 'lucide-react';
 import { useToastStore } from '@/components/ui/Toast';
 import Link from 'next/link';
@@ -36,6 +37,7 @@ interface Participant {
   cooldowns?: Record<number, number>; // tecnicaId -> reusableAtRound
   rasgos?: Array<{ id: number; nombre: string; usado: boolean }>;
   equipo?: Array<{ id: number; nombre: string }>;
+  stats_base?: Record<string, number>; // Added for temp characters
 }
 
 export default function CombatRoom({ roomId }: { roomId: string }) {
@@ -43,6 +45,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   const addToast = useToastStore(state => state.addToast);
   const searchParams = useSearchParams();
   const isEventMode = searchParams ? searchParams.get('mode') === 'event' : false;
+  const canUseCombatMusic = isEventMode;
 
   // Participant presence records
   const [participants, setParticipants] = useState<Record<string, Participant>>({});
@@ -98,6 +101,128 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCdDropdownOpen, setIsCdDropdownOpen] = useState(false);
   const [bgNumber, setBgNumber] = useState<number>(1);
+  const [isAdminOrNarrator, setIsAdminOrNarrator] = useState(false);
+  const [tempCharacters, setTempCharacters] = useState<Record<string, Participant>>({});
+  const tempCharactersRef = useRef(tempCharacters);
+  const [masterTraits, setMasterTraits] = useState<any[]>([]);
+  const [masterItems, setMasterItems] = useState<any[]>([]);
+  const [showCreateTempModal, setShowCreateTempModal] = useState(false);
+  const [rollTargetId, setRollTargetId] = useState<string>('self');
+
+  // NPC Form States
+  const [npcName, setNpcName] = useState('');
+  const [npcBando, setNpcBando] = useState<'A' | 'B'>('A');
+  const [npcVit, setNpcVit] = useState<number>(30);
+  const [npcStats, setNpcStats] = useState<Record<string, number>>({
+    NIN: 3, TAI: 3, GEN: 3, INT: 3, FUE: 3, AGI: 3, EST: 3, SM: 3
+  });
+  const [npcRasgos, setNpcRasgos] = useState<Array<{ id: number | string; nombre: string; usado: boolean }>>([]);
+  const [npcEquipo, setNpcEquipo] = useState<Array<{ id: number | string; nombre: string }>>([]);
+  const [traitSearch, setTraitSearch] = useState('');
+  const [itemSearch, setItemSearch] = useState('');
+  const [customTrait, setCustomTrait] = useState('');
+  const [customItem, setCustomItem] = useState('');
+
+  // Music Streaming States
+  const [activeMusicVideoId, setActiveMusicVideoId] = useState<string | null>(null);
+  const [musicVolume, setMusicVolume] = useState<number>(70);
+  const [musicUrlInput, setMusicUrlInput] = useState('');
+  const [musicIsPlaying, setMusicIsPlaying] = useState(true);
+  const ytPlayerRef = useRef<any>(null);
+  const activeMusicVideoIdRef = useRef<string | null>(null);
+  const musicIsPlayingRef = useRef(musicIsPlaying);
+  const playerTimeRef = useRef(0);
+
+  useEffect(() => { activeMusicVideoIdRef.current = activeMusicVideoId; }, [activeMusicVideoId]);
+  useEffect(() => { musicIsPlayingRef.current = musicIsPlaying; }, [musicIsPlaying]);
+
+  // Listen to postMessage from YouTube Player API to track current playback time
+  useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      try {
+        const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+        if (data.event === 'infoDelivery' && data.info && typeof data.info.currentTime === 'number') {
+          playerTimeRef.current = data.info.currentTime;
+        }
+      } catch (err) {
+        // Not a JSON message from YT Player
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  // Sync volume with YouTube player iframe via postMessage
+  useEffect(() => {
+    if (ytPlayerRef.current) {
+      try {
+        ytPlayerRef.current.contentWindow?.postMessage(
+          JSON.stringify({
+            event: 'command',
+            func: 'setVolume',
+            args: [musicVolume]
+          }),
+          '*'
+        );
+      } catch (err) {
+        console.error('Error syncing volume to YouTube player:', err);
+      }
+    }
+  }, [musicVolume, activeMusicVideoId]);
+
+
+  const handleTogglePlayMusic = () => {
+    if (!canUseCombatMusic) return;
+    const nextState = !musicIsPlaying;
+    setMusicIsPlaying(nextState);
+    if (ytPlayerRef.current) {
+      ytPlayerRef.current.contentWindow?.postMessage(
+        JSON.stringify({
+          event: 'command',
+          func: nextState ? 'playVideo' : 'pauseVideo',
+          args: []
+        }),
+        '*'
+      );
+    }
+    if (channelRef.current && activeCharacter) {
+      channelRef.current.send({
+        type: 'broadcast',
+        event: 'music_control',
+        payload: {
+          action: nextState ? 'play' : 'pause',
+          senderId: String(activeCharacter.id)
+        }
+      });
+    }
+  };
+
+  const handleSeekMusic = (deltaSeconds: number) => {
+    if (!canUseCombatMusic) return;
+    const newTime = Math.max(0, playerTimeRef.current + deltaSeconds);
+    playerTimeRef.current = newTime; // optimistic update
+    if (ytPlayerRef.current) {
+      ytPlayerRef.current.contentWindow?.postMessage(
+        JSON.stringify({
+          event: 'command',
+          func: 'seekTo',
+          args: [newTime, true]
+        }),
+        '*'
+      );
+    }
+    if (channelRef.current && activeCharacter) {
+      channelRef.current.send({
+        type: 'broadcast',
+        event: 'music_control',
+        payload: {
+          action: 'seek',
+          value: newTime,
+          senderId: String(activeCharacter.id)
+        }
+      });
+    }
+  };
 
   const supabase = createClient();
   const channelRef = useRef<any>(null);
@@ -107,6 +232,36 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     const randomNum = Math.floor(Math.random() * 12) + 1;
     setBgNumber(randomNum);
   }, []);
+
+  useEffect(() => {
+    async function loadUserRoles() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const profile = await ProfileService.getProfile(user.id);
+          const hasRole = profile?.roles?.some((r: string) => ['admin', 'moderador', 'narrador'].includes(r));
+          setIsAdminOrNarrator(!!hasRole);
+        }
+      } catch (err) {
+        console.error("Error loading user roles in CombatRoom:", err);
+      }
+    }
+    loadUserRoles();
+  }, [supabase]);
+
+  useEffect(() => {
+    if (isAdminOrNarrator && isEventMode) {
+      supabase.from('info_rasgos').select('*').eq('activo', true).order('nombre')
+        .then(({ data }) => {
+          if (data) setMasterTraits(data);
+        });
+
+      supabase.from('info_glosario').select('*').eq('categoria_id', 2).eq('activo', true).order('nombre_es')
+        .then(({ data }) => {
+          if (data) setMasterItems(data);
+        });
+    }
+  }, [isAdminOrNarrator, isEventMode, supabase]);
 
   useEffect(() => {
     fetchActiveCharacter();
@@ -171,6 +326,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   useEffect(() => { myCooldownsRef.current = myCooldowns; }, [myCooldowns]);
   useEffect(() => { logsRef.current = logs; }, [logs]);
   useEffect(() => { activeCharacterRef.current = activeCharacter; }, [activeCharacter]);
+  useEffect(() => { tempCharactersRef.current = tempCharacters; }, [tempCharacters]);
 
   // Supabase Presence and Broadcast Subscriptions
   useEffect(() => {
@@ -220,13 +376,20 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         const firstResponder = activeResponders[0];
 
         if (firstResponder === String(activeCharacter.id)) {
-          channel.httpSend('combat_state_update', {
-            turnQueue: turnQueueRef.current,
-            currentTurnIndex: currentTurnIndexRef.current,
-            rondaActual: rondaActualRef.current,
-            combatStarted: combatStartedRef.current,
-            logs: logsRef.current,
-            senderId: String(activeCharacter.id)
+          channel.send({
+            type: 'broadcast',
+            event: 'combat_state_update',
+            payload: {
+              turnQueue: turnQueueRef.current,
+              currentTurnIndex: currentTurnIndexRef.current,
+              rondaActual: rondaActualRef.current,
+              combatStarted: combatStartedRef.current,
+              logs: logsRef.current,
+              tempCharacters: tempCharactersRef.current,
+              activeMusicVideoId: activeMusicVideoIdRef.current,
+              musicIsPlaying: musicIsPlayingRef.current,
+              senderId: String(activeCharacter.id)
+            }
           });
         }
       })
@@ -239,12 +402,69 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
           if (payload.logs && payload.logs.length > 0) {
             setLogs(payload.logs);
           }
+          if (payload.tempCharacters !== undefined) {
+            setTempCharacters(payload.tempCharacters);
+          }
+          if (isEventMode && payload.activeMusicVideoId !== undefined) {
+            setActiveMusicVideoId(payload.activeMusicVideoId);
+          }
+          if (isEventMode && payload.musicIsPlaying !== undefined) {
+            setMusicIsPlaying(payload.musicIsPlaying);
+            setTimeout(() => {
+              if (ytPlayerRef.current) {
+                ytPlayerRef.current.contentWindow?.postMessage(
+                  JSON.stringify({
+                    event: 'command',
+                    func: payload.musicIsPlaying ? 'playVideo' : 'pauseVideo',
+                    args: []
+                  }),
+                  '*'
+                );
+              }
+            }, 800);
+          }
+        }
+      })
+      .on('broadcast', { event: 'temp_character_update' }, ({ payload }) => {
+        if (payload.senderId !== String(activeCharacterRef.current?.id)) {
+          setTempCharacters(payload.tempCharacters);
+        }
+      })
+      .on('broadcast', { event: 'music_update' }, ({ payload }) => {
+        if (isEventMode && payload.senderId !== String(activeCharacterRef.current?.id)) {
+          setActiveMusicVideoId(payload.videoId ?? null);
+          setMusicIsPlaying(true);
+        }
+      })
+      .on('broadcast', { event: 'music_control' }, ({ payload }) => {
+        if (isEventMode && payload.senderId !== String(activeCharacterRef.current?.id)) {
+          if (payload.action === 'play') {
+            setMusicIsPlaying(true);
+            ytPlayerRef.current?.contentWindow?.postMessage(
+              JSON.stringify({ event: 'command', func: 'playVideo', args: [] }),
+              '*'
+            );
+          } else if (payload.action === 'pause') {
+            setMusicIsPlaying(false);
+            ytPlayerRef.current?.contentWindow?.postMessage(
+              JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }),
+              '*'
+            );
+          } else if (payload.action === 'seek') {
+            ytPlayerRef.current?.contentWindow?.postMessage(
+              JSON.stringify({ event: 'command', func: 'seekTo', args: [payload.value, true] }),
+              '*'
+            );
+          }
         }
       })
       .on('broadcast', { event: 'combat_reset' }, () => {
         setMyBando(null);
         setMyIsInCombat(false);
         setMyCooldowns({});
+        setTempCharacters({});
+        setActiveMusicVideoId(null);
+        setMusicIsPlaying(true);
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
@@ -308,21 +528,54 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     setLogs(prev => [...prev, formatted].slice(-40));
 
     if (channelRef.current && activeCharacter) {
-      channelRef.current.httpSend('combat_log', {
-        message: formatted,
-        senderId: String(activeCharacter.id)
+      channelRef.current.send({
+        type: 'broadcast',
+        event: 'combat_log',
+        payload: {
+          message: formatted,
+          senderId: String(activeCharacter.id)
+        }
       });
     }
   };
 
-  const broadcastGlobalState = (queue: string[], index: number, round: number, started: boolean) => {
+  const broadcastGlobalState = (queue: string[], index: number, round: number, started: boolean, temps?: Record<string, Participant>) => {
     if (channelRef.current && activeCharacter) {
-      channelRef.current.httpSend('combat_state_update', {
-        turnQueue: queue,
-        currentTurnIndex: index,
-        rondaActual: round,
-        combatStarted: started,
-        senderId: String(activeCharacter.id)
+      channelRef.current.send({
+        type: 'broadcast',
+        event: 'combat_state_update',
+        payload: {
+          turnQueue: queue,
+          currentTurnIndex: index,
+          rondaActual: round,
+          combatStarted: started,
+          tempCharacters: temps ?? tempCharactersRef.current,
+          activeMusicVideoId: activeMusicVideoIdRef.current,
+          musicIsPlaying: musicIsPlayingRef.current,
+          senderId: String(activeCharacter.id)
+        }
+      });
+    }
+  };
+
+  const extractYoutubeId = (url: string): string | null => {
+    if (!url) return null;
+    // Standardize URL patterns
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+
+  const broadcastMusic = (videoId: string | null) => {
+    if (!canUseCombatMusic) return;
+    if (channelRef.current && activeCharacter) {
+      channelRef.current.send({
+        type: 'broadcast',
+        event: 'music_update',
+        payload: {
+          videoId,
+          senderId: String(activeCharacter.id)
+        }
       });
     }
   };
@@ -333,6 +586,51 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     setRondaActual(round);
     setCombatStarted(started);
     broadcastGlobalState(queue, index, round, started);
+  };
+
+  const broadcastTempCharacters = (temps: Record<string, Participant>) => {
+    if (channelRef.current && activeCharacter) {
+      channelRef.current.send({
+        type: 'broadcast',
+        event: 'temp_character_update',
+        payload: {
+          tempCharacters: temps,
+          senderId: String(activeCharacter.id)
+        }
+      });
+    }
+  };
+
+  const createTempCharacter = (tempChar: Participant) => {
+    const newTemps = { ...tempCharactersRef.current, [tempChar.user_id]: tempChar };
+    setTempCharacters(newTemps);
+    broadcastTempCharacters(newTemps);
+    addLog(`**[NPC]** **${tempChar.nombre}** ha sido añadido al **Bando ${tempChar.bando}** como personaje temporal.`);
+  };
+
+  const updateTempCharacter = (id: string, updates: Partial<Participant>) => {
+    const updated = { ...tempCharactersRef.current };
+    if (updated[id]) {
+      updated[id] = { ...updated[id], ...updates };
+      setTempCharacters(updated);
+      broadcastTempCharacters(updated);
+    }
+  };
+
+  const removeTempCharacter = (id: string) => {
+    const updated = { ...tempCharactersRef.current };
+    const name = updated[id]?.nombre || 'NPC';
+    delete updated[id];
+    // Remove from turn queue too
+    const newQueue = turnQueue.filter(qid => qid !== id);
+    let newIndex = currentTurnIndex;
+    if (newIndex >= newQueue.length && newQueue.length > 0) newIndex = 0;
+    setTempCharacters(updated);
+    broadcastTempCharacters(updated);
+    if (newQueue.length !== turnQueue.length) {
+      updateGlobalCombatState(newQueue, newIndex, rondaActual, newQueue.length > 0 ? combatStarted : false);
+    }
+    addLog(`**[NPC]** **${name}** ha sido eliminado de la sala de combate.`);
   };
 
   // Turn reordering or manual override
@@ -362,7 +660,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
       newIndex = 0;
     }
     updateGlobalCombatState(newQueue, newIndex, rondaActual, newQueue.length > 0 ? combatStarted : false);
-    addLog(`El participante **${participants[charId]?.nombre || 'Shinobi'}** ha sido retirado de los turnos.`);
+    addLog(`El participante **${participants[charId]?.nombre || tempCharactersRef.current[charId]?.nombre || 'Shinobi'}** ha sido retirado de los turnos.`);
   };
 
   const toggleJoinCombat = () => {
@@ -393,15 +691,17 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     }
     updateGlobalCombatState(turnQueue, 0, 1, true);
     addLog(`**¡EL COMBATE HA COMENZADO!** (Ronda 1)`);
-    const activePlayerName = participants[turnQueue[0]]?.nombre || 'Shinobi';
+    const activePlayerName = participants[turnQueue[0]]?.nombre || tempCharactersRef.current[turnQueue[0]]?.nombre || 'Shinobi';
     addLog(`Es el turno de **${activePlayerName}**.`);
   };
 
   const resetCombat = () => {
+    const newTemps: Record<string, Participant> = {};
     updateGlobalCombatState([], 0, 1, false);
     setMyBando(null);
     setMyIsInCombat(false);
     setMyCooldowns({});
+    setTempCharacters(newTemps);
     addLog(`El combate ha sido reiniciado por completo.`);
     if (channelRef.current && activeCharacter) {
       channelRef.current.httpSend('combat_reset', {
@@ -414,7 +714,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     if (turnQueue.length === 0) return;
 
     const activeCharId = turnQueue[currentTurnIndex];
-    const activeParticipantName = participants[activeCharId]?.nombre || 'Shinobi';
+    const activeParticipantName = participants[activeCharId]?.nombre || tempCharactersRef.current[activeCharId]?.nombre || 'Shinobi';
 
     let nextIndex = currentTurnIndex + 1;
     let nextRound = rondaActual;
@@ -434,7 +734,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     }
 
     const nextCharId = turnQueue[nextIndex];
-    const nextPlayerName = participants[nextCharId]?.nombre || 'Siguiente shinobi';
+    const nextPlayerName = participants[nextCharId]?.nombre || tempCharactersRef.current[nextCharId]?.nombre || 'Siguiente shinobi';
     addLog(`Es el turno de **${nextPlayerName}**.`);
   };
 
@@ -512,8 +812,16 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   };
 
   const rollStat = (statName: string) => {
-    if (!activeCharacter) return;
-    const statVal = Number(activeCharacter.stats_base[statName as keyof CharacterStats]) || 1;
+    let targetName = activeCharacter?.nombre_ninja || 'Ninja';
+    let statsSource = activeCharacter?.stats_base;
+
+    if (rollTargetId !== 'self' && tempCharacters[rollTargetId]) {
+      targetName = `[NPC] ${tempCharacters[rollTargetId].nombre}`;
+      statsSource = tempCharacters[rollTargetId].stats_base as any;
+    }
+
+    if (!statsSource) return;
+    const statVal = Number(statsSource[statName as keyof CharacterStats]) || 1;
     const baseMod = getStatModifier(statVal);
     const mod = baseMod + tempModifier;
 
@@ -526,7 +834,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     const roll2 = Math.floor(Math.random() * 20) + 1;
 
     let finalDice = roll1;
-    let formulaText = `**${activeCharacter.nombre_ninja}** tira **${statName}** (d20${modSign})${modExplanationText}`;
+    let formulaText = `**${targetName}** tira **${statName}** (d20${modSign})${modExplanationText}`;
 
     if (rollMode === 'advantage') {
       finalDice = Math.max(roll1, roll2);
@@ -735,9 +1043,10 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     );
   }
 
-  // Group participants by bando
-  const bandoAParticipants = Object.values(participants).filter(p => p.bando === 'A');
-  const bandoBParticipants = Object.values(participants).filter(p => p.bando === 'B');
+  // Group participants by bando (merge real participants + temp characters)
+  const allParticipantsMap = { ...participants, ...tempCharacters };
+  const bandoAParticipants = Object.values(allParticipantsMap).filter(p => p.bando === 'A');
+  const bandoBParticipants = Object.values(allParticipantsMap).filter(p => p.bando === 'B');
   const spectatorParticipants = Object.values(participants).filter(p => p.bando === null);
 
   const isMyTurn = combatStarted && turnQueue.length > 0 && turnQueue[currentTurnIndex] === String(activeCharacter.id);
@@ -795,6 +1104,16 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
               <Users className="w-4 h-4 text-oro" />
               <span>{Object.keys(participants).length} Conectados</span>
             </div>
+            {isEventMode && isAdminOrNarrator && (
+              <button
+                onClick={() => setShowCreateTempModal(true)}
+                className="ninja-btn-oro px-6 py-2.5 text-xs text-center flex items-center gap-2"
+                style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-rojo-sangre" />
+                Crear NPC Temporal
+              </button>
+            )}
             <button
               onClick={() => setShowRegisterForm(true)}
               className="ninja-btn-oro px-6 py-2.5 text-xs text-center"
@@ -811,6 +1130,155 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
             </Link>
           </div>
         </header>
+
+        {/* MUSIC AMBIENT PLAYER */}
+        {canUseCombatMusic && (activeMusicVideoId || isAdminOrNarrator) && (
+          <div className="ninja-card-oro p-3 flex flex-col sm:flex-row items-center gap-2 relative overflow-hidden">
+
+            {/* YouTube embed — styled to be invisible but active in DOM to avoid browser background playback block */}
+            {/* YouTube embed — styled to be invisible but active in DOM to avoid browser background playback block */}
+            {activeMusicVideoId && (
+              <div className="absolute w-[1px] h-[1px] opacity-0 pointer-events-none overflow-hidden" style={{ top: '-999px', left: '-999px' }}>
+                <iframe
+                  ref={ytPlayerRef}
+                  key={activeMusicVideoId}
+                  className="w-full h-full border-0"
+                  src={`https://www.youtube.com/embed/${activeMusicVideoId}?autoplay=1&loop=1&playlist=${activeMusicVideoId}&rel=0&enablejsapi=1`}
+                  allow="autoplay; encrypted-media"
+                  allowFullScreen
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  onLoad={() => {
+                    // Give YouTube API a brief moment to initialize before setting initial volume and play state
+                    setTimeout(() => {
+                      if (ytPlayerRef.current) {
+                        ytPlayerRef.current.contentWindow?.postMessage(
+                          JSON.stringify({
+                            event: 'command',
+                            func: 'setVolume',
+                            args: [musicVolume]
+                          }),
+                          '*'
+                        );
+                        ytPlayerRef.current.contentWindow?.postMessage(
+                          JSON.stringify({
+                            event: 'command',
+                            func: musicIsPlayingRef.current ? 'playVideo' : 'pauseVideo',
+                            args: []
+                          }),
+                          '*'
+                        );
+                      }
+                    }, 800);
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Status indicator */}
+            <div className="flex items-center gap-2 shrink-0">
+              {activeMusicVideoId ? (
+                <>
+                  <span className={`ml-2 w-2 h-2 rounded-full shrink-0 ${musicIsPlaying ? 'bg-emerald-400 animate-pulse' : 'bg-amber-500'}`} />
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${musicIsPlaying ? 'text-emerald-400' : 'text-amber-500'}`}>
+                    {musicIsPlaying ? '♫ Reproduciendo' : '♫ Pausado'}
+                  </span>
+                </>
+              ) : (
+                <span className="text-[10px] font-black text-oro/30 uppercase tracking-widest">♫ Sin música</span>
+              )}
+            </div>
+
+            {/* Narrator Playback Controls */}
+            {activeMusicVideoId && isAdminOrNarrator && (
+              <div className="flex items-center gap-1.5 border-l border-oro/10 pl-3 shrink-0">
+                <button
+                  onClick={() => handleSeekMusic(-10)}
+                  title="Retroceder 10s"
+                  className="h-7 px-2.5 bg-black/40 hover:bg-oro/10 text-oro border border-oro/20 rounded-sm transition-all inline-flex items-center justify-center shrink-0"
+                >
+                  <span className="text-[10px] font-black">⏪ -10s</span>
+                </button>
+                <button
+                  onClick={handleTogglePlayMusic}
+                  className="h-7 px-2.5 text-[10px] font-black bg-oro/10 hover:bg-oro/25 text-oro border border-oro/30 rounded-sm transition-all uppercase inline-flex items-center justify-center shrink-0"
+                >
+                  {musicIsPlaying ? "⏸ Pausar" : "▶ Play"}
+                </button>
+                <button
+                  onClick={() => handleSeekMusic(10)}
+                  title="Adelantar 10s"
+                  className="h-7 px-2.5 bg-black/40 hover:bg-oro/10 text-oro border border-oro/20 rounded-sm transition-all inline-flex items-center justify-center shrink-0"
+                >
+                  <span className="text-[10px] font-black">+10s ⏩</span>
+                </button>
+              </div>
+            )}
+
+            {/* Volume control */}
+            {activeMusicVideoId && (
+              <div className="flex items-center gap-2 sm:flex-none sm:w-[220px] w-full">
+                <span className="text-[10px] font-black text-oro/40 uppercase shrink-0">Vol.</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={musicVolume}
+                  onChange={(e) => setMusicVolume(Number(e.target.value))}
+
+                  className="flex-1 h-1.5 accent-oro cursor-pointer"
+                />
+                <span className="text-[10px] font-black text-oro/60 w-6 text-left shrink-0">{musicVolume}</span>
+              </div>
+            )}
+
+            {/* Admin/Narrator controls */}
+            {isAdminOrNarrator && (
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <input
+                  type="text"
+                  placeholder="Link de YouTube..."
+                  value={musicUrlInput}
+                  onChange={(e) => setMusicUrlInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const id = extractYoutubeId(musicUrlInput.trim());
+                      if (id) {
+                        setActiveMusicVideoId(id);
+                        broadcastMusic(id);
+                        setMusicUrlInput('');
+                      }
+                    }
+                  }}
+                  className="flex-1 bg-black/50 border border-oro/20 text-oro placeholder-oro/20 px-3 py-[5px] text-xs font-black outline-none focus:border-oro transition-all rounded-sm min-w-0"
+                />
+                <button
+                  onClick={() => {
+                    const id = extractYoutubeId(musicUrlInput.trim());
+                    if (id) {
+                      setActiveMusicVideoId(id);
+                      broadcastMusic(id);
+                      setMusicUrlInput('');
+                    }
+                  }}
+                  className="ninja-btn-oro px-3 py-[5px] text-xs font-black shrink-0"
+                >
+                  Poner
+                </button>
+                {activeMusicVideoId && (
+                  <button
+                    onClick={() => {
+                      setActiveMusicVideoId(null);
+                      broadcastMusic(null);
+                    }}
+                    className="ninja-btn-rojo px-3 py-[5px] text-xs shrink-0 border border-rojo-sangre/30 leading-none whitespace-nowrap"
+                  >
+                    Parar
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* THREE COLUMNS BATTLEGROUND */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0 lg:h-[720px]">
@@ -836,146 +1304,236 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-4 pr-1 mt-4 scrollbar-hide">
-              {bandoAParticipants.map(p => (
-                <div key={p.user_id} className="bg-black/40 border border-oro/5 p-4 rounded-sm hover:border-oro/20 transition-all">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 bg-black border border-oro/20 overflow-hidden flex items-center justify-center shrink-0">
-                      {p.url_img ? (
-                        <img src={p.url_img} alt="Avatar" className="w-full h-full object-cover object-top" />
-                      ) : (
-                        <span className="text-oro font-black text-xs">{p.nombre.charAt(0)}</span>
+              {bandoAParticipants.map(p => {
+                const isTemp = !!tempCharacters[p.user_id];
+                const canControlTemp = isTemp && isAdminOrNarrator;
+                return (
+                  <div key={p.user_id} className={`border p-4 rounded-sm hover:border-oro/20 transition-all ${isTemp ? 'bg-purple-950/20 border-purple-500/20' : 'bg-black/40 border-oro/5'}`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-black border border-oro/20 overflow-hidden flex items-center justify-center shrink-0">
+                          {p.url_img ? (
+                            <img src={p.url_img} alt="Avatar" className="w-full h-full object-cover object-top" />
+                          ) : (
+                            <span className="text-oro font-black text-xs">{p.nombre.charAt(0)}</span>
+                          )}
+                        </div>
+                        <div>
+                          <div className="font-black text-sm text-oro uppercase tracking-wider truncate max-w-[120px]">{p.nombre}</div>
+                          <div className="flex gap-1 flex-wrap">
+                            {p.isInCombat && (
+                              <span className="text-[9px] font-black uppercase text-emerald-400 bg-emerald-950/40 border border-emerald-500/20 px-1 rounded-sm">Combatiente</span>
+                            )}
+                            {isTemp && (
+                              <span className="text-[9px] font-black uppercase text-purple-400 bg-purple-950/40 border border-purple-500/20 px-1 rounded-sm">NPC</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      {canControlTemp && (
+                        <div className="flex items-center gap-1 ml-1 shrink-0">
+                          <button
+                            onClick={() => {
+                              const inQueue = turnQueue.includes(p.user_id);
+                              let newQueue;
+                              if (inQueue) {
+                                newQueue = turnQueue.filter(id => id !== p.user_id);
+                              } else {
+                                newQueue = [...turnQueue, p.user_id];
+                              }
+                              let newIndex = currentTurnIndex;
+                              if (newIndex >= newQueue.length && newQueue.length > 0) newIndex = 0;
+                              updateGlobalCombatState(newQueue, newIndex, rondaActual, newQueue.length > 0 ? combatStarted : false);
+                              addLog(`**[NPC] ${p.nombre}** ${inQueue ? 'sale del combate' : 'se une a los turnos'}.`);
+                            }}
+                            className={`p-1 rounded-sm transition-all ${turnQueue.includes(p.user_id) ? 'text-emerald-450 hover:text-emerald-300 hover:bg-emerald-950/20' : 'text-oro/40 hover:text-oro hover:bg-oro/10'}`}
+                            title={turnQueue.includes(p.user_id) ? "Retirar del orden de turnos" : "Añadir al orden de turnos"}
+                          >
+                            <Play className={`w-3.5 h-3.5 ${turnQueue.includes(p.user_id) ? 'fill-emerald-400' : ''}`} />
+                          </button>
+                          <button
+                            onClick={() => removeTempCharacter(p.user_id)}
+                            className="p-1 text-red-500/40 hover:text-red-400 hover:bg-red-950/20 rounded-sm transition-all"
+                            title="Eliminar NPC"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       )}
                     </div>
-                    <div>
-                      <div className="font-black text-sm text-oro uppercase tracking-wider truncate max-w-[150px]">{p.nombre}</div>
-                      {p.isInCombat && (
-                        <span className="text-[9px] font-black uppercase text-emerald-400 bg-emerald-950/40 border border-emerald-500/20 px-1 rounded-sm">Combatiente</span>
-                      )}
-                    </div>
-                  </div>
 
-                  {/* Stats bars */}
-                  <div className="space-y-2.5">
-                    <div>
-                      <div className="flex justify-between text-[10px] font-black mb-1">
-                        <span className="text-red-400">VIT</span>
-                        <span>{p.estado?.vit} / {p.estado?.maxVit}</span>
-                      </div>
-                      <div className="h-2 bg-black/60 border border-oro/5 rounded-full overflow-hidden">
-                        <div className="h-full bg-red-500 transition-all duration-300" style={{ width: `${(p.estado?.vit / p.estado?.maxVit) * 100}%` }} />
-                      </div>
-                    </div>
-                    {!isEventMode && (
+                    {/* Stats bars */}
+                    <div className="space-y-2.5">
                       <div>
                         <div className="flex justify-between text-[10px] font-black mb-1">
-                          <span className="text-blue-400">CH</span>
-                          <span>{p.estado?.ch} / {p.estado?.maxCh}</span>
+                          <span className="text-red-400">VIT</span>
+                          <span>{p.estado?.vit} / {p.estado?.maxVit}</span>
                         </div>
                         <div className="h-2 bg-black/60 border border-oro/5 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${(p.estado?.ch / p.estado?.maxCh) * 100}%` }} />
+                          <div className="h-full bg-red-500 transition-all duration-300" style={{ width: `${(p.estado?.vit / p.estado?.maxVit) * 100}%` }} />
                         </div>
                       </div>
-                    )}
-                    {/* Speed & Kawarimi */}
-                    <div className="flex justify-between items-center text-[10px] font-black pt-2 border-t border-oro/10 mt-1">
-                      <div className="flex items-center gap-1">
-                        <span className="text-amber-500 uppercase tracking-wider">VEL:</span>
-                        <span className="text-white">{p.estado?.vel ?? 0}</span>
-                      </div>
                       {!isEventMode && (
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-emerald-400 uppercase tracking-wider">KAWARIMI:</span>
-                          <div className="flex gap-1">
-                            {Array.from({ length: p.estado?.maxKawarimi || 1 }, (_, i) => i + 1).map((num) => {
-                              const isUsed = (p.estado?.kawarimi ?? 0) >= num;
-                              const isSelf = String(activeCharacter?.id) === p.user_id;
-                              return (
-                                <button
-                                  key={num}
-                                  disabled={!isSelf}
-                                  onClick={() => {
-                                    if (!isSelf || !localState) return;
-                                    const newKawarimi = localState.kawarimi === num ? num - 1 : num;
-                                    const updated = { ...localState, kawarimi: newKawarimi };
-                                    setLocalState(updated);
-                                    addLog(`**${activeCharacter.nombre_ninja}** marca Kawarimi ${newKawarimi >= num ? 'usado' : 'recuperado'} (${newKawarimi}/${localState.maxKawarimi}).`);
-                                  }}
-                                  className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center text-[8px] transition-all font-black ${isUsed
-                                    ? 'bg-red-500/20 border-red-500 text-red-500'
-                                    : 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30'
-                                    } ${isSelf ? 'cursor-pointer' : 'cursor-default'}`}
-                                  title={isSelf ? `Marcar Kawarimi ${num} como ${isUsed ? 'disponible' : 'usado'}` : `Kawarimi ${num}`}
-                                >
-                                  {isUsed ? '✕' : '✓'}
-                                </button>
-                              );
-                            })}
+                        <div>
+                          <div className="flex justify-between text-[10px] font-black mb-1">
+                            <span className="text-blue-400">CH</span>
+                            <span>{p.estado?.ch} / {p.estado?.maxCh}</span>
+                          </div>
+                          <div className="h-2 bg-black/60 border border-oro/5 rounded-full overflow-hidden">
+                            <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${(p.estado?.ch / p.estado?.maxCh) * 100}%` }} />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* NPC Inline Controls */}
+                      {canControlTemp && (
+                        <div className="flex gap-1 pt-1">
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Cant."
+                            id={`npc-vit-input-a-${p.user_id}`}
+                            className="w-14 bg-black/50 border border-purple-500/20 text-oro px-2 py-1 text-[9px] font-black outline-none focus:border-purple-400 transition-all rounded-sm"
+                          />
+                          <button
+                            onClick={() => {
+                              const el = document.getElementById(`npc-vit-input-a-${p.user_id}`) as HTMLInputElement;
+                              const val = parseInt(el?.value || '0');
+                              if (val > 0) {
+                                const newVit = Math.max(0, (p.estado?.vit ?? 0) - val);
+                                updateTempCharacter(p.user_id, { estado: { ...p.estado, vit: newVit } });
+                                addLog(`**[NPC] ${p.nombre}** recibe **${val}** de daño. VIT: ${newVit}/${p.estado?.maxVit}.`);
+                                el.value = '';
+                              }
+                            }}
+                            className="flex-1 py-1 text-[9px] font-black bg-red-950/40 border border-red-500/20 text-red-400 hover:bg-red-950/60 transition-all rounded-sm"
+                          >Daño</button>
+                          <button
+                            onClick={() => {
+                              const el = document.getElementById(`npc-vit-input-a-${p.user_id}`) as HTMLInputElement;
+                              const val = parseInt(el?.value || '0');
+                              if (val > 0) {
+                                const newVit = Math.min(p.estado?.maxVit ?? 0, (p.estado?.vit ?? 0) + val);
+                                updateTempCharacter(p.user_id, { estado: { ...p.estado, vit: newVit } });
+                                addLog(`**[NPC] ${p.nombre}** se cura **+${val}** VIT. VIT: ${newVit}/${p.estado?.maxVit}.`);
+                                el.value = '';
+                              }
+                            }}
+                            className="flex-1 py-1 text-[9px] font-black bg-emerald-950/40 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-950/60 transition-all rounded-sm"
+                          >Sanar</button>
+                        </div>
+                      )}
+
+                      {/* Speed & Kawarimi */}
+                      {!isTemp && (
+                        <div className="flex justify-between items-center text-[10px] font-black pt-2 border-t border-oro/10 mt-1">
+                          <div className="flex items-center gap-1">
+                            <span className="text-amber-500 uppercase tracking-wider">VEL:</span>
+                            <span className="text-white">{p.estado?.vel ?? 0}</span>
+                          </div>
+                          {!isEventMode && (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-emerald-400 uppercase tracking-wider">KAWARIMI:</span>
+                              <div className="flex gap-1">
+                                {Array.from({ length: p.estado?.maxKawarimi || 1 }, (_, i) => i + 1).map((num) => {
+                                  const isUsed = (p.estado?.kawarimi ?? 0) >= num;
+                                  const isSelf = String(activeCharacter?.id) === p.user_id;
+                                  return (
+                                    <button
+                                      key={num}
+                                      disabled={!isSelf}
+                                      onClick={() => {
+                                        if (!isSelf || !localState) return;
+                                        const newKawarimi = localState.kawarimi === num ? num - 1 : num;
+                                        const updated = { ...localState, kawarimi: newKawarimi };
+                                        setLocalState(updated);
+                                        addLog(`**${activeCharacter.nombre_ninja}** marca Kawarimi ${newKawarimi >= num ? 'usado' : 'recuperado'} (${newKawarimi}/${localState.maxKawarimi}).`);
+                                      }}
+                                      className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center text-[8px] transition-all font-black ${isUsed
+                                        ? 'bg-red-500/20 border-red-500 text-red-500'
+                                        : 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30'
+                                        } ${isSelf ? 'cursor-pointer' : 'cursor-default'}`}
+                                      title={isSelf ? `Marcar Kawarimi ${num} como ${isUsed ? 'disponible' : 'usado'}` : `Kawarimi ${num}`}
+                                    >
+                                      {isUsed ? '✕' : '✓'}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {isEventMode && (
+                        <div className="space-y-2.5 pt-2 border-t border-oro/10 mt-1 animate-in fade-in duration-300">
+                          {/* Traits (Rasgos) */}
+                          <div className="space-y-1">
+                            <span className="text-[9px] text-oro/40 uppercase font-black block tracking-wider">Rasgos:</span>
+                            {p.rasgos && p.rasgos.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {p.rasgos.map((r: any) => {
+                                  const isSelf = String(activeCharacter?.id) === p.user_id;
+                                  const canToggle = isSelf || canControlTemp;
+                                  return (
+                                    <button
+                                      key={r.id}
+                                      disabled={!canToggle}
+                                      onClick={() => {
+                                        if (!canToggle) return;
+                                        if (isTemp) {
+                                          const newRasgos = (p.rasgos || []).map((rr: any) => rr.id === r.id ? { ...rr, usado: !rr.usado } : rr);
+                                          updateTempCharacter(p.user_id, { rasgos: newRasgos });
+                                          addLog(`**[NPC] ${p.nombre}** marca el rasgo **${r.nombre}** como ${!r.usado ? 'usado' : 'disponible'}.`);
+                                        } else if (localState) {
+                                          const currentUsed = localState.usedTraits || {};
+                                          const updatedUsed = { ...currentUsed, [r.id]: !currentUsed[r.id] };
+                                          const updated = { ...localState, usedTraits: updatedUsed };
+                                          setLocalState(updated);
+                                          addLog(`**${activeCharacter.nombre_ninja}** marca el rasgo **${r.nombre}** como ${updatedUsed[r.id] ? 'usado' : 'disponible'}.`);
+                                        }
+                                      }}
+                                      className={`px-1.5 py-0.5 border text-[9px] font-black transition-all flex items-center gap-1 rounded-sm ${r.usado
+                                        ? 'bg-red-500/10 border-red-500/30 text-red-400 line-through'
+                                        : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
+                                        } ${canToggle ? 'cursor-pointer' : 'cursor-default'}`}
+                                      title={canToggle ? `Haga clic para cambiar estado de ${r.nombre}` : r.nombre}
+                                    >
+                                      <span>{r.nombre}</span>
+                                      <span>{r.usado ? '✕' : '✓'}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <span className="text-[9px] text-oro/20 italic block">Sin rasgos</span>
+                            )}
+                          </div>
+
+                          {/* Equipment (Equipo) */}
+                          <div className="space-y-1">
+                            <span className="text-[9px] text-oro/40 uppercase font-black block tracking-wider">Equipo Equipado:</span>
+                            {p.equipo && p.equipo.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {p.equipo.map((eq: any) => (
+                                  <span
+                                    key={eq.id}
+                                    className="px-1.5 py-0.5 bg-black/40 border border-oro/10 text-[9px] font-black text-oro/70 rounded-sm"
+                                  >
+                                    {eq.nombre}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-[9px] text-oro/20 italic block">Sin equipo equipado</span>
+                            )}
                           </div>
                         </div>
                       )}
                     </div>
-
-                    {isEventMode && (
-                      <div className="space-y-2.5 pt-2 border-t border-oro/10 mt-1 animate-in fade-in duration-300">
-                        {/* Traits (Rasgos) */}
-                        <div className="space-y-1">
-                          <span className="text-[9px] text-oro/40 uppercase font-black block tracking-wider">Rasgos:</span>
-                          {p.rasgos && p.rasgos.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {p.rasgos.map((r: any) => {
-                                const isSelf = String(activeCharacter?.id) === p.user_id;
-                                return (
-                                  <button
-                                    key={r.id}
-                                    disabled={!isSelf}
-                                    onClick={() => {
-                                      if (!isSelf || !localState) return;
-                                      const currentUsed = localState.usedTraits || {};
-                                      const updatedUsed = { ...currentUsed, [r.id]: !currentUsed[r.id] };
-                                      const updated = { ...localState, usedTraits: updatedUsed };
-                                      setLocalState(updated);
-                                      addLog(`**${activeCharacter.nombre_ninja}** marca el rasgo **${r.nombre}** como ${updatedUsed[r.id] ? 'usado' : 'disponible'}.`);
-                                    }}
-                                    className={`px-1.5 py-0.5 border text-[9px] font-black transition-all flex items-center gap-1 rounded-sm ${r.usado
-                                        ? 'bg-red-500/10 border-red-500/30 text-red-400 line-through'
-                                        : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
-                                      } ${isSelf ? 'cursor-pointer' : 'cursor-default'}`}
-                                    title={isSelf ? `Haga clic para cambiar estado de ${r.nombre}` : r.nombre}
-                                  >
-                                    <span>{r.nombre}</span>
-                                    <span>{r.usado ? '✕' : '✓'}</span>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          ) : (
-                            <span className="text-[9px] text-oro/20 italic block">Sin rasgos</span>
-                          )}
-                        </div>
-
-                        {/* Equipment (Equipo) */}
-                        <div className="space-y-1">
-                          <span className="text-[9px] text-oro/40 uppercase font-black block tracking-wider">Equipo Equipado:</span>
-                          {p.equipo && p.equipo.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {p.equipo.map((eq: any) => (
-                                <span
-                                  key={eq.id}
-                                  className="px-1.5 py-0.5 bg-black/40 border border-oro/10 text-[9px] font-black text-oro/70 rounded-sm"
-                                >
-                                  {eq.nombre}
-                                </span>
-                              ))}
-                            </div>
-                          ) : (
-                            <span className="text-[9px] text-oro/20 italic block">Sin equipo equipado</span>
-                          )}
-                        </div>
-                      </div>
-                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
               {bandoAParticipants.length === 0 && (
                 <div className="text-center py-10 text-oro/20 text-xs font-black uppercase tracking-wider">Vacío</div>
               )}
@@ -1036,7 +1594,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
               {/* Turn Queue List */}
               <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1">
                 {turnQueue.map((charId, idx) => {
-                  const part = participants[charId];
+                  const part = allParticipantsMap[charId];
                   const isActive = combatStarted && idx === currentTurnIndex;
                   if (!part) return null;
 
@@ -1152,146 +1710,223 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-4 pr-1 mt-4 scrollbar-hide">
-              {bandoBParticipants.map(p => (
-                <div key={p.user_id} className="bg-black/40 border border-oro/5 p-4 rounded-sm hover:border-oro/20 transition-all">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 bg-black border border-oro/20 overflow-hidden flex items-center justify-center shrink-0">
-                      {p.url_img ? (
-                        <img src={p.url_img} alt="Avatar" className="w-full h-full object-cover object-top" />
-                      ) : (
-                        <span className="text-oro font-black text-xs">{p.nombre.charAt(0)}</span>
+              {bandoBParticipants.map(p => {
+                const isTemp = !!tempCharacters[p.user_id];
+                const canControlTemp = isTemp && isAdminOrNarrator;
+                return (
+                  <div key={p.user_id} className={`border p-4 rounded-sm hover:border-oro/20 transition-all ${isTemp ? 'bg-purple-950/20 border-purple-500/20' : 'bg-black/40 border-oro/5'}`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-black border border-oro/20 overflow-hidden flex items-center justify-center shrink-0">
+                          {p.url_img ? (
+                            <img src={p.url_img} alt="Avatar" className="w-full h-full object-cover object-top" />
+                          ) : (
+                            <span className="text-oro font-black text-xs">{p.nombre.charAt(0)}</span>
+                          )}
+                        </div>
+                        <div>
+                          <div className="font-black text-sm text-oro uppercase tracking-wider truncate max-w-[120px]">{p.nombre}</div>
+                          <div className="flex gap-1 flex-wrap">
+                            {p.isInCombat && (
+                              <span className="text-[9px] font-black uppercase text-red-400 bg-red-950/40 border border-red-500/20 px-1 rounded-sm">Combatiente</span>
+                            )}
+                            {isTemp && (
+                              <span className="text-[9px] font-black uppercase text-purple-400 bg-purple-950/40 border border-purple-500/20 px-1 rounded-sm">NPC</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      {canControlTemp && (
+                        <div className="flex items-center gap-1 ml-1 shrink-0">
+                          <button
+                            onClick={() => {
+                              const inQueue = turnQueue.includes(p.user_id);
+                              let newQueue;
+                              if (inQueue) {
+                                newQueue = turnQueue.filter(id => id !== p.user_id);
+                              } else {
+                                newQueue = [...turnQueue, p.user_id];
+                              }
+                              let newIndex = currentTurnIndex;
+                              if (newIndex >= newQueue.length && newQueue.length > 0) newIndex = 0;
+                              updateGlobalCombatState(newQueue, newIndex, rondaActual, newQueue.length > 0 ? combatStarted : false);
+                              addLog(`**[NPC] ${p.nombre}** ${inQueue ? 'sale del combate' : 'se une a los turnos'}.`);
+                            }}
+                            className={`p-1 rounded-sm transition-all ${turnQueue.includes(p.user_id) ? 'text-emerald-450 hover:text-emerald-300 hover:bg-emerald-950/20' : 'text-oro/40 hover:text-oro hover:bg-oro/10'}`}
+                            title={turnQueue.includes(p.user_id) ? "Retirar del orden de turnos" : "Añadir al orden de turnos"}
+                          >
+                            <Play className={`w-3.5 h-3.5 ${turnQueue.includes(p.user_id) ? 'fill-emerald-400' : ''}`} />
+                          </button>
+                          <button
+                            onClick={() => removeTempCharacter(p.user_id)}
+                            className="p-1 text-red-500/40 hover:text-red-400 hover:bg-red-950/20 rounded-sm transition-all"
+                            title="Eliminar NPC"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       )}
                     </div>
-                    <div>
-                      <div className="font-black text-sm text-oro uppercase tracking-wider truncate max-w-[150px]">{p.nombre}</div>
-                      {p.isInCombat && (
-                        <span className="text-[9px] font-black uppercase text-red-400 bg-red-950/40 border border-red-500/20 px-1 rounded-sm">Combatiente</span>
-                      )}
-                    </div>
-                  </div>
 
-                  {/* Stats bars */}
-                  <div className="space-y-2.5">
-                    <div>
-                      <div className="flex justify-between text-[10px] font-black mb-1">
-                        <span className="text-red-400">VIT</span>
-                        <span>{p.estado?.vit} / {p.estado?.maxVit}</span>
-                      </div>
-                      <div className="h-2 bg-black/60 border border-oro/5 rounded-full overflow-hidden">
-                        <div className="h-full bg-red-500 transition-all duration-300" style={{ width: `${(p.estado?.vit / p.estado?.maxVit) * 100}%` }} />
-                      </div>
-                    </div>
-                    {!isEventMode && (
+                    {/* Stats bars */}
+                    <div className="space-y-2.5">
                       <div>
                         <div className="flex justify-between text-[10px] font-black mb-1">
-                          <span className="text-blue-400">CH</span>
-                          <span>{p.estado?.ch} / {p.estado?.maxCh}</span>
+                          <span className="text-red-400">VIT</span>
+                          <span>{p.estado?.vit} / {p.estado?.maxVit}</span>
                         </div>
                         <div className="h-2 bg-black/60 border border-oro/5 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${(p.estado?.ch / p.estado?.maxCh) * 100}%` }} />
+                          <div className="h-full bg-red-500 transition-all duration-300" style={{ width: `${(p.estado?.vit / p.estado?.maxVit) * 100}%` }} />
                         </div>
                       </div>
-                    )}
-                    {/* Speed & Kawarimi */}
-                    <div className="flex justify-between items-center text-[10px] font-black pt-2 border-t border-oro/10 mt-1">
-                      <div className="flex items-center gap-1">
-                        <span className="text-amber-500 uppercase tracking-wider">VEL:</span>
-                        <span className="text-white">{p.estado?.vel ?? 0}</span>
-                      </div>
                       {!isEventMode && (
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-emerald-400 uppercase tracking-wider">KAWARIMI:</span>
-                          <div className="flex gap-1">
-                            {Array.from({ length: p.estado?.maxKawarimi || 1 }, (_, i) => i + 1).map((num) => {
-                              const isUsed = (p.estado?.kawarimi ?? 0) >= num;
-                              const isSelf = String(activeCharacter?.id) === p.user_id;
-                              return (
-                                <button
-                                  key={num}
-                                  disabled={!isSelf}
-                                  onClick={() => {
-                                    if (!isSelf || !localState) return;
-                                    const newKawarimi = localState.kawarimi === num ? num - 1 : num;
-                                    const updated = { ...localState, kawarimi: newKawarimi };
-                                    setLocalState(updated);
-                                    addLog(`**${activeCharacter.nombre_ninja}** marca Kawarimi ${newKawarimi >= num ? 'usado' : 'recuperado'} (${newKawarimi}/${localState.maxKawarimi}).`);
-                                  }}
-                                  className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center text-[8px] transition-all font-black ${isUsed
-                                    ? 'bg-red-500/20 border-red-500 text-red-500'
-                                    : 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30'
-                                    } ${isSelf ? 'cursor-pointer' : 'cursor-default'}`}
-                                  title={isSelf ? `Marcar Kawarimi ${num} como ${isUsed ? 'disponible' : 'usado'}` : `Kawarimi ${num}`}
-                                >
-                                  {isUsed ? '✕' : '✓'}
-                                </button>
-                              );
-                            })}
+                        <div>
+                          <div className="flex justify-between text-[10px] font-black mb-1">
+                            <span className="text-blue-400">CH</span>
+                            <span>{p.estado?.ch} / {p.estado?.maxCh}</span>
+                          </div>
+                          <div className="h-2 bg-black/60 border border-oro/5 rounded-full overflow-hidden">
+                            <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${(p.estado?.ch / p.estado?.maxCh) * 100}%` }} />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* NPC Inline Controls */}
+                      {canControlTemp && (
+                        <div className="flex gap-1 pt-1">
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Cant."
+                            id={`npc-vit-input-b-${p.user_id}`}
+                            className="w-14 bg-black/50 border border-purple-500/20 text-oro px-2 py-1 text-[9px] font-black outline-none focus:border-purple-400 transition-all rounded-sm"
+                          />
+                          <button
+                            onClick={() => {
+                              const el = document.getElementById(`npc-vit-input-b-${p.user_id}`) as HTMLInputElement;
+                              const val = parseInt(el?.value || '0');
+                              if (val > 0) {
+                                const newVit = Math.max(0, (p.estado?.vit ?? 0) - val);
+                                updateTempCharacter(p.user_id, { estado: { ...p.estado, vit: newVit } });
+                                addLog(`**[NPC] ${p.nombre}** recibe **${val}** de daño. VIT: ${newVit}/${p.estado?.maxVit}.`);
+                                el.value = '';
+                              }
+                            }}
+                            className="flex-1 py-1 text-[9px] font-black bg-red-950/40 border border-red-500/20 text-red-400 hover:bg-red-950/60 transition-all rounded-sm"
+                          >Daño</button>
+                          <button
+                            onClick={() => {
+                              const el = document.getElementById(`npc-vit-input-b-${p.user_id}`) as HTMLInputElement;
+                              const val = parseInt(el?.value || '0');
+                              if (val > 0) {
+                                const newVit = Math.min(p.estado?.maxVit ?? 0, (p.estado?.vit ?? 0) + val);
+                                updateTempCharacter(p.user_id, { estado: { ...p.estado, vit: newVit } });
+                                addLog(`**[NPC] ${p.nombre}** se cura **+${val}** VIT. VIT: ${newVit}/${p.estado?.maxVit}.`);
+                                el.value = '';
+                              }
+                            }}
+                            className="flex-1 py-1 text-[9px] font-black bg-emerald-950/40 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-950/60 transition-all rounded-sm"
+                          >Sanar</button>
+                        </div>
+                      )}
+
+                      {!isTemp && (
+                        <div className="flex justify-between items-center text-[10px] font-black pt-2 border-t border-oro/10 mt-1">
+                          <div className="flex items-center gap-1">
+                            <span className="text-amber-500 uppercase tracking-wider">VEL:</span>
+                            <span className="text-white">{p.estado?.vel ?? 0}</span>
+                          </div>
+                          {!isEventMode && (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-emerald-400 uppercase tracking-wider">KAWARIMI:</span>
+                              <div className="flex gap-1">
+                                {Array.from({ length: p.estado?.maxKawarimi || 1 }, (_, i) => i + 1).map((num) => {
+                                  const isUsed = (p.estado?.kawarimi ?? 0) >= num;
+                                  const isSelf = String(activeCharacter?.id) === p.user_id;
+                                  return (
+                                    <button
+                                      key={num}
+                                      disabled={!isSelf}
+                                      onClick={() => {
+                                        if (!isSelf || !localState) return;
+                                        const newKawarimi = localState.kawarimi === num ? num - 1 : num;
+                                        const updated = { ...localState, kawarimi: newKawarimi };
+                                        setLocalState(updated);
+                                        addLog(`**${activeCharacter.nombre_ninja}** marca Kawarimi ${newKawarimi >= num ? 'usado' : 'recuperado'} (${newKawarimi}/${localState.maxKawarimi}).`);
+                                      }}
+                                      className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center text-[8px] transition-all font-black ${isUsed
+                                        ? 'bg-red-500/20 border-red-500 text-red-500'
+                                        : 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30'
+                                        } ${isSelf ? 'cursor-pointer' : 'cursor-default'}`}
+                                      title={isSelf ? `Marcar Kawarimi ${num} como ${isUsed ? 'disponible' : 'usado'}` : `Kawarimi ${num}`}
+                                    >
+                                      {isUsed ? '✕' : '✓'}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {isEventMode && (
+                        <div className="space-y-2.5 pt-2 border-t border-oro/10 mt-1 animate-in fade-in duration-300">
+                          <div className="space-y-1">
+                            <span className="text-[9px] text-oro/40 uppercase font-black block tracking-wider">Rasgos:</span>
+                            {p.rasgos && p.rasgos.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {p.rasgos.map((r: any) => {
+                                  const isSelf = String(activeCharacter?.id) === p.user_id;
+                                  const canToggle = isSelf || canControlTemp;
+                                  return (
+                                    <button
+                                      key={r.id}
+                                      disabled={!canToggle}
+                                      onClick={() => {
+                                        if (!canToggle) return;
+                                        if (isTemp) {
+                                          const newRasgos = (p.rasgos || []).map((rr: any) => rr.id === r.id ? { ...rr, usado: !rr.usado } : rr);
+                                          updateTempCharacter(p.user_id, { rasgos: newRasgos });
+                                          addLog(`**[NPC] ${p.nombre}** marca el rasgo **${r.nombre}** como ${!r.usado ? 'usado' : 'disponible'}.`);
+                                        } else if (localState) {
+                                          const currentUsed = localState.usedTraits || {};
+                                          const updatedUsed = { ...currentUsed, [r.id]: !currentUsed[r.id] };
+                                          setLocalState({ ...localState, usedTraits: updatedUsed });
+                                          addLog(`**${activeCharacter.nombre_ninja}** marca el rasgo **${r.nombre}** como ${updatedUsed[r.id] ? 'usado' : 'disponible'}.`);
+                                        }
+                                      }}
+                                      className={`px-1.5 py-0.5 border text-[9px] font-black transition-all flex items-center gap-1 rounded-sm ${r.usado ? 'bg-red-500/10 border-red-500/30 text-red-400 line-through' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'} ${canToggle ? 'cursor-pointer' : 'cursor-default'}`}
+                                      title={canToggle ? `Haga clic para cambiar estado de ${r.nombre}` : r.nombre}
+                                    >
+                                      <span>{r.nombre}</span>
+                                      <span>{r.usado ? '✕' : '✓'}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <span className="text-[9px] text-oro/20 italic block">Sin rasgos</span>
+                            )}
+                          </div>
+                          <div className="space-y-1">
+                            <span className="text-[9px] text-oro/40 uppercase font-black block tracking-wider">Equipo Equipado:</span>
+                            {p.equipo && p.equipo.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {p.equipo.map((eq: any) => (
+                                  <span key={eq.id} className="px-1.5 py-0.5 bg-black/40 border border-oro/10 text-[9px] font-black text-oro/70 rounded-sm">{eq.nombre}</span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-[9px] text-oro/20 italic block">Sin equipo equipado</span>
+                            )}
                           </div>
                         </div>
                       )}
                     </div>
-
-                    {isEventMode && (
-                      <div className="space-y-2.5 pt-2 border-t border-oro/10 mt-1 animate-in fade-in duration-300">
-                        {/* Traits (Rasgos) */}
-                        <div className="space-y-1">
-                          <span className="text-[9px] text-oro/40 uppercase font-black block tracking-wider">Rasgos:</span>
-                          {p.rasgos && p.rasgos.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {p.rasgos.map((r: any) => {
-                                const isSelf = String(activeCharacter?.id) === p.user_id;
-                                return (
-                                  <button
-                                    key={r.id}
-                                    disabled={!isSelf}
-                                    onClick={() => {
-                                      if (!isSelf || !localState) return;
-                                      const currentUsed = localState.usedTraits || {};
-                                      const updatedUsed = { ...currentUsed, [r.id]: !currentUsed[r.id] };
-                                      const updated = { ...localState, usedTraits: updatedUsed };
-                                      setLocalState(updated);
-                                      addLog(`**${activeCharacter.nombre_ninja}** marca el rasgo **${r.nombre}** como ${updatedUsed[r.id] ? 'usado' : 'disponible'}.`);
-                                    }}
-                                    className={`px-1.5 py-0.5 border text-[9px] font-black transition-all flex items-center gap-1 rounded-sm ${r.usado
-                                        ? 'bg-red-500/10 border-red-500/30 text-red-400 line-through'
-                                        : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
-                                      } ${isSelf ? 'cursor-pointer' : 'cursor-default'}`}
-                                    title={isSelf ? `Haga clic para cambiar estado de ${r.nombre}` : r.nombre}
-                                  >
-                                    <span>{r.nombre}</span>
-                                    <span>{r.usado ? '✕' : '✓'}</span>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          ) : (
-                            <span className="text-[9px] text-oro/20 italic block">Sin rasgos</span>
-                          )}
-                        </div>
-
-                        {/* Equipment (Equipo) */}
-                        <div className="space-y-1">
-                          <span className="text-[9px] text-oro/40 uppercase font-black block tracking-wider">Equipo Equipado:</span>
-                          {p.equipo && p.equipo.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {p.equipo.map((eq: any) => (
-                                <span
-                                  key={eq.id}
-                                  className="px-1.5 py-0.5 bg-black/40 border border-oro/10 text-[9px] font-black text-oro/70 rounded-sm"
-                                >
-                                  {eq.nombre}
-                                </span>
-                              ))}
-                            </div>
-                          ) : (
-                            <span className="text-[9px] text-oro/20 italic block">Sin equipo equipado</span>
-                          )}
-                        </div>
-                      </div>
-                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
               {bandoBParticipants.length === 0 && (
                 <div className="text-center py-10 text-oro/20 text-xs font-black uppercase tracking-wider">Vacío</div>
               )}
@@ -1484,8 +2119,8 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                       <button
                         onClick={() => setRollMode('normal')}
                         className={`flex-1 py-1.5 px-3 text-[10px] font-black uppercase tracking-widest transition-all border ${rollMode === 'normal'
-                            ? 'bg-oro text-black border-oro shadow-md shadow-oro/5'
-                            : 'border-oro/10 text-oro/60 bg-black/20'
+                          ? 'bg-oro text-black border-oro shadow-md shadow-oro/5'
+                          : 'border-oro/10 text-oro/60 bg-black/20'
                           }`}
                         style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
                       >
@@ -1494,8 +2129,8 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                       <button
                         onClick={() => setRollMode('advantage')}
                         className={`flex-1 py-1.5 px-3 text-[10px] font-black uppercase tracking-widest transition-all border ${rollMode === 'advantage'
-                            ? 'bg-oro text-black border-oro shadow-md shadow-oro/5'
-                            : 'border-oro/10 text-oro/60 bg-black/20'
+                          ? 'bg-oro text-black border-oro shadow-md shadow-oro/5'
+                          : 'border-oro/10 text-oro/60 bg-black/20'
                           }`}
                         style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
                       >
@@ -1504,8 +2139,8 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                       <button
                         onClick={() => setRollMode('disadvantage')}
                         className={`flex-1 py-1.5 px-3 text-[10px] font-black uppercase tracking-widest transition-all border ${rollMode === 'disadvantage'
-                            ? 'bg-oro text-black border-oro shadow-md shadow-oro/5'
-                            : 'border-oro/10 text-oro/60 bg-black/20'
+                          ? 'bg-oro text-black border-oro shadow-md shadow-oro/5'
+                          : 'border-oro/10 text-oro/60 bg-black/20'
                           }`}
                         style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
                       >
@@ -1540,11 +2175,30 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                       </div>
                     </div>
 
+                    {isAdminOrNarrator && Object.keys(tempCharacters).length > 0 && (
+                      <div className="pt-3 border-t border-oro/10 flex items-center justify-between gap-3 animate-in fade-in duration-300">
+                        <span className="text-[10px] font-black text-oro/40 uppercase tracking-wider whitespace-nowrap">Tirar Como:</span>
+                        <select
+                          value={rollTargetId}
+                          onChange={(e) => setRollTargetId(e.target.value)}
+                          className="bg-black/50 border border-oro/20 text-oro text-xs font-black px-2 py-1 outline-none focus:border-oro transition-all rounded-sm max-w-[150px]"
+                        >
+                          <option value="self">Mi Ninja ({activeCharacter.nombre_ninja})</option>
+                          {Object.values(tempCharacters).map(tc => (
+                            <option key={tc.user_id} value={tc.user_id}>{tc.nombre}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
                     <div className="pt-3 border-t border-oro/10 space-y-2 animate-in fade-in duration-300">
                       <span className="text-[10px] font-black text-oro/40 block uppercase ml-1">Tiradas de Atributos (d20)</span>
                       <div className="grid grid-cols-4 gap-1.5">
                         {['NIN', 'TAI', 'GEN', 'INT', 'FUE', 'AGI', 'EST', 'SM'].map((s) => {
-                          const val = activeCharacter.stats_base[s as keyof CharacterStats] || 1;
+                          let val = activeCharacter.stats_base[s as keyof CharacterStats] || 1;
+                          if (rollTargetId !== 'self' && tempCharacters[rollTargetId]) {
+                            val = tempCharacters[rollTargetId].stats_base?.[s] || 1;
+                          }
                           const mod = getStatModifier(val);
                           const modSign = mod >= 0 ? `+${mod}` : `${mod}`;
                           return (
@@ -1775,6 +2429,305 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
 
           </div>
         </section>
+
+        {/* CREATE NPC MODAL */}
+        {showCreateTempModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto animate-in fade-in duration-300">
+            <div
+              className="w-full max-w-2xl bg-[#0d0e12] border border-oro/30 shadow-2xl p-6 md:p-8 relative max-h-[90vh] overflow-y-auto"
+              style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}
+            >
+              <h2 className="ninja-title text-xl font-black text-oro uppercase tracking-[0.2em] mb-6 pb-3 border-b border-oro/20 flex items-center gap-2">
+                CREAR NPC TEMPORAL
+              </h2>
+
+              <div className="space-y-6">
+                {/* Basic Details: Name, Bando, VIT */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-[10px] font-black text-oro/60 block mb-1 uppercase tracking-wider">Nombre del NPC *</label>
+                    <input
+                      type="text"
+                      placeholder="Ej. Invocación de Serpiente"
+                      value={npcName}
+                      onChange={(e) => setNpcName(e.target.value)}
+                      className="w-full bg-black/40 border border-oro/20 text-white px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all rounded-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-oro/60 block mb-1 uppercase tracking-wider">Bando *</label>
+                    <select
+                      value={npcBando}
+                      onChange={(e) => setNpcBando(e.target.value as 'A' | 'B')}
+                      className="w-full bg-black/40 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all rounded-sm"
+                    >
+                      <option value="A">Bando A</option>
+                      <option value="B">Bando B</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-oro/60 block mb-1 uppercase tracking-wider">Vitalidad (VIT) *</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={npcVit}
+                      onChange={(e) => setNpcVit(Math.max(1, Number(e.target.value) || 0))}
+                      className="w-full bg-black/40 border border-oro/20 text-white px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all rounded-sm"
+                    />
+                  </div>
+                </div>
+
+                {/* Stats Base Grid */}
+                <div>
+                  <h3 className="text-[11px] font-black text-oro/40 uppercase tracking-widest mb-3 border-b border-oro/5 pb-1">Atributos Base (1-10)</h3>
+                  <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                    {['NIN', 'TAI', 'GEN', 'INT', 'FUE', 'AGI', 'EST', 'SM'].map((s) => (
+                      <div key={s} className="bg-black/30 border border-oro/10 p-2 flex flex-col items-center justify-center rounded-sm">
+                        <label className="text-[9px] font-black text-white/60 mb-1">{s}</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="10"
+                          value={npcStats[s] || 3}
+                          onChange={(e) => {
+                            const val = Math.max(1, Math.min(10, Number(e.target.value) || 1));
+                            setNpcStats(prev => ({ ...prev, [s]: val }));
+                          }}
+                          className="w-10 bg-transparent text-center text-oro text-xs font-black outline-none border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Traits Selector */}
+                <div>
+                  <h3 className="text-[11px] font-black text-oro/40 uppercase tracking-widest mb-3 border-b border-oro/5 pb-1">Rasgos</h3>
+
+                  {/* Selected traits list */}
+                  {npcRasgos.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-3 p-2 bg-black/20 border border-oro/5 rounded-sm">
+                      {npcRasgos.map(r => (
+                        <button
+                          key={r.id}
+                          onClick={() => setNpcRasgos(prev => prev.filter(t => t.id !== r.id))}
+                          className="px-2 py-0.5 bg-purple-950/40 border border-purple-500/30 text-purple-300 text-[10px] font-black flex items-center gap-1 hover:border-red-500/50 hover:text-red-400 rounded-sm transition-all"
+                          title="Click para quitar rasgo"
+                        >
+                          <span>{r.nombre}</span>
+                          <span className="text-[9px] font-mono">✕</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Search and custom input */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Buscar rasgo oficial..."
+                        value={traitSearch}
+                        onChange={(e) => setTraitSearch(e.target.value)}
+                        className="w-full bg-black/40 border border-oro/20 text-white px-3 py-1.5 text-xs outline-none focus:border-oro transition-all rounded-sm"
+                      />
+                      {traitSearch.trim() !== '' && (
+                        <div className="absolute z-10 left-0 right-0 mt-1 bg-black/95 border border-oro/20 max-h-40 overflow-y-auto rounded-sm shadow-xl custom-scrollbar">
+                          {masterTraits
+                            .filter(t => t.nombre.toLowerCase().includes(traitSearch.toLowerCase()) && !npcRasgos.some(nr => nr.id === t.id))
+                            .slice(0, 10)
+                            .map(t => (
+                              <div
+                                key={t.id}
+                                onClick={() => {
+                                  setNpcRasgos(prev => [...prev, { id: t.id, nombre: t.nombre, usado: false }]);
+                                  setTraitSearch('');
+                                }}
+                                className="px-3 py-2 text-xs font-black text-white/80 hover:bg-oro/10 hover:text-oro cursor-pointer border-b border-oro/5 last:border-0"
+                              >
+                                {t.nombre}
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Crear rasgo personalizado..."
+                        value={customTrait}
+                        onChange={(e) => setCustomTrait(e.target.value)}
+                        className="flex-1 bg-black/40 border border-oro/20 text-white px-3 py-1.5 text-xs outline-none focus:border-oro transition-all rounded-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (customTrait.trim()) {
+                            setNpcRasgos(prev => [...prev, { id: `custom_${Date.now()}_${Math.random()}`, nombre: customTrait.trim(), usado: false }]);
+                            setCustomTrait('');
+                          }
+                        }}
+                        className="ninja-btn-oro px-3 py-1.5 text-xs font-black rounded-sm"
+                      >
+                        Añadir
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Items/Equipment Selector */}
+                <div>
+                  <h3 className="text-[11px] font-black text-oro/40 uppercase tracking-widest mb-3 border-b border-oro/5 pb-1">Equipamiento</h3>
+
+                  {/* Selected items list */}
+                  {npcEquipo.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-3 p-2 bg-black/20 border border-oro/5 rounded-sm">
+                      {npcEquipo.map(eq => (
+                        <button
+                          key={eq.id}
+                          onClick={() => setNpcEquipo(prev => prev.filter(item => item.id !== eq.id))}
+                          className="px-2 py-0.5 bg-amber-950/40 border border-amber-500/30 text-amber-300 text-[10px] font-black flex items-center gap-1 hover:border-red-500/50 hover:text-red-400 rounded-sm transition-all"
+                          title="Click para quitar objeto"
+                        >
+                          <span>{eq.nombre}</span>
+                          <span className="text-[9px] font-mono">✕</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Search and custom input */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Buscar objeto oficial..."
+                        value={itemSearch}
+                        onChange={(e) => setItemSearch(e.target.value)}
+                        className="w-full bg-black/40 border border-oro/20 text-white px-3 py-1.5 text-xs outline-none focus:border-oro transition-all rounded-sm"
+                      />
+                      {itemSearch.trim() !== '' && (
+                        <div className="absolute z-10 left-0 right-0 mt-1 bg-black/95 border border-oro/20 max-h-40 overflow-y-auto rounded-sm shadow-xl custom-scrollbar">
+                          {masterItems
+                            .filter(i => i.nombre_es.toLowerCase().includes(itemSearch.toLowerCase()) && !npcEquipo.some(ne => ne.id === i.id))
+                            .slice(0, 10)
+                            .map(i => (
+                              <div
+                                key={i.id}
+                                onClick={() => {
+                                  setNpcEquipo(prev => [...prev, { id: i.id, nombre: i.nombre_es }]);
+                                  setItemSearch('');
+                                }}
+                                className="px-3 py-2 text-xs font-black text-white/80 hover:bg-oro/10 hover:text-oro cursor-pointer border-b border-oro/5 last:border-0"
+                              >
+                                {i.nombre_es}
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Crear objeto personalizado..."
+                        value={customItem}
+                        onChange={(e) => setCustomItem(e.target.value)}
+                        className="flex-1 bg-black/40 border border-oro/20 text-white px-3 py-1.5 text-xs outline-none focus:border-oro transition-all rounded-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (customItem.trim()) {
+                            setNpcEquipo(prev => [...prev, { id: `custom_${Date.now()}_${Math.random()}`, nombre: customItem.trim() }]);
+                            setCustomItem('');
+                          }
+                        }}
+                        className="ninja-btn-oro px-3 py-1.5 text-xs font-black rounded-sm"
+                      >
+                        Añadir
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Form Footer Action Buttons */}
+                <div className="flex gap-3 pt-4 border-t border-oro/15 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCreateTempModal(false);
+                      // Reset form values
+                      setNpcName('');
+                      setNpcBando('A');
+                      setNpcVit(30);
+                      setNpcStats({ NIN: 3, TAI: 3, GEN: 3, INT: 3, FUE: 3, AGI: 3, EST: 3, SM: 3 });
+                      setNpcRasgos([]);
+                      setNpcEquipo([]);
+                      setTraitSearch('');
+                      setItemSearch('');
+                      setCustomTrait('');
+                      setCustomItem('');
+                    }}
+                    className="ninja-btn-ghost px-5 py-2 text-xs"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!npcName.trim()) {
+                        addToast("Debe ingresar un nombre para el NPC.", "error");
+                        return;
+                      }
+                      const id = `temp_${Date.now()}`;
+                      const tempChar: Participant = {
+                        user_id: id,
+                        nombre: npcName.trim(),
+                        url_img: undefined,
+                        estado: {
+                          vit: npcVit,
+                          maxVit: npcVit,
+                          ch: 0,
+                          maxCh: 0,
+                          vel: 0,
+                          kawarimi: 0,
+                          maxKawarimi: 0
+                        },
+                        bando: npcBando,
+                        isInCombat: true,
+                        rasgos: npcRasgos as any,
+                        equipo: npcEquipo as any,
+                        stats_base: npcStats
+                      };
+                      createTempCharacter(tempChar);
+                      setShowCreateTempModal(false);
+
+                      // Reset values
+                      setNpcName('');
+                      setNpcBando('A');
+                      setNpcVit(30);
+                      setNpcStats({ NIN: 3, TAI: 3, GEN: 3, INT: 3, FUE: 3, AGI: 3, EST: 3, SM: 3 });
+                      setNpcRasgos([]);
+                      setNpcEquipo([]);
+                      setTraitSearch('');
+                      setItemSearch('');
+                      setCustomTrait('');
+                      setCustomItem('');
+                    }}
+                    className="ninja-btn-oro px-6 py-2 text-xs flex items-center gap-1.5"
+                  >
+                    Crear NPC
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
