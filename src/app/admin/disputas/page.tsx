@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
 import RegistroCard from '@/components/registros/RegistroCard';
 import { createClient } from '@/utils/supabase/client';
+import { ProfileService } from '@/services/supabase/profile.service';
 
 export default function AdminDisputePage() {
   const [disputes, setDisputes] = useState<NotificacionAdmin[]>([]);
@@ -22,6 +23,20 @@ export default function AdminDisputePage() {
 
   const fetchDisputes = async () => {
     try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        window.location.href = '/';
+        return;
+      }
+      const profile = await ProfileService.getProfile(user.id);
+      const userRoles = profile?.roles || [];
+      const hasAccess = userRoles.includes('admin') || userRoles.includes('moderador');
+      if (!hasAccess) {
+        window.location.href = '/admin';
+        return;
+      }
+
       const data = await AdminService.getDisputes();
       setDisputes(data as any);
     } catch (err) {

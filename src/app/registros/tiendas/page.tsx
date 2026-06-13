@@ -18,6 +18,8 @@ import { PaginationPageInput } from '@/components/ui/PaginationPageInput';
 import { PaginationContainer } from '@/components/ui/PaginationContainer';
 import { useRouter } from 'next/navigation';
 
+import { ProfileService } from '@/services/supabase/profile.service';
+
 export default function TiendasPage() {
   const router = useRouter();
   const { addToast } = useToastStore();
@@ -66,8 +68,9 @@ export default function TiendasPage() {
     try {
       const { data: { user } } = await AuthService.getUser();
       if (user) {
-        const { data: profile } = await createClient().from('profiles').select('role').eq('id', user.id).single();
-        setIsAdmin(profile?.role === 'admin');
+        const profile = await ProfileService.getProfile(user.id);
+        const userRoles = profile?.roles || [];
+        setIsAdmin(userRoles.includes('admin') || userRoles.includes('moderador'));
       }
     } catch (err) {
       console.error(err);

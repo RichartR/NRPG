@@ -6,10 +6,13 @@ export const ProfileService = {
     const supabase = client || createClient();
     const { data, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select('*, roles:reg_roles(rol_id)')
       .eq('id', userId)
       .single();
     if (error) throw error;
+    if (data) {
+      data.roles = data.roles ? data.roles.map((r: any) => r.rol_id) : [];
+    }
     return data;
   },
 
@@ -136,6 +139,7 @@ export const ProfileService = {
       .from('profiles')
       .select(`
         *,
+        roles:reg_roles(rol_id),
         active_character:reg_characters!profiles_active_char_id_fkey(
           id,
           nombre_ninja,
@@ -146,7 +150,10 @@ export const ProfileService = {
       `)
       .order('username', { ascending: true });
     if (error) throw error;
-    return data;
+    return (data || []).map((u: any) => ({
+      ...u,
+      roles: u.roles ? u.roles.map((r: any) => r.rol_id) : []
+    }));
   },
 
   async banUser(userId: string, reason: string, bannedUntil: string | null, client?: any) {
@@ -217,5 +224,50 @@ export const ProfileService = {
         .eq('ip', profile.last_ip);
       if (ipError) throw ipError;
     }
+  },
+
+  async getAllRoles(client?: any) {
+    const supabase = client || createClient();
+    const { data, error } = await supabase
+      .from('info_roles')
+      .select('*')
+      .order('nombre', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async assignRole(userId: string, roleId: string, client?: any) {
+    const supabase = client || createClient();
+    const { error } = await supabase
+      .from('reg_roles')
+      .insert([{ user_id: userId, rol_id: roleId }]);
+    
+    // Si estamos asignando el rol de administrador, también sincronizar la columna profiles.role heredada por compatibilidad
+    if (roleId === 'admin') {
+      await supabase
+        .from('profiles')
+        .update({ role: 'admin' })
+        .eq('id', userId);
+    }
+    
+    if (error) throw error;
+  },
+
+  async removeRole(userId: string, roleId: string, client?: any) {
+    const supabase = client || createClient();
+    const { error } = await supabase
+      .from('reg_roles')
+      .delete()
+      .match({ user_id: userId, rol_id: roleId });
+
+    // Si estamos removiendo el rol de administrador, actualizar la columna profiles.role heredada a 'user' por compatibilidad
+    if (roleId === 'admin') {
+      await supabase
+        .from('profiles')
+        .update({ role: 'user' })
+        .eq('id', userId);
+    }
+
+    if (error) throw error;
   }
 };

@@ -44,7 +44,8 @@ export default async function NoticiasPage() {
 
   const user = userRes.data?.user;
   const profile = user ? await ProfileService.getProfile(user.id, supabase) : null;
-  const isAdmin = profile?.role === 'admin';
+  const userRoles = profile?.roles || [];
+  const isAdmin = userRoles.includes('admin') || userRoles.includes('moderador') || userRoles.includes('narrador');
 
   return (
     <NoticiasClientView

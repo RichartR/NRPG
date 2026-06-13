@@ -22,7 +22,7 @@ export default async function MundoNinjaSelectionPage() {
       ? Number(maxCuposRaw)
       : 30;
 
-  const isAdmin = profile?.role === 'admin';
+  const isAdmin = profile?.roles?.includes('admin') || false;
 
   // 4. Load admin-only villages (all active and inactive) if user is admin
   let adminAldeas: any[] = [];

@@ -14,6 +14,7 @@ import { useToastStore } from '@/components/ui/Toast';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import { useMasterStore } from '@/store/useMasterStore';
 import { StatsLogic } from '@/domain/character/logic';
+import { ProfileService } from '@/services/supabase/profile.service';
 
 export default function TiendaDetallePage() {
   const { id } = useParams();
@@ -98,8 +99,8 @@ export default function TiendaDetallePage() {
     try {
       const { data: { user } } = await AuthService.getUser();
       if (user) {
-        const { data: profile } = await createClient().from('profiles').select('role').eq('id', user.id).single();
-        setIsAdmin(profile?.role === 'admin');
+        const profile = await ProfileService.getProfile(user.id);
+        setIsAdmin(profile?.roles?.includes('admin') || profile?.roles?.includes('moderador') || false);
       }
     } catch (err) {
       console.error(err);

@@ -157,6 +157,49 @@ export async function POST(request: Request) {
     // USAR CLIENTE ADMIN PARA BYPASSEAR RLS EN TABLAS RESTRINGIDAS
     const adminClient = createAdminClient();
 
+    // Sincronización de rol de Discord por Aldea / Renegado y Jugador al crear (en segundo plano)
+    (async () => {
+      try {
+        const { data: userProfile } = await adminClient
+          .from('profiles')
+          .select('discord_id')
+          .eq('id', user.id)
+          .single();
+
+        if (userProfile?.discord_id) {
+          const { getDiscordGuildId, assignDiscordRole } = await import('@/lib/discord');
+          const guildId = await getDiscordGuildId(adminClient);
+
+          if (guildId) {
+            // 1. Asignar rol de aldea o renegado
+            let roleIdToAssign = null;
+            if (data.aldea_id) {
+              const { data: aldeaInfo } = await adminClient
+                .from('info_aldeas')
+                .select('id_rol_discord')
+                .eq('id', data.aldea_id)
+                .single();
+              roleIdToAssign = aldeaInfo?.id_rol_discord;
+            } else {
+              roleIdToAssign = await MasterServerService.getConfiguracion(adminClient, 'discord_renegado_role_id');
+            }
+
+            if (roleIdToAssign) {
+              await assignDiscordRole(guildId, userProfile.discord_id, roleIdToAssign);
+            }
+
+            // 2. Asignar rol de jugador activo
+            const jugadorRoleId = await MasterServerService.getConfiguracion(adminClient, 'discord_jugador_role_id');
+            if (jugadorRoleId) {
+              await assignDiscordRole(guildId, userProfile.discord_id, jugadorRoleId);
+            }
+          }
+        }
+      } catch (discordRoleError) {
+        console.error('Error al asignar roles de Discord al crear personaje (background):', discordRoleError);
+      }
+    })();
+
     // 3, 4, 5. Guardar Ramas, Inventario y Técnicas en paralelo
     await Promise.all([
       CharacterServerService.insertRamas(adminClient, characterId, data.personajes_ramas || []),

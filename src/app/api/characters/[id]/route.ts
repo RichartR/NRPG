@@ -4,6 +4,7 @@ import { sendDiscordMessage, editDiscordMessage, deleteDiscordMessage, getDiscor
 import { CharacterServerService } from '@/services/supabase/character.server.service';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { ProfileService } from '@/services/supabase/profile.service';
 
 export async function PATCH(
   request: Request,
@@ -26,14 +27,10 @@ export async function PATCH(
     const isOwner = character.user_id === user.id;
     
     // Obtener rol del perfil en la base de datos
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    const profile = await ProfileService.getProfile(user.id, supabase);
 
     // @ts-ignore - roles might be in user_metadata or profiles
-    const isAdmin = profile?.role === 'admin' || user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin';
+    const isAdmin = profile?.roles?.includes('admin') || profile?.roles?.includes('moderador') || user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin';
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: 'No tienes permiso para editar este personaje' }, { status: 403 });
@@ -477,6 +474,62 @@ export async function PATCH(
     // 3. Aplicar actualización
     if (Object.keys(updateData).length > 0) {
       await CharacterServerService.updateCharacterFields(supabase, characterId, updateData);
+
+      // Sincronizar roles de Discord si cambió de aldea/organización (en segundo plano)
+      if (updateData.hasOwnProperty('aldea_id') && Number(updateData.aldea_id) !== Number(character.aldea_id)) {
+        (async () => {
+          try {
+            const { data: userProfile } = await adminClient
+              .from('profiles')
+              .select('discord_id')
+              .eq('id', character.user_id)
+              .single();
+
+            if (userProfile?.discord_id) {
+              let oldRoleId = null;
+              let newRoleId = null;
+
+              // Obtener rol antiguo
+              if (character.aldea_id) {
+                const { data: oldAldea } = await adminClient
+                  .from('info_aldeas')
+                  .select('id_rol_discord')
+                  .eq('id', character.aldea_id)
+                  .single();
+                oldRoleId = oldAldea?.id_rol_discord;
+              } else {
+                oldRoleId = await MasterServerService.getConfiguracion(adminClient, 'discord_renegado_role_id');
+              }
+
+              // Obtener rol nuevo
+              if (updateData.aldea_id) {
+                const { data: newAldea } = await adminClient
+                  .from('info_aldeas')
+                  .select('id_rol_discord')
+                  .eq('id', updateData.aldea_id)
+                  .single();
+                newRoleId = newAldea?.id_rol_discord;
+              } else {
+                newRoleId = await MasterServerService.getConfiguracion(adminClient, 'discord_renegado_role_id');
+              }
+
+              const { getDiscordGuildId, assignDiscordRole, removeDiscordRole } = await import('@/lib/discord');
+              const guildId = await getDiscordGuildId(adminClient);
+
+              if (guildId) {
+                if (oldRoleId && oldRoleId !== newRoleId) {
+                  await removeDiscordRole(guildId, userProfile.discord_id, oldRoleId).catch(err => console.error('Error al quitar rol antiguo:', err));
+                }
+                if (newRoleId && oldRoleId !== newRoleId) {
+                  await assignDiscordRole(guildId, userProfile.discord_id, newRoleId).catch(err => console.error('Error al dar nuevo rol:', err));
+                }
+              }
+            }
+          } catch (discordRoleError) {
+            console.error('Error al actualizar roles de Discord tras cambio de aldea (background):', discordRoleError);
+          }
+        })();
+      }
     }
 
     return NextResponse.json({ success: true });
@@ -507,14 +560,10 @@ export async function DELETE(
     const isOwner = character.user_id === user.id;
     
     // Obtener rol del perfil en la base de datos
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    const profile = await ProfileService.getProfile(user.id, supabase);
 
     // @ts-ignore
-    const isAdmin = profile?.role === 'admin' || user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin';
+    const isAdmin = profile?.roles?.includes('admin') || profile?.roles?.includes('moderador') || user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin';
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: 'No tienes permiso para borrar este personaje' }, { status: 403 });
@@ -525,6 +574,63 @@ export async function DELETE(
     }
 
     const adminClient = createAdminClient();
+
+    // Sincronizar Discord: Retirar roles de aldea/renegado y jugador al archivar/eliminar personaje (en segundo plano)
+    (async () => {
+      try {
+        const { data: userProfile } = await adminClient
+          .from('profiles')
+          .select('discord_id')
+          .eq('id', character.user_id)
+          .single();
+
+        if (userProfile?.discord_id) {
+          const { getDiscordGuildId, removeDiscordRole } = await import('@/lib/discord');
+          const guildId = await getDiscordGuildId(adminClient);
+
+          if (guildId) {
+            // 1. Quitar rol de aldea si tenía
+            if (character.aldea_id) {
+              const { data: aldeaInfo } = await adminClient
+                .from('info_aldeas')
+                .select('id_rol_discord')
+                .eq('id', character.aldea_id)
+                .single();
+              if (aldeaInfo?.id_rol_discord) {
+                await removeDiscordRole(guildId, userProfile.discord_id, aldeaInfo.id_rol_discord)
+                  .catch(e => console.error('Error al quitar rol de aldea tras archivar/eliminar:', e));
+              }
+            }
+            // 2. Quitar rol de renegado por si acaso
+            const renegadoRoleId = await MasterServerService.getConfiguracion(adminClient, 'discord_renegado_role_id');
+            if (renegadoRoleId) {
+              await removeDiscordRole(guildId, userProfile.discord_id, renegadoRoleId)
+                .catch(e => console.error('Error al quitar rol de renegado tras archivar/eliminar:', e));
+            }
+
+            // 3. Quitar rol de jugador activo si ya no le quedan otros personajes activos
+            const { count } = await adminClient
+              .from('reg_characters')
+              .select('*', { count: 'exact', head: true })
+              .eq('user_id', character.user_id)
+              .eq('activo', true)
+              .eq('eliminado_voluntario', false)
+              .neq('id', character.id);
+
+            if (count === 0 || count === null) {
+              const jugadorRoleId = await MasterServerService.getConfiguracion(adminClient, 'discord_jugador_role_id');
+              if (jugadorRoleId) {
+                await removeDiscordRole(guildId, userProfile.discord_id, jugadorRoleId)
+                  .catch(e => console.error('Error al quitar rol de jugador tras archivar/eliminar:', e));
+              }
+            }
+          }
+        }
+      } catch (roleErr) {
+        console.error('Error al sincronizar roles de Discord en eliminación/archivado (background):', roleErr);
+      }
+    })();
+
     const channelId = await getDiscordChannel(supabase);
 
     if (force) {

@@ -1,4 +1,18 @@
-// Vercel Trigger: Force new deployment with type fixes
+export interface RolInfo {
+  id: string;
+  nombre: string;
+  id_rol_discord?: string | null;
+  created_at?: string;
+}
+
+export interface UserRol {
+  id: number;
+  user_id: string;
+  rol_id: string;
+  created_at?: string;
+  info_roles?: RolInfo;
+}
+
 export interface Profile {
   id: string;
   username: string;
@@ -7,6 +21,7 @@ export interface Profile {
   url_avatar?: string;
   url_img?: string | null;
   last_ip?: string | null;
+  roles?: string[]; // Roles del usuario (ej. ['moderador', 'narrador'])
 }
 
 export interface Aldea {
@@ -18,9 +33,10 @@ export interface Aldea {
   abreviatura?: string;
   url_imagen?: string;
   url_icono?: string;
-  descripcion?: string;
   activo: boolean;
   categoria_id?: number | null;
+  id_rol_discord?: string | null;
+  descripcion?: string;
 }
 
 export interface Elemento {
@@ -282,6 +298,7 @@ export interface NotificacionAdmin {
   mensaje: string;
   estado: 'pendiente' | 'resuelto';
   resolucion?: 'aceptada' | 'rechazada';
+  tipo?: string;
   created_at: string;
   // Joins
   registro?: Registro;

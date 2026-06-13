@@ -1,8 +1,20 @@
 import Link from 'next/link';
 import { Settings, BookOpen, Map, GitBranch, Sword, ChevronRight, ScrollText, ShieldAlert, ShoppingBag, Shield } from 'lucide-react';
+import { createClient } from '@/utils/supabase/server';
+import { ProfileService } from '@/services/supabase/profile.service';
+import { redirect } from 'next/navigation';
 
-export default function AdminPage() {
-  const modules = [
+export default async function AdminPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/');
+
+  const profile = await ProfileService.getProfile(user.id, supabase);
+  const userRoles = profile?.roles || [];
+  const isAdmin = userRoles.includes('admin');
+  const isModerator = userRoles.includes('moderador');
+
+  const allModules = [
     {
       title: 'Sistemas',
       desc: 'Manuales, reglas base y sistemas generales del RPG.',
@@ -122,6 +134,13 @@ export default function AdminPage() {
     }
   ];
 
+  const modules = allModules.filter(mod => {
+    if (mod.href === '/admin/usuarios' || mod.href === '/admin/fichas') {
+      return isAdmin;
+    }
+    return isAdmin || isModerator;
+  });
+
   return (
     <div className="min-h-screen">
       <div className="max-w-[1750px]">
@@ -138,35 +157,43 @@ export default function AdminPage() {
           </p>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 xl:gap-8">
-          {modules.map((mod) => (
-            <Link
-              key={mod.href}
-              href={mod.href}
-              className="group relative p-10 ninja-card-oro hover:scale-[1.02] transition-all duration-500 flex flex-col justify-between"
-            >
-              {/* Sutil Glow de fondo */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-oro/[0.02] rounded-full blur-3xl group-hover:bg-oro/[0.05] transition-all" />
+        {modules.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 xl:gap-8">
+            {modules.map((mod) => (
+              <Link
+                key={mod.href}
+                href={mod.href}
+                className="group relative p-10 ninja-card-oro hover:scale-[1.02] transition-all duration-500 flex flex-col justify-between"
+              >
+                {/* Sutil Glow de fondo */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-oro/[0.02] rounded-full blur-3xl group-hover:bg-oro/[0.05] transition-all" />
 
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-12">
-                  <div className="w-10 h-10 bg-oro/[0.03] border border-oro/5 flex items-center justify-center group-hover:bg-oro group-hover:text-black transition-all duration-500">
-                    <mod.icon className="w-5 h-5 text-oro/40 group-hover:text-inherit" />
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-12">
+                    <div className="w-10 h-10 bg-oro/[0.03] border border-oro/5 flex items-center justify-center group-hover:bg-oro group-hover:text-black transition-all duration-500">
+                      <mod.icon className="w-5 h-5 text-oro/40 group-hover:text-inherit" />
+                    </div>
+                    <div className="text-caption font-black text-oro/20 uppercase tracking-[0.3em] group-hover:text-oro/40 transition-colors">CONFIG</div>
                   </div>
-                  <div className="text-caption font-black text-oro/20 uppercase tracking-[0.3em] group-hover:text-oro/40 transition-colors">CONFIG</div>
+
+                  <h3 className="text-2xl xl:text-3xl font-black text-oro uppercase tracking-widest mb-4 group-hover:translate-x-1 transition-transform">{mod.title}</h3>
+                  <p className="text-gris-texto/40 text-sm xl:text-base leading-relaxed mb-10 max-w-[250px]">{mod.desc}</p>
                 </div>
 
-                <h3 className="text-2xl xl:text-3xl font-black text-oro uppercase tracking-widest mb-4 group-hover:translate-x-1 transition-transform">{mod.title}</h3>
-                <p className="text-gris-texto/40 text-sm xl:text-base leading-relaxed mb-10 max-w-[250px]">{mod.desc}</p>
-              </div>
-
-              <div className="flex items-center gap-4 text-caption font-black text-oro/20 uppercase tracking-[0.3em] group-hover:text-oro transition-all mt-auto pt-6 border-t border-oro/[0.02]">
-                <span>ACCEDER AL MÓDULO</span>
-                <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </Link>
-          ))}
-        </div>
+                <div className="flex items-center gap-4 text-caption font-black text-oro/20 uppercase tracking-[0.3em] group-hover:text-oro transition-all mt-auto pt-6 border-t border-oro/[0.02]">
+                  <span>ACCEDER AL MÓDULO</span>
+                  <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="py-24 text-center ninja-card-oro opacity-60">
+            <ShieldAlert className="w-16 h-16 text-oro/20 mx-auto mb-4" />
+            <p className="text-oro/40 font-black uppercase tracking-[0.3em] text-sm">NO TIENES MÓDULOS DE ADMINISTRACIÓN ASIGNADOS</p>
+            <p className="text-[11px] font-bold text-oro/30 uppercase mt-2">Tus funciones (como narrar eventos o liderar tu aldea) se gestionan desde el mundo exterior o las secciones respectivas.</p>
+          </div>
+        )}
       </div>
     </div>
   );

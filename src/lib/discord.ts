@@ -86,3 +86,70 @@ export async function getDiscordChannel(supabase: any): Promise<string | null> {
   const { MasterServerService } = await import('@/services/supabase/master.server.service');
   return MasterServerService.getConfiguracion(supabase, 'discord_history_appearance_channel_id');
 }
+
+export async function getDiscordGuildId(supabase: any): Promise<string | null> {
+  try {
+    const { MasterServerService } = await import('@/services/supabase/master.server.service');
+    const guildIdConfig = await MasterServerService.getConfiguracion(supabase, 'discord_guild_id');
+    if (guildIdConfig && guildIdConfig.trim() !== '') {
+      return guildIdConfig;
+    }
+  } catch (configErr) {
+    console.error('Error fetching discord_guild_id config:', configErr);
+  }
+
+  const channelId = await getDiscordChannel(supabase);
+  if (!channelId || !BOT_TOKEN) return null;
+
+  try {
+    const response = await fetch(`${DISCORD_API_URL}/channels/${channelId}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bot ${BOT_TOKEN}`,
+      },
+    });
+    if (!response.ok) return null;
+    const channelData = await response.json();
+    return channelData.guild_id || null;
+  } catch (err) {
+    console.error('Error fetching guild ID from channel:', err);
+    return null;
+  }
+}
+
+export async function assignDiscordRole(guildId: string, userId: string, roleId: string) {
+  if (!BOT_TOKEN) throw new Error('DISCORD_BOT_TOKEN no configurado');
+
+  const response = await fetch(`${DISCORD_API_URL}/guilds/${guildId}/members/${userId}/roles/${roleId}`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bot ${BOT_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(`Error de Discord (PUT role): ${JSON.stringify(error)}`);
+  }
+
+  return true;
+}
+
+export async function removeDiscordRole(guildId: string, userId: string, roleId: string) {
+  if (!BOT_TOKEN) throw new Error('DISCORD_BOT_TOKEN no configurado');
+
+  const response = await fetch(`${DISCORD_API_URL}/guilds/${guildId}/members/${userId}/roles/${roleId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bot ${BOT_TOKEN}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(`Error de Discord (DELETE role): ${JSON.stringify(error)}`);
+  }
+
+  return true;
+}

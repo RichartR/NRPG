@@ -15,7 +15,8 @@ export default async function SistemasPage() {
   // 2. Verificar rol de administrador de forma segura en el servidor
   const user = userRes.data?.user;
   const profile = user ? await ProfileService.getProfile(user.id, supabase) : null;
-  const isAdmin = profile?.role === 'admin';
+  const userRoles = profile?.roles || [];
+  const isAdmin = userRoles.includes('admin') || userRoles.includes('moderador');
 
   // 3. Cargar datos administrativos adicionales solo si es admin
   let adminDocs: any[] = [];
