@@ -206,7 +206,7 @@ export default async function Home() {
             )}
 
             <nav className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-              {profile?.role === 'admin' && (
+               {profile?.roles && profile.roles.some((role: string) => ['admin', 'moderador', 'narrador', 'kage', 'delegado'].includes(role)) && (
                 <>
                   <Link
                     href="/admin"
@@ -215,7 +215,9 @@ export default async function Home() {
                   >
                     PANEL ADMIN
                   </Link>
-                  <AdminNotificationBadge />
+                  {profile.roles.some((role: string) => ['admin', 'moderador'].includes(role)) && (
+                    <AdminNotificationBadge />
+                  )}
                 </>
               )}
               {user ? (

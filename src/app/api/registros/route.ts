@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { RewardLogic } from '@/domain/character/logic';
+import { ProfileService } from '@/services/supabase/profile.service';
 
 export async function POST(request: Request) {
   try {
@@ -12,13 +13,9 @@ export async function POST(request: Request) {
     const { action, payload, id } = await request.json();
 
     // Check user role
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    const profile = await ProfileService.getProfile(user.id, supabase);
 
-    const isAdmin = profile?.role === 'admin' || user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin';
+    const isAdmin = profile?.roles?.includes('admin') || profile?.roles?.includes('moderador') || user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin';
 
     const adminClient = createAdminClient();
 

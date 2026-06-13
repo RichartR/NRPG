@@ -4,8 +4,19 @@ import Link from 'next/link';
 import FichasArchivadasList from '@/components/admin/FichasArchivadasList';
 import { CharacterServerService } from '@/services/supabase/character.server.service';
 
+import { ProfileService } from '@/services/supabase/profile.service';
+import { redirect } from 'next/navigation';
+
 export default async function AdminFichasArchivadasPage() {
   const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/');
+
+  const profile = await ProfileService.getProfile(user.id, supabase);
+  if (!profile?.roles?.includes('admin')) {
+    redirect('/admin');
+  }
 
   // Obtener personajes archivados/inactivos a través del servicio del servidor
   const characters = await CharacterServerService.getArchivedCharacters(supabase);

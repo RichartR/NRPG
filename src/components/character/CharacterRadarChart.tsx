@@ -16,7 +16,7 @@ const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div 
+      <div
         className="bg-black/95 border border-oro/30 px-4 py-2.5 shadow-[0_0_20px_rgba(223,184,87,0.2)] backdrop-blur-md text-center rounded-sm"
         style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
       >
@@ -89,7 +89,7 @@ export function CharacterRadarChart({ stats, maxVal }: CharacterRadarChartProps)
     const ny = dy / distance;
 
     // Ajustar las distancias (en píxeles) para alejar las etiquetas del gráfico y separarlas entre sí
-    const kanjiOffset = 16; 
+    const kanjiOffset = 16;
     const kanjiX = x + nx * kanjiOffset;
     const kanjiY = y + ny * kanjiOffset;
 
@@ -141,21 +141,21 @@ export function CharacterRadarChart({ stats, maxVal }: CharacterRadarChartProps)
       <ResponsiveContainer width="100%" aspect={1} minWidth={0}>
         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
           {/* Rejilla octagonal en oro sutil y líneas radiales */}
-          <PolarGrid 
+          <PolarGrid
             gridType="polygon"
             stroke="#dfb857"
             strokeOpacity={0.25}
             strokeWidth={1}
           />
           {/* Ejes angulares con nuestro renderizador de Kanji y Abreviación */}
-          <PolarAngleAxis 
-            dataKey="subject" 
+          <PolarAngleAxis
+            dataKey="subject"
             tick={renderCustomTick}
           />
           {/* Eje de radio invisible para guiar los límites dinámicos */}
-          <PolarRadiusAxis 
-            angle={90} 
-            domain={[0, maxVal]} 
+          <PolarRadiusAxis
+            angle={90}
+            domain={[0, maxVal]}
             tickCount={maxVal === 10 ? 11 : undefined}
             tick={false}
             axisLine={false}

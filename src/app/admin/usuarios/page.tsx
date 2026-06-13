@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react';
 import { ProfileService } from '@/services/supabase/profile.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
-import { ShieldAlert, Search, UserCheck, ShieldOff, Calendar, AlertCircle, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShieldAlert, Search, UserCheck, ShieldOff, Calendar, AlertCircle, ArrowLeft, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { PaginationContainer } from '@/components/ui/PaginationContainer';
 import { PaginationPageInput } from '@/components/ui/PaginationPageInput';
+import { createClient } from '@/utils/supabase/client';
 
 export default function AdminUsuariosPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -16,7 +17,7 @@ export default function AdminUsuariosPage() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  
+
   // Modal State
   const [banModalOpen, setBanModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -24,11 +25,29 @@ export default function AdminUsuariosPage() {
   const [banDuration, setBanDuration] = useState('1'); // Days, or 'custom', or 'permanent'
   const [customDate, setCustomDate] = useState('');
 
+  // Roles State
+  const [rolesModalOpen, setRolesModalOpen] = useState(false);
+  const [discordRolesModalOpen, setDiscordRolesModalOpen] = useState(false);
+  const [selectedUserForRoles, setSelectedUserForRoles] = useState<any>(null);
+  const [allRoles, setAllRoles] = useState<any[]>([]);
+  const [userRoles, setUserRoles] = useState<string[]>([]);
+  const [roleDiscordIds, setRoleDiscordIds] = useState<Record<string, string>>({});
+
   const addToast = useToastStore(state => state.addToast);
   const { confirm: confirmAction } = useConfirmStore();
 
   const fetchUsers = async () => {
     try {
+      const { data: { user } } = await createClient().auth.getUser();
+      if (!user) {
+        window.location.href = '/';
+        return;
+      }
+      const profile = await ProfileService.getProfile(user.id);
+      if (!profile?.roles?.includes('admin')) {
+        window.location.href = '/admin';
+        return;
+      }
       const data = await ProfileService.getUsersList();
       setUsers(data || []);
       setFilteredUsers(data || []);
@@ -40,8 +59,23 @@ export default function AdminUsuariosPage() {
     }
   };
 
+  const fetchRoles = async () => {
+    try {
+      const rolesData = await ProfileService.getAllRoles();
+      setAllRoles(rolesData || []);
+      const mapping: Record<string, string> = {};
+      rolesData?.forEach((r: any) => {
+        mapping[r.id] = r.id_rol_discord || '';
+      });
+      setRoleDiscordIds(mapping);
+    } catch (err) {
+      console.error('Error al cargar roles:', err);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
+    fetchRoles();
   }, []);
 
   useEffect(() => {
@@ -129,6 +163,63 @@ export default function AdminUsuariosPage() {
     }
   };
 
+  const handleOpenRoles = (user: any) => {
+    setSelectedUserForRoles(user);
+    setUserRoles(user.roles || []);
+    setRolesModalOpen(true);
+  };
+
+  const handleSaveRoles = async () => {
+    if (!selectedUserForRoles) return;
+
+    setLoading(true);
+    try {
+      const oldRoles = selectedUserForRoles.roles || [];
+      const toAssign = userRoles.filter((r: string) => !oldRoles.includes(r));
+      const toRemove = oldRoles.filter((r: string) => !userRoles.includes(r));
+
+      // Asignar nuevos roles
+      for (const role of toAssign) {
+        await ProfileService.assignRole(selectedUserForRoles.id, role);
+      }
+      // Quitar roles desmarcados
+      for (const role of toRemove) {
+        await ProfileService.removeRole(selectedUserForRoles.id, role);
+      }
+
+      addToast(`Roles actualizados para ${selectedUserForRoles.username}.`, 'success');
+      setRolesModalOpen(false);
+      fetchUsers();
+    } catch (err: any) {
+      console.error(err);
+      addToast(err.message || 'Error al actualizar los roles del usuario', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveDiscordRoles = async () => {
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      for (const role of allRoles) {
+        const { error } = await supabase
+          .from('info_roles')
+          .update({ id_rol_discord: roleDiscordIds[role.id] || null })
+          .eq('id', role.id);
+        if (error) throw error;
+      }
+      addToast('Mapeo de roles de Discord actualizado correctamente.', 'success');
+      setDiscordRolesModalOpen(false);
+      fetchRoles();
+    } catch (err: any) {
+      console.error(err);
+      addToast(err.message || 'Error al actualizar roles de Discord', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getStatusBadge = (user: any) => {
     if (user.banned_until) {
       const bannedUntil = new Date(user.banned_until);
@@ -136,8 +227,8 @@ export default function AdminUsuariosPage() {
       if (bannedUntil > now) {
         // Calcular si es baneo permanente (>90 años)
         const yearsDiff = bannedUntil.getFullYear() - now.getFullYear();
-        const label = yearsDiff > 90 
-          ? 'SUSPENDIDO PERMANENTE' 
+        const label = yearsDiff > 90
+          ? 'SUSPENDIDO PERMANENTE'
           : `BANEADO HASTA: ${bannedUntil.toLocaleDateString()} ${bannedUntil.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
         return (
           <span className="text-caption font-black text-red-400 bg-red-950/20 border border-red-500/30 px-3 py-1 ninja-clip-xs uppercase tracking-wider block text-center max-w-xs">
@@ -167,14 +258,24 @@ export default function AdminUsuariosPage() {
           VOLVER AL PANEL CENTRAL
         </Link>
 
-        <div className="flex items-center gap-6">
-          <div className="w-12 h-12 bg-rojo-sangre/10 border border-oro/25 flex items-center justify-center shadow-[0_0_15px_rgba(103,9,9,0.4)]">
-            <ShieldAlert className="w-6 h-6 text-oro" />
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="flex items-center gap-6">
+            <div className="w-12 h-12 bg-rojo-sangre/10 border border-oro/25 flex items-center justify-center shadow-[0_0_15px_rgba(103,9,9,0.4)]">
+              <ShieldAlert className="w-6 h-6 text-oro" />
+            </div>
+            <div>
+              <h1 className="ninja-title text-4xl xl:text-5xl italic">CONTROL DE USUARIOS Y BANEO</h1>
+              <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.4em] mt-2">ADMINISTRACIÓN DE ACCESOS, CUENTAS E IPS</p>
+            </div>
           </div>
-          <div>
-            <h1 className="ninja-title text-4xl xl:text-5xl italic">CONTROL DE USUARIOS Y BANEO</h1>
-            <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.4em] mt-2">ADMINISTRACIÓN DE ACCESOS, CUENTAS E IPS</p>
-          </div>
+          <button
+            onClick={() => setDiscordRolesModalOpen(true)}
+            className="flex items-center gap-2 px-5 py-3 border border-oro/20 hover:border-oro/60 text-oro bg-black/40 hover:bg-oro hover:text-black transition-all font-black text-caption uppercase tracking-wider cursor-pointer self-stretch md:self-auto text-center justify-center"
+            style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+          >
+            <Settings className="w-4 h-4" />
+            CONFIGURAR ROLES DISCORD
+          </button>
         </div>
       </header>
 
@@ -203,128 +304,153 @@ export default function AdminUsuariosPage() {
       ) : (
         <>
           <div className="ninja-card-oro p-6 overflow-x-auto">
-          <table className="w-full min-w-[1000px] text-left border-collapse">
-            <thead>
-              <tr className="border-b border-oro/10 text-caption font-black uppercase tracking-widest text-oro/40">
-                <th className="pb-4 pl-4">Usuario</th>
-                <th className="pb-4">Discord ID</th>
-                <th className="pb-4">Personaje Activo</th>
-                <th className="pb-4">IP Conexión</th>
-                <th className="pb-4">Estado</th>
-                <th className="pb-4 text-right pr-4">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-oro/5 text-sm font-bold">
-              {paginatedUsers.map((u) => {
-                const isBanned = u.banned_until && new Date(u.banned_until) > new Date();
-                return (
-                  <tr key={u.id} className="hover:bg-oro/5 transition-all duration-300">
-                    {/* Usuario */}
-                    <td className="py-4 pl-4 flex items-center gap-3">
-                      <div className="w-10 h-10 border border-oro/25 overflow-hidden bg-black/40 flex items-center justify-center shrink-0 ninja-clip-xs">
-                        {u.url_avatar || u.url_img ? (
-                          <img src={u.url_avatar || u.url_img} alt="Avatar" className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-oro/40 text-lg uppercase font-black">{u.username?.charAt(0)}</span>
-                        )}
-                      </div>
-                      <div>
-                        <span className="text-oro font-black block uppercase tracking-wider">{u.username}</span>
-                        <span className="text-caption text-oro/30 font-black uppercase tracking-widest">{u.role}</span>
-                      </div>
-                    </td>
-
-                    {/* Discord */}
-                    <td className="py-4 text-oro/80 font-mono text-xs">{u.discord_id || 'SIN VINCULAR'}</td>
-
-                    {/* Personaje Activo */}
-                    <td className="py-4">
-                      {u.active_character ? (
-                        <div>
-                          <span className="text-oro block uppercase tracking-wider italic font-black">
-                            {u.active_character.nombre_ninja}
-                          </span>
-                          <span className="text-caption text-oro/30 font-black uppercase tracking-widest">
-                            {u.active_character.rango} • {u.active_character.aldeas?.nombre_completo || 'Renegado'}
-                          </span>
+            <table className="w-full min-w-[1000px] text-left border-collapse">
+              <thead>
+                <tr className="border-b border-oro/10 text-caption font-black uppercase tracking-widest text-oro/40">
+                  <th className="pb-4 pl-4">Usuario</th>
+                  <th className="pb-4">Discord ID</th>
+                  <th className="pb-4">Personaje Activo</th>
+                  <th className="pb-4">Roles</th>
+                  <th className="pb-4">IP Conexión</th>
+                  <th className="pb-4">Estado</th>
+                  <th className="pb-4 text-right pr-4">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-oro/5 text-sm font-bold">
+                {paginatedUsers.map((u) => {
+                  const isBanned = u.banned_until && new Date(u.banned_until) > new Date();
+                  return (
+                    <tr key={u.id} className="hover:bg-oro/5 transition-all duration-300">
+                      {/* Usuario */}
+                      <td className="py-4 pl-4 flex items-center gap-3">
+                        <div className="w-10 h-10 border border-oro/25 overflow-hidden bg-black/40 flex items-center justify-center shrink-0 ninja-clip-xs">
+                          {u.url_avatar || u.url_img ? (
+                            <img src={u.url_avatar || u.url_img} alt="Avatar" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-oro/40 text-lg uppercase font-black">{u.username?.charAt(0)}</span>
+                          )}
                         </div>
-                      ) : (
-                        <span className="text-oro/20 uppercase text-caption tracking-widest">SIN FICHA ACTIVA</span>
-                      )}
-                    </td>
+                        <div>
+                          <span className="text-oro font-black block uppercase tracking-wider">{u.username}</span>
+                          <span className="text-caption text-oro/30 font-black uppercase tracking-widest">{u.role}</span>
+                        </div>
+                      </td>
 
-                    {/* IP */}
-                    <td className="py-4 text-oro/70 font-mono text-xs">{u.last_ip || 'SIN IP REGISTRADA'}</td>
+                      {/* Discord */}
+                      <td className="py-4 text-oro/80 font-mono text-xs">{u.discord_id || 'SIN VINCULAR'}</td>
 
-                    {/* Estado */}
-                    <td className="py-4">{getStatusBadge(u)}</td>
+                      {/* Personaje Activo */}
+                      <td className="py-4">
+                        {u.active_character ? (
+                          <div>
+                            <span className="text-oro block uppercase tracking-wider italic font-black">
+                              {u.active_character.nombre_ninja}
+                            </span>
+                            <span className="text-caption text-oro/30 font-black uppercase tracking-widest">
+                              {u.active_character.rango} • {u.active_character.aldeas?.nombre_completo || 'Renegado'}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-oro/20 uppercase text-caption tracking-widest">SIN FICHA ACTIVA</span>
+                        )}
+                      </td>
 
-                    {/* Acciones */}
-                    <td className="py-4 text-right pr-4">
-                      {isBanned ? (
-                        <button
-                          onClick={() => handleUnban(u)}
-                          className="px-4 py-2 border border-emerald-500/30 bg-emerald-950/20 text-emerald-400 hover:bg-emerald-500 hover:text-black transition-all font-black text-caption uppercase tracking-wider cursor-pointer"
-                          style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
-                        >
-                          <UserCheck className="w-3.5 h-3.5 inline mr-1.5" />
-                          Desbloquear
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleOpenBan(u)}
-                          className="px-4 py-2 border border-rojo-sangre/30 bg-rojo-sangre/10 text-red-400 hover:bg-rojo-sangre hover:text-oro transition-all font-black text-caption uppercase tracking-wider cursor-pointer"
-                          style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
-                        >
-                          <ShieldOff className="w-3.5 h-3.5 inline mr-1.5" />
-                          Suspender
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                      {/* Roles */}
+                      <td className="py-4">
+                        <div className="flex flex-wrap items-center gap-1.5 max-w-[240px]">
+                          {u.roles && u.roles.length > 0 ? (
+                            u.roles.map((r: string) => (
+                              <span key={r} className="text-[10px] font-black px-2 py-0.5 border border-oro/20 bg-oro/5 text-oro uppercase tracking-wider ninja-clip-xs">
+                                {r}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-[10px] font-black px-2 py-0.5 border border-oro/5 bg-black/10 text-oro/20 uppercase tracking-wider ninja-clip-xs">
+                              sin rol
+                            </span>
+                          )}
+                          <button
+                            onClick={() => handleOpenRoles(u)}
+                            title="Gestionar Roles"
+                            className="px-2 py-0.5 border border-rojo-sangre/30 bg-rojo-sangre/5 text-rojo-sangre hover:bg-rojo-sangre hover:text-oro transition-all uppercase text-[10px] font-black cursor-pointer ninja-clip-xs ml-1"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </td>
 
-        {totalPages > 1 && (
-          <div className="mt-8 flex justify-center w-full">
-            <PaginationContainer maxWidthClass="max-w-md">
-              <button
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(prev => prev - 1)}
-                className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center ninja-btn-oro shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft className="w-6 h-6 sm:w-7 sm:h-7" />
-              </button>
+                      {/* IP */}
+                      <td className="py-4 text-oro/70 font-mono text-xs">{u.last_ip || 'SIN IP REGISTRADA'}</td>
 
-              <div className="flex flex-col items-center px-3 text-center">
-                <span className="text-caption font-black text-oro/40 uppercase tracking-[0.25em] mb-1">
-                  PÁGINA
-                </span>
-                <div className="flex items-center gap-1.5 justify-center text-caption sm:text-sm xl:text-base font-black text-oro uppercase tracking-[0.18em] italic">
-                  <PaginationPageInput
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onChangePage={(p) => setCurrentPage(p)}
-                  />
-                  <span className="text-oro/40">DE {totalPages}</span>
-                </div>
-              </div>
+                      {/* Estado */}
+                      <td className="py-4">{getStatusBadge(u)}</td>
 
-              <button
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(prev => prev + 1)}
-                className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center ninja-btn-oro shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7" />
-              </button>
-            </PaginationContainer>
+                      {/* Acciones */}
+                      <td className="py-4 text-right pr-4">
+                        {isBanned ? (
+                          <button
+                            onClick={() => handleUnban(u)}
+                            className="px-4 py-2 border border-emerald-500/30 bg-emerald-950/20 text-emerald-400 hover:bg-emerald-500 hover:text-black transition-all font-black text-caption uppercase tracking-wider cursor-pointer"
+                            style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                          >
+                            <UserCheck className="w-3.5 h-3.5 inline mr-1.5" />
+                            Desbloquear
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleOpenBan(u)}
+                            className="px-4 py-2 border border-rojo-sangre/30 bg-rojo-sangre/10 text-red-400 hover:bg-rojo-sangre hover:text-oro transition-all font-black text-caption uppercase tracking-wider cursor-pointer"
+                            style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                          >
+                            <ShieldOff className="w-3.5 h-3.5 inline mr-1.5" />
+                            Suspender
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-        )}
-      </>
-    )}
+
+          {totalPages > 1 && (
+            <div className="mt-8 flex justify-center w-full">
+              <PaginationContainer maxWidthClass="max-w-md">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(prev => prev - 1)}
+                  className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center ninja-btn-oro shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="w-6 h-6 sm:w-7 sm:h-7" />
+                </button>
+
+                <div className="flex flex-col items-center px-3 text-center">
+                  <span className="text-caption font-black text-oro/40 uppercase tracking-[0.25em] mb-1">
+                    PÁGINA
+                  </span>
+                  <div className="flex items-center gap-1.5 justify-center text-caption sm:text-sm xl:text-base font-black text-oro uppercase tracking-[0.18em] italic">
+                    <PaginationPageInput
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onChangePage={(p) => setCurrentPage(p)}
+                    />
+                    <span className="text-oro/40">DE {totalPages}</span>
+                  </div>
+                </div>
+
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(prev => prev + 1)}
+                  className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center ninja-btn-oro shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7" />
+                </button>
+              </PaginationContainer>
+            </div>
+          )}
+        </>
+      )}
 
       {/* Modal de Baneo */}
       {banModalOpen && selectedUser && (
@@ -370,11 +496,10 @@ export default function AdminUsuariosPage() {
                       key={opt.val}
                       onClick={() => setBanDuration(opt.val)}
                       type="button"
-                      className={`py-2 px-3 border font-black text-caption uppercase tracking-wider transition-all cursor-pointer ${
-                        banDuration === opt.val
+                      className={`py-2 px-3 border font-black text-caption uppercase tracking-wider transition-all cursor-pointer ${banDuration === opt.val
                           ? 'bg-oro text-rojo-sangre border-oro shadow-[0_0_10px_rgba(255,230,159,0.2)]'
                           : 'border-oro/15 bg-black/40 text-oro/70 hover:border-oro/40'
-                      }`}
+                        }`}
                     >
                       {opt.label}
                     </button>
@@ -397,7 +522,7 @@ export default function AdminUsuariosPage() {
                     onClick={(e) => {
                       try {
                         (e.target as any).showPicker();
-                      } catch (err) {}
+                      } catch (err) { }
                     }}
                   />
                 </div>
@@ -430,6 +555,134 @@ export default function AdminUsuariosPage() {
                   style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
                 >
                   Aplicar Suspensión
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal de Gestión de Roles */}
+      {rolesModalOpen && selectedUserForRoles && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/85 backdrop-blur-md" onClick={() => setRolesModalOpen(false)} />
+          <div className="relative w-full max-w-xl ninja-card-oro p-8 shadow-[0_0_50px_rgba(0,0,0,0.8)] animate-in zoom-in-95">
+            <h3 className="text-xl font-black uppercase text-oro mb-2 font-ninja tracking-wider">
+              Gestionar Roles de Usuario
+            </h3>
+            <p className="text-oro/40 text-caption font-black uppercase tracking-widest mb-6 border-b border-oro/10 pb-2">
+              Usuario: {selectedUserForRoles.username}
+            </p>
+
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <label className="text-caption font-black uppercase tracking-wider text-oro/50 block">
+                  Roles Asignados
+                </label>
+                <div className="space-y-2">
+                  {allRoles.map((role) => {
+                    const isChecked = userRoles.includes(role.id);
+                    return (
+                      <label
+                        key={role.id}
+                        className="flex items-center gap-3 p-3 border border-oro/10 bg-black/40 hover:bg-oro/5 transition-all cursor-pointer"
+                        style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setUserRoles([...userRoles, role.id]);
+                            } else {
+                              setUserRoles(userRoles.filter(r => r !== role.id));
+                            }
+                          }}
+                          className="w-4 h-4 border border-oro/20 bg-black text-oro focus:ring-0 focus:ring-offset-0 cursor-pointer accent-oro"
+                        />
+                        <div>
+                          <span className="text-sm font-black text-oro uppercase tracking-wider block">{role.nombre}</span>
+                          <span className="text-[10px] text-oro/40 font-mono tracking-widest block uppercase">{role.id}</span>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Botones de acción */}
+              <div className="flex gap-4 pt-4 border-t border-oro/10">
+                <button
+                  onClick={() => setRolesModalOpen(false)}
+                  type="button"
+                  className="flex-1 py-3 bg-black/40 text-oro/60 border border-oro/15 hover:text-oro transition-all font-black text-caption uppercase tracking-[0.2em] cursor-pointer"
+                  style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveRoles}
+                  type="button"
+                  className="flex-1 py-3 bg-oro text-rojo-sangre hover:brightness-110 shadow-lg transition-all font-black text-caption uppercase tracking-[0.2em] cursor-pointer"
+                  style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                >
+                  Guardar Roles
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Mapeo de Roles de Discord */}
+      {discordRolesModalOpen && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/85 backdrop-blur-md" onClick={() => setDiscordRolesModalOpen(false)} />
+          <div className="relative w-full max-w-xl ninja-card-oro p-8 shadow-[0_0_50px_rgba(0,0,0,0.8)] animate-in zoom-in-95">
+            <h3 className="text-xl font-black uppercase text-oro mb-2 font-ninja tracking-wider">
+              Mapeo de Roles de Discord
+            </h3>
+            <p className="text-oro/40 text-caption font-black uppercase tracking-widest mb-6 border-b border-oro/10 pb-2">
+              Sincronización de roles con el Bot del Servidor
+            </p>
+
+            <div className="space-y-6">
+              <div className="space-y-4">
+                {allRoles.map((role) => (
+                  <div key={role.id} className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-oro/60 block">
+                      Rol: {role.nombre} ({role.id})
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="INGRESA EL ID DE ROL DE DISCORD (Ej. 112233445566778899)..."
+                      value={roleDiscordIds[role.id] || ''}
+                      onChange={(e) => setRoleDiscordIds({
+                        ...roleDiscordIds,
+                        [role.id]: e.target.value
+                      })}
+                      className="w-full bg-black border border-oro/15 p-3 text-xs text-oro placeholder:text-oro/20 font-bold uppercase tracking-wider outline-none focus:border-oro"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Botones de acción */}
+              <div className="flex gap-4 pt-4 border-t border-oro/10">
+                <button
+                  onClick={() => setDiscordRolesModalOpen(false)}
+                  type="button"
+                  className="flex-1 py-3 bg-black/40 text-oro/60 border border-oro/15 hover:text-oro transition-all font-black text-caption uppercase tracking-[0.2em] cursor-pointer"
+                  style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveDiscordRoles}
+                  type="button"
+                  className="flex-1 py-3 bg-oro text-black hover:brightness-110 shadow-lg transition-all font-black text-caption uppercase tracking-[0.2em] cursor-pointer"
+                  style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                >
+                  Guardar Mapeo
                 </button>
               </div>
             </div>

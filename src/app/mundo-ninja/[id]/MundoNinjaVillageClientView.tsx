@@ -9,6 +9,7 @@ import { PaginationPageInput } from '@/components/ui/PaginationPageInput';
 import { PaginationContainer } from '@/components/ui/PaginationContainer';
 import { createClient } from '@/utils/supabase/client';
 import { useToastStore } from '@/components/ui/Toast';
+import { ProfileService } from '@/services/supabase/profile.service';
 
 // ─── MemberSelector ── componente de nivel superior para evitar remounts ────
 function MemberSelector({
@@ -171,12 +172,8 @@ export default function MundoNinjaVillageClientView({
     async function fetchUserRole() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-        const isAdmin = profile?.role === 'admin';
+        const profile = await ProfileService.getProfile(session.user.id);
+        const isAdmin = profile?.roles?.includes('admin') || false;
         const myChar = ninjas.find((n) => n.user_id === session.user.id);
         setUserRole({
           character: myChar || null,

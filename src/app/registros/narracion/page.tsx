@@ -8,6 +8,7 @@ import NarrationForm from '@/components/registros/NarrationForm';
 import NarrationTable from '@/components/registros/NarrationTable';
 import { ScrollText, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { AuthService } from '@/services/supabase/auth.service';
+import { ProfileService } from '@/services/supabase/profile.service';
 import { createClient } from '@/utils/supabase/client';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { PaginationPageInput } from '@/components/ui/PaginationPageInput';
@@ -23,6 +24,7 @@ export default function NarracionPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [canCreate, setCanCreate] = useState(false);
   const [editingRegistro, setEditingRegistro] = useState<Registro | null>(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -43,8 +45,11 @@ export default function NarracionPage() {
       } = await AuthService.getUser();
 
       if (user) {
-        const { data: profile } = await createClient().from('profiles').select('role').eq('id', user.id).single();
-        setIsAdmin(profile?.role === 'admin');
+        const profile = await ProfileService.getProfile(user.id);
+        const userRoles = profile?.roles || [];
+        const isAdmOrMod = userRoles.includes('admin') || userRoles.includes('moderador');
+        setIsAdmin(isAdmOrMod);
+        setCanCreate(isAdmOrMod || userRoles.includes('narrador'));
       }
     } catch (err) {
       console.error(err);
@@ -84,17 +89,19 @@ export default function NarracionPage() {
                 />
               </div>
 
-              <button
-                onClick={() => {
-                  setEditingRegistro(null);
-                  setShowForm(true);
-                }}
-                disabled={!activeCharacter}
-                title={!activeCharacter ? 'Requiere tener un personaje activo en tu ficha shinobi' : undefined}
-                className="flex w-full lg:w-auto items-center justify-center gap-3 px-5 sm:px-6 py-3 ninja-btn-oro text-caption sm:text-xs disabled:opacity-30 disabled:cursor-not-allowed uppercase tracking-widest font-black shrink-0"
-              >
-                <Plus className="w-4 h-4" /> NUEVA NARRACIÓN
-              </button>
+              {canCreate && (
+                <button
+                  onClick={() => {
+                    setEditingRegistro(null);
+                    setShowForm(true);
+                  }}
+                  disabled={!activeCharacter}
+                  title={!activeCharacter ? 'Requiere tener un personaje activo en tu ficha shinobi' : undefined}
+                  className="flex w-full lg:w-auto items-center justify-center gap-3 px-5 sm:px-6 py-3 ninja-btn-oro text-caption sm:text-xs disabled:opacity-30 disabled:cursor-not-allowed uppercase tracking-widest font-black shrink-0"
+                >
+                  <Plus className="w-4 h-4" /> NUEVA NARRACIÓN
+                </button>
+              )}
             </div>
 
             <div className="flex items-center justify-center py-1 sm:py-2">

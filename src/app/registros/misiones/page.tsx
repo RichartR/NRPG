@@ -15,6 +15,8 @@ import AdminViewSelector from '@/components/admin/AdminViewSelector';
 import { PaginationPageInput } from '@/components/ui/PaginationPageInput';
 import { PaginationContainer } from '@/components/ui/PaginationContainer';
 
+import { ProfileService } from '@/services/supabase/profile.service';
+
 export default function MisionesPage() {
   const { activeCharacter, fetchActiveCharacter } = useCharacterStore();
   const [data, setData] = useState<{ list: Registro[]; count: number; page: number }>({
@@ -46,8 +48,8 @@ export default function MisionesPage() {
       } = await AuthService.getUser();
 
       if (user) {
-        const { data: profile } = await createClient().from('profiles').select('role').eq('id', user.id).single();
-        setIsAdmin(profile?.role === 'admin');
+        const profile = await ProfileService.getProfile(user.id);
+        setIsAdmin(profile?.roles?.includes('admin') || profile?.roles?.includes('moderador') || false);
       }
     } catch (err) {
       console.error(err);

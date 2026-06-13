@@ -62,7 +62,7 @@ export function useCharacter(characterId: string) {
           : Promise.resolve({})
       ]);
 
-      const isAdm = profile?.role === 'admin';
+      const isAdm = profile?.roles?.includes('admin') || false;
       setIsAdmin(isAdm);
       setCanEdit(!!(isAdm || (user && char.user_id === user.id)));
 

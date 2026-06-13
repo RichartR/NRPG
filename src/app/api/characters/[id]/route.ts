@@ -4,6 +4,7 @@ import { sendDiscordMessage, editDiscordMessage, deleteDiscordMessage, getDiscor
 import { CharacterServerService } from '@/services/supabase/character.server.service';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { ProfileService } from '@/services/supabase/profile.service';
 
 export async function PATCH(
   request: Request,
@@ -26,14 +27,10 @@ export async function PATCH(
     const isOwner = character.user_id === user.id;
     
     // Obtener rol del perfil en la base de datos
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    const profile = await ProfileService.getProfile(user.id, supabase);
 
     // @ts-ignore - roles might be in user_metadata or profiles
-    const isAdmin = profile?.role === 'admin' || user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin';
+    const isAdmin = profile?.roles?.includes('admin') || profile?.roles?.includes('moderador') || user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin';
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: 'No tienes permiso para editar este personaje' }, { status: 403 });
@@ -507,14 +504,10 @@ export async function DELETE(
     const isOwner = character.user_id === user.id;
     
     // Obtener rol del perfil en la base de datos
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    const profile = await ProfileService.getProfile(user.id, supabase);
 
     // @ts-ignore
-    const isAdmin = profile?.role === 'admin' || user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin';
+    const isAdmin = profile?.roles?.includes('admin') || profile?.roles?.includes('moderador') || user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin';
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: 'No tienes permiso para borrar este personaje' }, { status: 403 });

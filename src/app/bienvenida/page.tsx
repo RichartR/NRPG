@@ -12,7 +12,7 @@ export default async function BienvenidaPage() {
   ]);
 
   const profile = user ? await ProfileService.getProfile(user.id, supabase) : null;
-  const isAdmin = profile?.role === 'admin';
+  const isAdmin = profile?.roles?.includes('admin') || profile?.roles?.includes('moderador') || false;
 
   let adminDocs: any[] = [];
   let adminCategories: any[] = [];

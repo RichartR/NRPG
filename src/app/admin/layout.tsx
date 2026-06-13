@@ -16,8 +16,12 @@ export default async function AdminLayout({
 
   const profile = await ProfileService.getProfile(user.id, supabase);
 
-  if (profile?.role !== 'admin') {
-    redirect('/'); // Si no es admin, fuera
+  const allowedRoles = ['admin', 'moderador', 'narrador', 'kage', 'delegado'];
+  const userRoles = profile?.roles || [];
+  const hasAccess = allowedRoles.some(role => userRoles.includes(role));
+
+  if (!hasAccess) {
+    redirect('/'); // Si no tiene ningún rol de administración, fuera
   }
 
   return (
