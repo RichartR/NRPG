@@ -45,8 +45,8 @@ export default function CombateMenu() {
             type="button"
             onClick={() => setRoomMode('normal')}
             className={`flex-1 py-3 px-4 text-xs font-black uppercase tracking-widest border transition-all ${roomMode === 'normal'
-                ? 'bg-oro text-black border-oro shadow-md shadow-oro/5'
-                : 'border-oro/10 text-oro/60 hover:text-oro bg-black/20'
+              ? 'bg-oro text-rojo-sangre border-oro shadow-md shadow-oro/5'
+              : 'border-oro/10 text-oro/60 hover:text-oro bg-black/20'
               }`}
             style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
           >
@@ -56,8 +56,8 @@ export default function CombateMenu() {
             type="button"
             onClick={() => setRoomMode('event')}
             className={`flex-1 py-3 px-4 text-xs font-black uppercase tracking-widest border transition-all ${roomMode === 'event'
-                ? 'bg-oro text-black border-oro shadow-md shadow-oro/5'
-                : 'border-oro/10 text-oro/60 hover:text-oro bg-black/20'
+              ? 'bg-oro text-rojo-sangre border-oro shadow-md shadow-oro/5'
+              : 'border-oro/10 text-oro/60 hover:text-oro bg-black/20'
               }`}
             style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
           >
@@ -70,8 +70,12 @@ export default function CombateMenu() {
           className="w-full ninja-btn-oro flex items-center justify-center gap-4 py-5 px-6 text-xs xl:text-sm mb-10"
         >
           <Plus className="w-5 h-5" />
-          INICIAR NUEVO DUELO
+          INICIAR NUEVO COMBATE
         </button>
+
+        <hr className='border-oro/20 m-5' />
+
+        <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.3em] mb-4 text-center">ÚNETE A UN COMBATE EXISTENTE</p>
 
         <form onSubmit={handleJoin} className="space-y-6">
           <div className="relative">
@@ -95,11 +99,13 @@ export default function CombateMenu() {
           </button>
         </form>
 
-        <div className="mt-12 text-center">
-          <Link href="/" className="text-caption xl:text-xs font-black text-oro/40 hover:text-oro uppercase tracking-[0.4em] transition-all border-b border-oro/10 pb-1">
-            RETROCEDER AL DASHBOARD
-          </Link>
-        </div>
+        <Link
+          href="/"
+          className="w-full flex items-center justify-center gap-4 py-5 px-6 text-xs xl:text-sm shadow-lg shadow-rojo-sangre/20 border-oro/10 text-oro/60 hover:text-oro hover:bg-black/10 bg-black/20 mt-5 font-black uppercase tracking-[0.3em]"
+          style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
+        >
+          RETROCEDER AL DASHBOARD
+        </Link>
       </div>
     </div>
   );

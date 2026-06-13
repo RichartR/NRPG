@@ -1195,12 +1195,14 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                   onClick={() => handleSeekMusic(-10)}
                   title="Retroceder 10s"
                   className="h-7 px-2.5 bg-black/40 hover:bg-oro/10 text-oro border border-oro/20 rounded-sm transition-all inline-flex items-center justify-center shrink-0"
+                  style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                 >
                   <span className="text-[10px] font-black">⏪ -10s</span>
                 </button>
                 <button
                   onClick={handleTogglePlayMusic}
                   className="h-7 px-2.5 text-[10px] font-black bg-oro/10 hover:bg-oro/25 text-oro border border-oro/30 rounded-sm transition-all uppercase inline-flex items-center justify-center shrink-0"
+                  style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                 >
                   {musicIsPlaying ? "⏸ Pausar" : "▶ Play"}
                 </button>
@@ -1208,6 +1210,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                   onClick={() => handleSeekMusic(10)}
                   title="Adelantar 10s"
                   className="h-7 px-2.5 bg-black/40 hover:bg-oro/10 text-oro border border-oro/20 rounded-sm transition-all inline-flex items-center justify-center shrink-0"
+                  style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                 >
                   <span className="text-[10px] font-black">+10s ⏩</span>
                 </button>
