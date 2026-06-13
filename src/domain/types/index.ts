@@ -33,9 +33,10 @@ export interface Aldea {
   abreviatura?: string;
   url_imagen?: string;
   url_icono?: string;
-  descripcion?: string;
   activo: boolean;
   categoria_id?: number | null;
+  id_rol_discord?: string | null;
+  descripcion?: string;
 }
 
 export interface Elemento {

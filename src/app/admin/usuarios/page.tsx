@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { ProfileService } from '@/services/supabase/profile.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
-import { ShieldAlert, Search, UserCheck, ShieldOff, Calendar, AlertCircle, ArrowLeft, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import { ShieldAlert, Search, UserCheck, ShieldOff, Calendar, AlertCircle, ArrowLeft, ChevronLeft, ChevronRight, Settings, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { PaginationContainer } from '@/components/ui/PaginationContainer';
 import { PaginationPageInput } from '@/components/ui/PaginationPageInput';
@@ -32,6 +32,7 @@ export default function AdminUsuariosPage() {
   const [allRoles, setAllRoles] = useState<any[]>([]);
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [roleDiscordIds, setRoleDiscordIds] = useState<Record<string, string>>({});
+  const [syncingAldeas, setSyncingAldeas] = useState(false);
 
   const addToast = useToastStore(state => state.addToast);
   const { confirm: confirmAction } = useConfirmStore();
@@ -180,11 +181,29 @@ export default function AdminUsuariosPage() {
 
       // Asignar nuevos roles
       for (const role of toAssign) {
-        await ProfileService.assignRole(selectedUserForRoles.id, role);
+        const res = await fetch('/api/admin/roles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: selectedUserForRoles.id, roleId: role, action: 'assign' }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error al asignar rol');
+        if (data.warning) {
+          addToast(data.warning, 'info');
+        }
       }
       // Quitar roles desmarcados
       for (const role of toRemove) {
-        await ProfileService.removeRole(selectedUserForRoles.id, role);
+        const res = await fetch('/api/admin/roles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: selectedUserForRoles.id, roleId: role, action: 'remove' }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error al remover rol');
+        if (data.warning) {
+          addToast(data.warning, 'info');
+        }
       }
 
       addToast(`Roles actualizados para ${selectedUserForRoles.username}.`, 'success');
@@ -217,6 +236,37 @@ export default function AdminUsuariosPage() {
       addToast(err.message || 'Error al actualizar roles de Discord', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSyncAldeasDiscord = async () => {
+    const ok = await confirmAction({
+      title: 'Sincronizar Roles de Aldea',
+      message: '¿Estás seguro de que quieres sincronizar retroactivamente todos los personajes activos actuales con sus respectivos roles de Discord (aldeas, organizaciones o renegados)? Esto realizará llamadas a la API de Discord para cada miembro.',
+      variant: 'primary'
+    });
+
+    if (!ok) return;
+
+    setSyncingAldeas(true);
+    try {
+      const res = await fetch('/api/admin/roles/sync-aldeas', {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error en la sincronización');
+
+      if (data.failedCount > 0) {
+        addToast(`Sincronización completada. Éxito: ${data.syncedCount}. Fallos: ${data.failedCount}. Ver consola para detalles.`, 'info');
+        console.warn('Errores de sincronización de roles:', data.failures);
+      } else {
+        addToast(`Sincronización completada con éxito. Se actualizaron ${data.syncedCount} roles.`, 'success');
+      }
+    } catch (err: any) {
+      console.error(err);
+      addToast(err.message || 'Error al ejecutar la sincronización', 'error');
+    } finally {
+      setSyncingAldeas(false);
     }
   };
 
@@ -268,14 +318,25 @@ export default function AdminUsuariosPage() {
               <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.4em] mt-2">ADMINISTRACIÓN DE ACCESOS, CUENTAS E IPS</p>
             </div>
           </div>
-          <button
-            onClick={() => setDiscordRolesModalOpen(true)}
-            className="flex items-center gap-2 px-5 py-3 border border-oro/20 hover:border-oro/60 text-oro bg-black/40 hover:bg-oro hover:text-black transition-all font-black text-caption uppercase tracking-wider cursor-pointer self-stretch md:self-auto text-center justify-center"
-            style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
-          >
-            <Settings className="w-4 h-4" />
-            CONFIGURAR ROLES DISCORD
-          </button>
+          <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+            <button
+              onClick={handleSyncAldeasDiscord}
+              disabled={syncingAldeas}
+              className="flex items-center gap-2 px-5 py-3 border border-rojo-sangre/20 hover:border-rojo-sangre/60 text-oro bg-black/40 hover:bg-rojo-sangre hover:text-oro transition-all font-black text-caption uppercase tracking-wider cursor-pointer self-stretch md:self-auto text-center justify-center disabled:opacity-50"
+              style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 8px) 100%, 0 100%, 0 6px)' }}
+            >
+              <RefreshCw className={`w-4 h-4 ${syncingAldeas ? 'animate-spin' : ''}`} />
+              {syncingAldeas ? 'SINCRONIZANDO...' : 'SINCRONIZAR ALDEAS DISCORD'}
+            </button>
+            <button
+              onClick={() => setDiscordRolesModalOpen(true)}
+              className="flex items-center gap-2 px-5 py-3 border border-oro/20 hover:border-oro/60 text-oro bg-black/40 hover:bg-oro hover:text-black transition-all font-black text-caption uppercase tracking-wider cursor-pointer self-stretch md:self-auto text-center justify-center"
+              style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 6px)' }}
+            >
+              <Settings className="w-4 h-4" />
+              CONFIGURAR ROLES DISCORD
+            </button>
+          </div>
         </div>
       </header>
 
@@ -497,8 +558,8 @@ export default function AdminUsuariosPage() {
                       onClick={() => setBanDuration(opt.val)}
                       type="button"
                       className={`py-2 px-3 border font-black text-caption uppercase tracking-wider transition-all cursor-pointer ${banDuration === opt.val
-                          ? 'bg-oro text-rojo-sangre border-oro shadow-[0_0_10px_rgba(255,230,159,0.2)]'
-                          : 'border-oro/15 bg-black/40 text-oro/70 hover:border-oro/40'
+                        ? 'bg-oro text-rojo-sangre border-oro shadow-[0_0_10px_rgba(255,230,159,0.2)]'
+                        : 'border-oro/15 bg-black/40 text-oro/70 hover:border-oro/40'
                         }`}
                     >
                       {opt.label}
@@ -679,7 +740,7 @@ export default function AdminUsuariosPage() {
                 <button
                   onClick={handleSaveDiscordRoles}
                   type="button"
-                  className="flex-1 py-3 bg-oro text-black hover:brightness-110 shadow-lg transition-all font-black text-caption uppercase tracking-[0.2em] cursor-pointer"
+                  className="flex-1 py-3 bg-oro text-rojo-sangre hover:brightness-110 shadow-lg transition-all font-black text-caption uppercase tracking-[0.2em] cursor-pointer"
                   style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
                 >
                   Guardar Mapeo

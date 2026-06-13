@@ -29,7 +29,8 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
     if (aldea) {
       return {
         ...aldea,
-        categoria_id: aldea.categoria_id ?? 1
+        categoria_id: aldea.categoria_id ?? 1,
+        id_rol_discord: aldea.id_rol_discord ?? ''
       };
     }
     return {
@@ -42,7 +43,8 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
       url_imagen: '',
       url_icono: '',
       activo: true,
-      categoria_id: 1
+      categoria_id: 1,
+      id_rol_discord: ''
     };
   });
   const [loading, setLoading] = useState(false);
@@ -176,6 +178,16 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
                 value={formData.nombre_español}
                 onChange={(e) => updateField('nombre_español', e.target.value)}
                 placeholder="Ej: Aldea Oculta de la Hoja"
+                className="w-full ninja-input py-4"
+              />
+            </div>
+            <div className="space-y-3">
+              <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">ID del Rol de Discord</label>
+              <input
+                type="text"
+                value={formData.id_rol_discord || ''}
+                onChange={(e) => updateField('id_rol_discord', e.target.value)}
+                placeholder="Ej: 112233445566778899"
                 className="w-full ninja-input py-4"
               />
             </div>

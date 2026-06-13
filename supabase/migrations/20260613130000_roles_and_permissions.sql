@@ -34,7 +34,7 @@ ALTER TABLE public.sys_notificaciones_admin ADD COLUMN IF NOT EXISTS tipo TEXT D
 -- Crear índice para la columna tipo
 CREATE INDEX IF NOT EXISTS idx_sys_notificaciones_admin_tipo ON public.sys_notificaciones_admin(tipo);
 
--- Redefinir la función is_admin() para que admita tanto perfiles heredados como reg_roles
+-- Redefinir la función is_admin() para que use reg_roles exclusivamente
 CREATE OR REPLACE FUNCTION public.is_admin()
  RETURNS boolean
  LANGUAGE plpgsql
@@ -43,16 +43,13 @@ CREATE OR REPLACE FUNCTION public.is_admin()
 AS $function$
 BEGIN
   RETURN EXISTS (
-    SELECT 1 FROM public.profiles 
-    WHERE id = auth.uid() AND role = 'admin'
-  ) OR EXISTS (
     SELECT 1 FROM public.reg_roles
     WHERE user_id = auth.uid() AND rol_id = 'admin'
   );
 END;
 $function$;
 
--- Crear función genérica has_role(role_name) para comprobar otros roles
+-- Crear función genérica has_role(role_name) para comprobar otros roles usando reg_roles
 CREATE OR REPLACE FUNCTION public.has_role(role_name text)
  RETURNS boolean
  LANGUAGE plpgsql
@@ -63,9 +60,6 @@ BEGIN
   RETURN EXISTS (
     SELECT 1 FROM public.reg_roles
     WHERE user_id = auth.uid() AND rol_id = role_name
-  ) OR EXISTS (
-    SELECT 1 FROM public.profiles
-    WHERE id = auth.uid() AND role = role_name
   );
 END;
 $function$;
