@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { ShoppingBag, Plus, Trash2, Edit3, RotateCcw, History, X, Check, Loader2, Settings, Lock, ChevronLeft, ChevronRight, Link as LinkIcon } from 'lucide-react';
-import { createClient } from '@/utils/supabase/client';
 import { AuthService } from '@/services/supabase/auth.service';
 import { MasterService } from '@/services/supabase/master.service';
 import { TiendasService } from '@/services/supabase/tiendas.service';
@@ -248,7 +247,7 @@ export default function TiendasPage() {
             ]}
           />
           <div className="flex items-center gap-4">
-            <ShoppingBag className="w-5 xl:w-6 h-auto text-oro animate-pulse" />
+            <img src="/assets/icons/shuriken.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
             <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
               Tiendas <span className="text-oro/40">Ninja</span>
             </h1>

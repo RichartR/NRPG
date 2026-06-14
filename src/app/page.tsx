@@ -13,7 +13,6 @@ import {
   ScrollText,
   Swords,
   ShoppingBag,
-  Coins,
   Sparkles,
   ArrowRight,
   MessageSquare,
