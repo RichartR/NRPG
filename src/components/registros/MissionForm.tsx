@@ -114,7 +114,7 @@ export default function MissionForm({
       }
     };
 
-      if (formType === 'mision') {
+    if (formType === 'mision') {
       if (!selectedMision) {
         addToast('Selecciona una misión', 'error');
         return;
@@ -230,7 +230,7 @@ export default function MissionForm({
                           <button
                             type="button"
                             onClick={() => setEsFallida(true)}
-                            className={`py-4 border text-xs font-black uppercase tracking-widest transition-all ${esFallida ? 'bg-rojo-sangre/20 border-rojo-sangre/40 text-rojo-sangre' : 'bg-black/20 border-oro/5 text-oro/45'}`}
+                            className={`py-4 border text-xs font-black uppercase tracking-widest transition-all ${esFallida ? 'bg-rojo-sangre border-rojo-sangre/40 text-oro' : 'bg-black/20 border-oro/5 text-oro/45'}`}
                           >
                             FALLADA (+{misionObj.exp_fallida} EXP{misionObj.pa_recompensa_fallida ? ` / +${misionObj.pa_recompensa_fallida} PA` : ''})
                           </button>

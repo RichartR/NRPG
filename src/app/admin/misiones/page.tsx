@@ -157,8 +157,8 @@ export default function AdminMisionesPage() {
                 type="checkbox"
                 id="se_puede_fallar"
                 checked={editingMision.se_puede_fallar || false}
-                onChange={(e) => setEditingMision({ 
-                  ...editingMision, 
+                onChange={(e) => setEditingMision({
+                  ...editingMision,
                   se_puede_fallar: e.target.checked,
                   exp_fallida: e.target.checked ? editingMision.exp_fallida || 0 : 0,
                   ryous_fallida: e.target.checked ? editingMision.ryous_fallida || 0 : 0,
