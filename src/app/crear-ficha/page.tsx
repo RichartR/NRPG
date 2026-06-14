@@ -117,6 +117,10 @@ function CrearFichaContent() {
         .map((r: any) => r.rama_id ? Number(r.rama_id) : null)
         .filter(Boolean);
 
+      if (form.eleccion_tecnicas_clan?.rama_id) {
+        equipedRamaIds.push(Number(form.eleccion_tecnicas_clan.rama_id));
+      }
+
       const equipedElementIds = form.personajes_ramas
         .reduce((acc: number[], r: any) => {
           if (r.elemento_principal_id) acc.push(Number(r.elemento_principal_id));
@@ -144,7 +148,12 @@ function CrearFichaContent() {
           const reqElId = Number(requiredElementId);
           const isNinjutsuTech = Number(entry.rama_clan_id || reqs?.rama_id) === 4;
           if (isNinjutsuTech) {
-            const ninjutsuSlot = form.personajes_ramas.find((r: any) => Number(r.rama_id) === 4);
+            // Buscamos el slot de Ninjutsu Elemental o de un Clan Elemental
+            const ninjutsuSlot = form.personajes_ramas.find((r: any) => {
+              if (Number(r.rama_id) === 4) return true;
+              const clanInfo = (masters.ramas || []).find((cr: any) => cr.id === Number(r.rama_id));
+              return clanInfo?.config_iniciales?.clan_elemental === true;
+            });
             const ninElements: number[] = [];
             if (ninjutsuSlot) {
               if (ninjutsuSlot.elemento_principal_id) ninElements.push(Number(ninjutsuSlot.elemento_principal_id));
@@ -217,7 +226,7 @@ function CrearFichaContent() {
       const initialTecs = glosarioCompleto
         .filter((t: any) => {
           if (t.inicial && t.categoria_id !== 2 && meetsAllReqs(t)) {
-            if (isNinIIorIIIInBranch && Number(t.rama_clan_id) === 4) {
+            if (isNinIIorIII && Number(t.rama_clan_id) === 4) {
               return false;
             }
             return true;
@@ -232,7 +241,7 @@ function CrearFichaContent() {
         personajes_tecnicas: initialTecs
       }));
     }
-  }, [initialDataLoaded, glosarioCompleto, equipedRamaIdsStr, initialReqsStr, form.personajes_ramas]);
+  }, [initialDataLoaded, glosarioCompleto, equipedRamaIdsStr, initialReqsStr, form.personajes_ramas, form.eleccion_tecnicas_clan]);
 
   // Recalcular atributos derivados cuando cambian los stats
   useEffect(() => {
@@ -284,6 +293,10 @@ function CrearFichaContent() {
       const equipedRamaIds = form.personajes_ramas
         .map((r: any) => r.rama_id ? Number(r.rama_id) : null)
         .filter(Boolean);
+
+      if (form.eleccion_tecnicas_clan?.rama_id) {
+        equipedRamaIds.push(Number(form.eleccion_tecnicas_clan.rama_id));
+      }
 
       const equipedElementIds = form.personajes_ramas
         .reduce((acc: number[], r: any) => {

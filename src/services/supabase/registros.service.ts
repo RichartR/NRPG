@@ -80,6 +80,7 @@ export const RegistrosService = {
     const { data, error } = await supabase
       .from('reg_characters')
       .select('id, nombre_ninja, hobba_name, rango')
+      .eq('activo', true)
       .or(`nombre_ninja.ilike.%${query}%,hobba_name.ilike.%${query}%`)
       .limit(5);
     

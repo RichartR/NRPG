@@ -2109,7 +2109,7 @@ export function CharacterSheetView({
                         <span className="text-oro/20 text-sm xl:text-lg ml-2">/ {character.puntos_stats}</span>
                       </span>
                     </div>
-                    {!isEditing && (
+                    {!isEditing && !isNew && (
                       <Link
                         href="/registros/tiendas/1"
                         className="ninja-btn-oro py-3.5 px-6 text-xs xl:text-sm font-black uppercase tracking-widest text-center w-full min-w-[130px] shrink-0"

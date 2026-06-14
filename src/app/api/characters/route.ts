@@ -129,6 +129,7 @@ export async function POST(request: Request) {
       edad: data.edad,
       sexo: data.sexo,
       rasgos: data.rasgos,
+      url_img: data.url_img || null,
       eleccion_tecnicas_clan: data.eleccion_tecnicas_clan
     });
 

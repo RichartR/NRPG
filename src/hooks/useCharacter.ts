@@ -723,7 +723,7 @@ export function useCharacter(characterId: string) {
     activeTab,
     setActiveTab,
     masters,
-    glosarioFiltrado,
+    glosarioFiltrado: isEditing ? glosarioCompleto : glosarioFiltrado,
     freeResetPeriod,
     updateField,
     updateStat,

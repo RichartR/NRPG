@@ -13,14 +13,18 @@ export default function CombateMenu() {
   const handleJoin = (e: React.FormEvent) => {
     e.preventDefault();
     if (roomId.trim()) {
-      router.push(`/combate/${roomId.trim()}`);
+      let targetRoom = roomId.trim();
+      if (roomMode === 'event' && !targetRoom.endsWith('-E')) {
+        targetRoom = `${targetRoom}-E`;
+      }
+      router.push(`/combate/${targetRoom}`);
     }
   };
 
   const handleCreate = () => {
     const newRoom = Math.random().toString(36).substring(2, 8).toUpperCase();
     if (roomMode === 'event') {
-      router.push(`/combate/${newRoom}?mode=event`);
+      router.push(`/combate/${newRoom}-E`);
     } else {
       router.push(`/combate/${newRoom}`);
     }
@@ -86,7 +90,7 @@ export default function CombateMenu() {
               onChange={(e) => setRoomId(e.target.value.toUpperCase())}
               className="w-full bg-black/60 border border-oro/20 text-oro py-5 px-6 text-center text-2xl xl:text-4xl tracking-[0.4em] font-black outline-none hover:border-oro/40 focus:border-oro/80 transition-all uppercase placeholder:tracking-normal placeholder:text-oro/10 selection:bg-oro/20"
               placeholder="CÓDIGO"
-              maxLength={6}
+              maxLength={10}
               style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
             />
           </div>

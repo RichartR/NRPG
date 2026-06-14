@@ -473,7 +473,6 @@ export default function TiendaDetallePage() {
         fetchShopData();
       }
     } catch (err: any) {
-      console.error(err);
       addToast(err.message || 'Error al procesar la compra de stats', 'error');
     } finally {
       setIsSubmittingStatBuy(false);

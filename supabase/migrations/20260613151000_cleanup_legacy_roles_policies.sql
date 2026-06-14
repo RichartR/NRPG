@@ -412,6 +412,7 @@ END;
 $function$;
 
 -- comprar_puntos_stat
+DROP FUNCTION IF EXISTS public.comprar_puntos_stat(integer, integer, integer);
 CREATE OR REPLACE FUNCTION public.comprar_puntos_stat(p_personaje_id bigint, p_cantidad integer, p_coste_exp_total integer)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -589,6 +590,16 @@ BEGIN
         'restante_xp', v_char_xp - v_total_calculated_exp,
         'nuevo_rango', v_nuevo_rango
     );
+END;
+$function$;
+
+-- compatibilidad: algunas rutas llaman con bigint y otras con integer
+CREATE OR REPLACE FUNCTION public.fn_calcular_rango_personaje(p_personaje_id bigint, p_puntos_stats integer)
+ RETURNS character varying
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+    RETURN public.fn_calcular_rango_personaje(p_personaje_id::integer, p_puntos_stats);
 END;
 $function$;
 

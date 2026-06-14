@@ -12,15 +12,15 @@ export async function POST(request: Request) {
 
     const { action, payload, id } = await request.json();
 
-    // Check user role
-    const profile = await ProfileService.getProfile(user.id, supabase);
+    const adminClient = createAdminClient();
+
+    // Check user role using adminClient to bypass RLS restrictions
+    const profile = await ProfileService.getProfile(user.id, adminClient);
 
     const isAdmin = profile?.roles?.includes('admin') || profile?.roles?.includes('moderador') || user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin';
 
-    const adminClient = createAdminClient();
-
-    // Obtener personaje activo del usuario para validaciones de propietario
-    const { data: activeChar } = await supabase
+    // Obtener personaje activo del usuario para validaciones de propietario using adminClient
+    const { data: activeChar } = await adminClient
       .from('reg_characters')
       .select('id')
       .eq('user_id', user.id)
