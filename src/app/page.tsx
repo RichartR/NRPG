@@ -206,7 +206,7 @@ export default async function Home() {
             )}
 
             <nav className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-               {profile?.roles && profile.roles.some((role: string) => ['admin', 'moderador', 'narrador', 'kage', 'delegado'].includes(role)) && (
+              {profile?.roles && profile.roles.some((role: string) => ['admin', 'moderador', 'narrador', 'kage', 'delegado'].includes(role)) && (
                 <>
                   <Link
                     href="/admin"

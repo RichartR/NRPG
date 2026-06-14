@@ -337,7 +337,7 @@ export default function TiendasPage() {
 
         {/* Global actions: History button */}
         <div className="flex justify-between items-center mb-8">
-          <p className="text-xs sm:text-sm font-black text-oro/60 uppercase tracking-widest">
+          <p className="text-xs sm:text-sm font-black text-oro uppercase tracking-widest bg-rojo-sangre/80 p-2">
             {loading ? 'Cargando Tiendas...' : `${listToShow.length} Tiendas Disponibles`}
           </p>
           <button

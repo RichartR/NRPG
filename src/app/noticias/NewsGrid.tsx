@@ -219,7 +219,7 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
 
         {filteredNews.length === 0 && (
           <div className="col-span-full text-center py-32 ninja-card-oro opacity-50">
-            <p className="text-oro/40 font-black uppercase tracking-[0.3em] text-sm italic">SISTEMA SIN COMUNICADOS COMPATIBLES</p>
+            <p className="text-oro/40 font-black uppercase tracking-[0.3em] text-sm italic">SIN COMUNICADOS O EVENTOS</p>
           </div>
         )}
       </div>
