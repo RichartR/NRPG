@@ -14,6 +14,7 @@ export default async function GlosarioPage() {
     categorias,
     subcategorias,
     glosarios,
+    elementos,
     ramas,
     aldeas,
     subespecialidades,
@@ -25,6 +26,7 @@ export default async function GlosarioPage() {
     MasterServerService.getCachedGlosarioCategorias(),
     MasterServerService.getCachedGlosarioSubcategorias(),
     MasterServerService.getCachedGlosarios(),
+    MasterServerService.getCachedElementos(),
     MasterServerService.getCachedRamas(),
     MasterServerService.getCachedAldeasActivas(),
     MasterServerService.getCachedSubEspecialidades(),
@@ -108,6 +110,7 @@ export default async function GlosarioPage() {
           categorias={categorias}
           subcategorias={subcategorias}
           glosarios={combinedGlosarios}
+          elementos={elementos}
           ramas={ramas}
           aldeas={aldeas}
           subespecialidades={subespecialidades}

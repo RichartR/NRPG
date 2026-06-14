@@ -2,13 +2,14 @@
 
 import React, { useState, useMemo } from 'react';
 import { Search, Filter, ChevronRight, Hash } from 'lucide-react';
-import { Glosario, GlosarioCategoria, GlosarioSubcategoria } from '@/domain/types';
+import { Elemento, Glosario, GlosarioCategoria, GlosarioSubcategoria } from '@/domain/types';
 import { NinjaSelect } from '@/components/ui/Fields';
 
 interface GlosarioViewProps {
   categorias: GlosarioCategoria[];
   subcategorias: GlosarioSubcategoria[];
   glosarios: Glosario[];
+  elementos: Elemento[];
   ramas: any[];
   aldeas: any[];
   subespecialidades: any[];
@@ -22,6 +23,7 @@ export default function GlosarioView({
   categorias,
   subcategorias,
   glosarios,
+  elementos,
   ramas,
   aldeas,
   subespecialidades,
@@ -123,44 +125,81 @@ export default function GlosarioView({
           (i.rama_clan_id === null && ramaId === null) ||
           (Number(i.rama_clan_id) === Number(ramaId))
         );
-        const ramaGroup: any = { info: ramaInfo, subespecialidades: [] };
+        const isElementalRama = String(ramaInfo.nombre || '').toLowerCase().includes('elemental') || String((ramaInfo as any).slug || '').toLowerCase().includes('elemental');
+        const ramaGroup: any = { info: ramaInfo, isElemental: isElementalRama, subespecialidades: [], elementos: [] };
 
-        // 3. Subespecialidades
-        const uniqueSubIds = Array.from(new Set(itemsInRama.map(i => i.sub_especialidad_id)));
-        uniqueSubIds.sort((a, b) => {
-          if (a === null) return -1;
-          if (b === null) return 1;
-          const nameA = subespecialidades.find(s => Number(s.id) === Number(a))?.nombre || '';
-          const nameB = subespecialidades.find(s => Number(s.id) === Number(b))?.nombre || '';
-          return nameA.localeCompare(nameB);
-        }).forEach(subId => {
-          const subInfo = subespecialidades.find(s => Number(s.id) === Number(subId)) || { id: null, nombre: 'Esencial' };
-          const itemsInSub = itemsInRama.filter(i =>
-            (i.sub_especialidad_id === null && subId === null) ||
-            (Number(i.sub_especialidad_id) === Number(subId))
-          );
-          const subGroup: any = { info: subInfo, categorias: [] };
+        if (isElementalRama) {
+          const uniqueElementIds = Array.from(new Set(itemsInRama.map(i => i.elemento_id)));
+          uniqueElementIds.sort((a, b) => {
+            if (a === null) return -1;
+            if (b === null) return 1;
+            const nameA = elementos.find(el => Number(el.id) === Number(a))?.nombre_esp || '';
+            const nameB = elementos.find(el => Number(el.id) === Number(b))?.nombre_esp || '';
+            return nameA.localeCompare(nameB);
+          }).forEach(elementId => {
+            const elementoInfo = elementos.find(el => Number(el.id) === Number(elementId)) || { id: null, nombre_esp: 'General' };
+            const itemsInElement = itemsInRama.filter(i =>
+              (i.elemento_id === null && elementId === null) ||
+              (Number(i.elemento_id) === Number(elementId))
+            );
+            const elementGroup: any = { info: elementoInfo, categorias: [] };
 
-          // 4. Categorías
-          const uniqueCatIds = Array.from(new Set(itemsInSub.map(i => i.categoria_id)));
-          uniqueCatIds.forEach(catId => {
-            const catInfo = categorias.find(c => c.id === catId);
-            const itemsInCat = itemsInSub.filter(i => i.categoria_id === catId);
-            const catGroup: any = { info: catInfo, subcategorias: [] };
+            const uniqueCatIds = Array.from(new Set(itemsInElement.map(i => i.categoria_id)));
+            uniqueCatIds.forEach(catId => {
+              const catInfo = categorias.find(c => c.id === catId);
+              const itemsInCat = itemsInElement.filter(i => i.categoria_id === catId);
+              const catGroup: any = { info: catInfo, subcategorias: [] };
 
-            // 5. Subcategorías
-            const uniqueSubcatIds = Array.from(new Set(itemsInCat.map(i => i.subcategoria_id)));
-            uniqueSubcatIds.forEach(subcatId => {
-              const subcatInfo = subcategorias.find(s => s.id === subcatId) || { id: 'no-sub', nombre: 'General' };
-              catGroup.subcategorias.push({
-                info: subcatInfo,
-                items: itemsInCat.filter(i => i.subcategoria_id === subcatId)
+              const uniqueSubcatIds = Array.from(new Set(itemsInCat.map(i => i.subcategoria_id)));
+              uniqueSubcatIds.forEach(subcatId => {
+                const subcatInfo = subcategorias.find(s => s.id === subcatId) || { id: 'no-sub', nombre: 'General' };
+                catGroup.subcategorias.push({
+                  info: subcatInfo,
+                  items: itemsInCat.filter(i => i.subcategoria_id === subcatId)
+                });
               });
+              elementGroup.categorias.push(catGroup);
             });
-            subGroup.categorias.push(catGroup);
+            ramaGroup.elementos.push(elementGroup);
           });
-          ramaGroup.subespecialidades.push(subGroup);
-        });
+        } else {
+          // 3. Subespecialidades
+          const uniqueSubIds = Array.from(new Set(itemsInRama.map(i => i.sub_especialidad_id)));
+          uniqueSubIds.sort((a, b) => {
+            if (a === null) return -1;
+            if (b === null) return 1;
+            const nameA = subespecialidades.find(s => Number(s.id) === Number(a))?.nombre || '';
+            const nameB = subespecialidades.find(s => Number(s.id) === Number(b))?.nombre || '';
+            return nameA.localeCompare(nameB);
+          }).forEach(subId => {
+            const subInfo = subespecialidades.find(s => Number(s.id) === Number(subId)) || { id: null, nombre: 'Esencial' };
+            const itemsInSub = itemsInRama.filter(i =>
+              (i.sub_especialidad_id === null && subId === null) ||
+              (Number(i.sub_especialidad_id) === Number(subId))
+            );
+            const subGroup: any = { info: subInfo, categorias: [] };
+
+            // 4. Categorías
+            const uniqueCatIds = Array.from(new Set(itemsInSub.map(i => i.categoria_id)));
+            uniqueCatIds.forEach(catId => {
+              const catInfo = categorias.find(c => c.id === catId);
+              const itemsInCat = itemsInSub.filter(i => i.categoria_id === catId);
+              const catGroup: any = { info: catInfo, subcategorias: [] };
+
+              // 5. Subcategorías
+              const uniqueSubcatIds = Array.from(new Set(itemsInCat.map(i => i.subcategoria_id)));
+              uniqueSubcatIds.forEach(subcatId => {
+                const subcatInfo = subcategorias.find(s => s.id === subcatId) || { id: 'no-sub', nombre: 'General' };
+                catGroup.subcategorias.push({
+                  info: subcatInfo,
+                  items: itemsInCat.filter(i => i.subcategoria_id === subcatId)
+                });
+              });
+              subGroup.categorias.push(catGroup);
+            });
+            ramaGroup.subespecialidades.push(subGroup);
+          });
+        }
         aldeaGroup.ramas.push(ramaGroup);
       });
       aldeaGroups.push(aldeaGroup);
@@ -180,6 +219,10 @@ export default function GlosarioView({
     if (reqs.rama_id) {
       const rama = ramas.find(r => r.id === reqs.rama_id);
       elements.push(<span key="rama" className="text-amber-800 font-black">{rama?.nombre || `ID: ${reqs.rama_id}`}</span>);
+    }
+    if (reqs.elemento_id) {
+      const elemento = elementos.find(el => el.id === reqs.elemento_id);
+      elements.push(<span key="elemento" className="text-cyan-900 font-black">{elemento?.nombre_jap || `ID: ${reqs.elemento_id}`}</span>);
     }
     if (reqs.combates) {
       elements.push(
@@ -202,7 +245,7 @@ export default function GlosarioView({
     }
 
     Object.entries(reqs).forEach(([key, value]) => {
-      if (['rango', 'rama_id', 'stats', 'misiones', 'personaje_id', 'combates'].includes(key)) return;
+      if (['rango', 'rama_id', 'elemento_id', 'stats', 'misiones', 'personaje_id', 'combates'].includes(key)) return;
       if (value === null || value === undefined || value === 0 || value === false || value === '') return;
       elements.push(<span key={key} className="text-zinc-500 font-black">{key.replace('_', ' ').toUpperCase()}: <span className="text-zinc-900">{String(value)}</span></span>);
     });
@@ -296,7 +339,7 @@ export default function GlosarioView({
         {groupedData.map((aldeaGroup: any) => (
           <section key={aldeaGroup.info.id || 'general'} className="animate-in fade-in slide-in-from-bottom-10 duration-700">
             {/* NIVEL 1: ALDEA */}
-            <div className="relative py-6 mb-8 border-b-2 border-oro/30">
+            <div className="relative py-6 mb-8 border-b-2 border-rojo-sangre/10">
               <div className="flex flex-col items-center text-center">
                 <span className="text-xs font-black text-rojo-sangre/40 uppercase tracking-[1em] mb-2">
                   {aldeaGroup.info.categoria_id === 2 ? 'Organización' : 'Gran Nación'}
@@ -305,8 +348,8 @@ export default function GlosarioView({
                   {aldeaGroup.info.nombre_completo}
                 </h2>
                 {aldeaGroup.info.id !== null && (
-                  <div className="mt-4 px-5 py-2 bg-oro/10 border border-oro/20 rounded-none text-xs font-black text-oro tracking-[0.2em] uppercase inline-block shadow-[0_0_15px_rgba(212,175,55,0.05)]">
-                    Cupos: <span className="text-white">{countByAldea[aldeaGroup.info.id] ?? 0}</span> / <span className="text-white">{aldeaGroup.info.categoria_id === 2 ? cuposMaximosOrganizacion : cuposMaximosAldea}</span>
+                  <div className="mt-4 px-5 py-2 bg-rojo-sangre border border-oro/20 rounded-none text-xs font-black text-oro/70 tracking-[0.2em] uppercase inline-block shadow-[0_0_15px_rgba(212,175,55,0.05)]">
+                    Cupos: <span className="text-oro">{countByAldea[aldeaGroup.info.id] ?? 0}</span> / <span className="text-oro">{aldeaGroup.info.categoria_id === 2 ? cuposMaximosOrganizacion : cuposMaximosAldea}</span>
                   </div>
                 )}
                 <div className="w-24 h-1 bg-oro mt-4 shadow-sm" />
@@ -325,25 +368,27 @@ export default function GlosarioView({
                       <h3 className="text-3xl xl:text-5xl font-black text-zinc-900 uppercase tracking-widest">
                         {ramaGroup.info.nombre}
                         {ramaGroup.info.tipo === 'clan' && ramaGroup.info.es_especial && (
-                          <span className="ml-3 text-caption bg-purple-600/10 border border-purple-500/20 text-purple-600 px-2 py-0.5 font-black tracking-wider uppercase rounded-sm italic align-middle">Especial</span>
+                          <span className="ml-3 text-caption bg-rojo-sangre/10 border border-rojo-sangre/20 text-rojo-sangre px-2 py-0.5 font-black tracking-wider uppercase rounded-sm italic align-middle text-2xl">Especial</span>
                         )}
                       </h3>
                     </div>
                     {ramaGroup.info.tipo === 'clan' && ramaGroup.info.id !== null && (
-                      <div className="px-4 py-2 bg-zinc-950 text-oro border border-oro/20 rounded-none text-xs font-black tracking-widest uppercase shrink-0 self-start sm:self-center shadow-lg">
+                      <div className="px-4 py-2 bg-zinc-800/80 text-oro border border-oro/20 rounded-none text-xs font-black tracking-widest uppercase shrink-0 self-start sm:self-center shadow-lg">
                         Cupos: <span className="text-white">{countByClan[ramaGroup.info.id] ?? 0}</span> / <span className="text-white">{(ramaGroup.info.es_especial ? 2 : 4) + Math.floor((cuposMaximosAldea - 10) / 5)}</span>
                       </div>
                     )}
                   </div>
 
                   <div className="space-y-10 pl-4 md:pl-10">
-                    {ramaGroup.subespecialidades.map((subGroup: any) => (
+                    {(ramaGroup.elementos?.length > 0 ? ramaGroup.elementos : ramaGroup.subespecialidades).map((subGroup: any) => (
                       <div key={subGroup.info.id || 'esencial'} className="space-y-6">
-                        {/* NIVEL 3: SUBESPECIALIDAD */}
+                        {/* NIVEL 3: ELEMENTO / SUBESPECIALIDAD */}
                         {subGroup.info.id !== null && (
                           <div className="flex items-center gap-4 border-b border-zinc-200 pb-4">
                             <div className="w-2 h-2 bg-rojo-sangre" />
-                            <h4 className="text-xl xl:text-3xl font-black text-zinc-800 uppercase tracking-widest italic">{subGroup.info.nombre}</h4>
+                            <h4 className="text-xl xl:text-3xl font-black text-zinc-800 uppercase tracking-widest italic">
+                              {ramaGroup.isElemental ? (subGroup.info.nombre_jap || subGroup.info.nombre) : subGroup.info.nombre}
+                            </h4>
                           </div>
                         )}
 
@@ -351,8 +396,8 @@ export default function GlosarioView({
                           {subGroup.categorias.map((catGroup: any) => (
                             <div key={catGroup.info.id} className="space-y-4">
                               {/* NIVEL 4: CATEGORÍA */}
-                              <div className="flex items-center gap-3 bg-oro/50 p-4 border border-oro/20">
-                                <Hash className="w-4 h-4 text-oro" />
+                              <div className="flex items-center gap-3 bg-oro/40 p-4 border border-oro/20">
+                                <Hash className="w-4 h-4 text-rojo-sangre" />
                                 <h5 className="text-sm xl:text-lg font-black text-zinc-600 uppercase tracking-[0.3em]">{catGroup.info.nombre}</h5>
                               </div>
 
@@ -372,7 +417,7 @@ export default function GlosarioView({
                                       <React.Fragment key={subcat.info.id}>
                                         {/* NIVEL 5: SUBCATEGORÍA */}
                                         {subcat.info.nombre !== 'General' && (
-                                          <tr className="bg-zinc-50">
+                                          <tr className="bg-zinc-100">
                                             <td colSpan={5} className="py-3 px-8 text-caption font-black text-zinc-600 uppercase tracking-[0.4em] text-center border-y border-zinc-100 italic">
                                               --- {subcat.info.nombre} ---
                                             </td>
@@ -380,7 +425,7 @@ export default function GlosarioView({
                                         )}
 
                                         {subcat.items.map((item: Glosario) => (
-                                          <tr key={item.id} className="bg-zinc-50 group hover:bg-oro/5 transition-all duration-300">
+                                          <tr key={item.id} className="bg-zinc-50 group hover:bg-oro/20 transition-all duration-300">
                                             <td className="py-3 px-8">
                                               <div className="flex flex-col">
                                                 <div className="flex items-center gap-2">
@@ -391,7 +436,7 @@ export default function GlosarioView({
                                                     <span className="text-[7px] bg-rojo-sangre text-white px-1.5 py-0.5 font-black uppercase tracking-widest rounded-sm">Inic.</span>
                                                   )}
                                                   {item.basica !== undefined && (
-                                                    <span className={`text-[7px] ${item.basica ? 'bg-sky-600 text-white' : 'bg-purple-600 text-white'} px-1.5 py-0.5 font-black uppercase tracking-widest rounded-sm`}>
+                                                    <span className={`text-[7px] ${item.basica ? 'bg-sky-600 text-white' : 'bg-green-800 text-white'} px-1.5 py-0.5 font-black uppercase tracking-widest rounded-sm`}>
                                                       {item.basica ? 'Básica' : 'Avanzada'}
                                                     </span>
                                                   )}

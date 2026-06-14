@@ -1,5 +1,5 @@
 import { SupabaseClient, createClient as createSupabaseClient } from '@supabase/supabase-js';
-import { Aldea, RamaClan, SubEspecialidad, DocumentoSistema, DocumentoCombate, ConfiguracionSistema, Glosario, GlosarioCategoria, GlosarioSubcategoria, Entrenamiento } from '@/domain/types';
+import { Aldea, RamaClan, SubEspecialidad, DocumentoSistema, DocumentoCombate, ConfiguracionSistema, Glosario, GlosarioCategoria, GlosarioSubcategoria, Entrenamiento, Elemento } from '@/domain/types';
 import { unstable_cache } from 'next/cache';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -88,6 +88,20 @@ export const MasterServerService = {
       return data || [];
     },
     ['master-glosario-subcategorias'],
+    { revalidate: 300 }
+  ),
+
+  getCachedElementos: unstable_cache(
+    async () => {
+      const { data, error } = await publicClient
+        .from('info_elementos')
+        .select('*')
+        .eq('activo', true)
+        .order('nombre_esp', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    ['master-elementos-activos'],
     { revalidate: 300 }
   ),
 
