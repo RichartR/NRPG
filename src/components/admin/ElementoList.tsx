@@ -7,6 +7,7 @@ import ElementoEditForm from './ElementoEditForm';
 import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { Elemento, RamaClan, SubEspecialidad, RamaElemento } from '@/domain/types';
+import { searchAny } from '@/lib/utils/search';
 
 interface ElementoListProps {
   initialElementos: Elemento[];
@@ -43,9 +44,7 @@ export default function ElementoList({ initialElementos, ramas, subEspecialidade
     return initialElementos.filter((el) => {
       const matchesTab = activeTab === 'active' ? el.activo : !el.activo;
       const matchesType = activeType === 'todos' || el.tipo === activeType;
-      const matchesSearch =
-        el.nombre_esp.toLowerCase().includes(search.toLowerCase()) ||
-        el.nombre_jap.toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = searchAny(search, [el.nombre_esp, el.nombre_jap]);
       return matchesTab && matchesType && matchesSearch;
     });
   }, [initialElementos, activeTab, activeType, search]);

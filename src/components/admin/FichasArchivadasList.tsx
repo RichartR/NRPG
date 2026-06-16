@@ -5,6 +5,7 @@ import { Search, RefreshCw, Trash2, ShieldAlert, Sparkles, User, Clock, AlertTri
 import { useRouter } from 'next/navigation';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
+import { searchAny } from '@/lib/utils/search';
 
 interface Profile {
   username: string;
@@ -138,11 +139,7 @@ export default function FichasArchivadasList({ initialCharacters }: { initialCha
             ? char.eliminado_voluntario
             : !char.eliminado_voluntario;
 
-      const username = getUsername(char).toLowerCase();
-      const matchesSearch =
-        char.nombre_ninja.toLowerCase().includes(search.toLowerCase()) ||
-        username.includes(search.toLowerCase()) ||
-        char.rango.toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = searchAny(search, [char.nombre_ninja, getUsername(char), char.rango]);
 
       return matchesTab && matchesSearch;
     });

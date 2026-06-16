@@ -8,6 +8,7 @@ import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { DataField, SelectField, NinjaSelect } from '@/components/ui/Fields';
 import { ScrollText, Plus, Edit3, Trash2, X, Save, Image as ImageIcon, Search, Filter } from 'lucide-react';
 import Link from 'next/link';
+import { searchIncludes } from '@/lib/utils/search';
 
 export default function AdminMisionesPage() {
   const [misiones, setMisiones] = useState<MisionMaster[]>([]);
@@ -252,7 +253,7 @@ export default function AdminMisionesPage() {
             <div className="w-10 h-10 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin mx-auto" />
           </div>
         ) : misiones.filter(m => {
-          const matchesSearch = m.codigo_mision.toLowerCase().includes(searchTerm.toLowerCase());
+          const matchesSearch = searchIncludes(m.codigo_mision, searchTerm);
           const matchesRango = filterRango === 'ALL' || m.rango === filterRango;
           return matchesSearch && matchesRango;
         }).length > 0 ? (
@@ -269,7 +270,7 @@ export default function AdminMisionesPage() {
               </thead>
               <tbody className="divide-y divide-zinc-800/50">
                 {misiones.filter(m => {
-                  const matchesSearch = m.codigo_mision.toLowerCase().includes(searchTerm.toLowerCase());
+                  const matchesSearch = searchIncludes(m.codigo_mision, searchTerm);
                   const matchesRango = filterRango === 'ALL' || m.rango === filterRango;
                   return matchesSearch && matchesRango;
                 }).map((m) => (

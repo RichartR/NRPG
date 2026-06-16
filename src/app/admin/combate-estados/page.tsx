@@ -8,6 +8,7 @@ import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { DataField } from '@/components/ui/Fields';
 import { Swords, Plus, Edit3, Trash2, X, Save, Search, CheckCircle2, Archive } from 'lucide-react';
 import Link from 'next/link';
+import { searchIncludes } from '@/lib/utils/search';
 
 export default function AdminEstadosCombatePage() {
   const [estados, setEstados] = useState<EstadoCombate[]>([]);
@@ -87,7 +88,7 @@ export default function AdminEstadosCombatePage() {
   };
 
   const filteredEstados = estados.filter(est => {
-    const matchesSearch = est.nombre.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = searchIncludes(est.nombre, searchTerm);
     const matchesTab = activeTab === 'active' ? est.activo : !est.activo;
     return matchesSearch && matchesTab;
   });

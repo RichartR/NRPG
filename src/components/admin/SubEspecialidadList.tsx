@@ -7,6 +7,7 @@ import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { DataField, SearchableSelect } from '@/components/ui/Fields';
 import { SubEspecialidad, RamaClan } from '@/domain/types';
+import { searchIncludes } from '@/lib/utils/search';
 
 const generateSlug = (text: string): string =>
   text
@@ -98,7 +99,7 @@ export default function SubEspecialidadList({ initialSubs, ramas }: { initialSub
   const filteredSubs = useMemo(() => {
     return subs.filter(sub => {
       const matchesTab = activeTab === 'active' ? sub.activo : !sub.activo;
-      const matchesSearch = (sub.nombre || '').toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = searchIncludes(sub.nombre, search);
       return matchesTab && matchesSearch;
     });
   }, [subs, activeTab, search]);

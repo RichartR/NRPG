@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import RamaEditForm from './RamaEditForm';
 import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
+import { searchAny } from '@/lib/utils/search';
 
 export default function RamaList({ initialRamas, aldeas, rasgos }: { initialRamas: any[], aldeas: any[], rasgos: any[] }) {
   const [editingRama, setEditingRama] = useState<any>(null);
@@ -33,9 +34,7 @@ export default function RamaList({ initialRamas, aldeas, rasgos }: { initialRama
   const filteredRamas = useMemo(() => {
     return initialRamas.filter(rama => {
       const matchesTab = activeTab === 'active' ? rama.activo : !rama.activo;
-      const matchesSearch = 
-        rama.nombre.toLowerCase().includes(search.toLowerCase()) || 
-        rama.tipo.toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = searchAny(search, [rama.nombre, rama.tipo]);
       return matchesTab && matchesSearch;
     });
   }, [initialRamas, activeTab, search]);

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import AldeaEditForm from './AldeaEditForm';
 import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
+import { searchAny } from '@/lib/utils/search';
 
 export default function AldeaList({ initialAldeas }: { initialAldeas: any[] }) {
   const [editingAldea, setEditingAldea] = useState<any>(null);
@@ -33,9 +34,7 @@ export default function AldeaList({ initialAldeas }: { initialAldeas: any[] }) {
   const filteredAldeas = useMemo(() => {
     return initialAldeas.filter(aldea => {
       const matchesTab = activeTab === 'active' ? aldea.activo : !aldea.activo;
-      const matchesSearch = 
-        aldea.nombre_jap.toLowerCase().includes(search.toLowerCase()) || 
-        aldea.nombre_español.toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = searchAny(search, [aldea.nombre_jap, aldea.nombre_español]);
       return matchesTab && matchesSearch;
     });
   }, [initialAldeas, activeTab, search]);

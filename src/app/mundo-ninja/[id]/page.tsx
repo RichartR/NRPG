@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import { CharacterServerService } from '@/services/supabase/character.server.service';
 import MundoNinjaVillageClientView from './MundoNinjaVillageClientView';
+import { searchAny } from '@/lib/utils/search';
 
 export default async function MundoNinjaPublicVillagePage({
   params,
@@ -44,10 +45,8 @@ export default async function MundoNinjaPublicVillagePage({
   const searchQuery = resolvedSearchParams.search || '';
   const filteredNinjas = searchQuery
     ? ninjas.filter((ninja) => {
-      const nombreMatches = ninja.nombre_ninja.toLowerCase().includes(searchQuery.toLowerCase());
       const profileUsername = (Array.isArray(ninja.profiles) ? ninja.profiles[0]?.username : ninja.profiles?.username) || ninja.hobba_name || '';
-      const discordMatches = profileUsername.toLowerCase().includes(searchQuery.toLowerCase());
-      return nombreMatches || discordMatches;
+      return searchAny(searchQuery, [ninja.nombre_ninja, profileUsername]);
     })
     : ninjas;
 

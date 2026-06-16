@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { PaginationContainer } from '@/components/ui/PaginationContainer';
 import { PaginationPageInput } from '@/components/ui/PaginationPageInput';
 import { createClient } from '@/utils/supabase/client';
+import { searchAny } from '@/lib/utils/search';
 
 export default function AdminUsuariosPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -80,13 +81,8 @@ export default function AdminUsuariosPage() {
   }, []);
 
   useEffect(() => {
-    const term = searchTerm.toLowerCase();
     const filtered = users.filter(u => {
-      const usernameMatch = u.username?.toLowerCase().includes(term);
-      const discordMatch = u.discord_id?.toLowerCase().includes(term);
-      const charMatch = u.active_character?.nombre_ninja?.toLowerCase().includes(term);
-      const ipMatch = u.last_ip?.toLowerCase().includes(term);
-      return usernameMatch || discordMatch || charMatch || ipMatch;
+      return searchAny(searchTerm, [u.username, u.discord_id, u.active_character?.nombre_ninja, u.last_ip]);
     });
     setFilteredUsers(filtered);
     setCurrentPage(1);

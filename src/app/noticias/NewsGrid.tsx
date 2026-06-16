@@ -10,6 +10,7 @@ import RegistroCard from '@/components/registros/RegistroCard';
 import EventRewardForm from '@/components/admin/EventRewardForm';
 import { PaginationPageInput } from '@/components/ui/PaginationPageInput';
 import { PaginationContainer } from '@/components/ui/PaginationContainer';
+import { searchIncludes } from '@/lib/utils/search';
 
 interface NewsItem {
   id?: string;
@@ -128,7 +129,7 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
   const filteredNews = useMemo(() => {
     return newsList
       .filter(item => {
-        const matchesSearch = item.titulo.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSearch = searchIncludes(item.titulo, searchQuery);
         const matchesCategory = selectedCategory === 'todos' || item.categoria?.toLowerCase() === selectedCategory;
         return matchesSearch && matchesCategory;
       })

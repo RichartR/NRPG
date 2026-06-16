@@ -15,6 +15,7 @@ import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { createClient } from '@/utils/supabase/client';
 import { MasterService } from '@/services/supabase/master.service';
 import { NinjaSelect } from '@/components/ui/Fields';
+import { searchAny, searchIncludes } from '@/lib/utils/search';
 
 type Section = 'hub' | 'elementos' | 'categorias' | 'subcategorias';
 type ViewStatus = 'active' | 'archived';
@@ -112,15 +113,14 @@ export default function GlosarioManager() {
 
   const filteredData = () => {
     const isActivo = viewStatus === 'active';
-    const text = search.toLowerCase();
     if (activeSection === 'elementos') {
-      return elementos.filter(el => el.activo === isActivo && (el.nombre_es.toLowerCase().includes(text) || el.nombre_jp?.toLowerCase().includes(text)) && (filterCat ? el.categoria_id === filterCat : true));
+      return elementos.filter(el => el.activo === isActivo && searchAny(search, [el.nombre_es, el.nombre_jp]) && (filterCat ? el.categoria_id === filterCat : true));
     }
     if (activeSection === 'categorias') {
-      return categorias.filter(c => c.activo === isActivo && c.nombre.toLowerCase().includes(text));
+      return categorias.filter(c => c.activo === isActivo && searchIncludes(c.nombre, search));
     }
     if (activeSection === 'subcategorias') {
-      return subcategorias.filter(s => s.activo === isActivo && s.nombre.toLowerCase().includes(text));
+      return subcategorias.filter(s => s.activo === isActivo && searchIncludes(s.nombre, search));
     }
     return [];
   };
@@ -803,7 +803,7 @@ function SearchableSelect({ label, icon, options, value, onChange }: any) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const selectedOption = options.find((o: any) => o.id === value);
-  const filteredOptions = options.filter((o: any) => o.label.toLowerCase().includes(search.toLowerCase()));
+  const filteredOptions = options.filter((o: any) => searchIncludes(o.label, search));
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -853,7 +853,7 @@ function SearchableMultiSelect({ label, icon, options, value, onChange }: any) {
   }, [value]);
 
   const selectedOptions = options.filter((o: any) => selectedIds.includes(Number(o.id)));
-  const filteredOptions = options.filter((o: any) => o.label.toLowerCase().includes(search.toLowerCase()));
+  const filteredOptions = options.filter((o: any) => searchIncludes(o.label, search));
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

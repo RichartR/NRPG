@@ -7,6 +7,7 @@ import { ConfiguracionSistema } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { DataField } from '@/components/ui/Fields';
+import { searchAny } from '@/lib/utils/search';
 
 function KeyEditor({ initialKey, onRename }: { initialKey: string, onRename: (newKey: string) => void }) {
   const [localKey, setLocalKey] = useState(initialKey);
@@ -354,11 +355,7 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
     }
   };
 
-  const filteredConfigs = configs.filter(c => 
-    c.clave.toLowerCase().includes(search.toLowerCase()) || 
-    c.titulo.toLowerCase().includes(search.toLowerCase()) ||
-    c.descripcion?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredConfigs = configs.filter(c => searchAny(search, [c.clave, c.titulo, c.descripcion]));
 
   return (
     <div className="space-y-6">

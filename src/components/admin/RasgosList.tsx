@@ -7,6 +7,7 @@ import RasgoEditForm from './RasgoEditForm';
 import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { Rasgo } from '@/domain/types';
+import { searchIncludes } from '@/lib/utils/search';
 
 interface RasgosListProps {
   initialRasgos: Rasgo[];
@@ -41,7 +42,7 @@ export default function RasgosList({ initialRasgos, characters }: RasgosListProp
     return initialRasgos.filter((r) => {
       const matchesTab = activeTab === 'active' ? r.activo : !r.activo;
       const matchesCategory = activeCategory === 'todos' || r.categoria === activeCategory;
-      const matchesSearch = r.nombre.toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = searchIncludes(r.nombre, search);
       return matchesTab && matchesCategory && matchesSearch;
     });
   }, [initialRasgos, activeTab, activeCategory, search]);

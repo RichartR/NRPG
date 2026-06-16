@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Image as ImageIcon,
   Coins,
+  Search,
   ChevronUp,
   ChevronDown,
   Flame
@@ -34,6 +35,7 @@ import { CharacterRadarChart } from './CharacterRadarChart';
 import { useState, useMemo, useEffect, Fragment } from 'react';
 import { resolveAldeaIcono } from '@/utils/aldea-icon';
 import { createClient } from '@/utils/supabase/client';
+import { searchAny } from '@/lib/utils/search';
 
 interface CharacterSheetViewProps {
   character: Character;
@@ -112,6 +114,8 @@ export function CharacterSheetView({
 
   const [rasgosList, setRasgosList] = useState<Rasgo[]>([]);
   const [activeTeam, setActiveTeam] = useState<any>(null);
+  const [equipmentSearch, setEquipmentSearch] = useState('');
+  const [techniqueSearch, setTechniqueSearch] = useState('');
 
   useEffect(() => {
     setMounted(true);
@@ -1022,6 +1026,14 @@ export function CharacterSheetView({
     return sortedStructure;
   };
 
+  const matchesGlosarioSearch = (glosario: any, query: string) => {
+    return searchAny(query, [
+      glosario?.nombre_es,
+      glosario?.nombre_jp,
+      glosario?.descripcion
+    ]);
+  };
+
   // Memoizar el inventario agrupado (excluyendo objetos equipables/de la subcategoría equipo)
   const groupedInventory = useMemo(() => {
     const list = (character.personajes_inventario || []).filter((pi: PersonajeItem) => {
@@ -1041,11 +1053,20 @@ export function CharacterSheetView({
         const subSlug = (Array.isArray(subData) ? subData[0]?.slug : subData?.slug) || '';
         return pi.info_glosario?.zona_equipable || subSlug === 'equipo';
       })
+      .filter((pi: PersonajeItem) => matchesGlosarioSearch(pi.info_glosario, equipmentSearch))
       .sort((a, b) => {
         const aEq = a.equipado ? 1 : 0;
         const bEq = b.equipado ? 1 : 0;
         return bEq - aEq;
       });
+  }, [character.personajes_inventario, equipmentSearch]);
+
+  const hasPossessedEquipment = useMemo(() => {
+    return (character.personajes_inventario || []).some((pi: PersonajeItem) => {
+      const subData = pi.info_glosario?.info_glosario_subcategorias;
+      const subSlug = (Array.isArray(subData) ? subData[0]?.slug : subData?.slug) || '';
+      return pi.info_glosario?.zona_equipable || subSlug === 'equipo';
+    });
   }, [character.personajes_inventario]);
 
   const renderRequisitos = (reqs: any) => {
@@ -1133,25 +1154,25 @@ export function CharacterSheetView({
     const list = (character.personajes_tecnicas || []).filter((pt: PersonajeTecnica) => {
       const catId = pt.info_glosario?.categoria_id;
       return catId === 1 || (catId !== 2 && catId !== 3 && catId !== 4);
-    });
+    }).filter((pt: PersonajeTecnica) => matchesGlosarioSearch(pt.info_glosario, techniqueSearch));
     return groupItemsByHierarchy(list);
-  }, [character.personajes_tecnicas, masters.aldeas, masters.ramas]);
+  }, [character.personajes_tecnicas, masters.aldeas, masters.ramas, techniqueSearch]);
 
   // Memoizar Pasivas agrupadas por subcategoría (categoria_id === 4)
   const pasivasGrouped = useMemo(() => {
     const list = (character.personajes_tecnicas || []).filter((pt: PersonajeTecnica) => {
       return pt.info_glosario?.categoria_id === 4;
-    });
+    }).filter((pt: PersonajeTecnica) => matchesGlosarioSearch(pt.info_glosario, techniqueSearch));
     return groupItemsByHierarchy(list);
-  }, [character.personajes_tecnicas, masters.aldeas, masters.ramas]);
+  }, [character.personajes_tecnicas, masters.aldeas, masters.ramas, techniqueSearch]);
 
   // Memoizar Kuchiyoses agrupadas por subcategoría (categoria_id === 3)
   const kuchiyosesGrouped = useMemo(() => {
     const list = (character.personajes_tecnicas || []).filter((pt: PersonajeTecnica) => {
       return pt.info_glosario?.categoria_id === 3;
-    });
+    }).filter((pt: PersonajeTecnica) => matchesGlosarioSearch(pt.info_glosario, techniqueSearch));
     return groupItemsByHierarchy(list);
-  }, [character.personajes_tecnicas, masters.aldeas, masters.ramas]);
+  }, [character.personajes_tecnicas, masters.aldeas, masters.ramas, techniqueSearch]);
 
 
   const [editingRegistro, setEditingRegistro] = useState<Registro | null>(null);
@@ -2599,6 +2620,26 @@ export function CharacterSheetView({
 
               {inventarioSubTab === 'equipo' && (
                 <SectionCard title="EQUIPO DE COMBATE" color="oro">
+                  <div className="relative mb-8">
+                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-oro/40 pointer-events-none" />
+                    <input
+                      value={equipmentSearch}
+                      onChange={(e) => setEquipmentSearch(e.target.value)}
+                      placeholder="BUSCAR EQUIPAMIENTO..."
+                      className="w-full bg-black/50 border border-oro/10 py-4 pl-12 pr-12 text-oro font-black uppercase tracking-widest text-xs outline-none focus:border-oro/40 transition-all placeholder:text-oro/20 ninja-clip-sm"
+                    />
+                    {equipmentSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setEquipmentSearch('')}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-oro/30 hover:text-oro transition-colors"
+                        title="Limpiar búsqueda"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {(['Cabeza', 'Cuerpo', 'Especial'] as const).map(zone => {
                       const allEquippedItems = (character.personajes_inventario || []).filter(
@@ -2721,7 +2762,7 @@ export function CharacterSheetView({
 
                     {possessedEquipment.length === 0 ? (
                       <div className="py-8 text-center rounded-[4px] border border-oro/10 bg-black/20 text-xs font-black text-oro/30 uppercase tracking-[0.25em]">
-                        No tienes equipamiento en tu mochila
+                        {hasPossessedEquipment && equipmentSearch.trim() ? 'No hay equipamiento que coincida con la búsqueda' : 'No tienes equipamiento en tu mochila'}
                       </div>
                     ) : (
                       <div className="ninja-card-oro p-1 overflow-hidden border border-oro/10">
@@ -2876,13 +2917,39 @@ export function CharacterSheetView({
                 })}
               </div>
 
+              <div className="relative">
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-oro/40 pointer-events-none" />
+                <input
+                  value={techniqueSearch}
+                  onChange={(e) => setTechniqueSearch(e.target.value)}
+                  placeholder={
+                    tecnicasSubTab === 'jutsus'
+                      ? 'BUSCAR TÉCNICAS APRENDIDAS...'
+                      : tecnicasSubTab === 'pasivas'
+                        ? 'BUSCAR HABILIDADES PASIVAS...'
+                        : 'BUSCAR KUCHIYOSES...'
+                  }
+                  className="w-full bg-black/50 border border-oro/10 py-4 pl-12 pr-12 text-oro font-black uppercase tracking-widest text-xs outline-none focus:border-oro/40 transition-all placeholder:text-oro/20 ninja-clip-sm"
+                />
+                {techniqueSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setTechniqueSearch('')}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-oro/30 hover:text-oro transition-colors"
+                    title="Limpiar búsqueda"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
               {tecnicasSubTab === 'jutsus' && (
                 <div className="space-y-8">
                   {/* SECCIÓN 1: JUTSUS NINJA */}
                   <SectionCard title="JUTSUS" color="oro">
                     {Object.keys(tecnicasGrouped).length === 0 ? (
                       <div className="py-12 text-center rounded-[4px] border border-oro/10 bg-black/20 text-xs font-black text-oro/30 uppercase tracking-[0.25em]">
-                        No tienes técnicas aprendidas
+                        {techniqueSearch.trim() ? 'No hay técnicas que coincidan con la búsqueda' : 'No tienes técnicas aprendidas'}
                       </div>
                     ) : (
                       <div className="space-y-12">
@@ -3162,7 +3229,7 @@ export function CharacterSheetView({
                   <SectionCard title="HABILIDADES PASIVAS" icon={ScrollText} color="oro">
                     {Object.keys(pasivasGrouped).length === 0 ? (
                       <div className="py-12 text-center rounded-[4px] border border-oro/10 bg-black/20 text-xs font-black text-oro/30 uppercase tracking-[0.25em]">
-                        No tienes habilidades pasivas
+                        {techniqueSearch.trim() ? 'No hay pasivas que coincidan con la búsqueda' : 'No tienes habilidades pasivas'}
                       </div>
                     ) : (
                       <div className="space-y-12">
@@ -3318,7 +3385,7 @@ export function CharacterSheetView({
                   <SectionCard title="INVOCACIONES Y KUCHIYOSES" icon={Swords} color="oro">
                     {Object.keys(kuchiyosesGrouped).length === 0 ? (
                       <div className="py-12 text-center rounded-[4px] border border-oro/10 bg-black/20 text-xs font-black text-oro/30 uppercase tracking-[0.25em]">
-                        No tienes ningún pacto kuchiyose
+                        {techniqueSearch.trim() ? 'No hay kuchiyoses que coincidan con la búsqueda' : 'No tienes ningún pacto kuchiyose'}
                       </div>
                     ) : (
                       <div className="space-y-12">

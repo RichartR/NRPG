@@ -8,6 +8,7 @@ import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { NinjaSelect } from '@/components/ui/Fields';
+import { searchAny } from '@/lib/utils/search';
 
 interface NewsListProps {
   initialDocs: any[];
@@ -60,8 +61,7 @@ export default function NewsList({ initialDocs }: NewsListProps) {
     return initialDocs.filter(doc => {
       const isDocActive = doc.activo !== false;
       const matchesTab = activeTab === 'active' ? isDocActive : !isDocActive;
-      const matchesSearch = doc.titulo.toLowerCase().includes(search.toLowerCase()) ||
-        doc.discord_msg_id.toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = searchAny(search, [doc.titulo, doc.discord_msg_id]);
       const matchesCategory = categoryFilter === 'all' || doc.categoria === categoryFilter;
       return matchesTab && matchesSearch && matchesCategory;
     });

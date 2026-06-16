@@ -15,6 +15,7 @@ import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import { useMasterStore } from '@/store/useMasterStore';
 import { StatsLogic } from '@/domain/character/logic';
 import { ProfileService } from '@/services/supabase/profile.service';
+import { searchAny } from '@/lib/utils/search';
 
 export default function TiendaDetallePage() {
   const { id } = useParams();
@@ -557,9 +558,7 @@ export default function TiendaDetallePage() {
     if (!glosario) return false;
 
     // Search
-    const searchMatch =
-      glosario.nombre_es.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (glosario.nombre_jp && glosario.nombre_jp.toLowerCase().includes(searchTerm.toLowerCase()));
+    const searchMatch = searchAny(searchTerm, [glosario.nombre_es, glosario.nombre_jp]);
 
     if (!searchMatch) return false;
 

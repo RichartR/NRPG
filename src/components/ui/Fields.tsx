@@ -2,6 +2,7 @@
 import React from 'react';
 import { Lock } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import { searchIncludes } from '@/lib/utils/search';
 
 export const FormEditContext = React.createContext<{ isEditing?: boolean }>({ isEditing: true });
 
@@ -317,9 +318,7 @@ export function SearchableSelect({ label, value, options, onChange, disabled, pl
     [options]
   );
 
-  const filteredOptions = normalizedOptions.filter(o =>
-    o.label.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredOptions = normalizedOptions.filter(o => searchIncludes(o.label, search));
 
   const selectedOption = normalizedOptions.find(o => String(o.value) === String(value));
 

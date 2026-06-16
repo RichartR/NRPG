@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { Search, Filter, ChevronRight, Hash } from 'lucide-react';
 import { Elemento, Glosario, GlosarioCategoria, GlosarioSubcategoria } from '@/domain/types';
 import { NinjaSelect } from '@/components/ui/Fields';
+import { searchAny } from '@/lib/utils/search';
 
 interface GlosarioViewProps {
   categorias: GlosarioCategoria[];
@@ -40,9 +41,7 @@ export default function GlosarioView({
   // Filtrado de datos en tiempo real
   const filteredGlosarios = useMemo(() => {
     return glosarios.filter(item => {
-      const matchesSearch =
-        item.nombre_es.toLowerCase().includes(search.toLowerCase()) ||
-        (item.nombre_jp && item.nombre_jp.toLowerCase().includes(search.toLowerCase()));
+      const matchesSearch = searchAny(search, [item.nombre_es, item.nombre_jp]);
 
       const matchesCategoria = !selectedCategoria || item.categoria_id === selectedCategoria;
 

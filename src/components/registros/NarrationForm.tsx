@@ -7,6 +7,7 @@ import { Glosario, Registro } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { X, Search, UserPlus, User, Trash2, Coins, Sparkles, Plus, BookOpen, Link as LinkIcon } from 'lucide-react';
+import { searchIncludes } from '@/lib/utils/search';
 
 interface NarrationFormProps {
   onCreated: () => void;
@@ -531,7 +532,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                             ) : (
                               <div className="max-h-48 overflow-y-auto custom-scrollbar divide-y divide-oro/5">
                                 {(validGlosarioItems[p.id] || [])
-                                  .filter(item => item.nombre_es.toLowerCase().includes(glosarioSearchQuery.toLowerCase()))
+                                  .filter(item => searchIncludes(item.nombre_es, glosarioSearchQuery))
                                   .map((item) => (
                                     <button
                                       key={item.id}
@@ -543,7 +544,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                                     </button>
                                   ))}
 
-                                {(validGlosarioItems[p.id] || []).filter(item => item.nombre_es.toLowerCase().includes(glosarioSearchQuery.toLowerCase())).length === 0 && (
+                                {(validGlosarioItems[p.id] || []).filter(item => searchIncludes(item.nombre_es, glosarioSearchQuery)).length === 0 && (
                                   <div className="text-center py-6">
                                     <p className="text-caption font-black uppercase text-oro/20 italic">No hay ítems válidos para los requisitos de este personaje</p>
                                   </div>

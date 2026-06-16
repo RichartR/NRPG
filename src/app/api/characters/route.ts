@@ -126,10 +126,13 @@ export async function POST(request: Request) {
       puntos_stats: data.puntos_stats,
       xp: data.xp,
       ryous: data.ryous,
+      puntos_aprendizaje: data.puntos_aprendizaje,
+      moneda_evento: data.moneda_evento,
       edad: data.edad,
       sexo: data.sexo,
       rasgos: data.rasgos,
       url_img: data.url_img || null,
+      stats_updated_at: new Date().toISOString(),
       eleccion_tecnicas_clan: data.eleccion_tecnicas_clan
     });
 
@@ -201,14 +204,16 @@ export async function POST(request: Request) {
       }
     })();
 
-    // 3, 4, 5. Guardar Ramas, Inventario y Técnicas en paralelo
+    // 3, 4, 5, 6, 7. Guardar Ramas, Entrenamientos, Inventario, Técnicas y Rasgos en paralelo
     await Promise.all([
       CharacterServerService.insertRamas(adminClient, characterId, data.personajes_ramas || []),
+      CharacterServerService.bulkUpdateEntrenamientos(adminClient, characterId, data.personajes_entrenamientos || []),
       CharacterServerService.replaceInventario(adminClient, characterId, data.personajes_inventario || []),
-      CharacterServerService.replaceTecnicas(adminClient, characterId, data.personajes_tecnicas || [])
+      CharacterServerService.replaceTecnicas(adminClient, characterId, data.personajes_tecnicas || []),
+      CharacterServerService.bulkUpdateRasgos(adminClient, characterId, data.personajes_rasgos || [])
     ]);
 
-    // 6. Registro de Acción inicial
+    // 8. Registro de Acción inicial
     const { data: aldea } = await supabase.from('info_aldeas').select('nombre_completo').eq('id', data.aldea_id).single();
     
     // Obtener información de ramas y clanes para el título
@@ -256,7 +261,7 @@ export async function POST(request: Request) {
       });
     }
 
-    // 7. Registro de Elección de Entrenamiento (si aplica)
+    // 9. Registro de Elección de Entrenamiento (si aplica)
     if (data.personajes_ramas && data.personajes_ramas.length > 0) {
       const { data: allTrainings } = await adminClient.from('info_entrenamientos').select('id, nombre_esp').in('id', data.personajes_ramas.map((r: any) => r.id_entrenamiento).filter(Boolean));
       const trainingsMap = new Map(allTrainings?.map(t => [t.id, t]));

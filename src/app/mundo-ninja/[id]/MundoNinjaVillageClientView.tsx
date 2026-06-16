@@ -10,6 +10,7 @@ import { PaginationContainer } from '@/components/ui/PaginationContainer';
 import { createClient } from '@/utils/supabase/client';
 import { useToastStore } from '@/components/ui/Toast';
 import { ProfileService } from '@/services/supabase/profile.service';
+import { searchAny } from '@/lib/utils/search';
 
 // ─── MemberSelector ── componente de nivel superior para evitar remounts ────
 function MemberSelector({
@@ -187,12 +188,10 @@ export default function MundoNinjaVillageClientView({
 
   const getAvailableNinjas = (searchQuery: string, excludeIds: number[], requireNoGenin: boolean = false) => {
     return ninjas.filter(n => {
-      const nameMatches = n.nombre_ninja.toLowerCase().includes(searchQuery.toLowerCase());
       const username = (Array.isArray(n.profiles) ? n.profiles[0]?.username : n.profiles?.username) || n.hobba_name || '';
-      const userMatches = username.toLowerCase().includes(searchQuery.toLowerCase());
       const notExcluded = !excludeIds.includes(n.id);
       const rankingOk = !requireNoGenin || (n.rango_jerarquico && n.rango_jerarquico.toLowerCase() !== 'genin');
-      return (nameMatches || userMatches) && notExcluded && rankingOk;
+      return searchAny(searchQuery, [n.nombre_ninja, username]) && notExcluded && rankingOk;
     });
   };
 

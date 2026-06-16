@@ -8,6 +8,7 @@ import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { NinjaSelect } from '@/components/ui/Fields';
+import { searchAny } from '@/lib/utils/search';
 
 export default function DocList({ initialDocs, categories, defaultCategory, showSubcategory = true }: { initialDocs: any[], categories: any[], defaultCategory?: string, showSubcategory?: boolean }) {
   const [editingDoc, setEditingDoc] = useState<any>(null);
@@ -54,8 +55,7 @@ export default function DocList({ initialDocs, categories, defaultCategory, show
   const filteredDocs = useMemo(() => {
     return initialDocs.filter(doc => {
       const matchesTab = activeTab === 'active' ? doc.activo : !doc.activo;
-      const matchesSearch = doc.titulo.toLowerCase().includes(search.toLowerCase()) ||
-        doc.clave.toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = searchAny(search, [doc.titulo, doc.clave]);
       const matchesCategory = categoryFilter === 'all' || doc.categoria === categoryFilter;
       return matchesTab && matchesSearch && matchesCategory;
     });

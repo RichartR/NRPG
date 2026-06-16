@@ -15,6 +15,7 @@ import { useSearchParams } from 'next/navigation';
 import CombatForm from '@/components/registros/CombatForm';
 import NarrationForm from '@/components/registros/NarrationForm';
 import { CharacterStats } from '@/domain/types';
+import { searchIncludes } from '@/lib/utils/search';
 
 interface CombatState {
   vit: number;
@@ -2421,7 +2422,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                                 {(activeCharacter.personajes_tecnicas || [])
                                   .filter(pt => {
                                     const name = pt.info_glosario?.nombre_es || '';
-                                    const isMatch = name.toLowerCase().includes(tecnicaSearch.toLowerCase());
+                                    const isMatch = searchIncludes(name, tecnicaSearch);
                                     const isCD = myCooldowns[pt.tecnica_id] && getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) > 0;
                                     return isMatch && !isCD; // Ready techniques only
                                   })
@@ -2467,7 +2468,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                                 {/* No results */}
                                 {(activeCharacter.personajes_tecnicas || []).filter(pt => {
                                   const name = pt.info_glosario?.nombre_es || '';
-                                  const isMatch = name.toLowerCase().includes(tecnicaSearch.toLowerCase());
+                                  const isMatch = searchIncludes(name, tecnicaSearch);
                                   const isCD = myCooldowns[pt.tecnica_id] && getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) > 0;
                                   return isMatch && !isCD;
                                 }).length === 0 && (
@@ -2698,7 +2699,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                           {traitSearch.trim() !== '' && (
                             <div className="absolute z-10 left-0 right-0 mt-1 bg-black/95 border border-oro/20 max-h-40 overflow-y-auto rounded-sm shadow-xl custom-scrollbar">
                               {masterTraits
-                                .filter(t => t.nombre.toLowerCase().includes(traitSearch.toLowerCase()) && !npcRasgos.some(nr => nr.id === t.id))
+                                .filter(t => searchIncludes(t.nombre, traitSearch) && !npcRasgos.some(nr => nr.id === t.id))
                                 .slice(0, 10)
                                 .map(t => (
                                   <div
@@ -2774,7 +2775,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                           {itemSearch.trim() !== '' && (
                             <div className="absolute z-10 left-0 right-0 mt-1 bg-black/95 border border-oro/20 max-h-40 overflow-y-auto rounded-sm shadow-xl custom-scrollbar">
                               {masterItems
-                                .filter(i => i.nombre_es.toLowerCase().includes(itemSearch.toLowerCase()) && !npcEquipo.some(ne => ne.id === i.id))
+                                .filter(i => searchIncludes(i.nombre_es, itemSearch) && !npcEquipo.some(ne => ne.id === i.id))
                                 .slice(0, 10)
                                 .map(i => (
                                   <div

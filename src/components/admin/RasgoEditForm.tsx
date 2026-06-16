@@ -7,6 +7,7 @@ import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { DataField, SearchableSelect } from '@/components/ui/Fields';
 import { Rasgo } from '@/domain/types';
+import { searchIncludes } from '@/lib/utils/search';
 
 interface RasgoEditFormProps {
   rasgo?: Rasgo;
@@ -241,7 +242,7 @@ export default function RasgoEditForm({ rasgo, characters, onCancel }: RasgoEdit
                     >
                       <div className="max-h-60 overflow-y-auto custom-scrollbar">
                         {characters
-                          .filter(c => c.nombre_ninja.toLowerCase().includes(charSearch.toLowerCase()))
+                          .filter(c => searchIncludes(c.nombre_ninja, charSearch))
                           .map(c => {
                             const isSelected = (formData.personajes || []).includes(c.id);
                             return (
@@ -264,7 +265,7 @@ export default function RasgoEditForm({ rasgo, characters, onCancel }: RasgoEdit
                               </button>
                             );
                           })}
-                        {characters.filter(c => c.nombre_ninja.toLowerCase().includes(charSearch.toLowerCase())).length === 0 && (
+                        {characters.filter(c => searchIncludes(c.nombre_ninja, charSearch)).length === 0 && (
                           <div className="px-6 py-4 text-caption text-oro/20 font-black uppercase tracking-widest text-center italic">Sin resultados</div>
                         )}
                       </div>

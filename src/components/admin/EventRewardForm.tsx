@@ -9,6 +9,7 @@ import { useCharacterStore } from '@/store/useCharacterStore';
 import { AuthService } from '@/services/supabase/auth.service';
 import { ProfileService } from '@/services/supabase/profile.service';
 import { X, Search, UserPlus, User, Trash2, Coins, Sparkles, Plus, BookOpen } from 'lucide-react';
+import { searchIncludes } from '@/lib/utils/search';
 
 interface EventRewardFormProps {
   activeNews: {
@@ -450,7 +451,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
                           ) : (
                             <div className="max-h-48 overflow-y-auto custom-scrollbar divide-y divide-oro/5">
                               {(validGlosarioItems[p.id] || [])
-                                .filter(item => item.nombre_es.toLowerCase().includes(glosarioSearchQuery.toLowerCase()))
+                                .filter(item => searchIncludes(item.nombre_es, glosarioSearchQuery))
                                 .map((item) => (
                                   <button
                                     key={item.id}
@@ -462,7 +463,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
                                   </button>
                                 ))}
 
-                              {(validGlosarioItems[p.id] || []).filter(item => item.nombre_es.toLowerCase().includes(glosarioSearchQuery.toLowerCase())).length === 0 && (
+                              {(validGlosarioItems[p.id] || []).filter(item => searchIncludes(item.nombre_es, glosarioSearchQuery)).length === 0 && (
                                 <div className="text-center py-6">
                                   <p className="text-caption font-black uppercase text-oro/20 italic">No hay ítems válidos para los requisitos de este personaje</p>
                                 </div>

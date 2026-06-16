@@ -8,6 +8,7 @@ import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { useRouter } from 'next/navigation';
 import EntrenamientoEditForm from './EntrenamientoEditForm';
+import { searchAny } from '@/lib/utils/search';
 
 interface Props {
   initialEntrenamientos: Entrenamiento[];
@@ -29,9 +30,7 @@ export default function EntrenamientoList({ initialEntrenamientos, ramas, subEsp
   const filteredData = useMemo(() => {
     return initialEntrenamientos.filter(ent => {
       const matchesTab = activeTab === 'active' ? ent.activo : !ent.activo;
-      const matchesSearch =
-        ent.nombre_esp.toLowerCase().includes(search.toLowerCase()) ||
-        ent.nombre_jp.toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = searchAny(search, [ent.nombre_esp, ent.nombre_jp]);
       return matchesTab && matchesSearch;
     });
   }, [initialEntrenamientos, activeTab, search]);

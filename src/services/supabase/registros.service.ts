@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/client';
 import { Registro, MisionMaster } from '@/domain/types';
+import { searchAny } from '@/lib/utils/search';
 
 export const RegistrosService = {
   async getRegistros(page = 1, limit = 15, filters: { tipo?: string; subtipo?: string; personaje_id?: number; startDate?: string; endDate?: string } = {}) {
@@ -76,16 +77,21 @@ export const RegistrosService = {
   },
 
   async searchCharacters(query: string) {
+    const trimmedQuery = query.trim();
+    if (trimmedQuery.length < 3) return [];
+
     const supabase = createClient();
     const { data, error } = await supabase
       .from('reg_characters')
       .select('id, nombre_ninja, hobba_name, rango')
       .eq('activo', true)
-      .or(`nombre_ninja.ilike.%${query}%,hobba_name.ilike.%${query}%`)
-      .limit(5);
+      .order('nombre_ninja', { ascending: true })
+      .limit(250);
     
     if (error) throw error;
-    return data || [];
+    return (data || [])
+      .filter(character => searchAny(trimmedQuery, [character.nombre_ninja, character.hobba_name]))
+      .slice(0, 5);
   },
 
   async updateRegistro(id: number, payload: Partial<Registro> & { participantes_ids?: number[] }) {
