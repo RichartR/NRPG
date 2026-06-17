@@ -20,6 +20,8 @@ interface GlosarioViewProps {
   cuposMaximosOrganizacion?: number;
 }
 
+type AldeaFilter = number | 'general' | null;
+
 const RANK_ORDER: Record<string, number> = { D: 0, C: 1, B: 2, A: 3, S: 4 };
 
 const getGlosarioRankValue = (item: Glosario) => {
@@ -130,7 +132,7 @@ export default function GlosarioView({
 }: GlosarioViewProps) {
   const [search, setSearch] = useState('');
   const [selectedCategoria, setSelectedCategoria] = useState<number | null>(null);
-  const [selectedAldea, setSelectedAldea] = useState<number | null>(null);
+  const [selectedAldea, setSelectedAldea] = useState<AldeaFilter>(null);
   const [selectedRama, setSelectedRama] = useState<number | null>(null);
 
   // Filtrado de datos en tiempo real
@@ -149,7 +151,11 @@ export default function GlosarioView({
         if (rama) itemAldeaId = rama.aldea_id;
       }
 
-      const matchesAldea = !selectedAldea || Number(itemAldeaId) === Number(selectedAldea);
+      const matchesAldea =
+        selectedAldea === null ||
+        (selectedAldea === 'general'
+          ? itemAldeaId === null || itemAldeaId === undefined
+          : Number(itemAldeaId) === Number(selectedAldea));
       const matchesRama = !selectedRama || Number(itemRamaId) === Number(selectedRama);
 
       return matchesSearch && matchesCategoria && matchesAldea && matchesRama;
@@ -387,11 +393,14 @@ export default function GlosarioView({
                 variant="filter"
                 value={selectedAldea || ''}
                 onChange={(val) => {
-                  setSelectedAldea(val ? Number(val) : null);
+                  setSelectedAldea(val === 'general' ? 'general' : val ? Number(val) : null);
                   setSelectedRama(null);
                 }}
                 placeholder="Todas las Aldeas"
-                options={aldeas.map(a => ({ label: a.nombre_completo, value: a.id }))}
+                options={[
+                  { label: 'General', value: 'general' },
+                  ...aldeas.map(a => ({ label: a.nombre_completo, value: a.id }))
+                ]}
               />
             </div>
 
@@ -403,7 +412,11 @@ export default function GlosarioView({
                 onChange={(val) => setSelectedRama(val ? Number(val) : null)}
                 placeholder="Todas las Ramas / Clanes"
                 options={ramas
-                  .filter(r => !selectedAldea || Number(r.aldea_id) === Number(selectedAldea))
+                  .filter(r => {
+                    if (selectedAldea === null) return true;
+                    if (selectedAldea === 'general') return r.tipo === 'rama' && (r.aldea_id === null || r.aldea_id === undefined);
+                    return Number(r.aldea_id) === Number(selectedAldea);
+                  })
                   .map(r => ({ label: r.nombre, value: r.id }))
                 }
               />
