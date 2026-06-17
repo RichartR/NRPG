@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { Search, Filter, ChevronRight, Hash } from 'lucide-react';
 import { Elemento, Glosario, GlosarioCategoria, GlosarioSubcategoria } from '@/domain/types';
 import { NinjaSelect } from '@/components/ui/Fields';
-import { searchAny } from '@/lib/utils/search';
+import { normalizeSearchText, searchAny } from '@/lib/utils/search';
 
 interface GlosarioViewProps {
   categorias: GlosarioCategoria[];
@@ -19,6 +19,101 @@ interface GlosarioViewProps {
   cuposMaximosAldea?: number;
   cuposMaximosOrganizacion?: number;
 }
+
+const RANK_ORDER: Record<string, number> = { D: 0, C: 1, B: 2, A: 3, S: 4 };
+
+const getGlosarioRankValue = (item: Glosario) => {
+  const rank = String(item.requisitos?.rango || item.rango || 'D').toUpperCase();
+  return RANK_ORDER[rank] ?? Number.MAX_SAFE_INTEGER;
+};
+
+const getGlosarioTierValue = (item: Glosario) => {
+  if (item.inicial) return 0;
+  if (item.basica === true) return 1;
+  return 2;
+};
+
+const compareGlosarioItems = (a: Glosario, b: Glosario) => {
+  const rankDiff = getGlosarioRankValue(a) - getGlosarioRankValue(b);
+  if (rankDiff !== 0) return rankDiff;
+
+  const tierDiff = getGlosarioTierValue(a) - getGlosarioTierValue(b);
+  if (tierDiff !== 0) return tierDiff;
+
+  return normalizeSearchText(a.nombre_jp || a.nombre_es).localeCompare(
+    normalizeSearchText(b.nombre_jp || b.nombre_es),
+    'es'
+  );
+};
+
+const sortGlosarioItems = (items: Glosario[]) => {
+  return [...items].sort(compareGlosarioItems);
+};
+
+const compareGlosarioGroups = (a: { items: Glosario[] }, b: { items: Glosario[] }) => {
+  const firstA = sortGlosarioItems(a.items)[0];
+  const firstB = sortGlosarioItems(b.items)[0];
+  if (!firstA && !firstB) return 0;
+  if (!firstA) return 1;
+  if (!firstB) return -1;
+  return compareGlosarioItems(firstA, firstB);
+};
+
+const mergeAndSortSubcategoryGroups = (groups: Array<{ info: any; items: Glosario[] }>) => {
+  const generalItems: Glosario[] = [];
+  const namedGroups: Array<{ info: any; items: Glosario[] }> = [];
+
+  groups.forEach(group => {
+    if ((group.info?.nombre || 'General') === 'General') {
+      generalItems.push(...group.items);
+    } else {
+      namedGroups.push(group);
+    }
+  });
+
+  const mergedGroups = [
+    ...namedGroups,
+    ...(generalItems.length > 0
+      ? [{ info: { id: 'no-sub', nombre: 'General' }, items: sortGlosarioItems(generalItems) }]
+      : [])
+  ];
+
+  return mergedGroups.sort(compareGlosarioGroups);
+};
+
+const getFirstItemFromCategoryGroup = (group: { subcategorias: Array<{ items: Glosario[] }> }) => {
+  return sortGlosarioItems(group.subcategorias.flatMap(subcat => subcat.items))[0];
+};
+
+const getFirstItemFromSectionGroup = (group: { categorias: Array<{ subcategorias: Array<{ items: Glosario[] }> }> }) => {
+  return sortGlosarioItems(
+    group.categorias.flatMap(cat => cat.subcategorias.flatMap(subcat => subcat.items))
+  )[0];
+};
+
+const compareCategoryGroups = (
+  a: { subcategorias: Array<{ items: Glosario[] }> },
+  b: { subcategorias: Array<{ items: Glosario[] }> }
+) => {
+  const firstA = getFirstItemFromCategoryGroup(a);
+  const firstB = getFirstItemFromCategoryGroup(b);
+  if (!firstA && !firstB) return 0;
+  if (!firstA) return 1;
+  if (!firstB) return -1;
+  return compareGlosarioItems(firstA, firstB);
+};
+
+const compareSectionGroups = (
+  a: { categorias: Array<{ subcategorias: Array<{ items: Glosario[] }> }> },
+  b: { categorias: Array<{ subcategorias: Array<{ items: Glosario[] }> }> }
+) => {
+  const firstA = getFirstItemFromSectionGroup(a);
+  const firstB = getFirstItemFromSectionGroup(b);
+  if (!firstA && !firstB) return 0;
+  if (!firstA) return 1;
+  if (!firstB) return -1;
+  return compareGlosarioItems(firstA, firstB);
+};
 
 export default function GlosarioView({
   categorias,
@@ -154,13 +249,16 @@ export default function GlosarioView({
                 const subcatInfo = subcategorias.find(s => s.id === subcatId) || { id: 'no-sub', nombre: 'General' };
                 catGroup.subcategorias.push({
                   info: subcatInfo,
-                  items: itemsInCat.filter(i => i.subcategoria_id === subcatId)
+                  items: sortGlosarioItems(itemsInCat.filter(i => i.subcategoria_id === subcatId))
                 });
               });
+              catGroup.subcategorias = mergeAndSortSubcategoryGroups(catGroup.subcategorias);
               elementGroup.categorias.push(catGroup);
             });
+            elementGroup.categorias.sort(compareCategoryGroups);
             ramaGroup.elementos.push(elementGroup);
           });
+          ramaGroup.elementos.sort(compareSectionGroups);
         } else {
           // 3. Subespecialidades
           const uniqueSubIds = Array.from(new Set(itemsInRama.map(i => i.sub_especialidad_id)));
@@ -191,13 +289,16 @@ export default function GlosarioView({
                 const subcatInfo = subcategorias.find(s => s.id === subcatId) || { id: 'no-sub', nombre: 'General' };
                 catGroup.subcategorias.push({
                   info: subcatInfo,
-                  items: itemsInCat.filter(i => i.subcategoria_id === subcatId)
+                  items: sortGlosarioItems(itemsInCat.filter(i => i.subcategoria_id === subcatId))
                 });
               });
+              catGroup.subcategorias = mergeAndSortSubcategoryGroups(catGroup.subcategorias);
               subGroup.categorias.push(catGroup);
             });
+            subGroup.categorias.sort(compareCategoryGroups);
             ramaGroup.subespecialidades.push(subGroup);
           });
+          ramaGroup.subespecialidades.sort(compareSectionGroups);
         }
         aldeaGroup.ramas.push(ramaGroup);
       });

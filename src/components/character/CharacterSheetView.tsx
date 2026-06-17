@@ -114,6 +114,7 @@ export function CharacterSheetView({
 
   const [rasgosList, setRasgosList] = useState<Rasgo[]>([]);
   const [activeTeam, setActiveTeam] = useState<any>(null);
+  const [inventorySearch, setInventorySearch] = useState('');
   const [equipmentSearch, setEquipmentSearch] = useState('');
   const [techniqueSearch, setTechniqueSearch] = useState('');
 
@@ -1041,9 +1042,18 @@ export function CharacterSheetView({
       const subSlug = (Array.isArray(subData) ? subData[0]?.slug : subData?.slug) || '';
       const isEquipment = pi.info_glosario?.zona_equipable || subSlug === 'equipo';
       return !isEquipment;
-    });
+    }).filter((pi: PersonajeItem) => matchesGlosarioSearch(pi.info_glosario, inventorySearch));
     return groupItemsByHierarchy(list);
-  }, [character.personajes_inventario, masters.aldeas, masters.ramas]);
+  }, [character.personajes_inventario, masters.aldeas, masters.ramas, inventorySearch]);
+
+  const hasInventoryItems = useMemo(() => {
+    return (character.personajes_inventario || []).some((pi: PersonajeItem) => {
+      const subData = pi.info_glosario?.info_glosario_subcategorias;
+      const subSlug = (Array.isArray(subData) ? subData[0]?.slug : subData?.slug) || '';
+      const isEquipment = pi.info_glosario?.zona_equipable || subSlug === 'equipo';
+      return !isEquipment;
+    });
+  }, [character.personajes_inventario]);
 
   // Memoizar el equipamiento en propiedad (ordenando los equipados arriba)
   const possessedEquipment = useMemo(() => {
@@ -2468,44 +2478,69 @@ export function CharacterSheetView({
 
               {inventarioSubTab === 'mochila' && (
                 <SectionCard title="MOCHILA Y PERTENENCIAS" icon={Briefcase} color="oro">
+                  <div className="relative mb-8">
+                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-oro/40 pointer-events-none" />
+                    <input
+                      value={inventorySearch}
+                      onChange={(e) => setInventorySearch(e.target.value)}
+                      placeholder="BUSCAR EN MOCHILA..."
+                      className="w-full bg-black/50 border border-oro/10 py-4 pl-12 pr-12 text-oro font-black uppercase tracking-widest text-xs outline-none focus:border-oro/40 transition-all placeholder:text-oro/20 ninja-clip-sm"
+                    />
+                    {inventorySearch && (
+                      <button
+                        type="button"
+                        onClick={() => setInventorySearch('')}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-oro/30 hover:text-oro transition-colors"
+                        title="Limpiar búsqueda"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
                   <div className="space-y-16">
-                    {Object.entries(groupedInventory).map(([aldeaName, ramas]: [string, any]) => (
-                      <div key={aldeaName} className="space-y-10">
-                        <div className="flex items-center gap-6">
-                          <h3 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.2em]">{aldeaName}</h3>
-                          <div className="flex-1 h-px bg-oro/10" />
-                        </div>
+                    {Object.keys(groupedInventory).length === 0 ? (
+                      <div className="py-12 text-center rounded-[4px] border border-oro/10 bg-black/20 text-xs font-black text-oro/30 uppercase tracking-[0.25em]">
+                        {hasInventoryItems && inventorySearch.trim() ? 'No hay objetos que coincidan con la búsqueda' : 'No tienes objetos en la mochila'}
+                      </div>
+                    ) : (
+                      Object.entries(groupedInventory).map(([aldeaName, ramas]: [string, any]) => (
+                        <div key={aldeaName} className="space-y-10">
+                          <div className="flex items-center gap-6">
+                            <h3 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.2em]">{aldeaName}</h3>
+                            <div className="flex-1 h-px bg-oro/10" />
+                          </div>
 
-                        <div className="space-y-8 pl-4 border-l border-oro/5">
-                          {Object.entries(ramas).map(([ramaName, subs]: [string, any]) => (
-                            <div key={ramaName} className="space-y-6">
-                              <h4 className="text-base xl:text-lg font-black text-oro/70 uppercase tracking-widest flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 bg-oro rotate-45" />
-                                {ramaName}
-                              </h4>
+                          <div className="space-y-8 pl-4 border-l border-oro/5">
+                            {Object.entries(ramas).map(([ramaName, subs]: [string, any]) => (
+                              <div key={ramaName} className="space-y-6">
+                                <h4 className="text-base xl:text-lg font-black text-oro/70 uppercase tracking-widest flex items-center gap-2">
+                                  <div className="w-1.5 h-1.5 bg-oro rotate-45" />
+                                  {ramaName}
+                                </h4>
 
-                              <div className="space-y-6">
-                                {Object.entries(subs).map(([subName, items]: [string, any]) => (
-                                  <div key={subName} className="space-y-4">
-                                    {subName !== '' && (
-                                      <h5 className="text-caption xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
-                                        <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
-                                        {subName}
-                                      </h5>
-                                    )}
-                                    <div className="ninja-card-oro p-1 overflow-hidden border border-oro/10">
-                                      <div className="overflow-x-auto scrollbar-hide">
-                                        <table className="w-full text-left border-collapse table-fixed min-w-[600px]">
-                                          <thead>
-                                            <tr className="border-b border-oro/10 text-oro/70 text-caption xl:text-xs font-black uppercase tracking-[0.3em] bg-black/20">
-                                              <th className="py-3 px-5 w-[40%]">Objeto</th>
-                                              <th className="py-3 px-5 w-[45%]">Requisitos</th>
-                                              <th className="py-3 px-5 w-[15%] text-center">Acciones</th>
-                                            </tr>
-                                          </thead>
-                                          <tbody className="divide-y divide-oro/5 bg-black/40">
-                                            {items.map((pi: PersonajeItem, idx: number) => (
-                                              <tr key={`${pi.item_id}-${idx}`} className="hover:bg-oro/5 transition-colors group">
+                                <div className="space-y-6">
+                                  {Object.entries(subs).map(([subName, items]: [string, any]) => (
+                                    <div key={subName} className="space-y-4">
+                                      {subName !== '' && (
+                                        <h5 className="text-caption xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
+                                          <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
+                                          {subName}
+                                        </h5>
+                                      )}
+                                      <div className="ninja-card-oro p-1 overflow-hidden border border-oro/10">
+                                        <div className="overflow-x-auto scrollbar-hide">
+                                          <table className="w-full text-left border-collapse table-fixed min-w-[600px]">
+                                            <thead>
+                                              <tr className="border-b border-oro/10 text-oro/70 text-caption xl:text-xs font-black uppercase tracking-[0.3em] bg-black/20">
+                                                <th className="py-3 px-5 w-[40%]">Objeto</th>
+                                                <th className="py-3 px-5 w-[45%]">Requisitos</th>
+                                                <th className="py-3 px-5 w-[15%] text-center">Acciones</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-oro/5 bg-black/40">
+                                              {items.map((pi: PersonajeItem, idx: number) => (
+                                                <tr key={`${pi.item_id}-${idx}`} className="hover:bg-oro/5 transition-colors group">
                                                 <td className="py-3 px-5">
                                                   <div className="flex flex-col">
                                                     <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
@@ -2563,7 +2598,7 @@ export function CharacterSheetView({
                           ))}
                         </div>
                       </div>
-                    ))}
+                    )))}
                   </div>
 
                   {(canEdit || isNew) && (isEditing || isNew) && (
