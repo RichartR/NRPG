@@ -3,6 +3,20 @@ import { Aldea, RamaClan, SubEspecialidad, DocumentoSistema, DocumentoCombate, C
 import { RewardLogic } from '@/domain/character/logic';
 import { RegistrosService } from './registros.service';
 
+export type GlosarioAldeaFilter = number | 'general' | null;
+
+export interface GlosarioPageParams {
+  page: number;
+  pageSize: number;
+  active: boolean;
+  search?: string;
+  categoriaId?: number | null;
+  aldeaId?: GlosarioAldeaFilter;
+  ramaId?: number | null;
+  ramaIdsForAldea?: number[];
+  generalRamaIds?: number[];
+}
+
 export const AdminService = {
   // Aldeas
   async saveAldea(aldea: Partial<Aldea>) {
@@ -215,9 +229,53 @@ export const AdminService = {
     if (error) throw error;
   },
 
+  async getGlosarioPage(params: GlosarioPageParams): Promise<{ data: Glosario[]; count: number }> {
+    const supabase = createClient();
+    const page = Math.max(1, params.page || 1);
+    const pageSize = Math.max(1, params.pageSize || 25);
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+    const searchTerm = params.search?.trim().replace(/,/g, ' ');
+
+    let query: any = supabase
+      .from('info_glosario')
+      .select('*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre, slug), info_elementos(nombre_esp, nombre_jap)', { count: 'exact' })
+      .eq('activo', params.active);
+
+    if (searchTerm) {
+      query = query.or(`nombre_es.ilike.%${searchTerm}%,nombre_jp.ilike.%${searchTerm}%`);
+    }
+
+    if (params.categoriaId) {
+      query = query.eq('categoria_id', params.categoriaId);
+    }
+
+    if (params.ramaId) {
+      query = query.eq('rama_clan_id', params.ramaId);
+    } else if (params.aldeaId === 'general') {
+      const generalRamaIds = params.generalRamaIds || [];
+      query = query.is('aldea_id', null);
+      query = generalRamaIds.length > 0
+        ? query.or(`rama_clan_id.is.null,rama_clan_id.in.(${generalRamaIds.join(',')})`)
+        : query.is('rama_clan_id', null);
+    } else if (typeof params.aldeaId === 'number') {
+      const ramaIds = params.ramaIdsForAldea || [];
+      query = ramaIds.length > 0
+        ? query.or(`aldea_id.eq.${params.aldeaId},and(aldea_id.is.null,rama_clan_id.in.(${ramaIds.join(',')}))`)
+        : query.eq('aldea_id', params.aldeaId);
+    }
+
+    const { data, error, count } = await query
+      .order('nombre_es', { ascending: true })
+      .range(from, to);
+
+    if (error) throw error;
+    return { data: data || [], count: count || 0 };
+  },
+
   async saveGlosario(el: Partial<Glosario>) {
     const supabase = createClient();
-    const { info_glosario_categorias, info_glosario_subcategorias, id, ...cleanData } = el;
+    const { info_glosario_categorias, info_glosario_subcategorias, info_elementos, id, ...cleanData } = el as any;
 
     if (id) {
       const { data, error } = await supabase.from('info_glosario').update(cleanData).eq('id', id).select().single();

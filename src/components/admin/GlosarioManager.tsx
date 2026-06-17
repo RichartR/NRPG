@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
-import { Plus, Trash2, Save, Search, Filter, Layers, Tag, Box, Check, X, ArrowRight, Archive, Eye, User, Swords, ScrollText, Trophy, Star, ChevronDown, Sparkles, Flame } from 'lucide-react';
-import { AdminService } from '@/services/supabase/admin.service';
+import { Plus, Trash2, Save, Search, Filter, Layers, Tag, Box, Check, X, ArrowRight, Archive, Eye, User, Swords, ScrollText, Trophy, Star, ChevronDown, ChevronLeft, ChevronRight, Sparkles, Flame } from 'lucide-react';
+import { AdminService, type GlosarioAldeaFilter } from '@/services/supabase/admin.service';
 import {
   GlosarioCategoria,
   GlosarioSubcategoria,
@@ -15,10 +15,12 @@ import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { createClient } from '@/utils/supabase/client';
 import { MasterService } from '@/services/supabase/master.service';
 import { NinjaSelect } from '@/components/ui/Fields';
-import { searchAny, searchIncludes } from '@/lib/utils/search';
+import { searchIncludes } from '@/lib/utils/search';
 
 type Section = 'hub' | 'elementos' | 'categorias' | 'subcategorias';
 type ViewStatus = 'active' | 'archived';
+
+const PAGE_SIZE_OPTIONS = [25, 50, 100];
 
 const RANGOS = ['D', 'C', 'B', 'A', 'S'];
 const STATS_LIST = [
@@ -50,9 +52,15 @@ export default function GlosarioManager() {
   const [subespecialidades, setSubespecialidades] = useState<any[]>([]);
   const [personajes, setPersonajes] = useState<any[]>([]);
   const [elementosCatalogo, setElementosCatalogo] = useState<any[]>([]);
+  const [elementosTotal, setElementosTotal] = useState(0);
+  const [elementosLoading, setElementosLoading] = useState(false);
 
   const [search, setSearch] = useState('');
   const [filterCat, setFilterCat] = useState<number | null>(null);
+  const [filterAldea, setFilterAldea] = useState<GlosarioAldeaFilter>(null);
+  const [filterRama, setFilterRama] = useState<number | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showNewForm, setShowNewForm] = useState(false);
   const [editingCat, setEditingCat] = useState<GlosarioCategoria | null>(null);
@@ -61,18 +69,42 @@ export default function GlosarioManager() {
   const addToast = useToastStore(state => state.addToast);
   const { confirm: confirmAction } = useConfirmStore();
   const supabase = createClient();
+  const glosarioRequestRef = useRef(0);
+
+  const ramaFilterOptions = useMemo(() => {
+    return ramas.filter((r: any) => {
+      if (filterAldea === null) return true;
+      if (filterAldea === 'general') {
+        return r.tipo === 'rama' && (r.aldea_id === null || r.aldea_id === undefined);
+      }
+      return Number(r.aldea_id) === Number(filterAldea);
+    });
+  }, [ramas, filterAldea]);
+
+  const totalPages = Math.max(1, Math.ceil(elementosTotal / pageSize));
+  const pageStart = elementosTotal === 0 ? 0 : (page - 1) * pageSize + 1;
+  const pageEnd = Math.min(page * pageSize, elementosTotal);
 
   useEffect(() => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if (activeSection !== 'elementos' && elementosTotal > 0) return;
+
+    const timeout = window.setTimeout(() => {
+      fetchElementosPage();
+    }, activeSection === 'elementos' && search.trim() ? 250 : 0);
+
+    return () => window.clearTimeout(timeout);
+  }, [activeSection, viewStatus, search, filterCat, filterAldea, filterRama, page, pageSize, ramas]);
+
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [cats, subs, els, rms, alds, subEsps, catalogElems] = await Promise.all([
+      const [cats, subs, rms, alds, subEsps, catalogElems] = await Promise.all([
         MasterService.getGlosarioCategorias(),
         MasterService.getGlosarioSubcategorias(),
-        MasterService.getGlosarios(),
         MasterService.getAdminRamasActivas(),
         MasterService.getAldeasActivas(),
         MasterService.getSubEspecialidades(),
@@ -82,7 +114,6 @@ export default function GlosarioManager() {
 
       setCategorias(cats);
       setSubcategorias(subs);
-      setElementos(els);
       setRamas(rms);
       setAldeas(alds);
       setSubespecialidades(subEsps);
@@ -96,6 +127,50 @@ export default function GlosarioManager() {
     }
   };
 
+  const fetchElementosPage = async () => {
+    const requestId = glosarioRequestRef.current + 1;
+    glosarioRequestRef.current = requestId;
+    setElementosLoading(true);
+    try {
+      const ramaIdsForAldea = typeof filterAldea === 'number'
+        ? ramas.filter((r: any) => Number(r.aldea_id) === Number(filterAldea)).map((r: any) => Number(r.id))
+        : [];
+      const generalRamaIds = filterAldea === 'general'
+        ? ramas
+            .filter((r: any) => r.tipo === 'rama' && (r.aldea_id === null || r.aldea_id === undefined))
+            .map((r: any) => Number(r.id))
+        : [];
+
+      const result = await AdminService.getGlosarioPage({
+        page,
+        pageSize,
+        active: viewStatus === 'active',
+        search,
+        categoriaId: filterCat,
+        aldeaId: filterAldea,
+        ramaId: filterRama,
+        ramaIdsForAldea,
+        generalRamaIds
+      });
+
+      if (requestId !== glosarioRequestRef.current) return;
+      setElementos(result.data);
+      setElementosTotal(result.count);
+      if (page > 1 && result.count > 0 && page > Math.ceil(result.count / pageSize)) {
+        setPage(Math.ceil(result.count / pageSize));
+      }
+    } catch (error) {
+      console.error(error);
+      addToast('Error al cargar glosario', 'error');
+    } finally {
+      if (requestId === glosarioRequestRef.current) {
+        setElementosLoading(false);
+      }
+    }
+  };
+
+  const resetElementoPage = () => setPage(1);
+
   const handleSaveElemento = async (el: Partial<Glosario>) => {
     setSaving(true);
     try {
@@ -103,7 +178,7 @@ export default function GlosarioManager() {
       addToast('Glosario actualizado', 'success');
       setEditingId(null);
       setShowNewForm(false);
-      fetchData();
+      fetchElementosPage();
     } catch (error) {
       addToast('Error al guardar', 'error');
     } finally {
@@ -114,7 +189,7 @@ export default function GlosarioManager() {
   const filteredData = () => {
     const isActivo = viewStatus === 'active';
     if (activeSection === 'elementos') {
-      return elementos.filter(el => el.activo === isActivo && searchAny(search, [el.nombre_es, el.nombre_jp]) && (filterCat ? el.categoria_id === filterCat : true));
+      return elementos;
     }
     if (activeSection === 'categorias') {
       return categorias.filter(c => c.activo === isActivo && searchIncludes(c.nombre, search));
@@ -159,7 +234,7 @@ export default function GlosarioManager() {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <HubCard title="Glosario" desc="Administra todas las técnicas, artes, habilidades y jutsus." icon={<Box size={32} />} count={elementos.filter(e => e.activo).length} onClick={() => { setActiveSection('elementos'); setSearch(''); setViewStatus('active'); }} color="gold" />
+          <HubCard title="Glosario" desc="Administra todas las técnicas, artes, habilidades y jutsus." icon={<Box size={32} />} count={elementosTotal} onClick={() => { setActiveSection('elementos'); setSearch(''); setViewStatus('active'); resetElementoPage(); }} color="gold" />
           <HubCard title="Categorías" desc="Gestiona las categorías principales de la biblioteca del sistema." icon={<Tag size={32} />} count={categorias.filter(c => c.activo).length} onClick={() => { setActiveSection('categorias'); setSearch(''); setViewStatus('active'); }} color="gold" />
           <HubCard title="Subcategorías" desc="Vincula subcategorías a las ramas y especializaciones del rol." icon={<Layers size={32} />} count={subcategorias.filter(s => s.activo).length} onClick={() => { setActiveSection('subcategorias'); setSearch(''); setViewStatus('active'); }} color="gold" />
         </div>
@@ -187,8 +262,8 @@ export default function GlosarioManager() {
           </div>
           <div className="flex items-center gap-4">
             <div className="flex bg-black/60 p-1.5 rounded-2xl border border-oro/10 backdrop-blur-md">
-              <button onClick={() => setViewStatus('active')} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-caption uppercase tracking-widest transition-all ${viewStatus === 'active' ? 'bg-oro text-black shadow-lg shadow-oro/10' : 'text-oro/40 hover:text-oro/80'}`}><Eye size={14} /> Activas</button>
-              <button onClick={() => setViewStatus('archived')} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-caption uppercase tracking-widest transition-all ${viewStatus === 'archived' ? 'bg-zinc-800 text-zinc-300 shadow-lg' : 'text-oro/40 hover:text-oro/80'}`}><Archive size={14} /> Archivadas</button>
+              <button onClick={() => { setViewStatus('active'); resetElementoPage(); }} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-caption uppercase tracking-widest transition-all ${viewStatus === 'active' ? 'bg-oro text-black shadow-lg shadow-oro/10' : 'text-oro/40 hover:text-oro/80'}`}><Eye size={14} /> Activas</button>
+              <button onClick={() => { setViewStatus('archived'); resetElementoPage(); }} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-caption uppercase tracking-widest transition-all ${viewStatus === 'archived' ? 'bg-zinc-800 text-zinc-300 shadow-lg' : 'text-oro/40 hover:text-oro/80'}`}><Archive size={14} /> Archivadas</button>
             </div>
             <button onClick={() => setShowNewForm(true)} className="ninja-btn-oro px-6 py-4 text-xs font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 shadow-2xl"><Plus size={16} strokeWidth={3} /> Nuevo Registro</button>
           </div>
@@ -197,28 +272,63 @@ export default function GlosarioManager() {
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative group">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-oro/40 group-focus-within:text-oro transition-colors w-5 h-5" />
-            <input type="text" placeholder={`Buscar en ${activeSection}...`} value={search} onChange={(e) => setSearch(e.target.value)} className="ninja-input w-full pl-14 text-sm bg-black/40" />
+            <input type="text" placeholder={`Buscar en ${activeSection}...`} value={search} onChange={(e) => { setSearch(e.target.value); resetElementoPage(); }} className="ninja-input w-full pl-14 text-sm bg-black/40" />
           </div>
           {activeSection === 'elementos' && (
-            <div className="flex items-center gap-2 bg-black/40 border border-oro/10 rounded-2xl px-5 py-2">
-              <Filter size={16} className="text-oro/40" />
-              <NinjaSelect
-                variant="inline"
-                value={filterCat || ''}
-                onChange={(val) => setFilterCat(val ? Number(val) : null)}
-                placeholder="Todas las Categorías"
-                options={[
-                  ...categorias.map((c: any) => ({ label: c.nombre, value: c.id }))
-                ]}
-              />
-            </div>
+            <>
+              <div className="flex items-center gap-2 bg-black/40 border border-oro/10 rounded-2xl px-5 py-2">
+                <Filter size={16} className="text-oro/40" />
+                <NinjaSelect
+                  variant="inline"
+                  value={filterCat || ''}
+                  onChange={(val) => { setFilterCat(val ? Number(val) : null); resetElementoPage(); }}
+                  placeholder="Todas las Categorías"
+                  options={categorias.map((c: any) => ({ label: c.nombre, value: c.id }))}
+                />
+              </div>
+              <div className="flex items-center gap-2 bg-black/40 border border-oro/10 rounded-2xl px-5 py-2">
+                <Filter size={16} className="text-oro/40" />
+                <NinjaSelect
+                  variant="inline"
+                  value={filterAldea || ''}
+                  onChange={(val) => {
+                    setFilterAldea(val === 'general' ? 'general' : val ? Number(val) : null);
+                    setFilterRama(null);
+                    resetElementoPage();
+                  }}
+                  placeholder="Todas las Aldeas"
+                  options={[
+                    { label: 'General', value: 'general' },
+                    ...aldeas.map((a: any) => ({ label: a.nombre_completo, value: a.id }))
+                  ]}
+                />
+              </div>
+              <div className="flex items-center gap-2 bg-black/40 border border-oro/10 rounded-2xl px-5 py-2">
+                <Filter size={16} className="text-oro/40" />
+                <NinjaSelect
+                  variant="inline"
+                  value={filterRama || ''}
+                  onChange={(val) => { setFilterRama(val ? Number(val) : null); resetElementoPage(); }}
+                  placeholder="Todas las Ramas"
+                  options={ramaFilterOptions.map((r: any) => ({ label: r.nombre, value: r.id }))}
+                />
+              </div>
+            </>
           )}
         </div>
       </div>
 
       <div className="grid gap-4 mt-6">
         {activeSection === 'elementos' ? (
-          filteredData().map((el: any) => (
+          elementosLoading ? (
+            <div className="ninja-card-oro bg-black/30 border border-oro/10 p-10 text-center">
+              <span className="text-oro/50 font-black uppercase tracking-[0.3em] text-caption">Cargando página...</span>
+            </div>
+          ) : filteredData().length === 0 ? (
+            <div className="ninja-card-oro bg-black/30 border border-oro/10 p-10 text-center">
+              <span className="text-oro/50 font-black uppercase tracking-[0.3em] text-caption">Sin registros para este filtro</span>
+            </div>
+          ) : filteredData().map((el: any) => (
             <ElementoCard
               key={el.id}
               elemento={el}
@@ -232,7 +342,7 @@ export default function GlosarioManager() {
                   variant: 'danger',
                   requireValidation: true
                 });
-                if (ok) AdminService.deleteGlosario(el.id).then(fetchData);
+                if (ok) AdminService.deleteGlosario(el.id).then(fetchElementosPage);
               }}
             />
           ))
@@ -294,6 +404,46 @@ export default function GlosarioManager() {
           </div>
         )}
       </div>
+
+      {activeSection === 'elementos' && (
+        <div className="ninja-card-oro bg-black/30 border border-oro/10 p-5 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3 text-caption font-black uppercase tracking-[0.2em] text-oro/50">
+            <span>{pageStart}-{pageEnd} de {elementosTotal}</span>
+            <span className="w-1 h-1 bg-oro/30 rotate-45" />
+            <span>Página {page} / {totalPages}</span>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <div className="flex items-center gap-2 bg-black/40 border border-oro/10 rounded-2xl px-4 py-2">
+              <span className="text-caption font-black uppercase tracking-widest text-oro/40">Por página</span>
+              <NinjaSelect
+                variant="inline"
+                value={pageSize}
+                onChange={(val) => { setPageSize(Number(val)); resetElementoPage(); }}
+                options={PAGE_SIZE_OPTIONS.map(size => ({ label: String(size), value: size }))}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={page <= 1 || elementosLoading}
+                onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                className="p-3 bg-black/40 border border-oro/10 rounded-xl text-oro disabled:opacity-30 disabled:cursor-not-allowed hover:bg-oro hover:text-black transition-all"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                type="button"
+                disabled={page >= totalPages || elementosLoading}
+                onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+                className="p-3 bg-black/40 border border-oro/10 rounded-xl text-oro disabled:opacity-30 disabled:cursor-not-allowed hover:bg-oro hover:text-black transition-all"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {(showNewForm || editingId) && activeSection === 'elementos' && (
         <ElementoForm
