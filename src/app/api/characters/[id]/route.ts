@@ -378,6 +378,11 @@ export async function PATCH(
           updatePromises.push(CharacterServerService.bulkUpdateRasgos(adminClient, characterId, data.personajes_rasgos));
         }
 
+        // Sentidos
+        if (data.personajes_sentidos) {
+          updatePromises.push(CharacterServerService.bulkUpdateSentidos(adminClient, characterId, data.personajes_sentidos));
+        }
+
         await Promise.all(updatePromises);
         break;
 

@@ -12,7 +12,9 @@ import {
   Entrenamiento,
   RangoRules,
   Elemento,
-  RamaElemento
+  RamaElemento,
+  Sentido,
+  RamaSentido
 } from '@/domain/types';
 
 interface MasterState {
@@ -23,6 +25,8 @@ interface MasterState {
   glosario: Glosario[];
   elementos: Elemento[];
   ramaElementos: RamaElemento[];
+  sentidos: Sentido[];
+  ramaSentidos: RamaSentido[];
   rangoRules: RangoRules | null;
   escaladoRules: StatsEscaladoConfig | null;
   rankOrder: Record<string, number>;
@@ -45,6 +49,8 @@ export const useMasterStore = create<MasterState>((set, get) => ({
   glosario: [],
   elementos: [],
   ramaElementos: [],
+  sentidos: [],
+  ramaSentidos: [],
   rangoRules: null,
   escaladoRules: null,
   rankOrder: {},
@@ -65,49 +71,55 @@ export const useMasterStore = create<MasterState>((set, get) => ({
     const supabase = createClient();
     try {
       const [
-        aldeasRes, 
-        ramasRes, 
-        subEspecialidadesRes, 
-        entrenamientosRes,
-        glosarioRes,
-        elementosRes,
-        ramaElementosRes,
-        configsRes
-      ] = await Promise.allSettled([
-        MasterService.getAldeasActivas(),
-        MasterService.getRamas(),
-        MasterService.getSubEspecialidades(),
-        MasterService.getEntrenamientos(),
-        MasterService.getGlosarios({ onlyInitial: true }),
-        MasterService.getElementos(),
-        MasterService.getRamaElementos(),
-        MasterService.getSystemConfigs([
-          'rango_stats_rules',
-          'stats_escalado_config',
-          'orden-rangos',
-          'recursos_pj_inicio',
-          'rangos_jerarquicos',
-          'xp_limit_usage'
-        ])
-      ]);
-
-      const getVal = (res: any, fallback: any) => res.status === 'fulfilled' ? res.value : fallback;
-      const configs = getVal(configsRes, {});
-
-      const rawRankOrder = configs['orden-rangos'] || { "D": 1, "C": 2, "B": 3, "A": 4, "S": 5 };
-      const numericRankOrder: Record<string, number> = {};
-      Object.entries(rawRankOrder).forEach(([k, v]) => {
-        numericRankOrder[k] = Number(v);
-      });
-
-      set({
-        aldeas: getVal(aldeasRes, []),
-        ramas: getVal(ramasRes, []),
-        subEspecialidades: getVal(subEspecialidadesRes, []),
-        entrenamientos: getVal(entrenamientosRes, []),
-        glosario: getVal(glosarioRes, []),
-        elementos: getVal(elementosRes, []),
-        ramaElementos: getVal(ramaElementosRes, []),
+         aldeasRes, 
+         ramasRes, 
+         subEspecialidadesRes, 
+         entrenamientosRes,
+         glosarioRes,
+         elementosRes,
+         ramaElementosRes,
+         sentidosRes,
+         ramaSentidosRes,
+         configsRes
+       ] = await Promise.allSettled([
+         MasterService.getAldeasActivas(),
+         MasterService.getRamas(),
+         MasterService.getSubEspecialidades(),
+         MasterService.getEntrenamientos(),
+         MasterService.getGlosarios({ onlyInitial: true }),
+         MasterService.getElementos(),
+         MasterService.getRamaElementos(),
+         MasterService.getSentidos(),
+         MasterService.getRamaSentidos(),
+         MasterService.getSystemConfigs([
+           'rango_stats_rules',
+           'stats_escalado_config',
+           'orden-rangos',
+           'recursos_pj_inicio',
+           'rangos_jerarquicos',
+           'xp_limit_usage'
+         ])
+       ]);
+ 
+       const getVal = (res: any, fallback: any) => res.status === 'fulfilled' ? res.value : fallback;
+       const configs = getVal(configsRes, {});
+ 
+       const rawRankOrder = configs['orden-rangos'] || { "D": 1, "C": 2, "B": 3, "A": 4, "S": 5 };
+       const numericRankOrder: Record<string, number> = {};
+       Object.entries(rawRankOrder).forEach(([k, v]) => {
+         numericRankOrder[k] = Number(v);
+       });
+ 
+       set({
+         aldeas: getVal(aldeasRes, []),
+         ramas: getVal(ramasRes, []),
+         subEspecialidades: getVal(subEspecialidadesRes, []),
+         entrenamientos: getVal(entrenamientosRes, []),
+         glosario: getVal(glosarioRes, []),
+         elementos: getVal(elementosRes, []),
+         ramaElementos: getVal(ramaElementosRes, []),
+         sentidos: getVal(sentidosRes, []),
+         ramaSentidos: getVal(ramaSentidosRes, []),
         rangoRules: configs['rango_stats_rules'] || {
           "D": { stat_max: 25, puntos_totales: 16, vit_base: 600, ch_base: 200, vel_base: 5, min: 0 },
           "C": { stat_max: 45, puntos_totales: 40, vit_base: 1200, ch_base: 500, vel_base: 8, min: 25 },
