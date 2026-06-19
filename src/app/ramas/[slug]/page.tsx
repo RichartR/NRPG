@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import Breadcrumbs, { CrumbItem } from '@/components/ui/Breadcrumbs';
 import NinjaCard from '@/components/ui/NinjaCard';
+import DocumentosCombateSearch from '@/components/ui/DocumentosCombateSearch';
 
 export default async function RamaDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -73,27 +74,7 @@ export default async function RamaDetailPage({ params }: { params: Promise<{ slu
         })()}
 
         {documentos.length > 0 && (
-          <div className="mb-10">
-            <div className="mb-10 ninja-card-oro p-8 sm:p-10 xl:p-12">
-              <div className="flex items-center gap-6">
-                <h2 className="ninja-title text-4xl xl:text-6xl">Documentos</h2>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 xl:gap-16">
-              {documentos.map((doc) => (
-                <NinjaCard
-                  key={doc.id}
-                  href={`/docs/${doc.clave}`}
-                  title={doc.titulo}
-                  category="DOCUMENTO"
-                  imageUrl={doc.url_imagen}
-                  description={doc.descripcion}
-                  actionText="VER DOCUMENTO"
-                  titleClassName="text-2xl sm:text-3xl md:text-4xl"
-                />
-              ))}
-            </div>
-          </div>
+          <DocumentosCombateSearch documentos={documentos} />
         )}
       </main>
     </div>

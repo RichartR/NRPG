@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { Edit2, Save, X, Sword, Plus, Trash2, RefreshCw } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Edit2, Save, X, Sword, Plus, Trash2, RefreshCw, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { DataField, SelectField } from '@/components/ui/Fields';
+import { searchAny } from '@/lib/utils/search';
 
 export default function CombateList({ 
   initialDocs, 
@@ -22,6 +23,30 @@ export default function CombateList({
   const [editForm, setEditForm] = useState<any>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const filteredDocs = useMemo(() => {
+    return docs.filter(doc => {
+      return searchAny(search, [
+        doc.titulo,
+        doc.clave,
+        doc.ramas_clanes?.nombre,
+        doc.sub_especialidades?.nombre
+      ]);
+    });
+  }, [docs, search]);
+
+  const ITEMS_PER_PAGE = 15;
+  const totalPages = Math.max(1, Math.ceil(filteredDocs.length / ITEMS_PER_PAGE));
+  const pageStart = filteredDocs.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1;
+  const pageEnd = Math.min(currentPage * ITEMS_PER_PAGE, filteredDocs.length);
+
+  const paginatedDocs = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredDocs.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredDocs, currentPage]);
   
   const router = useRouter();
   const addToast = useToastStore(state => state.addToast);
@@ -35,6 +60,7 @@ export default function CombateList({
       url_drive: '',
       rama_id: '',
       sub_especialidad_id: '',
+      url_imagen: '',
       activo: true
     });
     setIsAdding(true);
@@ -101,13 +127,41 @@ export default function CombateList({
 
   return (
     <div className="space-y-6">
-      <button 
-        onClick={startAdding}
-        className="w-full py-8 bg-neutral-800/40 border-2 border-dashed border-oro/20 hover:border-oro/50 hover:bg-oro/5 text-oro/40 hover:text-oro transition-all font-black uppercase tracking-[0.4em] text-xs flex items-center justify-center gap-4 group ninja-clip-md"
-      >
-        <Plus className="w-5 h-5 group-hover:scale-125 transition-transform" /> 
-        Añadir Protocolo de Combate
-      </button>
+      <div className="flex flex-col md:flex-row gap-6 justify-between items-center bg-neutral-800/40 p-6 sm:p-8 border border-oro/5 backdrop-blur-md relative overflow-hidden ninja-clip-md">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-oro/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
+        
+        <div className="relative flex-1 w-full">
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-oro/40 w-5 h-5" />
+          <input
+            type="text"
+            placeholder="BUSCAR TÉCNICA / PROTOCOLO..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full bg-black/40 border border-oro/10 py-3.5 pl-16 pr-10 text-xs font-black uppercase tracking-widest text-oro placeholder:text-oro/20 outline-none transition-all focus:border-oro/40"
+            style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+          />
+          {search && (
+            <button
+              onClick={() => { setSearch(''); setCurrentPage(1); }}
+              className="absolute inset-y-0 right-0 pr-6 flex items-center hover:brightness-125 text-oro/40 hover:text-oro transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        <button 
+          onClick={startAdding}
+          className="w-full md:w-auto px-8 py-4 bg-rojo-sangre hover:brightness-125 text-oro font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-rojo-sangre/20 active:scale-95 flex items-center justify-center gap-3 whitespace-nowrap"
+          style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+        >
+          <Plus className="w-4 h-4" /> 
+          AÑADIR PROTOCOLO
+        </button>
+      </div>
 
       {(isAdding || editingId) && (
         <div 
@@ -117,7 +171,13 @@ export default function CombateList({
           
           <div className="flex items-center justify-between border-b border-oro/10 pb-8">
             <h3 className="text-2xl font-black text-oro uppercase italic tracking-tighter flex items-center gap-4">
-              <Sword className="w-8 h-8 text-rojo-sangre" />
+              {editForm?.url_imagen ? (
+                <div className="w-10 h-10 bg-black/40 border border-oro/10 flex items-center justify-center overflow-hidden shrink-0 animate-in fade-in zoom-in duration-300" style={{ clipPath: 'polygon(20% 0, 80% 0, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0 80%, 0 20%)' }}>
+                  <img src={editForm.url_imagen} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                </div>
+              ) : (
+                <Sword className="w-8 h-8 text-rojo-sangre" />
+              )}
               {isAdding ? 'Nueva Configuración de Combate' : 'Modificar Registro'}
             </h3>
             <button onClick={() => {setEditingId(null); setIsAdding(false);}} className="text-oro/30 hover:text-oro transition-colors">
@@ -153,7 +213,10 @@ export default function CombateList({
             />
           </div>
 
-          <DataField label="URL del Manual (Drive)" value={editForm.url_drive} onChange={v => setEditForm({...editForm, url_drive: v})} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <DataField label="URL del Manual (Drive)" value={editForm.url_drive} onChange={v => setEditForm({...editForm, url_drive: v})} />
+            <DataField label="URL Imagen de Cabecera" value={editForm.url_imagen || ''} onChange={v => setEditForm({...editForm, url_imagen: v})} placeholder="https://i.imgur.com/..." />
+          </div>
 
           <div className="space-y-3">
             <label className="text-caption font-black uppercase tracking-widest text-oro/30 ml-2">Descripción Técnica</label>
@@ -182,7 +245,7 @@ export default function CombateList({
       )}
 
       <div className="grid grid-cols-1 gap-4">
-        {docs.map((doc) => (
+        {paginatedDocs.map((doc) => (
           <div 
             key={doc.id} 
             className="group flex items-center justify-between p-8 bg-neutral-800/40 border border-oro/5 hover:border-oro/20 backdrop-blur-sm transition-all relative overflow-hidden"
@@ -192,10 +255,14 @@ export default function CombateList({
             
             <div className="flex items-center gap-8 relative z-10">
               <div 
-                className="w-16 h-16 bg-black/40 border border-oro/10 flex items-center justify-center shrink-0 group-hover:border-oro/30 transition-all"
+                className="w-16 h-16 bg-black/40 border border-oro/10 flex items-center justify-center shrink-0 group-hover:border-oro/30 transition-all overflow-hidden"
                 style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
               >
-                <Sword className="w-6 h-6 text-oro/30 group-hover:text-oro group-hover:scale-110 transition-all" />
+                {doc.url_imagen ? (
+                  <img src={doc.url_imagen} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" referrerPolicy="no-referrer" />
+                ) : (
+                  <Sword className="w-6 h-6 text-oro/30 group-hover:text-oro group-hover:scale-110 transition-all" />
+                )}
               </div>
               <div>
                 <div className="flex items-center gap-4 mb-2 flex-wrap">
@@ -238,14 +305,43 @@ export default function CombateList({
           </div>
         ))}
 
-        {docs.length === 0 && (
+        {filteredDocs.length === 0 && (
           <div 
             className="py-24 text-center bg-neutral-800/40 border border-oro/5 backdrop-blur-md ninja-clip-lg"
           >
-            <p className="text-oro/10 font-black uppercase italic tracking-[0.3em] text-xs">Arsenal vacío</p>
+            <p className="text-oro/10 font-black uppercase italic tracking-[0.3em] text-xs">Sin registros compatibles</p>
           </div>
         )}
       </div>
+
+      {filteredDocs.length > 0 && (
+        <div className="ninja-card-oro bg-neutral-800/40 border border-oro/5 p-5 flex flex-col md:flex-row items-center justify-between gap-4 ninja-clip-md backdrop-blur-sm">
+          <div className="flex items-center gap-3 text-caption font-black uppercase tracking-[0.2em] text-oro/50">
+            <span>{pageStart}-{pageEnd} de {filteredDocs.length}</span>
+            <span className="w-1 h-1 bg-oro/30 rotate-45" />
+            <span>Página {currentPage} / {totalPages}</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              className="p-3 bg-black/40 border border-oro/10 rounded-xl text-oro disabled:opacity-30 disabled:cursor-not-allowed hover:bg-oro hover:text-black transition-all"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              type="button"
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              className="p-3 bg-black/40 border border-oro/10 rounded-xl text-oro disabled:opacity-30 disabled:cursor-not-allowed hover:bg-oro hover:text-black transition-all"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
