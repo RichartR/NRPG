@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client';
-import { Aldea, RamaClan, SubEspecialidad, DocumentoSistema, DocumentoCombate, ConfiguracionSistema, Glosario, GlosarioCategoria, GlosarioSubcategoria, Entrenamiento, MisionMaster, Tienda, TiendaObjeto, Elemento, RamaElemento, Rasgo } from '@/domain/types';
+import { Aldea, RamaClan, SubEspecialidad, DocumentoSistema, DocumentoCombate, ConfiguracionSistema, Glosario, GlosarioCategoria, GlosarioSubcategoria, Entrenamiento, MisionMaster, Tienda, TiendaObjeto, Elemento, RamaElemento, Rasgo, Sentido, RamaSentido } from '@/domain/types';
 import { RewardLogic } from '@/domain/character/logic';
 import { RegistrosService } from './registros.service';
 
@@ -689,6 +689,47 @@ export const AdminService = {
   async deleteRasgo(id: number) {
     const supabase = createClient();
     const { error } = await supabase.from('info_rasgos').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // --- Sentidos Avanzados ---
+  async saveSentido(sentido: Partial<Sentido>): Promise<Sentido> {
+    const supabase = createClient();
+    const { id, created_at, ...cleanData } = sentido as any;
+    if (id) {
+      const { data, error } = await supabase.from('info_sentidos').update(cleanData).eq('id', id).select().single();
+      if (error) throw error;
+      return data;
+    } else {
+      const { data, error } = await supabase.from('info_sentidos').insert([cleanData]).select().single();
+      if (error) throw error;
+      return data;
+    }
+  },
+
+  async deleteSentido(id: number) {
+    const supabase = createClient();
+    const { error } = await supabase.from('info_sentidos').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  async saveRamaSentido(rel: Partial<RamaSentido>): Promise<RamaSentido> {
+    const supabase = createClient();
+    const { id, created_at, info_sentidos, ...cleanData } = rel as any;
+    if (id) {
+      const { data, error } = await supabase.from('info_rama_sentidos').update(cleanData).eq('id', id).select('*, info_sentidos(id, nombre, activo)').single();
+      if (error) throw error;
+      return data;
+    } else {
+      const { data, error } = await supabase.from('info_rama_sentidos').insert([cleanData]).select('*, info_sentidos(id, nombre, activo)').single();
+      if (error) throw error;
+      return data;
+    }
+  },
+
+  async deleteRamaSentido(id: number) {
+    const supabase = createClient();
+    const { error } = await supabase.from('info_rama_sentidos').delete().eq('id', id);
     if (error) throw error;
   },
 };

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Settings, Map, ScrollText, ShoppingBag, GitBranch, Sword, FileText, ShieldCheck, ShieldAlert, LogOut, ChevronDown, LayoutDashboard, Flame, BookOpen } from 'lucide-react';
+import { Settings, Map, ScrollText, ShoppingBag, GitBranch, Sword, FileText, ShieldCheck, ShieldAlert, LogOut, ChevronDown, LayoutDashboard, Flame, BookOpen, Eye, Shield, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 
@@ -11,9 +11,16 @@ interface MenuItem {
   icon: any;
 }
 
-export default function AdminNavbar() {
+interface AdminNavbarProps {
+  userRoles?: string[];
+}
+
+export default function AdminNavbar({ userRoles = [] }: AdminNavbarProps) {
   const pathname = usePathname();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  const isAdmin = userRoles.includes('admin');
+  const isModerator = userRoles.includes('moderador');
 
   const menuItems: MenuItem[] = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -23,16 +30,30 @@ export default function AdminNavbar() {
     { href: '/registros/tiendas', label: 'Tiendas', icon: ShoppingBag },
     { href: '/admin/ramas', label: 'Ramas', icon: GitBranch },
     { href: '/admin/elementos', label: 'Elementos', icon: Flame },
+    { href: '/admin/sentidos', label: 'Sentidos', icon: Eye },
     { href: '/admin/glosario', label: 'Glosario', icon: BookOpen },
     { href: '/admin/combate', label: 'Biblioteca', icon: Sword },
+    { href: '/admin/combate-estados', label: 'Estados', icon: Sword },
     { href: '/admin/documentos', label: 'Documentos', icon: FileText },
+    { href: '/admin/rasgos', label: 'Rasgos', icon: Shield },
+    { href: '/admin/config', label: 'Variables', icon: Settings },
+    { href: '/admin/crear-ficha', label: 'Crear Ficha', icon: UserPlus },
     { href: '/admin/fichas', label: 'Fichas', icon: ShieldCheck },
     { href: '/admin/disputas', label: 'Disputas', icon: ShieldAlert },
+    { href: '/admin/usuarios', label: 'Usuarios', icon: ShieldAlert },
   ];
 
-  const activeItem = menuItems.find(item =>
+  const allowedMenuItems = menuItems.filter(item => {
+    if (item.href === '/admin') return true;
+    if (item.href === '/admin/usuarios' || item.href === '/admin/fichas') {
+      return isAdmin;
+    }
+    return isAdmin || isModerator;
+  });
+
+  const activeItem = allowedMenuItems.find(item =>
     item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href)
-  ) || menuItems[0];
+  ) || allowedMenuItems[0];
 
   return (
     <header className="w-full max-w-[1750px] mx-auto mb-10 ninja-card-oro p-6 sm:p-8 xl:p-10 z-50 relative">
@@ -79,7 +100,7 @@ export default function AdminNavbar() {
 
         {dropdownOpen && (
           <div className="absolute left-0 right-0 mt-2 bg-zinc-950 border border-oro/10 shadow-2xl z-50 p-2 space-y-1" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
-            {menuItems.map((item) => {
+            {allowedMenuItems.map((item) => {
               const isActive = item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href);
               return (
                 <Link
@@ -102,7 +123,7 @@ export default function AdminNavbar() {
 
       {/* Desktop Horizontal Navigation (Scrollable if overflow) */}
       <nav className="hidden lg:flex flex-wrap items-center gap-2.5 overflow-x-auto pb-1 scrollbar-hide">
-        {menuItems.map((item) => {
+        {allowedMenuItems.map((item) => {
           const isActive = item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href);
           const Icon = item.icon;
           return (

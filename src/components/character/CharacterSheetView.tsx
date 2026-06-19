@@ -9,8 +9,7 @@ import {
   Coins,
   Search,
   ChevronUp,
-  ChevronDown,
-  Flame
+  ChevronDown
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
@@ -20,7 +19,7 @@ import { ProfileService } from '@/services/supabase/profile.service';
 import { MasterService } from '@/services/supabase/master.service';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { DataField, SelectField, SearchableSelect, NinjaSelect, FormEditContext } from '@/components/ui/Fields';
-import { Character, CharacterStats, Glosario, PersonajeItem, PersonajeTecnica, Registro, Rasgo, PersonajeRasgo } from '@/domain/types';
+import { Character, CharacterStats, Glosario, PersonajeItem, PersonajeTecnica, Registro, Rasgo } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import RegistroCard from '@/components/registros/RegistroCard';
@@ -481,6 +480,147 @@ export function CharacterSheetView({
     masters.ramaElementos,
     masters.elementos,
     masters.subEspecialidades
+  ]);
+
+  const { fixedSentidos, poolSelectables, isSelectableAvailable } = useMemo(() => {
+    if (!character?.personajes_ramas || !masters.ramaSentidos || !masters.sentidos) {
+      return { fixedSentidos: [], poolSelectables: [], isSelectableAvailable: false };
+    }
+
+    const charRamas = character.personajes_ramas || [];
+    const activeRamaIds = charRamas.map((pr: any) => Number(pr.rama_id)).filter(Boolean);
+    const activeSubIds = charRamas.map((pr: any) => Number(pr.sub_especialidad_id)).filter(Boolean);
+
+    const fijosSet = new Set<number>();
+    masters.ramaSentidos
+      .filter((rs: any) =>
+        rs.tipo === 'fijo' &&
+        (
+          (rs.rama_id && activeRamaIds.includes(Number(rs.rama_id))) ||
+          (rs.sub_especialidad_id && activeSubIds.includes(Number(rs.sub_especialidad_id)))
+        )
+      )
+      .forEach((rs: any) => {
+        if (rs.sentido_id) fijosSet.add(Number(rs.sentido_id));
+      });
+
+    const selectablesSet = new Set<number>();
+    masters.ramaSentidos
+      .filter((rs: any) =>
+        rs.tipo === 'seleccionable' &&
+        (
+          (rs.rama_id && activeRamaIds.includes(Number(rs.rama_id))) ||
+          (rs.sub_especialidad_id && activeSubIds.includes(Number(rs.sub_especialidad_id)))
+        )
+      )
+      .forEach((rs: any) => {
+        if (rs.sentido_id) selectablesSet.add(Number(rs.sentido_id));
+      });
+
+    const fixed = Array.from(fijosSet).map(id => masters.sentidos.find((s: any) => s.id === id)).filter(Boolean);
+    const pool = Array.from(selectablesSet).map(id => masters.sentidos.find((s: any) => s.id === id)).filter(Boolean);
+
+    return {
+      fixedSentidos: fixed,
+      poolSelectables: pool,
+      isSelectableAvailable: pool.length > 0 && fixed.length === 0
+    };
+  }, [character?.personajes_ramas, masters.ramaSentidos, masters.sentidos]);
+
+  // ESTRUCTURA DE ALINEACIÓN AUTOMÁTICA DE SENTIDOS AVANZADOS
+  const sentidosSignature = JSON.stringify(character?.personajes_sentidos?.map(s => [s.sentido_id, s.origen]) || []);
+  useEffect(() => {
+    if (!character?.personajes_ramas || !masters.ramaSentidos || !masters.sentidos) return;
+
+    const charRamas = character.personajes_ramas || [];
+    const activeRamaIds = charRamas.map((pr: any) => Number(pr.rama_id)).filter(Boolean);
+    const activeSubIds = charRamas.map((pr: any) => Number(pr.sub_especialidad_id)).filter(Boolean);
+
+    // 1. Obtener sentidos fijos
+    const fijosSet = new Set<number>();
+    masters.ramaSentidos
+      .filter((rs: any) =>
+        rs.tipo === 'fijo' &&
+        (
+          (rs.rama_id && activeRamaIds.includes(Number(rs.rama_id))) ||
+          (rs.sub_especialidad_id && activeSubIds.includes(Number(rs.sub_especialidad_id)))
+        )
+      )
+      .forEach((rs: any) => {
+        if (rs.sentido_id) fijosSet.add(Number(rs.sentido_id));
+      });
+
+    const fixedSentidosIds = Array.from(fijosSet);
+
+    // 2. Obtener pool de sentidos seleccionables
+    const selectablesSet = new Set<number>();
+    masters.ramaSentidos
+      .filter((rs: any) =>
+        rs.tipo === 'seleccionable' &&
+        (
+          (rs.rama_id && activeRamaIds.includes(Number(rs.rama_id))) ||
+          (rs.sub_especialidad_id && activeSubIds.includes(Number(rs.sub_especialidad_id)))
+        )
+      )
+      .forEach((rs: any) => {
+        if (rs.sentido_id) selectablesSet.add(Number(rs.sentido_id));
+      });
+
+    const poolSelectablesIds = Array.from(selectablesSet);
+
+    const currentSentidos = character.personajes_sentidos || [];
+    let updatedSentidos = [...currentSentidos];
+    let hasChanges = false;
+
+    if (fixedSentidosIds.length > 0) {
+      // Si tiene fijos, SOLO puede tener los fijos.
+      const currentFixedIds = currentSentidos.filter((cs: any) => cs.origen === 'fijo').map((cs: any) => Number(cs.sentido_id));
+      const currentSelectableIds = currentSentidos.filter((cs: any) => cs.origen === 'seleccionable').map((cs: any) => Number(cs.sentido_id));
+
+      const needsFixedUpdate = fixedSentidosIds.some(id => !currentFixedIds.includes(id)) || currentFixedIds.some(id => !fixedSentidosIds.includes(id));
+      const hasSelectables = currentSelectableIds.length > 0;
+
+      if (needsFixedUpdate || hasSelectables) {
+        updatedSentidos = fixedSentidosIds.map(id => ({
+          personaje_id: character.id,
+          sentido_id: id,
+          origen: 'fijo',
+          info_sentidos: masters.sentidos.find((s: any) => s.id === id)
+        }));
+        hasChanges = true;
+      }
+    } else if (poolSelectablesIds.length > 0) {
+      // Si no tiene fijos pero tiene seleccionables:
+      const currentFixedIds = currentSentidos.filter((cs: any) => cs.origen === 'fijo');
+      const selectables = currentSentidos.filter((cs: any) => cs.origen === 'seleccionable');
+
+      // Validar que el sentido seleccionado pertenezca al pool actual
+      const validSelectables = selectables.filter((cs: any) => poolSelectablesIds.includes(Number(cs.sentido_id)));
+
+      if (currentFixedIds.length > 0 || selectables.length !== validSelectables.length || validSelectables.length > 1) {
+        if (validSelectables.length > 0) {
+          updatedSentidos = [validSelectables[0]];
+        } else {
+          updatedSentidos = [];
+        }
+        hasChanges = true;
+      }
+    } else {
+      // No tiene fijos ni seleccionables
+      if (currentSentidos.length > 0) {
+        updatedSentidos = [];
+        hasChanges = true;
+      }
+    }
+
+    if (hasChanges) {
+      onUpdateField('personajes_sentidos', updatedSentidos);
+    }
+  }, [
+    character?.personajes_ramas,
+    masters.ramaSentidos,
+    masters.sentidos,
+    sentidosSignature
   ]);
 
   const aldeaOptions = useMemo(() => {
@@ -2088,7 +2228,7 @@ export function CharacterSheetView({
                 </SectionCard>
 
                 {/* BLOQUE GRÁFICO DE ELEMENTOS DEL PERSONAJE */}
-                <SectionCard title="AFINIDADES ELEMENTALES" icon={Flame} color="oro">
+                <SectionCard title="AFINIDADES ELEMENTALES" color="oro">
                   {derivedElements.length === 0 ? (
                     <div className="py-12 text-center rounded-[4px] border border-oro/10 bg-black/20 text-xs font-black text-oro/30 uppercase tracking-[0.25em]">
                       Este shinobi no posee afinidades elementales
@@ -2121,6 +2261,86 @@ export function CharacterSheetView({
                     </div>
                   )}
                 </SectionCard>
+
+                {/* BLOQUE DE SENTIDOS AVANZADOS */}
+                {(fixedSentidos.length > 0 || isSelectableAvailable || (character.personajes_sentidos && character.personajes_sentidos.length > 0)) && (
+                  <SectionCard title="SENTIDOS AVANZADOS" color="oro">
+                    {isEditing || isNew ? (
+                      <div className="space-y-4">
+                        {fixedSentidos.length > 0 ? (
+                          <div className="space-y-3">
+                            <p className="text-caption font-black text-oro/40 uppercase tracking-widest leading-relaxed">
+                              Sentidos Fijos otorgados automáticamente por tus ramas/clanes:
+                            </p>
+                            <div className="flex flex-wrap gap-3">
+                              {fixedSentidos.map((fs: any) => (
+                                <div key={fs.id} className="bg-rojo-sangre/20 border border-rojo-sangre/40 px-4 py-2 text-xs font-black text-oro uppercase tracking-wider ninja-clip-xs">
+                                  {fs.nombre} (Fijo)
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : isSelectableAvailable ? (
+                          <div className="space-y-4">
+                            <p className="text-caption font-black text-oro/40 uppercase tracking-widest leading-relaxed">
+                              Elige un Sentido Avanzado disponible para tus ramas/clanes:
+                            </p>
+                            <SelectField
+                              label="SELECCIONAR SENTIDO"
+                              value={character.personajes_sentidos?.find((s: any) => s.origen === 'seleccionable')?.sentido_id ?? null}
+                              options={poolSelectables.map((ps: any) => ({
+                                label: ps.nombre.toUpperCase(),
+                                value: ps.id
+                              }))}
+                              disabled={!isEditing && !isNew}
+                              onChange={(v) => {
+                                const selectedId = v ? Number(v) : null;
+                                if (selectedId) {
+                                  const sentidoObj = poolSelectables.find((ps: any) => ps.id === selectedId);
+                                  onUpdateField('personajes_sentidos', [
+                                    {
+                                      personaje_id: character.id,
+                                      sentido_id: selectedId,
+                                      origen: 'seleccionable',
+                                      info_sentidos: sentidoObj
+                                    }
+                                  ]);
+                                } else {
+                                  onUpdateField('personajes_sentidos', []);
+                                }
+                              }}
+                            />
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {character.personajes_sentidos && character.personajes_sentidos.length > 0 ? (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                            {character.personajes_sentidos.map((ps: any, idx: number) => (
+                              <div
+                                key={idx}
+                                className="flex flex-col items-center justify-center p-6 bg-black/40 border border-oro/10 hover:border-oro/30 transition-all group relative overflow-hidden ninja-clip-sm"
+                              >
+                                <div className="absolute top-0 right-0 w-16 h-16 bg-oro/5 rounded-full blur-xl pointer-events-none" />
+                                <span className="text-caption font-black text-oro uppercase tracking-widest text-center leading-none">
+                                  {ps.info_sentidos?.nombre || ps.nombre || 'Desconocido'}
+                                </span>
+                                <span className="text-caption font-black text-oro/40 uppercase tracking-tighter text-center mt-2 italic">
+                                  Sentido Avanzado ({ps.origen})
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="py-12 text-center rounded-[4px] border border-oro/10 bg-black/20 text-xs font-black text-oro/30 uppercase tracking-[0.25em]">
+                            Este shinobi no posee sentidos avanzados
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </SectionCard>
+                )}
               </div>
             </div>
           )}
@@ -2541,64 +2761,64 @@ export function CharacterSheetView({
                                             <tbody className="divide-y divide-oro/5 bg-black/40">
                                               {items.map((pi: PersonajeItem, idx: number) => (
                                                 <tr key={`${pi.item_id}-${idx}`} className="hover:bg-oro/5 transition-colors group">
-                                                <td className="py-3 px-5">
-                                                  <div className="flex flex-col">
-                                                    <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
-                                                      {pi.info_glosario?.nombre_es}
-                                                      {pi.info_glosario?.es_tienda_exp && (
-                                                        <span className="px-1.5 py-0.5 text-caption font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
-                                                          EXP SHOP
-                                                        </span>
-                                                      )}
-                                                      {pi.info_glosario?.zona_equipable && (
-                                                        <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-oro/10 border border-oro/30 text-oro tracking-widest rounded-sm">
-                                                          {pi.info_glosario.zona_equipable}
-                                                        </span>
-                                                      )}
-                                                    </span>
-                                                    {pi.info_glosario?.nombre_jp && (
-                                                      <span className="text-caption text-oro/30 uppercase font-black tracking-tighter mt-0.5">
-                                                        {pi.info_glosario?.nombre_jp}
+                                                  <td className="py-3 px-5">
+                                                    <div className="flex flex-col">
+                                                      <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
+                                                        {pi.info_glosario?.nombre_es}
+                                                        {pi.info_glosario?.es_tienda_exp && (
+                                                          <span className="px-1.5 py-0.5 text-caption font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
+                                                            EXP SHOP
+                                                          </span>
+                                                        )}
+                                                        {pi.info_glosario?.zona_equipable && (
+                                                          <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-oro/10 border border-oro/30 text-oro tracking-widest rounded-sm">
+                                                            {pi.info_glosario.zona_equipable}
+                                                          </span>
+                                                        )}
                                                       </span>
+                                                      {pi.info_glosario?.nombre_jp && (
+                                                        <span className="text-caption text-oro/30 uppercase font-black tracking-tighter mt-0.5">
+                                                          {pi.info_glosario?.nombre_jp}
+                                                        </span>
+                                                      )}
+                                                    </div>
+                                                  </td>
+                                                  <td className="py-3 px-5">
+                                                    {renderRequisitos(pi.info_glosario?.requisitos)}
+                                                  </td>
+                                                  <td className="py-3 px-5 text-center">
+                                                    {(isEditing || isNew) && (
+                                                      <button
+                                                        onClick={() => {
+                                                          const isNewlyAdded = !pi.id;
+                                                          if (isNewlyAdded) {
+                                                            if (pi.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pi.info_glosario.coste_exp);
+                                                            if (pi.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pi.info_glosario.coste_ryous);
+                                                            if (pi.info_glosario?.coste_puntos_aprendizaje) onUpdateField('puntos_aprendizaje', (character.puntos_aprendizaje || 0) + pi.info_glosario.coste_puntos_aprendizaje);
+                                                          }
+                                                          onUpdateField('personajes_inventario', character.personajes_inventario?.filter((i: PersonajeItem) => i.item_id !== pi.item_id));
+                                                        }}
+                                                        className="p-2 bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
+                                                        title="Eliminar Objeto"
+                                                      >
+                                                        <Trash2 className="w-4 h-4" />
+                                                      </button>
                                                     )}
-                                                  </div>
-                                                </td>
-                                                <td className="py-3 px-5">
-                                                  {renderRequisitos(pi.info_glosario?.requisitos)}
-                                                </td>
-                                                <td className="py-3 px-5 text-center">
-                                                  {(isEditing || isNew) && (
-                                                    <button
-                                                      onClick={() => {
-                                                        const isNewlyAdded = !pi.id;
-                                                        if (isNewlyAdded) {
-                                                          if (pi.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pi.info_glosario.coste_exp);
-                                                          if (pi.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pi.info_glosario.coste_ryous);
-                                                          if (pi.info_glosario?.coste_puntos_aprendizaje) onUpdateField('puntos_aprendizaje', (character.puntos_aprendizaje || 0) + pi.info_glosario.coste_puntos_aprendizaje);
-                                                        }
-                                                        onUpdateField('personajes_inventario', character.personajes_inventario?.filter((i: PersonajeItem) => i.item_id !== pi.item_id));
-                                                      }}
-                                                      className="p-2 bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
-                                                      title="Eliminar Objeto"
-                                                    >
-                                                      <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                  )}
-                                                </td>
-                                              </tr>
-                                            ))}
-                                          </tbody>
-                                        </table>
+                                                  </td>
+                                                </tr>
+                                              ))}
+                                            </tbody>
+                                          </table>
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
-                                ))}
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )))}
+                      )))}
                   </div>
 
                   {(canEdit || isNew) && (isEditing || isNew) && (
@@ -3262,6 +3482,27 @@ export function CharacterSheetView({
                 <div className="space-y-8">
                   {/* SECCIÓN 2: HABILIDADES PASIVAS */}
                   <SectionCard title="HABILIDADES PASIVAS" icon={ScrollText} color="oro">
+                    {character.personajes_sentidos && character.personajes_sentidos.length > 0 && (
+                      <div className="mb-6 pb-6 border-b border-oro/10 space-y-3">
+                        <div className="flex items-center gap-6">
+                          <h3 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.2em] flex items-center gap-3">
+                            Sentidos Avanzados
+                          </h3>
+                          <div className="flex-1 h-px bg-oro/10" />
+                        </div>
+                        <div className="space-y-4 pl-4 border-l border-oro/5">
+                          {character.personajes_sentidos.map((ps: any, idx: number) => (
+                            <div key={idx} className="bg-black/30 border border-oro/15 p-4 flex justify-between items-center ninja-clip-xs">
+                              <div>
+                                <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
+                                  Sentido Avanzado: {ps.info_sentidos?.nombre || ps.nombre || 'Desconocido'}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     {Object.keys(pasivasGrouped).length === 0 ? (
                       <div className="py-12 text-center rounded-[4px] border border-oro/10 bg-black/20 text-xs font-black text-oro/30 uppercase tracking-[0.25em]">
                         {techniqueSearch.trim() ? 'No hay pasivas que coincidan con la búsqueda' : 'No tienes habilidades pasivas'}

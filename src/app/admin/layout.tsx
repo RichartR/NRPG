@@ -33,7 +33,7 @@ export default async function AdminLayout({
       />
 
       {/* Top Navigation Admin */}
-      <AdminNavbar />
+      <AdminNavbar userRoles={userRoles} />
 
       {/* Contenido Principal Centrado */}
       <main className="w-full max-w-[1750px] mx-auto flex-1 flex flex-col">

@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client';
-import { Aldea, RamaClan, SubEspecialidad, Entrenamiento, Elemento, RamaElemento, Glosario, GlosarioCategoria, GlosarioSubcategoria } from '@/domain/types';
+import { Aldea, RamaClan, SubEspecialidad, Entrenamiento, Elemento, RamaElemento, Glosario, GlosarioCategoria, GlosarioSubcategoria, Sentido, RamaSentido } from '@/domain/types';
 
 export const MasterService = {
   async getAldeas(): Promise<Aldea[]> {
@@ -254,5 +254,27 @@ export const MasterService = {
       .single();
     if (error) throw error;
     return data;
+  },
+
+  async getSentidos(): Promise<Sentido[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('info_sentidos')
+      .select('*')
+      .order('nombre', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getRamaSentidos(): Promise<RamaSentido[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('info_rama_sentidos')
+      .select('*, info_sentidos(id, nombre, activo)')
+      .eq('activo', true);
+
+    if (error) throw error;
+    return data || [];
   }
 };

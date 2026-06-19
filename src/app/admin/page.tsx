@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Settings, BookOpen, Map, GitBranch, Sword, ChevronRight, ScrollText, ShieldAlert, ShoppingBag, Shield } from 'lucide-react';
+import { Settings, BookOpen, Map, GitBranch, Sword, ChevronRight, ScrollText, ShieldAlert, ShoppingBag, Shield, Flame, Eye, FileText, UserPlus } from 'lucide-react';
 import { createClient } from '@/utils/supabase/server';
 import { ProfileService } from '@/services/supabase/profile.service';
 import { redirect } from 'next/navigation';
@@ -61,13 +61,40 @@ export default async function AdminPage() {
       borderColor: 'hover:border-oro/50'
     },
     {
-      title: 'Documentos',
+      title: 'Elementos',
+      desc: 'Gestionar elementos y naturalezas de chakra del juego.',
+      icon: Flame,
+      href: '/admin/elementos',
+      color: 'text-oro',
+      bgColor: 'bg-oro/10',
+      borderColor: 'hover:border-oro/50'
+    },
+    {
+      title: 'Sentidos Avanzados',
+      desc: 'Configurar sentidos avanzados, fijos o elegibles por rama.',
+      icon: Eye,
+      href: '/admin/sentidos',
+      color: 'text-oro',
+      bgColor: 'bg-oro/10',
+      borderColor: 'hover:border-oro/50'
+    },
+    {
+      title: 'Biblioteca de Combate',
       desc: 'Gestionar técnicas, jutsus y habilidades de combate.',
       icon: Sword,
       href: '/admin/combate',
       color: 'text-rojo-sangre',
       bgColor: 'bg-rojo-sangre/10',
       borderColor: 'hover:border-rojo-sangre/50'
+    },
+    {
+      title: 'Lore y Archivo',
+      desc: 'Gestionar documentación histórica, lore y guías generales.',
+      icon: FileText,
+      href: '/admin/documentos',
+      color: 'text-oro',
+      bgColor: 'bg-oro/10',
+      borderColor: 'hover:border-oro/50'
     },
     {
       title: 'Glosario',
@@ -101,6 +128,15 @@ export default async function AdminPage() {
       desc: 'Configurar escalados, reglas de rango y constantes globales.',
       icon: Settings,
       href: '/admin/config',
+      color: 'text-oro',
+      bgColor: 'bg-oro/10',
+      borderColor: 'hover:border-oro/50'
+    },
+    {
+      title: 'Crear Shinobi',
+      desc: 'Inicializar y registrar un nuevo personaje shinobi en el sistema.',
+      icon: UserPlus,
+      href: '/admin/crear-ficha',
       color: 'text-oro',
       bgColor: 'bg-oro/10',
       borderColor: 'hover:border-oro/50'

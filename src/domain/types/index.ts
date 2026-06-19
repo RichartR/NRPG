@@ -238,6 +238,7 @@ export interface Character {
   personajes_ramas?: PersonajeRama[];
   personajes_entrenamientos?: PersonajeEntrenamiento[];
   personajes_rasgos?: PersonajeRasgo[];
+  personajes_sentidos?: PersonajeSentido[];
   registros_autor?: Registro[];
   registros_participante?: RegistroParticipante[];
   
@@ -432,4 +433,34 @@ export interface TiendaObjeto {
   info_glosario?: Glosario;
   info_tiendas?: Tienda;
 }
+
+export interface Sentido {
+  id: number;
+  nombre: string;
+  activo: boolean;
+  created_at?: string;
+}
+
+export interface RamaSentido {
+  id: number;
+  rama_id?: number | null;
+  sub_especialidad_id?: number | null;
+  sentido_id: number;
+  tipo: 'fijo' | 'seleccionable';
+  activo: boolean;
+  created_at?: string;
+  // Joins
+  info_sentidos?: Sentido;
+}
+
+export interface PersonajeSentido {
+  id?: number;
+  personaje_id: number;
+  sentido_id: number;
+  origen: string;
+  created_at?: string;
+  // Joins
+  info_sentidos?: Sentido;
+}
+
 
