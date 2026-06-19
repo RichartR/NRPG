@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ShoppingBag, Plus, Trash2, X, Check, Loader2, ArrowLeft, Search, AlertCircle, ChevronRight, Minus } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
@@ -8,7 +8,7 @@ import { AuthService } from '@/services/supabase/auth.service';
 import { MasterService } from '@/services/supabase/master.service';
 import { TiendasService } from '@/services/supabase/tiendas.service';
 import { AdminService } from '@/services/supabase/admin.service';
-import { NinjaSelect } from '@/components/ui/Fields';
+import { NinjaSelect, SearchableMultiSelect } from '@/components/ui/Fields';
 import { Character, Tienda, TiendaObjeto, Glosario } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
@@ -53,7 +53,9 @@ export default function TiendaDetallePage() {
     requisitos_personalizados: {
       rango: null,
       combates: 0,
-      stats: { sm: 0, agi: 0, est: 0, fue: 0, gen: 0, int: 0, nin: 0, tai: 0 }
+      stats: { sm: 0, agi: 0, est: 0, fue: 0, gen: 0, int: 0, nin: 0, tai: 0 },
+      entrenamiento_id: null as number | null,
+      sub_especialidad_id: null as number | null
     }
   });
 
@@ -69,7 +71,9 @@ export default function TiendaDetallePage() {
     requisitos: {
       rango: null as string | null,
       combates: 0,
-      stats: { sm: 0, agi: 0, est: 0, fue: 0, gen: 0, int: 0, nin: 0, tai: 0 }
+      stats: { sm: 0, agi: 0, est: 0, fue: 0, gen: 0, int: 0, nin: 0, tai: 0 },
+      entrenamiento_id: null as number | null,
+      sub_especialidad_id: null as number | null
     }
   });
 
@@ -222,6 +226,25 @@ export default function TiendaDetallePage() {
     }
   }, [selectedGlosarioId]);
 
+  const linkedGlosario = useMemo(() => {
+    return glosarioActivo.find(g => g.id === selectedGlosarioId);
+  }, [glosarioActivo, selectedGlosarioId]);
+
+  const filteredShopEntrenamientos = useMemo(() => {
+    if (!linkedGlosario) return masters.entrenamientos || [];
+    return (masters.entrenamientos || []).filter((e: any) => {
+      if (linkedGlosario.rama_clan_id && Number(e.id_ramaclan) !== Number(linkedGlosario.rama_clan_id)) return false;
+      if (linkedGlosario.sub_especialidad_id && Number(e.id_subespecialidad) !== Number(linkedGlosario.sub_especialidad_id)) return false;
+      return true;
+    });
+  }, [masters.entrenamientos, linkedGlosario]);
+
+  const filteredShopSubespecialidades = useMemo(() => {
+    if (!linkedGlosario) return masters.subEspecialidades || [];
+    if (!linkedGlosario.rama_clan_id) return masters.subEspecialidades || [];
+    return (masters.subEspecialidades || []).filter((s: any) => Number(s.rama_id) === Number(linkedGlosario.rama_clan_id));
+  }, [masters.subEspecialidades, linkedGlosario]);
+
   const handleSaveCatalogItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tienda) return;
@@ -325,7 +348,9 @@ export default function TiendaDetallePage() {
       requisitos_personalizados: {
         rango: null,
         combates: 0,
-        stats: { sm: 0, agi: 0, est: 0, fue: 0, gen: 0, int: 0, nin: 0, tai: 0 }
+        stats: { sm: 0, agi: 0, est: 0, fue: 0, gen: 0, int: 0, nin: 0, tai: 0 },
+        entrenamiento_id: null,
+        sub_especialidad_id: null
       }
     });
     setFormCustomGlosario({
@@ -338,7 +363,9 @@ export default function TiendaDetallePage() {
       requisitos: {
         rango: null,
         combates: 0,
-        stats: { sm: 0, agi: 0, est: 0, fue: 0, gen: 0, int: 0, nin: 0, tai: 0 }
+        stats: { sm: 0, agi: 0, est: 0, fue: 0, gen: 0, int: 0, nin: 0, tai: 0 },
+        entrenamiento_id: null,
+        sub_especialidad_id: null
       }
     });
   };
@@ -402,12 +429,12 @@ export default function TiendaDetallePage() {
     const currentStat = Number(selectedChar.puntos_stats) || 0;
     const next = statPointsToBuy + 1;
     const targetStatPoints = currentStat + next;
-    
+
     if (!isStatIncreaseAllowed(targetStatPoints)) {
       addToast('No puedes comprar más puntos de stat. Has alcanzado el límite máximo para tu rango actual y necesitas dominar las técnicas obligatorias para ascender.', 'error');
       return;
     }
-    
+
     const { total, isLevelBlocked } = calculateTotalExpCost(currentStat, next);
     if (isLevelBlocked) {
       return;
@@ -535,6 +562,37 @@ export default function TiendaDetallePage() {
               reasons.push(`Estadística ${statKey.toUpperCase()} insuficiente (Se requieren ${reqVal}, tienes ${charVal})`);
             }
           }
+        }
+      }
+
+      // Entrenamiento check
+      if (reqs.entrenamiento_id) {
+        const reqIds = Array.isArray(reqs.entrenamiento_id) ? reqs.entrenamiento_id : [reqs.entrenamiento_id];
+        if (reqIds.length > 0) {
+          const hasAny = reqIds.some((reqId: any) =>
+            char.personajes_entrenamientos?.some(pe => Number(pe.entrenamiento_id) === Number(reqId))
+          );
+          if (!hasAny) {
+            allowed = false;
+            const entNames = reqIds.map((reqId: any) =>
+              masters.entrenamientos?.find(e => Number(e.id) === Number(reqId))?.nombre_esp || `ID: ${reqId}`
+            );
+            reasons.push(`Falta uno de los entrenamientos requeridos: ${entNames.join(' o ')}`);
+          }
+        }
+      }
+
+      // Subespecialidad / Subcategoría check
+      if (reqs.sub_especialidad_id) {
+        const playerSubSpecs = [
+          ...(char.personajes_ramas || []).map(pr => pr.sub_especialidad_id ? Number(pr.sub_especialidad_id) : null).filter(Boolean),
+          ...(char.eleccion_tecnicas_clan?.sub_especialidad_id ? [Number(char.eleccion_tecnicas_clan.sub_especialidad_id)] : [])
+        ];
+        const hasSub = playerSubSpecs.includes(Number(reqs.sub_especialidad_id));
+        if (!hasSub) {
+          allowed = false;
+          const subName = masters.subEspecialidades?.find(s => Number(s.id) === Number(reqs.sub_especialidad_id))?.nombre || `ID: ${reqs.sub_especialidad_id}`;
+          reasons.push(`Falta subcategoría/especialidad requerida: ${subName}`);
         }
       }
     }
@@ -788,7 +846,7 @@ export default function TiendaDetallePage() {
                                   onChange={(e) => {
                                     const val = Math.max(1, Number(e.target.value) || 1);
                                     const currentStat = Number(selectedChar.puntos_stats) || 0;
-                                    
+
                                     // Limit the value to what is allowed by the rank and techniques
                                     let allowedVal = val;
                                     for (let v = 1; v <= val; v++) {
@@ -797,7 +855,7 @@ export default function TiendaDetallePage() {
                                         break;
                                       }
                                     }
-                                    
+
                                     const { total } = calculateTotalExpCost(currentStat, allowedVal);
                                     if (total <= selectedChar.xp) {
                                       setStatPointsToBuy(Math.max(1, allowedVal));
@@ -974,7 +1032,7 @@ export default function TiendaDetallePage() {
                   )}
                 </div>
               ) : (
-                           filteredObjetos.length > 0 ? (
+                filteredObjetos.length > 0 ? (
                   <div className="ninja-card-oro p-6 xl:p-8 overflow-hidden">
                     <div className="overflow-x-auto scrollbar-thin">
                       <table className="w-full text-left border-collapse">
@@ -996,8 +1054,8 @@ export default function TiendaDetallePage() {
                             const itemReqs = obj.mantener_requisitos ? glosario.requisitos : obj.requisitos_personalizados;
 
                             return (
-                              <tr 
-                                key={obj.id} 
+                              <tr
+                                key={obj.id}
                                 className={`border-b border-oro/5 hover:bg-oro/5 transition-colors duration-200 align-middle ${allowed ? '' : 'opacity-85'}`}
                               >
                                 {/* Artículo Name */}
@@ -1028,8 +1086,10 @@ export default function TiendaDetallePage() {
                                     const hasRango = !!itemReqs.rango;
                                     const hasCombates = itemReqs.combates > 0;
                                     const hasStats = itemReqs.stats && Object.values(itemReqs.stats).some((v: any) => v > 0);
+                                    const hasEntrenamiento = !!itemReqs.entrenamiento_id;
+                                    const hasSubespecialidad = !!itemReqs.sub_especialidad_id;
 
-                                    if (!hasRango && !hasCombates && !hasStats) {
+                                    if (!hasRango && !hasCombates && !hasStats && !hasEntrenamiento && !hasSubespecialidad) {
                                       return <span className="text-xs text-oro/40 italic font-bold">Ninguno</span>;
                                     }
 
@@ -1088,6 +1148,47 @@ export default function TiendaDetallePage() {
                                             );
                                           })
                                         }
+
+                                        {hasEntrenamiento && (() => {
+                                          const reqIds = Array.isArray(itemReqs.entrenamiento_id) ? itemReqs.entrenamiento_id : [itemReqs.entrenamiento_id];
+                                          const isMet = !selectedChar || reqIds.some((reqId: any) =>
+                                            selectedChar.personajes_entrenamientos?.some(pe => Number(pe.entrenamiento_id) === Number(reqId))
+                                          );
+                                          const entNames = reqIds.map((reqId: any) =>
+                                            masters.entrenamientos?.find(e => Number(e.id) === Number(reqId))?.nombre_esp || `ID: ${reqId}`
+                                          ).join(' o ');
+
+                                          return (
+                                            <span
+                                              className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-sm border ${isMet
+                                                ? 'bg-black/40 border-oro/10 text-oro/80'
+                                                : 'bg-rojo-oscuro/20 border-rojo-sangre/30 text-rojo-sangre'
+                                                }`}
+                                            >
+                                              Entr: <strong className="font-black text-oro">{entNames}</strong>
+                                            </span>
+                                          );
+                                        })()}
+
+                                        {hasSubespecialidad && (() => {
+                                          const playerSubSpecs = selectedChar ? [
+                                            ...(selectedChar.personajes_ramas || []).map(pr => pr.sub_especialidad_id ? Number(pr.sub_especialidad_id) : null).filter(Boolean),
+                                            ...(selectedChar.eleccion_tecnicas_clan?.sub_especialidad_id ? [Number(selectedChar.eleccion_tecnicas_clan.sub_especialidad_id)] : [])
+                                          ] : [];
+                                          const isMet = !selectedChar || playerSubSpecs.includes(Number(itemReqs.sub_especialidad_id));
+                                          const subName = masters.subEspecialidades?.find(s => Number(s.id) === Number(itemReqs.sub_especialidad_id))?.nombre || `ID: ${itemReqs.sub_especialidad_id}`;
+
+                                          return (
+                                            <span
+                                              className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-sm border ${isMet
+                                                ? 'bg-black/40 border-oro/10 text-oro/80'
+                                                : 'bg-rojo-oscuro/20 border-rojo-sangre/30 text-rojo-sangre'
+                                                }`}
+                                            >
+                                              Subcat: <strong className="font-black text-oro">{subName}</strong>
+                                            </span>
+                                          );
+                                        })()}
                                       </div>
                                     );
                                   })()}
@@ -1430,6 +1531,30 @@ export default function TiendaDetallePage() {
                           min={0}
                         />
                       </div>
+                      <div className="space-y-2">
+                        <SearchableMultiSelect
+                          label="Entrenamiento Requerido"
+                          value={formCustomGlosario.requisitos.entrenamiento_id || null}
+                          onChange={(val) => setFormCustomGlosario({
+                            ...formCustomGlosario,
+                            requisitos: { ...formCustomGlosario.requisitos, entrenamiento_id: val }
+                          })}
+                          placeholder="Ninguno"
+                          options={masters.entrenamientos?.map(e => ({ label: e.nombre_jp || e.nombre_esp, value: e.id })) || []}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="block text-caption font-black text-oro/60 uppercase tracking-widest">Subcategoría Requerida</label>
+                        <NinjaSelect
+                          value={formCustomGlosario.requisitos.sub_especialidad_id || ''}
+                          onChange={(val) => setFormCustomGlosario({
+                            ...formCustomGlosario,
+                            requisitos: { ...formCustomGlosario.requisitos, sub_especialidad_id: val ? Number(val) : null }
+                          })}
+                          placeholder="Ninguna"
+                          options={masters.subEspecialidades?.map(s => ({ label: s.nombre, value: s.id }))}
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -1530,6 +1655,36 @@ export default function TiendaDetallePage() {
                               })}
                               className="ninja-input py-2 w-full"
                               min={0}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <SearchableMultiSelect
+                              label="Entrenamiento Requerido"
+                              value={formObjeto.requisitos_personalizados?.entrenamiento_id || null}
+                              onChange={(val) => setFormObjeto({
+                                ...formObjeto,
+                                requisitos_personalizados: {
+                                  ...formObjeto.requisitos_personalizados,
+                                  entrenamiento_id: val
+                                }
+                              })}
+                              placeholder="Ninguno"
+                              options={filteredShopEntrenamientos?.map((e: any) => ({ label: e.nombre_jp || e.nombre_esp, value: e.id })) || []}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="block text-caption font-black text-oro/60 uppercase tracking-widest">Subcategoría Requerida</label>
+                            <NinjaSelect
+                              value={formObjeto.requisitos_personalizados?.sub_especialidad_id || ''}
+                              onChange={(val) => setFormObjeto({
+                                ...formObjeto,
+                                requisitos_personalizados: {
+                                  ...formObjeto.requisitos_personalizados,
+                                  sub_especialidad_id: val ? Number(val) : null
+                                }
+                              })}
+                              placeholder="Ninguna"
+                              options={filteredShopSubespecialidades?.map((s: any) => ({ label: s.nombre, value: s.id }))}
                             />
                           </div>
                         </div>

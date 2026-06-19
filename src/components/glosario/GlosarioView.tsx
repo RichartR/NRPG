@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Filter, ChevronRight, Hash } from 'lucide-react';
-import { Elemento, Glosario, GlosarioCategoria, GlosarioSubcategoria } from '@/domain/types';
+import { Elemento, Glosario, GlosarioCategoria, GlosarioSubcategoria, Entrenamiento } from '@/domain/types';
 import { NinjaSelect } from '@/components/ui/Fields';
 import { normalizeSearchText, searchAny } from '@/lib/utils/search';
 
@@ -14,6 +14,7 @@ interface GlosarioViewProps {
   ramas: any[];
   aldeas: any[];
   subespecialidades: any[];
+  entrenamientos?: Entrenamiento[];
   countByAldea?: Record<number, number>;
   countByClan?: Record<number, number>;
   cuposMaximosAldea?: number;
@@ -125,6 +126,7 @@ export default function GlosarioView({
   ramas,
   aldeas,
   subespecialidades,
+  entrenamientos = [],
   countByAldea = {},
   countByClan = {},
   cuposMaximosAldea = 10,
@@ -134,6 +136,20 @@ export default function GlosarioView({
   const [selectedCategoria, setSelectedCategoria] = useState<number | null>(null);
   const [selectedAldea, setSelectedAldea] = useState<AldeaFilter>(null);
   const [selectedRama, setSelectedRama] = useState<number | null>(null);
+
+  const [clientEntrenamientos, setClientEntrenamientos] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!entrenamientos || entrenamientos.length === 0) {
+      import('@/services/supabase/master.service').then(({ MasterService }) => {
+        MasterService.getEntrenamientos().then(data => {
+          setClientEntrenamientos(data || []);
+        });
+      });
+    }
+  }, [entrenamientos]);
+
+  const activeEntrenamientos = (entrenamientos && entrenamientos.length > 0) ? entrenamientos : clientEntrenamientos;
 
   // Filtrado de datos en tiempo real
   const filteredGlosarios = useMemo(() => {
@@ -337,6 +353,29 @@ export default function GlosarioView({
         </span>
       );
     }
+    if (reqs.entrenamiento_id) {
+      const ids = Array.isArray(reqs.entrenamiento_id) ? reqs.entrenamiento_id : [reqs.entrenamiento_id];
+      if (ids.length > 0) {
+        const entNames = ids.map((id: any) => {
+          const rawId = Number(id) >= 100000 ? Number(id) - 100000 : Number(id);
+          const ent = activeEntrenamientos.find((e: any) => e.id === rawId);
+          return ent?.nombre_jp || ent?.nombre_esp || `ID: ${id}`;
+        });
+        elements.push(
+          <span key="entrenamiento" className="text-purple-700 font-black">
+            Entr.: <span className="text-purple-950">{entNames.join(' o ')}</span>
+          </span>
+        );
+      }
+    }
+    if (reqs.sub_especialidad_id) {
+      const sub = subespecialidades.find((s: any) => s.id === reqs.sub_especialidad_id);
+      elements.push(
+        <span key="subespecialidad" className="text-indigo-700 font-black">
+          Subcat.: <span className="text-indigo-950">{sub?.nombre || `ID: ${reqs.sub_especialidad_id}`}</span>
+        </span>
+      );
+    }
 
     if (reqs.stats && typeof reqs.stats === 'object') {
       Object.entries(reqs.stats).forEach(([stat, val]) => {
@@ -351,7 +390,7 @@ export default function GlosarioView({
     }
 
     Object.entries(reqs).forEach(([key, value]) => {
-      if (['rango', 'rama_id', 'elemento_id', 'stats', 'misiones', 'personaje_id', 'combates'].includes(key)) return;
+      if (['rango', 'rama_id', 'elemento_id', 'stats', 'misiones', 'personaje_id', 'combates', 'entrenamiento_id', 'sub_especialidad_id'].includes(key)) return;
       if (value === null || value === undefined || value === 0 || value === false || value === '') return;
       elements.push(<span key={key} className="text-zinc-500 font-black">{key.replace('_', ' ').toUpperCase()}: <span className="text-zinc-900">{String(value)}</span></span>);
     });

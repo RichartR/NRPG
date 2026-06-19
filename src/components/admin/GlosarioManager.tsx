@@ -1,5 +1,6 @@
 'use client';
 
+import { createPortal } from 'react-dom';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { Plus, Trash2, Save, Search, Filter, Layers, Tag, Box, Check, X, ArrowRight, Archive, Eye, User, Swords, ScrollText, Trophy, Star, ChevronDown, ChevronLeft, ChevronRight, Sparkles, Flame } from 'lucide-react';
@@ -8,7 +9,8 @@ import {
   GlosarioCategoria,
   GlosarioSubcategoria,
   Glosario,
-  RamaClan
+  RamaClan,
+  Entrenamiento
 } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
@@ -52,6 +54,7 @@ export default function GlosarioManager() {
   const [subespecialidades, setSubespecialidades] = useState<any[]>([]);
   const [personajes, setPersonajes] = useState<any[]>([]);
   const [elementosCatalogo, setElementosCatalogo] = useState<any[]>([]);
+  const [entrenamientos, setEntrenamientos] = useState<Entrenamiento[]>([]);
   const [elementosTotal, setElementosTotal] = useState(0);
   const [elementosLoading, setElementosLoading] = useState(false);
 
@@ -102,13 +105,14 @@ export default function GlosarioManager() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [cats, subs, rms, alds, subEsps, catalogElems] = await Promise.all([
+      const [cats, subs, rms, alds, subEsps, catalogElems, ents] = await Promise.all([
         MasterService.getGlosarioCategorias(),
         MasterService.getGlosarioSubcategorias(),
         MasterService.getAdminRamasActivas(),
         MasterService.getAldeasActivas(),
         MasterService.getSubEspecialidades(),
-        MasterService.getAdminElementosActivos()
+        MasterService.getAdminElementosActivos(),
+        MasterService.getEntrenamientos()
       ]);
       const { data: pjs } = await supabase.from('reg_characters').select('id, nombre_ninja').eq('activo', true).order('nombre_ninja');
 
@@ -119,6 +123,7 @@ export default function GlosarioManager() {
       setSubespecialidades(subEsps);
       setPersonajes(pjs || []);
       setElementosCatalogo(catalogElems || []);
+      setEntrenamientos(ents || []);
     } catch (error) {
       console.error(error);
       addToast('Error al cargar datos', 'error');
@@ -455,6 +460,7 @@ export default function GlosarioManager() {
           subespecialidades={subespecialidades}
           personajes={personajes}
           elementosCatalogo={elementosCatalogo}
+          entrenamientos={entrenamientos}
           onClose={() => { setShowNewForm(false); setEditingId(null); }}
           onSave={handleSaveElemento}
           loading={saving}
@@ -584,7 +590,7 @@ function ElementoCard({ elemento, categorias, subcategorias, onEdit, onDelete }:
   );
 }
 
-function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, subespecialidades, personajes, elementosCatalogo, onClose, onSave, loading }: any) {
+function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, subespecialidades, personajes, elementosCatalogo, entrenamientos, onClose, onSave, loading }: any) {
   const defaultRequisitos = {
     stats: { fue: 0, agi: 0, int: 0, est: 0, nin: 0, gen: 0, tai: 0, sm: 0 },
     rango: null,
@@ -592,7 +598,9 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
     combates: 0,
     rama_id: null,
     elemento_id: null,
-    personaje_id: null
+    personaje_id: null,
+    entrenamiento_id: null,
+    sub_especialidad_id: null
   };
 
   const [formData, setFormData] = useState<Partial<Glosario>>(() => {
@@ -642,9 +650,19 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
     const fAldea = formData.aldea_id === null || formData.aldea_id === undefined ? null : Number(formData.aldea_id);
     return rAldea === fAldea;
   });
-  const filteredSpec = formData.rama_clan_id
-    ? subespecialidades.filter((s: any) => Number(s.rama_id) === Number(formData.rama_clan_id))
-    : [];
+  const filteredSpec = useMemo(() => {
+    return formData.rama_clan_id
+      ? subespecialidades.filter((s: any) => Number(s.rama_id) === Number(formData.rama_clan_id))
+      : [];
+  }, [subespecialidades, formData.rama_clan_id]);
+
+  const filteredEntrenamientos = useMemo(() => {
+    return (entrenamientos || []).filter((e: any) => {
+      if (formData.rama_clan_id && Number(e.id_ramaclan) !== Number(formData.rama_clan_id)) return false;
+      if (formData.sub_especialidad_id && Number(e.id_subespecialidad) !== Number(formData.sub_especialidad_id)) return false;
+      return true;
+    });
+  }, [entrenamientos, formData.rama_clan_id, formData.sub_especialidad_id]);
 
   const updateReq = (key: string, value: any) => {
     const newReqs = { ...formData.requisitos };
@@ -921,6 +939,21 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                     value={formData.requisitos?.elemento_id}
                     onChange={(id: any) => updateReq('elemento_id', id)}
                   />
+                  <SearchableMultiSelect
+                    label="Entrenamiento Requerido"
+                    icon={<ScrollText size={12} />}
+                    options={(filteredEntrenamientos || []).map((e: any) => ({ id: e.id, label: e.nombre_jp || e.nombre_esp }))}
+                    value={formData.requisitos?.entrenamiento_id}
+                    onChange={(ids: any) => updateReq('entrenamiento_id', ids)}
+                    placeholder="Seleccionar entrenamientos..."
+                  />
+                  <SearchableSelect
+                    label="Subcategoría (Rama) Requerida"
+                    icon={<Layers size={12} />}
+                    options={(filteredSpec || []).map((s: any) => ({ id: s.id, label: `${ramas.find((r: any) => r.id === s.rama_id)?.nombre || 'Sin Rama'} - ${s.nombre}` }))}
+                    value={formData.requisitos?.sub_especialidad_id}
+                    onChange={(id: any) => updateReq('sub_especialidad_id', id)}
+                  />
                   <div className="md:col-span-2">
                     <SearchableMultiSelect
                       label="Exclusivo para"
@@ -950,51 +983,118 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
 function SearchableSelect({ label, icon, options, value, onChange }: any) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const selectedOption = options.find((o: any) => o.id === value);
   const filteredOptions = options.filter((o: any) => searchIncludes(o.label, search));
 
+  const openDropdown = () => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const estimatedHeight = 260;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const openUp = spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
+    const maxW = Math.max(rect.width, Math.min(350, window.innerWidth - rect.left - 16));
+
+    setDropdownStyle(
+      openUp
+        ? { position: 'fixed', left: rect.left, bottom: window.innerHeight - rect.top + 4, width: rect.width, maxWidth: maxW, zIndex: 9999 }
+        : { position: 'fixed', left: rect.left, top: rect.bottom + 4, width: rect.width, maxWidth: maxW, zIndex: 9999 }
+    );
+    setOpen(true);
+  };
+
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) setOpen(false);
+    if (!open) return;
+    const handleMouseDown = (e: MouseEvent) => {
+      if (dropdownRef.current?.contains(e.target as Node) || triggerRef.current?.contains(e.target as Node)) return;
+      setOpen(false);
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    const handleScroll = (e: Event) => {
+      if (dropdownRef.current?.contains(e.target as Node)) return;
+      setOpen(false);
+    };
+    const handleResize = () => setOpen(false);
+
+    document.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
+  }, [open]);
 
   return (
-    <div className="relative space-y-2" ref={containerRef}>
+    <div className="relative space-y-2">
       <label className="flex items-center gap-2 text-caption font-black uppercase tracking-widest text-oro/40 ml-1">{icon} {label}</label>
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between bg-black/60 border border-oro/10 rounded-2xl px-6 py-4 text-white font-bold outline-none hover:border-oro/30 transition-all text-left">
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={() => open ? setOpen(false) : openDropdown()}
+        className="w-full flex items-center justify-between bg-black/60 border border-oro/10 rounded-2xl px-6 py-4 text-white font-bold outline-none hover:border-oro/30 transition-all text-left"
+      >
         <span className={selectedOption ? 'text-white' : 'text-oro/30'}>{selectedOption ? selectedOption.label : 'Seleccionar...'}</span>
         <ChevronDown size={16} className={`text-oro/40 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
-      {open && (
-        <div className="absolute z-[60] bottom-full mb-2 w-full bg-[#0E0E0E] border border-oro/20 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-2">
+      {open && createPortal(
+        <div
+          ref={dropdownRef}
+          style={dropdownStyle}
+          className="bg-[#0E0E0E] border border-oro/20 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-2"
+        >
           <div className="p-3 border-b border-oro/10">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-oro/40" size={14} />
-              <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} autoFocus className="w-full bg-black border border-oro/10 rounded-xl pl-9 pr-4 py-2 text-white text-xs font-bold outline-none focus:border-oro" placeholder="Buscar..." />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                autoFocus
+                className="w-full bg-black border border-oro/10 rounded-xl pl-9 pr-4 py-2 text-white text-xs font-bold outline-none focus:border-oro"
+                placeholder="Buscar..."
+              />
             </div>
           </div>
-          <div className="max-h-48 overflow-y-auto">
-            <button onClick={() => { onChange(null); setOpen(false); }} className="w-full text-left px-4 py-3 text-caption font-black text-oro/40 hover:bg-oro/5 uppercase tracking-widest">Ninguno / Quitar selección</button>
+          <div className="max-h-48 overflow-y-auto custom-scrollbar">
+            <button
+              type="button"
+              onClick={() => { onChange(null); setOpen(false); }}
+              className="w-full text-left px-4 py-3 text-caption font-black text-oro/40 hover:bg-oro/5 uppercase tracking-widest"
+            >
+              Ninguno / Quitar selección
+            </button>
             {filteredOptions.map((o: any) => (
-              <button key={o.id} onClick={() => { onChange(o.id); setOpen(false); }} className={`w-full text-left px-4 py-3 text-xs font-bold transition-all hover:bg-oro hover:text-black ${o.id === value ? 'bg-oro/10 text-oro' : 'text-white'}`}>{o.label}</button>
+              <button
+                key={o.id}
+                type="button"
+                onClick={() => { onChange(o.id); setOpen(false); }}
+                className={`w-full text-left px-4 py-3 text-xs font-bold transition-all hover:bg-oro hover:text-black ${o.id === value ? 'bg-oro/10 text-oro' : 'text-white'}`}
+              >
+                {o.label}
+              </button>
             ))}
-            {filteredOptions.length === 0 && <div className="px-4 py-8 text-center text-caption font-black text-oro/30 uppercase">Sin resultados</div>}
+            {filteredOptions.length === 0 && (
+              <div className="px-4 py-8 text-center text-caption font-black text-oro/30 uppercase">Sin resultados</div>
+            )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
 }
 
-function SearchableMultiSelect({ label, icon, options, value, onChange }: any) {
+function SearchableMultiSelect({ label, icon, options, value, onChange, placeholder = 'Seleccionar...' }: any) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const selectedIds: number[] = useMemo(() => {
     if (Array.isArray(value)) return value.map(id => Number(id));
@@ -1005,13 +1105,44 @@ function SearchableMultiSelect({ label, icon, options, value, onChange }: any) {
   const selectedOptions = options.filter((o: any) => selectedIds.includes(Number(o.id)));
   const filteredOptions = options.filter((o: any) => searchIncludes(o.label, search));
 
+  const openDropdown = () => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const estimatedHeight = 260;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const openUp = spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
+    const maxW = Math.max(rect.width, Math.min(350, window.innerWidth - rect.left - 16));
+
+    setDropdownStyle(
+      openUp
+        ? { position: 'fixed', left: rect.left, bottom: window.innerHeight - rect.top + 4, width: rect.width, maxWidth: maxW, zIndex: 9999 }
+        : { position: 'fixed', left: rect.left, top: rect.bottom + 4, width: rect.width, maxWidth: maxW, zIndex: 9999 }
+    );
+    setOpen(true);
+  };
+
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) setOpen(false);
+    if (!open) return;
+    const handleMouseDown = (e: MouseEvent) => {
+      if (dropdownRef.current?.contains(e.target as Node) || triggerRef.current?.contains(e.target as Node)) return;
+      setOpen(false);
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    const handleScroll = (e: Event) => {
+      if (dropdownRef.current?.contains(e.target as Node)) return;
+      setOpen(false);
+    };
+    const handleResize = () => setOpen(false);
+
+    document.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
+  }, [open]);
 
   const toggleOption = (id: number) => {
     const isSelected = selectedIds.includes(id);
@@ -1025,15 +1156,16 @@ function SearchableMultiSelect({ label, icon, options, value, onChange }: any) {
   };
 
   return (
-    <div className="relative space-y-2 text-left" ref={containerRef}>
+    <div className="relative space-y-2 text-left">
       <label className="flex items-center gap-2 text-caption font-black uppercase tracking-widest text-oro/40 ml-1">{icon} {label}</label>
       <button
+        ref={triggerRef}
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={() => open ? setOpen(false) : openDropdown()}
         className="w-full flex items-center justify-between bg-black/60 border border-oro/10 rounded-2xl px-6 py-4 text-white font-bold outline-none hover:border-oro/30 transition-all text-left"
       >
         <span className={selectedOptions.length > 0 ? 'text-white' : 'text-oro/30'}>
-          {selectedOptions.length > 0 ? `${selectedOptions.length} seleccionados` : 'Seleccionar personajes...'}
+          {selectedOptions.length > 0 ? `${selectedOptions.length} seleccionados` : placeholder}
         </span>
         <ChevronDown size={16} className={`text-oro/40 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -1055,16 +1187,33 @@ function SearchableMultiSelect({ label, icon, options, value, onChange }: any) {
         </div>
       )}
 
-      {open && (
-        <div className="absolute z-[60] bottom-full mb-2 w-full bg-[#0E0E0E] border border-oro/20 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-2">
+      {open && createPortal(
+        <div
+          ref={dropdownRef}
+          style={dropdownStyle}
+          className="bg-[#0E0E0E] border border-oro/20 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-2"
+        >
           <div className="p-3 border-b border-oro/10">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-oro/40" size={14} />
-              <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} autoFocus className="w-full bg-black border border-oro/10 rounded-xl pl-9 pr-4 py-2 text-white text-xs font-bold outline-none focus:border-oro" placeholder="Buscar..." />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                autoFocus
+                className="w-full bg-black border border-oro/10 rounded-xl pl-9 pr-4 py-2 text-white text-xs font-bold outline-none focus:border-oro"
+                placeholder="Buscar..."
+              />
             </div>
           </div>
-          <div className="max-h-48 overflow-y-auto">
-            <button type="button" onClick={() => { onChange(null); setOpen(false); }} className="w-full text-left px-4 py-3 text-caption font-black text-oro/40 hover:bg-oro/5 uppercase tracking-widest">Ninguno / Quitar todos</button>
+          <div className="max-h-48 overflow-y-auto custom-scrollbar">
+            <button
+              type="button"
+              onClick={() => { onChange(null); setOpen(false); }}
+              className="w-full text-left px-4 py-3 text-caption font-black text-oro/40 hover:bg-oro/5 uppercase tracking-widest"
+            >
+              Ninguno / Quitar todos
+            </button>
             {filteredOptions.map((o: any) => {
               const isSelected = selectedIds.includes(Number(o.id));
               return (
@@ -1079,9 +1228,12 @@ function SearchableMultiSelect({ label, icon, options, value, onChange }: any) {
                 </button>
               );
             })}
-            {filteredOptions.length === 0 && <div className="px-4 py-8 text-center text-caption font-black text-oro/30 uppercase">Sin resultados</div>}
+            {filteredOptions.length === 0 && (
+              <div className="px-4 py-8 text-center text-caption font-black text-oro/30 uppercase">Sin resultados</div>
+            )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

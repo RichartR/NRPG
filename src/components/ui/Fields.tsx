@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { Lock } from 'lucide-react';
+import { Lock, ChevronDown, Search, Check, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { searchIncludes } from '@/lib/utils/search';
 
@@ -425,3 +425,191 @@ export function SearchableSelect({ label, value, options, onChange, disabled, pl
     </div>
   );
 }
+
+// ─────────────────────────────────────────────
+//  SearchableMultiSelect (versión con portal)
+// ─────────────────────────────────────────────
+interface SearchableMultiSelectProps {
+  label: string;
+  value?: any;
+  options: { label: string; value?: any; id?: any }[];
+  onChange?: (val: any) => void;
+  disabled?: boolean;
+  placeholder?: string;
+  icon?: React.ReactNode;
+}
+
+export function SearchableMultiSelect({
+  label,
+  value,
+  options,
+  onChange,
+  disabled,
+  placeholder = 'Seleccionar...',
+  icon
+}: SearchableMultiSelectProps) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [search, setSearch] = React.useState('');
+  const [dropdownStyle, setDropdownStyle] = React.useState<React.CSSProperties>({});
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  const selectedIds: any[] = React.useMemo(() => {
+    if (Array.isArray(value)) return value.map(id => (typeof id === 'number' ? id : String(id)));
+    if (value !== undefined && value !== null && value !== '') return [typeof value === 'number' ? value : String(value)];
+    return [];
+  }, [value]);
+
+  const selectedOptions = React.useMemo(() => {
+    return options.filter((o: any) => {
+      const optId = o.value !== undefined ? o.value : o.id;
+      return selectedIds.includes(typeof optId === 'number' ? optId : String(optId));
+    });
+  }, [options, selectedIds]);
+
+  const filteredOptions = React.useMemo(() => {
+    return options.filter((o: any) => searchIncludes(o.label, search));
+  }, [options, search]);
+
+  const openDropdown = () => {
+    if (disabled || !triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const estimatedHeight = 330;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const openUp = spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
+    const maxW = Math.max(rect.width, Math.min(350, window.innerWidth - rect.left - 16));
+
+    setDropdownStyle(
+      openUp
+        ? { position: 'fixed', left: rect.left, bottom: window.innerHeight - rect.top + 4, width: rect.width, maxWidth: maxW, zIndex: 9999 }
+        : { position: 'fixed', left: rect.left, top: rect.bottom + 4, width: rect.width, maxWidth: maxW, zIndex: 9999 }
+    );
+    setIsOpen(true);
+  };
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleMouseDown = (e: MouseEvent) => {
+      if (dropdownRef.current?.contains(e.target as Node) || triggerRef.current?.contains(e.target as Node)) return;
+      setIsOpen(false);
+    };
+    const handleScroll = (e: Event) => {
+      if (dropdownRef.current?.contains(e.target as Node)) return;
+      setIsOpen(false);
+    };
+    const handleResize = () => setIsOpen(false);
+
+    document.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
+  }, [isOpen]);
+
+  const toggleOption = (optId: any) => {
+    const normId = typeof optId === 'number' ? optId : String(optId);
+    const isSelected = selectedIds.includes(normId);
+    let newSelected: any[];
+    if (isSelected) {
+      newSelected = selectedIds.filter(x => x !== normId);
+    } else {
+      newSelected = [...selectedIds, optId];
+    }
+    const cleanSelected = newSelected.map(x => (isNaN(Number(x)) ? x : Number(x)));
+    onChange?.(cleanSelected.length > 0 ? cleanSelected : null);
+  };
+
+  return (
+    <div className="space-y-3 relative text-left">
+      <label className="text-caption font-black uppercase tracking-[0.2em] text-oro/60 ml-1 flex items-center gap-2">
+        {icon} {label}
+      </label>
+      <button
+        ref={triggerRef}
+        type="button"
+        disabled={disabled}
+        onClick={() => isOpen ? setIsOpen(false) : openDropdown()}
+        className="w-full h-[58px] bg-black/40 border border-oro/10 px-6 py-4 text-left text-oro font-black outline-none focus:border-oro/40 disabled:cursor-default flex justify-between items-center transition-all text-sm xl:text-base ninja-clip-sm"
+      >
+        <span className={`${selectedOptions.length === 0 ? 'text-oro/20' : 'text-oro'} w-full text-left truncate`}>
+          {selectedOptions.length > 0 ? `${selectedOptions.length} seleccionados` : placeholder}
+        </span>
+        <ChevronDown size={16} className={`text-oro/40 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {selectedOptions.length > 0 && (
+        <div className="flex flex-wrap gap-2 mt-2">
+          {selectedOptions.map((o: any) => {
+            const optId = o.value !== undefined ? o.value : o.id;
+            return (
+              <span key={String(optId)} className="inline-flex items-center gap-1.5 bg-oro/10 border border-oro/20 text-oro text-caption font-black uppercase tracking-wider px-2.5 py-1 rounded-xl">
+                {o.label}
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); toggleOption(optId); }}
+                  className="hover:text-red-400 transition-colors"
+                >
+                  <X size={10} strokeWidth={3} />
+                </button>
+              </span>
+            );
+          })}
+        </div>
+      )}
+
+      {isOpen && createPortal(
+        <div
+          ref={dropdownRef}
+          style={dropdownStyle}
+          className="z-[9999] bg-black/95 border border-oro/20 shadow-[0_10px_30px_rgba(0,0,0,0.8)] overflow-hidden animate-in fade-in zoom-in duration-200 ninja-clip-sm backdrop-blur-md"
+        >
+          <div className="p-4 border-b border-oro/10 bg-black/20">
+            <input
+              autoFocus
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Filtrar por nombre..."
+              className="w-full bg-black/40 border border-oro/10 px-4 py-3 text-sm text-oro outline-none focus:border-oro/40 transition-all font-black"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+          <div className="max-h-64 overflow-y-auto overflow-x-hidden custom-scrollbar">
+            <button
+              type="button"
+              onClick={() => { onChange?.(null); setIsOpen(false); }}
+              className="w-full text-left px-8 py-4 text-caption font-black text-oro/40 hover:bg-oro/5 uppercase tracking-widest border-b border-oro/5"
+            >
+              Ninguno / Quitar todos
+            </button>
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((o: any) => {
+                const optId = o.value !== undefined ? o.value : o.id;
+                const isSelected = selectedIds.includes(typeof optId === 'number' ? optId : String(optId));
+                return (
+                  <button
+                    key={String(optId)}
+                    type="button"
+                    onClick={() => toggleOption(optId)}
+                    className={`w-full flex items-center justify-between px-8 py-4 text-xs xl:text-sm font-black uppercase tracking-widest hover:bg-oro/10 hover:text-oro transition-all ${isSelected ? 'bg-oro/10 text-oro' : 'text-oro/40'}`}
+                  >
+                    <span>{o.label}</span>
+                    {isSelected && <Check size={14} strokeWidth={3} className="text-oro" />}
+                  </button>
+                );
+              })
+            ) : (
+              <div className="px-8 py-10 text-caption text-oro/20 font-black uppercase tracking-widest text-center italic">Sin resultados</div>
+            )}
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+

@@ -114,6 +114,7 @@ export default async function GlosarioPage() {
           ramas={ramas}
           aldeas={aldeas}
           subespecialidades={subespecialidades}
+          entrenamientos={entrenamientos}
           countByAldea={countByAldea}
           countByClan={countByClan}
           cuposMaximosAldea={cuposMaximosAldea}
