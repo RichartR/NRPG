@@ -325,6 +325,18 @@ export const MasterServerService = {
     return data || [];
   },
 
+  async getDocumentosCombateGenerales(supabase: SupabaseClient): Promise<DocumentoCombate[]> {
+    const { data, error } = await supabase
+      .from('info_documentos_combate')
+      .select('*')
+      .is('rama_id', null)
+      .is('sub_especialidad_id', null)
+      .eq('activo', true)
+      .order('titulo', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  },
+
   async getDocumentosCombateBySubEspecialidad(supabase: SupabaseClient, subEspecialidadId: number): Promise<DocumentoCombate[]> {
     const { data, error } = await supabase
       .from('info_documentos_combate')

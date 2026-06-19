@@ -4,6 +4,7 @@ import { ScrollText } from 'lucide-react';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import Breadcrumbs, { CrumbItem } from '@/components/ui/Breadcrumbs';
 import NinjaCard from '@/components/ui/NinjaCard';
+import DocumentosCombateSearch from '@/components/ui/DocumentosCombateSearch';
 
 export default async function GroupingDetailPage({ params }: { params: Promise<{ slug: string, grouping: string }> }) {
   const { slug, grouping } = await params;
@@ -57,26 +58,13 @@ export default async function GroupingDetailPage({ params }: { params: Promise<{
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 xl:gap-16">
-          {documentos.map((doc) => (
-            <NinjaCard
-              key={doc.id}
-              href={`/docs/${doc.clave}`}
-              title={doc.titulo}
-              category="DOCUMENTO"
-              imageUrl={doc.url_imagen}
-              description={doc.descripcion}
-              actionText="Ver Documeno"
-              titleClassName="text-2xl sm:text-3xl md:text-3xl"
-            />
-          ))}
-
-          {documentos.length === 0 && (
-            <div className="col-span-full text-center py-40 ninja-card-oro opacity-40">
-              <p className="text-oro/40 font-black uppercase tracking-[0.6em] text-xl xl:text-2xl italic">ARCHIVOS NO DISPONIBLES</p>
-            </div>
-          )}
-        </div>
+        {documentos.length > 0 ? (
+          <DocumentosCombateSearch documentos={documentos} />
+        ) : (
+          <div className="col-span-full text-center py-40 ninja-card-oro opacity-40">
+            <p className="text-oro/40 font-black uppercase tracking-[0.6em] text-xl xl:text-2xl italic">ARCHIVOS NO DISPONIBLES</p>
+          </div>
+        )}
       </main>
     </div>
   );

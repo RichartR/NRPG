@@ -4,7 +4,11 @@ import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import NinjaCard from '@/components/ui/NinjaCard';
 
 export default async function RamasPage() {
-  const ramas = await MasterServerService.getCachedRamasGlobales();
+  const supabase = await createClient();
+  const [ramas, documentosGenerales] = await Promise.all([
+    MasterServerService.getCachedRamasGlobales(),
+    MasterServerService.getDocumentosCombateGenerales(supabase)
+  ]);
 
   return (
     <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col">
@@ -30,7 +34,7 @@ export default async function RamasPage() {
             <h1 className="ninja-title text-3xl sm:text-5xl xl:text-7xl uppercase leading-none">Ramas de Combate</h1>
           </div>
           <p className="text-gris-texto text-base sm:text-lg xl:text-2xl leading-relaxed">
-            Las disciplines fundamentales que definen el camino de cada shinobi. Especialidades, artes secretas y clanes milenarios.
+            Las disciplinas fundamentales que definen el camino de cada shinobi. Especialidades, artes secretas y clanes milenarios.
           </p>
         </div>
 
@@ -48,6 +52,28 @@ export default async function RamasPage() {
             />
           ))}
         </div>
+
+        {documentosGenerales && documentosGenerales.length > 0 && (
+          <div className="mt-20 mb-10">
+            <div className="mb-10 ninja-card-oro p-8 sm:p-12 xl:p-16">
+              <h2 className="ninja-title text-3xl sm:text-5xl xl:text-7xl uppercase leading-none">Documentos Generales</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10 xl:gap-16">
+              {documentosGenerales.map((doc) => (
+                <NinjaCard
+                  key={doc.id}
+                  href={`/docs/${doc.clave}`}
+                  title={doc.titulo}
+                  titleClassName="text-2xl sm:text-3xl md:text-4xl"
+                  category="DOCUMENTO"
+                  imageUrl={doc.url_imagen}
+                  description={doc.descripcion}
+                  actionText="Ver Documento"
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
