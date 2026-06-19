@@ -380,6 +380,62 @@ export async function PATCH(
 
         // Sentidos
         if (data.personajes_sentidos) {
+          const oldSelectable = character.personajes_sentidos?.find((s: any) => s.origen === 'seleccionable');
+          const newSelectable = data.personajes_sentidos?.find((s: any) => s.origen === 'seleccionable');
+
+          const oldSelectableId = oldSelectable ? Number(oldSelectable.sentido_id) : null;
+          const newSelectableId = newSelectable ? Number(newSelectable.sentido_id) : null;
+
+          if (oldSelectableId !== newSelectableId) {
+            let tituloAccion = '';
+            if (!oldSelectableId && newSelectableId) {
+              let sentidoNombre = newSelectable?.info_sentidos?.nombre;
+              if (!sentidoNombre) {
+                const { data: sData } = await adminClient.from('info_sentidos').select('nombre').eq('id', newSelectableId).single();
+                sentidoNombre = sData?.nombre;
+              }
+              tituloAccion = `${character.nombre_ninja} despierta el sentido avanzado: ${sentidoNombre}.`;
+            } else if (oldSelectableId && newSelectableId) {
+              let oldNombre = oldSelectable?.info_sentidos?.nombre;
+              let newNombre = newSelectable?.info_sentidos?.nombre;
+              if (!oldNombre) {
+                const { data: sData } = await adminClient.from('info_sentidos').select('nombre').eq('id', oldSelectableId).single();
+                oldNombre = sData?.nombre;
+              }
+              if (!newNombre) {
+                const { data: sData } = await adminClient.from('info_sentidos').select('nombre').eq('id', newSelectableId).single();
+                newNombre = sData?.nombre;
+              }
+              tituloAccion = `${character.nombre_ninja} cambia su sentido avanzado de ${oldNombre} a ${newNombre}.`;
+            } else if (oldSelectableId && !newSelectableId) {
+              let oldNombre = oldSelectable?.info_sentidos?.nombre;
+              if (!oldNombre) {
+                const { data: sData } = await adminClient.from('info_sentidos').select('nombre').eq('id', oldSelectableId).single();
+                oldNombre = sData?.nombre;
+              }
+              tituloAccion = `${character.nombre_ninja} pierde el sentido avanzado: ${oldNombre}.`;
+            }
+
+            if (tituloAccion) {
+              const { data: registro } = await adminClient.from('reg_registros').insert({
+                tipo: 'accion',
+                autor_id: characterId,
+                data: {
+                  titulo: tituloAccion,
+                  tipo_accion: 'despertar_sentido'
+                }
+              }).select().single();
+
+              if (registro) {
+                await adminClient.from('reg_registros_participantes').insert({
+                  registro_id: registro.id,
+                  personaje_id: characterId,
+                  estado: 'aceptado'
+                });
+              }
+            }
+          }
+
           updatePromises.push(CharacterServerService.bulkUpdateSentidos(adminClient, characterId, data.personajes_sentidos));
         }
 
