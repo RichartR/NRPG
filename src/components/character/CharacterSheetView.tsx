@@ -2262,85 +2262,7 @@ export function CharacterSheetView({
                   )}
                 </SectionCard>
 
-                {/* BLOQUE DE SENTIDOS AVANZADOS */}
-                {(fixedSentidos.length > 0 || isSelectableAvailable || (character.personajes_sentidos && character.personajes_sentidos.length > 0)) && (
-                  <SectionCard title="SENTIDOS AVANZADOS" color="oro">
-                    {isEditing || isNew ? (
-                      <div className="space-y-4">
-                        {fixedSentidos.length > 0 ? (
-                          <div className="space-y-3">
-                            <p className="text-caption font-black text-oro/40 uppercase tracking-widest leading-relaxed">
-                              Sentidos Fijos otorgados automáticamente por tus ramas/clanes:
-                            </p>
-                            <div className="flex flex-wrap gap-3">
-                              {fixedSentidos.map((fs: any) => (
-                                <div key={fs.id} className="bg-rojo-sangre/20 border border-rojo-sangre/40 px-4 py-2 text-xs font-black text-oro uppercase tracking-wider ninja-clip-xs">
-                                  {fs.nombre} (Fijo)
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ) : isSelectableAvailable ? (
-                          <div className="space-y-4">
-                            <p className="text-caption font-black text-oro/40 uppercase tracking-widest leading-relaxed">
-                              Elige un Sentido Avanzado disponible para tus ramas/clanes:
-                            </p>
-                            <SelectField
-                              label="SELECCIONAR SENTIDO"
-                              value={character.personajes_sentidos?.find((s: any) => s.origen === 'seleccionable')?.sentido_id ?? null}
-                              options={poolSelectables.map((ps: any) => ({
-                                label: ps.nombre.toUpperCase(),
-                                value: ps.id
-                              }))}
-                              disabled={!isEditing && !isNew}
-                              onChange={(v) => {
-                                const selectedId = v ? Number(v) : null;
-                                if (selectedId) {
-                                  const sentidoObj = poolSelectables.find((ps: any) => ps.id === selectedId);
-                                  onUpdateField('personajes_sentidos', [
-                                    {
-                                      personaje_id: character.id,
-                                      sentido_id: selectedId,
-                                      origen: 'seleccionable',
-                                      info_sentidos: sentidoObj
-                                    }
-                                  ]);
-                                } else {
-                                  onUpdateField('personajes_sentidos', []);
-                                }
-                              }}
-                            />
-                          </div>
-                        ) : null}
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {character.personajes_sentidos && character.personajes_sentidos.length > 0 ? (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                            {character.personajes_sentidos.map((ps: any, idx: number) => (
-                              <div
-                                key={idx}
-                                className="flex flex-col items-center justify-center p-6 bg-black/40 border border-oro/10 hover:border-oro/30 transition-all group relative overflow-hidden ninja-clip-sm"
-                              >
-                                <div className="absolute top-0 right-0 w-16 h-16 bg-oro/5 rounded-full blur-xl pointer-events-none" />
-                                <span className="text-caption font-black text-oro uppercase tracking-widest text-center leading-none">
-                                  {ps.info_sentidos?.nombre || ps.nombre || 'Desconocido'}
-                                </span>
-                                <span className="text-caption font-black text-oro/40 uppercase tracking-tighter text-center mt-2 italic">
-                                  Sentido Avanzado ({ps.origen})
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="py-12 text-center rounded-[4px] border border-oro/10 bg-black/20 text-xs font-black text-oro/30 uppercase tracking-[0.25em]">
-                            Este shinobi no posee sentidos avanzados
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </SectionCard>
-                )}
+
               </div>
             </div>
           )}
@@ -3482,7 +3404,7 @@ export function CharacterSheetView({
                 <div className="space-y-8">
                   {/* SECCIÓN 2: HABILIDADES PASIVAS */}
                   <SectionCard title="HABILIDADES PASIVAS" icon={ScrollText} color="oro">
-                    {character.personajes_sentidos && character.personajes_sentidos.length > 0 && (
+                    {(fixedSentidos.length > 0 || isSelectableAvailable || (character.personajes_sentidos && character.personajes_sentidos.length > 0)) && (
                       <div className="mb-6 pb-6 border-b border-oro/10 space-y-3">
                         <div className="flex items-center gap-6">
                           <h3 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.2em] flex items-center gap-3">
@@ -3491,15 +3413,68 @@ export function CharacterSheetView({
                           <div className="flex-1 h-px bg-oro/10" />
                         </div>
                         <div className="space-y-4 pl-4 border-l border-oro/5">
-                          {character.personajes_sentidos.map((ps: any, idx: number) => (
-                            <div key={idx} className="bg-black/30 border border-oro/15 p-4 flex justify-between items-center ninja-clip-xs">
-                              <div>
-                                <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
-                                  Sentido Avanzado: {ps.info_sentidos?.nombre || ps.nombre || 'Desconocido'}
-                                </span>
-                              </div>
+                          {isEditing || isNew ? (
+                            <div className="space-y-4">
+                              {fixedSentidos.length > 0 && (
+                                <div className="space-y-4">
+                                  {fixedSentidos.map((fs: any) => (
+                                    <div key={fs.id} className="bg-black/30 border border-oro/15 p-4 flex justify-between items-center ninja-clip-xs">
+                                      <div>
+                                        <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
+                                          Sentido Avanzado: {fs.nombre}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {isSelectableAvailable && (
+                                <div className="space-y-2">
+                                  <SelectField
+                                    label="SELECCIONAR SENTIDO"
+                                    value={character.personajes_sentidos?.find((s: any) => s.origen === 'seleccionable')?.sentido_id ?? null}
+                                    options={poolSelectables.map((ps: any) => ({
+                                      label: ps.nombre.toUpperCase(),
+                                      value: ps.id
+                                    }))}
+                                    disabled={!isEditing && !isNew}
+                                    onChange={(v) => {
+                                      const selectedId = v ? Number(v) : null;
+                                      if (selectedId) {
+                                        const sentidoObj = poolSelectables.find((ps: any) => ps.id === selectedId);
+                                        onUpdateField('personajes_sentidos', [
+                                          {
+                                            personaje_id: character.id,
+                                            sentido_id: selectedId,
+                                            origen: 'seleccionable',
+                                            info_sentidos: sentidoObj
+                                          }
+                                        ]);
+                                      } else {
+                                        onUpdateField('personajes_sentidos', []);
+                                      }
+                                    }}
+                                  />
+                                </div>
+                              )}
                             </div>
-                          ))}
+                          ) : (
+                            <div className="space-y-3">
+                              {character.personajes_sentidos && character.personajes_sentidos.length > 0 ? (
+                                character.personajes_sentidos.map((ps: any, idx: number) => (
+                                  <div key={idx} className="bg-black/30 border border-oro/15 p-4 flex justify-between items-center ninja-clip-xs">
+                                    <div>
+                                      <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
+                                        Sentido Avanzado: {ps.info_sentidos?.nombre || ps.nombre || 'Desconocido'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="text-xs text-oro/40 italic">Este shinobi no posee sentidos avanzados</p>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
