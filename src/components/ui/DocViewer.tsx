@@ -29,20 +29,23 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Lógica Híbrida: PDF.js en móvil (auto-load) y Nativo en PC (high-performance)
-  const embedUrl = isMobile
-    ? `/pdf-viewer.html?file=${encodeURIComponent(rawProxyUrl)}`
-    : `${rawProxyUrl}#navpanes=0`;
+  // Dado que cargamos el enlace de preview directamente, lo embebemos tal cual
+  const embedUrl = rawProxyUrl;
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 2.0));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.6));
 
+  const isGoogleDoc = rawProxyUrl.includes("docs.google.com/document");
+  const isGoogleDriveFile = rawProxyUrl.includes("drive.google.com/file");
+
   // Medidas de precisión (Escritorio)
-  const desktopBaseWidth = 793;
-  const desktopBaseHeight = 1050;
-  const desktopIframeWidth = 949;
-  const desktopLeftOffset = 71;
-  const desktopTopOffset = 60;
+  const desktopBaseWidth = 794;
+  const desktopBaseHeight = 1120;
+
+  // Ajustamos los offsets y el ancho para "recortar" los márgenes blancos nativos del preview de Google Docs
+  const desktopLeftOffset = isGoogleDoc ? 70 : (isGoogleDriveFile ? 0 : 71);
+  const desktopTopOffset = isGoogleDoc ? 20 : (isGoogleDriveFile ? 56 : 60);
+  const desktopIframeWidth = isGoogleDoc ? 950 : (isGoogleDriveFile ? desktopBaseWidth : 949);
 
   return (
     <div className="min-h-screen flex flex-col overflow-hidden">
@@ -108,7 +111,7 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
           }}
         >
           <div
-            className="bg-white shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden relative transition-all duration-500"
+            className="bg-[#ffe6ba] shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden relative transition-all duration-500"
             style={{
               width: isMobile ? '95vw' : `${desktopBaseWidth}px`,
               height: isMobile ? 'auto' : `${desktopBaseHeight}px`,
@@ -131,7 +134,7 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
               <iframe
                 src={embedUrl}
                 onLoad={() => setLoading(false)}
-                className="w-full h-full border-none"
+                className="w-full h-full border-none bg-[#ffe6ba]"
                 allow="autoplay"
               />
             </div>
