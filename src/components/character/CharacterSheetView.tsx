@@ -2630,15 +2630,31 @@ export function CharacterSheetView({
               <div className="relative mb-8">
                 <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-oro/40 pointer-events-none" />
                 <input
-                  value={inventorySearch}
-                  onChange={(e) => setInventorySearch(e.target.value)}
-                  placeholder="BUSCAR EN MOCHILA..."
+                  value={inventarioSubTab === 'mochila' ? inventorySearch : equipmentSearch}
+                  onChange={(e) => {
+                    if (inventarioSubTab === 'mochila') {
+                      setInventorySearch(e.target.value);
+                    } else {
+                      setEquipmentSearch(e.target.value);
+                    }
+                  }}
+                  placeholder={
+                    inventarioSubTab === 'mochila'
+                      ? 'BUSCAR EN MOCHILA...'
+                      : 'BUSCAR EQUIPAMIENTO...'
+                  }
                   className="w-full bg-black/50 border border-oro/10 py-4 pl-12 pr-12 text-oro font-black uppercase tracking-widest text-xs outline-none focus:border-oro/40 transition-all placeholder:text-oro/20 ninja-clip-sm"
                 />
-                {inventorySearch && (
+                {((inventarioSubTab === 'mochila' && inventorySearch) || (inventarioSubTab === 'equipo' && equipmentSearch)) && (
                   <button
                     type="button"
-                    onClick={() => setInventorySearch('')}
+                    onClick={() => {
+                      if (inventarioSubTab === 'mochila') {
+                        setInventorySearch('');
+                      } else {
+                        setEquipmentSearch('');
+                      }
+                    }}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-oro/30 hover:text-oro transition-colors"
                     title="Limpiar búsqueda"
                   >
@@ -2806,25 +2822,7 @@ export function CharacterSheetView({
                 </SectionCard>
               )}
 
-              <div className="relative mb-8">
-                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-oro/40 pointer-events-none" />
-                <input
-                  value={equipmentSearch}
-                  onChange={(e) => setEquipmentSearch(e.target.value)}
-                  placeholder="BUSCAR EQUIPAMIENTO..."
-                  className="w-full bg-black/50 border border-oro/10 py-4 pl-12 pr-12 text-oro font-black uppercase tracking-widest text-xs outline-none focus:border-oro/40 transition-all placeholder:text-oro/20 ninja-clip-sm"
-                />
-                {equipmentSearch && (
-                  <button
-                    type="button"
-                    onClick={() => setEquipmentSearch('')}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-oro/30 hover:text-oro transition-colors"
-                    title="Limpiar búsqueda"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
+
               {inventarioSubTab === 'equipo' && (
                 <SectionCard title="EQUIPO DE COMBATE" color="oro">
 
