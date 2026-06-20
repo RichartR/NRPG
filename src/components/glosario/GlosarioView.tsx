@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Filter, ChevronRight, Hash } from 'lucide-react';
+import { Search, Filter, ChevronRight, Hash, ChevronUp } from 'lucide-react';
 import { Elemento, Glosario, GlosarioCategoria, GlosarioSubcategoria, Entrenamiento } from '@/domain/types';
 import { NinjaSelect } from '@/components/ui/Fields';
 import { normalizeSearchText, searchAny } from '@/lib/utils/search';
@@ -136,6 +136,7 @@ export default function GlosarioView({
   const [selectedCategoria, setSelectedCategoria] = useState<number | null>(null);
   const [selectedAldea, setSelectedAldea] = useState<AldeaFilter>(null);
   const [selectedRama, setSelectedRama] = useState<number | null>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const [clientEntrenamientos, setClientEntrenamientos] = useState<any[]>([]);
 
@@ -148,6 +149,14 @@ export default function GlosarioView({
       });
     }
   }, [entrenamientos]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const activeEntrenamientos = (entrenamientos && entrenamientos.length > 0) ? entrenamientos : clientEntrenamientos;
 
@@ -667,13 +676,16 @@ export default function GlosarioView({
         )}
       </div>
 
-      {/* Botón flotante para volver arriba (opcional pero útil) */}
-      <button
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className="fixed bottom-10 right-10 w-14 h-14 bg-black/80 border border-oro/20 text-oro flex items-center justify-center hover:bg-oro hover:text-rojo-sangre transition-all z-[100] ninja-clip-sm shadow-2xl md:hidden"
-      >
-        <ChevronRight className="w-6 h-6 -rotate-90" />
-      </button>
+      {/* Botón flotante para volver arriba */}
+      {showScrollTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="fixed bottom-8 right-8 w-12 h-12 bg-black/80 border border-oro/20 text-oro flex items-center justify-center hover:bg-oro hover:text-rojo-sangre transition-all z-[100] ninja-clip-sm shadow-2xl active:scale-90"
+          title="Volver Arriba"
+        >
+          <ChevronUp className="w-5 h-5" />
+        </button>
+      )}
     </div>
   );
 }
