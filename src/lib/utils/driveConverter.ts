@@ -11,10 +11,13 @@ export function convertDriveUrl(url: string): string {
 
   if (!fileId) return url;
 
-  // Usamos nuestro nuevo proxy interno para servir el PDF directamente.
-  // Esto elimina CUALQUIER interfaz de Google (iconos, menús, etc.)
-  // y usa el visor nativo del navegador del usuario.
-  return `/api/proxy-pdf?fileId=${fileId}`;
+  // Si es un documento de Google Docs, usamos la vista previa minimalista
+  if (url.includes("docs.google.com/document")) {
+    return `https://docs.google.com/document/d/${fileId}/preview?rm=minimal`;
+  }
+
+  // Si es cualquier otro archivo en Google Drive (como un PDF)
+  return `https://drive.google.com/file/d/${fileId}/preview`;
 }
 
 /**
