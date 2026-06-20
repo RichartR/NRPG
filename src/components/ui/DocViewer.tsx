@@ -20,6 +20,11 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
   const rawProxyUrl = convertDriveUrl(url);
   const downloadUrl = getDownloadUrl(url);
 
+  // Extraer el ID para reconstruir la URL del proxy PDF si estamos en móvil
+  const fileIdMatch = url.match(/\/d\/(.*?)(\/|$)/);
+  const fileId = fileIdMatch ? fileIdMatch[1] : null;
+  const proxyPdfUrl = fileId ? `/api/proxy-pdf?fileId=${fileId}` : url;
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 640);
@@ -29,8 +34,12 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Dado que cargamos el enlace de preview directamente, lo embebemos tal cual
-  const embedUrl = rawProxyUrl;
+  // Lógica Híbrida:
+  // - En móvil: Cargamos el PDF a través del proxy y lo mostramos con pdf-viewer.html (evita que Google renderice roto en móviles).
+  // - En PC: Cargamos la vista previa directa de Google (alta velocidad y rendimiento).
+  const embedUrl = isMobile
+    ? `/pdf-viewer.html?file=${encodeURIComponent(proxyPdfUrl)}`
+    : rawProxyUrl;
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 2.0));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.6));
