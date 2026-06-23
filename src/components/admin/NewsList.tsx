@@ -144,7 +144,7 @@ export default function NewsList({ initialDocs }: NewsListProps) {
               <tr className="border-b border-oro/10">
                 <th className="p-6 text-caption font-black uppercase tracking-[0.25em] text-oro/40 w-24">Miniatura</th>
                 <th className="p-6 text-caption font-black uppercase tracking-[0.25em] text-oro/40">Título / Categoría</th>
-                <th className="p-6 text-caption font-black uppercase tracking-[0.25em] text-oro/40 w-64">ID Mensaje Discord</th>
+                <th className="p-6 text-caption font-black uppercase tracking-[0.25em] text-oro/40 w-64">ID / Enlace de Documento</th>
                 <th className="p-6 text-caption font-black uppercase tracking-[0.25em] text-oro/40 w-48 text-right">Operaciones Shinobi</th>
               </tr>
             </thead>
@@ -172,10 +172,22 @@ export default function NewsList({ initialDocs }: NewsListProps) {
                     </div>
                   </td>
 
-                  {/* ID Discord */}
+                  {/* ID Discord / Enlace */}
                   <td className="p-6 w-64">
                     <div className="flex items-center gap-2">
-                      <code className="text-xs font-mono text-oro/60 bg-black/50 px-3 py-1.5 border border-oro/5 font-bold">{item.discord_msg_id}</code>
+                      {item.discord_msg_id?.startsWith('http') ? (
+                        <a
+                          href={item.discord_msg_id}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-mono text-oro hover:underline truncate max-w-[200px] block font-bold"
+                          title={item.discord_msg_id}
+                        >
+                          {item.discord_msg_id}
+                        </a>
+                      ) : (
+                        <code className="text-xs font-mono text-oro/60 bg-black/50 px-3 py-1.5 border border-oro/5 font-bold">{item.discord_msg_id}</code>
+                      )}
                     </div>
                   </td>
 

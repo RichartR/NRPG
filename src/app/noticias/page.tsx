@@ -17,7 +17,7 @@ const getCachedAllNews = unstable_cache(
     return data || [];
   },
   ['all-noticias-page'],
-  { revalidate: 30 }
+  { revalidate: 30, tags: ['all-noticias-page'] }
 );
 
 export default async function NoticiasPage() {

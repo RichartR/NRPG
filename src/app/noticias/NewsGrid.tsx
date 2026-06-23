@@ -11,6 +11,7 @@ import EventRewardForm from '@/components/admin/EventRewardForm';
 import { PaginationPageInput } from '@/components/ui/PaginationPageInput';
 import { PaginationContainer } from '@/components/ui/PaginationContainer';
 import { searchIncludes } from '@/lib/utils/search';
+import { convertDriveUrl } from '@/lib/utils/driveConverter';
 
 interface NewsItem {
   id?: string;
@@ -263,11 +264,11 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
           onClick={() => setActiveNews(null)}
         >
           <div
-            className="w-full max-w-4xl h-[85vh] sm:h-auto max-h-[85vh] overflow-hidden ninja-card-oro flex flex-col relative"
+            className="w-full max-w-4xl h-[85vh] overflow-hidden ninja-card-oro flex flex-col relative"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Cabecera del Modal con Imagen */}
-            <div className="h-64 sm:h-80 md:h-96 relative overflow-hidden bg-black flex-shrink-0">
+            <div className="h-40 sm:h-52 md:h-60 relative overflow-hidden bg-black flex-shrink-0">
               {activeNews.url_imagen ? (
                 <img
                   src={activeNews.url_imagen}
@@ -302,8 +303,8 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
             {/* Separador dorado independiente (no recortado por overflow-hidden) */}
             <div className="h-px bg-oro/20 flex-shrink-0" />
 
-            {/* Contenido en Scroll (Con Lazy Load) */}
-            <div className="p-8 sm:p-12 overflow-y-auto flex-1 custom-scrollbar bg-neutral-900">
+            {/* Contenido en Scroll / Iframe */}
+            <div className={`overflow-y-auto flex-1 custom-scrollbar bg-[#ffe6ba] ${activeNews.discord_msg_id?.startsWith('http') ? 'p-0 overflow-hidden flex flex-col' : 'p-8 sm:p-12 bg-neutral-900'}`}>
               {loadingMsg ? (
                 /* Spinner de Carga Premium */
                 <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -312,67 +313,90 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center gap-6 mb-8 text-oro/60 text-xs sm:text-sm font-bold uppercase tracking-wider border-b border-oro/5 pb-6">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-oro" />
-                      <span>{formatDate(loadedContent[activeNews.discord_msg_id]?.timestamp)}</span>
+                  {activeNews.discord_msg_id?.startsWith('http') ? (
+                    /* Documento embebido para Noticias y Parches */
+                    <div className="flex-1 w-full h-full relative bg-[#ffe6ba] flex flex-col">
+                      <iframe
+                        src={convertDriveUrl(activeNews.discord_msg_id)}
+                        className="w-full h-full flex-1 border-none min-h-[450px]"
+                        style={{
+                          position: 'absolute',
+                          width: '100%',
+                          height: '100%',
+                          left: '0',
+                          top: '-50px', // Oculta la barra de herramientas superior de Google
+                          transform: 'scale(1.15)', // Magnifica el documento para que los márgenes queden fuera de la pantalla
+                          transformOrigin: 'center top'
+                        }}
+                        allow="autoplay"
+                      />
                     </div>
-                  </div>
-
-                  <div className="prose prose-invert max-w-none text-gris-texto text-base sm:text-lg md:text-xl leading-relaxed">
-                    {renderDiscordMarkdown(loadedContent[activeNews.discord_msg_id]?.content || "Contenido no disponible.")}
-                  </div>
-
-                  {activeNews.categoria?.toLowerCase() === 'evento' && (
-                    <div className="mt-12 pt-8 border-t border-oro/10 space-y-8">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div>
-                          <h3 className="text-xl font-black text-oro uppercase tracking-wider flex items-center gap-2">
-                            PREMIOS OTORGADOS
-                          </h3>
-                          <p className="text-[11px] font-bold text-oro/40 uppercase tracking-widest mt-1">Historial de repartos de este evento</p>
+                  ) : (
+                    /* Renderizado de Markdown para Eventos */
+                    <>
+                      <div className="flex items-center gap-6 mb-8 text-oro/60 text-xs sm:text-sm font-bold uppercase tracking-wider border-b border-oro/5 pb-6">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-oro" />
+                          <span>{formatDate(loadedContent[activeNews.discord_msg_id]?.timestamp)}</span>
                         </div>
-                        {isAdmin && (
-                          <button
-                            onClick={() => {
-                              setEditingRegistry(null);
-                              setIsRewardFormOpen(true);
-                            }}
-                            className="px-6 py-2.5 bg-rojo-sangre hover:brightness-125 text-oro font-black text-caption xl:text-xs uppercase tracking-widest transition-all shadow-md select-none self-start sm:self-auto"
-                            style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
-                          >
-                            Repartir Premios
-                          </button>
-                        )}
                       </div>
 
-                      {loadingRegistries ? (
-                        <div className="flex justify-center items-center py-10 gap-2">
-                          <RefreshCw className="w-5 h-5 text-oro animate-spin" />
-                          <span className="text-caption font-black uppercase tracking-widest text-oro/40">Cargando registros...</span>
-                        </div>
-                      ) : eventRegistries.length === 0 ? (
-                        <div className="p-8 text-center bg-black/20 border border-oro/5">
-                          <p className="text-caption font-black uppercase tracking-widest text-oro/30 italic">No se han repartido premios en este evento todavía</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-6">
-                          {eventRegistries.map((reg) => (
-                            <RegistroCard
-                              key={reg.id}
-                              registro={reg}
-                              isAdmin={isAdmin}
-                              onRefresh={fetchEventRegistries}
-                              onEdit={(r) => {
-                                setEditingRegistry(r);
-                                setIsRewardFormOpen(true);
-                              }}
-                              isGlobalView={true}
-                            />
-                          ))}
+                      <div className="prose prose-invert max-w-none text-gris-texto text-base sm:text-lg md:text-xl leading-relaxed">
+                        {renderDiscordMarkdown(loadedContent[activeNews.discord_msg_id]?.content || "Contenido no disponible.")}
+                      </div>
+
+                      {activeNews.categoria?.toLowerCase() === 'evento' && (
+                        <div className="mt-12 pt-8 border-t border-oro/10 space-y-8">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                              <h3 className="text-xl font-black text-oro uppercase tracking-wider flex items-center gap-2">
+                                PREMIOS OTORGADOS
+                              </h3>
+                              <p className="text-[11px] font-bold text-oro/40 uppercase tracking-widest mt-1">Historial de repartos de este evento</p>
+                            </div>
+                            {isAdmin && (
+                              <button
+                                onClick={() => {
+                                  setEditingRegistry(null);
+                                  setIsRewardFormOpen(true);
+                                }}
+                                className="px-6 py-2.5 bg-rojo-sangre hover:brightness-125 text-oro font-black text-caption xl:text-xs uppercase tracking-widest transition-all shadow-md select-none self-start sm:self-auto"
+                                style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                              >
+                                Repartir Premios
+                              </button>
+                            )}
+                          </div>
+
+                          {loadingRegistries ? (
+                            <div className="flex justify-center items-center py-10 gap-2">
+                              <RefreshCw className="w-5 h-5 text-oro animate-spin" />
+                              <span className="text-caption font-black uppercase tracking-widest text-oro/40">Cargando registros...</span>
+                            </div>
+                          ) : eventRegistries.length === 0 ? (
+                            <div className="p-8 text-center bg-black/20 border border-oro/5">
+                              <p className="text-caption font-black uppercase tracking-widest text-oro/30 italic">No se han repartido premios en este evento todavía</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-6">
+                              {eventRegistries.map((reg) => (
+                                <RegistroCard
+                                  key={reg.id}
+                                  registro={reg}
+                                  isAdmin={isAdmin}
+                                  onRefresh={fetchEventRegistries}
+                                  onEdit={(r) => {
+                                    setEditingRegistry(r);
+                                    setIsRewardFormOpen(true);
+                                  }}
+                                  isGlobalView={true}
+                                />
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
-                    </div>
+                    </>
                   )}
                 </>
               )}
