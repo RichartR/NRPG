@@ -37,7 +37,8 @@ interface Participant {
   estado: CombatState;
   bando: 'A' | 'B' | null;
   isInCombat: boolean;
-  cooldowns?: Record<number, number>; // tecnicaId -> reusableAtRound
+  cooldowns?: Array<{ id: number; nombre: string; reusableAtRound: number }>;
+  tecnicasActivas?: Array<{ id: number; nombre: string; cdRounds: number }>;
   rasgos?: Array<{ id: number; nombre: string; usado: boolean }>;
   equipo?: Array<{ id: number; nombre: string }>;
   stats_base?: Record<string, number>; // Added for temp characters
@@ -109,6 +110,11 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   const [customChCost, setCustomChCost] = useState<number>(0);
   const [customCdRounds, setCustomCdRounds] = useState<number>(1);
   const [tecnicaSearch, setTecnicaSearch] = useState('');
+  const [isConstantCh, setIsConstantCh] = useState(false);
+  const [constantChCost, setConstantChCost] = useState<number>(0);
+  const [isTechActive, setIsTechActive] = useState(false);
+  const [myActiveTecnicas, setMyActiveTecnicas] = useState<Record<number, { cdRounds: number }>>({});
+  const [isActiveDropdownOpen, setIsActiveDropdownOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCdDropdownOpen, setIsCdDropdownOpen] = useState(false);
   const [bgNumber, setBgNumber] = useState<number>(1);
@@ -353,8 +359,22 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
       addLog(`**${activeCharacter.nombre_ninja}** consume **${totalCost}** CH por mantenimiento constante de técnica al iniciar la Ronda ${rondaActual}. CH: ${newCh}/${localState.maxCh}.`);
     }
 
+    // Shift reusableAtRound forward for active techniques to freeze their cooldowns
+    const activeTechIds = Object.keys(myActiveTecnicas).map(Number);
+    if (activeTechIds.length > 0) {
+      setMyCooldowns(prev => {
+        const updated = { ...prev };
+        activeTechIds.forEach(techId => {
+          if (updated[techId]) {
+            updated[techId] = updated[techId] + roundsAdvanced;
+          }
+        });
+        return updated;
+      });
+    }
+
     lastProcessedRoundRef.current = rondaActual;
-  }, [rondaActual, combatStarted, isEventMode, activeCharacter?.id, localState?.chConstanteActive, localState?.chConstanteCost]);
+  }, [rondaActual, combatStarted, isEventMode, activeCharacter?.id, localState?.chConstanteActive, localState?.chConstanteCost, myActiveTecnicas]);
 
   useEffect(() => { turnQueueRef.current = turnQueue; }, [turnQueue]);
   useEffect(() => { currentTurnIndexRef.current = currentTurnIndex; }, [currentTurnIndex]);
@@ -499,6 +519,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         setMyBando(null);
         setMyIsInCombat(false);
         setMyCooldowns({});
+        setMyActiveTecnicas({});
         setTempCharacters({});
         setActiveMusicVideoId(null);
         setMusicIsPlaying(true);
@@ -534,7 +555,22 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         estado: localState,
         bando: myBando,
         isInCombat: myIsInCombat,
-        cooldowns: myCooldowns,
+        cooldowns: Object.keys(myCooldowns).map(Number).map(techId => {
+          const pt = activeCharacter.personajes_tecnicas?.find(t => t.tecnica_id === techId);
+          return {
+            id: techId,
+            nombre: pt?.info_glosario?.nombre_jp || pt?.info_glosario?.nombre_es || 'Técnica',
+            reusableAtRound: myCooldowns[techId]
+          };
+        }),
+        tecnicasActivas: Object.keys(myActiveTecnicas).map(Number).map(techId => {
+          const pt = activeCharacter.personajes_tecnicas?.find(t => t.tecnica_id === techId);
+          return {
+            id: techId,
+            nombre: pt?.info_glosario?.nombre_jp || pt?.info_glosario?.nombre_es || 'Técnica',
+            cdRounds: myActiveTecnicas[techId].cdRounds
+          };
+        }),
         rasgos: activeCharacter.personajes_rasgos?.map(r => ({
           id: r.info_rasgos?.id || r.rasgo_id,
           nombre: r.info_rasgos?.nombre || 'Rasgo',
@@ -555,7 +591,8 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     localState,
     myBando,
     myIsInCombat,
-    myCooldowns
+    myCooldowns,
+    myActiveTecnicas
   ]);
 
   const addLog = async (message: string) => {
@@ -737,6 +774,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     setMyBando(null);
     setMyIsInCombat(false);
     setMyCooldowns({});
+    setMyActiveTecnicas({});
     setTempCharacters(newTemps);
     addLog(`El combate ha sido reiniciado por completo.`);
     if (channelRef.current && activeCharacter) {
@@ -905,12 +943,24 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     return reusableAtRound - rondaActual;
   };
 
+  // Deactivate Technique
+  const handleDeactivateTecnica = (techId: number) => {
+    setMyActiveTecnicas(prev => {
+      const copy = { ...prev };
+      delete copy[techId];
+      return copy;
+    });
+    const techWrapper = activeCharacter?.personajes_tecnicas?.find(t => t.tecnica_id === techId);
+    const techName = techWrapper?.info_glosario?.nombre_jp || techWrapper?.info_glosario?.nombre_es || 'Técnica';
+    addLog(`**${activeCharacter?.nombre_ninja}** desactiva la técnica **${techName}**. Su CD comienza a transcurrir.`);
+  };
+
   // Use Technique
   const handleUseTecnica = () => {
     if (!localState || selectedTecnicaId === null || !activeCharacter) return;
 
     const techWrapper = activeCharacter.personajes_tecnicas?.find(t => t.tecnica_id === selectedTecnicaId);
-    const techName = techWrapper?.info_glosario?.nombre_es || 'Técnica';
+    const techName = techWrapper?.info_glosario?.nombre_jp || techWrapper?.info_glosario?.nombre_es || 'Técnica';
 
     if (!isEventMode && localState.ch < customChCost) {
       addToast("Chakra insuficiente para realizar esta técnica.", "error");
@@ -931,9 +981,20 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
       newCooldowns[selectedTecnicaId] = rondaActual + customCdRounds + 1;
     }
 
-    const updatedState = { ...localState, ch: newCh };
+    const updatedState = {
+      ...localState,
+      ch: newCh,
+      ...(isConstantCh ? { chConstanteCost: constantChCost, chConstanteActive: true } : {})
+    };
     setLocalState(updatedState);
     setMyCooldowns(newCooldowns);
+
+    if (isTechActive) {
+      setMyActiveTecnicas(prev => ({
+        ...prev,
+        [selectedTecnicaId]: { cdRounds: customCdRounds }
+      }));
+    }
 
     // Logging & Roll resolution for event mode
     let rollText = '';
@@ -988,7 +1049,15 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     if (isEventMode) {
       addLog(`**${activeCharacter.nombre_ninja}** usa **${techName}** (CD: ${customCdRounds} rondas)${rollText}.`);
     } else {
-      addLog(`**${activeCharacter.nombre_ninja}** usa **${techName}** (Coste: **${customChCost}** CH | CD: **${customCdRounds}** rondas). CH restante: **${newCh}**/**${localState.maxCh}**.`);
+      let constantText = '';
+      if (isConstantCh) {
+        constantText = ` | Mantenimiento: **${constantChCost}** CH/ronda (Activo)`;
+      }
+      let activeText = '';
+      if (isTechActive) {
+        activeText = ` | Estado: **Activa** (CD pausado)`;
+      }
+      addLog(`**${activeCharacter.nombre_ninja}** usa **${techName}** (Coste: **${customChCost}** CH${constantText}${activeText} | CD: **${customCdRounds}** rondas). CH restante: **${newCh}**/**${localState.maxCh}**.`);
 
       const percentage = (newCh / localState.maxCh) * 100;
       if (percentage < 10) {
@@ -1310,7 +1379,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                       broadcastMusic(null);
                     }}
                     className="ninja-btn-rojo px-3 py-[5px] text-xs shrink-0 border border-rojo-sangre/30 leading-none whitespace-nowrap"
-                    >
+                  >
                     Parar
                   </button>
                 )}
@@ -1320,1569 +1389,1772 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
           </div>
         )}
 
-            {/* THREE COLUMNS BATTLEGROUND */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0 lg:h-[720px]">
+        {/* THREE COLUMNS BATTLEGROUND */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0 lg:h-[720px]">
 
-              {/* COLUMN 1: BANDO A */}
-              <div className="lg:col-span-1 flex flex-col gap-4 ninja-card-oro p-6 relative overflow-hidden">
-                <div className="flex items-center justify-between border-b border-oro/10 pb-4 mb-2 gap-2">
-                  <h2 className="font-black text-sm uppercase tracking-[0.2em] flex items-center gap-2 shrink-0">
-                    BANDO A
-                  </h2>
-                  {/* Bando Selector for Self */}
-                  {myIsInCombat && myBando !== 'A' && (
-                    <button
-                      onClick={() => selectBando('A')}
-                      className="ninja-btn-oro py-1.5 px-4 text-xs text-center"
-                    >
-                      Unirse
-                    </button>
-                  )}
-                  <span className="text-caption font-black bg-oro/10 border border-oro/30 text-oro px-2.5 py-0.5 rounded-sm shrink-0">
-                    {bandoAParticipants.length} ninjas
-                  </span>
-                </div>
+          {/* COLUMN 1: BANDO A */}
+          <div className="lg:col-span-1 flex flex-col gap-4 ninja-card-oro p-6 relative overflow-hidden">
+            <div className="flex items-center justify-between border-b border-oro/10 pb-4 mb-2 gap-2">
+              <h2 className="font-black text-sm uppercase tracking-[0.2em] flex items-center gap-2 shrink-0">
+                BANDO A
+              </h2>
+              {/* Bando Selector for Self */}
+              {myIsInCombat && myBando !== 'A' && (
+                <button
+                  onClick={() => selectBando('A')}
+                  className="ninja-btn-oro py-1.5 px-4 text-xs text-center"
+                >
+                  Unirse
+                </button>
+              )}
+              <span className="text-caption font-black bg-oro/10 border border-oro/30 text-oro px-2.5 py-0.5 rounded-sm shrink-0">
+                {bandoAParticipants.length} ninjas
+              </span>
+            </div>
 
-                <div className="flex-1 overflow-y-auto space-y-4 pr-1 mt-4 scrollbar-hide">
-                  {bandoAParticipants.map(p => {
-                    const isTemp = !!tempCharacters[p.user_id];
-                    const canControlTemp = isTemp && isAdminOrNarrator;
-                    return (
-                      <div key={p.user_id} className={`border p-4 rounded-sm hover:border-oro/20 transition-all ${isTemp ? 'bg-purple-950/20 border-purple-500/20' : 'bg-black/40 border-oro/5'}`}>
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-black border border-oro/20 overflow-hidden flex items-center justify-center shrink-0">
-                              {p.url_img ? (
-                                <img src={p.url_img} alt="Avatar" className="w-full h-full object-cover object-top" />
-                              ) : (
-                                <span className="text-oro font-black text-xs">{p.nombre.charAt(0)}</span>
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1 mt-4 scrollbar-hide">
+              {bandoAParticipants.map(p => {
+                const isTemp = !!tempCharacters[p.user_id];
+                const canControlTemp = isTemp && isAdminOrNarrator;
+                return (
+                  <div key={p.user_id} className={`border p-4 rounded-sm hover:border-oro/20 transition-all ${isTemp ? 'bg-purple-950/20 border-purple-500/20' : 'bg-black/40 border-oro/5'}`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-black border border-oro/20 overflow-hidden flex items-center justify-center shrink-0">
+                          {p.url_img ? (
+                            <img src={p.url_img} alt="Avatar" className="w-full h-full object-cover object-top" />
+                          ) : (
+                            <span className="text-oro font-black text-xs">{p.nombre.charAt(0)}</span>
+                          )}
+                        </div>
+                        <div>
+                          <div className="font-black text-sm text-oro uppercase tracking-wider truncate max-w-[120px]">{p.nombre}</div>
+                          <div className="flex gap-1 flex-wrap">
+                            {p.isInCombat && (
+                              <span className="text-[9px] font-black uppercase text-emerald-400 bg-emerald-950/40 border border-emerald-500/20 px-1 rounded-sm">Combatiente</span>
+                            )}
+                            {isTemp && (
+                              <span className="text-[9px] font-black uppercase text-purple-400 bg-purple-950/40 border border-purple-500/20 px-1 rounded-sm">NPC</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      {canControlTemp && (
+                        <div className="flex items-center gap-1 ml-1 shrink-0">
+                          <button
+                            onClick={() => {
+                              const inQueue = turnQueue.includes(p.user_id);
+                              let newQueue;
+                              if (inQueue) {
+                                newQueue = turnQueue.filter(id => id !== p.user_id);
+                              } else {
+                                newQueue = [...turnQueue, p.user_id];
+                              }
+                              let newIndex = currentTurnIndex;
+                              if (newIndex >= newQueue.length && newQueue.length > 0) newIndex = 0;
+                              updateGlobalCombatState(newQueue, newIndex, rondaActual, newQueue.length > 0 ? combatStarted : false);
+                              addLog(`**[NPC] ${p.nombre}** ${inQueue ? 'sale del combate' : 'se une a los turnos'}.`);
+                            }}
+                            className={`p-1 rounded-sm transition-all ${turnQueue.includes(p.user_id) ? 'text-emerald-450 hover:text-emerald-300 hover:bg-emerald-950/20' : 'text-oro/40 hover:text-oro hover:bg-oro/10'}`}
+                            title={turnQueue.includes(p.user_id) ? "Retirar del orden de turnos" : "Añadir al orden de turnos"}
+                          >
+                            <Play className={`w-3.5 h-3.5 ${turnQueue.includes(p.user_id) ? 'fill-emerald-400' : ''}`} />
+                          </button>
+                          <button
+                            onClick={() => removeTempCharacter(p.user_id)}
+                            className="p-1 text-red-500/40 hover:text-red-400 hover:bg-red-950/20 rounded-sm transition-all"
+                            title="Eliminar NPC"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Stats bars */}
+                    <div className="space-y-2.5">
+                      {(!p.ocultar_vit || isAdminOrNarrator) && (
+                        <div>
+                          <div className="flex justify-between items-center text-[10px] font-black mb-1">
+                            <span className="text-red-400">
+                              VIT {p.ocultar_vit && <span className="text-purple-400 text-[8px] font-black uppercase tracking-wider">(Oculta)</span>}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              {canControlTemp && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const isHidden = !!p.ocultar_vit;
+                                    updateTempCharacter(p.user_id, { ocultar_vit: !isHidden });
+                                    addLog(`**[NPC] ${p.nombre}** ahora tiene su vitalidad **${!isHidden ? 'oculta' : 'visible'}**.`);
+                                  }}
+                                  className={`p-0.5 rounded-sm transition-all hover:bg-oro/10 ${p.ocultar_vit ? 'text-amber-500 hover:text-amber-400' : 'text-oro/40 hover:text-oro'}`}
+                                  title={p.ocultar_vit ? "Mostrar vitalidad" : "Ocultar vitalidad"}
+                                >
+                                  {p.ocultar_vit ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                </button>
                               )}
+                              <span>{p.estado?.vit} / {p.estado?.maxVit}</span>
                             </div>
-                            <div>
-                              <div className="font-black text-sm text-oro uppercase tracking-wider truncate max-w-[120px]">{p.nombre}</div>
-                              <div className="flex gap-1 flex-wrap">
-                                {p.isInCombat && (
-                                  <span className="text-[9px] font-black uppercase text-emerald-400 bg-emerald-950/40 border border-emerald-500/20 px-1 rounded-sm">Combatiente</span>
-                                )}
-                                {isTemp && (
-                                  <span className="text-[9px] font-black uppercase text-purple-400 bg-purple-950/40 border border-purple-500/20 px-1 rounded-sm">NPC</span>
-                                )}
+                          </div>
+                          <div className="h-2 bg-black/60 border border-oro/5 rounded-full overflow-hidden">
+                            <div className="h-full bg-red-500 transition-all duration-300" style={{ width: `${(p.estado?.vit / p.estado?.maxVit) * 100}%` }} />
+                          </div>
+                        </div>
+                      )}
+                      {!isEventMode && (
+                        <div>
+                          <div className="flex justify-between text-[10px] font-black mb-1">
+                            <span className="text-blue-400">CH</span>
+                            <span>
+                              {String(activeCharacter?.id) === p.user_id ? (localState?.ch ?? p.estado?.ch) : p.estado?.ch}
+                              {' / '}
+                              {String(activeCharacter?.id) === p.user_id ? (localState?.maxCh ?? p.estado?.maxCh) : p.estado?.maxCh}
+                            </span>
+                          </div>
+                          <div className="h-2 bg-black/60 border border-oro/5 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-blue-500 transition-all duration-300"
+                              style={{
+                                width: `${(
+                                  (String(activeCharacter?.id) === p.user_id ? (localState?.ch ?? p.estado?.ch) : p.estado?.ch) /
+                                  (String(activeCharacter?.id) === p.user_id ? (localState?.maxCh ?? p.estado?.maxCh) : p.estado?.maxCh)
+                                ) * 100}%`
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* NPC Inline Controls */}
+                      {canControlTemp && (
+                        <div className="flex gap-1 pt-1">
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Cant."
+                            id={`npc-vit-input-a-${p.user_id}`}
+                            className="w-14 bg-black/50 border border-purple-500/20 text-oro px-2 py-1 text-[9px] font-black outline-none focus:border-purple-400 transition-all rounded-sm"
+                          />
+                          <button
+                            onClick={() => {
+                              const el = document.getElementById(`npc-vit-input-a-${p.user_id}`) as HTMLInputElement;
+                              const val = parseInt(el?.value || '0');
+                              if (val > 0) {
+                                const newVit = Math.max(0, (p.estado?.vit ?? 0) - val);
+                                updateTempCharacter(p.user_id, { estado: { ...p.estado, vit: newVit } });
+                                addLog(`**[NPC] ${p.nombre}** recibe **${val}** de daño. VIT: **${newVit}**/**${p.estado?.maxVit}**.`);
+                                el.value = '';
+                              }
+                            }}
+                            className="flex-1 py-1 text-[9px] font-black bg-red-950/40 border border-red-500/20 text-red-400 hover:bg-red-950/60 transition-all rounded-sm"
+                          >Daño</button>
+                          <button
+                            onClick={() => {
+                              const el = document.getElementById(`npc-vit-input-a-${p.user_id}`) as HTMLInputElement;
+                              const val = parseInt(el?.value || '0');
+                              if (val > 0) {
+                                const newVit = Math.min(p.estado?.maxVit ?? 0, (p.estado?.vit ?? 0) + val);
+                                updateTempCharacter(p.user_id, { estado: { ...p.estado, vit: newVit } });
+                                addLog(`**[NPC] ${p.nombre}** se cura **+${val}** VIT. VIT: **${newVit}**/**${p.estado?.maxVit}**.`);
+                                el.value = '';
+                              }
+                            }}
+                            className="flex-1 py-1 text-[9px] font-black bg-emerald-950/40 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-950/60 transition-all rounded-sm"
+                          >Sanar</button>
+                        </div>
+                      )}
+
+                      {/* Speed & Kawarimi */}
+                      {!isTemp && !isEventMode && (
+                        <div className="flex flex-col gap-2 text-[10px] font-black pt-2 border-t border-oro/10 mt-1">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-1">
+                              <span className="text-amber-500 uppercase tracking-wider">VEL:</span>
+                              <span className="text-white">{p.estado?.vel ?? 0}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-emerald-400 uppercase tracking-wider">KAWARIMI:</span>
+                              <div className="flex gap-1">
+                                {Array.from({ length: String(activeCharacter?.id) === p.user_id ? (localState?.maxKawarimi ?? p.estado?.maxKawarimi ?? 1) : (p.estado?.maxKawarimi || 1) }, (_, i) => i + 1).map((num) => {
+                                  const effectiveKawarimi = String(activeCharacter?.id) === p.user_id ? (localState?.kawarimi ?? p.estado?.kawarimi ?? 0) : (p.estado?.kawarimi ?? 0);
+                                  const isUsed = effectiveKawarimi >= num;
+                                  const isSelf = String(activeCharacter?.id) === p.user_id;
+                                  return (
+                                    <button
+                                      key={num}
+                                      disabled={!isSelf}
+                                      onClick={() => {
+                                        if (!isSelf || !localState) return;
+                                        const newKawarimi = localState.kawarimi === num ? num - 1 : num;
+                                        const updated = { ...localState, kawarimi: newKawarimi };
+                                        setLocalState(updated);
+                                        addLog(`**${activeCharacter.nombre_ninja}** marca Kawarimi ${newKawarimi >= num ? 'usado' : 'recuperado'} (${newKawarimi}/${localState.maxKawarimi}).`);
+                                      }}
+                                      className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center text-[8px] transition-all font-black ${isUsed
+                                        ? 'bg-red-500/20 border-red-500 text-red-500'
+                                        : 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30'
+                                        } ${isSelf ? 'cursor-pointer' : 'cursor-default'}`}
+                                      title={isSelf ? `Marcar Kawarimi ${num} como ${isUsed ? 'disponible' : 'usado'}` : `Kawarimi ${num}`}
+                                    >
+                                      {isUsed ? '✕' : '✓'}
+                                    </button>
+                                  );
+                                })}
                               </div>
                             </div>
                           </div>
-                          {canControlTemp && (
-                            <div className="flex items-center gap-1 ml-1 shrink-0">
-                              <button
-                                onClick={() => {
-                                  const inQueue = turnQueue.includes(p.user_id);
-                                  let newQueue;
-                                  if (inQueue) {
-                                    newQueue = turnQueue.filter(id => id !== p.user_id);
-                                  } else {
-                                    newQueue = [...turnQueue, p.user_id];
-                                  }
-                                  let newIndex = currentTurnIndex;
-                                  if (newIndex >= newQueue.length && newQueue.length > 0) newIndex = 0;
-                                  updateGlobalCombatState(newQueue, newIndex, rondaActual, newQueue.length > 0 ? combatStarted : false);
-                                  addLog(`**[NPC] ${p.nombre}** ${inQueue ? 'sale del combate' : 'se une a los turnos'}.`);
-                                }}
-                                className={`p-1 rounded-sm transition-all ${turnQueue.includes(p.user_id) ? 'text-emerald-450 hover:text-emerald-300 hover:bg-emerald-950/20' : 'text-oro/40 hover:text-oro hover:bg-oro/10'}`}
-                                title={turnQueue.includes(p.user_id) ? "Retirar del orden de turnos" : "Añadir al orden de turnos"}
-                              >
-                                <Play className={`w-3.5 h-3.5 ${turnQueue.includes(p.user_id) ? 'fill-emerald-400' : ''}`} />
-                              </button>
-                              <button
-                                onClick={() => removeTempCharacter(p.user_id)}
-                                className="p-1 text-red-500/40 hover:text-red-400 hover:bg-red-950/20 rounded-sm transition-all"
-                                title="Eliminar NPC"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Stats bars */}
-                        <div className="space-y-2.5">
-                          {(!p.ocultar_vit || isAdminOrNarrator) && (
-                            <div>
-                              <div className="flex justify-between items-center text-[10px] font-black mb-1">
-                                <span className="text-red-400">
-                                  VIT {p.ocultar_vit && <span className="text-purple-400 text-[8px] font-black uppercase tracking-wider">(Oculta)</span>}
-                                </span>
-                                <div className="flex items-center gap-1">
-                                  {canControlTemp && (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const isHidden = !!p.ocultar_vit;
-                                        updateTempCharacter(p.user_id, { ocultar_vit: !isHidden });
-                                        addLog(`**[NPC] ${p.nombre}** ahora tiene su vitalidad **${!isHidden ? 'oculta' : 'visible'}**.`);
-                                      }}
-                                      className={`p-0.5 rounded-sm transition-all hover:bg-oro/10 ${p.ocultar_vit ? 'text-amber-500 hover:text-amber-400' : 'text-oro/40 hover:text-oro'}`}
-                                      title={p.ocultar_vit ? "Mostrar vitalidad" : "Ocultar vitalidad"}
-                                    >
-                                      {p.ocultar_vit ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                                    </button>
-                                  )}
-                                  <span>{p.estado?.vit} / {p.estado?.maxVit}</span>
-                                </div>
-                              </div>
-                              <div className="h-2 bg-black/60 border border-oro/5 rounded-full overflow-hidden">
-                                <div className="h-full bg-red-500 transition-all duration-300" style={{ width: `${(p.estado?.vit / p.estado?.maxVit) * 100}%` }} />
-                              </div>
-                            </div>
-                          )}
                           {!isEventMode && (
-                            <div>
-                              <div className="flex justify-between text-[10px] font-black mb-1">
-                                <span className="text-blue-400">CH</span>
-                                <span>
-                                  {String(activeCharacter?.id) === p.user_id ? (localState?.ch ?? p.estado?.ch) : p.estado?.ch}
-                                  {' / '}
-                                  {String(activeCharacter?.id) === p.user_id ? (localState?.maxCh ?? p.estado?.maxCh) : p.estado?.maxCh}
-                                </span>
-                              </div>
-                              <div className="h-2 bg-black/60 border border-oro/5 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-blue-500 transition-all duration-300"
-                                  style={{
-                                    width: `${(
-                                      (String(activeCharacter?.id) === p.user_id ? (localState?.ch ?? p.estado?.ch) : p.estado?.ch) /
-                                      (String(activeCharacter?.id) === p.user_id ? (localState?.maxCh ?? p.estado?.maxCh) : p.estado?.maxCh)
-                                    ) * 100}%`
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          )}
-
-                          {/* NPC Inline Controls */}
-                          {canControlTemp && (
-                            <div className="flex gap-1 pt-1">
-                              <input
-                                type="number"
-                                min="1"
-                                placeholder="Cant."
-                                id={`npc-vit-input-a-${p.user_id}`}
-                                className="w-14 bg-black/50 border border-purple-500/20 text-oro px-2 py-1 text-[9px] font-black outline-none focus:border-purple-400 transition-all rounded-sm"
-                              />
+                            <div className="flex items-center gap-1.5 text-[10px] font-black">
+                              <span className="text-blue-400 uppercase tracking-wider">CH CONSTANTE:</span>
                               <button
+                                type="button"
+                                disabled={String(activeCharacter?.id) !== p.user_id}
                                 onClick={() => {
-                                  const el = document.getElementById(`npc-vit-input-a-${p.user_id}`) as HTMLInputElement;
-                                  const val = parseInt(el?.value || '0');
-                                  if (val > 0) {
-                                    const newVit = Math.max(0, (p.estado?.vit ?? 0) - val);
-                                    updateTempCharacter(p.user_id, { estado: { ...p.estado, vit: newVit } });
-                                    addLog(`**[NPC] ${p.nombre}** recibe **${val}** de daño. VIT: **${newVit}**/**${p.estado?.maxVit}**.`);
-                                    el.value = '';
-                                  }
+                                  const isSelf = String(activeCharacter?.id) === p.user_id;
+                                  if (!isSelf || !localState) return;
+                                  toggleConstantCh(!localState.chConstanteActive);
                                 }}
-                                className="flex-1 py-1 text-[9px] font-black bg-red-950/40 border border-red-500/20 text-red-400 hover:bg-red-950/60 transition-all rounded-sm"
-                              >Daño</button>
-                              <button
-                                onClick={() => {
-                                  const el = document.getElementById(`npc-vit-input-a-${p.user_id}`) as HTMLInputElement;
-                                  const val = parseInt(el?.value || '0');
-                                  if (val > 0) {
-                                    const newVit = Math.min(p.estado?.maxVit ?? 0, (p.estado?.vit ?? 0) + val);
-                                    updateTempCharacter(p.user_id, { estado: { ...p.estado, vit: newVit } });
-                                    addLog(`**[NPC] ${p.nombre}** se cura **+${val}** VIT. VIT: **${newVit}**/**${p.estado?.maxVit}**.`);
-                                    el.value = '';
-                                  }
-                                }}
-                                className="flex-1 py-1 text-[9px] font-black bg-emerald-950/40 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-950/60 transition-all rounded-sm"
-                              >Sanar</button>
-                            </div>
-                          )}
-
-                          {/* Speed & Kawarimi */}
-                          {!isTemp && !isEventMode && (
-                            <div className="flex flex-col gap-2 text-[10px] font-black pt-2 border-t border-oro/10 mt-1">
-                              <div className="flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-1">
-                                  <span className="text-amber-500 uppercase tracking-wider">VEL:</span>
-                                  <span className="text-white">{p.estado?.vel ?? 0}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-emerald-400 uppercase tracking-wider">KAWARIMI:</span>
-                                  <div className="flex gap-1">
-                                    {Array.from({ length: String(activeCharacter?.id) === p.user_id ? (localState?.maxKawarimi ?? p.estado?.maxKawarimi ?? 1) : (p.estado?.maxKawarimi || 1) }, (_, i) => i + 1).map((num) => {
-                                      const effectiveKawarimi = String(activeCharacter?.id) === p.user_id ? (localState?.kawarimi ?? p.estado?.kawarimi ?? 0) : (p.estado?.kawarimi ?? 0);
-                                      const isUsed = effectiveKawarimi >= num;
-                                      const isSelf = String(activeCharacter?.id) === p.user_id;
-                                      return (
-                                        <button
-                                          key={num}
-                                          disabled={!isSelf}
-                                          onClick={() => {
-                                            if (!isSelf || !localState) return;
-                                            const newKawarimi = localState.kawarimi === num ? num - 1 : num;
-                                            const updated = { ...localState, kawarimi: newKawarimi };
-                                            setLocalState(updated);
-                                            addLog(`**${activeCharacter.nombre_ninja}** marca Kawarimi ${newKawarimi >= num ? 'usado' : 'recuperado'} (${newKawarimi}/${localState.maxKawarimi}).`);
-                                          }}
-                                          className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center text-[8px] transition-all font-black ${isUsed
-                                            ? 'bg-red-500/20 border-red-500 text-red-500'
-                                            : 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30'
-                                            } ${isSelf ? 'cursor-pointer' : 'cursor-default'}`}
-                                          title={isSelf ? `Marcar Kawarimi ${num} como ${isUsed ? 'disponible' : 'usado'}` : `Kawarimi ${num}`}
-                                        >
-                                          {isUsed ? '✕' : '✓'}
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              </div>
-                              {!isEventMode && (
-                                <div className="flex items-center gap-1.5 text-[10px] font-black">
-                                  <span className="text-blue-400 uppercase tracking-wider">CH CONSTANTE:</span>
-                                  <button
-                                    type="button"
-                                    disabled={String(activeCharacter?.id) !== p.user_id}
-                                    onClick={() => {
-                                      const isSelf = String(activeCharacter?.id) === p.user_id;
-                                      if (!isSelf || !localState) return;
-                                      toggleConstantCh(!localState.chConstanteActive);
-                                    }}
-                                    className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center text-[8px] transition-all font-black ${String(activeCharacter?.id) === p.user_id
-                                      ? (localState?.chConstanteActive
-                                        ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30'
-                                        : 'bg-red-500/20 border-red-500 text-red-500 hover:bg-red-500/30')
-                                      : (p.estado?.chConstanteActive
-                                        ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400'
-                                        : 'bg-red-500/20 border-red-500 text-red-500')
-                                      } ${String(activeCharacter?.id) === p.user_id ? 'cursor-pointer' : 'cursor-default'}`}
-                                    title={String(activeCharacter?.id) === p.user_id ? (localState?.chConstanteActive ? 'Desactivar CH constante' : 'Activar CH constante') : (p.estado?.chConstanteActive ? 'CH constante activo' : 'CH constante inactivo')}
-                                  >
-                                    {String(activeCharacter?.id) === p.user_id ? (localState?.chConstanteActive ? '✕' : '✓') : (p.estado?.chConstanteActive ? '✕' : '✓')}
-                                  </button>
-                                  <span className={`font-mono font-black text-[9px] uppercase tracking-wider ${String(activeCharacter?.id) === p.user_id ? 'text-blue-100' : 'text-blue-200/80'}`}>
-                                    {String(activeCharacter?.id) === p.user_id ? (localState?.chConstanteActive ? 'Activo' : 'Inactivo') : (p.estado?.chConstanteActive ? 'Activo' : 'Inactivo')}
-                                  </span>
-                                  <span className="font-mono text-[9px] font-black text-blue-100 bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded-sm">
-                                    -{String(activeCharacter?.id) === p.user_id ? (localState?.chConstanteCost ?? 0) : (p.estado?.chConstanteCost ?? 0)} CH/Ronda
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {isEventMode && (
-                            <div className="space-y-2.5 pt-2 border-t border-oro/10 mt-1 animate-in fade-in duration-300">
-                              {/* Traits (Rasgos) */}
-                              <div className="space-y-1">
-                                <span className="text-[9px] text-oro/40 uppercase font-black block tracking-wider">Rasgos:</span>
-                                {p.rasgos && p.rasgos.length > 0 ? (
-                                  <div className="flex flex-wrap gap-1">
-                                    {p.rasgos.map((r: any) => {
-                                      const isSelf = String(activeCharacter?.id) === p.user_id;
-                                      const canToggle = isSelf || canControlTemp;
-                                      return (
-                                        <button
-                                          key={r.id}
-                                          disabled={!canToggle}
-                                          onClick={() => {
-                                            if (!canToggle) return;
-                                            if (isTemp) {
-                                              const newRasgos = (p.rasgos || []).map((rr: any) => rr.id === r.id ? { ...rr, usado: !rr.usado } : rr);
-                                              updateTempCharacter(p.user_id, { rasgos: newRasgos });
-                                              addLog(`**[NPC] ${p.nombre}** marca el rasgo **${r.nombre}** como ${!r.usado ? 'usado' : 'disponible'}.`);
-                                            } else if (localState) {
-                                              const currentUsed = localState.usedTraits || {};
-                                              const updatedUsed = { ...currentUsed, [r.id]: !currentUsed[r.id] };
-                                              const updated = { ...localState, usedTraits: updatedUsed };
-                                              setLocalState(updated);
-                                              addLog(`**${activeCharacter.nombre_ninja}** marca el rasgo **${r.nombre}** como ${updatedUsed[r.id] ? 'usado' : 'disponible'}.`);
-                                            }
-                                          }}
-                                          className={`px-1.5 py-0.5 border text-[9px] font-black transition-all flex items-center gap-1 rounded-sm ${r.usado
-                                            ? 'bg-red-500/10 border-red-500/30 text-red-400 line-through'
-                                            : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
-                                            } ${canToggle ? 'cursor-pointer' : 'cursor-default'}`}
-                                          title={canToggle ? `Haga clic para cambiar estado de ${r.nombre}` : r.nombre}
-                                        >
-                                          <span>{r.nombre}</span>
-                                          <span>{r.usado ? '✕' : '✓'}</span>
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-                                ) : (
-                                  <span className="text-[9px] text-oro/20 italic block">Sin rasgos</span>
-                                )}
-                              </div>
-
-                              {/* Equipment (Equipo) */}
-                              <div className="space-y-1">
-                                <span className="text-[9px] text-oro/40 uppercase font-black block tracking-wider">Equipo Equipado:</span>
-                                {p.equipo && p.equipo.length > 0 ? (
-                                  <div className="flex flex-wrap gap-1">
-                                    {p.equipo.map((eq: any) => (
-                                      <span
-                                        key={eq.id}
-                                        className="px-1.5 py-0.5 bg-black/40 border border-oro/10 text-[9px] font-black text-oro/70 rounded-sm"
-                                      >
-                                        {eq.nombre}
-                                      </span>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <span className="text-[9px] text-oro/20 italic block">Sin equipo equipado</span>
-                                )}
-                              </div>
+                                className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center text-[8px] transition-all font-black ${String(activeCharacter?.id) === p.user_id
+                                  ? (localState?.chConstanteActive
+                                    ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30'
+                                    : 'bg-red-500/20 border-red-500 text-red-500 hover:bg-red-500/30')
+                                  : (p.estado?.chConstanteActive
+                                    ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400'
+                                    : 'bg-red-500/20 border-red-500 text-red-500')
+                                  } ${String(activeCharacter?.id) === p.user_id ? 'cursor-pointer' : 'cursor-default'}`}
+                                title={String(activeCharacter?.id) === p.user_id ? (localState?.chConstanteActive ? 'Desactivar CH constante' : 'Activar CH constante') : (p.estado?.chConstanteActive ? 'CH constante activo' : 'CH constante inactivo')}
+                              >
+                                {String(activeCharacter?.id) === p.user_id ? (localState?.chConstanteActive ? '✕' : '✓') : (p.estado?.chConstanteActive ? '✕' : '✓')}
+                              </button>
+                              <span className={`font-mono font-black text-[9px] uppercase tracking-wider ${String(activeCharacter?.id) === p.user_id ? 'text-blue-100' : 'text-blue-200/80'}`}>
+                                {String(activeCharacter?.id) === p.user_id ? (localState?.chConstanteActive ? 'Activo' : 'Inactivo') : (p.estado?.chConstanteActive ? 'Activo' : 'Inactivo')}
+                              </span>
+                              <span className="font-mono text-[9px] font-black text-blue-100 bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded-sm">
+                                -{String(activeCharacter?.id) === p.user_id ? (localState?.chConstanteCost ?? 0) : (p.estado?.chConstanteCost ?? 0)} CH/Ronda
+                              </span>
                             </div>
                           )}
                         </div>
-                      </div>
-                    );
-                  })}
-                  {bandoAParticipants.length === 0 && (
-                    <div className="text-center py-10 text-oro/20 text-xs font-black uppercase tracking-wider">Vacío</div>
-                  )}
-                </div>
-              </div>
+                      )}
 
-              {/* COLUMN 2 & 3: CENTER (COMBAT CONTROLS, TURN QUEUE, AND LOGS) */}
-              <div className="lg:col-span-2 flex flex-col gap-6">
-
-                {/* TURN QUEUE CONTAINER */}
-                <div className="ninja-card-oro p-4 relative overflow-hidden">
-                  <div className="flex flex-col sm:flex-row justify-between sm:items-center border-b border-oro/10 pb-4 mb-4 gap-3">
-                    <div className="flex items-center gap-3">
-                      <h2 className="font-black text-sm uppercase tracking-[0.2em]">ORDEN DE TURNOS</h2>
-                    </div>
-                    <div className="text-caption font-black text-oro/50 uppercase tracking-widest">
-                      Ronda: <span className="text-oro font-bold text-base">{rondaActual}</span>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-wrap gap-3 mb-6">
-                    <button
-                      onClick={toggleJoinCombat}
-                      className={`px-5 py-2.5 text-xs ${myIsInCombat
-                        ? 'ninja-btn-rojo'
-                        : 'ninja-btn-oro'
-                        }`}
-                    >
-                      {myIsInCombat ? 'Salir del Combate' : 'Unirse al Combate'}
-                    </button>
-
-                    {!combatStarted ? (
-                      <button
-                        onClick={startCombat}
-                        disabled={turnQueue.length === 0}
-                        className="ninja-btn-oro px-5 py-2.5 text-xs flex items-center gap-2"
-                      >
-                        <Play className="w-3.5 h-3.5 fill-rojo-sangre" /> Iniciar Combate
-                      </button>
-                    ) : (
-                      <button
-                        onClick={passTurn}
-                        className="ninja-btn-oro px-6 py-2.5 text-xs flex items-center gap-2"
-                      >
-                        Pasar Turno
-                      </button>
-                    )}
-
-                    <button
-                      onClick={resetCombat}
-                      className="ninja-btn-ghost px-5 py-2.5 text-xs flex items-center gap-2"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" /> Reiniciar
-                    </button>
-                  </div>
-
-                  {/* Turn Queue List */}
-                  <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1">
-                    {turnQueue.map((charId, idx) => {
-                      const part = allParticipantsMap[charId];
-                      const isActive = combatStarted && idx === currentTurnIndex;
-                      if (!part) return null;
-
-                      return (
-                        <div
-                          key={`${charId}-${idx}`}
-                          className={`flex items-center justify-between p-3 border rounded-sm transition-all ${isActive
-                            ? 'bg-oro/10 border-oro shadow-[0_0_15px_rgba(255,230,159,0.15)]'
-                            : 'bg-black/30 border-oro/5 hover:border-oro/15'
-                            }`}
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="font-mono text-xs text-oro/40 w-4">{idx + 1}.</div>
-                            <div className="w-6 h-6 bg-black border border-oro/20 overflow-hidden flex items-center justify-center shrink-0">
-                              {part.url_img ? (
-                                <img src={part.url_img} alt="Avatar" className="w-full h-full object-cover object-top" />
-                              ) : (
-                                <span className="text-oro font-black text-[10px]">{part.nombre.charAt(0)}</span>
-                              )}
-                            </div>
-                            <span className={`font-black text-xs uppercase tracking-wide truncate ${isActive ? 'text-oro' : 'text-oro/70'}`}>
-                              {part.nombre}
-                            </span>
-                            {isActive && (
-                              <span className="text-[9px] font-black uppercase text-rojo-sangre bg-oro px-1.5 py-0.5 rounded-sm animate-pulse">
-                                Turno Activo
-                              </span>
+                      {isEventMode && (
+                        <div className="space-y-2.5 pt-2 border-t border-oro/10 mt-1 animate-in fade-in duration-300">
+                          {/* Traits (Rasgos) */}
+                          <div className="space-y-1">
+                            <span className="text-[9px] text-oro/40 uppercase font-black block tracking-wider">Rasgos:</span>
+                            {p.rasgos && p.rasgos.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {p.rasgos.map((r: any) => {
+                                  const isSelf = String(activeCharacter?.id) === p.user_id;
+                                  const canToggle = isSelf || canControlTemp;
+                                  return (
+                                    <button
+                                      key={r.id}
+                                      disabled={!canToggle}
+                                      onClick={() => {
+                                        if (!canToggle) return;
+                                        if (isTemp) {
+                                          const newRasgos = (p.rasgos || []).map((rr: any) => rr.id === r.id ? { ...rr, usado: !rr.usado } : rr);
+                                          updateTempCharacter(p.user_id, { rasgos: newRasgos });
+                                          addLog(`**[NPC] ${p.nombre}** marca el rasgo **${r.nombre}** como ${!r.usado ? 'usado' : 'disponible'}.`);
+                                        } else if (localState) {
+                                          const currentUsed = localState.usedTraits || {};
+                                          const updatedUsed = { ...currentUsed, [r.id]: !currentUsed[r.id] };
+                                          const updated = { ...localState, usedTraits: updatedUsed };
+                                          setLocalState(updated);
+                                          addLog(`**${activeCharacter.nombre_ninja}** marca el rasgo **${r.nombre}** como ${updatedUsed[r.id] ? 'usado' : 'disponible'}.`);
+                                        }
+                                      }}
+                                      className={`px-1.5 py-0.5 border text-[9px] font-black transition-all flex items-center gap-1 rounded-sm ${r.usado
+                                        ? 'bg-red-500/10 border-red-500/30 text-red-400 line-through'
+                                        : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
+                                        } ${canToggle ? 'cursor-pointer' : 'cursor-default'}`}
+                                      title={canToggle ? `Haga clic para cambiar estado de ${r.nombre}` : r.nombre}
+                                    >
+                                      <span>{r.nombre}</span>
+                                      <span>{r.usado ? '✕' : '✓'}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <span className="text-[9px] text-oro/20 italic block">Sin rasgos</span>
                             )}
                           </div>
 
-                          {/* Queue sorting/management */}
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <button
-                              onClick={() => moveQueueItem(idx, 'up')}
-                              disabled={idx === 0}
-                              className="p-1 hover:bg-oro/5 text-oro/40 hover:text-oro disabled:opacity-20"
-                              title="Subir turno"
-                            >
-                              <ChevronUp className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => moveQueueItem(idx, 'down')}
-                              disabled={idx === turnQueue.length - 1}
-                              className="p-1 hover:bg-oro/5 text-oro/40 hover:text-oro disabled:opacity-20"
-                              title="Bajar turno"
-                            >
-                              <ChevronDown className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => removeFromQueue(charId)}
-                              className="p-1 hover:bg-rojo-sangre/10 text-oro/30 hover:text-red-400 ml-2"
-                              title="Retirar de turnos"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                          {/* Equipment (Equipo) */}
+                          <div className="space-y-1">
+                            <span className="text-[9px] text-oro/40 uppercase font-black block tracking-wider">Equipo Equipado:</span>
+                            {p.equipo && p.equipo.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {p.equipo.map((eq: any) => (
+                                  <span
+                                    key={eq.id}
+                                    className="px-1.5 py-0.5 bg-black/40 border border-oro/10 text-[9px] font-black text-oro/70 rounded-sm"
+                                  >
+                                    {eq.nombre}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-[9px] text-oro/20 italic block">Sin equipo equipado</span>
+                            )}
                           </div>
                         </div>
-                      );
-                    })}
+                      )}
 
-                    {turnQueue.length === 0 && (
-                      <div className="text-center py-8 text-oro/20 text-xs font-black uppercase tracking-wider italic">
-                        Sin ninjas en la fila de turnos. Pulsa "Unirse al Combate" para empezar.
-                      </div>
-                    )}
+                      {/* Active & Cooldown Techniques */}
+                      {((p.tecnicasActivas && p.tecnicasActivas.length > 0) || (p.cooldowns && p.cooldowns.length > 0 && p.cooldowns.some((c: any) => (c.reusableAtRound - rondaActual) > 0))) && (
+                        <div className="space-y-2 pt-2 border-t border-oro/10 mt-1.5 animate-in fade-in duration-300">
+                          {p.tecnicasActivas && p.tecnicasActivas.length > 0 && (
+                            <div className="space-y-1">
+                              <span className="text-[9px] text-emerald-400 uppercase font-black block tracking-wider">Técnicas Activas:</span>
+                              <div className="flex flex-wrap gap-1">
+                                {p.tecnicasActivas.map((ta: any) => (
+                                  <span
+                                    key={ta.id}
+                                    className="px-1.5 py-0.5 bg-emerald-950/40 border border-emerald-500/30 text-[9px] font-black text-emerald-300 rounded-sm"
+                                  >
+                                    {ta.nombre}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {p.cooldowns && p.cooldowns.length > 0 && p.cooldowns.some((c: any) => (c.reusableAtRound - rondaActual) > 0) && (
+                            <div className="space-y-1">
+                              <span className="text-[9px] text-red-400 uppercase font-black block tracking-wider">Técnicas en CD:</span>
+                              <div className="flex flex-wrap gap-1">
+                                {p.cooldowns.map((c: any) => {
+                                  const remaining = c.reusableAtRound - rondaActual;
+                                  if (remaining <= 0) return null;
+                                  const isActive = p.tecnicasActivas?.some((ta: any) => ta.id === c.id);
+                                  return (
+                                    <span
+                                      key={c.id}
+                                      className="px-1.5 py-0.5 bg-red-950/40 border border-red-500/30 text-[9px] font-black text-red-400 rounded-sm flex items-center gap-1"
+                                    >
+                                      <span>{c.nombre}</span>
+                                      <span className="text-[8px] font-mono opacity-80">
+                                        ({isActive ? 'Pausado' : `${remaining} R`})
+                                      </span>
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
+                );
+              })}
+              {bandoAParticipants.length === 0 && (
+                <div className="text-center py-10 text-oro/20 text-xs font-black uppercase tracking-wider">Vacío</div>
+              )}
+            </div>
+          </div>
+
+          {/* COLUMN 2 & 3: CENTER (COMBAT CONTROLS, TURN QUEUE, AND LOGS) */}
+          <div className="lg:col-span-2 flex flex-col gap-6">
+
+            {/* TURN QUEUE CONTAINER */}
+            <div className="ninja-card-oro p-4 relative overflow-hidden">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center border-b border-oro/10 pb-4 mb-4 gap-3">
+                <div className="flex items-center gap-3">
+                  <h2 className="font-black text-sm uppercase tracking-[0.2em]">ORDEN DE TURNOS</h2>
                 </div>
-
-                {/* COMBAT LOGS */}
-                <div className="ninja-card-oro p-6 flex flex-col relative overflow-hidden h-[500px] min-h-[300px] max-h-[500px]">
-                  <h3 className="font-black text-sm uppercase tracking-[0.2em] border-b border-oro/10 pb-4 mb-4">
-                    REGISTRO DE COMBATE
-                  </h3>
-
-                  <div className="flex-1 overflow-y-auto space-y-3.5 pr-2 font-mono text-xs text-oro/75 custom-scrollbar">
-                    {[...logs].reverse().map((log, i) => (
-                      <div
-                        key={i}
-                        className="border-b border-oro/5 pb-2 last:border-0 leading-relaxed animate-fade-in"
-                        dangerouslySetInnerHTML={{
-                          __html: log
-                            .replace(/\*\*(.*?)\*\*/g, '<strong class="text-oro font-black">$1</strong>')
-                        }}
-                      />
-                    ))}
-                    {logs.length === 0 && (
-                      <div className="text-oro/20 italic text-center py-12 uppercase tracking-widest">
-                        Esperando sucesos en el campo de batalla...
-                      </div>
-                    )}
-                  </div>
+                <div className="text-caption font-black text-oro/50 uppercase tracking-widest">
+                  Ronda: <span className="text-oro font-bold text-base">{rondaActual}</span>
                 </div>
               </div>
 
-              {/* COLUMN 4: BANDO B */}
-              <div className="lg:col-span-1 flex flex-col gap-4 ninja-card-rojo p-6 relative overflow-hidden">
-                <div className="flex items-center justify-between border-b border-oro/10 pb-4 mb-2 gap-2">
-                  <h2 className="font-black text-sm uppercase tracking-[0.2em] flex items-center gap-2 shrink-0">
-                    BANDO B
-                  </h2>
-                  {/* Bando Selector for Self */}
-                  {myIsInCombat && myBando !== 'B' && (
-                    <button
-                      onClick={() => selectBando('B')}
-                      className="ninja-btn-rojo py-1.5 px-4 text-xs text-center"
+              {/* Action Buttons */}
+              <div className="flex flex-wrap gap-3 mb-6">
+                <button
+                  onClick={toggleJoinCombat}
+                  className={`px-5 py-2.5 text-xs ${myIsInCombat
+                    ? 'ninja-btn-rojo'
+                    : 'ninja-btn-oro'
+                    }`}
+                >
+                  {myIsInCombat ? 'Salir del Combate' : 'Unirse al Combate'}
+                </button>
+
+                {!combatStarted ? (
+                  <button
+                    onClick={startCombat}
+                    disabled={turnQueue.length === 0}
+                    className="ninja-btn-oro px-5 py-2.5 text-xs flex items-center gap-2"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-rojo-sangre" /> Iniciar Combate
+                  </button>
+                ) : (
+                  <button
+                    onClick={passTurn}
+                    className="ninja-btn-oro px-6 py-2.5 text-xs flex items-center gap-2"
+                  >
+                    Pasar Turno
+                  </button>
+                )}
+
+                <button
+                  onClick={resetCombat}
+                  className="ninja-btn-ghost px-5 py-2.5 text-xs flex items-center gap-2"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" /> Reiniciar
+                </button>
+              </div>
+
+              {/* Turn Queue List */}
+              <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1">
+                {turnQueue.map((charId, idx) => {
+                  const part = allParticipantsMap[charId];
+                  const isActive = combatStarted && idx === currentTurnIndex;
+                  if (!part) return null;
+
+                  return (
+                    <div
+                      key={`${charId}-${idx}`}
+                      className={`flex items-center justify-between p-3 border rounded-sm transition-all ${isActive
+                        ? 'bg-oro/10 border-oro shadow-[0_0_15px_rgba(255,230,159,0.15)]'
+                        : 'bg-black/30 border-oro/5 hover:border-oro/15'
+                        }`}
                     >
-                      Unirse
-                    </button>
-                  )}
-                  <span className="text-caption font-black bg-oro/10 border border-oro/30 text-oro px-2.5 py-0.5 rounded-sm shrink-0">
-                    {bandoBParticipants.length} ninjas
-                  </span>
-                </div>
-
-                <div className="flex-1 overflow-y-auto space-y-4 pr-1 mt-4 scrollbar-hide">
-                  {bandoBParticipants.map(p => {
-                    const isTemp = !!tempCharacters[p.user_id];
-                    const canControlTemp = isTemp && isAdminOrNarrator;
-                    return (
-                      <div key={p.user_id} className={`border p-4 rounded-sm hover:border-oro/20 transition-all ${isTemp ? 'bg-purple-950/20 border-purple-500/20' : 'bg-black/40 border-oro/5'}`}>
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-black border border-oro/20 overflow-hidden flex items-center justify-center shrink-0">
-                              {p.url_img ? (
-                                <img src={p.url_img} alt="Avatar" className="w-full h-full object-cover object-top" />
-                              ) : (
-                                <span className="text-oro font-black text-xs">{p.nombre.charAt(0)}</span>
-                              )}
-                            </div>
-                            <div>
-                              <div className="font-black text-sm text-oro uppercase tracking-wider truncate max-w-[120px]">{p.nombre}</div>
-                              <div className="flex gap-1 flex-wrap">
-                                {p.isInCombat && (
-                                  <span className="text-[9px] font-black uppercase text-red-400 bg-red-950/40 border border-red-500/20 px-1 rounded-sm">Combatiente</span>
-                                )}
-                                {isTemp && (
-                                  <span className="text-[9px] font-black uppercase text-purple-400 bg-purple-950/40 border border-purple-500/20 px-1 rounded-sm">NPC</span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          {canControlTemp && (
-                            <div className="flex items-center gap-1 ml-1 shrink-0">
-                              <button
-                                onClick={() => {
-                                  const inQueue = turnQueue.includes(p.user_id);
-                                  let newQueue;
-                                  if (inQueue) {
-                                    newQueue = turnQueue.filter(id => id !== p.user_id);
-                                  } else {
-                                    newQueue = [...turnQueue, p.user_id];
-                                  }
-                                  let newIndex = currentTurnIndex;
-                                  if (newIndex >= newQueue.length && newQueue.length > 0) newIndex = 0;
-                                  updateGlobalCombatState(newQueue, newIndex, rondaActual, newQueue.length > 0 ? combatStarted : false);
-                                  addLog(`**[NPC] ${p.nombre}** ${inQueue ? 'sale del combate' : 'se une a los turnos'}.`);
-                                }}
-                                className={`p-1 rounded-sm transition-all ${turnQueue.includes(p.user_id) ? 'text-emerald-450 hover:text-emerald-300 hover:bg-emerald-950/20' : 'text-oro/40 hover:text-oro hover:bg-oro/10'}`}
-                                title={turnQueue.includes(p.user_id) ? "Retirar del orden de turnos" : "Añadir al orden de turnos"}
-                              >
-                                <Play className={`w-3.5 h-3.5 ${turnQueue.includes(p.user_id) ? 'fill-emerald-400' : ''}`} />
-                              </button>
-                              <button
-                                onClick={() => removeTempCharacter(p.user_id)}
-                                className="p-1 text-red-500/40 hover:text-red-400 hover:bg-red-950/20 rounded-sm transition-all"
-                                title="Eliminar NPC"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="font-mono text-xs text-oro/40 w-4">{idx + 1}.</div>
+                        <div className="w-6 h-6 bg-black border border-oro/20 overflow-hidden flex items-center justify-center shrink-0">
+                          {part.url_img ? (
+                            <img src={part.url_img} alt="Avatar" className="w-full h-full object-cover object-top" />
+                          ) : (
+                            <span className="text-oro font-black text-[10px]">{part.nombre.charAt(0)}</span>
                           )}
                         </div>
-
-                        {/* Stats bars */}
-                        <div className="space-y-2.5">
-                          {(!p.ocultar_vit || isAdminOrNarrator) && (
-                            <div>
-                              <div className="flex justify-between items-center text-[10px] font-black mb-1">
-                                <span className="text-red-400">
-                                  VIT {p.ocultar_vit && <span className="text-purple-400 text-[8px] font-black uppercase tracking-wider">(Oculta)</span>}
-                                </span>
-                                <div className="flex items-center gap-1">
-                                  {canControlTemp && (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const isHidden = !!p.ocultar_vit;
-                                        updateTempCharacter(p.user_id, { ocultar_vit: !isHidden });
-                                        addLog(`**[NPC] ${p.nombre}** ahora tiene su vitalidad **${!isHidden ? 'oculta' : 'visible'}**.`);
-                                      }}
-                                      className={`p-0.5 rounded-sm transition-all hover:bg-oro/10 ${p.ocultar_vit ? 'text-amber-500 hover:text-amber-400' : 'text-oro/40 hover:text-oro'}`}
-                                      title={p.ocultar_vit ? "Mostrar vitalidad" : "Ocultar vitalidad"}
-                                    >
-                                      {p.ocultar_vit ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                                    </button>
-                                  )}
-                                  <span>{p.estado?.vit} / {p.estado?.maxVit}</span>
-                                </div>
-                              </div>
-                              <div className="h-2 bg-black/60 border border-oro/5 rounded-full overflow-hidden">
-                                <div className="h-full bg-red-500 transition-all duration-300" style={{ width: `${(p.estado?.vit / p.estado?.maxVit) * 100}%` }} />
-                              </div>
-                            </div>
-                          )}
-                          {!isEventMode && (
-                            <div>
-                              <div className="flex justify-between text-[10px] font-black mb-1">
-                                <span className="text-blue-400">CH</span>
-                                <span>
-                                  {String(activeCharacter?.id) === p.user_id ? (localState?.ch ?? p.estado?.ch) : p.estado?.ch}
-                                  {' / '}
-                                  {String(activeCharacter?.id) === p.user_id ? (localState?.maxCh ?? p.estado?.maxCh) : p.estado?.maxCh}
-                                </span>
-                              </div>
-                              <div className="h-2 bg-black/60 border border-oro/5 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-blue-500 transition-all duration-300"
-                                  style={{
-                                    width: `${(
-                                      (String(activeCharacter?.id) === p.user_id ? (localState?.ch ?? p.estado?.ch) : p.estado?.ch) /
-                                      (String(activeCharacter?.id) === p.user_id ? (localState?.maxCh ?? p.estado?.maxCh) : p.estado?.maxCh)
-                                    ) * 100}%`
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          )}
-
-                          {/* NPC Inline Controls */}
-                          {canControlTemp && (
-                            <div className="flex gap-1 pt-1">
-                              <input
-                                type="number"
-                                min="1"
-                                placeholder="Cant."
-                                id={`npc-vit-input-b-${p.user_id}`}
-                                className="w-14 bg-black/50 border border-purple-500/20 text-oro px-2 py-1 text-[9px] font-black outline-none focus:border-purple-400 transition-all rounded-sm"
-                              />
-                              <button
-                                onClick={() => {
-                                  const el = document.getElementById(`npc-vit-input-b-${p.user_id}`) as HTMLInputElement;
-                                  const val = parseInt(el?.value || '0');
-                                  if (val > 0) {
-                                    const newVit = Math.max(0, (p.estado?.vit ?? 0) - val);
-                                    updateTempCharacter(p.user_id, { estado: { ...p.estado, vit: newVit } });
-                                    addLog(`**[NPC] ${p.nombre}** recibe **${val}** de daño. VIT: **${newVit}**/**${p.estado?.maxVit}**.`);
-                                    el.value = '';
-                                  }
-                                }}
-                                className="flex-1 py-1 text-[9px] font-black bg-red-950/40 border border-red-500/20 text-red-400 hover:bg-red-950/60 transition-all rounded-sm"
-                              >Daño</button>
-                              <button
-                                onClick={() => {
-                                  const el = document.getElementById(`npc-vit-input-b-${p.user_id}`) as HTMLInputElement;
-                                  const val = parseInt(el?.value || '0');
-                                  if (val > 0) {
-                                    const newVit = Math.min(p.estado?.maxVit ?? 0, (p.estado?.vit ?? 0) + val);
-                                    updateTempCharacter(p.user_id, { estado: { ...p.estado, vit: newVit } });
-                                    addLog(`**[NPC] ${p.nombre}** se cura **+${val}** VIT. VIT: **${newVit}**/**${p.estado?.maxVit}**.`);
-                                    el.value = '';
-                                  }
-                                }}
-                                className="flex-1 py-1 text-[9px] font-black bg-emerald-950/40 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-950/60 transition-all rounded-sm"
-                              >Sanar</button>
-                            </div>
-                          )}
-
-                          {!isTemp && (
-                            <div className="flex flex-col gap-2 text-[10px] font-black pt-2 border-t border-oro/10 mt-1">
-                              <div className="flex items-center gap-1">
-                                <span className="text-amber-500 uppercase tracking-wider">VEL:</span>
-                                <span className="text-white">{p.estado?.vel ?? 0}</span>
-                              </div>
-                              {!isEventMode && (
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-emerald-400 uppercase tracking-wider">KAWARIMI:</span>
-                                  <div className="flex gap-1">
-                                    {Array.from({ length: String(activeCharacter?.id) === p.user_id ? (localState?.maxKawarimi ?? p.estado?.maxKawarimi ?? 1) : (p.estado?.maxKawarimi || 1) }, (_, i) => i + 1).map((num) => {
-                                      const effectiveKawarimi = String(activeCharacter?.id) === p.user_id ? (localState?.kawarimi ?? p.estado?.kawarimi ?? 0) : (p.estado?.kawarimi ?? 0);
-                                      const isUsed = effectiveKawarimi >= num;
-                                      const isSelf = String(activeCharacter?.id) === p.user_id;
-                                      return (
-                                        <button
-                                          key={num}
-                                          disabled={!isSelf}
-                                          onClick={() => {
-                                            if (!isSelf || !localState) return;
-                                            const newKawarimi = localState.kawarimi === num ? num - 1 : num;
-                                            const updated = { ...localState, kawarimi: newKawarimi };
-                                            setLocalState(updated);
-                                            addLog(`**${activeCharacter.nombre_ninja}** marca Kawarimi ${newKawarimi >= num ? 'usado' : 'recuperado'} (${newKawarimi}/${localState.maxKawarimi}).`);
-                                          }}
-                                          className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center text-[8px] transition-all font-black ${isUsed
-                                            ? 'bg-red-500/20 border-red-500 text-red-500'
-                                            : 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30'
-                                            } ${isSelf ? 'cursor-pointer' : 'cursor-default'}`}
-                                          title={isSelf ? `Marcar Kawarimi ${num} como ${isUsed ? 'disponible' : 'usado'}` : `Kawarimi ${num}`}
-                                        >
-                                          {isUsed ? '✕' : '✓'}
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              )}
-                              {!isEventMode && (
-                                <div className="flex items-center gap-1.5 text-[10px] font-black">
-                                  <span className="text-blue-400 uppercase tracking-wider">CH CONSTANTE:</span>
-                                  <button
-                                    type="button"
-                                    disabled={String(activeCharacter?.id) !== p.user_id}
-                                    onClick={() => {
-                                      const isSelf = String(activeCharacter?.id) === p.user_id;
-                                      if (!isSelf || !localState) return;
-                                      toggleConstantCh(!localState.chConstanteActive);
-                                    }}
-                                    className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center text-[8px] transition-all font-black ${String(activeCharacter?.id) === p.user_id
-                                      ? (localState?.chConstanteActive
-                                        ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30'
-                                        : 'bg-red-500/20 border-red-500 text-red-500 hover:bg-red-500/30')
-                                      : (p.estado?.chConstanteActive
-                                        ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400'
-                                        : 'bg-red-500/20 border-red-500 text-red-500')
-                                      } ${String(activeCharacter?.id) === p.user_id ? 'cursor-pointer' : 'cursor-default'}`}
-                                    title={String(activeCharacter?.id) === p.user_id ? (localState?.chConstanteActive ? 'Desactivar CH constante' : 'Activar CH constante') : (p.estado?.chConstanteActive ? 'CH constante activo' : 'CH constante inactivo')}
-                                  >
-                                    {String(activeCharacter?.id) === p.user_id ? (localState?.chConstanteActive ? '✕' : '✓') : (p.estado?.chConstanteActive ? '✕' : '✓')}
-                                  </button>
-                                  <span className={`font-mono font-black text-[9px] uppercase tracking-wider ${String(activeCharacter?.id) === p.user_id ? 'text-blue-100' : 'text-blue-200/80'}`}>
-                                    {String(activeCharacter?.id) === p.user_id ? (localState?.chConstanteActive ? 'Activo' : 'Inactivo') : (p.estado?.chConstanteActive ? 'Activo' : 'Inactivo')}
-                                  </span>
-                                  <span className="font-mono text-[9px] font-black text-blue-100 bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded-sm">
-                                    -{String(activeCharacter?.id) === p.user_id ? (localState?.chConstanteCost ?? 0) : (p.estado?.chConstanteCost ?? 0)} CH/Ronda
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {isEventMode && (
-                            <div className="space-y-2.5 pt-2 border-t border-oro/10 mt-1 animate-in fade-in duration-300">
-                              <div className="space-y-1">
-                                <span className="text-[9px] text-oro/40 uppercase font-black block tracking-wider">Rasgos:</span>
-                                {p.rasgos && p.rasgos.length > 0 ? (
-                                  <div className="flex flex-wrap gap-1">
-                                    {p.rasgos.map((r: any) => {
-                                      const isSelf = String(activeCharacter?.id) === p.user_id;
-                                      const canToggle = isSelf || canControlTemp;
-                                      return (
-                                        <button
-                                          key={r.id}
-                                          disabled={!canToggle}
-                                          onClick={() => {
-                                            if (!canToggle) return;
-                                            if (isTemp) {
-                                              const newRasgos = (p.rasgos || []).map((rr: any) => rr.id === r.id ? { ...rr, usado: !rr.usado } : rr);
-                                              updateTempCharacter(p.user_id, { rasgos: newRasgos });
-                                              addLog(`**[NPC] ${p.nombre}** marca el rasgo **${r.nombre}** como ${!r.usado ? 'usado' : 'disponible'}.`);
-                                            } else if (localState) {
-                                              const currentUsed = localState.usedTraits || {};
-                                              const updatedUsed = { ...currentUsed, [r.id]: !currentUsed[r.id] };
-                                              setLocalState({ ...localState, usedTraits: updatedUsed });
-                                              addLog(`**${activeCharacter.nombre_ninja}** marca el rasgo **${r.nombre}** como ${updatedUsed[r.id] ? 'usado' : 'disponible'}.`);
-                                            }
-                                          }}
-                                          className={`px-1.5 py-0.5 border text-[9px] font-black transition-all flex items-center gap-1 rounded-sm ${r.usado ? 'bg-red-500/10 border-red-500/30 text-red-400 line-through' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'} ${canToggle ? 'cursor-pointer' : 'cursor-default'}`}
-                                          title={canToggle ? `Haga clic para cambiar estado de ${r.nombre}` : r.nombre}
-                                        >
-                                          <span>{r.nombre}</span>
-                                          <span>{r.usado ? '✕' : '✓'}</span>
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-                                ) : (
-                                  <span className="text-[9px] text-oro/20 italic block">Sin rasgos</span>
-                                )}
-                              </div>
-                              <div className="space-y-1">
-                                <span className="text-[9px] text-oro/40 uppercase font-black block tracking-wider">Equipo Equipado:</span>
-                                {p.equipo && p.equipo.length > 0 ? (
-                                  <div className="flex flex-wrap gap-1">
-                                    {p.equipo.map((eq: any) => (
-                                      <span key={eq.id} className="px-1.5 py-0.5 bg-black/40 border border-oro/10 text-[9px] font-black text-oro/70 rounded-sm">{eq.nombre}</span>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <span className="text-[9px] text-oro/20 italic block">Sin equipo equipado</span>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
+                        <span className={`font-black text-xs uppercase tracking-wide truncate ${isActive ? 'text-oro' : 'text-oro/70'}`}>
+                          {part.nombre}
+                        </span>
+                        {isActive && (
+                          <span className="text-[9px] font-black uppercase text-rojo-sangre bg-oro px-1.5 py-0.5 rounded-sm animate-pulse">
+                            Turno Activo
+                          </span>
+                        )}
                       </div>
-                    );
-                  })}
-                  {bandoBParticipants.length === 0 && (
-                    <div className="text-center py-10 text-oro/20 text-xs font-black uppercase tracking-wider">Vacío</div>
-                  )}
-                </div>
+
+                      {/* Queue sorting/management */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          onClick={() => moveQueueItem(idx, 'up')}
+                          disabled={idx === 0}
+                          className="p-1 hover:bg-oro/5 text-oro/40 hover:text-oro disabled:opacity-20"
+                          title="Subir turno"
+                        >
+                          <ChevronUp className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => moveQueueItem(idx, 'down')}
+                          disabled={idx === turnQueue.length - 1}
+                          className="p-1 hover:bg-oro/5 text-oro/40 hover:text-oro disabled:opacity-20"
+                          title="Bajar turno"
+                        >
+                          <ChevronDown className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => removeFromQueue(charId)}
+                          className="p-1 hover:bg-rojo-sangre/10 text-oro/30 hover:text-red-400 ml-2"
+                          title="Retirar de turnos"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {turnQueue.length === 0 && (
+                  <div className="text-center py-8 text-oro/20 text-xs font-black uppercase tracking-wider italic">
+                    Sin ninjas en la fila de turnos. Pulsa "Unirse al Combate" para empezar.
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* SPECTATORS PANEL */}
-            {spectatorParticipants.length > 0 && (
-              <div className="ninja-card-oro p-4 relative">
-                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-oro/40 border-b border-oro/10 pb-2 mb-2">Espectadores en la sala</h4>
-                <div className="flex flex-wrap gap-3">
-                  {spectatorParticipants.map(s => (
-                    <span key={s.user_id} className="text-xs font-black text-oro/60 bg-black/40 border border-oro/5 px-3 py-1">
-                      {s.nombre}
-                    </span>
-                  ))}
-                </div>
+            {/* COMBAT LOGS */}
+            <div className="ninja-card-oro p-6 flex flex-col relative overflow-hidden h-[500px] min-h-[300px] max-h-[500px]">
+              <h3 className="font-black text-sm uppercase tracking-[0.2em] border-b border-oro/10 pb-4 mb-4">
+                REGISTRO DE COMBATE
+              </h3>
+
+              <div className="flex-1 overflow-y-auto space-y-3.5 pr-2 font-mono text-xs text-oro/75 custom-scrollbar">
+                {[...logs].reverse().map((log, i) => (
+                  <div
+                    key={i}
+                    className="border-b border-oro/5 pb-2 last:border-0 leading-relaxed animate-fade-in"
+                    dangerouslySetInnerHTML={{
+                      __html: log
+                        .replace(/\*\*(.*?)\*\*/g, '<strong class="text-oro font-black">$1</strong>')
+                    }}
+                  />
+                ))}
+                {logs.length === 0 && (
+                  <div className="text-oro/20 italic text-center py-12 uppercase tracking-widest">
+                    Esperando sucesos en el campo de batalla...
+                  </div>
+                )}
               </div>
-            )}
+            </div>
+          </div>
 
-            {/* BOTTOM PANEL: PLAYER CONSOLE CONTROLS */}
-            <section className="ninja-card-oro p-6 md:p-8 relative" style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}>
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          {/* COLUMN 4: BANDO B */}
+          <div className="lg:col-span-1 flex flex-col gap-4 ninja-card-rojo p-6 relative overflow-hidden">
+            <div className="flex items-center justify-between border-b border-oro/10 pb-4 mb-2 gap-2">
+              <h2 className="font-black text-sm uppercase tracking-[0.2em] flex items-center gap-2 shrink-0">
+                BANDO B
+              </h2>
+              {/* Bando Selector for Self */}
+              {myIsInCombat && myBando !== 'B' && (
+                <button
+                  onClick={() => selectBando('B')}
+                  className="ninja-btn-rojo py-1.5 px-4 text-xs text-center"
+                >
+                  Unirse
+                </button>
+              )}
+              <span className="text-caption font-black bg-oro/10 border border-oro/30 text-oro px-2.5 py-0.5 rounded-sm shrink-0">
+                {bandoBParticipants.length} ninjas
+              </span>
+            </div>
 
-                {/* 1. MY STATS */}
-                <div className="space-y-5">
-                  <h3 className="font-black text-sm uppercase tracking-[0.2em] border-b border-oro/10 pb-3 flex items-center gap-2.5">
-                    TU ESTADO EN COMBATE
-                  </h3>
-
-                  {localState && (
-                    <div className="space-y-5">
-                      <div>
-                        <div className="flex justify-between text-xs font-black mb-1.5">
-                          <span className="text-red-400">VITALIDAD (VIT)</span>
-                          <span>{localState.vit} / {localState.maxVit}</span>
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1 mt-4 scrollbar-hide">
+              {bandoBParticipants.map(p => {
+                const isTemp = !!tempCharacters[p.user_id];
+                const canControlTemp = isTemp && isAdminOrNarrator;
+                return (
+                  <div key={p.user_id} className={`border p-4 rounded-sm hover:border-oro/20 transition-all ${isTemp ? 'bg-purple-950/20 border-purple-500/20' : 'bg-black/40 border-oro/5'}`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-black border border-oro/20 overflow-hidden flex items-center justify-center shrink-0">
+                          {p.url_img ? (
+                            <img src={p.url_img} alt="Avatar" className="w-full h-full object-cover object-top" />
+                          ) : (
+                            <span className="text-oro font-black text-xs">{p.nombre.charAt(0)}</span>
+                          )}
                         </div>
-                        <div className="h-4 bg-black/60 border border-oro/15 rounded-full overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-red-600 to-red-500 transition-all duration-300" style={{ width: `${(localState.vit / localState.maxVit) * 100}%` }} />
+                        <div>
+                          <div className="font-black text-sm text-oro uppercase tracking-wider truncate max-w-[120px]">{p.nombre}</div>
+                          <div className="flex gap-1 flex-wrap">
+                            {p.isInCombat && (
+                              <span className="text-[9px] font-black uppercase text-red-400 bg-red-950/40 border border-red-500/20 px-1 rounded-sm">Combatiente</span>
+                            )}
+                            {isTemp && (
+                              <span className="text-[9px] font-black uppercase text-purple-400 bg-purple-950/40 border border-purple-500/20 px-1 rounded-sm">NPC</span>
+                            )}
+                          </div>
                         </div>
                       </div>
+                      {canControlTemp && (
+                        <div className="flex items-center gap-1 ml-1 shrink-0">
+                          <button
+                            onClick={() => {
+                              const inQueue = turnQueue.includes(p.user_id);
+                              let newQueue;
+                              if (inQueue) {
+                                newQueue = turnQueue.filter(id => id !== p.user_id);
+                              } else {
+                                newQueue = [...turnQueue, p.user_id];
+                              }
+                              let newIndex = currentTurnIndex;
+                              if (newIndex >= newQueue.length && newQueue.length > 0) newIndex = 0;
+                              updateGlobalCombatState(newQueue, newIndex, rondaActual, newQueue.length > 0 ? combatStarted : false);
+                              addLog(`**[NPC] ${p.nombre}** ${inQueue ? 'sale del combate' : 'se une a los turnos'}.`);
+                            }}
+                            className={`p-1 rounded-sm transition-all ${turnQueue.includes(p.user_id) ? 'text-emerald-450 hover:text-emerald-300 hover:bg-emerald-950/20' : 'text-oro/40 hover:text-oro hover:bg-oro/10'}`}
+                            title={turnQueue.includes(p.user_id) ? "Retirar del orden de turnos" : "Añadir al orden de turnos"}
+                          >
+                            <Play className={`w-3.5 h-3.5 ${turnQueue.includes(p.user_id) ? 'fill-emerald-400' : ''}`} />
+                          </button>
+                          <button
+                            onClick={() => removeTempCharacter(p.user_id)}
+                            className="p-1 text-red-500/40 hover:text-red-400 hover:bg-red-950/20 rounded-sm transition-all"
+                            title="Eliminar NPC"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
 
+                    {/* Stats bars */}
+                    <div className="space-y-2.5">
+                      {(!p.ocultar_vit || isAdminOrNarrator) && (
+                        <div>
+                          <div className="flex justify-between items-center text-[10px] font-black mb-1">
+                            <span className="text-red-400">
+                              VIT {p.ocultar_vit && <span className="text-purple-400 text-[8px] font-black uppercase tracking-wider">(Oculta)</span>}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              {canControlTemp && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const isHidden = !!p.ocultar_vit;
+                                    updateTempCharacter(p.user_id, { ocultar_vit: !isHidden });
+                                    addLog(`**[NPC] ${p.nombre}** ahora tiene su vitalidad **${!isHidden ? 'oculta' : 'visible'}**.`);
+                                  }}
+                                  className={`p-0.5 rounded-sm transition-all hover:bg-oro/10 ${p.ocultar_vit ? 'text-amber-500 hover:text-amber-400' : 'text-oro/40 hover:text-oro'}`}
+                                  title={p.ocultar_vit ? "Mostrar vitalidad" : "Ocultar vitalidad"}
+                                >
+                                  {p.ocultar_vit ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                </button>
+                              )}
+                              <span>{p.estado?.vit} / {p.estado?.maxVit}</span>
+                            </div>
+                          </div>
+                          <div className="h-2 bg-black/60 border border-oro/5 rounded-full overflow-hidden">
+                            <div className="h-full bg-red-500 transition-all duration-300" style={{ width: `${(p.estado?.vit / p.estado?.maxVit) * 100}%` }} />
+                          </div>
+                        </div>
+                      )}
                       {!isEventMode && (
                         <div>
-                          <div className="flex justify-between text-xs font-black mb-1.5">
-                            <span className="text-blue-400">CHAKRA (CH)</span>
-                            <span>{localState.ch} / {localState.maxCh}</span>
+                          <div className="flex justify-between text-[10px] font-black mb-1">
+                            <span className="text-blue-400">CH</span>
+                            <span>
+                              {String(activeCharacter?.id) === p.user_id ? (localState?.ch ?? p.estado?.ch) : p.estado?.ch}
+                              {' / '}
+                              {String(activeCharacter?.id) === p.user_id ? (localState?.maxCh ?? p.estado?.maxCh) : p.estado?.maxCh}
+                            </span>
                           </div>
-                          <div className="h-4 bg-black/60 border border-oro/15 rounded-full overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-blue-600 to-blue-500 transition-all duration-300" style={{ width: `${(localState.ch / localState.maxCh) * 100}%` }} />
+                          <div className="h-2 bg-black/60 border border-oro/5 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-blue-500 transition-all duration-300"
+                              style={{
+                                width: `${(
+                                  (String(activeCharacter?.id) === p.user_id ? (localState?.ch ?? p.estado?.ch) : p.estado?.ch) /
+                                  (String(activeCharacter?.id) === p.user_id ? (localState?.maxCh ?? p.estado?.maxCh) : p.estado?.maxCh)
+                                ) * 100}%`
+                              }}
+                            />
                           </div>
                         </div>
                       )}
 
-                      {/* VEL and KAWARIMI FOR SELF */}
-                      <div className="flex justify-between items-center text-xs font-black pt-3 border-t border-oro/10">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-amber-500 uppercase tracking-wider">VELOCIDAD:</span>
-                          <span className="text-white text-sm">{localState.vel}</span>
+                      {/* NPC Inline Controls */}
+                      {canControlTemp && (
+                        <div className="flex gap-1 pt-1">
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Cant."
+                            id={`npc-vit-input-b-${p.user_id}`}
+                            className="w-14 bg-black/50 border border-purple-500/20 text-oro px-2 py-1 text-[9px] font-black outline-none focus:border-purple-400 transition-all rounded-sm"
+                          />
+                          <button
+                            onClick={() => {
+                              const el = document.getElementById(`npc-vit-input-b-${p.user_id}`) as HTMLInputElement;
+                              const val = parseInt(el?.value || '0');
+                              if (val > 0) {
+                                const newVit = Math.max(0, (p.estado?.vit ?? 0) - val);
+                                updateTempCharacter(p.user_id, { estado: { ...p.estado, vit: newVit } });
+                                addLog(`**[NPC] ${p.nombre}** recibe **${val}** de daño. VIT: **${newVit}**/**${p.estado?.maxVit}**.`);
+                                el.value = '';
+                              }
+                            }}
+                            className="flex-1 py-1 text-[9px] font-black bg-red-950/40 border border-red-500/20 text-red-400 hover:bg-red-950/60 transition-all rounded-sm"
+                          >Daño</button>
+                          <button
+                            onClick={() => {
+                              const el = document.getElementById(`npc-vit-input-b-${p.user_id}`) as HTMLInputElement;
+                              const val = parseInt(el?.value || '0');
+                              if (val > 0) {
+                                const newVit = Math.min(p.estado?.maxVit ?? 0, (p.estado?.vit ?? 0) + val);
+                                updateTempCharacter(p.user_id, { estado: { ...p.estado, vit: newVit } });
+                                addLog(`**[NPC] ${p.nombre}** se cura **+${val}** VIT. VIT: **${newVit}**/**${p.estado?.maxVit}**.`);
+                                el.value = '';
+                              }
+                            }}
+                            className="flex-1 py-1 text-[9px] font-black bg-emerald-950/40 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-950/60 transition-all rounded-sm"
+                          >Sanar</button>
                         </div>
-                        {!isEventMode && (
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-emerald-400 uppercase tracking-wider">KAWARIMI:</span>
-                            <div className="flex gap-1.5">
-                              {Array.from({ length: localState.maxKawarimi || 1 }, (_, i) => i + 1).map((num) => {
-                                const isUsed = localState.kawarimi >= num;
-                                return (
-                                  <button
-                                    key={num}
-                                    onClick={() => {
-                                      const newKawarimi = localState.kawarimi === num ? num - 1 : num;
-                                      const updated = { ...localState, kawarimi: newKawarimi };
-                                      setLocalState(updated);
-                                      addLog(`**${activeCharacter.nombre_ninja}** marca Kawarimi ${newKawarimi >= num ? 'usado' : 'recuperado'} (${newKawarimi}/${localState.maxKawarimi}).`);
-                                    }}
-                                    className={`w-6 h-6 border rounded-sm flex items-center justify-center text-xs transition-all font-black ${isUsed
-                                      ? 'bg-red-500/20 border-red-500 text-red-500'
-                                      : 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30'
-                                      } cursor-pointer`}
-                                    title={`Marcar Kawarimi ${num} como ${isUsed ? 'disponible' : 'usado'}`}
+                      )}
+
+                      {!isTemp && (
+                        <div className="flex flex-col gap-2 text-[10px] font-black pt-2 border-t border-oro/10 mt-1">
+                          <div className="flex items-center gap-1">
+                            <span className="text-amber-500 uppercase tracking-wider">VEL:</span>
+                            <span className="text-white">{p.estado?.vel ?? 0}</span>
+                          </div>
+                          {!isEventMode && (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-emerald-400 uppercase tracking-wider">KAWARIMI:</span>
+                              <div className="flex gap-1">
+                                {Array.from({ length: String(activeCharacter?.id) === p.user_id ? (localState?.maxKawarimi ?? p.estado?.maxKawarimi ?? 1) : (p.estado?.maxKawarimi || 1) }, (_, i) => i + 1).map((num) => {
+                                  const effectiveKawarimi = String(activeCharacter?.id) === p.user_id ? (localState?.kawarimi ?? p.estado?.kawarimi ?? 0) : (p.estado?.kawarimi ?? 0);
+                                  const isUsed = effectiveKawarimi >= num;
+                                  const isSelf = String(activeCharacter?.id) === p.user_id;
+                                  return (
+                                    <button
+                                      key={num}
+                                      disabled={!isSelf}
+                                      onClick={() => {
+                                        if (!isSelf || !localState) return;
+                                        const newKawarimi = localState.kawarimi === num ? num - 1 : num;
+                                        const updated = { ...localState, kawarimi: newKawarimi };
+                                        setLocalState(updated);
+                                        addLog(`**${activeCharacter.nombre_ninja}** marca Kawarimi ${newKawarimi >= num ? 'usado' : 'recuperado'} (${newKawarimi}/${localState.maxKawarimi}).`);
+                                      }}
+                                      className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center text-[8px] transition-all font-black ${isUsed
+                                        ? 'bg-red-500/20 border-red-500 text-red-500'
+                                        : 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30'
+                                        } ${isSelf ? 'cursor-pointer' : 'cursor-default'}`}
+                                      title={isSelf ? `Marcar Kawarimi ${num} como ${isUsed ? 'disponible' : 'usado'}` : `Kawarimi ${num}`}
+                                    >
+                                      {isUsed ? '✕' : '✓'}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                          {!isEventMode && (
+                            <div className="flex items-center gap-1.5 text-[10px] font-black">
+                              <span className="text-blue-400 uppercase tracking-wider">CH CONSTANTE:</span>
+                              <button
+                                type="button"
+                                disabled={String(activeCharacter?.id) !== p.user_id}
+                                onClick={() => {
+                                  const isSelf = String(activeCharacter?.id) === p.user_id;
+                                  if (!isSelf || !localState) return;
+                                  toggleConstantCh(!localState.chConstanteActive);
+                                }}
+                                className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center text-[8px] transition-all font-black ${String(activeCharacter?.id) === p.user_id
+                                  ? (localState?.chConstanteActive
+                                    ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30'
+                                    : 'bg-red-500/20 border-red-500 text-red-500 hover:bg-red-500/30')
+                                  : (p.estado?.chConstanteActive
+                                    ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400'
+                                    : 'bg-red-500/20 border-red-500 text-red-500')
+                                  } ${String(activeCharacter?.id) === p.user_id ? 'cursor-pointer' : 'cursor-default'}`}
+                                title={String(activeCharacter?.id) === p.user_id ? (localState?.chConstanteActive ? 'Desactivar CH constante' : 'Activar CH constante') : (p.estado?.chConstanteActive ? 'CH constante activo' : 'CH constante inactivo')}
+                              >
+                                {String(activeCharacter?.id) === p.user_id ? (localState?.chConstanteActive ? '✕' : '✓') : (p.estado?.chConstanteActive ? '✕' : '✓')}
+                              </button>
+                              <span className={`font-mono font-black text-[9px] uppercase tracking-wider ${String(activeCharacter?.id) === p.user_id ? 'text-blue-100' : 'text-blue-200/80'}`}>
+                                {String(activeCharacter?.id) === p.user_id ? (localState?.chConstanteActive ? 'Activo' : 'Inactivo') : (p.estado?.chConstanteActive ? 'Activo' : 'Inactivo')}
+                              </span>
+                              <span className="font-mono text-[9px] font-black text-blue-100 bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded-sm">
+                                -{String(activeCharacter?.id) === p.user_id ? (localState?.chConstanteCost ?? 0) : (p.estado?.chConstanteCost ?? 0)} CH/Ronda
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {isEventMode && (
+                        <div className="space-y-2.5 pt-2 border-t border-oro/10 mt-1 animate-in fade-in duration-300">
+                          <div className="space-y-1">
+                            <span className="text-[9px] text-oro/40 uppercase font-black block tracking-wider">Rasgos:</span>
+                            {p.rasgos && p.rasgos.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {p.rasgos.map((r: any) => {
+                                  const isSelf = String(activeCharacter?.id) === p.user_id;
+                                  const canToggle = isSelf || canControlTemp;
+                                  return (
+                                    <button
+                                      key={r.id}
+                                      disabled={!canToggle}
+                                      onClick={() => {
+                                        if (!canToggle) return;
+                                        if (isTemp) {
+                                          const newRasgos = (p.rasgos || []).map((rr: any) => rr.id === r.id ? { ...rr, usado: !rr.usado } : rr);
+                                          updateTempCharacter(p.user_id, { rasgos: newRasgos });
+                                          addLog(`**[NPC] ${p.nombre}** marca el rasgo **${r.nombre}** como ${!r.usado ? 'usado' : 'disponible'}.`);
+                                        } else if (localState) {
+                                          const currentUsed = localState.usedTraits || {};
+                                          const updatedUsed = { ...currentUsed, [r.id]: !currentUsed[r.id] };
+                                          setLocalState({ ...localState, usedTraits: updatedUsed });
+                                          addLog(`**${activeCharacter.nombre_ninja}** marca el rasgo **${r.nombre}** como ${updatedUsed[r.id] ? 'usado' : 'disponible'}.`);
+                                        }
+                                      }}
+                                      className={`px-1.5 py-0.5 border text-[9px] font-black transition-all flex items-center gap-1 rounded-sm ${r.usado ? 'bg-red-500/10 border-red-500/30 text-red-400 line-through' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'} ${canToggle ? 'cursor-pointer' : 'cursor-default'}`}
+                                      title={canToggle ? `Haga clic para cambiar estado de ${r.nombre}` : r.nombre}
+                                    >
+                                      <span>{r.nombre}</span>
+                                      <span>{r.usado ? '✕' : '✓'}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <span className="text-[9px] text-oro/20 italic block">Sin rasgos</span>
+                            )}
+                          </div>
+                          <div className="space-y-1">
+                            <span className="text-[9px] text-oro/40 uppercase font-black block tracking-wider">Equipo Equipado:</span>
+                            {p.equipo && p.equipo.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {p.equipo.map((eq: any) => (
+                                  <span key={eq.id} className="px-1.5 py-0.5 bg-black/40 border border-oro/10 text-[9px] font-black text-oro/70 rounded-sm">{eq.nombre}</span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-[9px] text-oro/20 italic block">Sin equipo equipado</span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Active & Cooldown Techniques */}
+                      {((p.tecnicasActivas && p.tecnicasActivas.length > 0) || (p.cooldowns && p.cooldowns.length > 0 && p.cooldowns.some((c: any) => (c.reusableAtRound - rondaActual) > 0))) && (
+                        <div className="space-y-2 pt-2 border-t border-oro/10 mt-1.5 animate-in fade-in duration-300">
+                          {p.tecnicasActivas && p.tecnicasActivas.length > 0 && (
+                            <div className="space-y-1">
+                              <span className="text-[9px] text-emerald-400 uppercase font-black block tracking-wider">Técnicas Activas:</span>
+                              <div className="flex flex-wrap gap-1">
+                                {p.tecnicasActivas.map((ta: any) => (
+                                  <span
+                                    key={ta.id}
+                                    className="px-1.5 py-0.5 bg-emerald-950/40 border border-emerald-500/30 text-[9px] font-black text-emerald-300 rounded-sm"
                                   >
-                                    {isUsed ? '✕' : '✓'}
-                                  </button>
+                                    {ta.nombre}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {p.cooldowns && p.cooldowns.length > 0 && p.cooldowns.some((c: any) => (c.reusableAtRound - rondaActual) > 0) && (
+                            <div className="space-y-1">
+                              <span className="text-[9px] text-red-400 uppercase font-black block tracking-wider">Técnicas en CD:</span>
+                              <div className="flex flex-wrap gap-1">
+                                {p.cooldowns.map((c: any) => {
+                                  const remaining = c.reusableAtRound - rondaActual;
+                                  if (remaining <= 0) return null;
+                                  const isActive = p.tecnicasActivas?.some((ta: any) => ta.id === c.id);
+                                  return (
+                                    <span
+                                      key={c.id}
+                                      className="px-1.5 py-0.5 bg-red-950/40 border border-red-500/30 text-[9px] font-black text-red-400 rounded-sm flex items-center gap-1"
+                                    >
+                                      <span>{c.nombre}</span>
+                                      <span className="text-[8px] font-mono opacity-80">
+                                        ({isActive ? 'Pausado' : `${remaining} R`})
+                                      </span>
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              {bandoBParticipants.length === 0 && (
+                <div className="text-center py-10 text-oro/20 text-xs font-black uppercase tracking-wider">Vacío</div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* SPECTATORS PANEL */}
+        {spectatorParticipants.length > 0 && (
+          <div className="ninja-card-oro p-4 relative">
+            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-oro/40 border-b border-oro/10 pb-2 mb-2">Espectadores en la sala</h4>
+            <div className="flex flex-wrap gap-3">
+              {spectatorParticipants.map(s => (
+                <span key={s.user_id} className="text-xs font-black text-oro/60 bg-black/40 border border-oro/5 px-3 py-1">
+                  {s.nombre}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* BOTTOM PANEL: PLAYER CONSOLE CONTROLS */}
+        <section className="ninja-card-oro p-6 md:p-8 relative" style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}>
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+
+            {/* 1. MY STATS */}
+            <div className="space-y-5 xl:col-span-3">
+              <h3 className="font-black text-sm uppercase tracking-[0.2em] border-b border-oro/10 pb-3 flex items-center gap-2.5">
+                TU ESTADO EN COMBATE
+              </h3>
+
+              {localState && (
+                <div className="space-y-5">
+                  <div>
+                    <div className="flex justify-between text-xs font-black mb-1.5">
+                      <span className="text-red-400">VITALIDAD (VIT)</span>
+                      <span>{localState.vit} / {localState.maxVit}</span>
+                    </div>
+                    <div className="h-4 bg-black/60 border border-oro/15 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-red-600 to-red-500 transition-all duration-300" style={{ width: `${(localState.vit / localState.maxVit) * 100}%` }} />
+                    </div>
+                  </div>
+
+                  {!isEventMode && (
+                    <div>
+                      <div className="flex justify-between text-xs font-black mb-1.5">
+                        <span className="text-blue-400">CHAKRA (CH)</span>
+                        <span>{localState.ch} / {localState.maxCh}</span>
+                      </div>
+                      <div className="h-4 bg-black/60 border border-oro/15 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-blue-600 to-blue-500 transition-all duration-300" style={{ width: `${(localState.ch / localState.maxCh) * 100}%` }} />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* VEL and KAWARIMI FOR SELF */}
+                  <div className="flex justify-between items-center text-xs font-black pt-3 border-t border-oro/10">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-amber-500 uppercase tracking-wider">VELOCIDAD:</span>
+                      <span className="text-white text-sm">{localState.vel}</span>
+                    </div>
+                    {!isEventMode && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-emerald-400 uppercase tracking-wider">KAWARIMI:</span>
+                        <div className="flex gap-1.5">
+                          {Array.from({ length: localState.maxKawarimi || 1 }, (_, i) => i + 1).map((num) => {
+                            const isUsed = localState.kawarimi >= num;
+                            return (
+                              <button
+                                key={num}
+                                onClick={() => {
+                                  const newKawarimi = localState.kawarimi === num ? num - 1 : num;
+                                  const updated = { ...localState, kawarimi: newKawarimi };
+                                  setLocalState(updated);
+                                  addLog(`**${activeCharacter.nombre_ninja}** marca Kawarimi ${newKawarimi >= num ? 'usado' : 'recuperado'} (${newKawarimi}/${localState.maxKawarimi}).`);
+                                }}
+                                className={`w-6 h-6 border rounded-sm flex items-center justify-center text-xs transition-all font-black ${isUsed
+                                  ? 'bg-red-500/20 border-red-500 text-red-500'
+                                  : 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30'
+                                  } cursor-pointer`}
+                                title={`Marcar Kawarimi ${num} como ${isUsed ? 'disponible' : 'usado'}`}
+                              >
+                                {isUsed ? '✕' : '✓'}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            {/* 2. STAT ADJUSTMENTS & DICE ROLLS */}
+            <div className="space-y-5 border-l border-r border-oro/10 px-0 xl:px-8 xl:col-span-3">
+              <h3 className="font-black text-sm uppercase tracking-[0.2em] border-b border-oro/10 pb-3 flex items-center gap-2.5">
+                AJUSTES Y TIRADAS
+              </h3>
+
+              <div className="space-y-4">
+                {/* Adjust Life (VIT) */}
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Vida (Cant.)"
+                    value={vitInput}
+                    onChange={(e) => setVitInput(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="w-1/3 bg-black/50 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all"
+                  />
+                  <button
+                    onClick={handleApplyDamage}
+                    className="ninja-btn-rojo flex-1 py-2 text-xs text-center font-black"
+                  >
+                    Recibir
+                  </button>
+                  <button
+                    onClick={handleApplyHeal}
+                    className="ninja-btn-oro flex-1 py-2 text-xs text-center font-black"
+                  >
+                    Sanar
+                  </button>
+                </div>
+
+                {/* Adjust Chakra (CH) */}
+                {!isEventMode && (
+                  <div className="flex gap-2 pt-3 border-t border-oro/10">
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="Chakra (Cant.)"
+                      value={chInput}
+                      onChange={(e) => setChInput(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-1/3 bg-black/50 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all"
+                    />
+                    <button
+                      onClick={handleSpendChakra}
+                      className="ninja-btn-rojo flex-1 py-2 text-xs text-center font-black"
+                    >
+                      Gastar
+                    </button>
+                    <button
+                      onClick={handleRecoverChakra}
+                      className="ninja-btn-oro flex-1 py-2 text-xs text-center font-black"
+                    >
+                      Recuperar
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-3 border-t border-oro/10">
+                  <div className="flex items-center w-2/3 bg-black/50 border border-oro/20 px-3 focus-within:border-oro transition-all">
+                    <span className="text-oro/40 font-mono text-xs mr-2 whitespace-nowrap">{isEventMode ? "Dados (D)" : "Cansancio (D)"}</span>
+                    <input
+                      type="number"
+                      value={dadoInput}
+                      onChange={(e) => setDadoInput(Number(e.target.value))}
+                      className="bg-transparent text-oro text-xs font-black outline-none w-full py-2"
+                    />
+                  </div>
+                  <button
+                    onClick={rollDice}
+                    className="ninja-btn-oro flex-1 py-2 text-xs flex items-center justify-center gap-2 font-black"
+                  >
+                    <Dices className="w-4 h-4 text-rojo-sangre" /> Tirar
+                  </button>
+                </div>
+
+                {isEventMode && (
+                  <>
+                    <div className="flex gap-2 pt-3 border-t border-oro/10 justify-between">
+                      <button
+                        onClick={() => setRollMode('normal')}
+                        className={`flex-1 py-1.5 px-3 text-[10px] font-black uppercase tracking-widest transition-all border ${rollMode === 'normal'
+                          ? 'bg-oro text-black border-oro shadow-md shadow-oro/5'
+                          : 'border-oro/10 text-oro/60 bg-black/20'
+                          }`}
+                        style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
+                      >
+                        Normal
+                      </button>
+                      <button
+                        onClick={() => setRollMode('advantage')}
+                        className={`flex-1 py-1.5 px-3 text-[10px] font-black uppercase tracking-widest transition-all border ${rollMode === 'advantage'
+                          ? 'bg-oro text-black border-oro shadow-md shadow-oro/5'
+                          : 'border-oro/10 text-oro/60 bg-black/20'
+                          }`}
+                        style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
+                      >
+                        Ventaja
+                      </button>
+                      <button
+                        onClick={() => setRollMode('disadvantage')}
+                        className={`flex-1 py-1.5 px-3 text-[10px] font-black uppercase tracking-widest transition-all border ${rollMode === 'disadvantage'
+                          ? 'bg-oro text-black border-oro shadow-md shadow-oro/5'
+                          : 'border-oro/10 text-oro/60 bg-black/20'
+                          }`}
+                        style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
+                      >
+                        Desventaja
+                      </button>
+                    </div>
+
+                    {/* Bonificador Temporal */}
+                    <div className="flex items-center justify-between gap-3 pt-3 border-t border-oro/10 animate-in fade-in duration-300">
+                      <span className="text-[10px] font-black text-oro/40 uppercase tracking-wider whitespace-nowrap">Modificador Temporal:</span>
+                      <div className="flex items-center bg-black/50 border border-oro/20 rounded-sm overflow-hidden w-28 px-2 focus-within:border-oro transition-all">
+                        <button
+                          onClick={() => setTempModifier(prev => prev - 1)}
+                          className="text-oro hover:text-white font-black px-1.5 py-1 text-xs select-none"
+                          type="button"
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          value={tempModifier}
+                          onChange={(e) => setTempModifier(Number(e.target.value) || 0)}
+                          className="bg-transparent text-center text-white text-xs font-black w-full outline-none py-1 border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                        <button
+                          onClick={() => setTempModifier(prev => prev + 1)}
+                          className="text-oro hover:text-white font-black px-1.5 py-1 text-xs select-none"
+                          type="button"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    {isAdminOrNarrator && Object.keys(tempCharacters).length > 0 && (
+                      <div className="pt-3 border-t border-oro/10 flex items-center justify-between gap-3 animate-in fade-in duration-300">
+                        <span className="text-[10px] font-black text-oro/40 uppercase tracking-wider whitespace-nowrap">Tirar Como:</span>
+                        <select
+                          value={rollTargetId}
+                          onChange={(e) => setRollTargetId(e.target.value)}
+                          className="bg-black/50 border border-oro/20 text-oro text-xs font-black px-2 py-1 outline-none focus:border-oro transition-all rounded-sm max-w-[150px]"
+                        >
+                          <option value="self">Mi Ninja ({activeCharacter.nombre_ninja})</option>
+                          {Object.values(tempCharacters).map(tc => (
+                            <option key={tc.user_id} value={tc.user_id}>{tc.nombre}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    <div className="pt-3 border-t border-oro/10 space-y-2 animate-in fade-in duration-300">
+                      <span className="text-[10px] font-black text-oro/40 block uppercase ml-1">Tiradas de Atributos (d20)</span>
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {['NIN', 'TAI', 'GEN', 'INT', 'FUE', 'AGI', 'EST', 'SM'].map((s) => {
+                          let val = activeCharacter.stats_base[s as keyof CharacterStats] || 1;
+                          if (rollTargetId !== 'self' && tempCharacters[rollTargetId]) {
+                            val = tempCharacters[rollTargetId].stats_base?.[s] || 1;
+                          }
+                          const mod = getStatModifier(val);
+                          const modSign = mod >= 0 ? `+${mod}` : `${mod}`;
+                          return (
+                            <button
+                              key={s}
+                              onClick={() => rollStat(s)}
+                              className="bg-black/40 border border-oro/15 hover:border-oro py-1 text-[10px] font-black text-oro hover:bg-oro/10 transition-all flex flex-col items-center justify-center rounded-sm"
+                              title={`Tirar D20 + Modificador de ${s} (${modSign})`}
+                            >
+                              <span className="text-white/80">{s}</span>
+                              <span className="text-[9px] text-oro/60 font-bold">{modSign}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* 3. TECHNIQUE CASTING CONSOLE */}
+            <div className="space-y-5 xl:col-span-6">
+              <h3 className="font-black text-sm uppercase tracking-[0.2em] border-b border-oro/10 pb-3 flex items-center gap-2.5">
+                USO DE TÉCNICAS
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Left Column: Search & Select Ready Technique */}
+                <div className="relative">
+                  {/* Transparent overlay to close on outside click */}
+                  {isDropdownOpen && (
+                    <div className="fixed inset-0 z-40" onClick={() => { setIsDropdownOpen(false); setTecnicaSearch(''); }} />
+                  )}
+
+                  <div
+                    onClick={() => {
+                      setIsDropdownOpen(prev => !prev);
+                      setIsCdDropdownOpen(false);
+                      setIsActiveDropdownOpen(false);
+                    }}
+                    className="w-full bg-black/60 border border-oro/20 text-oro px-4 py-2.5 text-xs font-black flex justify-between items-center cursor-pointer hover:border-oro transition-all relative z-40"
+                  >
+                    <span className="truncate pr-4">
+                      {selectedTecnicaId && !(myCooldowns[selectedTecnicaId] && getRemainingCD(myCooldowns[selectedTecnicaId], customCdRounds) > 0)
+                        ? (activeCharacter.personajes_tecnicas?.find(t => t.tecnica_id === selectedTecnicaId)?.info_glosario?.nombre_jp || activeCharacter.personajes_tecnicas?.find(t => t.tecnica_id === selectedTecnicaId)?.info_glosario?.nombre_es)
+                        : 'BUSCAR TÉCNICA'}
+                    </span>
+                    <span className="text-[10px] text-oro/60 shrink-0">▼</span>
+                  </div>
+
+                  {isDropdownOpen && (
+                    <div className="absolute z-50 left-0 right-0 mt-1 bg-black/95 border border-oro/30 shadow-2xl max-h-[300px] overflow-hidden flex flex-col backdrop-blur-md">
+                      {/* Search input field */}
+                      <input
+                        type="text"
+                        placeholder="Buscar técnica..."
+                        value={tecnicaSearch}
+                        onChange={(e) => setTecnicaSearch(e.target.value)}
+                        className="w-full bg-black/40 border-b border-oro/25 text-oro px-4 py-2 text-xs font-black outline-none focus:bg-black/20"
+                        autoFocus
+                      />
+
+                      {/* Options list */}
+                      <div className="overflow-y-auto max-h-[240px]">
+                        {tecnicaSearch.trim() === '' ? (
+                          <div className="px-4 py-4 text-xs text-oro/40 italic text-center">
+                            Escribe para buscar una técnica...
+                          </div>
+                        ) : (
+                          <>
+                            {(activeCharacter.personajes_tecnicas || [])
+                              .filter(pt => {
+                                const nameEs = pt.info_glosario?.nombre_es || '';
+                                const nameJp = pt.info_glosario?.nombre_jp || '';
+                                const isMatch = searchIncludes(nameEs, tecnicaSearch) || searchIncludes(nameJp, tecnicaSearch);
+                                const isCD = myCooldowns[pt.tecnica_id] && getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) > 0;
+                                return isMatch && !isCD; // Ready techniques only
+                              })
+                              .map(pt => {
+                                const isSelected = selectedTecnicaId === pt.tecnica_id;
+
+                                const handleSelect = () => {
+                                  setSelectedTecnicaId(pt.tecnica_id);
+                                  setIsDropdownOpen(false);
+                                  setTecnicaSearch('');
+                                  setCustomChCost(0);
+                                  setCustomCdRounds(1);
+                                  setIsConstantCh(false);
+                                  setConstantChCost(0);
+                                  setIsTechActive(false);
+                                };
+
+                                return (
+                                  <div
+                                    key={pt.tecnica_id}
+                                    onClick={handleSelect}
+                                    className={`px-4 py-2.5 text-xs font-black border-b border-oro/5 last:border-b-0 flex justify-between items-center transition-all text-white/80 hover:bg-oro/10 hover:text-oro cursor-pointer ${isSelected ? 'bg-oro/20 text-oro border-l-2 border-oro' : ''
+                                      }`}
+                                  >
+                                    <span className="truncate pr-2">
+                                      {pt.info_glosario?.nombre_jp || pt.info_glosario?.nombre_es}
+                                      {pt.info_glosario?.nombre_jp && pt.info_glosario?.nombre_es && (
+                                        <span className="text-oro/50 font-medium italic ml-1">
+                                          ({pt.info_glosario.nombre_es})
+                                        </span>
+                                      )}
+                                    </span>
+                                    <span className="text-[9px] text-oro/40 font-mono shrink-0">Disponible</span>
+                                  </div>
                                 );
                               })}
-                            </div>
-                          </div>
+
+                            {/* No results */}
+                            {(activeCharacter.personajes_tecnicas || []).filter(pt => {
+                              const nameEs = pt.info_glosario?.nombre_es || '';
+                              const nameJp = pt.info_glosario?.nombre_jp || '';
+                              const isMatch = searchIncludes(nameEs, tecnicaSearch) || searchIncludes(nameJp, tecnicaSearch);
+                              const isCD = myCooldowns[pt.tecnica_id] && getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) > 0;
+                              return isMatch && !isCD;
+                            }).length === 0 && (
+                                <div className="px-4 py-4 text-xs text-oro/30 italic text-center">
+                                  No hay técnicas disponibles
+                                </div>
+                              )}
+                          </>
                         )}
                       </div>
                     </div>
                   )}
-              </div>
-                {/* 2. STAT ADJUSTMENTS & DICE ROLLS */}
-                <div className="space-y-5 border-l border-r border-oro/10 px-0 xl:px-8">
-                  <h3 className="font-black text-sm uppercase tracking-[0.2em] border-b border-oro/10 pb-3 flex items-center gap-2.5">
-                    AJUSTES Y TIRADAS
-                  </h3>
+                </div>
 
-                  <div className="space-y-4">
-                    {/* Adjust Life (VIT) */}
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        min="0"
-                        placeholder="Vida (Cant.)"
-                        value={vitInput}
-                        onChange={(e) => setVitInput(e.target.value === '' ? '' : Number(e.target.value))}
-                        className="w-1/3 bg-black/50 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all"
-                      />
-                      <button
-                        onClick={handleApplyDamage}
-                        className="ninja-btn-rojo flex-1 py-2 text-xs text-center font-black"
-                      >
-                        Recibir
-                      </button>
-                      <button
-                        onClick={handleApplyHeal}
-                        className="ninja-btn-oro flex-1 py-2 text-xs text-center font-black"
-                      >
-                        Sanar
-                      </button>
+                {/* Center Column: Techniques in CD Dropdown */}
+                <div className="relative">
+                  {/* Transparent overlay to close on outside click */}
+                  {isCdDropdownOpen && (
+                    <div className="fixed inset-0 z-40" onClick={() => setIsCdDropdownOpen(false)} />
+                  )}
+
+                  <div
+                    onClick={() => {
+                      setIsCdDropdownOpen(prev => !prev);
+                      setIsDropdownOpen(false);
+                      setIsActiveDropdownOpen(false);
+                    }}
+                    className="w-full bg-black/60 border border-red-500/20 text-red-400 px-4 py-2.5 text-xs font-black flex justify-between items-center cursor-pointer hover:border-red-500 transition-all relative z-40"
+                  >
+                    <span className="truncate pr-4">
+                      {`TÉCNICAS EN CD (${(activeCharacter.personajes_tecnicas || []).filter(pt => {
+                        const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) : 0;
+                        return cd > 0;
+                      }).length})`}
+                    </span>
+                    <span className="text-[10px] text-red-500/60 shrink-0">▼</span>
+                  </div>
+
+                  {isCdDropdownOpen && (
+                    <div className="absolute z-50 left-0 right-0 mt-1 bg-black/95 border border-red-500/30 shadow-2xl max-h-[300px] overflow-y-auto flex flex-col backdrop-blur-md">
+                      {(activeCharacter.personajes_tecnicas || [])
+                        .filter(pt => {
+                          const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) : 0;
+                          return cd > 0;
+                        })
+                        .map(pt => {
+                          const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) : 0;
+                          return (
+                            <div
+                              key={pt.tecnica_id}
+                              className="px-4 py-2.5 text-xs font-black border-b border-red-500/5 last:border-b-0 flex justify-between items-center bg-red-950/20 text-red-400 border-l-2 border-red-500"
+                            >
+                              <span className="truncate pr-2">
+                                {pt.info_glosario?.nombre_jp || pt.info_glosario?.nombre_es}
+                                {pt.info_glosario?.nombre_jp && pt.info_glosario?.nombre_es && (
+                                  <span className="text-red-400/50 font-medium italic ml-1">
+                                    ({pt.info_glosario.nombre_es})
+                                  </span>
+                                )}
+                              </span>
+                              <span className="text-[9px] font-black uppercase text-red-500 bg-red-950 border border-red-500/30 px-1.5 py-0.5 rounded-sm shrink-0">
+                                CD: {cd} rondas
+                              </span>
+                            </div>
+                          );
+                        })}
+
+                      {/* No results */}
+                      {(activeCharacter.personajes_tecnicas || []).filter(pt => {
+                        const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) : 0;
+                        return cd > 0;
+                      }).length === 0 && (
+                          <div className="px-4 py-4 text-xs text-red-400/40 italic text-center">
+                            Ninguna técnica en cooldown
+                          </div>
+                        )}
                     </div>
+                  )}
+                </div>
 
-                    {/* Adjust Chakra (CH) */}
+                {/* Right Column: Active Techniques Dropdown */}
+                <div className="relative">
+                  {/* Transparent overlay to close on outside click */}
+                  {isActiveDropdownOpen && (
+                    <div className="fixed inset-0 z-40" onClick={() => setIsActiveDropdownOpen(false)} />
+                  )}
+
+                  <div
+                    onClick={() => {
+                      setIsActiveDropdownOpen(prev => !prev);
+                      setIsDropdownOpen(false);
+                      setIsCdDropdownOpen(false);
+                    }}
+                    className="w-full bg-black/60 border border-emerald-500/20 text-emerald-400 px-4 py-2.5 text-xs font-black flex justify-between items-center cursor-pointer hover:border-emerald-500 transition-all relative z-40"
+                  >
+                    <span className="truncate pr-4">
+                      {`TÉCNICAS ACTIVAS (${Object.keys(myActiveTecnicas).length})`}
+                    </span>
+                    <span className="text-[10px] text-emerald-500/60 shrink-0">▼</span>
+                  </div>
+
+                  {isActiveDropdownOpen && (
+                    <div className="absolute z-50 left-0 right-0 mt-1 bg-black/95 border border-emerald-500/30 shadow-2xl max-h-[300px] overflow-y-auto flex flex-col backdrop-blur-md">
+                      {Object.keys(myActiveTecnicas).map(Number).map(techId => {
+                        const pt = activeCharacter.personajes_tecnicas?.find(t => t.tecnica_id === techId);
+                        if (!pt) return null;
+                        const cd = myCooldowns[techId] ? getRemainingCD(myCooldowns[techId], myActiveTecnicas[techId].cdRounds) : 0;
+
+                        return (
+                          <div
+                            key={techId}
+                            className="px-4 py-2.5 text-xs font-black border-b border-emerald-500/5 last:border-b-0 flex justify-between items-center bg-emerald-950/20 text-emerald-400 border-l-2 border-emerald-500"
+                          >
+                            <div className="flex flex-col min-w-0 pr-2">
+                              <span className="truncate text-white">
+                                {pt.info_glosario?.nombre_jp || pt.info_glosario?.nombre_es}
+                              </span>
+                              <span className="text-[9px] text-oro/40 font-mono">
+                                CD Pausado: {cd} rondas
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => handleDeactivateTecnica(techId)}
+                              className="text-[9px] font-black uppercase text-red-400 bg-red-950/40 border border-red-500/30 px-2 py-1 rounded-sm shrink-0 hover:bg-red-500 hover:text-white transition-all"
+                            >
+                              Desactivar
+                            </button>
+                          </div>
+                        );
+                      })}
+
+                      {Object.keys(myActiveTecnicas).length === 0 && (
+                        <div className="px-4 py-4 text-xs text-emerald-400/40 italic text-center">
+                          Ninguna técnica activa
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {selectedTecnicaId !== null && (
+                <div className="space-y-4 animate-in fade-in duration-300">
+                  <div className={isEventMode ? "grid grid-cols-1" : "grid grid-cols-2 gap-4"}>
                     {!isEventMode && (
-                      <div className="flex gap-2 pt-3 border-t border-oro/10">
+                      <div>
+                        <label className="text-[10px] font-black text-oro/40 block mb-1 uppercase">COSTE CHAKRA (CH)</label>
                         <input
                           type="number"
                           min="0"
-                          placeholder="Chakra (Cant.)"
-                          value={chInput}
-                          onChange={(e) => setChInput(e.target.value === '' ? '' : Number(e.target.value))}
-                          className="w-1/3 bg-black/50 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all"
+                          value={customChCost}
+                          onChange={(e) => setCustomChCost(Number(e.target.value))}
+                          className="w-full bg-black/50 border border-oro/20 text-oro px-4 py-2 text-xs font-black outline-none focus:border-oro transition-all"
                         />
-                        <button
-                          onClick={handleSpendChakra}
-                          className="ninja-btn-rojo flex-1 py-2 text-xs text-center font-black"
-                        >
-                          Gastar
-                        </button>
-                        <button
-                          onClick={handleRecoverChakra}
-                          className="ninja-btn-oro flex-1 py-2 text-xs text-center font-black"
-                        >
-                          Recuperar
-                        </button>
                       </div>
                     )}
+                    <div>
+                      <label className="text-[10px] font-black text-oro/40 block mb-1 uppercase">COOLDOWN (RONDAS)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={customCdRounds}
+                        onChange={(e) => setCustomCdRounds(Number(e.target.value))}
+                        className="w-full bg-black/50 border border-oro/20 text-oro px-4 py-2 text-xs font-black outline-none focus:border-oro transition-all"
+                      />
+                    </div>
+                  </div>
 
-                    <div className="flex gap-2 pt-3 border-t border-oro/10">
-                      <div className="flex items-center w-2/3 bg-black/50 border border-oro/20 px-3 focus-within:border-oro transition-all">
-                        <span className="text-oro/40 font-mono text-xs mr-2 whitespace-nowrap">{isEventMode ? "Dados (D)" : "Cansancio (D)"}</span>
+                  <div className="grid grid-cols-2 gap-4 pt-2 border-t border-oro/10">
+                    <div className="flex flex-col gap-2">
+                      {!isEventMode && (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="is-constant-ch"
+                            checked={isConstantCh}
+                            onChange={(e) => {
+                              setIsConstantCh(e.target.checked);
+                              if (!e.target.checked) setConstantChCost(0);
+                            }}
+                            className="accent-oro cursor-pointer w-4 h-4"
+                          />
+                          <label htmlFor="is-constant-ch" className="text-[10px] font-black text-oro/40 uppercase cursor-pointer select-none">
+                            Chakra Constante
+                          </label>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 pt-1">
+                        <input
+                          type="checkbox"
+                          id="is-tech-active"
+                          checked={isTechActive}
+                          onChange={(e) => setIsTechActive(e.target.checked)}
+                          className="accent-oro cursor-pointer w-4 h-4"
+                        />
+                        <label htmlFor="is-tech-active" className="text-[10px] font-black text-oro/40 uppercase cursor-pointer select-none">
+                          Técnica Activa (Pausar CD)
+                        </label>
+                      </div>
+                    </div>
+                    {!isEventMode && isConstantCh && (
+                      <div>
+                        <label className="text-[10px] font-black text-oro/40 block mb-1 uppercase">COST CH CONSTANTE / RONDA</label>
                         <input
                           type="number"
-                          value={dadoInput}
-                          onChange={(e) => setDadoInput(Number(e.target.value))}
-                          className="bg-transparent text-oro text-xs font-black outline-none w-full py-2"
+                          min="0"
+                          value={constantChCost}
+                          onChange={(e) => setConstantChCost(Number(e.target.value))}
+                          className="w-full bg-black/50 border border-oro/20 text-oro px-4 py-2 text-xs font-black outline-none focus:border-oro transition-all"
                         />
                       </div>
-                      <button
-                        onClick={rollDice}
-                        className="ninja-btn-oro flex-1 py-2 text-xs flex items-center justify-center gap-2 font-black"
-                      >
-                        <Dices className="w-4 h-4 text-rojo-sangre" /> Tirar
-                      </button>
-                    </div>
-
-                    {isEventMode && (
-                      <>
-                        <div className="flex gap-2 pt-3 border-t border-oro/10 justify-between">
-                          <button
-                            onClick={() => setRollMode('normal')}
-                            className={`flex-1 py-1.5 px-3 text-[10px] font-black uppercase tracking-widest transition-all border ${rollMode === 'normal'
-                              ? 'bg-oro text-black border-oro shadow-md shadow-oro/5'
-                              : 'border-oro/10 text-oro/60 bg-black/20'
-                              }`}
-                            style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
-                          >
-                            Normal
-                          </button>
-                          <button
-                            onClick={() => setRollMode('advantage')}
-                            className={`flex-1 py-1.5 px-3 text-[10px] font-black uppercase tracking-widest transition-all border ${rollMode === 'advantage'
-                              ? 'bg-oro text-black border-oro shadow-md shadow-oro/5'
-                              : 'border-oro/10 text-oro/60 bg-black/20'
-                              }`}
-                            style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
-                          >
-                            Ventaja
-                          </button>
-                          <button
-                            onClick={() => setRollMode('disadvantage')}
-                            className={`flex-1 py-1.5 px-3 text-[10px] font-black uppercase tracking-widest transition-all border ${rollMode === 'disadvantage'
-                              ? 'bg-oro text-black border-oro shadow-md shadow-oro/5'
-                              : 'border-oro/10 text-oro/60 bg-black/20'
-                              }`}
-                            style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
-                          >
-                            Desventaja
-                          </button>
-                        </div>
-
-                        {/* Bonificador Temporal */}
-                        <div className="flex items-center justify-between gap-3 pt-3 border-t border-oro/10 animate-in fade-in duration-300">
-                          <span className="text-[10px] font-black text-oro/40 uppercase tracking-wider whitespace-nowrap">Modificador Temporal:</span>
-                          <div className="flex items-center bg-black/50 border border-oro/20 rounded-sm overflow-hidden w-28 px-2 focus-within:border-oro transition-all">
-                            <button
-                              onClick={() => setTempModifier(prev => prev - 1)}
-                              className="text-oro hover:text-white font-black px-1.5 py-1 text-xs select-none"
-                              type="button"
-                            >
-                              -
-                            </button>
-                            <input
-                              type="number"
-                              value={tempModifier}
-                              onChange={(e) => setTempModifier(Number(e.target.value) || 0)}
-                              className="bg-transparent text-center text-white text-xs font-black w-full outline-none py-1 border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                            />
-                            <button
-                              onClick={() => setTempModifier(prev => prev + 1)}
-                              className="text-oro hover:text-white font-black px-1.5 py-1 text-xs select-none"
-                              type="button"
-                            >
-                              +
-                            </button>
-                          </div>
-                        </div>
-
-                        {isAdminOrNarrator && Object.keys(tempCharacters).length > 0 && (
-                          <div className="pt-3 border-t border-oro/10 flex items-center justify-between gap-3 animate-in fade-in duration-300">
-                            <span className="text-[10px] font-black text-oro/40 uppercase tracking-wider whitespace-nowrap">Tirar Como:</span>
-                            <select
-                              value={rollTargetId}
-                              onChange={(e) => setRollTargetId(e.target.value)}
-                              className="bg-black/50 border border-oro/20 text-oro text-xs font-black px-2 py-1 outline-none focus:border-oro transition-all rounded-sm max-w-[150px]"
-                            >
-                              <option value="self">Mi Ninja ({activeCharacter.nombre_ninja})</option>
-                              {Object.values(tempCharacters).map(tc => (
-                                <option key={tc.user_id} value={tc.user_id}>{tc.nombre}</option>
-                              ))}
-                            </select>
-                          </div>
-                        )}
-
-                        <div className="pt-3 border-t border-oro/10 space-y-2 animate-in fade-in duration-300">
-                          <span className="text-[10px] font-black text-oro/40 block uppercase ml-1">Tiradas de Atributos (d20)</span>
-                          <div className="grid grid-cols-4 gap-1.5">
-                            {['NIN', 'TAI', 'GEN', 'INT', 'FUE', 'AGI', 'EST', 'SM'].map((s) => {
-                              let val = activeCharacter.stats_base[s as keyof CharacterStats] || 1;
-                              if (rollTargetId !== 'self' && tempCharacters[rollTargetId]) {
-                                val = tempCharacters[rollTargetId].stats_base?.[s] || 1;
-                              }
-                              const mod = getStatModifier(val);
-                              const modSign = mod >= 0 ? `+${mod}` : `${mod}`;
-                              return (
-                                <button
-                                  key={s}
-                                  onClick={() => rollStat(s)}
-                                  className="bg-black/40 border border-oro/15 hover:border-oro py-1 text-[10px] font-black text-oro hover:bg-oro/10 transition-all flex flex-col items-center justify-center rounded-sm"
-                                  title={`Tirar D20 + Modificador de ${s} (${modSign})`}
-                                >
-                                  <span className="text-white/80">{s}</span>
-                                  <span className="text-[9px] text-oro/60 font-bold">{modSign}</span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </>
                     )}
                   </div>
+
+                  <button
+                    onClick={handleUseTecnica}
+                    className="w-full ninja-btn-oro py-3 px-6 text-xs flex items-center justify-center gap-2"
+                  >
+                    Ejecutar Técnica
+                  </button>
                 </div>
+              )}
+            </div>
 
-                {/* 3. TECHNIQUE CASTING CONSOLE */}
-                <div className="space-y-5">
-                  <h3 className="font-black text-sm uppercase tracking-[0.2em] border-b border-oro/10 pb-3 flex items-center gap-2.5">
-                    USO DE TÉCNICAS
-                  </h3>
+          </div>
+        </section>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Left Column: Search & Select Ready Technique */}
-                    <div className="relative">
-                      {/* Transparent overlay to close on outside click */}
-                      {isDropdownOpen && (
-                        <div className="fixed inset-0 z-40" onClick={() => { setIsDropdownOpen(false); setTecnicaSearch(''); }} />
-                      )}
+        {/* CREATE NPC MODAL */}
+        {showCreateTempModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto animate-in fade-in duration-300">
+            <div
+              className="w-full max-w-2xl bg-[#0d0e12] border border-oro/30 shadow-2xl p-6 md:p-8 relative max-h-[90vh] overflow-y-auto"
+              style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}
+            >
+              <h2 className="ninja-title text-xl font-black text-oro uppercase tracking-[0.2em] mb-6 pb-3 border-b border-oro/20 flex items-center gap-2">
+                CREAR NPC TEMPORAL
+              </h2>
 
-                      <div
-                        onClick={() => {
-                          setIsDropdownOpen(prev => !prev);
-                          setIsCdDropdownOpen(false);
-                        }}
-                        className="w-full bg-black/60 border border-oro/20 text-oro px-4 py-2.5 text-xs font-black flex justify-between items-center cursor-pointer hover:border-oro transition-all relative z-40"
-                      >
-                        <span className="truncate pr-4">
-                          {selectedTecnicaId && !(myCooldowns[selectedTecnicaId] && getRemainingCD(myCooldowns[selectedTecnicaId], customCdRounds) > 0)
-                            ? activeCharacter.personajes_tecnicas?.find(t => t.tecnica_id === selectedTecnicaId)?.info_glosario?.nombre_es
-                            : 'BUSCAR TÉCNICA'}
-                        </span>
-                        <span className="text-[10px] text-oro/60 shrink-0">▼</span>
-                      </div>
-
-                      {isDropdownOpen && (
-                        <div className="absolute z-50 left-0 right-0 mt-1 bg-black/95 border border-oro/30 shadow-2xl max-h-[300px] overflow-hidden flex flex-col backdrop-blur-md">
-                          {/* Search input field */}
-                          <input
-                            type="text"
-                            placeholder="Buscar técnica..."
-                            value={tecnicaSearch}
-                            onChange={(e) => setTecnicaSearch(e.target.value)}
-                            className="w-full bg-black/40 border-b border-oro/25 text-oro px-4 py-2 text-xs font-black outline-none focus:bg-black/20"
-                            autoFocus
-                          />
-
-                          {/* Options list */}
-                          <div className="overflow-y-auto max-h-[240px]">
-                            {tecnicaSearch.trim() === '' ? (
-                              <div className="px-4 py-4 text-xs text-oro/40 italic text-center">
-                                Escribe para buscar una técnica...
-                              </div>
-                            ) : (
-                              <>
-                                {(activeCharacter.personajes_tecnicas || [])
-                                  .filter(pt => {
-                                    const name = pt.info_glosario?.nombre_es || '';
-                                    const isMatch = searchIncludes(name, tecnicaSearch);
-                                    const isCD = myCooldowns[pt.tecnica_id] && getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) > 0;
-                                    return isMatch && !isCD; // Ready techniques only
-                                  })
-                                  .map(pt => {
-                                    const isSelected = selectedTecnicaId === pt.tecnica_id;
-
-                                    const handleSelect = () => {
-                                      setSelectedTecnicaId(pt.tecnica_id);
-                                      setIsDropdownOpen(false);
-                                      setTecnicaSearch('');
-
-                                      if (pt.info_glosario) {
-                                        const desc = pt.info_glosario.descripcion?.toLowerCase() || '';
-                                        const chMatch = desc.match(/(\d+)\s*(?:ch|chakra|puntos de chakra)/);
-                                        if (chMatch) {
-                                          setCustomChCost(Number(chMatch[1]));
-                                        } else {
-                                          setCustomChCost(0);
-                                        }
-
-                                        const cdMatch = desc.match(/(\d+)\s*(?:ronda|rondas|cd|cooldown)/);
-                                        if (cdMatch) {
-                                          setCustomCdRounds(Number(cdMatch[1]));
-                                        } else {
-                                          setCustomCdRounds(1);
-                                        }
-                                      }
-                                    };
-
-                                    return (
-                                      <div
-                                        key={pt.tecnica_id}
-                                        onClick={handleSelect}
-                                        className={`px-4 py-2.5 text-xs font-black border-b border-oro/5 last:border-b-0 flex justify-between items-center transition-all text-white/80 hover:bg-oro/10 hover:text-oro cursor-pointer ${isSelected ? 'bg-oro/20 text-oro border-l-2 border-oro' : ''
-                                          }`}
-                                      >
-                                        <span className="truncate pr-2">{pt.info_glosario?.nombre_es}</span>
-                                        <span className="text-[9px] text-oro/40 font-mono shrink-0">Disponible</span>
-                                      </div>
-                                    );
-                                  })}
-
-                                {/* No results */}
-                                {(activeCharacter.personajes_tecnicas || []).filter(pt => {
-                                  const name = pt.info_glosario?.nombre_es || '';
-                                  const isMatch = searchIncludes(name, tecnicaSearch);
-                                  const isCD = myCooldowns[pt.tecnica_id] && getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) > 0;
-                                  return isMatch && !isCD;
-                                }).length === 0 && (
-                                    <div className="px-4 py-4 text-xs text-oro/30 italic text-center">
-                                      No hay técnicas disponibles
-                                    </div>
-                                  )}
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Right Column: Techniques in CD Dropdown */}
-                    <div className="relative">
-                      {/* Transparent overlay to close on outside click */}
-                      {isCdDropdownOpen && (
-                        <div className="fixed inset-0 z-40" onClick={() => setIsCdDropdownOpen(false)} />
-                      )}
-
-                      <div
-                        onClick={() => {
-                          setIsCdDropdownOpen(prev => !prev);
-                          setIsDropdownOpen(false);
-                        }}
-                        className="w-full bg-black/60 border border-red-500/20 text-red-400 px-4 py-2.5 text-xs font-black flex justify-between items-center cursor-pointer hover:border-red-500 transition-all relative z-40"
-                      >
-                        <span className="truncate pr-4">
-                          {`TÉCNICAS EN CD (${(activeCharacter.personajes_tecnicas || []).filter(pt => {
-                            const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) : 0;
-                            return cd > 0;
-                          }).length})`}
-                        </span>
-                        <span className="text-[10px] text-red-500/60 shrink-0">▼</span>
-                      </div>
-
-                      {isCdDropdownOpen && (
-                        <div className="absolute z-50 left-0 right-0 mt-1 bg-black/95 border border-red-500/30 shadow-2xl max-h-[300px] overflow-y-auto flex flex-col backdrop-blur-md">
-                          {(activeCharacter.personajes_tecnicas || [])
-                            .filter(pt => {
-                              const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) : 0;
-                              return cd > 0;
-                            })
-                            .map(pt => {
-                              const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) : 0;
-                              return (
-                                <div
-                                  key={pt.tecnica_id}
-                                  className="px-4 py-2.5 text-xs font-black border-b border-red-500/5 last:border-b-0 flex justify-between items-center bg-red-950/20 text-red-400 border-l-2 border-red-500"
-                                >
-                                  <span className="truncate pr-2">{pt.info_glosario?.nombre_es}</span>
-                                  <span className="text-[9px] font-black uppercase text-red-500 bg-red-950 border border-red-500/30 px-1.5 py-0.5 rounded-sm shrink-0">
-                                    CD: {cd} rondas
-                                  </span>
-                                </div>
-                              );
-                            })}
-
-                          {/* No results */}
-                          {(activeCharacter.personajes_tecnicas || []).filter(pt => {
-                            const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) : 0;
-                            return cd > 0;
-                          }).length === 0 && (
-                              <div className="px-4 py-4 text-xs text-red-400/40 italic text-center">
-                                Ninguna técnica en cooldown
-                              </div>
-                            )}
-                        </div>
-                      )}
-                    </div>
+              <div className="space-y-6">
+                {/* Basic Details: Name, Image URL, Bando, VIT */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="text-[10px] font-black text-oro/60 block mb-1 uppercase tracking-wider">Nombre del NPC *</label>
+                    <input
+                      type="text"
+                      placeholder="Ej. Invocación de Serpiente"
+                      value={npcName}
+                      onChange={(e) => setNpcName(e.target.value)}
+                      className="w-full bg-black/40 border border-oro/20 text-white px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all rounded-sm"
+                    />
                   </div>
 
-                  {selectedTecnicaId !== null && (
-                    <div className="space-y-4 animate-in fade-in duration-300">
-                      <div className={isEventMode ? "grid grid-cols-1" : "grid grid-cols-2 gap-4"}>
-                        {!isEventMode && (
-                          <div>
-                            <label className="text-[10px] font-black text-oro/40 block mb-1 uppercase">COSTE CHAKRA (CH)</label>
-                            <input
-                              type="number"
-                              min="0"
-                              value={customChCost}
-                              onChange={(e) => setCustomChCost(Number(e.target.value))}
-                              className="w-full bg-black/50 border border-oro/20 text-oro px-4 py-2 text-xs font-black outline-none focus:border-oro transition-all"
-                            />
-                          </div>
-                        )}
-                        <div>
-                          <label className="text-[10px] font-black text-oro/40 block mb-1 uppercase">COOLDOWN (RONDAS)</label>
-                          <input
-                            type="number"
-                            min="0"
-                            value={customCdRounds}
-                            onChange={(e) => setCustomCdRounds(Number(e.target.value))}
-                            className="w-full bg-black/50 border border-oro/20 text-oro px-4 py-2 text-xs font-black outline-none focus:border-oro transition-all"
-                          />
-                        </div>
-                      </div>
+                  <div>
+                    <label className="text-[10px] font-black text-oro/60 block mb-1 uppercase tracking-wider">URL Imagen (Opcional)</label>
+                    <input
+                      type="text"
+                      placeholder="Ej. https://url.com/img.png"
+                      value={npcUrlImg}
+                      onChange={(e) => setNpcUrlImg(e.target.value)}
+                      className="w-full bg-black/40 border border-oro/20 text-white px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all rounded-sm"
+                    />
+                  </div>
 
-                      <button
-                        onClick={handleUseTecnica}
-                        className="w-full ninja-btn-oro py-3 px-6 text-xs flex items-center justify-center gap-2"
-                      >
-                        Ejecutar Técnica
-                      </button>
-                    </div>
-                  )}
+                  <div>
+                    <label className="text-[10px] font-black text-oro/60 block mb-1 uppercase tracking-wider">Bando *</label>
+                    <select
+                      value={npcBando}
+                      onChange={(e) => setNpcBando(e.target.value as 'A' | 'B')}
+                      className="w-full bg-black/40 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all rounded-sm"
+                    >
+                      <option value="A">Bando A</option>
+                      <option value="B">Bando B</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-oro/60 block mb-1 uppercase tracking-wider">Vitalidad (VIT) *</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={npcVit}
+                      onChange={(e) => setNpcVit(Math.max(1, Number(e.target.value) || 0))}
+                      className="w-full bg-black/40 border border-oro/20 text-white px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all rounded-sm"
+                    />
+                  </div>
                 </div>
 
-              </div>
-            </section>
-
-            {/* CREATE NPC MODAL */}
-            {showCreateTempModal && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto animate-in fade-in duration-300">
-                <div
-                  className="w-full max-w-2xl bg-[#0d0e12] border border-oro/30 shadow-2xl p-6 md:p-8 relative max-h-[90vh] overflow-y-auto"
-                  style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}
-                >
-                  <h2 className="ninja-title text-xl font-black text-oro uppercase tracking-[0.2em] mb-6 pb-3 border-b border-oro/20 flex items-center gap-2">
-                    CREAR NPC TEMPORAL
-                  </h2>
-
-                  <div className="space-y-6">
-                    {/* Basic Details: Name, Image URL, Bando, VIT */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div>
-                        <label className="text-[10px] font-black text-oro/60 block mb-1 uppercase tracking-wider">Nombre del NPC *</label>
-                        <input
-                          type="text"
-                          placeholder="Ej. Invocación de Serpiente"
-                          value={npcName}
-                          onChange={(e) => setNpcName(e.target.value)}
-                          className="w-full bg-black/40 border border-oro/20 text-white px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all rounded-sm"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-[10px] font-black text-oro/60 block mb-1 uppercase tracking-wider">URL Imagen (Opcional)</label>
-                        <input
-                          type="text"
-                          placeholder="Ej. https://url.com/img.png"
-                          value={npcUrlImg}
-                          onChange={(e) => setNpcUrlImg(e.target.value)}
-                          className="w-full bg-black/40 border border-oro/20 text-white px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all rounded-sm"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-[10px] font-black text-oro/60 block mb-1 uppercase tracking-wider">Bando *</label>
-                        <select
-                          value={npcBando}
-                          onChange={(e) => setNpcBando(e.target.value as 'A' | 'B')}
-                          className="w-full bg-black/40 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all rounded-sm"
-                        >
-                          <option value="A">Bando A</option>
-                          <option value="B">Bando B</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="text-[10px] font-black text-oro/60 block mb-1 uppercase tracking-wider">Vitalidad (VIT) *</label>
+                {/* Stats Base Grid */}
+                <div>
+                  <h3 className="text-[11px] font-black text-oro/40 uppercase tracking-widest mb-3 border-b border-oro/5 pb-1">Atributos Base (1-10)</h3>
+                  <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                    {['NIN', 'TAI', 'GEN', 'INT', 'FUE', 'AGI', 'EST', 'SM'].map((s) => (
+                      <div key={s} className="bg-black/30 border border-oro/10 p-2 flex flex-col items-center justify-center rounded-sm">
+                        <label className="text-[9px] font-black text-white/60 mb-1">{s}</label>
                         <input
                           type="number"
                           min="1"
-                          value={npcVit}
-                          onChange={(e) => setNpcVit(Math.max(1, Number(e.target.value) || 0))}
-                          className="w-full bg-black/40 border border-oro/20 text-white px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all rounded-sm"
+                          max="10"
+                          value={npcStats[s] || 3}
+                          onChange={(e) => {
+                            const val = Math.max(1, Math.min(10, Number(e.target.value) || 1));
+                            setNpcStats(prev => ({ ...prev, [s]: val }));
+                          }}
+                          className="w-10 bg-transparent text-center text-oro text-xs font-black outline-none border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0"
                         />
                       </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Traits Selector */}
+                <div>
+                  <h3 className="text-[11px] font-black text-oro/40 uppercase tracking-widest mb-3 border-b border-oro/5 pb-1">Rasgos</h3>
+
+                  {/* Selected traits list */}
+                  {npcRasgos.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-3 p-2 bg-black/20 border border-oro/5 rounded-sm">
+                      {npcRasgos.map(r => (
+                        <button
+                          key={r.id}
+                          onClick={() => setNpcRasgos(prev => prev.filter(t => t.id !== r.id))}
+                          className="px-2 py-0.5 bg-purple-950/40 border border-purple-500/30 text-purple-300 text-[10px] font-black flex items-center gap-1 hover:border-red-500/50 hover:text-red-400 rounded-sm transition-all"
+                          title="Click para quitar rasgo"
+                        >
+                          <span>{r.nombre}</span>
+                          <span className="text-[9px] font-mono">✕</span>
+                        </button>
+                      ))}
                     </div>
+                  )}
 
-                    {/* Stats Base Grid */}
-                    <div>
-                      <h3 className="text-[11px] font-black text-oro/40 uppercase tracking-widest mb-3 border-b border-oro/5 pb-1">Atributos Base (1-10)</h3>
-                      <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-                        {['NIN', 'TAI', 'GEN', 'INT', 'FUE', 'AGI', 'EST', 'SM'].map((s) => (
-                          <div key={s} className="bg-black/30 border border-oro/10 p-2 flex flex-col items-center justify-center rounded-sm">
-                            <label className="text-[9px] font-black text-white/60 mb-1">{s}</label>
-                            <input
-                              type="number"
-                              min="1"
-                              max="10"
-                              value={npcStats[s] || 3}
-                              onChange={(e) => {
-                                const val = Math.max(1, Math.min(10, Number(e.target.value) || 1));
-                                setNpcStats(prev => ({ ...prev, [s]: val }));
-                              }}
-                              className="w-10 bg-transparent text-center text-oro text-xs font-black outline-none border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Traits Selector */}
-                    <div>
-                      <h3 className="text-[11px] font-black text-oro/40 uppercase tracking-widest mb-3 border-b border-oro/5 pb-1">Rasgos</h3>
-
-                      {/* Selected traits list */}
-                      {npcRasgos.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mb-3 p-2 bg-black/20 border border-oro/5 rounded-sm">
-                          {npcRasgos.map(r => (
-                            <button
-                              key={r.id}
-                              onClick={() => setNpcRasgos(prev => prev.filter(t => t.id !== r.id))}
-                              className="px-2 py-0.5 bg-purple-950/40 border border-purple-500/30 text-purple-300 text-[10px] font-black flex items-center gap-1 hover:border-red-500/50 hover:text-red-400 rounded-sm transition-all"
-                              title="Click para quitar rasgo"
-                            >
-                              <span>{r.nombre}</span>
-                              <span className="text-[9px] font-mono">✕</span>
-                            </button>
-                          ))}
+                  {/* Search and custom input */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Buscar rasgo oficial..."
+                        value={traitSearch}
+                        onChange={(e) => setTraitSearch(e.target.value)}
+                        className="w-full bg-black/40 border border-oro/20 text-white px-3 py-1.5 text-xs outline-none focus:border-oro transition-all rounded-sm"
+                      />
+                      {traitSearch.trim() !== '' && (
+                        <div className="absolute z-10 left-0 right-0 mt-1 bg-black/95 border border-oro/20 max-h-40 overflow-y-auto rounded-sm shadow-xl custom-scrollbar">
+                          {masterTraits
+                            .filter(t => searchIncludes(t.nombre, traitSearch) && !npcRasgos.some(nr => nr.id === t.id))
+                            .slice(0, 10)
+                            .map(t => (
+                              <div
+                                key={t.id}
+                                onClick={() => {
+                                  setNpcRasgos(prev => [...prev, { id: t.id, nombre: t.nombre, usado: false }]);
+                                  setTraitSearch('');
+                                }}
+                                className="px-3 py-2 text-xs font-black text-white/80 hover:bg-oro/10 hover:text-oro cursor-pointer border-b border-oro/5 last:border-0"
+                              >
+                                {t.nombre}
+                              </div>
+                            ))}
                         </div>
                       )}
-
-                      {/* Search and custom input */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="relative">
-                          <input
-                            type="text"
-                            placeholder="Buscar rasgo oficial..."
-                            value={traitSearch}
-                            onChange={(e) => setTraitSearch(e.target.value)}
-                            className="w-full bg-black/40 border border-oro/20 text-white px-3 py-1.5 text-xs outline-none focus:border-oro transition-all rounded-sm"
-                          />
-                          {traitSearch.trim() !== '' && (
-                            <div className="absolute z-10 left-0 right-0 mt-1 bg-black/95 border border-oro/20 max-h-40 overflow-y-auto rounded-sm shadow-xl custom-scrollbar">
-                              {masterTraits
-                                .filter(t => searchIncludes(t.nombre, traitSearch) && !npcRasgos.some(nr => nr.id === t.id))
-                                .slice(0, 10)
-                                .map(t => (
-                                  <div
-                                    key={t.id}
-                                    onClick={() => {
-                                      setNpcRasgos(prev => [...prev, { id: t.id, nombre: t.nombre, usado: false }]);
-                                      setTraitSearch('');
-                                    }}
-                                    className="px-3 py-2 text-xs font-black text-white/80 hover:bg-oro/10 hover:text-oro cursor-pointer border-b border-oro/5 last:border-0"
-                                  >
-                                    {t.nombre}
-                                  </div>
-                                ))}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            placeholder="Crear rasgo personalizado..."
-                            value={customTrait}
-                            onChange={(e) => setCustomTrait(e.target.value)}
-                            className="flex-1 bg-black/40 border border-oro/20 text-white px-3 py-1.5 text-xs outline-none focus:border-oro transition-all rounded-sm"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (customTrait.trim()) {
-                                setNpcRasgos(prev => [...prev, { id: `custom_${Date.now()}_${Math.random()}`, nombre: customTrait.trim(), usado: false }]);
-                                setCustomTrait('');
-                              }
-                            }}
-                            className="ninja-btn-oro px-3 py-1.5 text-xs font-black rounded-sm"
-                          >
-                            Añadir
-                          </button>
-                        </div>
-                      </div>
                     </div>
 
-                    {/* Items/Equipment Selector */}
-                    <div>
-                      <h3 className="text-[11px] font-black text-oro/40 uppercase tracking-widest mb-3 border-b border-oro/5 pb-1">Equipamiento</h3>
-
-                      {/* Selected items list */}
-                      {npcEquipo.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mb-3 p-2 bg-black/20 border border-oro/5 rounded-sm">
-                          {npcEquipo.map(eq => (
-                            <button
-                              key={eq.id}
-                              onClick={() => setNpcEquipo(prev => prev.filter(item => item.id !== eq.id))}
-                              className="px-2 py-0.5 bg-amber-950/40 border border-amber-500/30 text-amber-300 text-[10px] font-black flex items-center gap-1 hover:border-red-500/50 hover:text-red-400 rounded-sm transition-all"
-                              title="Click para quitar objeto"
-                            >
-                              <span>{eq.nombre}</span>
-                              <span className="text-[9px] font-mono">✕</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Search and custom input */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="relative">
-                          <input
-                            type="text"
-                            placeholder="Buscar objeto oficial..."
-                            value={itemSearch}
-                            onChange={(e) => setItemSearch(e.target.value)}
-                            className="w-full bg-black/40 border border-oro/20 text-white px-3 py-1.5 text-xs outline-none focus:border-oro transition-all rounded-sm"
-                          />
-                          {itemSearch.trim() !== '' && (
-                            <div className="absolute z-10 left-0 right-0 mt-1 bg-black/95 border border-oro/20 max-h-40 overflow-y-auto rounded-sm shadow-xl custom-scrollbar">
-                              {masterItems
-                                .filter(i => searchIncludes(i.nombre_es, itemSearch) && !npcEquipo.some(ne => ne.id === i.id))
-                                .slice(0, 10)
-                                .map(i => (
-                                  <div
-                                    key={i.id}
-                                    onClick={() => {
-                                      setNpcEquipo(prev => [...prev, { id: i.id, nombre: i.nombre_es }]);
-                                      setItemSearch('');
-                                    }}
-                                    className="px-3 py-2 text-xs font-black text-white/80 hover:bg-oro/10 hover:text-oro cursor-pointer border-b border-oro/5 last:border-0"
-                                  >
-                                    {i.nombre_es}
-                                  </div>
-                                ))}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            placeholder="Crear objeto personalizado..."
-                            value={customItem}
-                            onChange={(e) => setCustomItem(e.target.value)}
-                            className="flex-1 bg-black/40 border border-oro/20 text-white px-3 py-1.5 text-xs outline-none focus:border-oro transition-all rounded-sm"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (customItem.trim()) {
-                                setNpcEquipo(prev => [...prev, { id: `custom_${Date.now()}_${Math.random()}`, nombre: customItem.trim() }]);
-                                setCustomItem('');
-                              }
-                            }}
-                            className="ninja-btn-oro px-3 py-1.5 text-xs font-black rounded-sm"
-                          >
-                            Añadir
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Form Footer Action Buttons */}
-                    <div className="flex gap-3 pt-4 border-t border-oro/15 justify-end">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Crear rasgo personalizado..."
+                        value={customTrait}
+                        onChange={(e) => setCustomTrait(e.target.value)}
+                        className="flex-1 bg-black/40 border border-oro/20 text-white px-3 py-1.5 text-xs outline-none focus:border-oro transition-all rounded-sm"
+                      />
                       <button
                         type="button"
                         onClick={() => {
-                          setShowCreateTempModal(false);
-                          // Reset form values
-                          setNpcName('');
-                          setNpcUrlImg('');
-                          setNpcBando('A');
-                          setNpcVit(30);
-                          setNpcStats({ NIN: 3, TAI: 3, GEN: 3, INT: 3, FUE: 3, AGI: 3, EST: 3, SM: 3 });
-                          setNpcRasgos([]);
-                          setNpcEquipo([]);
-                          setTraitSearch('');
-                          setItemSearch('');
-                          setCustomTrait('');
-                          setCustomItem('');
+                          if (customTrait.trim()) {
+                            setNpcRasgos(prev => [...prev, { id: `custom_${Date.now()}_${Math.random()}`, nombre: customTrait.trim(), usado: false }]);
+                            setCustomTrait('');
+                          }
                         }}
-                        className="ninja-btn-ghost px-5 py-2 text-xs"
+                        className="ninja-btn-oro px-3 py-1.5 text-xs font-black rounded-sm"
                       >
-                        Cancelar
+                        Añadir
                       </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Items/Equipment Selector */}
+                <div>
+                  <h3 className="text-[11px] font-black text-oro/40 uppercase tracking-widest mb-3 border-b border-oro/5 pb-1">Equipamiento</h3>
+
+                  {/* Selected items list */}
+                  {npcEquipo.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-3 p-2 bg-black/20 border border-oro/5 rounded-sm">
+                      {npcEquipo.map(eq => (
+                        <button
+                          key={eq.id}
+                          onClick={() => setNpcEquipo(prev => prev.filter(item => item.id !== eq.id))}
+                          className="px-2 py-0.5 bg-amber-950/40 border border-amber-500/30 text-amber-300 text-[10px] font-black flex items-center gap-1 hover:border-red-500/50 hover:text-red-400 rounded-sm transition-all"
+                          title="Click para quitar objeto"
+                        >
+                          <span>{eq.nombre}</span>
+                          <span className="text-[9px] font-mono">✕</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Search and custom input */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Buscar objeto oficial..."
+                        value={itemSearch}
+                        onChange={(e) => setItemSearch(e.target.value)}
+                        className="w-full bg-black/40 border border-oro/20 text-white px-3 py-1.5 text-xs outline-none focus:border-oro transition-all rounded-sm"
+                      />
+                      {itemSearch.trim() !== '' && (
+                        <div className="absolute z-10 left-0 right-0 mt-1 bg-black/95 border border-oro/20 max-h-40 overflow-y-auto rounded-sm shadow-xl custom-scrollbar">
+                          {masterItems
+                            .filter(i => searchIncludes(i.nombre_es, itemSearch) && !npcEquipo.some(ne => ne.id === i.id))
+                            .slice(0, 10)
+                            .map(i => (
+                              <div
+                                key={i.id}
+                                onClick={() => {
+                                  setNpcEquipo(prev => [...prev, { id: i.id, nombre: i.nombre_es }]);
+                                  setItemSearch('');
+                                }}
+                                className="px-3 py-2 text-xs font-black text-white/80 hover:bg-oro/10 hover:text-oro cursor-pointer border-b border-oro/5 last:border-0"
+                              >
+                                {i.nombre_es}
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Crear objeto personalizado..."
+                        value={customItem}
+                        onChange={(e) => setCustomItem(e.target.value)}
+                        className="flex-1 bg-black/40 border border-oro/20 text-white px-3 py-1.5 text-xs outline-none focus:border-oro transition-all rounded-sm"
+                      />
                       <button
                         type="button"
+                        onClick={() => {
+                          if (customItem.trim()) {
+                            setNpcEquipo(prev => [...prev, { id: `custom_${Date.now()}_${Math.random()}`, nombre: customItem.trim() }]);
+                            setCustomItem('');
+                          }
+                        }}
+                        className="ninja-btn-oro px-3 py-1.5 text-xs font-black rounded-sm"
+                      >
+                        Añadir
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Form Footer Action Buttons */}
+                <div className="flex gap-3 pt-4 border-t border-oro/15 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCreateTempModal(false);
+                      // Reset form values
+                      setNpcName('');
+                      setNpcUrlImg('');
+                      setNpcBando('A');
+                      setNpcVit(30);
+                      setNpcStats({ NIN: 3, TAI: 3, GEN: 3, INT: 3, FUE: 3, AGI: 3, EST: 3, SM: 3 });
+                      setNpcRasgos([]);
+                      setNpcEquipo([]);
+                      setTraitSearch('');
+                      setItemSearch('');
+                      setCustomTrait('');
+                      setCustomItem('');
+                    }}
+                    className="ninja-btn-ghost px-5 py-2 text-xs"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => {
                       if (!npcName.trim()) {
                         addToast("Debe ingresar un nombre para el NPC.", "error");
                         return;
                       }
-                          const id = `temp_${Date.now()}`;
-                          const tempChar: Participant = {
-                            user_id: id,
-                            nombre: npcName.trim(),
-                            url_img: npcUrlImg.trim() || undefined,
-                            estado: {
-                              vit: npcVit,
-                              maxVit: npcVit,
-                              ch: 0,
-                              maxCh: 0,
-                              vel: 0,
-                              kawarimi: 0,
-                              maxKawarimi: 0
-                            },
-                            bando: npcBando,
-                            isInCombat: true,
-                            rasgos: npcRasgos as any,
-                            equipo: npcEquipo as any,
-                            stats_base: npcStats
-                          };
-                          createTempCharacter(tempChar);
-                          setShowCreateTempModal(false);
+                      const id = `temp_${Date.now()}`;
+                      const tempChar: Participant = {
+                        user_id: id,
+                        nombre: npcName.trim(),
+                        url_img: npcUrlImg.trim() || undefined,
+                        estado: {
+                          vit: npcVit,
+                          maxVit: npcVit,
+                          ch: 0,
+                          maxCh: 0,
+                          vel: 0,
+                          kawarimi: 0,
+                          maxKawarimi: 0
+                        },
+                        bando: npcBando,
+                        isInCombat: true,
+                        rasgos: npcRasgos as any,
+                        equipo: npcEquipo as any,
+                        stats_base: npcStats,
+                        ocultar_vit: true
+                      };
+                      createTempCharacter(tempChar);
+                      setShowCreateTempModal(false);
 
-                          // Reset values
-                          setNpcName('');
-                          setNpcUrlImg('');
-                          setNpcBando('A');
-                          setNpcVit(30);
-                          setNpcStats({ NIN: 3, TAI: 3, GEN: 3, INT: 3, FUE: 3, AGI: 3, EST: 3, SM: 3 });
-                          setNpcRasgos([]);
-                          setNpcEquipo([]);
-                          setTraitSearch('');
-                          setItemSearch('');
-                          setCustomTrait('');
-                          setCustomItem('');
-                        }}
+                      // Reset values
+                      setNpcName('');
+                      setNpcUrlImg('');
+                      setNpcBando('A');
+                      setNpcVit(30);
+                      setNpcStats({ NIN: 3, TAI: 3, GEN: 3, INT: 3, FUE: 3, AGI: 3, EST: 3, SM: 3 });
+                      setNpcRasgos([]);
+                      setNpcEquipo([]);
+                      setTraitSearch('');
+                      setItemSearch('');
+                      setCustomTrait('');
+                      setCustomItem('');
+                    }}
                     className="ninja-btn-oro px-6 py-2 text-xs flex items-center gap-1.5"
                   >
                     Crear NPC
