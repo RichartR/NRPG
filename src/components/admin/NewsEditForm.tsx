@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, PlusCircle, RefreshCw, Save } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { DataField, SelectField } from '@/components/ui/Fields';
+import { renderDiscordMarkdown } from '@/lib/discord/renderDiscordMarkdown';
 
 interface NewsEditFormProps {
   newsItem?: any;
@@ -23,9 +24,27 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
     descripcion: '',
     ...newsItem
   });
+  const [discordContent, setDiscordContent] = useState('');
+  const [fetchingContent, setFetchingContent] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const addToast = useToastStore(state => state.addToast);
+
+  // Fetch Discord message content if editing an event
+  useEffect(() => {
+    if (!isCreate && formData.categoria === 'Evento' && formData.discord_msg_id) {
+      setFetchingContent(true);
+      fetch(`/api/discord/messages?messageId=${formData.discord_msg_id}&categoria=${formData.categoria}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.content) {
+            setDiscordContent(data.content);
+          }
+        })
+        .catch(err => console.error("Error fetching event message from Discord:", err))
+        .finally(() => setFetchingContent(false));
+    }
+  }, [isCreate, formData.discord_msg_id, formData.categoria]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,21 +64,48 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
       setLoading(false);
       return;
     }
-    if (!discord_msg_id) {
-      addToast("El ID de mensaje de Discord es obligatorio", "error");
-      setLoading(false);
-      return;
+
+    if (categoria === 'Evento') {
+      if (!discordContent.trim()) {
+        addToast("El contenido de Discord para el evento es obligatorio", "error");
+        setLoading(false);
+        return;
+      }
+      if (discordContent.length > 1800) {
+        addToast("El contenido excede el límite de 1800 caracteres", "error");
+        setLoading(false);
+        return;
+      }
+    } else {
+      if (!discord_msg_id) {
+        addToast("El enlace del documento es obligatorio", "error");
+        setLoading(false);
+        return;
+      }
+      if (!discord_msg_id.startsWith('http')) {
+        addToast("El enlace del documento debe ser una URL válida (comenzar con http/https)", "error");
+        setLoading(false);
+        return;
+      }
     }
 
     try {
-      const cleanData = {
+      const cleanData: any = {
         titulo,
         categoria,
-        discord_msg_id,
         url_imagen: formData.url_imagen?.trim() || null,
         descripcion: formData.descripcion?.trim().slice(0, 100) || null,
         activo: formData.activo
       };
+
+      if (categoria === 'Evento') {
+        cleanData.discord_content = discordContent;
+        if (!isCreate) {
+          cleanData.discord_msg_id = formData.discord_msg_id;
+        }
+      } else {
+        cleanData.discord_msg_id = discord_msg_id;
+      }
 
       await AdminService.saveNewsItem({
         id: newsItem?.id,
@@ -82,9 +128,10 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
     { label: 'EVENTO', value: 'Evento' }
   ];
 
+
   return (
     <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-start sm:items-center justify-center p-4 sm:p-6 xl:p-12 overflow-y-auto">
-      <div className="ninja-card-oro w-full max-w-4xl shadow-[0_0_100px_rgba(0,0,0,0.9)] my-8 sm:my-auto overflow-hidden relative">
+      <div className="ninja-card-oro w-full max-w-5xl shadow-[0_0_100px_rgba(0,0,0,0.9)] my-8 sm:my-auto overflow-hidden relative">
         <div className="absolute top-0 right-0 w-96 h-96 bg-oro/5 rounded-full blur-[100px] -mr-48 -mt-48 pointer-events-none" />
 
         <header className="bg-black/40 p-4 sm:p-10 xl:p-12 flex flex-col md:flex-row justify-between items-center gap-6 border-b border-oro/10 relative z-10">
@@ -125,7 +172,7 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-10">
             <div className="md:col-span-2">
               <DataField
-                label="TÍTULO DE LA NOTICIA / ANUNCIO"
+                label="TÍTULO DE LA NOTICIA / ANUNCIO / EVENTO"
                 value={formData.titulo}
                 onChange={v => setFormData({ ...formData, titulo: v })}
                 placeholder="Escribe un título descriptivo..."
@@ -137,12 +184,24 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
               options={categories}
               onChange={v => setFormData({ ...formData, categoria: v })}
             />
-            <DataField
-              label="ID MENSAJE DISCORD (REQUISITO TÁCTICO)"
-              value={formData.discord_msg_id}
-              onChange={v => setFormData({ ...formData, discord_msg_id: v })}
-              placeholder="Ej. 123456789012345678"
-            />
+
+            {formData.categoria === 'Evento' ? (
+              !isCreate && (
+                <DataField
+                  label="ID MENSAJE DISCORD (GENERADO AUTOMÁTICAMENTE)"
+                  value={formData.discord_msg_id}
+                  disabled={true}
+                />
+              )
+            ) : (
+              <DataField
+                label="ENLACE DEL DOCUMENTO (URL)"
+                value={formData.discord_msg_id}
+                onChange={v => setFormData({ ...formData, discord_msg_id: v })}
+                placeholder="Ej. https://drive.google.com/..."
+              />
+            )}
+
             <div className="md:col-span-2">
               <DataField
                 label="URL IMAGEN DE CABECERA (OPCIONAL)"
@@ -151,6 +210,7 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
                 placeholder="https://i.imgur.com/... o /assets/images/..."
               />
             </div>
+
             <div className="md:col-span-2">
               <div className="flex flex-col gap-2">
                 <label className="text-caption sm:text-caption font-black uppercase tracking-[0.3em] text-oro/50">
@@ -166,13 +226,104 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
                     className="w-full bg-black/60 border border-oro/20 hover:border-oro/40 focus:border-oro/60 px-5 py-3 text-xs text-oro/90 font-bold outline-none transition-all placeholder:text-oro/20 uppercase tracking-wider resize-none"
                     style={{ clipPath: 'polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px)' }}
                   />
-                  <span className={`absolute bottom-3 right-4 text-caption font-black tabular-nums tracking-widest transition-colors ${(formData.descripcion?.length || 0) >= 90 ? 'text-rojo-sangre' : 'text-oro/30'
-                    }`}>
+                  <span className={`absolute bottom-3 right-4 text-caption font-black tabular-nums tracking-widest transition-colors ${(formData.descripcion?.length || 0) >= 90 ? 'text-rojo-sangre' : 'text-oro/30'}`}>
                     {formData.descripcion?.length || 0}/100
                   </span>
                 </div>
               </div>
             </div>
+
+            {formData.categoria === 'Evento' && (
+              <div className="md:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-8 border-t border-oro/10 pt-8 mt-4">
+                {/* Markdown Editor */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-caption sm:text-caption font-black uppercase tracking-[0.3em] text-oro/50">
+                    CONTENIDO DEL EVENTO (MARKDOWN DE DISCORD)
+                  </label>
+                  
+                  {/* Legend / Guide of MD formats */}
+                  <div className="bg-black/30 border border-oro/10 p-3.5 flex flex-wrap gap-x-5 gap-y-1.5 text-[10px] text-oro/50 font-bold uppercase tracking-wider" style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}>
+                    <div><span className="text-oro font-black">**Negrita**</span></div>
+                    <div><span className="text-oro font-black">*Cursiva*</span></div>
+                    <div><span className="text-oro font-black">__Subrayado__</span></div>
+                    <div><span className="text-oro font-black">~~Tachado~~</span></div>
+                    <div><span className="text-oro font-black">`Código`</span></div>
+                    <div><span className="text-oro font-black">```Bloque Código```</span></div>
+                    <div><span className="text-oro font-black">- Lista</span></div>
+                    <div><span className="text-oro font-black"># H1 | ## H2</span></div>
+                    <div><span className="text-oro font-black">&gt; Cita</span></div>
+                    <div><span className="text-oro font-black">[Enlace](url)</span></div>
+                  </div>
+
+                  <div className="relative flex-1 min-h-[300px] flex flex-col">
+                    {fetchingContent ? (
+                      <div className="flex-1 bg-black/60 border border-oro/20 flex items-center justify-center">
+                        <RefreshCw className="w-6 h-6 animate-spin text-oro" />
+                      </div>
+                    ) : (
+                      <>
+                        <textarea
+                          maxLength={1800}
+                          value={discordContent}
+                          onChange={e => setDiscordContent(e.target.value)}
+                          placeholder="Escribe el cuerpo del evento utilizando markdown de Discord... **negrita**, *cursiva*, `código`, listados, etc."
+                          className="w-full flex-1 bg-black/60 border border-oro/20 hover:border-oro/40 focus:border-oro/60 px-5 py-4 text-xs text-oro/90 font-bold outline-none transition-all placeholder:text-oro/20 resize-none min-h-[250px]"
+                          style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                        />
+                        <div className={`flex justify-end mt-2 text-caption font-black uppercase tracking-widest tabular-nums transition-colors ${discordContent.length >= 1700 ? 'text-rojo-sangre' : discordContent.length >= 1500 ? 'text-oro/60' : 'text-oro/30'}`}>
+                          {discordContent.length} / 1800
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Web Live Preview */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-caption sm:text-caption font-black uppercase tracking-[0.3em] text-oro/50">
+                    VISTA PREVIA EN LA WEB (REPLICACIÓN DE DISEÑO)
+                  </label>
+                  <div 
+                    className="flex-1 ninja-card-oro w-full overflow-hidden flex flex-col relative shadow-[0_0_30px_rgba(0,0,0,0.5)] border border-oro/10 min-h-[350px] max-h-[500px]"
+                    style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
+                  >
+                    {/* Modal Header Replica */}
+                    <div className="h-32 sm:h-40 relative overflow-hidden bg-black flex-shrink-0">
+                      {formData.url_imagen ? (
+                        <img
+                          src={formData.url_imagen}
+                          alt=""
+                          className="w-full h-full object-cover object-center opacity-80"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-oro/5" />
+                      )}
+                      <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/50 to-transparent" />
+
+                      <div className="absolute bottom-4 left-4 right-4 z-10 flex flex-col items-start gap-0.5">
+                        <span className="px-2.5 py-0.5 text-[9px] font-black bg-rojo-sangre text-oro uppercase tracking-[0.3em] inline-block" style={{ clipPath: 'polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px)' }}>
+                          {formData.categoria || 'Evento'}
+                        </span>
+                        <h2 className="block ninja-title text-base sm:text-lg leading-tight uppercase font-ninja truncate w-full">
+                          {formData.titulo || 'SIN TÍTULO'}
+                        </h2>
+                      </div>
+                    </div>
+
+                    {/* Gold Divider */}
+                    <div className="h-px bg-oro/20 flex-shrink-0" />
+
+                    {/* Modal Body Replica */}
+                    <div className="p-4 sm:p-6 overflow-y-auto flex-1 bg-neutral-900 custom-scrollbar">
+                      <div className="prose prose-invert max-w-none text-gris-texto text-xs sm:text-sm leading-relaxed">
+                        {discordContent.trim() ? renderDiscordMarkdown(discordContent) : <span className="text-oro/20 italic select-none">Escribe contenido para ver la vista previa...</span>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
           </div>
 

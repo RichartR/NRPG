@@ -95,24 +95,27 @@ export const AdminService = {
 
   // Noticias y Eventos
   async saveNewsItem(item: any) {
-    const supabase = createClient();
-    const { id, created_at, ...cleanData } = item;
-
-    if (id) {
-      const { data, error } = await supabase.from('info_noticias_index').update(cleanData).eq('id', id).select().single();
-      if (error) throw error;
-      return data;
-    } else {
-      const { data, error } = await supabase.from('info_noticias_index').insert([cleanData]).select().single();
-      if (error) throw error;
-      return data;
+    const res = await fetch('/api/admin/news', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(item),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Error al guardar el anuncio');
     }
+    return res.json();
   },
 
   async deleteNewsItem(id: number) {
-    const supabase = createClient();
-    const { error } = await supabase.from('info_noticias_index').delete().eq('id', id);
-    if (error) throw error;
+    const res = await fetch(`/api/admin/news?id=${id}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Error al eliminar el anuncio');
+    }
+    return res.json();
   },
 
   // Documentos de Combate
