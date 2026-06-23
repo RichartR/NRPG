@@ -653,6 +653,10 @@ export function CharacterSheetView({
 
   const getClanOptions = (slot: number) => {
     const filteredRamas = (masters.ramas || []).filter((r: any) => !r.aldea_id || Number(r.aldea_id) === Number(character.aldea_id));
+    const otherSlot = slot === 1 ? 2 : 1;
+    const otherPr = character.personajes_ramas?.find((r: any) => Number(r.slot) === otherSlot);
+    const otherRama = otherPr ? (masters.ramas || []).find((r: any) => r.id === Number(otherPr.rama_id)) : null;
+    const otherIsClan = otherRama?.tipo === 'clan';
 
     return filteredRamas.map((r: any) => {
       const isClan = r.tipo === 'clan';
@@ -670,10 +674,13 @@ export function CharacterSheetView({
 
       const isOriginalClan = !isNew && originalCharacter?.personajes_ramas?.some((pr: any) => pr.rama_id === r.id);
       const isFull = activeCount >= limit;
-      const shouldDisable = isFull && !isOriginalClan;
+      const shouldDisable = (isFull && !isOriginalClan) || otherIsClan;
 
       const tagEspecial = r.es_especial ? ' [Especial]' : '';
-      const label = `${r.nombre}${tagEspecial}\n(${activeCount}/${limit} cupos)${shouldDisable ? ' - LLENO' : ''}`;
+      let label = `${r.nombre}${tagEspecial}\n(${activeCount}/${limit} cupos)${isFull && !isOriginalClan ? ' - LLENO' : ''}`;
+      if (otherIsClan) {
+        label = `${r.nombre}${tagEspecial} - LÍMITE DE 1 CLAN`;
+      }
 
       return {
         label,
