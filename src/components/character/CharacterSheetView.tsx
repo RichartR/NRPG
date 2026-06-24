@@ -941,7 +941,7 @@ export function CharacterSheetView({
           charSubIds.push(Number(clanEleccion.sub_especialidad_id));
         }
 
-        if (!reqIds.some(reqId => charSubIds.includes(Number(reqId)))) {
+        if (!reqIds.some((reqId: any) => charSubIds.includes(Number(reqId)))) {
           return false;
         }
       }

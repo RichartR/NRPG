@@ -1181,8 +1181,8 @@ export default function TiendaDetallePage() {
                                             ...(selectedChar.eleccion_tecnicas_clan?.sub_especialidad_id ? [Number(selectedChar.eleccion_tecnicas_clan.sub_especialidad_id)] : [])
                                           ] : [];
                                           const reqIds = Array.isArray(itemReqs.sub_especialidad_id) ? itemReqs.sub_especialidad_id : [itemReqs.sub_especialidad_id];
-                                          const isMet = !selectedChar || reqIds.some(reqId => playerSubSpecs.includes(Number(reqId)));
-                                          const subNames = reqIds.map(reqId => masters.subEspecialidades?.find(s => Number(s.id) === Number(reqId))?.nombre || `ID: ${reqId}`);
+                                          const isMet = !selectedChar || reqIds.some((reqId: any) => playerSubSpecs.includes(Number(reqId)));
+                                          const subNames = reqIds.map((reqId: any) => masters.subEspecialidades?.find(s => Number(s.id) === Number(reqId))?.nombre || `ID: ${reqId}`);
                                           const subLabel = subNames.join(' o ');
 
                                           return (
