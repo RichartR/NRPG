@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { convertDriveUrl, getDownloadUrl } from '@/lib/utils/driveConverter';
 import Link from 'next/link';
 import Breadcrumbs, { CrumbItem } from './Breadcrumbs';
@@ -16,6 +16,13 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
   const [zoom, setZoom] = useState(1);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [timestamp] = useState(() => Date.now());
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [showScrollWarning, setShowScrollWarning] = useState(false);
+
+  const mainRef = useRef<HTMLElement>(null);
+  const warningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const rawProxyUrl = convertDriveUrl(url);
   const downloadUrl = getDownloadUrl(url);
@@ -25,7 +32,17 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
   const fileId = fileIdMatch ? fileIdMatch[1] : null;
   const proxyPdfUrl = fileId ? `/api/proxy-pdf?fileId=${fileId}` : url;
 
+  // Limpiar timeout al desmontar
   useEffect(() => {
+    return () => {
+      if (warningTimeoutRef.current) {
+        clearTimeout(warningTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    setMounted(true);
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 640);
     };
@@ -36,13 +53,41 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
 
   // Lógica Híbrida:
   // - En móvil: Cargamos el PDF a través del proxy y lo mostramos con pdf-viewer.html (evita que Google renderice roto en móviles).
-  // - En PC: Cargamos la vista previa directa de Google (alta velocidad y rendimiento).
+  // - En PC: Cargamos la vista previa directa de Google con authuser=0 y cache-buster para máxima confiabilidad.
   const embedUrl = isMobile
     ? `/pdf-viewer.html?file=${encodeURIComponent(proxyPdfUrl)}`
-    : rawProxyUrl;
+    : `${rawProxyUrl}${rawProxyUrl.includes('?') ? '&' : '?'}authuser=0&cb=${timestamp}`;
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 2.0));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.6));
+
+  const handleMainScroll = (e: React.UIEvent<HTMLElement>) => {
+    const currentTarget = e.currentTarget;
+    const scrollTop = currentTarget.scrollTop;
+    setShowScrollTop(scrollTop > 200);
+  };
+
+  const handleMainWheel = (e: React.WheelEvent<HTMLElement>) => {
+    if (isMobile) return;
+    const currentTarget = mainRef.current;
+    if (!currentTarget) return;
+
+    // Detectamos si está abajo del todo (o muy cerca, tolerancia 10px) y el usuario intenta rodar hacia abajo
+    const isAtBottom = currentTarget.scrollHeight - currentTarget.scrollTop <= currentTarget.clientHeight + 10;
+    if (isAtBottom && e.deltaY > 0) {
+      setShowScrollWarning(true);
+      if (warningTimeoutRef.current) {
+        clearTimeout(warningTimeoutRef.current);
+      }
+      warningTimeoutRef.current = setTimeout(() => {
+        setShowScrollWarning(false);
+      }, 2000);
+    }
+  };
+
+  const scrollToTop = () => {
+    mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const isGoogleDoc = rawProxyUrl.includes("docs.google.com/document");
   const isGoogleDriveFile = rawProxyUrl.includes("drive.google.com/file");
@@ -108,7 +153,12 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
         </div>
       </header>
 
-      <main className={`flex-1 overflow-auto custom-scrollbar transition-colors duration-1000 ${loading ? 'bg-black' : 'bg-transparent'}`}>
+      <main
+        ref={mainRef}
+        onScroll={handleMainScroll}
+        onWheel={handleMainWheel}
+        className={`flex-1 overflow-auto custom-scrollbar transition-colors duration-1000 ${loading ? 'bg-black' : 'bg-transparent'}`}
+      >
         <div
           className="py-12 xl:py-20 flex flex-col items-center min-h-full"
           style={zoom !== 1 ? {
@@ -131,22 +181,24 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
               WebkitFontSmoothing: 'antialiased'
             }}
           >
-            <div
-              className="absolute"
-              style={{
-                width: isMobile ? '100%' : `${desktopIframeWidth}px`,
-                height: isMobile ? '100%' : `calc(100% + ${desktopTopOffset}px)`,
-                left: isMobile ? '0' : `-${desktopLeftOffset}px`,
-                top: isMobile ? '0' : `-${desktopTopOffset}px`
-              }}
-            >
-              <iframe
-                src={embedUrl}
-                onLoad={() => setLoading(false)}
-                className="w-full h-full border-none bg-[#ffe6ba]"
-                allow="autoplay"
-              />
-            </div>
+            {mounted && (
+              <div
+                className="absolute"
+                style={{
+                  width: isMobile ? '100%' : `${desktopIframeWidth}px`,
+                  height: isMobile ? '100%' : `calc(100% + ${desktopTopOffset}px)`,
+                  left: isMobile ? '0' : `-${desktopLeftOffset}px`,
+                  top: isMobile ? '0' : `-${desktopTopOffset}px`
+                }}
+              >
+                <iframe
+                  src={embedUrl}
+                  onLoad={() => setLoading(false)}
+                  className="w-full h-full border-none bg-[#ffe6ba]"
+                  allow="autoplay"
+                />
+              </div>
+            )}
 
             {loading && (
               <div className="absolute inset-0 bg-black flex items-center justify-center z-10">
@@ -161,6 +213,27 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
           </div>
         </div>
       </main>
+
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 z-50 p-4 bg-oro text-rojo-sangre hover:bg-[#ffe69f] hover:text-black font-black text-caption tracking-[0.1em] uppercase transition-all duration-300 shadow-[0_0_20px_rgba(255,230,159,0.3)] active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+          style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+        >
+          <span className="text-xs">▲</span>
+          <span>SUBIR</span>
+        </button>
+      )}
+
+      {showScrollWarning && (
+        <div
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-4 bg-neutral-900 border border-oro/40 text-oro text-xs sm:text-sm font-black uppercase tracking-[0.15em] flex items-center gap-3 shadow-[0_0_30px_rgba(255,230,159,0.25)] animate-fade-in"
+          style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
+        >
+          <span className="text-rojo-sangre text-base">⚠️</span>
+          <span>Coloca el ratón sobre el documento para seguir leyendo</span>
+        </div>
+      )}
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {
