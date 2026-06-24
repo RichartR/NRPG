@@ -7,7 +7,7 @@ import { useScrollLock } from '@/hooks/useScrollLock';
 
 interface ConfirmOptions {
   title?: string;
-  message: string;
+  message: string | React.ReactNode;
   confirmLabel?: string;
   cancelLabel?: string;
   variant?: 'danger' | 'primary';
@@ -109,7 +109,17 @@ export function ConfirmContainer() {
 
           <div className="rounded-sm mb-8 px-4 py-4 bg-white/30 border border-white/20 backdrop-blur-sm" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
             <p className="text-xs sm:text-sm text-[#050309] leading-relaxed font-semibold">
-              {options.message}
+              {(() => {
+                const message = options.message;
+                if (typeof message !== 'string') return message;
+                const parts = message.split('**');
+                return parts.map((part, i) => {
+                  if (i % 2 !== 0) {
+                    return <strong key={i} className="font-extrabold text-[#5d0e0e]">{part}</strong>;
+                  }
+                  return part;
+                });
+              })()}
             </p>
           </div>
 
