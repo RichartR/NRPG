@@ -378,12 +378,18 @@ export default function GlosarioView({
       }
     }
     if (reqs.sub_especialidad_id) {
-      const sub = subespecialidades.find((s: any) => s.id === reqs.sub_especialidad_id);
-      elements.push(
-        <span key="subespecialidad" className="text-indigo-700 font-black">
-          Subcat.: <span className="text-indigo-950">{sub?.nombre || `ID: ${reqs.sub_especialidad_id}`}</span>
-        </span>
-      );
+      const ids = Array.isArray(reqs.sub_especialidad_id) ? reqs.sub_especialidad_id : [reqs.sub_especialidad_id];
+      if (ids.length > 0) {
+        const subNames = ids.map((id: any) => {
+          const sub = subespecialidades.find((s: any) => s.id === id);
+          return sub?.nombre || `ID: ${id}`;
+        });
+        elements.push(
+          <span key="subespecialidad" className="text-indigo-700 font-black">
+            Subcat.: <span className="text-indigo-950">{subNames.join(' o ')}</span>
+          </span>
+        );
+      }
     }
 
     if (reqs.stats && typeof reqs.stats === 'object') {
