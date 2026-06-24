@@ -7,9 +7,10 @@ import { ProfileService } from '@/services/supabase/profile.service';
 import {
   Dices, Users, Play,
   RotateCcw, ChevronUp, ChevronDown,
-  Trash2, Copy, Sparkles, Eye, EyeOff
+  Trash2, Copy, Sparkles, Eye, EyeOff, RefreshCw
 } from 'lucide-react';
 import { useToastStore } from '@/components/ui/Toast';
+import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import CombatForm from '@/components/registros/CombatForm';
@@ -48,6 +49,7 @@ interface Participant {
 export default function CombatRoom({ roomId }: { roomId: string }) {
   const { activeCharacter, fetchActiveCharacter } = useCharacterStore();
   const addToast = useToastStore(state => state.addToast);
+  const confirm = useConfirmStore(state => state.confirm);
   const searchParams = useSearchParams();
   const isEventMode = roomId.endsWith('-E') || (searchParams ? searchParams.get('mode') === 'event' : false);
   const canUseCombatMusic = isEventMode;
@@ -119,6 +121,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   const [isCdDropdownOpen, setIsCdDropdownOpen] = useState(false);
   const [bgNumber, setBgNumber] = useState<number>(1);
   const [isAdminOrNarrator, setIsAdminOrNarrator] = useState(false);
+  const [userRoles, setUserRoles] = useState<string[]>([]);
   const [tempCharacters, setTempCharacters] = useState<Record<string, Participant>>({});
   const tempCharactersRef = useRef(tempCharacters);
   const [masterTraits, setMasterTraits] = useState<any[]>([]);
@@ -257,7 +260,9 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const profile = await ProfileService.getProfile(user.id);
-          const hasRole = profile?.roles?.some((r: string) => ['admin', 'moderador', 'narrador'].includes(r));
+          const roles = profile?.roles || [];
+          setUserRoles(roles);
+          const hasRole = roles.some((r: string) => ['admin', 'moderador', 'narrador'].includes(r));
           setIsAdminOrNarrator(!!hasRole);
         }
       } catch (err) {
@@ -285,44 +290,130 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     fetchActiveCharacter();
   }, [fetchActiveCharacter]);
 
+  // Initializing global combat state from localStorage (if valid)
+  useEffect(() => {
+    const globalStorageKey = `combat_room_global_${roomId}`;
+    const savedGlobalStr = localStorage.getItem(globalStorageKey);
+    if (savedGlobalStr) {
+      try {
+        const savedGlobal = JSON.parse(savedGlobalStr);
+        if (savedGlobal.timestamp && Date.now() - savedGlobal.timestamp <= 7200000) {
+          setTurnQueue(savedGlobal.turnQueue || []);
+          setCurrentTurnIndex(savedGlobal.currentTurnIndex || 0);
+          setRondaActual(savedGlobal.rondaActual || 1);
+          setCombatStarted(savedGlobal.combatStarted || false);
+          setLogs(savedGlobal.logs || []);
+          setTempCharacters(savedGlobal.tempCharacters || {});
+        } else {
+          localStorage.removeItem(globalStorageKey);
+        }
+      } catch (e) {
+        console.error("Error parsing saved global combat state:", e);
+      }
+    }
+  }, [roomId]);
+
   // Initializing local character stats
   useEffect(() => {
     if (activeCharacter) {
       if (!localState) {
-        let vit = activeCharacter.atributos_derivados.VIT;
-        let maxVit = activeCharacter.atributos_derivados.VIT;
+        const storageKey = `combat_room_${roomId}_${activeCharacter.id}`;
+        const savedDataStr = localStorage.getItem(storageKey);
+        let restored = false;
 
-        if (isEventMode) {
-          const rankVal = (activeCharacter.rango || 'D').toUpperCase();
-          const rankVits: Record<string, number> = {
-            'D': 15,
-            'C': 25,
-            'B': 50,
-            'A': 80,
-            'S': 100
-          };
-          const evVit = rankVits[rankVal] ?? 15;
-          vit = evVit;
-          maxVit = evVit;
+        if (savedDataStr) {
+          try {
+            const savedData = JSON.parse(savedDataStr);
+            if (savedData.timestamp && Date.now() - savedData.timestamp <= 7200000) {
+              setLocalState(savedData.localState);
+              setMyBando(savedData.myBando);
+              setMyIsInCombat(savedData.myIsInCombat);
+              setMyCooldowns(savedData.myCooldowns || {});
+              setMyActiveTecnicas(savedData.myActiveTecnicas || {});
+              restored = true;
+            } else {
+              localStorage.removeItem(storageKey);
+            }
+          } catch (e) {
+            console.error("Error parsing saved combat state:", e);
+          }
         }
 
-        setLocalState({
-          vit: vit,
-          maxVit: maxVit,
-          ch: activeCharacter.atributos_derivados.CH,
-          maxCh: activeCharacter.atributos_derivados.CH,
-          vel: activeCharacter.atributos_derivados.VEL || 0,
-          kawarimi: 0,
-          maxKawarimi: 1,
-          usedTraits: {},
-          chConstanteActive: false,
-          chConstanteCost: 0,
-        });
+        if (!restored) {
+          let vit = activeCharacter.atributos_derivados.VIT;
+          let maxVit = activeCharacter.atributos_derivados.VIT;
+
+          if (isEventMode) {
+            const rankVal = (activeCharacter.rango || 'D').toUpperCase();
+            const rankVits: Record<string, number> = {
+              'D': 15,
+              'C': 25,
+              'B': 50,
+              'A': 80,
+              'S': 100
+            };
+            const evVit = rankVits[rankVal] ?? 15;
+            vit = evVit;
+            maxVit = evVit;
+          }
+
+          setLocalState({
+            vit: vit,
+            maxVit: maxVit,
+            ch: activeCharacter.atributos_derivados.CH,
+            maxCh: activeCharacter.atributos_derivados.CH,
+            vel: activeCharacter.atributos_derivados.VEL || 0,
+            kawarimi: 0,
+            maxKawarimi: 1,
+            usedTraits: {},
+            chConstanteActive: false,
+            chConstanteCost: 0,
+          });
+        }
       } else if (localState.vel !== activeCharacter.atributos_derivados.VEL) {
         setLocalState(prev => prev ? { ...prev, vel: activeCharacter.atributos_derivados.VEL || 0 } : null);
       }
     }
-  }, [activeCharacter, localState?.vel, isEventMode]);
+  }, [activeCharacter, localState?.vel, isEventMode, roomId]);
+
+  // Save local active character state to localStorage on changes
+  useEffect(() => {
+    if (activeCharacter && localState) {
+      const storageKey = `combat_room_${roomId}_${activeCharacter.id}`;
+      if (myIsInCombat || myBando !== null) {
+        const dataToSave = {
+          localState,
+          myBando,
+          myIsInCombat,
+          myCooldowns,
+          myActiveTecnicas,
+          timestamp: Date.now()
+        };
+        localStorage.setItem(storageKey, JSON.stringify(dataToSave));
+      } else {
+        localStorage.removeItem(storageKey);
+      }
+    }
+  }, [roomId, activeCharacter?.id, localState, myBando, myIsInCombat, myCooldowns, myActiveTecnicas]);
+
+  // Save global room state to localStorage on changes
+  useEffect(() => {
+    const globalStorageKey = `combat_room_global_${roomId}`;
+    if (combatStarted && turnQueue.length > 0) {
+      const globalData = {
+        turnQueue,
+        currentTurnIndex,
+        rondaActual,
+        combatStarted,
+        logs,
+        tempCharacters,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(globalStorageKey, JSON.stringify(globalData));
+    } else {
+      localStorage.removeItem(globalStorageKey);
+    }
+  }, [roomId, turnQueue, currentTurnIndex, rondaActual, combatStarted, logs, tempCharacters]);
 
   // Refs to avoid feedback loops and channel recreation on state updates
   const turnQueueRef = useRef(turnQueue);
@@ -335,6 +426,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   const myCooldownsRef = useRef(myCooldowns);
   const logsRef = useRef(logs);
   const activeCharacterRef = useRef(activeCharacter);
+  const myActiveTecnicasRef = useRef(myActiveTecnicas);
   const lastProcessedRoundRef = useRef<number>(rondaActual);
 
   useEffect(() => {
@@ -387,6 +479,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   useEffect(() => { logsRef.current = logs; }, [logs]);
   useEffect(() => { activeCharacterRef.current = activeCharacter; }, [activeCharacter]);
   useEffect(() => { tempCharactersRef.current = tempCharacters; }, [tempCharacters]);
+  useEffect(() => { myActiveTecnicasRef.current = myActiveTecnicas; }, [myActiveTecnicas]);
 
   // Supabase Presence and Broadcast Subscriptions
   useEffect(() => {
@@ -404,6 +497,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     channel
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
+        console.log("Supabase Presence sync triggered, raw state:", state);
         const activeParticipants: Record<string, Participant> = {};
 
         Object.keys(state).forEach((key) => {
@@ -413,6 +507,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
             activeParticipants[key] = merged;
           }
         });
+        console.log("Processed activeParticipants:", activeParticipants);
         setParticipants(activeParticipants);
       })
       .on('broadcast', { event: 'combat_log' }, ({ payload }) => {
@@ -420,10 +515,12 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
           setLogs(prev => [...prev, payload.message].slice(-40));
         }
       })
-      .on('broadcast', { event: 'request_combat_state' }, () => {
+      .on('broadcast', { event: 'request_combat_state' }, ({ payload }) => {
+        const requesterId = payload?.requesterId;
         // Find active participants to choose a single responder
         const presenceState = channel.presenceState();
         const activeResponders = Object.keys(presenceState).filter(key => {
+          if (key === requesterId) return false;
           const presences = presenceState[key] as any[];
           if (presences.length === 0) return false;
           const participant = presences[0];
@@ -515,7 +612,46 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
           }
         }
       })
+      .on('broadcast', { event: 'request_presence_update' }, () => {
+        if (channelRef.current && activeCharacterRef.current && localStateRef.current) {
+          const payloadTrack = {
+            user_id: String(activeCharacterRef.current.id),
+            nombre: activeCharacterRef.current.nombre_ninja,
+            url_img: activeCharacterRef.current.url_img || '',
+            estado: localStateRef.current,
+            bando: myBandoRef.current,
+            isInCombat: myIsInCombatRef.current,
+            cooldowns: Object.keys(myCooldownsRef.current).map(Number).map(techId => {
+              const pt = activeCharacterRef.current?.personajes_tecnicas?.find(t => t.tecnica_id === techId);
+              return {
+                id: techId,
+                nombre: pt?.info_glosario?.nombre_jp || pt?.info_glosario?.nombre_es || 'Técnica',
+                reusableAtRound: myCooldownsRef.current[techId]
+              };
+            }),
+            tecnicasActivas: Object.keys(myActiveTecnicasRef.current).map(Number).map(techId => {
+              const pt = activeCharacterRef.current?.personajes_tecnicas?.find(t => t.tecnica_id === techId);
+              return {
+                id: techId,
+                nombre: pt?.info_glosario?.nombre_jp || pt?.info_glosario?.nombre_es || 'Técnica',
+                cdRounds: myActiveTecnicasRef.current[techId].cdRounds
+              };
+            }),
+            rasgos: activeCharacterRef.current.personajes_rasgos?.map(r => ({
+              id: r.info_rasgos?.id || r.rasgo_id,
+              nombre: r.info_rasgos?.nombre || 'Rasgo',
+              usado: localStateRef.current?.usedTraits?.[r.info_rasgos?.id || r.rasgo_id] || false
+            })) || [],
+            equipo: activeCharacterRef.current.personajes_inventario?.filter(pi => pi.equipado).map(pi => ({
+              id: pi.info_glosario?.id || pi.item_id,
+              nombre: pi.info_glosario?.nombre_es || 'Objeto'
+            })) || []
+          };
+          channelRef.current.track(payloadTrack);
+        }
+      })
       .on('broadcast', { event: 'combat_reset' }, () => {
+        resetLocalStateToDefault();
         setMyBando(null);
         setMyIsInCombat(false);
         setMyCooldowns({});
@@ -523,6 +659,13 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         setTempCharacters({});
         setActiveMusicVideoId(null);
         setMusicIsPlaying(true);
+        // Clear localStorage on reset
+        const globalStorageKey = `combat_room_global_${roomId}`;
+        localStorage.removeItem(globalStorageKey);
+        if (activeCharacterRef.current) {
+          const storageKey = `combat_room_${roomId}_${activeCharacterRef.current.id}`;
+          localStorage.removeItem(storageKey);
+        }
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
@@ -531,7 +674,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
           channel.send({
             type: 'broadcast',
             event: 'request_combat_state',
-            payload: {}
+            payload: { requesterId: String(activeCharacter.id) }
           });
         } else {
           setIsSubscribed(false);
@@ -581,6 +724,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
           nombre: pi.info_glosario?.nombre_es || 'Objeto'
         })) || []
       };
+      console.log("Tracking local player presence. Payload:", payload);
       channelRef.current.track(payload);
     }
   }, [
@@ -726,21 +870,48 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     updateGlobalCombatState(newQueue, newActiveIndex, rondaActual, combatStarted);
   };
 
-  const removeFromQueue = (charId: string) => {
+  const removeFromQueue = async (charId: string) => {
+    const isAdminOrMod = userRoles.some(r => ['admin', 'moderador'].includes(r));
+    const canDeleteAll = isAdminOrMod || (isEventMode && userRoles.includes('narrador'));
+    const isOwnCharacter = activeCharacter && String(activeCharacter.id) === charId;
+
+    if (!canDeleteAll && !isOwnCharacter) {
+      addToast("No tienes permission para retirar a este personaje.", "error");
+      return;
+    }
+
+    const name = participants[charId]?.nombre || tempCharactersRef.current[charId]?.nombre || 'Shinobi';
+    const isConfirmed = await confirm({
+      title: "Retirar de Turnos",
+      message: `¿Seguro que deseas retirar a **${name}** de la cola de turnos?`,
+      confirmLabel: "Retirar",
+      cancelLabel: "Cancelar",
+      variant: "danger"
+    });
+    if (!isConfirmed) return;
+
     const newQueue = turnQueue.filter(id => id !== charId);
     let newIndex = currentTurnIndex;
     if (newIndex >= newQueue.length && newQueue.length > 0) {
       newIndex = 0;
     }
     updateGlobalCombatState(newQueue, newIndex, rondaActual, newQueue.length > 0 ? combatStarted : false);
-    addLog(`El participante **${participants[charId]?.nombre || tempCharactersRef.current[charId]?.nombre || 'Shinobi'}** ha sido retirado de los turnos.`);
+    addLog(`El participante **${name}** ha sido retirado de los turnos.`);
   };
 
-  const toggleJoinCombat = () => {
+  const toggleJoinCombat = async () => {
     if (!activeCharacter) return;
     const charIdStr = String(activeCharacter.id);
 
     if (myIsInCombat) {
+      const isConfirmed = await confirm({
+        title: "Salir del Combate",
+        message: "¿Seguro que deseas salir del combate? Serás eliminado del orden de turnos.",
+        confirmLabel: "Salir",
+        cancelLabel: "Cancelar",
+        variant: "danger"
+      });
+      if (!isConfirmed) return;
       setMyIsInCombat(false);
       const newQueue = turnQueue.filter(id => id !== charIdStr);
       let newIndex = currentTurnIndex;
@@ -768,7 +939,53 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     addLog(`Es el turno de **${activePlayerName}**.`);
   };
 
-  const resetCombat = () => {
+  const resetLocalStateToDefault = () => {
+    const char = activeCharacterRef.current || activeCharacter;
+    if (char) {
+      let vit = char.atributos_derivados.VIT;
+      let maxVit = char.atributos_derivados.VIT;
+
+      if (isEventMode) {
+        const rankVal = (char.rango || 'D').toUpperCase();
+        const rankVits: Record<string, number> = {
+          'D': 15,
+          'C': 25,
+          'B': 50,
+          'A': 80,
+          'S': 100
+        };
+        const evVit = rankVits[rankVal] ?? 15;
+        vit = evVit;
+        maxVit = evVit;
+      }
+
+      setLocalState({
+        vit: vit,
+        maxVit: maxVit,
+        ch: char.atributos_derivados.CH,
+        maxCh: char.atributos_derivados.CH,
+        vel: char.atributos_derivados.VEL || 0,
+        kawarimi: 0,
+        maxKawarimi: 1,
+        usedTraits: {},
+        chConstanteActive: false,
+        chConstanteCost: 0,
+      });
+    }
+  };
+
+  const resetCombat = async () => {
+    const isConfirmed = await confirm({
+      title: "Reiniciar Combate",
+      message: "¿Estás seguro de que quieres reiniciar el combate por completo? Esto limpiará el orden de turnos, los registros y reiniciará el estado de todos los participantes.",
+      confirmLabel: "Reiniciar",
+      cancelLabel: "Cancelar",
+      variant: "danger"
+    });
+    if (!isConfirmed) return;
+
+    resetLocalStateToDefault();
+
     const newTemps: Record<string, Participant> = {};
     updateGlobalCombatState([], 0, 1, false);
     setMyBando(null);
@@ -782,6 +999,70 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         senderId: String(activeCharacter.id)
       });
     }
+
+    // Clear localStorage on reset
+    const globalStorageKey = `combat_room_global_${roomId}`;
+    localStorage.removeItem(globalStorageKey);
+    if (activeCharacter) {
+      const storageKey = `combat_room_${roomId}_${activeCharacter.id}`;
+      localStorage.removeItem(storageKey);
+    }
+  };
+
+  const forceSync = () => {
+    if (channelRef.current && activeCharacter) {
+      // 1. Request the latest global state
+      channelRef.current.send({
+        type: 'broadcast',
+        event: 'request_combat_state',
+        payload: { requesterId: String(activeCharacter.id) }
+      });
+      // 2. Request other players to broadcast/re-track their presence
+      channelRef.current.send({
+        type: 'broadcast',
+        event: 'request_presence_update',
+        payload: { senderId: String(activeCharacter.id) }
+      });
+    }
+
+    // 3. Track ourselves immediately to publish/refresh our status for everyone
+    if (isSubscribed && channelRef.current && activeCharacter && localState) {
+      const payload = {
+        user_id: String(activeCharacter.id),
+        nombre: activeCharacter.nombre_ninja,
+        url_img: activeCharacter.url_img || '',
+        estado: localState,
+        bando: myBando,
+        isInCombat: myIsInCombat,
+        cooldowns: Object.keys(myCooldowns).map(Number).map(techId => {
+          const pt = activeCharacter.personajes_tecnicas?.find(t => t.tecnica_id === techId);
+          return {
+            id: techId,
+            nombre: pt?.info_glosario?.nombre_jp || pt?.info_glosario?.nombre_es || 'Técnica',
+            reusableAtRound: myCooldowns[techId]
+          };
+        }),
+        tecnicasActivas: Object.keys(myActiveTecnicas).map(Number).map(techId => {
+          const pt = activeCharacter.personajes_tecnicas?.find(t => t.tecnica_id === techId);
+          return {
+            id: techId,
+            nombre: pt?.info_glosario?.nombre_jp || pt?.info_glosario?.nombre_es || 'Técnica',
+            cdRounds: myActiveTecnicas[techId].cdRounds
+          };
+        }),
+        rasgos: activeCharacter.personajes_rasgos?.map(r => ({
+          id: r.info_rasgos?.id || r.rasgo_id,
+          nombre: r.info_rasgos?.nombre || 'Rasgo',
+          usado: localState.usedTraits?.[r.info_rasgos?.id || r.rasgo_id] || false
+        })) || [],
+        equipo: activeCharacter.personajes_inventario?.filter(pi => pi.equipado).map(pi => ({
+          id: pi.info_glosario?.id || pi.item_id,
+          nombre: pi.info_glosario?.nombre_es || 'Objeto'
+        })) || []
+      };
+      channelRef.current.track(payload);
+    }
+    addToast("Sincronización forzada enviada a la sala.", "info");
   };
 
   const passTurn = () => {
@@ -936,12 +1217,11 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   };
 
   // Cooldown Helper
-  const getRemainingCD = (reusableAtRound: number, cdRounds: number) => {
+  const getRemainingCD = (reusableAtRound: number, _cdRounds?: number) => {
     if (rondaActual >= reusableAtRound) return 0;
-    const castRound = reusableAtRound - cdRounds - 1;
-    if (rondaActual === castRound) return cdRounds;
-    return reusableAtRound - rondaActual;
+    return Math.max(0, reusableAtRound - rondaActual - 1);
   };
+
 
   // Deactivate Technique
   const handleDeactivateTecnica = (techId: number) => {
@@ -1543,7 +1823,11 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                               if (val > 0) {
                                 const newVit = Math.max(0, (p.estado?.vit ?? 0) - val);
                                 updateTempCharacter(p.user_id, { estado: { ...p.estado, vit: newVit } });
-                                addLog(`**[NPC] ${p.nombre}** recibe **${val}** de daño. VIT: **${newVit}**/**${p.estado?.maxVit}**.`);
+                                if (p.ocultar_vit) {
+                                  addLog(`**[NPC] ${p.nombre}** recibe **${val}** de daño.`);
+                                } else {
+                                  addLog(`**[NPC] ${p.nombre}** recibe **${val}** de daño. VIT: **${newVit}**/**${p.estado?.maxVit}**.`);
+                                }
                                 el.value = '';
                               }
                             }}
@@ -1556,7 +1840,11 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                               if (val > 0) {
                                 const newVit = Math.min(p.estado?.maxVit ?? 0, (p.estado?.vit ?? 0) + val);
                                 updateTempCharacter(p.user_id, { estado: { ...p.estado, vit: newVit } });
-                                addLog(`**[NPC] ${p.nombre}** se cura **+${val}** VIT. VIT: **${newVit}**/**${p.estado?.maxVit}**.`);
+                                if (p.ocultar_vit) {
+                                  addLog(`**[NPC] ${p.nombre}** se cura **+${val}** VIT.`);
+                                } else {
+                                  addLog(`**[NPC] ${p.nombre}** se cura **+${val}** VIT. VIT: **${newVit}**/**${p.estado?.maxVit}**.`);
+                                }
                                 el.value = '';
                               }
                             }}
@@ -1705,7 +1993,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                       )}
 
                       {/* Active & Cooldown Techniques */}
-                      {((p.tecnicasActivas && p.tecnicasActivas.length > 0) || (p.cooldowns && p.cooldowns.length > 0 && p.cooldowns.some((c: any) => (c.reusableAtRound - rondaActual) > 0))) && (
+                      {((p.tecnicasActivas && p.tecnicasActivas.length > 0) || (p.cooldowns && p.cooldowns.length > 0 && p.cooldowns.some((c: any) => (c.reusableAtRound - rondaActual - 1) > 0))) && (
                         <div className="space-y-2 pt-2 border-t border-oro/10 mt-1.5 animate-in fade-in duration-300">
                           {p.tecnicasActivas && p.tecnicasActivas.length > 0 && (
                             <div className="space-y-1">
@@ -1723,12 +2011,12 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                             </div>
                           )}
 
-                          {p.cooldowns && p.cooldowns.length > 0 && p.cooldowns.some((c: any) => (c.reusableAtRound - rondaActual) > 0) && (
+                          {p.cooldowns && p.cooldowns.length > 0 && p.cooldowns.some((c: any) => (c.reusableAtRound - rondaActual - 1) > 0) && (
                             <div className="space-y-1">
                               <span className="text-[9px] text-red-400 uppercase font-black block tracking-wider">Técnicas en CD:</span>
                               <div className="flex flex-wrap gap-1">
                                 {p.cooldowns.map((c: any) => {
-                                  const remaining = c.reusableAtRound - rondaActual;
+                                  const remaining = c.reusableAtRound - rondaActual - 1;
                                   if (remaining <= 0) return null;
                                   const isActive = p.tecnicasActivas?.some((ta: any) => ta.id === c.id);
                                   return (
@@ -1802,6 +2090,13 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                 )}
 
                 <button
+                  onClick={forceSync}
+                  className="ninja-btn-ghost px-5 py-2.5 text-xs flex items-center gap-2"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" /> Sincronizar
+                </button>
+
+                <button
                   onClick={resetCombat}
                   className="ninja-btn-ghost px-5 py-2.5 text-xs flex items-center gap-2"
                 >
@@ -1816,6 +2111,11 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                   const isActive = combatStarted && idx === currentTurnIndex;
                   if (!part) return null;
 
+                  const isAdminOrMod = userRoles.some(r => ['admin', 'moderador'].includes(r));
+                  const canDeleteAll = isAdminOrMod || (isEventMode && userRoles.includes('narrador'));
+                  const isOwnCharacter = activeCharacter && String(activeCharacter.id) === charId;
+                  const canDelete = canDeleteAll || isOwnCharacter;
+
                   return (
                     <div
                       key={`${charId}-${idx}`}
@@ -1825,6 +2125,17 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                         }`}
                     >
                       <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                          {canDelete && (
+                            <button
+                              onClick={() => removeFromQueue(charId)}
+                              className="p-1 hover:bg-rojo-sangre/10 text-red-500/60 hover:text-red-400 rounded-sm transition-all"
+                              title="Retirar de turnos"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                         <div className="font-mono text-xs text-oro/40 w-4">{idx + 1}.</div>
                         <div className="w-6 h-6 bg-black border border-oro/20 overflow-hidden flex items-center justify-center shrink-0">
                           {part.url_img ? (
@@ -1860,13 +2171,6 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                           title="Bajar turno"
                         >
                           <ChevronDown className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => removeFromQueue(charId)}
-                          className="p-1 hover:bg-rojo-sangre/10 text-oro/30 hover:text-red-400 ml-2"
-                          title="Retirar de turnos"
-                        >
-                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
@@ -2058,7 +2362,11 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                               if (val > 0) {
                                 const newVit = Math.max(0, (p.estado?.vit ?? 0) - val);
                                 updateTempCharacter(p.user_id, { estado: { ...p.estado, vit: newVit } });
-                                addLog(`**[NPC] ${p.nombre}** recibe **${val}** de daño. VIT: **${newVit}**/**${p.estado?.maxVit}**.`);
+                                if (p.ocultar_vit) {
+                                  addLog(`**[NPC] ${p.nombre}** recibe **${val}** de daño.`);
+                                } else {
+                                  addLog(`**[NPC] ${p.nombre}** recibe **${val}** de daño. VIT: **${newVit}**/**${p.estado?.maxVit}**.`);
+                                }
                                 el.value = '';
                               }
                             }}
@@ -2071,7 +2379,11 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                               if (val > 0) {
                                 const newVit = Math.min(p.estado?.maxVit ?? 0, (p.estado?.vit ?? 0) + val);
                                 updateTempCharacter(p.user_id, { estado: { ...p.estado, vit: newVit } });
-                                addLog(`**[NPC] ${p.nombre}** se cura **+${val}** VIT. VIT: **${newVit}**/**${p.estado?.maxVit}**.`);
+                                if (p.ocultar_vit) {
+                                  addLog(`**[NPC] ${p.nombre}** se cura **+${val}** VIT.`);
+                                } else {
+                                  addLog(`**[NPC] ${p.nombre}** se cura **+${val}** VIT. VIT: **${newVit}**/**${p.estado?.maxVit}**.`);
+                                }
                                 el.value = '';
                               }
                             }}
@@ -2207,7 +2519,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                       )}
 
                       {/* Active & Cooldown Techniques */}
-                      {((p.tecnicasActivas && p.tecnicasActivas.length > 0) || (p.cooldowns && p.cooldowns.length > 0 && p.cooldowns.some((c: any) => (c.reusableAtRound - rondaActual) > 0))) && (
+                      {((p.tecnicasActivas && p.tecnicasActivas.length > 0) || (p.cooldowns && p.cooldowns.length > 0 && p.cooldowns.some((c: any) => (c.reusableAtRound - rondaActual - 1) > 0))) && (
                         <div className="space-y-2 pt-2 border-t border-oro/10 mt-1.5 animate-in fade-in duration-300">
                           {p.tecnicasActivas && p.tecnicasActivas.length > 0 && (
                             <div className="space-y-1">
@@ -2225,12 +2537,12 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                             </div>
                           )}
 
-                          {p.cooldowns && p.cooldowns.length > 0 && p.cooldowns.some((c: any) => (c.reusableAtRound - rondaActual) > 0) && (
+                          {p.cooldowns && p.cooldowns.length > 0 && p.cooldowns.some((c: any) => (c.reusableAtRound - rondaActual - 1) > 0) && (
                             <div className="space-y-1">
                               <span className="text-[9px] text-red-400 uppercase font-black block tracking-wider">Técnicas en CD:</span>
                               <div className="flex flex-wrap gap-1">
                                 {p.cooldowns.map((c: any) => {
-                                  const remaining = c.reusableAtRound - rondaActual;
+                                  const remaining = c.reusableAtRound - rondaActual - 1;
                                   if (remaining <= 0) return null;
                                   const isActive = p.tecnicasActivas?.some((ta: any) => ta.id === c.id);
                                   return (
@@ -2560,7 +2872,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                   </div>
 
                   {isDropdownOpen && (
-                    <div className="absolute z-50 left-0 right-0 mt-1 bg-black/95 border border-oro/30 shadow-2xl max-h-[300px] overflow-hidden flex flex-col backdrop-blur-md">
+                    <div className="absolute z-50 left-0 right-0 bottom-full mb-1 bg-black/95 border border-oro/30 shadow-2xl max-h-[300px] overflow-hidden flex flex-col backdrop-blur-md">
                       {/* Search input field */}
                       <input
                         type="text"
@@ -2665,7 +2977,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                   </div>
 
                   {isCdDropdownOpen && (
-                    <div className="absolute z-50 left-0 right-0 mt-1 bg-black/95 border border-red-500/30 shadow-2xl max-h-[300px] overflow-y-auto flex flex-col backdrop-blur-md">
+                    <div className="absolute z-50 left-0 right-0 bottom-full mb-1 bg-black/95 border border-red-500/30 shadow-2xl max-h-[300px] overflow-y-auto flex flex-col backdrop-blur-md">
                       {(activeCharacter.personajes_tecnicas || [])
                         .filter(pt => {
                           const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) : 0;
@@ -2728,7 +3040,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                   </div>
 
                   {isActiveDropdownOpen && (
-                    <div className="absolute z-50 left-0 right-0 mt-1 bg-black/95 border border-emerald-500/30 shadow-2xl max-h-[300px] overflow-y-auto flex flex-col backdrop-blur-md">
+                    <div className="absolute z-50 left-0 right-0 bottom-full mb-1 bg-black/95 border border-emerald-500/30 shadow-2xl max-h-[300px] overflow-y-auto flex flex-col backdrop-blur-md">
                       {Object.keys(myActiveTecnicas).map(Number).map(techId => {
                         const pt = activeCharacter.personajes_tecnicas?.find(t => t.tecnica_id === techId);
                         if (!pt) return null;
