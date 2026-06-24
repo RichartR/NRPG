@@ -224,17 +224,6 @@ export function useCharacter(characterId: string) {
         });
 
         if (newTrainingsList.length > 0) {
-          const currentExp = character.xp || 0;
-          const currentRyous = character.ryous || 0;
-          const currentPA = character.puntos_aprendizaje || 0;
-
-          if (currentExp < totalExpCost || currentRyous < totalRyousCost || currentPA < totalPACost) {
-            throw new Error(`RECURSOS INSUFICIENTES PARA EL ENTRENAMIENTO. REQUIERES ${totalExpCost} EXP, ${totalRyousCost} RYOUS Y ${totalPACost} PA.`);
-          }
-
-          character.xp = currentExp - totalExpCost;
-          character.ryous = currentRyous - totalRyousCost;
-          character.puntos_aprendizaje = currentPA - totalPACost;
 
           const trNames = newTrainingsList.map(t => t.nombre_esp).join(', ');
           const gastoText = [

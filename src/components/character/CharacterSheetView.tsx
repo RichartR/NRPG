@@ -1132,7 +1132,13 @@ export function CharacterSheetView({
 
       // 1. Aldea
       let aldeaName = 'General';
-      const aldeaId = glosario.aldea_id;
+      let aldeaId = glosario.aldea_id;
+      if (!aldeaId && glosario.rama_clan_id) {
+        const rama = (masters.ramas || []).find((r: any) => Number(r.id) === Number(glosario.rama_clan_id));
+        if (rama?.aldea_id) {
+          aldeaId = rama.aldea_id;
+        }
+      }
       if (aldeaId) {
         const aldea = (masters.aldeas || []).find((a: any) => Number(a.id) === Number(aldeaId));
         if (aldea) aldeaName = aldea.nombre_completo || aldea.nombre;
@@ -2200,7 +2206,7 @@ export function CharacterSheetView({
 
                               const eligibleTrainings = (masters.entrenamientos || [])
                                 .filter((e: any) => {
-                                  if (e.id_ramaclan !== pr.rama_id) return false;
+                                  if (Number(e.id_ramaclan) !== Number(pr.rama_id)) return false;
 
                                   // Lógica especial para Ninjutsu Elemental (rama_id = 4)
                                   if (Number(pr.rama_id) === 4) {
@@ -2210,12 +2216,12 @@ export function CharacterSheetView({
                                     }
 
                                     // Obtener el elemento principal
-                                    const mainElement = (masters.elementos || []).find((el: any) => el.id === pr.elemento_principal_id);
+                                    const mainElement = (masters.elementos || []).find((el: any) => Number(el.id) === Number(pr.elemento_principal_id));
 
                                     // Buscar la sub-especialidad de elemento que coincida
                                     const elementSub = mainElement
                                       ? (masters.subEspecialidades || []).find((s: any) =>
-                                        s.rama_id === 4 &&
+                                        Number(s.rama_id) === 4 &&
                                         (s.slug?.toLowerCase() === mainElement.nombre_jap?.toLowerCase() ||
                                           s.nombre?.toLowerCase() === mainElement.nombre_esp?.toLowerCase() ||
                                           s.nombre?.toLowerCase() === mainElement.nombre_jap?.toLowerCase())
@@ -2227,11 +2233,11 @@ export function CharacterSheetView({
                                     }
 
                                     // Permitir entrenamientos del elemento principal o entrenamientos genéricos de Ninjutsu
-                                    return (e.id_subespecialidad === elementSub.id || !e.id_subespecialidad) && meetsTrainingRequirements(e);
+                                    return (Number(e.id_subespecialidad) === Number(elementSub.id) || !e.id_subespecialidad) && meetsTrainingRequirements(e);
                                   }
 
                                   // Lógica por defecto para otras especialidades
-                                  return (!pr.sub_especialidad_id ? !e.id_subespecialidad : (e.id_subespecialidad === pr.sub_especialidad_id || !e.id_subespecialidad)) && meetsTrainingRequirements(e);
+                                  return (!pr.sub_especialidad_id ? !e.id_subespecialidad : (Number(e.id_subespecialidad) === Number(pr.sub_especialidad_id) || !e.id_subespecialidad)) && meetsTrainingRequirements(e);
                                 });
 
                               const rankOrderMap: Record<string, number> = masters.rankOrder || { 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5 };
@@ -2271,15 +2277,60 @@ export function CharacterSheetView({
                                             return et && (et.rango || 'B').toUpperCase() !== rank;
                                           }) || [];
 
+                                          let deltaExp = 0;
+                                          let deltaRyous = 0;
+                                          let deltaPA = 0;
+
+                                          // Refund old selected training if it was newly added (not in original character)
+                                          if (selectedTraining) {
+                                            const oldTrainingObj = (masters.entrenamientos || []).find((x: any) => x.id === Number(selectedTraining.entrenamiento_id));
+                                            const isOldNew = !originalCharacter?.personajes_entrenamientos?.some(
+                                              (oe: any) => Number(oe.entrenamiento_id) === Number(selectedTraining.entrenamiento_id)
+                                            );
+                                            if (isOldNew && oldTrainingObj) {
+                                              deltaExp += oldTrainingObj.coste_exp || 0;
+                                              deltaRyous += oldTrainingObj.coste_ryous || 0;
+                                              deltaPA += oldTrainingObj.coste_puntos_aprendizaje || 0;
+                                            }
+                                          }
+
                                           const newEntrenamientos = [...otherEntrenamientos];
                                           if (v) {
+                                            const newTrainingObj = (masters.entrenamientos || []).find((x: any) => x.id === Number(v));
+                                            const isNewNew = !originalCharacter?.personajes_entrenamientos?.some(
+                                              (oe: any) => Number(oe.entrenamiento_id) === Number(v)
+                                            );
+
+                                            if (isNewNew && newTrainingObj) {
+                                              const tempExp = (character.xp || 0) + deltaExp;
+                                              const tempRyous = (character.ryous || 0) + deltaRyous;
+                                              const tempPA = (character.puntos_aprendizaje || 0) + deltaPA;
+
+                                              const costExp = newTrainingObj.coste_exp || 0;
+                                              const costRyous = newTrainingObj.coste_ryous || 0;
+                                              const costPA = newTrainingObj.coste_puntos_aprendizaje || 0;
+
+                                              if (tempExp < costExp || tempRyous < costRyous || tempPA < costPA) {
+                                                addToast(`RECURSOS INSUFICIENTES. REQUIERES ${costExp} EXP, ${costRyous} RYOUS Y ${costPA} PA.`, "error");
+                                                return;
+                                              }
+
+                                              deltaExp -= costExp;
+                                              deltaRyous -= costRyous;
+                                              deltaPA -= costPA;
+                                            }
+
                                             newEntrenamientos.push({
                                               personaje_id: character.id,
                                               rama_id: pr.rama_id,
                                               entrenamiento_id: Number(v)
                                             });
                                           }
+
                                           onUpdateField('personajes_entrenamientos', newEntrenamientos);
+                                          onUpdateField('xp', (character.xp || 0) + deltaExp);
+                                          onUpdateField('ryous', (character.ryous || 0) + deltaRyous);
+                                          onUpdateField('puntos_aprendizaje', (character.puntos_aprendizaje || 0) + deltaPA);
                                         }}
                                       />
                                     );

@@ -133,11 +133,31 @@ export const StatsLogic = {
 
           if (!hasBranch && !hasSubSpec && !hasElement) return true; // General technique of this rank
 
-          const matchBranch = hasBranch && playerBranches.includes(Number(t.rama_clan_id));
-          const matchSubSpec = hasSubSpec && playerSubSpecs.includes(Number(t.sub_especialidad_id));
-          const matchElement = hasElement && playerElements.includes(Number(t.elemento_id));
+          if (hasElement) {
+            return playerElements.includes(Number(t.elemento_id));
+          }
 
-          return matchBranch || matchSubSpec || matchElement;
+          if (hasBranch) {
+            const ramaId = Number(t.rama_clan_id);
+            const hasThisBranch = playerBranches.includes(ramaId);
+            if (!hasThisBranch) return false;
+
+            // Find if the character has a subcategory for this branch
+            const branchEntry = ramasPersonaje.find(rp => Number(rp.rama_id) === ramaId);
+            const clanEntry = (eleccionClan && Number(eleccionClan.rama_id) === ramaId) ? eleccionClan : null;
+            const chosenSubId = branchEntry?.sub_especialidad_id || clanEntry?.sub_especialidad_id;
+
+            if (chosenSubId) {
+              // Player has a subcategory for this branch. Only count techniques of that subcategory.
+              return hasSubSpec && Number(t.sub_especialidad_id) === Number(chosenSubId);
+            } else {
+              // Player does not have a subcategory for this branch.
+              // So they only check the branch itself (techniques that have no subcategory).
+              return !hasSubSpec;
+            }
+          }
+
+          return false;
         });
 
         // Verify player has all of these mandatory techniques

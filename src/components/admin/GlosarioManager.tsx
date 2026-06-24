@@ -728,7 +728,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                       <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">Categoría</label>
                       <NinjaSelect
                         value={formData.categoria_id || ''}
-                        onChange={(val) => setFormData({ ...formData, categoria_id: Number(val), subcategoria_id: undefined })}
+                        onChange={(val) => setFormData({ ...formData, categoria_id: Number(val), subcategoria_id: null })}
                         placeholder="Seleccionar..."
                         options={categorias.map((c: any) => ({ label: c.nombre, value: c.id }))}
                       />
@@ -737,7 +737,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                       <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">Subcategoría</label>
                       <NinjaSelect
                         value={formData.subcategoria_id || ''}
-                        onChange={(val) => setFormData({ ...formData, subcategoria_id: val ? Number(val) : undefined })}
+                        onChange={(val) => setFormData({ ...formData, subcategoria_id: val ? Number(val) : null })}
                         placeholder="Ninguna"
                         options={filteredSubs.map((s: any) => ({ label: s.nombre, value: s.id }))}
                       />

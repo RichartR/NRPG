@@ -132,7 +132,7 @@ export interface Entrenamiento {
 export interface Glosario {
   id: number;
   categoria_id: number;
-  subcategoria_id?: number;
+  subcategoria_id?: number | null;
   aldea_id?: number | null;
   rama_clan_id?: number | null;
   sub_especialidad_id?: number | null;
