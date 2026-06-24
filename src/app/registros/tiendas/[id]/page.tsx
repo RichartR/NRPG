@@ -584,15 +584,20 @@ export default function TiendaDetallePage() {
 
       // Subespecialidad / Subcategoría check
       if (reqs.sub_especialidad_id) {
-        const playerSubSpecs = [
-          ...(char.personajes_ramas || []).map(pr => pr.sub_especialidad_id ? Number(pr.sub_especialidad_id) : null).filter(Boolean),
-          ...(char.eleccion_tecnicas_clan?.sub_especialidad_id ? [Number(char.eleccion_tecnicas_clan.sub_especialidad_id)] : [])
-        ];
-        const hasSub = playerSubSpecs.includes(Number(reqs.sub_especialidad_id));
-        if (!hasSub) {
-          allowed = false;
-          const subName = masters.subEspecialidades?.find(s => Number(s.id) === Number(reqs.sub_especialidad_id))?.nombre || `ID: ${reqs.sub_especialidad_id}`;
-          reasons.push(`Falta subcategoría/especialidad requerida: ${subName}`);
+        const reqIds = Array.isArray(reqs.sub_especialidad_id) ? reqs.sub_especialidad_id : [reqs.sub_especialidad_id];
+        if (reqIds.length > 0) {
+          const playerSubSpecs = [
+            ...(char.personajes_ramas || []).map(pr => pr.sub_especialidad_id ? Number(pr.sub_especialidad_id) : null).filter(Boolean),
+            ...(char.eleccion_tecnicas_clan?.sub_especialidad_id ? [Number(char.eleccion_tecnicas_clan.sub_especialidad_id)] : [])
+          ];
+          const hasAny = reqIds.some((reqId: any) => playerSubSpecs.includes(Number(reqId)));
+          if (!hasAny) {
+            allowed = false;
+            const subNames = reqIds.map((reqId: any) =>
+              masters.subEspecialidades?.find(s => Number(s.id) === Number(reqId))?.nombre || `ID: ${reqId}`
+            );
+            reasons.push(`Falta una de las subcategorías/especialidades requeridas: ${subNames.join(' o ')}`);
+          }
         }
       }
     }
@@ -1175,8 +1180,10 @@ export default function TiendaDetallePage() {
                                             ...(selectedChar.personajes_ramas || []).map(pr => pr.sub_especialidad_id ? Number(pr.sub_especialidad_id) : null).filter(Boolean),
                                             ...(selectedChar.eleccion_tecnicas_clan?.sub_especialidad_id ? [Number(selectedChar.eleccion_tecnicas_clan.sub_especialidad_id)] : [])
                                           ] : [];
-                                          const isMet = !selectedChar || playerSubSpecs.includes(Number(itemReqs.sub_especialidad_id));
-                                          const subName = masters.subEspecialidades?.find(s => Number(s.id) === Number(itemReqs.sub_especialidad_id))?.nombre || `ID: ${itemReqs.sub_especialidad_id}`;
+                                          const reqIds = Array.isArray(itemReqs.sub_especialidad_id) ? itemReqs.sub_especialidad_id : [itemReqs.sub_especialidad_id];
+                                          const isMet = !selectedChar || reqIds.some(reqId => playerSubSpecs.includes(Number(reqId)));
+                                          const subNames = reqIds.map(reqId => masters.subEspecialidades?.find(s => Number(s.id) === Number(reqId))?.nombre || `ID: ${reqId}`);
+                                          const subLabel = subNames.join(' o ');
 
                                           return (
                                             <span
@@ -1185,7 +1192,7 @@ export default function TiendaDetallePage() {
                                                 : 'bg-rojo-oscuro/20 border-rojo-sangre/30 text-rojo-sangre'
                                                 }`}
                                             >
-                                              Subcat: <strong className="font-black text-oro">{subName}</strong>
+                                              Subcat: <strong className="font-black text-oro">{subLabel}</strong>
                                             </span>
                                           );
                                         })()}
@@ -1544,15 +1551,15 @@ export default function TiendaDetallePage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="block text-caption font-black text-oro/60 uppercase tracking-widest">Subcategoría Requerida</label>
-                        <NinjaSelect
-                          value={formCustomGlosario.requisitos.sub_especialidad_id || ''}
+                        <SearchableMultiSelect
+                          label="Subcategoría Requerida"
+                          value={formCustomGlosario.requisitos.sub_especialidad_id || null}
                           onChange={(val) => setFormCustomGlosario({
                             ...formCustomGlosario,
-                            requisitos: { ...formCustomGlosario.requisitos, sub_especialidad_id: val ? Number(val) : null }
+                            requisitos: { ...formCustomGlosario.requisitos, sub_especialidad_id: val }
                           })}
                           placeholder="Ninguna"
-                          options={masters.subEspecialidades?.map(s => ({ label: s.nombre, value: s.id }))}
+                          options={masters.subEspecialidades?.map(s => ({ label: s.nombre, value: s.id })) || []}
                         />
                       </div>
                     </div>
@@ -1673,18 +1680,18 @@ export default function TiendaDetallePage() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <label className="block text-caption font-black text-oro/60 uppercase tracking-widest">Subcategoría Requerida</label>
-                            <NinjaSelect
-                              value={formObjeto.requisitos_personalizados?.sub_especialidad_id || ''}
+                            <SearchableMultiSelect
+                              label="Subcategoría Requerida"
+                              value={formObjeto.requisitos_personalizados?.sub_especialidad_id || null}
                               onChange={(val) => setFormObjeto({
                                 ...formObjeto,
                                 requisitos_personalizados: {
                                   ...formObjeto.requisitos_personalizados,
-                                  sub_especialidad_id: val ? Number(val) : null
+                                  sub_especialidad_id: val
                                 }
                               })}
                               placeholder="Ninguna"
-                              options={filteredShopSubespecialidades?.map((s: any) => ({ label: s.nombre, value: s.id }))}
+                              options={filteredShopSubespecialidades?.map((s: any) => ({ label: s.nombre, value: s.id })) || []}
                             />
                           </div>
                         </div>

@@ -927,6 +927,26 @@ export function CharacterSheetView({
       if (!charSubIds.includes(reqSubId)) return false;
     }
 
+    // Check de Sub-especialidad/Subcategoría Requerida en requisitos (JSON)
+    if (req.sub_especialidad_id) {
+      const reqIds = Array.isArray(req.sub_especialidad_id) ? req.sub_especialidad_id : [req.sub_especialidad_id];
+      if (reqIds.length > 0) {
+        const charSubIds = (character.personajes_ramas || [])
+          .map((r: any) => r.sub_especialidad_id)
+          .filter(Boolean)
+          .map(Number);
+
+        const clanEleccion = character.eleccion_tecnicas_clan;
+        if (clanEleccion?.sub_especialidad_id) {
+          charSubIds.push(Number(clanEleccion.sub_especialidad_id));
+        }
+
+        if (!reqIds.some(reqId => charSubIds.includes(Number(reqId)))) {
+          return false;
+        }
+      }
+    }
+
     // 6. Exclusividad
     if (req.personaje_id) {
       const pId = req.personaje_id;
@@ -1291,8 +1311,39 @@ export function CharacterSheetView({
       });
     }
 
+    if (reqs.entrenamiento_id) {
+      const ids = Array.isArray(reqs.entrenamiento_id) ? reqs.entrenamiento_id : [reqs.entrenamiento_id];
+      if (ids.length > 0) {
+        const entNames = ids.map((id: any) => {
+          const rawId = Number(id) >= 100000 ? Number(id) - 100000 : Number(id);
+          const ent = (masters.entrenamientos || []).find((e: any) => e.id === rawId);
+          return ent?.nombre_jp || ent?.nombre_esp || `ID: ${id}`;
+        });
+        elements.push(
+          <span key="entrenamiento" className="text-purple-400 font-black">
+            ENTR.: <span className="text-oro">{entNames.join(' o ')}</span>
+          </span>
+        );
+      }
+    }
+
+    if (reqs.sub_especialidad_id) {
+      const ids = Array.isArray(reqs.sub_especialidad_id) ? reqs.sub_especialidad_id : [reqs.sub_especialidad_id];
+      if (ids.length > 0) {
+        const subNames = ids.map((id: any) => {
+          const sub = (masters.subEspecialidades || []).find((s: any) => s.id === id);
+          return sub?.nombre || `ID: ${id}`;
+        });
+        elements.push(
+          <span key="subespecialidad" className="text-indigo-400 font-black">
+            SUBCAT.: <span className="text-oro">{subNames.join(' o ')}</span>
+          </span>
+        );
+      }
+    }
+
     Object.entries(reqs).forEach(([key, value]) => {
-      if (['rango', 'rama_id', 'elemento_id', 'stats', 'misiones', 'personaje_id', 'combates'].includes(key)) return;
+      if (['rango', 'rama_id', 'elemento_id', 'stats', 'misiones', 'personaje_id', 'combates', 'entrenamiento_id', 'sub_especialidad_id'].includes(key)) return;
       if (value === null || value === undefined || value === 0 || value === false || value === '') return;
       elements.push(
         <span key={key} className="text-oro/50 font-black">

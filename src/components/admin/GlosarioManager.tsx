@@ -947,12 +947,13 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                     onChange={(ids: any) => updateReq('entrenamiento_id', ids)}
                     placeholder="Seleccionar entrenamientos..."
                   />
-                  <SearchableSelect
+                  <SearchableMultiSelect
                     label="Subcategoría (Rama) Requerida"
                     icon={<Layers size={12} />}
-                    options={(filteredSpec || []).map((s: any) => ({ id: s.id, label: `${ramas.find((r: any) => r.id === s.rama_id)?.nombre || 'Sin Rama'} - ${s.nombre}` }))}
+                    options={(subespecialidades || []).map((s: any) => ({ id: s.id, label: `${ramas.find((r: any) => r.id === s.rama_id)?.nombre || 'Sin Rama'} - ${s.nombre}` }))}
                     value={formData.requisitos?.sub_especialidad_id}
-                    onChange={(id: any) => updateReq('sub_especialidad_id', id)}
+                    onChange={(ids: any) => updateReq('sub_especialidad_id', ids)}
+                    placeholder="Seleccionar subcategorías..."
                   />
                   <div className="md:col-span-2">
                     <SearchableMultiSelect
