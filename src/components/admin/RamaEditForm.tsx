@@ -371,7 +371,7 @@ export default function RamaEditForm({ rama, aldeas, rasgos, onCancel }: RamaEdi
                               const tec = glosario.find(t => t.id === tid);
                               return (
                                 <div key={tid} className="flex items-center gap-2 bg-black/40 border border-oro/10 px-3 py-1.5 text-xs text-oro">
-                                  <span>{tec ? tec.nombre_es : `ID: ${tid}`}</span>
+                                  <span>{tec ? tec.nombre_jp || tec.nombre_es : `ID: ${tid}`}</span>
                                   <button
                                     type="button"
                                     onClick={() => {
@@ -411,11 +411,12 @@ export default function RamaEditForm({ rama, aldeas, rasgos, onCancel }: RamaEdi
                                   if (opt.rama_id === 4 && opt.sub_especialidad_id) {
                                     const sub = subEsps.find(s => s.id === Number(opt.sub_especialidad_id));
                                     if (sub) {
-                                      const elem = elementos.find((el: any) =>
-                                        sub.slug?.toLowerCase() === el.nombre_jap?.toLowerCase() ||
-                                        sub.nombre?.toLowerCase() === el.nombre_esp?.toLowerCase() ||
-                                        sub.nombre?.toLowerCase() === el.nombre_jap?.toLowerCase()
-                                      );
+                                      const elem = elementos.find((el: any) => {
+                                        const clean = (s: string) => (s || '').toLowerCase().replace(/uu/g, 'u').trim();
+                                        return clean(sub.slug) === clean(el.nombre_jap) ||
+                                          clean(sub.nombre) === clean(el.nombre_esp) ||
+                                          clean(sub.nombre) === clean(el.nombre_jap);
+                                      });
                                       if (elem) {
                                         return Number(t.elemento_id) === Number(elem.id);
                                       }
@@ -426,7 +427,7 @@ export default function RamaEditForm({ rama, aldeas, rasgos, onCancel }: RamaEdi
                                   if (tSubId !== optSubId) return false;
                                   return true;
                                 })
-                                .map(t => ({ label: `${t.nombre_es}${t.basica ? '' : ' ▲'}`, value: t.id }))}
+                                .map(t => ({ label: `${t.nombre_jp || t.nombre_es}${t.basica ? '' : ' ▲'}`, value: t.id }))}
                               onChange={(v) => {
                                 if (!v) return;
                                 const tId = Number(v);

@@ -107,9 +107,13 @@ const compareCategoryGroups = (
 };
 
 const compareSectionGroups = (
-  a: { categorias: Array<{ subcategorias: Array<{ items: Glosario[] }> }> },
-  b: { categorias: Array<{ subcategorias: Array<{ items: Glosario[] }> }> }
+  a: { info?: any; categorias: Array<{ subcategorias: Array<{ items: Glosario[] }> }> },
+  b: { info?: any; categorias: Array<{ subcategorias: Array<{ items: Glosario[] }> }> }
 ) => {
+  if (a.info?.id === null && b.info?.id === null) return 0;
+  if (a.info?.id === null) return -1;
+  if (b.info?.id === null) return 1;
+
   const firstA = getFirstItemFromSectionGroup(a);
   const firstB = getFirstItemFromSectionGroup(b);
   if (!firstA && !firstB) return 0;
@@ -250,12 +254,17 @@ export default function GlosarioView({
           (i.rama_clan_id === null && ramaId === null) ||
           (Number(i.rama_clan_id) === Number(ramaId))
         );
-        const isElementalRama = String(ramaInfo.nombre || '').toLowerCase().includes('elemental') || String((ramaInfo as any).slug || '').toLowerCase().includes('elemental');
+        const isElementalRama = 
+          String(ramaInfo.nombre || '').toLowerCase().includes('elemental') || 
+          String(ramaInfo.nombre || '').toLowerCase().includes('ninjutsu') || 
+          String((ramaInfo as any).slug || '').toLowerCase().includes('elemental') ||
+          String((ramaInfo as any).slug || '').toLowerCase().includes('ninjutsu');
         const ramaGroup: any = { info: ramaInfo, isElemental: isElementalRama, subespecialidades: [], elementos: [] };
 
         if (isElementalRama) {
-          const uniqueElementIds = Array.from(new Set(itemsInRama.map(i => i.elemento_id)));
+          const uniqueElementIds = Array.from(new Set(itemsInRama.map(i => i.elemento_id ?? null)));
           uniqueElementIds.sort((a, b) => {
+            if (a === null && b === null) return 0;
             if (a === null) return -1;
             if (b === null) return 1;
             const nameA = elementos.find(el => Number(el.id) === Number(a))?.nombre_esp || '';
@@ -264,8 +273,7 @@ export default function GlosarioView({
           }).forEach(elementId => {
             const elementoInfo = elementos.find(el => Number(el.id) === Number(elementId)) || { id: null, nombre_esp: 'General' };
             const itemsInElement = itemsInRama.filter(i =>
-              (i.elemento_id === null && elementId === null) ||
-              (Number(i.elemento_id) === Number(elementId))
+              (i.elemento_id ?? null) === (elementId ?? null)
             );
             const elementGroup: any = { info: elementoInfo, categorias: [] };
 

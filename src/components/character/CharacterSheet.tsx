@@ -355,11 +355,11 @@ export default function CharacterSheet() {
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   {derivedElements.length > 0 ? (
                     derivedElements.map((e, index) => (
-                      <div key={e?.id || index} className="w-6 h-6 flex items-center justify-center shrink-0">
+                      <div key={e?.id || index} className="w-10 h-10 flex items-center justify-center shrink-0">
                         {e?.url_icono ? (
                           <img src={e.url_icono} alt={e?.nombre_esp || ''} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
                         ) : (
-                          <span className="text-[10px] text-oro/60 font-black">{e?.nombre_esp ? e.nombre_esp.substring(0, 2).toUpperCase() : ''}</span>
+                          <span className="text-xs text-oro/60 font-black">{e?.nombre_esp ? e.nombre_esp.substring(0, 2).toUpperCase() : ''}</span>
                         )}
                       </div>
                     ))
