@@ -45,21 +45,40 @@ export default async function GlosarioPage() {
   // Mapear entrenamientos a la estructura de Glosario
   const mappedEntrenamientos = (entrenamientos || [])
     .filter((e: any) => e.activo)
-    .map((e: any) => ({
-      id: 100000 + e.id,
-      categoria_id: 5,
-      subcategoria_id: undefined,
-      aldea_id: e.info_ramas_clanes?.aldea_id || null,
-      rama_clan_id: e.id_ramaclan,
-      sub_especialidad_id: e.id_subespecialidad,
-      nombre_es: e.nombre_esp,
-      nombre_jp: e.nombre_jp,
-      requisitos: e.requisitos || (e.rango ? { rango: e.rango } : {}),
-      coste_exp: e.coste_exp || 0,
-      coste_ryous: e.coste_ryous || 0,
-      coste_puntos_aprendizaje: e.coste_puntos_aprendizaje || 0,
-      activo: true
-    }));
+    .map((e: any) => {
+      let derivedElementId = null;
+      if (e.id_subespecialidad && subespecialidades && elementos) {
+        const sub = subespecialidades.find((s: any) => s.id === e.id_subespecialidad);
+        if (sub) {
+          const elem = elementos.find((el: any) => {
+            const clean = (s: string) => (s || '').toLowerCase().replace(/uu/g, 'u').trim();
+            return clean(sub.slug) === clean(el.nombre_jap) ||
+              clean(sub.nombre) === clean(el.nombre_esp) ||
+              clean(sub.nombre) === clean(el.nombre_jap);
+          });
+          if (elem) {
+            derivedElementId = elem.id;
+          }
+        }
+      }
+
+      return {
+        id: 100000 + e.id,
+        categoria_id: 5,
+        subcategoria_id: undefined,
+        aldea_id: e.info_ramas_clanes?.aldea_id || null,
+        rama_clan_id: e.id_ramaclan,
+        sub_especialidad_id: e.id_subespecialidad,
+        elemento_id: derivedElementId,
+        nombre_es: e.nombre_esp,
+        nombre_jp: e.nombre_jp,
+        requisitos: e.requisitos || (e.rango ? { rango: e.rango } : {}),
+        coste_exp: e.coste_exp || 0,
+        coste_ryous: e.coste_ryous || 0,
+        coste_puntos_aprendizaje: e.coste_puntos_aprendizaje || 0,
+        activo: true
+      };
+    });
 
   const combinedGlosarios = [...(glosarios || []), ...mappedEntrenamientos];
 

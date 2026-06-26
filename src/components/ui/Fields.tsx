@@ -345,7 +345,10 @@ export function SearchableSelect({ label, value, options, onChange, disabled, pl
       if (dropdownRef.current?.contains(e.target as Node) || triggerRef.current?.contains(e.target as Node)) return;
       setIsOpen(false);
     };
-    const handleScroll = () => setIsOpen(false);
+    const handleScroll = (e: Event) => {
+      if (dropdownRef.current?.contains(e.target as Node)) return;
+      setIsOpen(false);
+    };
     document.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('scroll', handleScroll, true);
     return () => {

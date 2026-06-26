@@ -225,7 +225,7 @@ export function useCharacter(characterId: string) {
 
         if (newTrainingsList.length > 0) {
 
-          const trNames = newTrainingsList.map(t => t.nombre_esp).join(', ');
+          const trNames = newTrainingsList.map(t => t.nombre_jp || t.nombre_esp).join(', ');
           const gastoText = [
             totalExpCost > 0 && `${totalExpCost} EXP`,
             totalRyousCost > 0 && `${totalRyousCost} Ryous`,
@@ -240,7 +240,7 @@ export function useCharacter(characterId: string) {
               titulo: `${character.nombre_ninja} obtiene el entrenamiento: ${trNames}`,
               subtitulo: `Gasto: ${gastoText}`,
               tipo_accion: 'compra_entrenamientos',
-              entrenamientos: newTrainingsList.map(t => ({ id: t.id, nombre: t.nombre_esp })),
+              entrenamientos: newTrainingsList.map(t => ({ id: t.id, nombre: t.nombre_jp || t.nombre_esp })),
               gasto_xp: totalExpCost,
               gasto_ryous: totalRyousCost,
               gasto_pc: totalPACost
@@ -354,7 +354,7 @@ export function useCharacter(characterId: string) {
         const newItems = currentInv.filter(ci => !oldInv.some(oi => Number(oi.item_id) === Number(ci.item_id)));
 
         if (newItems.length > 0) {
-          const itemNames = newItems.map(ni => ni.info_glosario?.nombre_es || 'Objeto Desconocido').join(', ');
+          const itemNames = newItems.map(ni => ni.info_glosario?.nombre_jp || ni.info_glosario?.nombre_es || 'Objeto Desconocido').join(', ');
           const totalExp = newItems.reduce((sum, ni) => sum + (Number(ni.info_glosario?.coste_exp) || 0), 0);
           const totalRyous = newItems.reduce((sum, ni) => sum + (Number(ni.info_glosario?.coste_ryous) || 0), 0);
           const totalPA = newItems.reduce((sum, ni) => sum + (Number(ni.info_glosario?.coste_puntos_aprendizaje) || 0), 0);
@@ -373,7 +373,7 @@ export function useCharacter(characterId: string) {
               titulo: `${character.nombre_ninja} obtiene: ${itemNames}`,
               subtitulo: `Gasto: ${gastoText}`,
               tipo_accion: 'compra_objetos',
-              items: newItems.map(ni => ({ id: ni.item_id, nombre: ni.info_glosario?.nombre_es })),
+              items: newItems.map(ni => ({ id: ni.item_id, nombre: ni.info_glosario?.nombre_jp || ni.info_glosario?.nombre_es })),
               gasto_xp: totalExp,
               gasto_ryous: totalRyous,
               gasto_pc: totalPA
@@ -387,7 +387,7 @@ export function useCharacter(characterId: string) {
         const newTecs = currentTecs.filter(ct => !oldTecs.some(ot => Number(ot.tecnica_id) === Number(ct.tecnica_id)));
 
         if (newTecs.length > 0) {
-          const tecNames = newTecs.map(nt => nt.info_glosario?.nombre_es || 'Técnica Desconocida').join(', ');
+          const tecNames = newTecs.map(nt => nt.info_glosario?.nombre_jp || nt.info_glosario?.nombre_es || 'Técnica Desconocida').join(', ');
           const totalExp = newTecs.reduce((sum, nt) => sum + (Number(nt.info_glosario?.coste_exp) || 0), 0);
           const totalRyous = newTecs.reduce((sum, nt) => sum + (Number(nt.info_glosario?.coste_ryous) || 0), 0);
           const totalPA = newTecs.reduce((sum, nt) => sum + (Number(nt.info_glosario?.coste_puntos_aprendizaje) || 0), 0);
@@ -406,7 +406,7 @@ export function useCharacter(characterId: string) {
               titulo: `${character.nombre_ninja} aprende: ${tecNames}`,
               subtitulo: `Gasto: ${gastoText}`,
               tipo_accion: 'aprendizaje_tecnicas',
-              tecnicas: newTecs.map(nt => ({ id: nt.tecnica_id, nombre: nt.info_glosario?.nombre_es })),
+              tecnicas: newTecs.map(nt => ({ id: nt.tecnica_id, nombre: nt.info_glosario?.nombre_jp || nt.info_glosario?.nombre_es })),
               gasto_xp: totalExp,
               gasto_ryous: totalRyous,
               gasto_pc: totalPA
@@ -417,7 +417,7 @@ export function useCharacter(characterId: string) {
         // Check deleted items
         const deletedItems = oldInv.filter(oi => !currentInv.some(ci => Number(ci.item_id) === Number(oi.item_id)));
         if (deletedItems.length > 0) {
-          const itemNames = deletedItems.map(di => di.info_glosario?.nombre_es || 'Objeto').join(', ');
+          const itemNames = deletedItems.map(di => di.info_glosario?.nombre_jp || di.info_glosario?.nombre_es || 'Objeto').join(', ');
           await RegistrosService.createRegistro({
             tipo: 'accion',
             autor_id: Number(characterId),
@@ -425,7 +425,7 @@ export function useCharacter(characterId: string) {
             data: {
               titulo: `${character.nombre_ninja} pierde/elimina: ${itemNames}`,
               tipo_accion: 'eliminacion_objetos',
-              items: deletedItems.map(di => ({ id: di.item_id, nombre: di.info_glosario?.nombre_es }))
+              items: deletedItems.map(di => ({ id: di.item_id, nombre: di.info_glosario?.nombre_jp || di.info_glosario?.nombre_es }))
             }
           });
         }
@@ -433,7 +433,7 @@ export function useCharacter(characterId: string) {
         // Check deleted techniques
         const deletedTecs = oldTecs.filter(ot => !currentTecs.some(ct => Number(ct.tecnica_id) === Number(ot.tecnica_id)));
         if (deletedTecs.length > 0) {
-          const tecNames = deletedTecs.map(dt => dt.info_glosario?.nombre_es || 'Técnica').join(', ');
+          const tecNames = deletedTecs.map(dt => dt.info_glosario?.nombre_jp || dt.info_glosario?.nombre_es || 'Técnica').join(', ');
           await RegistrosService.createRegistro({
             tipo: 'accion',
             autor_id: Number(characterId),
@@ -441,7 +441,7 @@ export function useCharacter(characterId: string) {
             data: {
               titulo: `${character.nombre_ninja} olvida/elimina: ${tecNames}`,
               tipo_accion: 'eliminacion_tecnicas',
-              tecnicas: deletedTecs.map(dt => ({ id: dt.tecnica_id, nombre: dt.info_glosario?.nombre_es }))
+              tecnicas: deletedTecs.map(dt => ({ id: dt.tecnica_id, nombre: dt.info_glosario?.nombre_jp || dt.info_glosario?.nombre_es }))
             }
           });
         }
@@ -618,9 +618,9 @@ export function useCharacter(characterId: string) {
         autor_id: Number(characterId),
         participantes_ids: [Number(characterId)],
         data: {
-          titulo: `${character.nombre_ninja} pierde/elimina: ${item.info_glosario?.nombre_es}`,
+          titulo: `${character.nombre_ninja} pierde/elimina: ${item.info_glosario?.nombre_jp || item.info_glosario?.nombre_es}`,
           tipo_accion: 'eliminacion_objetos',
-          items: [{ id: item.item_id, nombre: item.info_glosario?.nombre_es }]
+          items: [{ id: item.item_id, nombre: item.info_glosario?.nombre_jp || item.info_glosario?.nombre_es }]
         }
       });
       
@@ -664,9 +664,9 @@ export function useCharacter(characterId: string) {
         autor_id: Number(characterId),
         participantes_ids: [Number(characterId)],
         data: {
-          titulo: `${character.nombre_ninja} olvida/elimina: ${tec.info_glosario?.nombre_es}`,
+          titulo: `${character.nombre_ninja} olvida/elimina: ${tec.info_glosario?.nombre_jp || tec.info_glosario?.nombre_es}`,
           tipo_accion: 'eliminacion_tecnicas',
-          tecnicas: [{ id: tec.tecnica_id, nombre: tec.info_glosario?.nombre_es }]
+          tecnicas: [{ id: tec.tecnica_id, nombre: tec.info_glosario?.nombre_jp || tec.info_glosario?.nombre_es }]
         }
       });
       

@@ -825,9 +825,36 @@ export function CharacterSheetView({
   }, [character, masters.elementos, masters.ramaElementos]);
 
   const meetsRequirements = (item: Glosario) => {
-    if (!item.requisitos) return true;
     if (!character) return true;
 
+    // Block learning basic techniques of a branch if the branch is only had via clan compatibility,
+    // UNLESS the technique is one of the initial techniques granted by that compatibility.
+    if (item.basica === true && item.rama_clan_id) {
+      const techRamaId = Number(item.rama_clan_id);
+      const hasDirectly = (character.personajes_ramas || []).some((r: any) => Number(r.rama_id) === techRamaId);
+      
+      let hasViaClan = false;
+      const clanEleccion = character.eleccion_tecnicas_clan;
+      if (clanEleccion) {
+        if (Number(clanEleccion.rama_id) === techRamaId) {
+          hasViaClan = true;
+        } else {
+          const subEsp = (masters.subEspecialidades || []).find((s: any) => s.id === Number(clanEleccion.sub_especialidad_id));
+          if (subEsp && Number(subEsp.rama_id) === techRamaId) {
+            hasViaClan = true;
+          }
+        }
+      }
+
+      if (hasViaClan && !hasDirectly) {
+        const isGrantedByClan = clanEleccion?.tecnicas_ids?.includes(Number(item.id));
+        if (!isGrantedByClan) {
+          return false;
+        }
+      }
+    }
+
+    if (!item.requisitos) return true;
     let req = item.requisitos;
     if (typeof req === 'string') {
       try { req = JSON.parse(req); } catch { return true; }
@@ -924,6 +951,20 @@ export function CharacterSheetView({
         charSubIds.push(Number(clanEleccion.sub_especialidad_id));
       }
 
+      // Añadir sub-especialidades mapeadas de los elementos derivados
+      derivedElements.forEach((el: any) => {
+        const sub = (masters.subEspecialidades || []).find((s: any) => {
+          const clean = (str: string) => (str || '').toLowerCase().replace(/uu/g, 'u').trim();
+          return Number(s.rama_id) === 4 &&
+            (clean(s.slug) === clean(el.nombre_jap) ||
+              clean(s.nombre) === clean(el.nombre_esp) ||
+              clean(s.nombre) === clean(el.nombre_jap));
+        });
+        if (sub && !charSubIds.includes(sub.id)) {
+          charSubIds.push(sub.id);
+        }
+      });
+
       if (!charSubIds.includes(reqSubId)) return false;
     }
 
@@ -940,6 +981,20 @@ export function CharacterSheetView({
         if (clanEleccion?.sub_especialidad_id) {
           charSubIds.push(Number(clanEleccion.sub_especialidad_id));
         }
+
+        // Añadir sub-especialidades mapeadas de los elementos derivados
+        derivedElements.forEach((el: any) => {
+          const sub = (masters.subEspecialidades || []).find((s: any) => {
+            const clean = (str: string) => (str || '').toLowerCase().replace(/uu/g, 'u').trim();
+            return Number(s.rama_id) === 4 &&
+              (clean(s.slug) === clean(el.nombre_jap) ||
+                clean(s.nombre) === clean(el.nombre_esp) ||
+                clean(s.nombre) === clean(el.nombre_jap));
+          });
+          if (sub && !charSubIds.includes(sub.id)) {
+            charSubIds.push(sub.id);
+          }
+        });
 
         if (!reqIds.some((reqId: any) => charSubIds.includes(Number(reqId)))) {
           return false;
@@ -1105,7 +1160,8 @@ export function CharacterSheetView({
     const reqRank = rankOrder[reqR] ?? 0;
     if (charRank < reqRank) return false;
     if (e.requisitos) {
-      return meetsRequirements({ ...e, requisitos: e.requisitos } as any);
+      const { id_subespecialidad, sub_especialidad_id, ...cleanE } = e;
+      return meetsRequirements({ ...cleanE, requisitos: e.requisitos } as any);
     }
     return true;
   };
@@ -1158,6 +1214,11 @@ export function CharacterSheetView({
                 ? `${el.nombre_jap} (${el.nombre_esp})`
                 : el.nombre_esp;
               ramaName = `${rama.nombre} — ${elName.toUpperCase()}`;
+            }
+          } else if (glosario.sub_especialidad_id) {
+            const sub = (masters.subEspecialidades || []).find((s: any) => Number(s.id) === Number(glosario.sub_especialidad_id));
+            if (sub) {
+              ramaName = `${rama.nombre} — ${sub.nombre.toUpperCase()}`;
             }
           }
         }
@@ -2359,11 +2420,11 @@ export function CharacterSheetView({
                           className="flex flex-col items-center justify-center p-6 bg-black/40 border border-oro/10 hover:border-oro/30 transition-all group relative overflow-hidden ninja-clip-sm"
                         >
                           <div className="absolute top-0 right-0 w-16 h-16 bg-oro/5 rounded-full blur-xl pointer-events-none" />
-                          <div className="w-14 h-14 rounded-none flex items-center justify-center group-hover:scale-110 group-hover:border-oro/50 transition-all duration-500  relative mb-4">
+                          <div className="w-24 h-24 rounded-none flex items-center justify-center group-hover:scale-110 group-hover:border-oro/50 transition-all duration-500  relative mb-2">
                             {elem.url_icono ? (
-                              <img src={elem.url_icono} alt={elem.nombre_esp} className="w-10 h-10 object-contain" />
+                              <img src={elem.url_icono} alt={elem.nombre_esp} className="w-20 h-20 object-contain" />
                             ) : (
-                              <span className="text-xl font-bold text-oro/40 group-hover:text-oro transition-colors">{elem.nombre_jap?.[0] || elem.nombre_esp?.[0]}</span>
+                              <span className="text-4xl font-bold text-oro/40 group-hover:text-oro transition-colors">{elem.nombre_jap?.[0] || elem.nombre_esp?.[0]}</span>
                             )}
                           </div>
                           {elem.nombre_jap && (
@@ -2791,8 +2852,9 @@ export function CharacterSheetView({
                             const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'GENERAL';
                             const paEfectivo = i.coste_puntos_aprendizaje || 0;
                             const paCostText = ` / ${paEfectivo} PA`;
+                            const nameText = i.nombre_jp ? `${i.nombre_jp} - ${i.nombre_es}` : i.nombre_es;
                             return {
-                              label: `${i.nombre_es} (${subName}) — ${i.coste_exp} EXP / ${i.coste_ryous} RYOUS${paCostText}`,
+                              label: `${nameText} (${subName}) — ${i.coste_exp} EXP / ${i.coste_ryous} RYOUS${paCostText}`,
                               value: i.id
                             };
                           })
@@ -2870,7 +2932,7 @@ export function CharacterSheetView({
                                                   <td className="py-3 px-5">
                                                     <div className="flex flex-col">
                                                       <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
-                                                        {pi.info_glosario?.nombre_es}
+                                                        {pi.info_glosario?.nombre_jp || pi.info_glosario?.nombre_es}
                                                         {pi.info_glosario?.es_tienda_exp && (
                                                           <span className="px-1.5 py-0.5 text-caption font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
                                                             EXP SHOP
@@ -2884,7 +2946,7 @@ export function CharacterSheetView({
                                                       </span>
                                                       {pi.info_glosario?.nombre_jp && (
                                                         <span className="text-caption text-oro/30 uppercase font-black tracking-tighter mt-0.5">
-                                                          {pi.info_glosario?.nombre_jp}
+                                                          {pi.info_glosario?.nombre_es}
                                                         </span>
                                                       )}
                                                     </div>
@@ -2953,8 +3015,9 @@ export function CharacterSheetView({
                             const paEfectivo = i.coste_puntos_aprendizaje || 0;
                             const paCostText = ` / ${paEfectivo} PA`;
                             const zoneText = i.zona_equipable ? ` [${i.zona_equipable}]` : '';
+                            const nameText = i.nombre_jp ? `${i.nombre_jp} - ${i.nombre_es}` : i.nombre_es;
                             return {
-                              label: `${i.nombre_es}${zoneText} (${subName}) — ${i.coste_exp} EXP / ${i.coste_ryous} RYOUS${paCostText}`,
+                              label: `${nameText}${zoneText} (${subName}) — ${i.coste_exp} EXP / ${i.coste_ryous} RYOUS${paCostText}`,
                               value: i.id
                             };
                           })
@@ -3314,8 +3377,9 @@ export function CharacterSheetView({
                               const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'TÉCNICA';
                               const paEfectivoT = t.coste_puntos_aprendizaje || 0;
                               const paCostText = ` / ${paEfectivoT} PA`;
+                              const nameText = t.nombre_jp ? `${t.nombre_jp} - ${t.nombre_es}` : t.nombre_es;
                               return {
-                                label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${paCostText}`,
+                                label: `${nameText} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${paCostText}`,
                                 value: t.id
                               };
                             })
@@ -3459,7 +3523,7 @@ export function CharacterSheetView({
                                                     <td className="py-3 px-5">
                                                       <div className="flex flex-col">
                                                         <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
-                                                          {pt.info_glosario?.nombre_es}
+                                                          {pt.info_glosario?.nombre_jp || pt.info_glosario?.nombre_es}
                                                           {pt.info_glosario?.es_tienda_exp && (
                                                             <span className="px-1.5 py-0.5 text-caption font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
                                                               EXP SHOP
@@ -3468,7 +3532,7 @@ export function CharacterSheetView({
                                                         </span>
                                                         {pt.info_glosario?.nombre_jp && (
                                                           <span className="text-caption text-oro/30 uppercase font-black tracking-tighter mt-0.5">
-                                                            {pt.info_glosario?.nombre_jp}
+                                                            {pt.info_glosario?.nombre_es}
                                                           </span>
                                                         )}
                                                       </div>
@@ -3537,8 +3601,9 @@ export function CharacterSheetView({
                               const subData = t.info_glosario_subcategorias;
                               const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'PASIVA';
                               const pcCostText = ` / ${t.coste_puntos_aprendizaje || 0} PA`;
+                              const nameText = t.nombre_jp ? `${t.nombre_jp} - ${t.nombre_es}` : t.nombre_es;
                               return {
-                                label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${pcCostText}`,
+                                label: `${nameText} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${pcCostText}`,
                                 value: t.id
                               };
                             })
@@ -3690,7 +3755,7 @@ export function CharacterSheetView({
                                                     <td className="py-3 px-5">
                                                       <div className="flex flex-col">
                                                         <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
-                                                          {pt.info_glosario?.nombre_es}
+                                                          {pt.info_glosario?.nombre_jp || pt.info_glosario?.nombre_es}
                                                           {pt.info_glosario?.es_tienda_exp && (
                                                             <span className="px-1.5 py-0.5 text-caption font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
                                                               EXP SHOP
@@ -3699,7 +3764,7 @@ export function CharacterSheetView({
                                                         </span>
                                                         {pt.info_glosario?.nombre_jp && (
                                                           <span className="text-caption text-oro/30 uppercase font-black tracking-tighter mt-0.5">
-                                                            {pt.info_glosario?.nombre_jp}
+                                                            {pt.info_glosario?.nombre_es}
                                                           </span>
                                                         )}
                                                       </div>
@@ -3768,8 +3833,9 @@ export function CharacterSheetView({
                               const subData = t.info_glosario_subcategorias;
                               const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || 'KUCHIYOSE';
                               const pcCostText = ` / ${t.coste_puntos_aprendizaje || 0} PA`;
+                              const nameText = t.nombre_jp ? `${t.nombre_jp} - ${t.nombre_es}` : t.nombre_es;
                               return {
-                                label: `${t.nombre_es} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${pcCostText}`,
+                                label: `${nameText} (${subName}) — ${t.coste_exp} EXP / ${t.coste_ryous} RYOUS${pcCostText}`,
                                 value: t.id
                               };
                             })
@@ -3847,7 +3913,7 @@ export function CharacterSheetView({
                                                     <td className="py-3 px-5">
                                                       <div className="flex flex-col">
                                                         <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
-                                                          {pt.info_glosario?.nombre_es}
+                                                          {pt.info_glosario?.nombre_jp || pt.info_glosario?.nombre_es}
                                                           {pt.info_glosario?.es_tienda_exp && (
                                                             <span className="px-1.5 py-0.5 text-caption font-black uppercase bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-widest rounded-sm">
                                                               EXP SHOP
@@ -3856,7 +3922,7 @@ export function CharacterSheetView({
                                                         </span>
                                                         {pt.info_glosario?.nombre_jp && (
                                                           <span className="text-caption text-oro/30 uppercase font-black tracking-tighter mt-0.5">
-                                                            {pt.info_glosario?.nombre_jp}
+                                                            {pt.info_glosario?.nombre_es}
                                                           </span>
                                                         )}
                                                       </div>

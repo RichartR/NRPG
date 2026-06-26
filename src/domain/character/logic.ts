@@ -71,11 +71,12 @@ export const StatsLogic = {
         if (eleccionClan?.sub_especialidad_id && elementos.length > 0) {
           const sub = subEspecialidades.find((s: any) => s.id === Number(eleccionClan.sub_especial_id || eleccionClan.sub_especialidad_id));
           if (sub) {
-            const elem = elementos.find((el: any) =>
-              sub.slug?.toLowerCase() === el.nombre_jap?.toLowerCase() ||
-              sub.nombre?.toLowerCase() === el.nombre_esp?.toLowerCase() ||
-              sub.nombre?.toLowerCase() === el.nombre_jap?.toLowerCase()
-            );
+            const elem = elementos.find((el: any) => {
+              const clean = (s: string) => (s || '').toLowerCase().replace(/uu/g, 'u').trim();
+              return clean(sub.slug) === clean(el.nombre_jap) ||
+                clean(sub.nombre) === clean(el.nombre_esp) ||
+                clean(sub.nombre) === clean(el.nombre_jap);
+            });
             if (elem) {
               playerElements.push(Number(elem.id));
             }
