@@ -56,16 +56,38 @@ export async function PATCH(
           const { data: subSpecs } = await supabase
             .from('info_sub_especialidades')
             .select('*');
+          const { data: ramaElems } = await supabase
+            .from('info_rama_elementos')
+            .select('*, info_elementos(*)');
 
           const { NinjutsuLogic } = await import('@/domain/character/logic');
           const validation = NinjutsuLogic.validateNinjutsuLimits(
             data.personajes_ramas || character.personajes_ramas || [],
             techDetails,
             subSpecs || [],
-            data.eleccion_tecnicas_clan !== undefined ? data.eleccion_tecnicas_clan : character.eleccion_tecnicas_clan
+            data.eleccion_tecnicas_clan !== undefined ? data.eleccion_tecnicas_clan : character.eleccion_tecnicas_clan,
+            ramaElems || []
           );
           if (!validation.valid) {
             return NextResponse.json({ error: validation.error }, { status: 400 });
+          }
+
+          // Validar que ninguna técnica exija un rango superior al actual del personaje
+          const rankOrder: Record<string, number> = { 'D': 0, 'C': 1, 'B': 2, 'A': 3, 'S': 4 };
+          const charRango = (data.rango || character.rango || 'D').toUpperCase();
+          const charRankValue = rankOrder[charRango] ?? 0;
+          for (const tech of techDetails) {
+            let req = tech.requisitos;
+            if (typeof req === 'string') {
+              try { req = JSON.parse(req); } catch { req = null; }
+            }
+            const techRango = (tech.rango || req?.rango || 'D').toUpperCase();
+            const techRankValue = rankOrder[techRango] ?? 0;
+            if (techRankValue > charRankValue) {
+              return NextResponse.json({
+                error: `La técnica "${tech.nombre_jp || tech.nombre_es}" requiere rango ${techRango} pero el personaje es rango ${charRango}.`
+              }, { status: 400 });
+            }
           }
         }
 
@@ -505,13 +527,17 @@ export async function PATCH(
           const { data: subSpecs } = await supabase
             .from('info_sub_especialidades')
             .select('*');
+          const { data: ramaElems } = await supabase
+            .from('info_rama_elementos')
+            .select('*, info_elementos(*)');
 
           const { NinjutsuLogic } = await import('@/domain/character/logic');
           const validation = NinjutsuLogic.validateNinjutsuLimits(
             character.personajes_ramas || [],
             techDetails,
             subSpecs || [],
-            character.eleccion_tecnicas_clan
+            character.eleccion_tecnicas_clan,
+            ramaElems || []
           );
           if (!validation.valid) {
             return NextResponse.json({ error: validation.error }, { status: 400 });

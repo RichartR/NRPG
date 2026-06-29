@@ -181,7 +181,8 @@ export function useCharacter(characterId: string) {
           character.personajes_ramas || [],
           character.personajes_tecnicas || [],
           masters.subEspecialidades || [],
-          character.eleccion_tecnicas_clan
+          character.eleccion_tecnicas_clan,
+          masters.ramaElementos || []
         );
         if (!validation.valid) {
           throw new Error(validation.error);

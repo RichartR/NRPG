@@ -100,13 +100,17 @@ export async function POST(request: Request) {
     const { data: subSpecs } = await supabase
       .from('info_sub_especialidades')
       .select('*');
+    const { data: ramaElems } = await supabase
+      .from('info_rama_elementos')
+      .select('*, info_elementos(*)');
 
     const { NinjutsuLogic } = await import('@/domain/character/logic');
     const validation = NinjutsuLogic.validateNinjutsuLimits(
       data.personajes_ramas || [],
       techDetails,
       subSpecs || [],
-      data.eleccion_tecnicas_clan
+      data.eleccion_tecnicas_clan,
+      ramaElems || []
     );
     if (!validation.valid) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
