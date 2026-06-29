@@ -156,9 +156,21 @@ function CrearFichaContent() {
             });
             const ninElements: number[] = [];
             if (ninjutsuSlot) {
-              if (ninjutsuSlot.elemento_principal_id) ninElements.push(Number(ninjutsuSlot.elemento_principal_id));
-              if (ninjutsuSlot.elemento_secundario_id) ninElements.push(Number(ninjutsuSlot.elemento_secundario_id));
-              if (ninjutsuSlot.elemento_terciario_id) ninElements.push(Number(ninjutsuSlot.elemento_terciario_id));
+              const clanInfo = (masters.ramas || []).find((cr: any) => cr.id === Number(ninjutsuSlot.rama_id));
+              const isClanElemental = clanInfo?.config_iniciales?.clan_elemental === true;
+              if (isClanElemental) {
+                if (masters.ramaElementos) {
+                  masters.ramaElementos
+                    .filter((re: any) => Number(re.rama_id) === Number(ninjutsuSlot.rama_id) && re.tipo === 'fijo')
+                    .forEach((re: any) => {
+                      if (re.elemento_id) ninElements.push(Number(re.elemento_id));
+                    });
+                }
+              } else {
+                if (ninjutsuSlot.elemento_principal_id) ninElements.push(Number(ninjutsuSlot.elemento_principal_id));
+                if (ninjutsuSlot.elemento_secundario_id) ninElements.push(Number(ninjutsuSlot.elemento_secundario_id));
+                if (ninjutsuSlot.elemento_terciario_id) ninElements.push(Number(ninjutsuSlot.elemento_terciario_id));
+              }
             }
             if (!ninElements.includes(reqElId)) return false;
           } else {
@@ -223,11 +235,30 @@ function CrearFichaContent() {
         .filter((i: any) => i.inicial && i.categoria_id === 2 && meetsAllReqs(i))
         .map((i: any) => ({ item_id: i.id, cantidad: 1, info_glosario: i }));
       
+      // Check if they have an elemental clan
+      const clanElementalRama = form.personajes_ramas.find((r: any) => {
+        const clanInfo = (masters.ramas || []).find((cr: any) => cr.id === Number(r.rama_id));
+        return clanInfo?.config_iniciales?.clan_elemental === true;
+      });
+      const isClanElemental = !!clanElementalRama;
+
       const initialTecs = glosarioCompleto
         .filter((t: any) => {
           if (t.inicial && t.categoria_id !== 2 && meetsAllReqs(t)) {
             if (isNinIIorIII && Number(t.rama_clan_id) === 4) {
               return false;
+            }
+            if (isClanElemental) {
+              const reqElId = t.elemento_id || t.requisitos?.elemento_id;
+              if (reqElId) {
+                if (ninjutsuRama && Number(ninjutsuRama.sub_especialidad_id) === 9) { // Ninjutsu I
+                  const ninElementId = Number(ninjutsuRama.elemento_principal_id);
+                  if (Number(reqElId) === ninElementId) {
+                    return true;
+                  }
+                }
+                return false;
+              }
             }
             return true;
           }

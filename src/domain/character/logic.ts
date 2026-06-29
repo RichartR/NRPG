@@ -29,7 +29,7 @@ export const StatsLogic = {
     const rulesEntries = Object.entries(rules);
     // Sort ranks by min threshold ascending (D, C, B, A, S, etc.)
     const sortedRanks = rulesEntries.sort((a: any, b: any) => (Number(a[1].min) || 0) - (Number(b[1].min) || 0));
-    
+
     let newRango = 'D';
 
     for (const [r, rule] of sortedRanks) {
@@ -42,7 +42,7 @@ export const StatsLogic = {
       // we must verify that all mandatory techniques of newRango are acquired.
       if (newRango !== r && glosarioTecnicas.length > 0) {
         const currentRankCheck = newRango;
-        
+
         // Incluir ramas reales y las de elección del clan
         const playerBranches = [
           ...ramasPersonaje.map(rp => Number(rp.rama_id)),
@@ -98,20 +98,52 @@ export const StatsLogic = {
           }
         }
 
-        // A) If isNinIIorIII, check if they have enough basic Ninjutsu techniques of the current rank
+        let isNinI = false;
+        if (ninjutsuRama && ninjutsuRama.sub_especialidad_id) {
+          const sub = subEspecialidades.find((s: any) => Number(s.id) === Number(ninjutsuRama.sub_especialidad_id));
+          if (sub && sub.slug === 'ninjutsu-i') {
+            isNinI = true;
+          }
+        }
+        if (!isNinI && eleccionClan && Number(eleccionClan.rama_id) === 4 && eleccionClan.sub_especialidad_id) {
+          const sub = subEspecialidades.find((s: any) => Number(s.id) === Number(eleccionClan.sub_especialidad_id));
+          if (sub && sub.slug === 'ninjutsu-i') {
+            isNinI = true;
+          }
+        }
+
+        const clanElementalRama = ramasPersonaje.find(r => {
+          const clanInfo = r.info_ramas_clanes || r.info_rama;
+          if (!clanInfo) return false;
+          let config = clanInfo.config_iniciales;
+          if (typeof config === 'string') {
+            try {
+              config = JSON.parse(config);
+            } catch {
+              return false;
+            }
+          }
+          return config?.clan_elemental === true;
+        });
+        const isClanElemental = !!clanElementalRama;
+
+        // A) If isNinIIorIII or has elemental clan, check if they have enough basic techniques of the current rank
         const rankRule = rules[currentRankCheck] as any;
         const reqBasicas = rankRule?.basicas_requeridas || 0;
-        if (isNinIIorIII && reqBasicas > 0) {
+        if ((isNinIIorIII || (isClanElemental && !isNinI)) && reqBasicas > 0) {
           const playerTechIds = tecnicasPersonaje.map(pt => Number(pt.tecnica_id));
-          
-          // Count learned techniques of currentRankCheck that are basic Ninjutsu
+
+          // Count learned techniques of currentRankCheck that are basic Ninjutsu or from the elemental clan
           const basicCount = glosarioTecnicas.filter(t => {
             const tRank = t.rango || t.requisitos?.rango;
-            return t.basica === true && Number(t.rama_clan_id) === 4 && tRank === currentRankCheck && playerTechIds.includes(t.id);
+            const rId = Number(t.rama_clan_id);
+            const isNinjutsuOrClan = rId === 4 || (clanElementalRama && rId === Number(clanElementalRama.rama_id));
+            return t.basica === true && isNinjutsuOrClan && tRank === currentRankCheck && playerTechIds.includes(t.id);
           }).length;
 
+
           if (basicCount < reqBasicas) {
-            break; // Blocked: doesn't have the maximum basic techniques allowed/required
+            break; // Blocked: doesn't have the required basic techniques
           }
         }
 
@@ -121,8 +153,10 @@ export const StatsLogic = {
           const isMandatory = t.obligatoria_ascenso || t.requisitos?.obligatoria_ascenso;
           if (!isMandatory || tRank !== currentRankCheck) return false;
 
-          // If Ninjutsu II or III is active, exclude basic Ninjutsu techniques from mandatory check (already validated above)
-          if (isNinIIorIII && Number(t.rama_clan_id) === 4 && t.basica === true) {
+          // If Ninjutsu II/III or elemental clan is active, exclude basic techniques from mandatory check (already validated above)
+          const rId = Number(t.rama_clan_id);
+          const isNinjutsuOrClan = rId === 4 || (clanElementalRama && rId === Number(clanElementalRama.rama_id));
+          if ((isNinIIorIII || (isClanElemental && !isNinI)) && isNinjutsuOrClan && t.basica === true) {
             return false;
           }
 
@@ -135,7 +169,25 @@ export const StatsLogic = {
           if (!hasBranch && !hasSubSpec && !hasElement) return true; // General technique of this rank
 
           if (hasElement) {
-            return playerElements.includes(Number(t.elemento_id));
+            const elId = Number(t.elemento_id);
+            if (rId === 4) {
+              // Si es técnica de la rama de Ninjutsu, solo es obligatoria para ascender
+              // si pertenece a los elementos configurados específicamente en su rama de Ninjutsu (no los del clan elemental).
+              const ninjutsuElements: number[] = [];
+              if (ninjutsuRama) {
+                if (ninjutsuRama.elemento_principal_id) ninjutsuElements.push(Number(ninjutsuRama.elemento_principal_id));
+                if (ninjutsuRama.elemento_secundario_id) ninjutsuElements.push(Number(ninjutsuRama.elemento_secundario_id));
+                if (ninjutsuRama.elemento_terciario_id) ninjutsuElements.push(Number(ninjutsuRama.elemento_terciario_id));
+              }
+              if (eleccionClan && Number(eleccionClan.rama_id) === 4) {
+                // Si la especialidad viene de elección de clan
+                if (clanElementalRama?.elemento_principal_id) {
+                  ninjutsuElements.push(Number(clanElementalRama.elemento_principal_id));
+                }
+              }
+              return ninjutsuElements.includes(elId);
+            }
+            return playerElements.includes(elId);
           }
 
           if (hasBranch) {
@@ -241,7 +293,7 @@ export const RewardLogic = {
 
       // Calcular el rango máximo de cada bando
       const RANK_SCALE: Record<string, number> = { 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5 };
-      
+
       const maxRankA = (data.equipo_a || []).reduce((max: number, p: any) => {
         const val = RANK_SCALE[(p.rango || 'D').toUpperCase()] || 1;
         return val > max ? val : max;
@@ -348,10 +400,11 @@ export const NinjutsuLogic = {
     ramas: any[],
     tecnicas: any[],
     subEspecialidades: any[],
-    eleccionClan: any = null
+    eleccionClan: any = null,
+    ramaElementos: any[] = []
   ): { valid: boolean; error?: string } {
     const ninjutsuRama = ramas.find(r => Number(r.rama_id) === 4);
-    
+
     let isNinIIorIIIInBranch = false;
     if (ninjutsuRama && ninjutsuRama.sub_especialidad_id) {
       const sub = subEspecialidades.find(s => Number(s.id) === Number(ninjutsuRama.sub_especialidad_id));
@@ -368,8 +421,85 @@ export const NinjutsuLogic = {
       }
     }
 
-    if (!isNinIIorIIIInBranch && !isNinIIorIIIInClan) {
+    const clanElementalRama = ramas.find(r => {
+      const clanInfo = r.info_ramas_clanes || r.info_rama;
+      if (!clanInfo) return false;
+      let config = clanInfo.config_iniciales;
+      if (typeof config === 'string') {
+        try {
+          config = JSON.parse(config);
+        } catch {
+          return false;
+        }
+      }
+      return config?.clan_elemental === true;
+    });
+    const isClanElemental = !!clanElementalRama;
+
+    if (!isNinIIorIIIInBranch && !isNinIIorIIIInClan && !isClanElemental) {
       return { valid: true };
+    }
+
+    // 1. Si el clan es elemental y la otra rama es Ninjutsu, debe ser únicamente Ninjutsu I
+    if (isClanElemental && ninjutsuRama) {
+      const sub = subEspecialidades.find(s => Number(s.id) === Number(ninjutsuRama.sub_especialidad_id));
+      if (sub && sub.slug !== 'ninjutsu-i') {
+        return { valid: false, error: "RESTRICCIÓN: Al poseer un clan elemental, la rama de Ninjutsu solo puede tener la especialidad de 'Ninjutsu I (1 Elemento)'." };
+      }
+    }
+
+    // 2. Extraer los elementos básicos del clan elemental
+    let clanBasicElementIds: number[] = [];
+    if (isClanElemental && ramaElementos.length > 0 && clanElementalRama) {
+      clanBasicElementIds = ramaElementos
+        .filter((re: any) => {
+          const isFijo = re.tipo === 'fijo';
+          const isSameRama = Number(re.rama_id) === Number(clanElementalRama.rama_id);
+          const isBasic = re.info_elementos?.tipo === 'basico' || re.elemento_tipo === 'basico';
+          return isFijo && isSameRama && isBasic;
+        })
+        .map((re: any) => Number(re.elemento_id));
+    }
+
+    // 3. Validar que el elemento de Ninjutsu I esté entre los básicos del clan elemental
+    if (isClanElemental && ninjutsuRama && clanBasicElementIds.length > 0) {
+      const ninPrincipalElementId = ninjutsuRama.elemento_principal_id ? Number(ninjutsuRama.elemento_principal_id) : null;
+      if (ninPrincipalElementId && !clanBasicElementIds.includes(ninPrincipalElementId)) {
+        return { valid: false, error: "RESTRICCIÓN: El elemento principal de Ninjutsu I debe ser uno de los elementos básicos de tu clan elemental." };
+      }
+    }
+
+    // 4. Validar técnicas avanzadas de Ninjutsu de elementos básicos del clan
+    if (isClanElemental && clanBasicElementIds.length > 0) {
+      for (const t of tecnicas) {
+        const info = t.info_glosario || t;
+        if (
+          info &&
+          (Number(info.rama_clan_id) === 4 || Number(info.categoria_id) === 1) &&
+          info.basica !== true &&
+          info.elemento_id
+        ) {
+          const tElementId = Number(info.elemento_id);
+          if (clanBasicElementIds.includes(tElementId)) {
+            // Debe estar seleccionado como principal en alguna de las ramas (clan o Ninjutsu)
+            const isPrincipal = ramas.some(r => Number(r.elemento_principal_id) === tElementId);
+            if (!isPrincipal) {
+              return {
+                valid: false,
+                error: `RESTRICCIÓN: Para aprender la técnica avanzada "${info.nombre_es}", debes tener su elemento correspondiente seleccionado como principal.`
+              };
+            }
+          }
+        }
+      }
+    }
+
+    let ninjutsuIElementId: number | null = null;
+    if (ninjutsuRama) {
+      const sub = subEspecialidades.find(s => Number(s.id) === Number(ninjutsuRama.sub_especialidad_id));
+      if (sub && sub.slug === 'ninjutsu-i' && ninjutsuRama.elemento_principal_id) {
+        ninjutsuIElementId = Number(ninjutsuRama.elemento_principal_id);
+      }
     }
 
     const isFromClan = !isNinIIorIIIInBranch && isNinIIorIIIInClan;
@@ -379,41 +509,78 @@ export const NinjutsuLogic = {
     const basicNinjutsu = tecnicas.filter(t => {
       const info = t.info_glosario || t;
       if (!info || info.basica !== true || Number(info.categoria_id || 1) !== 1) return false;
-      const rId = Number(info.rama_clan_id);
-      if (isFromClan) {
-        return rId === 4 || clanIds.includes(rId);
-      } else {
-        return rId === 4;
+
+      // Excluir técnicas del elemento de Ninjutsu I del conteo para límites del clan elemental
+      if (isClanElemental && !isNinIIorIIIInBranch && !isNinIIorIIIInClan && ninjutsuIElementId !== null) {
+        if (Number(info.elemento_id) === ninjutsuIElementId) {
+          return false;
+        }
       }
+
+      const rId = Number(info.rama_clan_id);
+      return rId === 4;
     });
 
-    const limitTotal = isFromClan ? 6 : 8;
-    const maxD = 3;
-    const maxC = isFromClan ? 2 : 3;
-    const maxB = isFromClan ? 1 : 2;
+    let limitTotal = isFromClan ? 6 : 8;
+    let maxD = 3;
+    let maxC = isFromClan ? 2 : 3;
+    let maxB = isFromClan ? 1 : 2;
 
-    if (basicNinjutsu.length > limitTotal) {
-      return { valid: false, error: `LÍMITE ALCANZADO: El límite máximo de técnicas de Ninjutsu Básico es de ${limitTotal}.` };
+    if (isClanElemental && !isNinIIorIIIInBranch && !isNinIIorIIIInClan) {
+      const clanInfo = clanElementalRama.info_ramas_clanes || clanElementalRama.info_rama;
+      const clanSlug = clanInfo?.slug || '';
+
+      limitTotal = 5;
+      maxD = 3;
+
+      if (clanSlug === 'kekkei-genkai-yoton-kasai') {
+        maxC = 1;
+        maxB = 1;
+      } else {
+        // Por defecto o Ranton (kekkei-genkai-ranton-reiza)
+        maxC = 2;
+        maxB = 0;
+      }
     }
+
+    const clanInfo = clanElementalRama ? (clanElementalRama.info_ramas_clanes || clanElementalRama.info_rama || clanElementalRama) : null;
+    const clanName = clanInfo?.nombre || "Clan";
 
     const counts: Record<string, number> = { D: 0, C: 0, B: 0, A: 0, S: 0 };
     for (const t of basicNinjutsu) {
       const info = t.info_glosario || t;
-      const r = (info.rango || 'D').toUpperCase();
+      let req = info.requisitos;
+      if (typeof req === 'string') {
+        try { req = JSON.parse(req); } catch {}
+      }
+      const r = (info.rango || req?.rango || 'D').toUpperCase();
       counts[r] = (counts[r] || 0) + 1;
     }
 
+    const targetStr = isClanElemental && !isNinIIorIIIInBranch && !isNinIIorIIIInClan
+      ? `para el ${clanName}`
+      : "de Ninjutsu Básico";
+
     if (counts.D > maxD) {
-      return { valid: false, error: `LÍMITE ALCANZADO: Solo se permiten hasta ${maxD} técnicas de Rango D de Ninjutsu Básico.` };
+      return { valid: false, error: `LÍMITE ALCANZADO: Solo se permiten hasta ${maxD} técnicas de Rango D ${targetStr}.` };
     }
     if (counts.C > maxC) {
-      return { valid: false, error: `LÍMITE ALCANZADO: Solo se permiten hasta ${maxC} técnicas de Rango C de Ninjutsu Básico.` };
+      return { valid: false, error: `LÍMITE ALCANZADO: Solo se permiten hasta ${maxC} técnicas de Rango C ${targetStr}.` };
     }
     if (counts.B > maxB) {
-      return { valid: false, error: `LÍMITE ALCANZADO: Solo se permiten hasta ${maxB} técnicas de Rango B de Ninjutsu Básico.` };
+      return { valid: false, error: `LÍMITE ALCANZADO: Solo se permiten hasta ${maxB} técnicas de Rango B ${targetStr}.` };
     }
     if (counts.A > 0 || counts.S > 0) {
-      return { valid: false, error: "LÍMITE ALCANZADO: No se permiten técnicas de Rango A o S de Ninjutsu Básico." };
+      return { valid: false, error: `LÍMITE ALCANZADO: No se permiten técnicas de Rango A o S ${targetStr}.` };
+    }
+
+    if (basicNinjutsu.length > limitTotal) {
+      const bandoStr = isClanElemental && !isNinIIorIIIInBranch && !isNinIIorIIIInClan
+        ? `para el ${clanName}`
+        : isFromClan
+          ? "para el Clan"
+          : "de Ninjutsu Básico";
+      return { valid: false, error: `LÍMITE ALCANZADO: El límite máximo de técnicas de Ninjutsu Básico es de ${limitTotal} ${bandoStr}.` };
     }
 
     // Validar restricciones de rango por slot
@@ -421,7 +588,11 @@ export const NinjutsuLogic = {
       const info = t.info_glosario || t;
       if (info && info.elemento_id && Number(info.categoria_id || 1) === 1) {
         const elementId = Number(info.elemento_id);
-        const rank = (info.rango || 'D').toUpperCase();
+        let req = info.requisitos;
+        if (typeof req === 'string') {
+          try { req = JSON.parse(req); } catch {}
+        }
+        const rank = (info.rango || req?.rango || 'D').toUpperCase();
 
         if (ninjutsuRama) {
           // Elemento secundario: Máximo rango B

@@ -55,7 +55,12 @@ export default function CharacterSheet() {
 
     return Array.from(fijosSet)
       .map((id) => elementos.find((e: any) => e.id === id))
-      .filter(Boolean);
+      .filter(Boolean)
+      .sort((a: any, b: any) => {
+        // 'avanzado' antes que 'basico' (alfabéticamente 'avanzado' < 'basico', pero lo forzamos)
+        const order = (tipo: string) => tipo === 'avanzado' ? 0 : 1;
+        return order(a?.tipo || '') - order(b?.tipo || '');
+      });
   }, [activeCharacter, elementos, ramaElementos]);
 
   // Prevent background scrolling when portrait modal is open
