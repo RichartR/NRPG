@@ -239,6 +239,7 @@ export interface Character {
   personajes_entrenamientos?: PersonajeEntrenamiento[];
   personajes_rasgos?: PersonajeRasgo[];
   personajes_sentidos?: PersonajeSentido[];
+  personajes_acompanantes?: PersonajeAcompanante[];
   registros_autor?: Registro[];
   registros_participante?: RegistroParticipante[];
   
@@ -462,5 +463,31 @@ export interface PersonajeSentido {
   // Joins
   info_sentidos?: Sentido;
 }
+
+export interface AcompananteInfo {
+  id: number;
+  rama_clan_id: number;
+  nombre_esp: string;
+  nombre_jap: string;
+  slug: string;
+  url_default?: string | null;
+  activo: boolean;
+  created_at?: string;
+  // Joins
+  info_ramas_clanes?: RamaClan;
+}
+
+export interface PersonajeAcompanante {
+  id?: number;
+  personaje_id: number;
+  acompanante_id: number;
+  nombre_personalizado?: string | null;
+  url_image_personalizada?: string | null;
+  origen: string;
+  created_at?: string;
+  // Joins
+  info_acompanantes?: AcompananteInfo;
+}
+
 
 

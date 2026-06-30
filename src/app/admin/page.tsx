@@ -160,6 +160,15 @@ export default async function AdminPage() {
       borderColor: 'hover:border-oro/50'
     },
     {
+      title: 'Acompañantes',
+      desc: 'Configurar y asociar compañeros/Ninken a clanes y ramas.',
+      icon: Shield,
+      href: '/admin/acompanantes',
+      color: 'text-oro',
+      bgColor: 'bg-oro/10',
+      borderColor: 'hover:border-oro/50'
+    },
+    {
       title: 'Control de Usuarios',
       desc: 'Buscar usuarios, ver personajes, Discord y gestionar baneos temporales de cuentas e IPs.',
       icon: ShieldAlert,

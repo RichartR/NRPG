@@ -9,7 +9,7 @@ export const CharacterServerService = {
   async getCharacterById(supabase: SupabaseClient, id: string | number): Promise<Character | null> {
     const { data, error } = await supabase
       .from('reg_characters')
-      .select('*, personajes_ramas:reg_personajes_ramas(*, rama:info_ramas_clanes(nombre), sub_especialidad:info_sub_especialidades(nombre)), personajes_entrenamientos:reg_personajes_entrenamientos(*, info_entrenamientos(*)), personajes_rasgos:reg_personajes_rasgos(*, info_rasgos(*)), personajes_sentidos:reg_personajes_sentidos(*, info_sentidos(*))')
+      .select('*, personajes_ramas:reg_personajes_ramas(*, rama:info_ramas_clanes(nombre), sub_especialidad:info_sub_especialidades(nombre)), personajes_entrenamientos:reg_personajes_entrenamientos(*, info_entrenamientos(*)), personajes_rasgos:reg_personajes_rasgos(*, info_rasgos(*)), personajes_sentidos:reg_personajes_sentidos(*, info_sentidos(*)), personajes_acompanantes:reg_personajes_acompanantes(*, info_acompanantes(*))')
       .eq('id', id)
       .single();
     if (error) return null;
@@ -497,5 +497,20 @@ export const CharacterServerService = {
       return [];
     }
     return data || [];
+  },
+
+  async bulkUpdateAcompanantes(supabase: SupabaseClient, characterId: string | number, acompanantes: any[]) {
+    await supabase.from('reg_personajes_acompanantes').delete().eq('personaje_id', characterId);
+    if (acompanantes && acompanantes.length > 0) {
+      const mapped = acompanantes.map(a => ({
+        personaje_id: characterId,
+        acompanante_id: a.acompanante_id,
+        nombre_personalizado: a.nombre_personalizado || null,
+        url_image_personalizada: a.url_image_personalizada || null,
+        origen: a.origen
+      }));
+      const { error } = await supabase.from('reg_personajes_acompanantes').insert(mapped);
+      if (error) throw error;
+    }
   }
 };

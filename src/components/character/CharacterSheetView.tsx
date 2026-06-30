@@ -31,6 +31,7 @@ import CombatTable from '@/components/registros/CombatTable';
 import MissionForm from '@/components/registros/MissionForm';
 import CombatForm from '@/components/registros/CombatForm';
 import { CharacterRadarChart } from './CharacterRadarChart';
+import NinkenSection from './NinkenSection';
 import { useState, useMemo, useEffect, Fragment } from 'react';
 import { resolveAldeaIcono } from '@/utils/aldea-icon';
 import { createClient } from '@/utils/supabase/client';
@@ -125,6 +126,7 @@ export function CharacterSheetView({
   const [eventCoinName, setEventCoinName] = useState('Monedas de Evento');
 
   const [rasgosList, setRasgosList] = useState<Rasgo[]>([]);
+  const [companionsList, setCompanionsList] = useState<any[]>([]);
   const [activeTeam, setActiveTeam] = useState<any>(null);
   const [inventorySearch, setInventorySearch] = useState('');
   const [equipmentSearch, setEquipmentSearch] = useState('');
@@ -159,6 +161,14 @@ export function CharacterSheetView({
         console.error("Error fetching rasgos in CharacterSheetView:", err);
       }
     };
+    const fetchCompanions = async () => {
+      try {
+        const data = await CharacterService.getCompanions();
+        setCompanionsList(data);
+      } catch (err) {
+        console.error("Error fetching companions in CharacterSheetView:", err);
+      }
+    };
     const fetchActiveTeam = async () => {
       if (!character?.id) return;
       try {
@@ -186,6 +196,7 @@ export function CharacterSheetView({
 
     fetchEventCoinName();
     fetchRasgos();
+    fetchCompanions();
     fetchActiveTeam();
   }, [character?.id]);
 
@@ -275,6 +286,75 @@ export function CharacterSheetView({
       onUpdateField('personajes_rasgos', updatedRasgos);
     }
   }, [character?.personajes_ramas, character?.rango, rasgosList, masters.ramas]);
+
+  // AUTO-ALIGN COMPANIONS BASED ON BRANCHES AND TRAININGS
+  useEffect(() => {
+    if (!character || !companionsList || companionsList.length === 0) return;
+
+    const charRamas = character.personajes_ramas || [];
+    const activeRamaIds = charRamas.map((pr: any) => Number(pr.rama_id)).filter(Boolean);
+
+    const currentCompanions = character.personajes_acompanantes || [];
+    let updatedCompanions = [...currentCompanions];
+    let hasChanges = false;
+
+    // Filter out companions that belong to branches the character no longer has
+    updatedCompanions = updatedCompanions.filter(ac => {
+      const companionObj = companionsList.find(c => Number(c.id) === Number(ac.acompanante_id));
+      if (!companionObj) {
+        hasChanges = true;
+        return false;
+      }
+      const hasBranch = activeRamaIds.includes(Number(companionObj.rama_clan_id));
+      if (!hasBranch) {
+        hasChanges = true;
+        return false;
+      }
+
+      // Check training restrictions
+      if (ac.origen === 'entrenamiento') {
+        const isKamizuru = Number(companionObj.rama_clan_id) === 21;
+        const isAburame = Number(companionObj.rama_clan_id) === 31;
+        if (isKamizuru) {
+          const hasMure = (character.personajes_entrenamientos || []).some((e: any) => Number(e.entrenamiento_id) === 45);
+          if (!hasMure) {
+            hasChanges = true;
+            return false;
+          }
+        } else if (isAburame) {
+          const hasEkibyoTsukai = (character.personajes_entrenamientos || []).some((e: any) => Number(e.entrenamiento_id) === 56);
+          if (!hasEkibyoTsukai) {
+            hasChanges = true;
+            return false;
+          }
+        }
+      }
+
+      // Inuzuka companions check
+      if (Number(companionObj.rama_clan_id) === 30) {
+        const rankOrder = masters.rankOrder || { "D": 1, "C": 2, "B": 3, "A": 4, "S": 5 };
+        const charRankVal = rankOrder[character.rango] || 1;
+        const maxSlots = charRankVal <= 2 ? 1 : charRankVal === 3 ? 2 : 3;
+
+        const slotNum = Number(ac.origen.replace('slot_', ''));
+        if (!isNaN(slotNum) && slotNum > maxSlots) {
+          hasChanges = true;
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    if (hasChanges) {
+      onUpdateField('personajes_acompanantes', updatedCompanions);
+    }
+  }, [
+    character?.personajes_ramas,
+    character?.personajes_entrenamientos,
+    character?.rango,
+    companionsList
+  ]);
 
   const [occupancy, setOccupancy] = useState<{
     countByAldea: Record<number, number>;
@@ -1562,7 +1642,7 @@ export function CharacterSheetView({
 
   const [editingRegistro, setEditingRegistro] = useState<Registro | null>(null);
   const [registroTab, setRegistroTab] = useState<'mision' | 'accion' | 'combate'>('mision');
-  const [tecnicasSubTab, setTecnicasSubTab] = useState<'jutsus' | 'pasivas' | 'kuchiyoses'>('jutsus');
+  const [tecnicasSubTab, setTecnicasSubTab] = useState<'jutsus' | 'pasivas' | 'kuchiyoses' | 'ninken'>('jutsus');
   const [inventarioSubTab, setInventarioSubTab] = useState<'mochila' | 'equipo'>('mochila');
   const [recordPage, setRecordPage] = useState(1);
   const recordsPerPage = 10;
@@ -2511,6 +2591,82 @@ export function CharacterSheetView({
                                 </div>
                               );
                             })()}
+
+                            {/* ACOMPAÑANTES DEL CLAN (Para Kamizuru y Aburame) */}
+                            {(() => {
+                              console.log("DEBUG COMPANIONS RENDER:", {
+                                slot,
+                                rama_id: pr?.rama_id,
+                                isKamizuru: pr?.rama_id ? Number(pr.rama_id) === 21 : false,
+                                isAburame: pr?.rama_id ? Number(pr.rama_id) === 31 : false,
+                                companionsListLength: companionsList.length
+                              });
+                              if (!pr?.rama_id) return null;
+                              const isKamizuru = Number(pr.rama_id) === 21;
+                              const isAburame = Number(pr.rama_id) === 31;
+                              if (!isKamizuru && !isAburame) return null;
+
+                              const branchCompanions = companionsList.filter(c => Number(c.rama_clan_id) === Number(pr.rama_id) && c.activo);
+                              if (branchCompanions.length === 0) return null;
+
+                              const hasTraining = isKamizuru
+                                ? (character.personajes_entrenamientos || []).some((e: any) => Number(e.entrenamiento_id) === 45)
+                                : (character.personajes_entrenamientos || []).some((e: any) => Number(e.entrenamiento_id) === 56);
+
+                              const baseCompanion = (character.personajes_acompanantes || []).find((a: any) => Number(a.info_acompanantes?.rama_clan_id) === Number(pr.rama_id) && a.origen === 'base');
+                              const trainingCompanion = (character.personajes_acompanantes || []).find((a: any) => Number(a.info_acompanantes?.rama_clan_id) === Number(pr.rama_id) && a.origen === 'entrenamiento');
+
+                              const baseOptions = branchCompanions.map(bc => ({
+                                label: bc.nombre_jap,
+                                value: String(bc.id),
+                                disabled: trainingCompanion && Number(trainingCompanion.acompanante_id) === Number(bc.id)
+                              }));
+
+                              const trainingOptions = branchCompanions.map(bc => ({
+                                label: bc.nombre_jap,
+                                value: String(bc.id),
+                                disabled: baseCompanion && Number(baseCompanion.acompanante_id) === Number(bc.id)
+                              }));
+
+                              const updateCompanion = (origen: 'base' | 'entrenamiento', companionIdVal: string) => {
+                                const list = character.personajes_acompanantes || [];
+                                let updated = list.filter((a: any) => !(Number(a.info_acompanantes?.rama_clan_id) === Number(pr.rama_id) && a.origen === origen));
+                                if (companionIdVal) {
+                                  const companionObj = companionsList.find(c => Number(c.id) === Number(companionIdVal));
+                                  updated.push({
+                                    personaje_id: character.id,
+                                    acompanante_id: Number(companionIdVal),
+                                    origen,
+                                    info_acompanantes: companionObj
+                                  });
+                                }
+                                onUpdateField('personajes_acompanantes', updated);
+                              };
+
+                              return (
+                                <div className="space-y-4 p-4 bg-oro/5 border border-oro/10 ninja-clip-sm mt-4 animate-in fade-in duration-300">
+                                  <h5 className="text-caption font-black text-oro uppercase tracking-[0.2em] mb-2">Acompañantes del Clan</h5>
+                                  
+                                  <SelectField
+                                    label="ACOMPAÑANTE BASE"
+                                    value={baseCompanion?.acompanante_id ?? null}
+                                    options={baseOptions}
+                                    disabled={!isEditing && !isNew}
+                                    onChange={(v) => updateCompanion('base', v)}
+                                  />
+
+                                  {hasTraining && (
+                                    <SelectField
+                                      label="ACOMPAÑANTE DE ENTRENAMIENTO"
+                                      value={trainingCompanion?.acompanante_id ?? null}
+                                      options={trainingOptions}
+                                      disabled={!isEditing && !isNew}
+                                      onChange={(v) => updateCompanion('entrenamiento', v)}
+                                    />
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </div>
                         </div>
                       );
@@ -3367,26 +3523,33 @@ export function CharacterSheetView({
 
               {/* Submenu for Técnicas */}
               <div className="flex flex-nowrap gap-4 overflow-x-auto pb-2 lg:pb-0 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-                {(['jutsus', 'pasivas', 'kuchiyoses'] as const).map(tab => {
-                  const isActive = tecnicasSubTab === tab;
-                  const label = tab === 'jutsus' ? 'TÉCNICAS' : tab === 'pasivas' ? 'HABILIDADES PASIVAS' : 'KUCHIYOSES';
+                {(() => {
+                  const isInuzuka = (character.personajes_ramas || []).some((r: any) => Number(r.rama_id) === 30);
+                  const subtabs = isInuzuka
+                    ? (['jutsus', 'pasivas', 'kuchiyoses', 'ninken'] as const)
+                    : (['jutsus', 'pasivas', 'kuchiyoses'] as const);
 
-                  return (
-                    <button
-                      key={tab}
-                      onClick={() => setTecnicasSubTab(tab)}
-                      className={`px-8 sm:px-16 py-4 text-[11px] xl:text-sm font-black uppercase tracking-widest transition-all duration-300 border ninja-clip-sm shrink-0 relative group flex items-center gap-4 ${isActive
-                        ? 'bg-oro text-rojo-sangre border-oro shadow-[0_0_30px_rgba(255,230,159,0.5)]'
-                        : 'bg-black/60 text-oro/30 border-oro/10 hover:border-oro/60 hover:text-oro hover:bg-black/90'
-                        }`}
-                    >
-                      <span>{label}</span>
-                      {!isActive && (
-                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-oro transition-all duration-300 group-hover:w-[80%]" />
-                      )}
-                    </button>
-                  );
-                })}
+                  return subtabs.map(tab => {
+                    const isActive = tecnicasSubTab === tab;
+                    const label = tab === 'jutsus' ? 'TÉCNICAS' : tab === 'pasivas' ? 'HABILIDADES PASIVAS' : tab === 'kuchiyoses' ? 'KUCHIYOSES' : 'NINKEN';
+
+                    return (
+                      <button
+                        key={tab}
+                        onClick={() => setTecnicasSubTab(tab as any)}
+                        className={`px-8 sm:px-16 py-4 text-[11px] xl:text-sm font-black uppercase tracking-widest transition-all duration-300 border ninja-clip-sm shrink-0 relative group flex items-center gap-4 ${isActive
+                          ? 'bg-oro text-rojo-sangre border-oro shadow-[0_0_30px_rgba(255,230,159,0.5)]'
+                          : 'bg-black/60 text-oro/30 border-oro/10 hover:border-oro/60 hover:text-oro hover:bg-black/90'
+                          }`}
+                      >
+                        <span>{label}</span>
+                        {!isActive && (
+                          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-oro transition-all duration-300 group-hover:w-[80%]" />
+                        )}
+                      </button>
+                    );
+                  });
+                })()}
               </div>
 
               <div className="relative">
@@ -4161,6 +4324,17 @@ export function CharacterSheetView({
 
                   </SectionCard>
                 </div>
+              )}
+
+              {tecnicasSubTab === 'ninken' && (
+                <NinkenSection
+                  character={character}
+                  companionsList={companionsList}
+                  isEditing={isEditing}
+                  isNew={isNew}
+                  onUpdateField={onUpdateField}
+                  addToast={addToast}
+                />
               )}
             </div>
           )}
