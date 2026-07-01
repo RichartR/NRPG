@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client';
-import { Character, PersonajeRama, PersonajeItem, PersonajeTecnica, Registro, Glosario, Rasgo, PersonajeSentido, PersonajeAcompanante, AcompananteInfo } from '@/domain/types';
+import { Character, PersonajeRama, PersonajeItem, PersonajeTecnica, Registro, Glosario, Rasgo, PersonajeSentido, PersonajeAcompanante, AcompananteInfo, KugutsuComponente } from '@/domain/types';
 import { RewardLogic } from '@/domain/character/logic';
 
 export const CharacterService = {
@@ -18,6 +18,7 @@ export const CharacterService = {
         reg_personajes_rasgos!reg_personajes_rasgos_personaje_id_fkey(*, info_rasgos(*)),
         reg_personajes_sentidos!reg_personajes_sentidos_personaje_id_fkey(*, info_sentidos(*)),
         reg_personajes_acompanantes!reg_personajes_acompanantes_personaje_id_fkey(*, info_acompanantes(*)),
+        reg_personajes_kugutsu_componentes!reg_personajes_kugutsu_componentes_personaje_id_fkey(*, info_cuerpo:info_kugutsu_componentes!cuerpo_id(*), info_extremidad:info_kugutsu_componentes!extremidad_id(*), info_accesorio:info_kugutsu_componentes!accesorio_id(*)),
         registros_autor: reg_registros!reg_registros_autor_id_fkey(*, autor: reg_characters!reg_registros_autor_id_fkey(nombre_ninja), participantes: reg_registros_participantes!reg_registros_participantes_registro_id_fkey(*, personaje: reg_characters!reg_registros_participantes_personaje_id_fkey(nombre_ninja))),
         registros_participante: reg_registros_participantes!reg_registros_participantes_personaje_id_fkey(*, registro: reg_registros!reg_registros_participantes_registro_id_fkey(*, autor: reg_characters!reg_registros_autor_id_fkey(nombre_ninja), participantes: reg_registros_participantes!reg_registros_participantes_registro_id_fkey(*, personaje: reg_characters!reg_registros_participantes_personaje_id_fkey(nombre_ninja))))
       `)
@@ -26,7 +27,13 @@ export const CharacterService = {
 
     if (error) throw error;
     
-    // Normalización ultra-segura de propiedades
+    const acomps = data.reg_personajes_acompanantes || data.personajes_acompanantes || [];
+    const comps = data.reg_personajes_kugutsu_componentes || data.personajes_kugutsu_componentes || [];
+    const normalizedComps = comps.map((c: any) => {
+      const match = acomps.find((a: any) => Number(a.id) === Number(c.personaje_acompanante_id));
+      return match ? { ...c, origen: match.origen } : c;
+    });
+
     return {
       ...data,
       aldeas: data.info_aldeas || data.aldeas,
@@ -36,7 +43,8 @@ export const CharacterService = {
       personajes_tecnicas: data.reg_personajes_tecnicas || data.personajes_tecnicas || data.tecnicas || [],
       personajes_rasgos: data.reg_personajes_rasgos || data.personajes_rasgos || [],
       personajes_sentidos: data.reg_personajes_sentidos || data.personajes_sentidos || [],
-      personajes_acompanantes: data.reg_personajes_acompanantes || data.personajes_acompanantes || [],
+      personajes_acompanantes: acomps,
+      personajes_kugutsu_componentes: normalizedComps,
       registros_autor: data.registros_autor || [],
       registros_participante: data.registros_participante || []
     } as Character;
@@ -412,5 +420,16 @@ export const CharacterService = {
       .order('nombre_jap', { ascending: true });
     if (error) throw error;
     return (data || []) as AcompananteInfo[];
+  },
+
+  async getKugutsuComponents(): Promise<KugutsuComponente[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('info_kugutsu_componentes')
+      .select('*')
+      .eq('activo', true)
+      .order('nombre_esp', { ascending: true });
+    if (error) throw error;
+    return (data || []) as KugutsuComponente[];
   }
 };

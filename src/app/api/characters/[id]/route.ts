@@ -461,9 +461,14 @@ export async function PATCH(
           updatePromises.push(CharacterServerService.bulkUpdateSentidos(adminClient, characterId, data.personajes_sentidos));
         }
 
-        // Acompañantes
+        // Acompañantes y Componentes Kugutsu
         if (data.personajes_acompanantes) {
-          updatePromises.push(CharacterServerService.bulkUpdateAcompanantes(adminClient, characterId, data.personajes_acompanantes));
+          updatePromises.push(CharacterServerService.bulkUpdateAcompanantes(
+            adminClient, 
+            characterId, 
+            data.personajes_acompanantes, 
+            data.personajes_kugutsu_componentes || []
+          ));
         }
 
         await Promise.all(updatePromises);

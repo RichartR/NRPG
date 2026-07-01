@@ -32,6 +32,7 @@ import MissionForm from '@/components/registros/MissionForm';
 import CombatForm from '@/components/registros/CombatForm';
 import { CharacterRadarChart } from './CharacterRadarChart';
 import NinkenSection from './NinkenSection';
+import KugutsuKoboSection from './KugutsuKoboSection';
 import { useState, useMemo, useEffect, Fragment } from 'react';
 import { resolveAldeaIcono } from '@/utils/aldea-icon';
 import { createClient } from '@/utils/supabase/client';
@@ -937,7 +938,7 @@ export function CharacterSheetView({
     if (item.basica === true && item.rama_clan_id) {
       const techRamaId = Number(item.rama_clan_id);
       const hasDirectly = (character.personajes_ramas || []).some((r: any) => Number(r.rama_id) === techRamaId);
-      
+
       let hasViaClan = false;
       const clanEleccion = character.eleccion_tecnicas_clan;
       if (clanEleccion) {
@@ -1206,7 +1207,7 @@ export function CharacterSheetView({
         if (!t.inicial || t.categoria_id === 2) return false;
         if (Number(t.rama_clan_id) === 4) {
           if (isNinIIorIII) return false;
-          
+
           const ninIElementId = ninjutsuSlot ? Number(ninjutsuSlot.elemento_principal_id) : null;
           if (ninIElementId !== null && Number(t.elemento_id) !== ninIElementId) {
             return false;
@@ -1642,7 +1643,7 @@ export function CharacterSheetView({
 
   const [editingRegistro, setEditingRegistro] = useState<Registro | null>(null);
   const [registroTab, setRegistroTab] = useState<'mision' | 'accion' | 'combate'>('mision');
-  const [tecnicasSubTab, setTecnicasSubTab] = useState<'jutsus' | 'pasivas' | 'kuchiyoses' | 'ninken'>('jutsus');
+  const [tecnicasSubTab, setTecnicasSubTab] = useState<'jutsus' | 'pasivas' | 'kuchiyoses' | 'ninken' | 'kugutsu'>('jutsus');
   const [inventarioSubTab, setInventarioSubTab] = useState<'mochila' | 'equipo'>('mochila');
   const [recordPage, setRecordPage] = useState(1);
   const recordsPerPage = 10;
@@ -2338,7 +2339,7 @@ export function CharacterSheetView({
                               );
                             })()}
 
-                                             {(() => {
+                            {(() => {
                               const clanInfo = pr ? (pr.info_ramas_clanes || (masters.ramas || []).find((r: any) => r.id === Number(pr.rama_id))) : null;
                               const isClanElemental = checkClanElemental(clanInfo);
                               const clanEleccion = character.eleccion_tecnicas_clan;
@@ -2646,7 +2647,7 @@ export function CharacterSheetView({
                               return (
                                 <div className="space-y-4 p-4 bg-oro/5 border border-oro/10 ninja-clip-sm mt-4 animate-in fade-in duration-300">
                                   <h5 className="text-caption font-black text-oro uppercase tracking-[0.2em] mb-2">Acompañantes del Clan</h5>
-                                  
+
                                   <SelectField
                                     label="ACOMPAÑANTE BASE"
                                     value={baseCompanion?.acompanante_id ?? null}
@@ -3525,13 +3526,15 @@ export function CharacterSheetView({
               <div className="flex flex-nowrap gap-4 overflow-x-auto pb-2 lg:pb-0 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
                 {(() => {
                   const isInuzuka = (character.personajes_ramas || []).some((r: any) => Number(r.rama_id) === 30);
-                  const subtabs = isInuzuka
-                    ? (['jutsus', 'pasivas', 'kuchiyoses', 'ninken'] as const)
-                    : (['jutsus', 'pasivas', 'kuchiyoses'] as const);
+                  const isKugutsu = (character.personajes_ramas || []).some((r: any) => Number(r.rama_id) === 28);
+
+                  const subtabs: ('jutsus' | 'pasivas' | 'kuchiyoses' | 'ninken' | 'kugutsu')[] = ['jutsus', 'pasivas', 'kuchiyoses'];
+                  if (isInuzuka) subtabs.push('ninken');
+                  if (isKugutsu) subtabs.push('kugutsu');
 
                   return subtabs.map(tab => {
                     const isActive = tecnicasSubTab === tab;
-                    const label = tab === 'jutsus' ? 'TÉCNICAS' : tab === 'pasivas' ? 'HABILIDADES PASIVAS' : tab === 'kuchiyoses' ? 'KUCHIYOSES' : 'NINKEN';
+                    const label = tab === 'jutsus' ? 'TÉCNICAS' : tab === 'pasivas' ? 'HABILIDADES PASIVAS' : tab === 'kuchiyoses' ? 'KUCHIYOSES' : tab === 'ninken' ? 'NINKEN' : 'KUGUTSU KOBO';
 
                     return (
                       <button
@@ -3552,6 +3555,7 @@ export function CharacterSheetView({
                 })()}
               </div>
 
+              {tecnicasSubTab !== 'kugutsu' && (
               <div className="relative">
                 <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-oro/40 pointer-events-none" />
                 <input
@@ -3577,6 +3581,7 @@ export function CharacterSheetView({
                   </button>
                 )}
               </div>
+              )}
 
               {tecnicasSubTab === 'jutsus' && (
                 <div className="space-y-8">
@@ -4328,6 +4333,17 @@ export function CharacterSheetView({
 
               {tecnicasSubTab === 'ninken' && (
                 <NinkenSection
+                  character={character}
+                  companionsList={companionsList}
+                  isEditing={isEditing}
+                  isNew={isNew}
+                  onUpdateField={onUpdateField}
+                  addToast={addToast}
+                />
+              )}
+
+              {tecnicasSubTab === 'kugutsu' && (
+                <KugutsuKoboSection
                   character={character}
                   companionsList={companionsList}
                   isEditing={isEditing}

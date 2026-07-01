@@ -9,11 +9,23 @@ export const CharacterServerService = {
   async getCharacterById(supabase: SupabaseClient, id: string | number): Promise<Character | null> {
     const { data, error } = await supabase
       .from('reg_characters')
-      .select('*, personajes_ramas:reg_personajes_ramas(*, rama:info_ramas_clanes(nombre), sub_especialidad:info_sub_especialidades(nombre)), personajes_entrenamientos:reg_personajes_entrenamientos(*, info_entrenamientos(*)), personajes_rasgos:reg_personajes_rasgos(*, info_rasgos(*)), personajes_sentidos:reg_personajes_sentidos(*, info_sentidos(*)), personajes_acompanantes:reg_personajes_acompanantes(*, info_acompanantes(*))')
+      .select('*, personajes_ramas:reg_personajes_ramas(*, rama:info_ramas_clanes(nombre), sub_especialidad:info_sub_especialidades(nombre)), personajes_entrenamientos:reg_personajes_entrenamientos(*, info_entrenamientos(*)), personajes_rasgos:reg_personajes_rasgos(*, info_rasgos(*)), personajes_sentidos:reg_personajes_sentidos(*, info_sentidos(*)), personajes_acompanantes:reg_personajes_acompanantes(*, info_acompanantes(*)), personajes_kugutsu_componentes:reg_personajes_kugutsu_componentes(*, info_cuerpo:info_kugutsu_componentes!cuerpo_id(*), info_extremidad:info_kugutsu_componentes!extremidad_id(*), info_accesorio:info_kugutsu_componentes!accesorio_id(*))')
       .eq('id', id)
       .single();
     if (error) return null;
-    return data as any; // Cast as any since we added joins not in basic Character type
+    
+    // Normalizar origen de los componentes de marioneta basándonos en el acompañante correspondiente
+    const acomps = data.personajes_acompanantes || [];
+    const comps = data.personajes_kugutsu_componentes || [];
+    const normalizedComps = comps.map((c: any) => {
+      const match = acomps.find((a: any) => Number(a.id) === Number(c.personaje_acompanante_id));
+      return match ? { ...c, origen: match.origen } : c;
+    });
+
+    return {
+      ...data,
+      personajes_kugutsu_componentes: normalizedComps
+    } as any;
   },
 
   async hasReachedCharacterLimit(supabase: SupabaseClient, userId: string): Promise<boolean> {
@@ -499,7 +511,12 @@ export const CharacterServerService = {
     return data || [];
   },
 
-  async bulkUpdateAcompanantes(supabase: SupabaseClient, characterId: string | number, acompanantes: any[]) {
+  async bulkUpdateAcompanantes(
+    supabase: SupabaseClient, 
+    characterId: string | number, 
+    acompanantes: any[], 
+    kugutsuComponents?: any[]
+  ) {
     await supabase.from('reg_personajes_acompanantes').delete().eq('personaje_id', characterId);
     if (acompanantes && acompanantes.length > 0) {
       const mapped = acompanantes.map(a => ({
@@ -509,8 +526,35 @@ export const CharacterServerService = {
         url_image_personalizada: a.url_image_personalizada || null,
         origen: a.origen
       }));
-      const { error } = await supabase.from('reg_personajes_acompanantes').insert(mapped);
-      if (error) throw error;
+      const { data: inserted, error: insertError } = await supabase
+        .from('reg_personajes_acompanantes')
+        .insert(mapped)
+        .select('id, origen');
+
+      if (insertError) throw insertError;
+
+      // Si hay componentes de marioneta, insertarlos vinculándolos al ID del acompañante recién creado
+      if (kugutsuComponents && kugutsuComponents.length > 0) {
+        const compsToInsert = [];
+        for (const item of kugutsuComponents) {
+          const matchedAcom = inserted?.find(a => a.origen === item.origen);
+          if (matchedAcom) {
+            compsToInsert.push({
+              personaje_acompanante_id: matchedAcom.id,
+              personaje_id: characterId,
+              cuerpo_id: item.cuerpo_id || null,
+              extremidad_id: item.extremidad_id || null,
+              accesorio_id: item.accesorio_id || null
+            });
+          }
+        }
+        if (compsToInsert.length > 0) {
+          const { error: compError } = await supabase
+            .from('reg_personajes_kugutsu_componentes')
+            .insert(compsToInsert);
+          if (compError) throw compError;
+        }
+      }
     }
   }
 };

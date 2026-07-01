@@ -70,17 +70,8 @@ export default function NinkenSection({
     onUpdateField('personajes_acompanantes', updated);
   };
 
-  const swayKeyframes = `
-  @keyframes ninja-sway {
-    0%, 100% { transform: rotate(0deg); }
-    33% { transform: rotate(0.8deg); }
-    66% { transform: rotate(-0.8deg); }
-  }
-  `;
-
   return (
     <div className="space-y-8 animate-fade-in">
-      <style dangerouslySetInnerHTML={{ __html: swayKeyframes }} />
       <SectionCard title="NINKEN (PERROS NINJA)" icon={Sparkles} color="oro">
 
         {inuzukaTemplates.length === 0 ? (
@@ -92,26 +83,22 @@ export default function NinkenSection({
             {Array.from({ length: maxSlots }).map((_, idx) => {
               const slotKey = `slot_${idx + 1}`;
               const companion = (character.personajes_acompanantes || []).find((a: any) => a.origen === slotKey);
-              const template = inuzukaTemplates.find(t => Number(t.id) === Number(companion?.acompanante_id));
-              const displayImage = companion?.url_image_personalizada || template?.url_default || `/assets/images/ninken_slot${idx + 1}.png`;
 
-              const displayName = companion?.nombre_personalizado
-                ? `${companion.nombre_personalizado} - ${template?.nombre_jap || 'Ninken'}`
+              const templateOptions = inuzukaTemplates.map(t => ({
+                label: `${t.nombre_jap} (${t.nombre_esp})`,
+                value: String(t.id)
+              }));
+
+              const template = inuzukaTemplates.find(t => Number(t.id) === Number(companion?.acompanante_id));
+              const displayImage = companion?.url_image_personalizada || companion?.info_acompanantes?.url_default || template?.url_default || '/assets/images/ninken_placeholder.png';
+              const displayName = companion?.nombre_personalizado 
+                ? `${companion.nombre_personalizado} (${template?.nombre_jap || 'Ninken'})`
                 : (template?.nombre_jap || `Ninken #${idx + 1}`);
 
               return (
                 <div
                   key={slotKey}
                   className="w-full max-w-[290px] mx-auto flex flex-col items-center group/kakejiku origin-top"
-                  style={{
-                    animation: 'ninja-sway 6s ease-in-out infinite alternate',
-                    animationPlayState: 'paused'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.animationPlayState = 'running'}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.animationPlayState = 'paused';
-                    e.currentTarget.style.transform = 'rotate(0deg)';
-                  }}
                 >
 
                   {/* Varilla Superior de Madera */}

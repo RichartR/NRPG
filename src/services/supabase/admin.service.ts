@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client';
-import { Aldea, RamaClan, SubEspecialidad, DocumentoSistema, DocumentoCombate, ConfiguracionSistema, Glosario, GlosarioCategoria, GlosarioSubcategoria, Entrenamiento, MisionMaster, Tienda, TiendaObjeto, Elemento, RamaElemento, Rasgo, Sentido, RamaSentido, AcompananteInfo } from '@/domain/types';
+import { Aldea, RamaClan, SubEspecialidad, DocumentoSistema, DocumentoCombate, ConfiguracionSistema, Glosario, GlosarioCategoria, GlosarioSubcategoria, Entrenamiento, MisionMaster, Tienda, TiendaObjeto, Elemento, RamaElemento, Rasgo, Sentido, RamaSentido, AcompananteInfo, KugutsuComponente } from '@/domain/types';
 import { RewardLogic } from '@/domain/character/logic';
 import { RegistrosService } from './registros.service';
 
@@ -764,6 +764,37 @@ export const AdminService = {
   async deleteAcompanante(id: number) {
     const supabase = createClient();
     const { error } = await supabase.from('info_acompanantes').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // --- Componentes de Marioneta (Kugutsu) ---
+  async getKugutsuComponentsAdmin(): Promise<KugutsuComponente[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('info_kugutsu_componentes')
+      .select('*')
+      .order('id', { ascending: true });
+    if (error) throw error;
+    return (data || []) as KugutsuComponente[];
+  },
+
+  async saveKugutsuComponent(component: Partial<KugutsuComponente>): Promise<KugutsuComponente> {
+    const supabase = createClient();
+    const { id, created_at, ...cleanData } = component as any;
+    if (id) {
+      const { data, error } = await supabase.from('info_kugutsu_componentes').update(cleanData).eq('id', id).select('*').single();
+      if (error) throw error;
+      return data;
+    } else {
+      const { data, error } = await supabase.from('info_kugutsu_componentes').insert([cleanData]).select('*').single();
+      if (error) throw error;
+      return data;
+    }
+  },
+
+  async deleteKugutsuComponent(id: number) {
+    const supabase = createClient();
+    const { error } = await supabase.from('info_kugutsu_componentes').delete().eq('id', id);
     if (error) throw error;
   }
 };
