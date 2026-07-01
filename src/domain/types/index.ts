@@ -239,6 +239,8 @@ export interface Character {
   personajes_entrenamientos?: PersonajeEntrenamiento[];
   personajes_rasgos?: PersonajeRasgo[];
   personajes_sentidos?: PersonajeSentido[];
+  personajes_acompanantes?: PersonajeAcompanante[];
+  personajes_kugutsu_componentes?: PersonajeKugutsuComponentes[];
   registros_autor?: Registro[];
   registros_participante?: RegistroParticipante[];
   
@@ -462,5 +464,56 @@ export interface PersonajeSentido {
   // Joins
   info_sentidos?: Sentido;
 }
+
+export interface AcompananteInfo {
+  id: number;
+  rama_clan_id: number;
+  nombre_esp: string;
+  nombre_jap: string;
+  slug: string;
+  url_default?: string | null;
+  activo: boolean;
+  created_at?: string;
+  // Joins
+  info_ramas_clanes?: RamaClan;
+}
+
+export interface PersonajeAcompanante {
+  id?: number;
+  personaje_id: number;
+  acompanante_id: number;
+  nombre_personalizado?: string | null;
+  url_image_personalizada?: string | null;
+  origen: string;
+  created_at?: string;
+  // Joins
+  info_acompanantes?: AcompananteInfo;
+}
+
+export interface KugutsuComponente {
+  id: number;
+  nombre_esp: string;
+  nombre_jap: string;
+  url_image: string;
+  tipo: 'cuerpo' | 'extremidad' | 'accesorio';
+  activo: boolean;
+  created_at?: string;
+}
+
+export interface PersonajeKugutsuComponentes {
+  id?: number;
+  personaje_acompanante_id: number;
+  personaje_id: number;
+  cuerpo_id?: number | null;
+  extremidad_id?: number | null;
+  accesorio_id?: number | null;
+  origen?: string;
+  created_at?: string;
+  // Joins
+  info_cuerpo?: KugutsuComponente | null;
+  info_extremidad?: KugutsuComponente | null;
+  info_accesorio?: KugutsuComponente | null;
+}
+
 
 

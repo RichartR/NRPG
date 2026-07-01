@@ -208,13 +208,14 @@ export async function POST(request: Request) {
       }
     })();
 
-    // 3, 4, 5, 6, 7. Guardar Ramas, Entrenamientos, Inventario, Técnicas y Rasgos en paralelo
+    // 3, 4, 5, 6, 7, 8. Guardar Ramas, Entrenamientos, Inventario, Técnicas, Rasgos y Acompañantes en paralelo
     await Promise.all([
       CharacterServerService.insertRamas(adminClient, characterId, data.personajes_ramas || []),
       CharacterServerService.bulkUpdateEntrenamientos(adminClient, characterId, data.personajes_entrenamientos || []),
       CharacterServerService.replaceInventario(adminClient, characterId, data.personajes_inventario || []),
       CharacterServerService.replaceTecnicas(adminClient, characterId, data.personajes_tecnicas || []),
-      CharacterServerService.bulkUpdateRasgos(adminClient, characterId, data.personajes_rasgos || [])
+      CharacterServerService.bulkUpdateRasgos(adminClient, characterId, data.personajes_rasgos || []),
+      CharacterServerService.bulkUpdateAcompanantes(adminClient, characterId, data.personajes_acompanantes || [])
     ]);
 
     // 8. Registro de Acción inicial
