@@ -425,6 +425,11 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                 <h4 className="text-lg sm:text-2xl font-black text-oro uppercase tracking-widest mb-1">
                   {registro.data.titulo || 'Acción General'}
                 </h4>
+                {registro.data.subtitulo && (
+                  <p className="text-xs text-oro/50 uppercase tracking-wider mt-1">
+                    {registro.data.subtitulo}
+                  </p>
+                )}
               </div>
               {participants.filter((p: any) => p.id !== registro.autor_id).length > 0 && (
                 <div className="flex flex-wrap gap-3 items-center">

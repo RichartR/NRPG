@@ -194,6 +194,11 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
                   {/* Acción / Crónica */}
                   <td className="py-3 px-5 text-oro/80 text-xs xl:text-sm whitespace-normal break-words">
                     {renderActionTitle(actionTitle, selfName)}
+                    {m.data.subtitulo && (
+                      <div className="text-[11px] text-oro/40 mt-1 uppercase tracking-wide">
+                        {m.data.subtitulo}
+                      </div>
+                    )}
                   </td>
 
                   {/* Coste */}

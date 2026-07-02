@@ -482,6 +482,150 @@ export function useCharacter(characterId: string) {
           });
         }
 
+        // Check companion changes (personajes_acompanantes)
+        const currentAcomps = character.personajes_acompanantes || [];
+        const oldAcomps = originalCharacter?.personajes_acompanantes || [];
+
+        const allAcompSlots = Array.from(new Set([
+          ...oldAcomps.map(a => a.origen),
+          ...currentAcomps.map(a => a.origen)
+        ])).filter(Boolean);
+
+        for (const slotKey of allAcompSlots) {
+          if (!slotKey) continue;
+          const oldA = oldAcomps.find(a => a.origen === slotKey);
+          const newA = currentAcomps.find(a => a.origen === slotKey);
+
+          if (!oldA && newA) {
+            // Added
+            const templateName = newA.info_acompanantes?.nombre_jap || newA.info_acompanantes?.nombre_esp || 'Acompañante';
+            const isKugutsu = newA.info_acompanantes?.slug === 'kugutsu';
+            
+            await RegistrosService.createRegistro({
+              tipo: 'accion',
+              autor_id: Number(characterId),
+              participantes_ids: [Number(characterId)],
+              data: {
+                titulo: isKugutsu 
+                  ? `${character.nombre_ninja} construye una marioneta`
+                  : `${character.nombre_ninja} obtiene el acompañante: ${templateName}`,
+                subtitulo: slotKey.startsWith('kugutsu_') 
+                  ? `Marioneta #${slotKey.replace('kugutsu_', '')}` 
+                  : `Ranura #${slotKey.replace('slot_', '')}`,
+                tipo_accion: 'obtencion_acompanantes',
+                acompanante_id: newA.acompanante_id,
+                origen: slotKey
+              }
+            });
+          } else if (oldA && !newA) {
+            // Removed
+            const templateName = oldA.info_acompanantes?.nombre_jap || oldA.info_acompanantes?.nombre_esp || 'Acompañante';
+            const isKugutsu = oldA.info_acompanantes?.slug === 'kugutsu';
+
+            await RegistrosService.createRegistro({
+              tipo: 'accion',
+              autor_id: Number(characterId),
+              participantes_ids: [Number(characterId)],
+              data: {
+                titulo: isKugutsu
+                  ? `${character.nombre_ninja} retira la marioneta`
+                  : `${character.nombre_ninja} retira el acompañante: ${templateName}`,
+                subtitulo: slotKey.startsWith('kugutsu_') 
+                  ? `Marioneta #${slotKey.replace('kugutsu_', '')}` 
+                  : `Ranura #${slotKey.replace('slot_', '')}`,
+                tipo_accion: 'eliminacion_acompanantes',
+                acompanante_id: oldA.acompanante_id,
+                origen: slotKey
+              }
+            });
+          } else if (oldA && newA && Number(oldA.acompanante_id) !== Number(newA.acompanante_id)) {
+            // Changed template
+            const oldTemplateName = oldA.info_acompanantes?.nombre_jap || oldA.info_acompanantes?.nombre_esp || 'Acompañante';
+            const newTemplateName = newA.info_acompanantes?.nombre_jap || newA.info_acompanantes?.nombre_esp || 'Acompañante';
+
+            await RegistrosService.createRegistro({
+              tipo: 'accion',
+              autor_id: Number(characterId),
+              participantes_ids: [Number(characterId)],
+              data: {
+                titulo: `${character.nombre_ninja} cambia de acompañante: ${oldTemplateName} -> ${newTemplateName}`,
+                subtitulo: slotKey.startsWith('kugutsu_') 
+                  ? `Marioneta #${slotKey.replace('kugutsu_', '')}` 
+                  : `Ranura #${slotKey.replace('slot_', '')}`,
+                tipo_accion: 'cambio_acompanantes',
+                old_acompanante_id: oldA.acompanante_id,
+                new_acompanante_id: newA.acompanante_id,
+                origen: slotKey
+              }
+            });
+          }
+        }
+
+        // Check marionette component changes (personajes_kugutsu_componentes)
+        const currentComps = character.personajes_kugutsu_componentes || [];
+        const oldComps = originalCharacter?.personajes_kugutsu_componentes || [];
+
+        const allCompSlots = Array.from(new Set([
+          ...oldComps.map(c => c.origen),
+          ...currentComps.map(c => c.origen)
+        ])).filter(Boolean);
+
+        for (const slotKey of allCompSlots) {
+          if (!slotKey) continue;
+          const oldC = oldComps.find(c => c.origen === slotKey);
+          const newC = currentComps.find(c => c.origen === slotKey);
+
+          const slotChanges: string[] = [];
+
+          const checkField = (
+            field: 'cuerpo_id' | 'extremidad_id' | 'accesorio_id', 
+            label: string, 
+            oldObj: any, 
+            newObj: any
+          ) => {
+            const oldVal = oldC?.[field] ? Number(oldC[field]) : null;
+            const newVal = newC?.[field] ? Number(newC[field]) : null;
+
+            if (oldVal !== newVal) {
+              const oldName = oldObj?.nombre_jap || oldObj?.nombre_esp;
+              const newName = newObj?.nombre_jap || newObj?.nombre_esp;
+
+              if (!oldVal && newVal) {
+                slotChanges.push(`se equipa [${newName}] (${label})`);
+              } else if (oldVal && !newVal) {
+                slotChanges.push(`se desequipa [${oldName}] (${label})`);
+              } else if (oldVal && newVal) {
+                slotChanges.push(`se cambia [${oldName}] por [${newName}] (${label})`);
+              }
+            }
+          };
+
+          checkField('cuerpo_id', 'Cuerpo', oldC?.info_cuerpo, newC?.info_cuerpo);
+          checkField('extremidad_id', 'Extremidades', oldC?.info_extremidad, newC?.info_extremidad);
+          checkField('accesorio_id', 'Accesorio', oldC?.info_accesorio, newC?.info_accesorio);
+
+          if (slotChanges.length > 0) {
+            const companion = currentAcomps.find(a => a.origen === slotKey) || oldAcomps.find(a => a.origen === slotKey);
+            const slotNum = slotKey.replace('kugutsu_', '#');
+            const slotLabel = companion?.nombre_personalizado 
+              ? `Marioneta "${companion.nombre_personalizado}"` 
+              : `Marioneta ${slotNum}`;
+
+            await RegistrosService.createRegistro({
+              tipo: 'accion',
+              autor_id: Number(characterId),
+              participantes_ids: [Number(characterId)],
+              data: {
+                titulo: `${character.nombre_ninja} modifica componentes de marioneta`,
+                subtitulo: `${slotLabel}: ${slotChanges.join(', ')}`,
+                tipo_accion: 'modificacion_componentes_kugutsu',
+                origen: slotKey,
+                detalles: slotChanges
+              }
+            });
+          }
+        }
+
         // Check Profile Image change
         const currentProfile = Array.isArray(character.profiles) ? character.profiles[0] : character.profiles;
         const originalProfile = Array.isArray(originalCharacter?.profiles) ? originalCharacter?.profiles[0] : originalCharacter?.profiles;
