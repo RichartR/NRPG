@@ -94,10 +94,25 @@ const getFirstItemFromSectionGroup = (group: { categorias: Array<{ subcategorias
   )[0];
 };
 
+const getCategoryOrderValue = (nombre?: string) => {
+  if (!nombre) return 999;
+  const normalized = nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  const order = ['pasivas', 'kuchiyoses', 'entrenamientos', 'objetos', 'tecnicas'];
+  const idx = order.indexOf(normalized);
+  return idx !== -1 ? idx : 999;
+};
+
 const compareCategoryGroups = (
-  a: { subcategorias: Array<{ items: Glosario[] }> },
-  b: { subcategorias: Array<{ items: Glosario[] }> }
+  a: { info?: any; subcategorias: Array<{ items: Glosario[] }> },
+  b: { info?: any; subcategorias: Array<{ items: Glosario[] }> }
 ) => {
+  const orderA = getCategoryOrderValue(a.info?.nombre);
+  const orderB = getCategoryOrderValue(b.info?.nombre);
+
+  if (orderA !== orderB) {
+    return orderA - orderB;
+  }
+
   const firstA = getFirstItemFromCategoryGroup(a);
   const firstB = getFirstItemFromCategoryGroup(b);
   if (!firstA && !firstB) return 0;
@@ -141,6 +156,15 @@ export default function GlosarioView({
   const [selectedAldea, setSelectedAldea] = useState<AldeaFilter>(null);
   const [selectedRama, setSelectedRama] = useState<number | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  const sortedCategorias = useMemo(() => {
+    return [...categorias].sort((a, b) => {
+      const orderA = getCategoryOrderValue(a.nombre);
+      const orderB = getCategoryOrderValue(b.nombre);
+      if (orderA !== orderB) return orderA - orderB;
+      return (a.nombre || '').localeCompare(b.nombre || '', 'es');
+    });
+  }, [categorias]);
 
   const [clientEntrenamientos, setClientEntrenamientos] = useState<any[]>([]);
 
@@ -400,6 +424,16 @@ export default function GlosarioView({
       }
     }
 
+    if (reqs.objeto_id) {
+      const obj = glosarios.find(g => g.id === reqs.objeto_id);
+      const name = obj?.nombre_jp || obj?.nombre_es || `ID: ${reqs.objeto_id}`;
+      elements.push(
+        <span key="objeto" className="text-amber-700 font-black">
+          Objeto: <span className="text-amber-950">{name}</span>
+        </span>
+      );
+    }
+
     if (reqs.stats && typeof reqs.stats === 'object') {
       Object.entries(reqs.stats).forEach(([stat, val]) => {
         if (val && val !== 0) elements.push(<span key={stat} className="text-zinc-500 font-black">{stat.toUpperCase()}: <span className="text-zinc-900">{String(val)}</span></span>);
@@ -413,7 +447,7 @@ export default function GlosarioView({
     }
 
     Object.entries(reqs).forEach(([key, value]) => {
-      if (['rango', 'rama_id', 'elemento_id', 'stats', 'misiones', 'personaje_id', 'combates', 'entrenamiento_id', 'sub_especialidad_id'].includes(key)) return;
+      if (['rango', 'rama_id', 'elemento_id', 'stats', 'misiones', 'personaje_id', 'combates', 'entrenamiento_id', 'sub_especialidad_id', 'objeto_id'].includes(key)) return;
       if (value === null || value === undefined || value === 0 || value === false || value === '') return;
       elements.push(<span key={key} className="text-zinc-500 font-black">{key.replace('_', ' ').toUpperCase()}: <span className="text-zinc-900">{String(value)}</span></span>);
     });
@@ -496,7 +530,7 @@ export default function GlosarioView({
               <Hash className="w-3 h-3" />
               Todos
             </button>
-            {categorias.map(cat => (
+            {sortedCategorias.map(cat => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategoria(cat.id)}

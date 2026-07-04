@@ -55,6 +55,7 @@ export default function GlosarioManager() {
   const [personajes, setPersonajes] = useState<any[]>([]);
   const [elementosCatalogo, setElementosCatalogo] = useState<any[]>([]);
   const [entrenamientos, setEntrenamientos] = useState<Entrenamiento[]>([]);
+  const [objetos, setObjetos] = useState<Glosario[]>([]);
   const [elementosTotal, setElementosTotal] = useState(0);
   const [elementosLoading, setElementosLoading] = useState(false);
 
@@ -105,14 +106,15 @@ export default function GlosarioManager() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [cats, subs, rms, alds, subEsps, catalogElems, ents] = await Promise.all([
+      const [cats, subs, rms, alds, subEsps, catalogElems, ents, objs] = await Promise.all([
         MasterService.getGlosarioCategorias(),
         MasterService.getGlosarioSubcategorias(),
         MasterService.getAdminRamasActivas(),
         MasterService.getAldeasActivas(),
         MasterService.getSubEspecialidades(),
         MasterService.getAdminElementosActivos(),
-        MasterService.getEntrenamientos()
+        MasterService.getEntrenamientos(),
+        MasterService.getGlosarios({ categoriaId: 2 })
       ]);
       const { data: pjs } = await supabase.from('reg_characters').select('id, nombre_ninja').eq('activo', true).order('nombre_ninja');
 
@@ -124,6 +126,7 @@ export default function GlosarioManager() {
       setPersonajes(pjs || []);
       setElementosCatalogo(catalogElems || []);
       setEntrenamientos(ents || []);
+      setObjetos(objs || []);
     } catch (error) {
       console.error(error);
       addToast('Error al cargar datos', 'error');
@@ -461,6 +464,7 @@ export default function GlosarioManager() {
           personajes={personajes}
           elementosCatalogo={elementosCatalogo}
           entrenamientos={entrenamientos}
+          objetos={objetos}
           onClose={() => { setShowNewForm(false); setEditingId(null); }}
           onSave={handleSaveElemento}
           loading={saving}
@@ -590,7 +594,7 @@ function ElementoCard({ elemento, categorias, subcategorias, onEdit, onDelete }:
   );
 }
 
-function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, subespecialidades, personajes, elementosCatalogo, entrenamientos, onClose, onSave, loading }: any) {
+function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, subespecialidades, personajes, elementosCatalogo, entrenamientos, onClose, onSave, loading, objetos = [] }: any) {
   const defaultRequisitos = {
     stats: { fue: 0, agi: 0, int: 0, est: 0, nin: 0, gen: 0, tai: 0, sm: 0 },
     rango: null,
@@ -600,7 +604,8 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
     elemento_id: null,
     personaje_id: null,
     entrenamiento_id: null,
-    sub_especialidad_id: null
+    sub_especialidad_id: null,
+    objeto_id: null
   };
 
   const [formData, setFormData] = useState<Partial<Glosario>>(() => {
@@ -663,6 +668,18 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
       return true;
     });
   }, [entrenamientos, formData.rama_clan_id, formData.sub_especialidad_id]);
+
+  const filteredObjetos = useMemo(() => {
+    const activeRamaId = formData.rama_clan_id || formData.requisitos?.rama_id;
+    return (objetos || []).filter((o: any) => {
+      const isGeneral = (o.aldea_id === null || o.aldea_id === undefined) && (o.rama_clan_id === null || o.rama_clan_id === undefined);
+      const matchesRama = activeRamaId && (
+        Number(o.rama_clan_id) === Number(activeRamaId) ||
+        Number(o.requisitos?.rama_id) === Number(activeRamaId)
+      );
+      return isGeneral || matchesRama;
+    });
+  }, [objetos, formData.rama_clan_id, formData.requisitos?.rama_id]);
 
   const updateReq = (key: string, value: any) => {
     const newReqs = { ...formData.requisitos };
@@ -938,6 +955,13 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                     options={(elementosCatalogo || []).map((e: any) => ({ id: e.id, label: e.nombre_esp }))}
                     value={formData.requisitos?.elemento_id}
                     onChange={(id: any) => updateReq('elemento_id', id)}
+                  />
+                  <SearchableSelect
+                    label="Objeto Requerido"
+                    icon={<Box size={12} />}
+                    options={filteredObjetos.map((o: any) => ({ id: o.id, label: o.nombre_jp || o.nombre_es }))}
+                    value={formData.requisitos?.objeto_id}
+                    onChange={(id: any) => updateReq('objeto_id', id)}
                   />
                   <SearchableMultiSelect
                     label="Entrenamiento Requerido"

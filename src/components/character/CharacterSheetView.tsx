@@ -975,6 +975,15 @@ export function CharacterSheetView({
       }
     }
 
+    // Check de objeto_id
+    if (req.objeto_id) {
+      const reqObjetoId = Number(req.objeto_id);
+      const hasObject = (character.personajes_inventario || []).some(
+        (pi: any) => Number(pi.glosario_id || pi.info_glosario?.id || pi.item_id) === reqObjetoId
+      );
+      if (!hasObject) return false;
+    }
+
     // 1. Rango
     if (req.rango && typeof req.rango === 'string') {
       const rankOrder: Record<string, number> = { 'D': 0, 'C': 1, 'B': 2, 'A': 3, 'S': 4 };
