@@ -327,6 +327,13 @@ export default function MapaClientView({ isAdmin }: MapaClientViewProps) {
                 )}
               </div>
 
+              {/* Helper text under search bar */}
+              <div className="text-center mt-3 mb-1">
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-black text-oro/60 uppercase tracking-[0.15em] bg-zinc-950/80 border border-oro/10 px-4 py-1.5 rounded-full shadow-md">
+                  <Info className="w-3.5 h-3.5 text-oro/60 shrink-0" /> Haz clic en los marcadores del mapa para ver más información de los caminos y rutas
+                </span>
+              </div>
+
               {/* Floating dropdown suggestions */}
               {showSearchResults && searchQuery.trim() && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-zinc-950/95 border border-oro/20 rounded-xl shadow-[0_15px_40px_rgba(0,0,0,0.9)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-[2010]">
