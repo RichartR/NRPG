@@ -66,6 +66,17 @@ export default function DocumentosPage() {
             description="Consulta el glosario con todo el conocimiento del mundo shinobi."
             actionText="Ver Glosario"
           />
+
+          {/* Tarjeta Mapa */}
+          <NinjaCard
+            href="/mapa"
+            title="MAPA INTERACTIVO"
+            titleClassName="text-3xl sm:text-3xl md:text-4xl"
+            category="CARTOGRAFÍA"
+            imageUrl="/assets/images/mapa-scroll.png"
+            description="Explora la geografía del mundo ninja y sus caminos shinobi a través de la cartografía interactiva."
+            actionText="Ver Mapa"
+          />
         </div>
       </main>
     </div>

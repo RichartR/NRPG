@@ -1,6 +1,7 @@
 import CharacterSheet from "@/components/character/CharacterSheet";
 import LogoutButton from "@/components/auth/LogoutButton";
 import Link from "next/link";
+import QuickAccessHUD from "@/components/layout/QuickAccessHUD";
 import { createClient } from "@/utils/supabase/server";
 import { ProfileService } from '@/services/supabase/profile.service';
 import NotificationBell from '@/components/layout/NotificationBell';
@@ -297,9 +298,9 @@ export default async function Home() {
               <div className="relative z-10">
                 <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4 tracking-widest">
                   <img src="/assets/icons/shuriken.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
-                  Documentos y Glosario
+                  Documentos, Glosario y Mapa
                 </h3>
-                <p className="text-gris-texto leading-relaxed text-sm xl:text-base max-w-2xl">Consulta los documentos de las ramas, clanes y el glosario.</p>
+                <p className="text-gris-texto leading-relaxed text-sm xl:text-base max-w-2xl">Consulta los documentos de las ramas, clanes, el mapa y el glosario.</p>
               </div>
             </Link>
 
@@ -583,6 +584,7 @@ export default async function Home() {
 
         </div>
       </main>
+      <QuickAccessHUD />
     </div>
   );
 }

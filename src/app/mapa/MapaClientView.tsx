@@ -261,8 +261,8 @@ export default function MapaClientView({ isAdmin }: MapaClientViewProps) {
         ) : (
           <>
             {/* Top Section: Controls or General Instructions */}
-            <div className="w-full">
-              {isAdmin ? (
+            {isAdmin && (
+              <div className="w-full">
                 <MapaAdminControls
                   adminMode={adminMode}
                   setAdminMode={setAdminMode}
@@ -282,19 +282,8 @@ export default function MapaClientView({ isAdmin }: MapaClientViewProps) {
                   pendingCoords={pendingCoords}
                   setPendingCoords={setPendingCoords}
                 />
-              ) : (
-                <div className="ninja-card-oro p-6 w-full">
-                  <h3 className="text-sm font-black text-oro uppercase tracking-wider flex items-center gap-2 mb-3">
-                    <Compass className="w-4 h-4" /> Exploración Cartográfica
-                  </h3>
-                  <p className="text-xs text-oro/60 font-semibold leading-relaxed">
-                    Navega por el mapa interactivo arrastrando el terreno y usando la rueda del ratón para hacer
-                    zoom. Haz clic en cualquiera de los marcadores para consultar la información del lugar en un popup
-                    o ver las rutas y caminos shinobi que conectan los diferentes puntos de interés.
-                  </p>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Search Bar */}
             <div className="w-full max-w-[1024px] mx-auto relative z-[2000] mb-4 md:-mb-4">
@@ -328,7 +317,7 @@ export default function MapaClientView({ isAdmin }: MapaClientViewProps) {
               </div>
 
               {/* Helper text under search bar */}
-              <div className="text-center mt-3 mb-1">
+              <div className="text-center mt-3">
                 <span className="inline-flex items-center gap-1.5 text-[10px] font-black text-oro/60 uppercase tracking-[0.15em] bg-zinc-950/80 border border-oro/10 px-4 py-1.5 rounded-full shadow-md">
                   <Info className="w-3.5 h-3.5 text-oro/60 shrink-0" /> Haz clic en los marcadores del mapa para ver más información de los caminos y rutas
                 </span>
@@ -479,7 +468,7 @@ export default function MapaClientView({ isAdmin }: MapaClientViewProps) {
                                   onClick={() => toggleConnImage(connection.id)}
                                   className="px-3 py-1.5 bg-black/40 border border-oro/10 hover:border-oro/30 text-oro/70 hover:text-oro rounded-lg text-[9px] font-black uppercase tracking-wider transition-all duration-200"
                                 >
-                                  {expandedConns[connection.id] ? 'Ocultar Camino' : 'Ver Camino'}
+                                  {expandedConns[connection.id] ? 'Ocultar Port' : 'Ver Port'}
                                 </button>
                               )}
 
