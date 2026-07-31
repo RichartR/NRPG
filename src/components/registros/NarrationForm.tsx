@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import { RegistrosService } from '@/services/supabase/registros.service';
 import { CharacterService } from '@/services/supabase/character.service';
-import { Glosario, Registro } from '@/domain/types';
+import { Glosario, Registro, Rasgo } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
 import { useCharacterStore } from '@/store/useCharacterStore';
-import { X, Search, UserPlus, User, Trash2, Coins, Sparkles, Plus, BookOpen, Link as LinkIcon } from 'lucide-react';
+import { AdminService } from '@/services/supabase/admin.service';
+import { X, Search, UserPlus, User, Trash2, Coins, Sparkles, Plus, BookOpen, Link as LinkIcon, Shield } from 'lucide-react';
 import { searchIncludes } from '@/lib/utils/search';
 
 interface NarrationFormProps {
@@ -27,6 +28,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
   // Rewards states (Global)
   const [globalXp, setGlobalXp] = useState<number>(Number(initialData?.data?.global_xp) || 0);
   const [globalRyous, setGlobalRyous] = useState<number>(Number(initialData?.data?.global_ryous) || 0);
+  const [globalPa, setGlobalPa] = useState<number>(Number(initialData?.data?.global_pa) || 0);
   const [globalMonedasEvento, setGlobalMonedasEvento] = useState<number>(Number(initialData?.data?.global_monedas_evento) || 0);
 
   // Participants & Rewards
@@ -40,10 +42,18 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
   const [activeGlosarioSelector, setActiveGlosarioSelector] = useState<number | null>(null);
   const [glosarioSearchQuery, setGlosarioSearchQuery] = useState('');
 
+  // Rasgos selection states
+  const [allRasgos, setAllRasgos] = useState<Rasgo[]>([]);
+  const [activeRasgoSelector, setActiveRasgoSelector] = useState<number | null>(null);
+  const [rasgoSearchQuery, setRasgoSearchQuery] = useState('');
+
   useEffect(() => {
     if (!activeCharacter) {
       fetchActiveCharacter();
     }
+    AdminService.getRasgos().then(data => {
+      setAllRasgos(data.filter(r => r.activo !== false));
+    }).catch(err => console.error('Error loading traits:', err));
   }, []);
 
   // Load editing registry participants if editing
@@ -52,6 +62,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
       setNarrador(initialData.data?.narrador || '');
       setGlobalXp(Number(initialData.data?.global_xp) || 0);
       setGlobalRyous(Number(initialData.data?.global_ryous) || 0);
+      setGlobalPa(Number(initialData.data?.global_pa) || 0);
       setGlobalMonedasEvento(Number(initialData.data?.global_monedas_evento) || 0);
       setImages(initialData.data?.urls_imagenes || ['']);
 
@@ -62,8 +73,10 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
           nombre_ninja: p.personaje?.nombre_ninja || 'Ninja Desaparecido',
           xp_extra: premio?.xp_extra || 0,
           ryous_extra: premio?.ryous_extra || 0,
+          pa_extra: premio?.pa_extra || 0,
           monedas_evento: premio?.monedas_evento || 0,
-          glosario_items: premio?.glosario_items || []
+          glosario_items: premio?.glosario_items || [],
+          rasgos_items: premio?.rasgos_items || []
         };
       }) || [];
       setParticipants(initialParts);
@@ -78,18 +91,14 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
         nombre_ninja: p.nombre_ninja,
         xp_extra: 0,
         ryous_extra: 0,
+        pa_extra: 0,
         monedas_evento: 0,
-        glosario_items: []
+        glosario_items: [],
+        rasgos_items: []
       }));
       setParticipants(parts);
       parts.forEach(p => {
         loadValidGlosarioItems(p.id);
-      });
-    } else if (activeCharacter) {
-      // Add author automatically as participant
-      addParticipant({
-        id: activeCharacter.id,
-        nombre_ninja: activeCharacter.nombre_ninja
       });
     }
   }, [initialData, activeCharacter?.id, initialParticipants]);
@@ -132,8 +141,10 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
         nombre_ninja: p.nombre_ninja,
         xp_extra: 0,
         ryous_extra: 0,
+        pa_extra: 0,
         monedas_evento: 0,
-        glosario_items: []
+        glosario_items: [],
+        rasgos_items: []
       }
     ]);
     loadValidGlosarioItems(p.id);
@@ -184,6 +195,37 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
     }));
   };
 
+  const addRasgoItemToParticipant = (personajeId: number, rasgo: Rasgo) => {
+    setParticipants(participants.map(p => {
+      if (p.id === personajeId) {
+        const currentRasgos = p.rasgos_items || [];
+        if (currentRasgos.find((r: any) => r.id === rasgo.id)) {
+          addToast('Este personaje ya recibe este rasgo', 'error');
+          return p;
+        }
+        return {
+          ...p,
+          rasgos_items: [...currentRasgos, { id: rasgo.id, nombre: rasgo.nombre, especial: rasgo.especial }]
+        };
+      }
+      return p;
+    }));
+    setActiveRasgoSelector(null);
+    setRasgoSearchQuery('');
+  };
+
+  const removeRasgoItemFromParticipant = (personajeId: number, rasgoId: number) => {
+    setParticipants(participants.map(p => {
+      if (p.id === personajeId) {
+        return {
+          ...p,
+          rasgos_items: (p.rasgos_items || []).filter((r: any) => r.id !== rasgoId)
+        };
+      }
+      return p;
+    }));
+  };
+
   const handleSubmit = async () => {
     if (!activeCharacter) {
       addToast('No se ha detectado un personaje activo.', 'error');
@@ -216,6 +258,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
           narrador: narrador.trim(),
           global_xp: globalXp,
           global_ryous: globalRyous,
+          global_pa: globalPa,
           global_monedas_evento: globalMonedasEvento,
           urls_imagenes: validImages,
           participantes_historicos: participants.map(p => ({
@@ -227,8 +270,10 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
             nombre_ninja: p.nombre_ninja,
             xp_extra: Number(p.xp_extra) || 0,
             ryous_extra: Number(p.ryous_extra) || 0,
+            pa_extra: Number(p.pa_extra) || 0,
             monedas_evento: Number(p.monedas_evento) || 0,
-            glosario_items: p.glosario_items
+            glosario_items: p.glosario_items || [],
+            rasgos_items: p.rasgos_items || []
           }))
         }
       };
@@ -291,7 +336,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
               {/* Premios Globales */}
               <div className="p-6 bg-black/40 border border-oro/10 ninja-clip-sm space-y-6">
                 <span className="text-xs font-black uppercase tracking-[0.25em] text-oro/50 block">Recompensas Globales (Para todos)</span>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="space-y-2">
                     <label className="text-caption font-black uppercase tracking-[0.2em] text-oro/40 flex items-center gap-1.5">
                       EXP GLOBAL
@@ -306,7 +351,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                   </div>
                   <div className="space-y-2">
                     <label className="text-caption font-black uppercase tracking-[0.2em] text-oro/40 flex items-center gap-1.5">
-                      RYOUS GLOBALES
+                      RYOUS GLOBAL
                     </label>
                     <input
                       type="number"
@@ -318,7 +363,19 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                   </div>
                   <div className="space-y-2">
                     <label className="text-caption font-black uppercase tracking-[0.2em] text-oro/40 flex items-center gap-1.5">
-                      MONEDA EVENTO
+                      PA GLOBAL
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={globalPa}
+                      onChange={(e) => setGlobalPa(Math.max(0, Number(e.target.value)))}
+                      className="w-full ninja-input py-3 text-xs"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-caption font-black uppercase tracking-[0.2em] text-oro/40 flex items-center gap-1.5">
+                      M. EVENTO
                     </label>
                     <input
                       type="number"
@@ -448,9 +505,9 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                         </button>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div className="space-y-2">
-                          <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">EXP EXTRA INDEPENDIENTE</label>
+                          <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">EXP EXTRA</label>
                           <input
                             type="number"
                             min="0"
@@ -460,7 +517,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">RYOUS EXTRA INDEPENDIENTES</label>
+                          <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">RYOUS EXTRA</label>
                           <input
                             type="number"
                             min="0"
@@ -470,7 +527,17 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">MONEDAS EVENTO EXTRA</label>
+                          <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">PA EXTRA</label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={p.pa_extra}
+                            onChange={(e) => updateParticipantField(p.id, 'pa_extra', Math.max(0, Number(e.target.value)))}
+                            className="w-full ninja-input py-3 text-xs"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">MONEDAS EVENTO</label>
                           <input
                             type="number"
                             min="0"
@@ -506,6 +573,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                           <button
                             onClick={() => {
                               setActiveGlosarioSelector(activeGlosarioSelector === p.id ? null : p.id);
+                              setActiveRasgoSelector(null);
                               setGlosarioSearchQuery('');
                             }}
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-oro/5 hover:bg-oro hover:text-rojo-sangre border border-oro/15 hover:border-oro text-caption font-black text-oro uppercase tracking-wider transition-all ninja-clip-xs"
@@ -551,6 +619,79 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                                 )}
                               </div>
                             )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Rasgos Especiales del Personaje */}
+                      <div className="space-y-3 pt-2 border-t border-oro/5">
+                        <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1 flex items-center gap-1.5">
+                          Rasgos Especiales / Concedidos
+                        </label>
+
+                        <div className="flex flex-wrap gap-2.5 items-center">
+                          {p.rasgos_items?.map((rasgo: any) => (
+                            <span
+                              key={rasgo.id}
+                              className={`inline-flex items-center gap-2 px-3 py-1.5 border text-caption font-black uppercase tracking-wider ninja-clip-xs ${rasgo.especial ? 'bg-purple-950/40 border-purple-500/40 text-purple-300' : 'bg-amber-950/40 border-amber-500/40 text-amber-300'}`}
+                            >
+                              {rasgo.especial && <span className="text-[9px] bg-purple-500/20 text-purple-300 px-1 py-0.5 rounded">ESPECIAL</span>}
+                              {rasgo.nombre}
+                              <button
+                                onClick={() => removeRasgoItemFromParticipant(p.id, rasgo.id)}
+                                className="text-rojo-sangre/60 hover:text-rojo-sangre transition-all"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </span>
+                          ))}
+
+                          <button
+                            onClick={() => {
+                              setActiveRasgoSelector(activeRasgoSelector === p.id ? null : p.id);
+                              setActiveGlosarioSelector(null);
+                              setRasgoSearchQuery('');
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-oro/5 hover:bg-oro hover:text-rojo-sangre border border-oro/15 hover:border-oro text-caption font-black text-oro uppercase tracking-wider transition-all ninja-clip-xs"
+                          >
+                            <Plus className="w-3.5 h-3.5" /> Conceder Rasgo
+                          </button>
+                        </div>
+
+                        {/* Dropdown del Selector de Rasgos */}
+                        {activeRasgoSelector === p.id && (
+                          <div className="mt-3 p-4 bg-neutral-800 border border-amber-500/30 space-y-4 animate-in zoom-in-95 duration-200">
+                            <input
+                              type="text"
+                              placeholder="BUSCAR RASGO O RASGO ESPECIAL..."
+                              value={rasgoSearchQuery}
+                              onChange={(e) => setRasgoSearchQuery(e.target.value)}
+                              className="w-full ninja-input py-2.5 px-4 text-xs font-black"
+                            />
+
+                            <div className="max-h-48 overflow-y-auto custom-scrollbar divide-y divide-oro/5">
+                              {allRasgos
+                                .filter(r => searchIncludes(r.nombre, rasgoSearchQuery))
+                                .map((rasgo) => (
+                                  <button
+                                    key={rasgo.id}
+                                    onClick={() => addRasgoItemToParticipant(p.id, rasgo)}
+                                    className="w-full text-left py-3 px-4 hover:bg-amber-500/10 text-xs font-black text-oro/70 hover:text-amber-400 flex justify-between items-center uppercase tracking-widest border-b border-oro/5 last:border-0"
+                                  >
+                                    <span className="flex items-center gap-2">
+                                      {rasgo.especial && <span className="text-[9px] bg-purple-950 text-purple-300 border border-purple-500/30 px-1.5 py-0.5 rounded font-black">ESPECIAL</span>}
+                                      {rasgo.nombre}
+                                    </span>
+                                    <span className="text-caption font-bold text-oro/40">{rasgo.categoria} ({rasgo.rango})</span>
+                                  </button>
+                                ))}
+
+                              {allRasgos.filter(r => searchIncludes(r.nombre, rasgoSearchQuery)).length === 0 && (
+                                <div className="text-center py-6">
+                                  <p className="text-caption font-black uppercase text-oro/20 italic">No se encontraron rasgos</p>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>

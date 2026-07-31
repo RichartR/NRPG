@@ -22,13 +22,27 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
     discord_msg_id: '',
     url_imagen: '',
     descripcion: '',
+    pingRole: 'default',
     ...newsItem
   });
   const [discordContent, setDiscordContent] = useState('');
   const [fetchingContent, setFetchingContent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [discordRoles, setDiscordRoles] = useState<{ id: string; name: string }[]>([]);
   const router = useRouter();
   const addToast = useToastStore(state => state.addToast);
+
+  // Fetch Discord roles on load for Event category
+  useEffect(() => {
+    fetch('/api/admin/discord-roles')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.roles) {
+          setDiscordRoles(data.roles);
+        }
+      })
+      .catch(err => console.error('Error fetching discord roles:', err));
+  }, []);
 
   // Fetch Discord message content if editing an event
   useEffect(() => {
@@ -100,6 +114,7 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
 
       if (categoria === 'Evento') {
         cleanData.discord_content = discordContent;
+        cleanData.ping_role = formData.pingRole;
         if (!isCreate) {
           cleanData.discord_msg_id = formData.discord_msg_id;
         }
@@ -128,6 +143,13 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
     { label: 'EVENTO', value: 'Evento' }
   ];
 
+  const pingRoleOptions = [
+    { label: '@Jugador (Por defecto)', value: 'default' },
+    { label: '@everyone', value: 'everyone' },
+    { label: '@here', value: 'here' },
+    { label: 'Sin mención', value: 'none' },
+    ...discordRoles.map(r => ({ label: r.name, value: r.id }))
+  ];
 
   return (
     <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-start sm:items-center justify-center p-4 sm:p-6 xl:p-12 overflow-y-auto">
@@ -186,13 +208,12 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
             />
 
             {formData.categoria === 'Evento' ? (
-              !isCreate && (
-                <DataField
-                  label="ID MENSAJE DISCORD (GENERADO AUTOMÁTICAMENTE)"
-                  value={formData.discord_msg_id}
-                  disabled={true}
-                />
-              )
+              <SelectField
+                label="ROL DE DISCORD A MENCIONAR (PING)"
+                value={formData.pingRole || 'default'}
+                options={pingRoleOptions}
+                onChange={v => setFormData({ ...formData, pingRole: v })}
+              />
             ) : (
               <DataField
                 label="ENLACE DEL DOCUMENTO (URL)"

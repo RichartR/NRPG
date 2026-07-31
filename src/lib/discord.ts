@@ -153,3 +153,21 @@ export async function removeDiscordRole(guildId: string, userId: string, roleId:
 
   return true;
 }
+
+export async function getDiscordGuildRoles(guildId: string) {
+  if (!BOT_TOKEN) throw new Error('DISCORD_BOT_TOKEN no configurado');
+
+  const response = await fetch(`${DISCORD_API_URL}/guilds/${guildId}/roles`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bot ${BOT_TOKEN}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(`Error de Discord (GET roles): ${JSON.stringify(error)}`);
+  }
+
+  return response.json();
+}

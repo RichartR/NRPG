@@ -235,12 +235,14 @@ export const CharacterService = {
       
       let extraMonedaEvento = 0;
       let glosarioItems: any[] = [];
+      let rasgosItems: any[] = [];
       if (registro.subtipo === 'evento_premios' || registro.subtipo === 'narracion') {
         const partPremio = registro.data.participantes_premios?.find((p: any) => Number(p.personaje_id) === Number(personajeId));
         const globalMonedas = Number(registro.data.global_monedas_evento) || 0;
         if (partPremio) {
           extraMonedaEvento = globalMonedas + (Number(partPremio.monedas_evento) || 0);
           glosarioItems = partPremio.glosario_items || [];
+          rasgosItems = partPremio.rasgos_items || [];
         } else if (registro.participantes?.some((part: any) => Number(part.personaje_id) === Number(personajeId))) {
           // Si el jugador está como participante pero no tiene premios extra, recibe el premio global
           extraMonedaEvento = globalMonedas;
@@ -282,6 +284,14 @@ export const CharacterService = {
         if (techniquesPack.length > 0) {
           await supabase.from('reg_personajes_tecnicas').insert(techniquesPack);
         }
+      }
+
+      if (rasgosItems.length > 0) {
+        const traitsPack = rasgosItems.map((r: any) => ({
+          personaje_id: personajeId,
+          rasgo_id: r.id
+        }));
+        await supabase.from('reg_personajes_rasgos').upsert(traitsPack, { onConflict: 'personaje_id,rasgo_id', ignoreDuplicates: true });
       }
 
       await supabase

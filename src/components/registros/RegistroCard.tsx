@@ -8,6 +8,7 @@ import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { useState } from 'react';
 import { RewardLogic } from '@/domain/character/logic';
+import { renderDiscordMarkdown } from '@/lib/discord/renderDiscordMarkdown';
 
 interface RegistroCardProps {
   registro: Registro;
@@ -275,6 +276,12 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                 <div className="flex items-center gap-1.5">EXP: +{registro.data.global_xp || 0}</div>
                 <div className="w-px h-4 bg-oro/10" />
                 <div className="flex items-center gap-1.5">RYOUS: +{registro.data.global_ryous || 0}</div>
+                {Number(registro.data.global_pa) > 0 && (
+                  <>
+                    <div className="w-px h-4 bg-oro/10" />
+                    <div className="flex items-center gap-1.5 text-emerald-400">PA: +{registro.data.global_pa}</div>
+                  </>
+                )}
                 {registro.data.global_monedas_evento > 0 && (
                   <>
                     <div className="w-px h-4 bg-oro/10" />
@@ -283,6 +290,12 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                 )}
               </div>
             </div>
+
+            {registro.data.texto_entrega && (
+              <div className="p-4 bg-black/40 border-l-2 border-oro/40 text-xs text-oro/90 font-medium">
+                {renderDiscordMarkdown(registro.data.texto_entrega)}
+              </div>
+            )}
 
             <div className="space-y-4">
               <span className="text-caption font-black text-oro/30 uppercase tracking-[0.25em] block">PREMIOS INDIVIDUALES POR SHINOBI:</span>
@@ -293,8 +306,9 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                       <th className="py-4 px-6">Shinobi</th>
                       <th className="py-4 px-6 text-center">EXP Extra</th>
                       <th className="py-4 px-6 text-center">Ryous Extra</th>
+                      <th className="py-4 px-6 text-center">PA Extra</th>
                       <th className="py-4 px-6 text-center">Monedas Evento</th>
-                      <th className="py-4 px-6">Otros</th>
+                      <th className="py-4 px-6">Otros / Rasgos</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-oro/5 font-bold text-oro/70 uppercase">
@@ -316,6 +330,13 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                           )}
                         </td>
                         <td className="py-4 px-6 text-center text-[11px]">
+                          {p.pa_extra > 0 ? (
+                            <span className="text-emerald-400 font-black">+{p.pa_extra} PA</span>
+                          ) : (
+                            <span className="text-oro/20">-</span>
+                          )}
+                        </td>
+                        <td className="py-4 px-6 text-center text-[11px]">
                           {p.monedas_evento > 0 ? (
                             <span className="text-oro font-black">+{p.monedas_evento} M. EVENTO</span>
                           ) : (
@@ -323,17 +344,21 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                           )}
                         </td>
                         <td className="py-4 px-6">
-                          {p.glosario_items && p.glosario_items.length > 0 ? (
-                            <div className="flex flex-wrap gap-1.5">
-                              {p.glosario_items.map((i: any) => (
-                                <span key={i.id} className="text-caption font-black bg-oro/10 border border-oro/20 text-oro px-2.5 py-0.5 ninja-clip-xs">
-                                  {i.nombre_es}
-                                </span>
-                              ))}
-                            </div>
-                          ) : (
-                            <span className="text-oro/20">-</span>
-                          )}
+                          <div className="flex flex-wrap gap-1.5">
+                            {p.glosario_items?.map((i: any) => (
+                              <span key={i.id} className="text-caption font-black bg-oro/10 border border-oro/20 text-oro px-2.5 py-0.5 ninja-clip-xs">
+                                {i.nombre_es}
+                              </span>
+                            ))}
+                            {p.rasgos_items?.map((r: any) => (
+                              <span key={r.id} className={`text-caption font-black border px-2.5 py-0.5 ninja-clip-xs ${r.especial ? 'bg-purple-950/60 border-purple-500/40 text-purple-300' : 'bg-amber-950/60 border-amber-500/40 text-amber-300'}`}>
+                                {r.especial && '[E] '}{r.nombre}
+                              </span>
+                            ))}
+                            {(!p.glosario_items || p.glosario_items.length === 0) && (!p.rasgos_items || p.rasgos_items.length === 0) && (
+                              <span className="text-oro/20">-</span>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -357,6 +382,12 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                 <div className="flex items-center gap-1.5">EXP GLOBAL: +{registro.data.global_xp || 0}</div>
                 <div className="w-px h-4 bg-oro/10" />
                 <div className="flex items-center gap-1.5">RYOUS GLOBAL: +{registro.data.global_ryous || 0}</div>
+                {Number(registro.data.global_pa) > 0 && (
+                  <>
+                    <div className="w-px h-4 bg-oro/10" />
+                    <div className="flex items-center gap-1.5 text-emerald-400">PA GLOBAL: +{registro.data.global_pa}</div>
+                  </>
+                )}
                 {Number(registro.data.global_monedas_evento) > 0 && (
                   <>
                     <div className="w-px h-4 bg-oro/10" />
@@ -375,14 +406,16 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                       <th className="py-4 px-6">Shinobi</th>
                       <th className="py-4 px-6 text-center">EXP Total</th>
                       <th className="py-4 px-6 text-center">Ryous Total</th>
+                      <th className="py-4 px-6 text-center">PA Total</th>
                       <th className="py-4 px-6 text-center">Monedas Evento</th>
-                      <th className="py-4 px-6">Glosario</th>
+                      <th className="py-4 px-6">Glosario / Rasgos</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-oro/5 font-bold text-oro/70 uppercase">
                     {registro.data.participantes_premios?.map((p: any) => {
                       const totalXp = (Number(registro.data.global_xp) || 0) + (Number(p.xp_extra) || 0);
                       const totalRyous = (Number(registro.data.global_ryous) || 0) + (Number(p.ryous_extra) || 0);
+                      const totalPa = (Number(registro.data.global_pa) || 0) + (Number(p.pa_extra) || 0);
                       const totalMonedas = (Number(registro.data.global_monedas_evento) || 0) + (Number(p.monedas_evento) || 0);
                       
                       return (
@@ -391,6 +424,13 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                           <td className="py-4 px-6 text-center text-[11px] font-black text-green-700">+{totalXp} EXP</td>
                           <td className="py-4 px-6 text-center text-[11px] font-black text-green-700">+{totalRyous} RYOUS</td>
                           <td className="py-4 px-6 text-center text-[11px]">
+                            {totalPa > 0 ? (
+                              <span className="text-emerald-400 font-black">+{totalPa} PA</span>
+                            ) : (
+                              <span className="text-oro/20">-</span>
+                            )}
+                          </td>
+                          <td className="py-4 px-6 text-center text-[11px]">
                             {totalMonedas > 0 ? (
                               <span className="text-oro font-black">+{totalMonedas} M. EVENTO</span>
                             ) : (
@@ -398,17 +438,21 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                             )}
                           </td>
                           <td className="py-4 px-6">
-                            {p.glosario_items && p.glosario_items.length > 0 ? (
-                              <div className="flex flex-wrap gap-1.5">
-                                {p.glosario_items.map((i: any) => (
-                                  <span key={i.id} className="text-caption font-black bg-oro/10 border border-oro/20 text-oro px-2.5 py-0.5 ninja-clip-xs">
-                                    {i.nombre_es}
-                                  </span>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="text-oro/20">-</span>
-                            )}
+                            <div className="flex flex-wrap gap-1.5">
+                              {p.glosario_items?.map((i: any) => (
+                                <span key={i.id} className="text-caption font-black bg-oro/10 border border-oro/20 text-oro px-2.5 py-0.5 ninja-clip-xs">
+                                  {i.nombre_es}
+                                </span>
+                              ))}
+                              {p.rasgos_items?.map((r: any) => (
+                                <span key={r.id} className={`text-caption font-black border px-2.5 py-0.5 ninja-clip-xs ${r.especial ? 'bg-purple-950/60 border-purple-500/40 text-purple-300' : 'bg-amber-950/60 border-amber-500/40 text-amber-300'}`}>
+                                  {r.especial && '[E] '}{r.nombre}
+                                </span>
+                              ))}
+                              {(!p.glosario_items || p.glosario_items.length === 0) && (!p.rasgos_items || p.rasgos_items.length === 0) && (
+                                <span className="text-oro/20">-</span>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
