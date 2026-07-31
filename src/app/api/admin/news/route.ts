@@ -6,6 +6,26 @@ import { sendDiscordMessage, editDiscordMessage } from '@/lib/discord';
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 
+async function buildMentionText(adminClient: any, pingRoles: unknown): Promise<string> {
+  const rolesArray: string[] = Array.isArray(pingRoles) ? pingRoles.filter(Boolean) : ['default'];
+  if (rolesArray.length === 0 || rolesArray.includes('none')) return '';
+
+  const jugadorRoleId = rolesArray.includes('default')
+    ? await MasterServerService.getConfiguracion(adminClient, 'discord_jugador_role_id')
+    : null;
+
+  const mentions = rolesArray
+    .map((role) => {
+      if (role === 'everyone') return '@everyone';
+      if (role === 'here') return '@here';
+      if (role === 'default') return jugadorRoleId ? `<@&${jugadorRoleId}>` : '';
+      return `<@&${role}>`;
+    })
+    .filter(Boolean);
+
+  return Array.from(new Set(mentions)).join(' ');
+}
+
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
@@ -20,7 +40,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No tienes permisos de administrador para esta acción' }, { status: 403 });
     }
 
-    const { id, titulo, categoria, url_imagen, descripcion, activo, discord_msg_id, discord_content, ping_role } = await request.json();
+    const { id, titulo, categoria, url_imagen, descripcion, activo, discord_msg_id, discord_content, ping_roles } = await request.json();
 
     const cleanData: any = {
       titulo,
@@ -36,20 +56,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Canal de Discord para eventos (discord_event_channel_id) no configurado en el sistema' }, { status: 400 });
       }
 
-      // Determine Discord role mention
-      let mentionText = '';
-      if (ping_role === 'everyone') {
-        mentionText = '@everyone';
-      } else if (ping_role === 'here') {
-        mentionText = '@here';
-      } else if (ping_role === 'none') {
-        mentionText = '';
-      } else if (ping_role && ping_role !== 'default') {
-        mentionText = `<@&${ping_role}>`;
-      } else {
-        const jugadorRoleId = await MasterServerService.getConfiguracion(adminClient, 'discord_jugador_role_id');
-        mentionText = jugadorRoleId ? `<@&${jugadorRoleId}>` : '';
-      }
+      const mentionText = await buildMentionText(adminClient, ping_roles);
 
       if (id) {
         // Edit existing event
@@ -87,8 +94,8 @@ export async function POST(request: Request) {
 
         return NextResponse.json(updated);
       } else {
-        // Create new event with ping role if specified
-        const eventContentWithPing = mentionText ? `${mentionText}\n${discord_content}` : discord_content;
+        // Create new event — pings go at the end
+        const eventContentWithPing = mentionText ? `${discord_content}\n${mentionText}` : discord_content;
         const discordMsg = await sendDiscordMessage(eventChannelId, eventContentWithPing);
         cleanData.discord_msg_id = discordMsg.id;
 
@@ -104,7 +111,7 @@ export async function POST(request: Request) {
         const announcementChannelId = await MasterServerService.getConfiguracion(adminClient, 'discord_event_announcement_channel_id');
         if (announcementChannelId) {
           const origin = new URL(request.url).origin;
-          const announcementText = `${mentionText ? mentionText + '\n' : ''}**¡Nuevo Evento Publicado!**\n**Título:** ${titulo}\n**Enlace a la web:** ${origin}/noticias`;
+          const announcementText = `**¡Nuevo Evento Publicado!**\n**Título:** ${titulo}\n**Enlace a la web:** ${origin}/noticias${mentionText ? '\n' + mentionText : ''}`;  
           try {
             await sendDiscordMessage(announcementChannelId, announcementText);
           } catch (announcementErr) {
@@ -151,12 +158,13 @@ export async function POST(request: Request) {
           const targetChannelId = await MasterServerService.getConfiguracion(adminClient, channelKey);
           if (targetChannelId) {
             const origin = new URL(request.url).origin;
-            const jugadorRoleId = await MasterServerService.getConfiguracion(adminClient, 'discord_jugador_role_id');
-            const roleMention = jugadorRoleId ? `<@&${jugadorRoleId}>` : '';
             const typeLabel = isNoticia ? 'Nueva Noticia' : 'Nuevo Parche';
             const actionVerb = isNoticia ? 'Publicada' : 'Publicado';
 
-            let announcementText = `${roleMention}\n**¡${typeLabel} ${actionVerb}!**\n**Título:** ${titulo}\n**Enlace a la web:** ${origin}/noticias`;
+            const mentionText = await buildMentionText(adminClient, ping_roles);
+
+            let announcementText = `**¡${typeLabel} ${actionVerb}!**\n**Título:** ${titulo}\n**Enlace a la web:** ${origin}/noticias`;
+            if (mentionText) announcementText += `\n${mentionText}`;
 
             try {
               await sendDiscordMessage(targetChannelId, announcementText);

@@ -151,8 +151,9 @@ export async function POST(request: Request) {
 
             const titulo = payload.data?.titulo || 'Reparto de Premios de Evento';
 
-            let announcementText = `${roleMention ? roleMention + '\n' : ''}**¡ENTREGA DE PREMIOS DE EVENTO!**\n**Evento:** ${titulo}`;
+            let announcementText = `**¡ENTREGA DE PREMIOS DE EVENTO!**\n**Evento:** ${titulo}`;
             announcementText += `\n**Ver detalles en la web:** ${origin}/noticias`;
+            if (roleMention) announcementText += `\n${roleMention}`;
 
             await sendDiscordMessage(announcementChannelId, announcementText);
           }
