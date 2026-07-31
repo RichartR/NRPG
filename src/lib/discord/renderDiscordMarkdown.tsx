@@ -26,7 +26,7 @@ import React from 'react';
 ────────────────────────────────────────────── */
 function renderInline(str: string, keyPrefix: string): React.ReactNode[] {
   // Combined inline regex (order matters)
-  const INLINE_RE = /(\|\|.*?\|\||\*\*.*?\*\*|__.*?__|~~.*?~~|\*[^*\n]+?\*|_[^_\n]+?_|`[^`\n]+?`|\[([^\]]+)\]\((https?:\/\/[^)]+)\))/g;
+  const INLINE_RE = /(<@&\d+>|<@!?\d+>|<#\d+>|@everyone|@here|\|\|.*?\|\||\*\*.*?\*\*|__.*?__|~~.*?~~|\*[^*\n]+?\*|_[^_\n]+?_|`[^`\n]+?`|\[([^\]]+)\]\((https?:\/\/[^)]+)\))/g;
 
   const parts: React.ReactNode[] = [];
   let last = 0;
@@ -40,7 +40,31 @@ function renderInline(str: string, keyPrefix: string): React.ReactNode[] {
     const raw = match[0];
     const k = `${keyPrefix}-${match.index}`;
 
-    if (raw.startsWith('**') && raw.endsWith('**')) {
+    if (raw.startsWith('<@&') && raw.endsWith('>')) {
+      parts.push(
+        <span key={k} className="inline-flex items-center px-2 py-0.5 bg-indigo-950/80 border border-indigo-500/40 text-indigo-300 font-black rounded text-caption select-none my-0.5">
+          @Rol
+        </span>
+      );
+    } else if (raw.startsWith('<@') && raw.endsWith('>')) {
+      parts.push(
+        <span key={k} className="inline-flex items-center px-2 py-0.5 bg-indigo-950/80 border border-indigo-500/40 text-indigo-300 font-black rounded text-caption select-none my-0.5">
+          @Usuario
+        </span>
+      );
+    } else if (raw.startsWith('<#') && raw.endsWith('>')) {
+      parts.push(
+        <span key={k} className="inline-flex items-center px-2 py-0.5 bg-indigo-950/80 border border-indigo-500/40 text-indigo-300 font-black rounded text-caption select-none my-0.5">
+          #canal
+        </span>
+      );
+    } else if (raw === '@everyone' || raw === '@here') {
+      parts.push(
+        <span key={k} className="inline-flex items-center px-2 py-0.5 bg-indigo-950/80 border border-indigo-500/40 text-indigo-300 font-black rounded text-caption select-none my-0.5">
+          {raw}
+        </span>
+      );
+    } else if (raw.startsWith('**') && raw.endsWith('**')) {
       parts.push(<strong key={k} className="text-oro font-black">{renderInline(raw.slice(2, -2), k)}</strong>);
     } else if ((raw.startsWith('*') && raw.endsWith('*') && !raw.startsWith('**')) ||
                (raw.startsWith('_') && raw.endsWith('_') && !raw.startsWith('__'))) {
@@ -95,7 +119,9 @@ function renderInline(str: string, keyPrefix: string): React.ReactNode[] {
    Block-level parser
 ────────────────────────────────────────────── */
 export function renderDiscordMarkdown(content: string): React.ReactNode {
-  const lines = content.split('\n');
+  // Strip leading ping / mention lines from the start of the event content for clean web display
+  const cleanContent = (content || '').replace(/^(?:<@&\d+>|<@!?\d+>|<#\d+>|@everyone|@here)\s*\n?/, '');
+  const lines = cleanContent.split('\n');
   const nodes: React.ReactNode[] = [];
   let i = 0;
 

@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { RewardLogic } from '@/domain/character/logic';
 import { ProfileService } from '@/services/supabase/profile.service';
+import { sendDiscordMessage } from '@/lib/discord';
+import { MasterServerService } from '@/services/supabase/master.server.service';
 
 export async function POST(request: Request) {
   try {
@@ -57,45 +59,38 @@ export async function POST(request: Request) {
         .insert({
           tipo: payload.tipo,
           subtipo: payload.subtipo,
-          data: payload.data,
-          autor_id: payload.autor_id
+          autor_id: payload.autor_id,
+          data: payload.data
         })
         .select()
         .single();
 
       if (regError) throw regError;
 
-      // 2. Crear participantes (Todos empiezan como 'pendiente' para esperar su aceptación manual, excepto el autor)
-      if (payload.participantes_ids.length > 0) {
+      // 2. Crear participantes (En evento_premios y narración, TODOS empiezan como 'pendiente' para requerir aceptación explícita)
+      const isEventoOrNarracion = payload.subtipo === 'evento_premios' || payload.subtipo === 'narracion';
+
+      if (payload.participantes_ids && payload.participantes_ids.length > 0) {
         const participantsData = payload.participantes_ids.map((pid: number) => ({
           registro_id: registro.id,
           personaje_id: pid,
-          estado: payload.autor_id && pid === payload.autor_id ? 'aceptado' : 'pendiente'
+          estado: (!isEventoOrNarracion && payload.autor_id && pid === payload.autor_id) ? 'aceptado' : 'pendiente'
         }));
 
         const { error: partError } = await adminClient
           .from('reg_registros_participantes')
           .insert(participantsData);
-        
+
         if (partError) throw partError;
       }
 
-      // 3. Aplicar recompensas instantáneas al autor (si tiene personaje)
-      if (payload.autor_id) {
+      // 3. Aplicar recompensas instantáneas al autor (solo para otros tipos de registro, NO en evento_premios ni narracion)
+      if (payload.autor_id && !isEventoOrNarracion) {
         const { xp, ryous, pa } = RewardLogic.calculateReward(registro, payload.autor_id);
-        
+
         let extraMonedaEvento = 0;
         let glosarioItems: any[] = [];
-        if (registro.subtipo === 'evento_premios' || registro.subtipo === 'narracion') {
-          const partPremio = registro.data.participantes_premios?.find((pItem: any) => Number(pItem.personaje_id) === Number(payload.autor_id));
-          const globalMonedas = Number(registro.data.global_monedas_evento) || 0;
-          if (partPremio) {
-            extraMonedaEvento = globalMonedas + (Number(partPremio.monedas_evento) || 0);
-            glosarioItems = partPremio.glosario_items || [];
-          } else if (payload.participantes_ids.includes(payload.autor_id)) {
-            extraMonedaEvento = globalMonedas;
-          }
-        }
+        let rasgosItems: any[] = [];
 
         if (xp > 0 || ryous > 0 || pa > 0 || extraMonedaEvento > 0) {
           const { data: char } = await adminClient
@@ -133,6 +128,37 @@ export async function POST(request: Request) {
             await adminClient.from('reg_personajes_tecnicas').insert(techniquesPack);
           }
         }
+
+        if (rasgosItems.length > 0) {
+          const traitsPack = rasgosItems.map((r: any) => ({
+            personaje_id: payload.autor_id,
+            rasgo_id: r.id
+          }));
+          await adminClient.from('reg_personajes_rasgos').upsert(traitsPack, { onConflict: 'personaje_id,rasgo_id', ignoreDuplicates: true });
+        }
+      }
+
+      // 4. Notificar por Discord si es un reparto de premios de evento
+      if (payload.subtipo === 'evento_premios') {
+        try {
+          const announcementChannelId = (await MasterServerService.getConfiguracion(adminClient, 'discord_event_announcement_channel_id'))
+            || (await MasterServerService.getConfiguracion(adminClient, 'discord_event_channel_id'));
+
+          if (announcementChannelId) {
+            const origin = new URL(request.url).origin;
+            const jugadorRoleId = await MasterServerService.getConfiguracion(adminClient, 'discord_jugador_role_id');
+            const roleMention = jugadorRoleId ? `<@&${jugadorRoleId}>` : '';
+
+            const titulo = payload.data?.titulo || 'Reparto de Premios de Evento';
+
+            let announcementText = `${roleMention ? roleMention + '\n' : ''}**¡ENTREGA DE PREMIOS DE EVENTO!**\n**Evento:** ${titulo}`;
+            announcementText += `\n**Ver detalles en la web:** ${origin}/noticias`;
+
+            await sendDiscordMessage(announcementChannelId, announcementText);
+          }
+        } catch (discordErr) {
+          console.error('Error sending event rewards notification to Discord:', discordErr);
+        }
       }
 
       return NextResponse.json(registro);
@@ -142,14 +168,14 @@ export async function POST(request: Request) {
       // 1. Obtener el registro viejo y sus participantes actuales
       const { data: oldRegistro } = await adminClient.from('reg_registros').select('*').eq('id', id).single();
       const { data: currentDbParticipants } = await adminClient.from('reg_registros_participantes').select('*').eq('registro_id', id);
-      
+
       if (!oldRegistro) throw new Error('Registro no encontrado');
-      
+
       const updatedData = {
         ...payload.data,
         fecha_modificacion: new Date().toISOString()
       };
-      
+
       // 2. Actualizar el registro base
       const { error: updateError } = await adminClient
         .from('reg_registros')
@@ -158,7 +184,7 @@ export async function POST(request: Request) {
           data: updatedData
         })
         .eq('id', id);
-      
+
       if (updateError) throw updateError;
 
       if (!payload.participantes_ids) return NextResponse.json({ success: true });
@@ -172,7 +198,7 @@ export async function POST(request: Request) {
       for (const p of removedParticipants) {
         if (p.estado === 'aceptado') {
           const { xp, ryous, pa } = RewardLogic.calculateReward(oldRegistro, p.personaje_id);
-          
+
           let extraMonedaEvento = 0;
           let glosarioItems: any[] = [];
           if (oldRegistro.subtipo === 'evento_premios' || oldRegistro.subtipo === 'narracion') {
@@ -350,13 +376,13 @@ export async function POST(request: Request) {
       // 1. Obtener participantes y registro para revertir recompensas
       const { data: registro } = await adminClient.from('reg_registros').select('*').eq('id', id).single();
       const { data: participantes } = await adminClient.from('reg_registros_participantes').select('*').eq('registro_id', id);
-      
+
       if (registro) {
         if (participantes) {
           for (const p of participantes) {
             if (p.estado === 'aceptado') {
               const { xp, ryous, pa } = RewardLogic.calculateReward(registro, p.personaje_id);
-              
+
               let extraMonedaEvento = 0;
               let glosarioItems: any[] = [];
               if (registro.subtipo === 'evento_premios' || registro.subtipo === 'narracion') {
@@ -414,7 +440,7 @@ export async function POST(request: Request) {
         .from('reg_registros')
         .delete()
         .eq('id', id);
-      
+
       if (error) throw error;
       return NextResponse.json({ success: true });
     }

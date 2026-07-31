@@ -3,13 +3,15 @@
 import { useState, useEffect } from 'react';
 import { RegistrosService } from '@/services/supabase/registros.service';
 import { CharacterService } from '@/services/supabase/character.service';
-import { Glosario, Registro } from '@/domain/types';
+import { Glosario, Registro, Rasgo } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { AuthService } from '@/services/supabase/auth.service';
 import { ProfileService } from '@/services/supabase/profile.service';
-import { X, Search, UserPlus, User, Trash2, Coins, Sparkles, Plus, BookOpen } from 'lucide-react';
+import { AdminService } from '@/services/supabase/admin.service';
+import { X, Search, UserPlus, User, Trash2, Coins, Sparkles, Plus, BookOpen, Shield, MessageSquare } from 'lucide-react';
 import { searchIncludes } from '@/lib/utils/search';
+import { renderDiscordMarkdown } from '@/lib/discord/renderDiscordMarkdown';
 
 interface EventRewardFormProps {
   activeNews: {
@@ -49,7 +51,9 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
   // Rewards states
   const [globalXp, setGlobalXp] = useState<number>(Number(editingRegistry?.data?.global_xp) || 0);
   const [globalRyous, setGlobalRyous] = useState<number>(Number(editingRegistry?.data?.global_ryous) || 0);
+  const [globalPa, setGlobalPa] = useState<number>(Number(editingRegistry?.data?.global_pa) || 0);
   const [globalMonedasEvento, setGlobalMonedasEvento] = useState<number>(Number(editingRegistry?.data?.global_monedas_evento) || 0);
+  const [textoEntrega, setTextoEntrega] = useState<string>(editingRegistry?.data?.texto_entrega || '');
 
   // Participants & Rewards
   const [participants, setParticipants] = useState<any[]>([]);
@@ -62,12 +66,25 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
   const [activeGlosarioSelector, setActiveGlosarioSelector] = useState<number | null>(null);
   const [glosarioSearchQuery, setGlosarioSearchQuery] = useState('');
 
+  // Rasgos selection states
+  const [allRasgos, setAllRasgos] = useState<Rasgo[]>([]);
+  const [activeRasgoSelector, setActiveRasgoSelector] = useState<number | null>(null);
+  const [rasgoSearchQuery, setRasgoSearchQuery] = useState('');
+
+  useEffect(() => {
+    AdminService.getRasgos().then(data => {
+      setAllRasgos(data.filter(r => r.activo !== false));
+    }).catch(err => console.error('Error loading traits:', err));
+  }, []);
+
   // Load editing registry participants if editing
   useEffect(() => {
     if (editingRegistry) {
       setGlobalXp(Number(editingRegistry.data?.global_xp) || 0);
       setGlobalRyous(Number(editingRegistry.data?.global_ryous) || 0);
+      setGlobalPa(Number(editingRegistry.data?.global_pa) || 0);
       setGlobalMonedasEvento(Number(editingRegistry.data?.global_monedas_evento) || 0);
+      setTextoEntrega(editingRegistry.data?.texto_entrega || '');
 
       const initialParts = editingRegistry.participantes?.map((p: any) => {
         const premio = editingRegistry.data?.participantes_premios?.find((pr: any) => Number(pr.personaje_id) === Number(p.personaje_id));
@@ -76,8 +93,10 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
           nombre_ninja: p.personaje?.nombre_ninja || 'Ninja Desaparecido',
           xp_extra: premio?.xp_extra || 0,
           ryous_extra: premio?.ryous_extra || 0,
+          pa_extra: premio?.pa_extra || 0,
           monedas_evento: premio?.monedas_evento || 0,
-          glosario_items: premio?.glosario_items || []
+          glosario_items: premio?.glosario_items || [],
+          rasgos_items: premio?.rasgos_items || []
         };
       }) || [];
       setParticipants(initialParts);
@@ -126,8 +145,10 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
         nombre_ninja: p.nombre_ninja,
         xp_extra: 0,
         ryous_extra: 0,
+        pa_extra: 0,
         monedas_evento: 0,
-        glosario_items: []
+        glosario_items: [],
+        rasgos_items: []
       }
     ]);
     loadValidGlosarioItems(p.id);
@@ -151,7 +172,6 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
   const addGlosarioItemToParticipant = (personajeId: number, item: Glosario) => {
     setParticipants(participants.map(p => {
       if (p.id === personajeId) {
-        // Prevent duplicate glosario rewards
         if (p.glosario_items.find((i: any) => i.id === item.id)) {
           addToast('Este personaje ya recibe este premio', 'error');
           return p;
@@ -179,6 +199,37 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
     }));
   };
 
+  const addRasgoItemToParticipant = (personajeId: number, rasgo: Rasgo) => {
+    setParticipants(participants.map(p => {
+      if (p.id === personajeId) {
+        const currentRasgos = p.rasgos_items || [];
+        if (currentRasgos.find((r: any) => r.id === rasgo.id)) {
+          addToast('Este personaje ya recibe este rasgo', 'error');
+          return p;
+        }
+        return {
+          ...p,
+          rasgos_items: [...currentRasgos, { id: rasgo.id, nombre: rasgo.nombre, especial: rasgo.especial }]
+        };
+      }
+      return p;
+    }));
+    setActiveRasgoSelector(null);
+    setRasgoSearchQuery('');
+  };
+
+  const removeRasgoItemFromParticipant = (personajeId: number, rasgoId: number) => {
+    setParticipants(participants.map(p => {
+      if (p.id === personajeId) {
+        return {
+          ...p,
+          rasgos_items: (p.rasgos_items || []).filter((r: any) => r.id !== rasgoId)
+        };
+      }
+      return p;
+    }));
+  };
+
   const handleSubmit = async () => {
     if (!activeCharacter && !adminProfile) {
       addToast('No se ha detectado un personaje administrador activo ni cuenta administradora.', 'error');
@@ -186,6 +237,10 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
     }
     if (participants.length === 0) {
       addToast('Añade al menos un participante para repartir premios', 'error');
+      return;
+    }
+    if (textoEntrega.length > 1500) {
+      addToast('La nota de entrega excede el límite de 1500 caracteres para Discord', 'error');
       return;
     }
 
@@ -199,8 +254,10 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
         data: {
           titulo: `Reparto de Premios: ${activeNews.titulo}`,
           evento_id: activeNews.id,
+          texto_entrega: textoEntrega.trim(),
           global_xp: globalXp,
           global_ryous: globalRyous,
+          global_pa: globalPa,
           global_monedas_evento: globalMonedasEvento,
           autor_admin: !activeCharacter && adminProfile ? {
             id: adminProfile.id,
@@ -211,8 +268,10 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
             nombre_ninja: p.nombre_ninja,
             xp_extra: Number(p.xp_extra) || 0,
             ryous_extra: Number(p.ryous_extra) || 0,
+            pa_extra: Number(p.pa_extra) || 0,
             monedas_evento: Number(p.monedas_evento) || 0,
-            glosario_items: p.glosario_items
+            glosario_items: p.glosario_items || [],
+            rasgos_items: p.rasgos_items || []
           }))
         }
       };
@@ -262,11 +321,52 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
 
         {/* Contenido en Scroll */}
         <div className="flex-1 overflow-y-auto p-5 sm:p-12 xl:p-16 space-y-8 sm:space-y-12 relative z-10 bg-transparent custom-scrollbar">
-          {/* Premios Globales */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-6 bg-black/40 border border-oro/10 ninja-clip-sm relative">
-            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+          {/* Texto de Entrega de Premios (Notificación Discord) */}
+          <div className="space-y-3 p-6 bg-black/40 border border-oro/10 ninja-clip-sm">
+            <div className="flex justify-between items-center">
+              <label className="text-xs font-black uppercase tracking-[0.25em] text-oro/50 flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-oro/60" /> NOTA / DESCRIPCIÓN DE ENTREGA DE PREMIOS (FORMATO DISCORD)
+              </label>
+              <span className={`text-caption font-black tracking-widest tabular-nums ${textoEntrega.length >= 1400 ? 'text-rojo-sangre' : 'text-oro/40'}`}>
+                {textoEntrega.length} / 1500
+              </span>
             </div>
-            <div className="space-y-4">
+
+            {/* Guía de Formatos Markdown */}
+            <div className="bg-black/30 border border-oro/10 p-3 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-oro/50 font-bold uppercase tracking-wider ninja-clip-xs">
+              <div><span className="text-oro font-black">**Negrita**</span></div>
+              <div><span className="text-oro font-black">*Cursiva*</span></div>
+              <div><span className="text-oro font-black">__Subrayado__</span></div>
+              <div><span className="text-oro font-black">~~Tachado~~</span></div>
+              <div><span className="text-oro font-black">`Código`</span></div>
+              <div><span className="text-oro font-black">- Lista</span></div>
+            </div>
+
+            <textarea
+              maxLength={1500}
+              rows={3}
+              value={textoEntrega}
+              onChange={(e) => setTextoEntrega(e.target.value)}
+              placeholder="Escribe un mensaje o aclaración utilizando markdown (**negrita**, *cursiva*, etc.) que se enviará a Discord y se mostrará en la web..."
+              className="w-full ninja-input py-3 px-4 text-xs font-medium resize-none"
+            />
+
+            {/* Vista previa en tiempo real de Markdown */}
+            {textoEntrega.trim() && (
+              <div className="space-y-2 pt-2 border-t border-oro/10">
+                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-oro/40 block">
+                  VISTA PREVIA DE LA NOTA (MARKDOWN EN TIEMPO REAL)
+                </span>
+                <div className="p-4 bg-black/60 border border-oro/20 text-xs text-oro/90 font-medium ninja-clip-xs leading-relaxed">
+                  {renderDiscordMarkdown(textoEntrega)}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Premios Globales */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-6 bg-black/40 border border-oro/10 ninja-clip-sm relative">
+            <div className="space-y-3">
               <label className="text-xs font-black uppercase tracking-[0.25em] text-oro/50 flex items-center gap-2 min-h-[2.5rem]">
                 EXP GLOBAL (Para todos)
               </label>
@@ -276,10 +376,10 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
                 value={globalXp}
                 onChange={(e) => setGlobalXp(Math.max(0, Number(e.target.value)))}
                 placeholder="EXP global..."
-                className="w-full ninja-input py-4 text-sm"
+                className="w-full ninja-input py-3.5 text-sm"
               />
             </div>
-            <div className="space-y-4">
+            <div className="space-y-3">
               <label className="text-xs font-black uppercase tracking-[0.25em] text-oro/50 flex items-center gap-2 min-h-[2.5rem]">
                 RYOUS GLOBALES (Para todos)
               </label>
@@ -289,10 +389,23 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
                 value={globalRyous}
                 onChange={(e) => setGlobalRyous(Math.max(0, Number(e.target.value)))}
                 placeholder="Ryous globales..."
-                className="w-full ninja-input py-4 text-sm"
+                className="w-full ninja-input py-3.5 text-sm"
               />
             </div>
-            <div className="space-y-4">
+            <div className="space-y-3">
+              <label className="text-xs font-black uppercase tracking-[0.25em] text-oro/50 flex items-center gap-2 min-h-[2.5rem]">
+                PA GLOBAL (Para todos)
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={globalPa}
+                onChange={(e) => setGlobalPa(Math.max(0, Number(e.target.value)))}
+                placeholder="PA globales..."
+                className="w-full ninja-input py-3.5 text-sm"
+              />
+            </div>
+            <div className="space-y-3">
               <label className="text-xs font-black uppercase tracking-[0.25em] text-oro/50 flex items-center gap-2 min-h-[2.5rem]">
                 MONEDAS GLOBAL (Para todos)
               </label>
@@ -302,7 +415,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
                 value={globalMonedasEvento}
                 onChange={(e) => setGlobalMonedasEvento(Math.max(0, Number(e.target.value)))}
                 placeholder="Monedas globales..."
-                className="w-full ninja-input py-4 text-sm"
+                className="w-full ninja-input py-3.5 text-sm"
               />
             </div>
           </div>
@@ -366,9 +479,9 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                       <div className="space-y-2">
-                        <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">EXP EXTRA INDEPENDIENTE</label>
+                        <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">EXP EXTRA</label>
                         <input
                           type="number"
                           min="0"
@@ -378,7 +491,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">RYOUS EXTRA INDEPENDIENTES</label>
+                        <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">RYOUS EXTRA</label>
                         <input
                           type="number"
                           min="0"
@@ -388,7 +501,17 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">MONEDAS DE EVENTO</label>
+                        <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">PA EXTRA</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={p.pa_extra}
+                          onChange={(e) => updateParticipantField(p.id, 'pa_extra', Math.max(0, Number(e.target.value)))}
+                          className="w-full ninja-input py-3 text-xs"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">MONEDAS EVENTO</label>
                         <input
                           type="number"
                           min="0"
@@ -402,7 +525,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
                     {/* Glosario Premios del Personaje */}
                     <div className="space-y-3 pt-2">
                       <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1 flex items-center gap-1.5">
-                        <BookOpen className="w-3.5 h-3.5" /> Recompensas del Glosario (Técnicas, Objetos, etc.)
+                        Recompensas del Glosario (Técnicas, Objetos, etc.)
                       </label>
 
                       <div className="flex flex-wrap gap-2.5 items-center">
@@ -421,10 +544,10 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
                           </span>
                         ))}
 
-                        {/* Botón para abrir Selector de Glosario específico para este jugador */}
                         <button
                           onClick={() => {
                             setActiveGlosarioSelector(activeGlosarioSelector === p.id ? null : p.id);
+                            setActiveRasgoSelector(null);
                             setGlosarioSearchQuery('');
                           }}
                           className="flex items-center gap-1.5 px-3 py-1.5 bg-oro/5 hover:bg-oro hover:text-rojo-sangre border border-oro/15 hover:border-oro text-caption font-black text-oro uppercase tracking-wider transition-all ninja-clip-xs"
@@ -470,6 +593,79 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
                               )}
                             </div>
                           )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Rasgos Especiales del Personaje */}
+                    <div className="space-y-3 pt-2 border-t border-oro/5">
+                      <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1 flex items-center gap-1.5">
+                        Rasgos Especiales / Concedidos
+                      </label>
+
+                      <div className="flex flex-wrap gap-2.5 items-center">
+                        {p.rasgos_items?.map((rasgo: any) => (
+                          <span
+                            key={rasgo.id}
+                            className={`inline-flex items-center gap-2 px-3 py-1.5 border text-caption font-black uppercase tracking-wider ninja-clip-xs ${rasgo.especial ? 'bg-purple-950/40 border-purple-500/40 text-purple-300' : 'bg-amber-950/40 border-amber-500/40 text-amber-300'}`}
+                          >
+                            {rasgo.especial && <span className="text-[9px] bg-purple-500/20 text-purple-300 px-1 py-0.5 rounded">ESPECIAL</span>}
+                            {rasgo.nombre}
+                            <button
+                              onClick={() => removeRasgoItemFromParticipant(p.id, rasgo.id)}
+                              className="text-rojo-sangre/60 hover:text-rojo-sangre transition-all"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </span>
+                        ))}
+
+                        <button
+                          onClick={() => {
+                            setActiveRasgoSelector(activeRasgoSelector === p.id ? null : p.id);
+                            setActiveGlosarioSelector(null);
+                            setRasgoSearchQuery('');
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-oro/5 hover:bg-oro hover:text-rojo-sangre border border-oro/15 hover:border-oro text-caption font-black text-oro uppercase tracking-wider transition-all ninja-clip-xs"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Conceder Rasgo
+                        </button>
+                      </div>
+
+                      {/* Dropdown del Selector de Rasgos */}
+                      {activeRasgoSelector === p.id && (
+                        <div className="mt-3 p-4 bg-neutral-800 border border-amber-500/30 space-y-4 animate-in zoom-in-95 duration-200">
+                          <input
+                            type="text"
+                            placeholder="BUSCAR RASGO O RASGO ESPECIAL..."
+                            value={rasgoSearchQuery}
+                            onChange={(e) => setRasgoSearchQuery(e.target.value)}
+                            className="w-full ninja-input py-2.5 px-4 text-xs font-black"
+                          />
+
+                          <div className="max-h-48 overflow-y-auto custom-scrollbar divide-y divide-oro/5">
+                            {allRasgos
+                              .filter(r => searchIncludes(r.nombre, rasgoSearchQuery))
+                              .map((rasgo) => (
+                                <button
+                                  key={rasgo.id}
+                                  onClick={() => addRasgoItemToParticipant(p.id, rasgo)}
+                                  className="w-full text-left py-3 px-4 hover:bg-amber-500/10 text-xs font-black text-oro/70 hover:text-amber-400 flex justify-between items-center uppercase tracking-widest border-b border-oro/5 last:border-0"
+                                >
+                                  <span className="flex items-center gap-2">
+                                    {rasgo.especial && <span className="text-[9px] bg-purple-950 text-purple-300 border border-purple-500/30 px-1.5 py-0.5 rounded font-black">ESPECIAL</span>}
+                                    {rasgo.nombre}
+                                  </span>
+                                  <span className="text-caption font-bold text-oro/40">{rasgo.categoria} ({rasgo.rango})</span>
+                                </button>
+                              ))}
+
+                            {allRasgos.filter(r => searchIncludes(r.nombre, rasgoSearchQuery)).length === 0 && (
+                              <div className="text-center py-6">
+                                <p className="text-caption font-black uppercase text-oro/20 italic">No se encontraron rasgos</p>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>

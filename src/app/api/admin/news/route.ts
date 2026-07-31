@@ -20,7 +20,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No tienes permisos de administrador para esta acción' }, { status: 403 });
     }
 
-    const { id, titulo, categoria, url_imagen, descripcion, activo, discord_msg_id, discord_content } = await request.json();
+    const { id, titulo, categoria, url_imagen, descripcion, activo, discord_msg_id, discord_content, ping_role } = await request.json();
 
     const cleanData: any = {
       titulo,
@@ -34,6 +34,21 @@ export async function POST(request: Request) {
       const eventChannelId = await MasterServerService.getConfiguracion(adminClient, 'discord_event_channel_id');
       if (!eventChannelId) {
         return NextResponse.json({ error: 'Canal de Discord para eventos (discord_event_channel_id) no configurado en el sistema' }, { status: 400 });
+      }
+
+      // Determine Discord role mention
+      let mentionText = '';
+      if (ping_role === 'everyone') {
+        mentionText = '@everyone';
+      } else if (ping_role === 'here') {
+        mentionText = '@here';
+      } else if (ping_role === 'none') {
+        mentionText = '';
+      } else if (ping_role && ping_role !== 'default') {
+        mentionText = `<@&${ping_role}>`;
+      } else {
+        const jugadorRoleId = await MasterServerService.getConfiguracion(adminClient, 'discord_jugador_role_id');
+        mentionText = jugadorRoleId ? `<@&${jugadorRoleId}>` : '';
       }
 
       if (id) {
@@ -54,7 +69,6 @@ export async function POST(request: Request) {
             await editDiscordMessage(eventChannelId, msgId, discord_content);
           } catch (discordErr: any) {
             console.error('Error updating Discord message:', discordErr);
-            // Non-blocking fallback if the message was deleted in Discord
           }
         }
 
@@ -73,8 +87,9 @@ export async function POST(request: Request) {
 
         return NextResponse.json(updated);
       } else {
-        // Create new event
-        const discordMsg = await sendDiscordMessage(eventChannelId, discord_content);
+        // Create new event with ping role if specified
+        const eventContentWithPing = mentionText ? `${mentionText}\n${discord_content}` : discord_content;
+        const discordMsg = await sendDiscordMessage(eventChannelId, eventContentWithPing);
         cleanData.discord_msg_id = discordMsg.id;
 
         const { data: inserted, error: insertErr } = await adminClient
@@ -89,14 +104,11 @@ export async function POST(request: Request) {
         const announcementChannelId = await MasterServerService.getConfiguracion(adminClient, 'discord_event_announcement_channel_id');
         if (announcementChannelId) {
           const origin = new URL(request.url).origin;
-          const jugadorRoleId = await MasterServerService.getConfiguracion(adminClient, 'discord_jugador_role_id');
-          const roleMention = jugadorRoleId ? `<@&${jugadorRoleId}>` : '';
-          const announcementText = `${roleMention}\n**¡Nuevo Evento Publicado!**\n**Título:** ${titulo}\n**Enlace a la web:** ${origin}/noticias`;
+          const announcementText = `${mentionText ? mentionText + '\n' : ''}**¡Nuevo Evento Publicado!**\n**Título:** ${titulo}\n**Enlace a la web:** ${origin}/noticias`;
           try {
             await sendDiscordMessage(announcementChannelId, announcementText);
           } catch (announcementErr) {
             console.error('Error sending event announcement to Discord:', announcementErr);
-            // Do not fail the whole request if only the announcement fails
           }
         }
 
