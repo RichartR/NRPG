@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, PlusCircle, RefreshCw, Save } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AdminService } from '@/services/supabase/admin.service';
@@ -22,9 +22,14 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
     discord_msg_id: '',
     url_imagen: '',
     descripcion: '',
-    pingRole: 'default',
     ...newsItem
   });
+  // ping_roles: array of role IDs / special keys ('default','everyone','here','none')
+  const [pingRoles, setPingRoles] = useState<string[]>(
+    Array.isArray(newsItem?.ping_roles) && newsItem.ping_roles.length > 0 ? newsItem.ping_roles : ['default']
+  );
+  const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
+  const roleDropdownRef = useRef<HTMLDivElement>(null);
   const [discordContent, setDiscordContent] = useState('');
   const [fetchingContent, setFetchingContent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -59,6 +64,25 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
         .finally(() => setFetchingContent(false));
     }
   }, [isCreate, formData.discord_msg_id, formData.categoria]);
+
+  useEffect(() => {
+    if (!roleDropdownOpen) return;
+
+    const handleMouseDown = (e: MouseEvent) => {
+      if (roleDropdownRef.current?.contains(e.target as Node)) return;
+      setRoleDropdownOpen(false);
+    };
+    const handleClose = () => setRoleDropdownOpen(false);
+
+    document.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('resize', handleClose);
+    window.addEventListener('scroll', handleClose, true);
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('resize', handleClose);
+      window.removeEventListener('scroll', handleClose, true);
+    };
+  }, [roleDropdownOpen]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,12 +138,13 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
 
       if (categoria === 'Evento') {
         cleanData.discord_content = discordContent;
-        cleanData.ping_role = formData.pingRole;
+        cleanData.ping_roles = pingRoles;
         if (!isCreate) {
           cleanData.discord_msg_id = formData.discord_msg_id;
         }
       } else {
         cleanData.discord_msg_id = discord_msg_id;
+        cleanData.ping_roles = pingRoles;
       }
 
       await AdminService.saveNewsItem({
@@ -143,13 +168,32 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
     { label: 'EVENTO', value: 'Evento' }
   ];
 
-  const pingRoleOptions = [
+  const allRoleOptions = [
     { label: '@Jugador (Por defecto)', value: 'default' },
     { label: '@everyone', value: 'everyone' },
     { label: '@here', value: 'here' },
     { label: 'Sin mención', value: 'none' },
     ...discordRoles.map(r => ({ label: r.name, value: r.id }))
   ];
+
+  const togglePingRole = (value: string) => {
+    // 'none' is exclusive — selecting it clears everything else
+    if (value === 'none') {
+      setPingRoles(['none']);
+      return;
+    }
+    // Selecting anything else removes 'none'
+    setPingRoles(prev => {
+      const without = prev.filter(v => v !== 'none');
+      const nextRoles = without.includes(value)
+        ? without.filter(v => v !== value)
+        : [...without, value];
+      return nextRoles.length > 0 ? nextRoles : ['none'];
+    });
+  };
+
+  const roleLabel = (value: string) =>
+    allRoleOptions.find(o => o.value === value)?.label ?? value;
 
   return (
     <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-start sm:items-center justify-center p-4 sm:p-6 xl:p-12 overflow-y-auto">
@@ -207,14 +251,7 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
               onChange={v => setFormData({ ...formData, categoria: v })}
             />
 
-            {formData.categoria === 'Evento' ? (
-              <SelectField
-                label="ROL DE DISCORD A MENCIONAR (PING)"
-                value={formData.pingRole || 'default'}
-                options={pingRoleOptions}
-                onChange={v => setFormData({ ...formData, pingRole: v })}
-              />
-            ) : (
+            {formData.categoria !== 'Evento' && (
               <DataField
                 label="ENLACE DEL DOCUMENTO (URL)"
                 value={formData.discord_msg_id}
@@ -222,6 +259,75 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
                 placeholder="Ej. https://drive.google.com/..."
               />
             )}
+
+            {/* ── Multi-role ping selector — always visible ── */}
+            <div className="flex flex-col gap-2">
+              <label className="text-caption sm:text-caption font-black uppercase tracking-[0.3em] text-oro/50">
+                ROLES DE DISCORD A MENCIONAR (PING)
+              </label>
+              {/* Selected chips */}
+              {pingRoles.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-1">
+                  {pingRoles.map(v => (
+                    <span
+                      key={v}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 bg-oro/10 border border-oro/40 text-oro text-caption font-black uppercase tracking-wider"
+                      style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
+                    >
+                      {roleLabel(v)}
+                      <button
+                        type="button"
+                        onClick={() => togglePingRole(v)}
+                        className="text-oro/60 hover:text-rojo-sangre transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {/* Dropdown trigger */}
+              <div ref={roleDropdownRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setRoleDropdownOpen(prev => !prev)}
+                  className={`w-full flex items-center justify-between bg-black/60 px-5 py-3 text-xs font-bold uppercase tracking-wider transition-all border ${roleDropdownOpen ? 'border-oro/60 text-oro' : 'border-oro/20 hover:border-oro/50 text-oro/70'}`}
+                  style={{ clipPath: 'polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px)' }}
+                >
+                  <span>{pingRoles.length === 0 ? 'Seleccionar roles...' : `${pingRoles.length} rol${pingRoles.length > 1 ? 'es' : ''} seleccionado${pingRoles.length > 1 ? 's' : ''}`}</span>
+                  <span className={`transition-transform duration-150 text-oro/60 ${roleDropdownOpen ? 'rotate-180' : ''}`}>▼</span>
+                </button>
+                {roleDropdownOpen && (
+                  <div
+                    className="absolute z-50 top-full left-0 right-0 mt-1 bg-[#0a0a0a] border border-oro/30 shadow-[0_8px_32px_rgba(0,0,0,0.8)] max-h-56 overflow-y-auto custom-scrollbar"
+                    style={{ clipPath: 'polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px)' }}
+                  >
+                    {allRoleOptions.map(opt => {
+                      const isSelected = pingRoles.includes(opt.value);
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => { togglePingRole(opt.value); }}
+                          className={`w-full flex items-center gap-3 px-4 py-3 text-left text-xs font-black uppercase tracking-wider transition-colors border-b border-oro/5 last:border-0 ${
+                            isSelected
+                              ? 'bg-oro/10 text-oro'
+                              : 'text-oro/50 hover:bg-oro/5 hover:text-oro/90'
+                          }`}
+                        >
+                          <span className={`w-4 h-4 border flex items-center justify-center shrink-0 transition-colors ${
+                            isSelected ? 'bg-oro border-oro' : 'border-oro/30 hover:border-oro/60'
+                          }`}>
+                            {isSelected && <span className="text-negro text-[10px] font-black">✓</span>}
+                          </span>
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
 
             <div className="md:col-span-2">
               <DataField
