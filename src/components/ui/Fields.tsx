@@ -471,6 +471,7 @@ export function SearchableMultiSelect({
   }, [options, selectedIds]);
 
   const filteredOptions = React.useMemo(() => {
+    if (!search.trim()) return [];
     return options.filter((o: any) => searchIncludes(o.label, search));
   }, [options, search]);
 
@@ -582,14 +583,18 @@ export function SearchableMultiSelect({
             />
           </div>
           <div className="max-h-64 overflow-y-auto overflow-x-hidden custom-scrollbar">
-            <button
-              type="button"
-              onClick={() => { onChange?.(null); setIsOpen(false); }}
-              className="w-full text-left px-8 py-4 text-caption font-black text-oro/40 hover:bg-oro/5 uppercase tracking-widest border-b border-oro/5"
-            >
-              Ninguno / Quitar todos
-            </button>
-            {filteredOptions.length > 0 ? (
+            {selectedIds.length > 0 && (
+              <button
+                type="button"
+                onClick={() => { onChange?.(null); setIsOpen(false); }}
+                className="w-full text-left px-8 py-4 text-caption font-black text-oro/40 hover:bg-oro/5 uppercase tracking-widest border-b border-oro/5"
+              >
+                Quitar todos
+              </button>
+            )}
+            {!search.trim() ? (
+              <div className="px-8 py-10 text-caption text-oro/20 font-black uppercase tracking-widest text-center italic">Escribe para buscar...</div>
+            ) : filteredOptions.length > 0 ? (
               filteredOptions.map((o: any) => {
                 const optId = o.value !== undefined ? o.value : o.id;
                 const isSelected = selectedIds.includes(typeof optId === 'number' ? optId : String(optId));

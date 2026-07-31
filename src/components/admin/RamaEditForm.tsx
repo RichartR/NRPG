@@ -6,13 +6,15 @@ import { useRouter } from 'next/navigation';
 import { AdminService } from '@/services/supabase/admin.service';
 import { MasterService } from '@/services/supabase/master.service';
 import { useToastStore } from '@/components/ui/Toast';
-import { DataField, SearchableSelect } from '@/components/ui/Fields';
+import { DataField, SearchableSelect, SearchableMultiSelect } from '@/components/ui/Fields';
 import { RamaClan, Aldea, Glosario, SubEspecialidad, Elemento } from '@/domain/types';
+import { searchIncludes } from '@/lib/utils/search';
 
 interface RamaEditFormProps {
   rama?: RamaClan;
   aldeas: Aldea[];
   rasgos: any[];
+  characters?: any[];
   onCancel: () => void;
 }
 
@@ -26,7 +28,7 @@ const generateSlug = (name: string) => {
     .replace(/\s+/g, '-');
 };
 
-export default function RamaEditForm({ rama, aldeas, rasgos, onCancel }: RamaEditFormProps) {
+export default function RamaEditForm({ rama, aldeas, rasgos, characters = [], onCancel }: RamaEditFormProps) {
   const isCreate = !rama;
   const [isSlugEdited, setIsSlugEdited] = useState(false);
   const [formData, setFormData] = useState<Partial<RamaClan>>(() => {
@@ -36,7 +38,7 @@ export default function RamaEditForm({ rama, aldeas, rasgos, onCancel }: RamaEdi
         es_especial: rama.es_especial ?? false,
         es_repetible: rama.es_repetible ?? false,
         rasgo_id: rama.rasgo_id ?? null,
-        config_iniciales: rama.config_iniciales ?? { opciones: [] }
+        config_iniciales: rama.config_iniciales ?? { opciones: [], personajes_permitidos: [] }
       };
     }
     return {
@@ -50,7 +52,7 @@ export default function RamaEditForm({ rama, aldeas, rasgos, onCancel }: RamaEdi
       es_repetible: false,
       url_imagen: '',
       rasgo_id: null,
-      config_iniciales: { opciones: [] }
+      config_iniciales: { opciones: [], personajes_permitidos: [] }
     };
   });
   const [glosario, setGlosario] = useState<Glosario[]>([]);
@@ -218,7 +220,7 @@ export default function RamaEditForm({ rama, aldeas, rasgos, onCancel }: RamaEdi
                 <label className="text-caption font-black uppercase tracking-widest text-oro/60 ml-1">Estatus del Clan</label>
                 <div className="flex bg-black/40 p-4 border border-oro/10 justify-between items-center h-[58px] ninja-clip-sm">
                   <span className="text-[11px] font-black uppercase tracking-widest text-oro/40">
-                    Clan Especial (Límites reducidos)
+                    Clan Especial (Solo accesible por personajes autorizados)
                   </span>
                   <label className="flex items-center gap-3 cursor-pointer group">
                     <span className={`text-caption font-black uppercase tracking-widest transition-colors ${formData.es_especial ? 'text-oro' : 'text-oro/20'}`}>
@@ -235,6 +237,25 @@ export default function RamaEditForm({ rama, aldeas, rasgos, onCancel }: RamaEdi
                     </div>
                   </label>
                 </div>
+              </div>
+            )}
+
+            {/* Selector de Personajes Autorizados si es Clan Especial */}
+            {formData.tipo === 'clan' && formData.es_especial && (
+              <div className="md:col-span-2">
+                <SearchableMultiSelect
+                  label="Personajes Autorizados a Acceder al Clan"
+                  value={formData.config_iniciales?.personajes_permitidos || []}
+                  options={characters.map(c => ({ label: c.nombre_ninja, value: c.id }))}
+                  onChange={(val) => {
+                    const permitidos = val ? (Array.isArray(val) ? val.map(Number) : [Number(val)]) : [];
+                    updateField('config_iniciales', {
+                      ...formData.config_iniciales,
+                      personajes_permitidos: permitidos
+                    });
+                  }}
+                  placeholder="BUSCAR PERSONAJE PARA AUTORIZAR..."
+                />
               </div>
             )}
             <div className="md:col-span-2">

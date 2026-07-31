@@ -7,12 +7,13 @@ import { MasterServerService } from '@/services/supabase/master.server.service';
 export default async function AdminRamasPage() {
   const supabase = await createClient();
 
-  const [ramas, aldeas, subEspecialidades, entrenamientos, { data: rasgosData }] = await Promise.all([
+  const [ramas, aldeas, subEspecialidades, entrenamientos, { data: rasgosData }, { data: charsData }] = await Promise.all([
     MasterServerService.getAdminRamas(supabase),
     MasterServerService.getAldeasActivas(supabase),
     MasterServerService.getAdminSubEspecialidades(supabase),
     MasterServerService.getAdminEntrenamientos(supabase),
-    supabase.from('info_rasgos').select('id, nombre').eq('activo', true).order('nombre')
+    supabase.from('info_rasgos').select('id, nombre').eq('activo', true).order('nombre'),
+    supabase.from('reg_characters').select('id, nombre_ninja').eq('activo', true).order('nombre_ninja')
   ]);
 
   return (
@@ -40,6 +41,7 @@ export default async function AdminRamasPage() {
         initialSubs={subEspecialidades}
         initialEntrenamientos={entrenamientos}
         rasgos={(rasgosData || []) as any[]}
+        characters={charsData || []}
       />
     </div>
   );

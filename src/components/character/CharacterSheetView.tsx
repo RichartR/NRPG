@@ -752,7 +752,13 @@ export function CharacterSheetView({
     const otherRama = otherPr ? (masters.ramas || []).find((r: any) => r.id === Number(otherPr.rama_id)) : null;
     const otherIsClan = otherRama?.tipo === 'clan';
 
-    return filteredRamas.map((r: any) => {
+    return filteredRamas
+      .sort((a: any, b: any) => {
+        if (a.tipo === 'clan' && b.tipo !== 'clan') return -1;
+        if (a.tipo !== 'clan' && b.tipo === 'clan') return 1;
+        return a.nombre.localeCompare(b.nombre, 'es');
+      })
+      .map((r: any) => {
       const isClan = r.tipo === 'clan';
       if (!isClan) {
         return {
@@ -764,24 +770,31 @@ export function CharacterSheetView({
 
       const activeCount = occupancy.countByClan[r.id] || 0;
       const C = occupancy.cuposMaximosAldea;
-      const limit = (r.es_especial ? 2 : 4) + Math.floor((C - 10) / 5);
+      const limit = 4 + Math.floor((C - 10) / 5);
 
       const isOriginalClan = !isNew && originalCharacter?.personajes_ramas?.some((pr: any) => pr.rama_id === r.id);
       const isFull = activeCount >= limit;
+
+      const isSpecial = r.es_especial === true;
+      if (isSpecial) {
+        const permitidos: number[] = r.config_iniciales?.personajes_permitidos || [];
+        const charId = Number(character?.id);
+        const isAuthorized = !!charId && permitidos.includes(charId);
+        // Si no está autorizado, no mostrar el clan en el selector
+        if (!isAuthorized) return null;
+      }
+
       const shouldDisable = (isFull && !isOriginalClan) || otherIsClan;
 
-      const tagEspecial = r.es_especial ? ' [Especial]' : '';
-      let label = `${r.nombre}${tagEspecial}\n(${activeCount}/${limit} cupos)${isFull && !isOriginalClan ? ' - LLENO' : ''}`;
-      if (otherIsClan) {
-        label = `${r.nombre}${tagEspecial} - LÍMITE DE 1 CLAN`;
-      }
+      const tagEspecial = isSpecial ? ' [Especial]' : '';
+      const label = `${r.nombre}${tagEspecial}\n(${activeCount}/${limit} cupos)${isFull && !isOriginalClan ? ' - LLENO' : ''}${otherIsClan ? ' - LÍMITE DE 1 CLAN' : ''}`;
 
       return {
         label,
         value: r.id,
         disabled: shouldDisable
       };
-    });
+    }).filter(Boolean);
   };
 
   // Cálculos Memoizados para evitar trabajo redundante en cada render

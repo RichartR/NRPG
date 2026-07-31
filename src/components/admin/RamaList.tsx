@@ -8,7 +8,7 @@ import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { searchAny } from '@/lib/utils/search';
 
-export default function RamaList({ initialRamas, aldeas, rasgos }: { initialRamas: any[], aldeas: any[], rasgos: any[] }) {
+export default function RamaList({ initialRamas, aldeas, rasgos, characters = [] }: { initialRamas: any[], aldeas: any[], rasgos: any[], characters?: any[] }) {
   const [editingRama, setEditingRama] = useState<any>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
@@ -32,11 +32,19 @@ export default function RamaList({ initialRamas, aldeas, rasgos }: { initialRama
   };
 
   const filteredRamas = useMemo(() => {
-    return initialRamas.filter(rama => {
-      const matchesTab = activeTab === 'active' ? rama.activo : !rama.activo;
-      const matchesSearch = searchAny(search, [rama.nombre, rama.tipo]);
-      return matchesTab && matchesSearch;
-    });
+    return initialRamas
+      .filter(rama => {
+        const matchesTab = activeTab === 'active' ? rama.activo : !rama.activo;
+        const matchesSearch = searchAny(search, [rama.nombre, rama.tipo]);
+        return matchesTab && matchesSearch;
+      })
+      .sort((a, b) => {
+        // Clanes primero, ramas después
+        if (a.tipo === 'clan' && b.tipo !== 'clan') return -1;
+        if (a.tipo !== 'clan' && b.tipo === 'clan') return 1;
+        // Mismo tipo: orden alfabético
+        return a.nombre.localeCompare(b.nombre, 'es');
+      });
   }, [initialRamas, activeTab, search]);
 
   return (
@@ -203,6 +211,7 @@ export default function RamaList({ initialRamas, aldeas, rasgos }: { initialRama
           rama={editingRama} 
           aldeas={aldeas}
           rasgos={rasgos}
+          characters={characters}
           onCancel={() => {
             setEditingRama(null);
             setIsAdding(false);
