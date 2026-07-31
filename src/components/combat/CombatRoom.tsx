@@ -47,12 +47,15 @@ interface Participant {
 }
 
 export default function CombatRoom({ roomId }: { roomId: string }) {
-  const { activeCharacter, fetchActiveCharacter } = useCharacterStore();
+  const { activeCharacter, fetchActiveCharacter, loading: characterLoading } = useCharacterStore();
   const addToast = useToastStore(state => state.addToast);
   const confirm = useConfirmStore(state => state.confirm);
   const searchParams = useSearchParams();
   const isEventMode = roomId.endsWith('-E') || (searchParams ? searchParams.get('mode') === 'event' : false);
   const canUseCombatMusic = isEventMode;
+
+  const [userProfile, setUserProfile] = useState<{ id: string; username: string; url_avatar?: string } | null>(null);
+  const [rolesLoaded, setRolesLoaded] = useState(false);
 
   // Participant presence records
   const [participants, setParticipants] = useState<Record<string, Participant>>({});
@@ -260,13 +263,22 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const profile = await ProfileService.getProfile(user.id);
-          const roles = profile?.roles || [];
-          setUserRoles(roles);
-          const hasRole = roles.some((r: string) => ['admin', 'moderador', 'narrador'].includes(r));
-          setIsAdminOrNarrator(!!hasRole);
+          if (profile) {
+            setUserProfile({
+              id: profile.id,
+              username: profile.username || 'Staff',
+              url_avatar: profile.url_avatar || profile.url_img
+            });
+            const roles = profile.roles || [];
+            setUserRoles(roles);
+            const hasRole = roles.some((r: string) => ['admin', 'moderador', 'narrador'].includes(r));
+            setIsAdminOrNarrator(!!hasRole);
+          }
         }
       } catch (err) {
         void err;
+      } finally {
+        setRolesLoaded(true);
       }
     }
     loadUserRoles();
@@ -481,14 +493,22 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   useEffect(() => { tempCharactersRef.current = tempCharacters; }, [tempCharacters]);
   useEffect(() => { myActiveTecnicasRef.current = myActiveTecnicas; }, [myActiveTecnicas]);
 
+  const userProfileRef = useRef(userProfile);
+  useEffect(() => { userProfileRef.current = userProfile; }, [userProfile]);
+
+  const currentActorId = activeCharacter ? String(activeCharacter.id) : userProfile?.id;
+  const currentActorName = activeCharacter?.nombre_ninja || userProfile?.username || 'Staff';
+  const currentActorImg = activeCharacter?.url_img || userProfile?.url_avatar || '';
+
   // Supabase Presence and Broadcast Subscriptions
   useEffect(() => {
-    if (!activeCharacter) return;
+    const actorId = activeCharacter ? String(activeCharacter.id) : userProfile?.id;
+    if (!actorId) return;
 
     const channelName = `room_${roomId}`;
     const channel = supabase.channel(channelName, {
       config: {
-        presence: { key: String(activeCharacter.id) },
+        presence: { key: actorId },
         broadcast: { self: false }
       },
     });
@@ -511,13 +531,13 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         setParticipants(activeParticipants);
       })
       .on('broadcast', { event: 'combat_log' }, ({ payload }) => {
-        if (payload.senderId !== String(activeCharacterRef.current?.id)) {
+        const myActorId = activeCharacterRef.current ? String(activeCharacterRef.current.id) : userProfileRef.current?.id;
+        if (payload.senderId !== myActorId) {
           setLogs(prev => [...prev, payload.message].slice(-40));
         }
       })
       .on('broadcast', { event: 'request_combat_state' }, ({ payload }) => {
         const requesterId = payload?.requesterId;
-        // Find active participants to choose a single responder
         const presenceState = channel.presenceState();
         const activeResponders = Object.keys(presenceState).filter(key => {
           if (key === requesterId) return false;
@@ -528,8 +548,9 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         }).sort();
 
         const firstResponder = activeResponders[0];
+        const myActorId = activeCharacterRef.current ? String(activeCharacterRef.current.id) : userProfileRef.current?.id;
 
-        if (firstResponder === String(activeCharacter.id)) {
+        if (firstResponder === myActorId) {
           channel.send({
             type: 'broadcast',
             event: 'combat_state_update',
@@ -542,13 +563,14 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
               tempCharacters: tempCharactersRef.current,
               activeMusicVideoId: activeMusicVideoIdRef.current,
               musicIsPlaying: musicIsPlayingRef.current,
-              senderId: String(activeCharacter.id)
+              senderId: myActorId
             }
           });
         }
       })
       .on('broadcast', { event: 'combat_state_update' }, ({ payload }) => {
-        if (payload.senderId !== String(activeCharacterRef.current?.id)) {
+        const myActorId = activeCharacterRef.current ? String(activeCharacterRef.current.id) : userProfileRef.current?.id;
+        if (payload.senderId !== myActorId) {
           setTurnQueue(payload.turnQueue);
           setCurrentTurnIndex(payload.currentTurnIndex);
           setRondaActual(payload.rondaActual);
@@ -580,18 +602,21 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         }
       })
       .on('broadcast', { event: 'temp_character_update' }, ({ payload }) => {
-        if (payload.senderId !== String(activeCharacterRef.current?.id)) {
+        const myActorId = activeCharacterRef.current ? String(activeCharacterRef.current.id) : userProfileRef.current?.id;
+        if (payload.senderId !== myActorId) {
           setTempCharacters(payload.tempCharacters);
         }
       })
       .on('broadcast', { event: 'music_update' }, ({ payload }) => {
-        if (isEventMode && payload.senderId !== String(activeCharacterRef.current?.id)) {
+        const myActorId = activeCharacterRef.current ? String(activeCharacterRef.current.id) : userProfileRef.current?.id;
+        if (isEventMode && payload.senderId !== myActorId) {
           setActiveMusicVideoId(payload.videoId ?? null);
           setMusicIsPlaying(true);
         }
       })
       .on('broadcast', { event: 'music_control' }, ({ payload }) => {
-        if (isEventMode && payload.senderId !== String(activeCharacterRef.current?.id)) {
+        const myActorId = activeCharacterRef.current ? String(activeCharacterRef.current.id) : userProfileRef.current?.id;
+        if (isEventMode && payload.senderId !== myActorId) {
           if (payload.action === 'play') {
             setMusicIsPlaying(true);
             ytPlayerRef.current?.contentWindow?.postMessage(
@@ -613,12 +638,15 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         }
       })
       .on('broadcast', { event: 'request_presence_update' }, () => {
-        if (channelRef.current && activeCharacterRef.current && localStateRef.current) {
+        const myActorId = activeCharacterRef.current ? String(activeCharacterRef.current.id) : userProfileRef.current?.id;
+        const myName = activeCharacterRef.current?.nombre_ninja || userProfileRef.current?.username || 'Staff';
+        const myImg = activeCharacterRef.current?.url_img || userProfileRef.current?.url_avatar || '';
+        if (channelRef.current && myActorId) {
           const payloadTrack = {
-            user_id: String(activeCharacterRef.current.id),
-            nombre: activeCharacterRef.current.nombre_ninja,
-            url_img: activeCharacterRef.current.url_img || '',
-            estado: localStateRef.current,
+            user_id: myActorId,
+            nombre: myName,
+            url_img: myImg,
+            estado: localStateRef.current || { vit: 0, maxVit: 0, ch: 0, maxCh: 0, vel: 0, kawarimi: 0, maxKawarimi: 0 },
             bando: myBandoRef.current,
             isInCombat: myIsInCombatRef.current,
             cooldowns: Object.keys(myCooldownsRef.current).map(Number).map(techId => {
@@ -637,12 +665,12 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                 cdRounds: myActiveTecnicasRef.current[techId].cdRounds
               };
             }),
-            rasgos: activeCharacterRef.current.personajes_rasgos?.map(r => ({
+            rasgos: activeCharacterRef.current?.personajes_rasgos?.map(r => ({
               id: r.info_rasgos?.id || r.rasgo_id,
               nombre: r.info_rasgos?.nombre || 'Rasgo',
               usado: localStateRef.current?.usedTraits?.[r.info_rasgos?.id || r.rasgo_id] || false
             })) || [],
-            equipo: activeCharacterRef.current.personajes_inventario?.filter(pi => pi.equipado).map(pi => ({
+            equipo: activeCharacterRef.current?.personajes_inventario?.filter(pi => pi.equipado).map(pi => ({
               id: pi.info_glosario?.id || pi.item_id,
               nombre: pi.info_glosario?.nombre_es || 'Objeto'
             })) || []
@@ -659,7 +687,6 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         setTempCharacters({});
         setActiveMusicVideoId(null);
         setMusicIsPlaying(true);
-        // Clear localStorage on reset
         const globalStorageKey = `combat_room_global_${roomId}`;
         localStorage.removeItem(globalStorageKey);
         if (activeCharacterRef.current) {
@@ -670,11 +697,10 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           setIsSubscribed(true);
-          // Request the current global combat state from anyone in the room
           channel.send({
             type: 'broadcast',
             event: 'request_combat_state',
-            payload: { requesterId: String(activeCharacter.id) }
+            payload: { requesterId: actorId }
           });
         } else {
           setIsSubscribed(false);
@@ -686,20 +712,23 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
       channelRef.current = null;
       setIsSubscribed(false);
     };
-  }, [roomId, activeCharacter?.id]);
+  }, [roomId, activeCharacter?.id, userProfile?.id]);
 
   // Track presence reactively when stats, bando, or combat status changes (only after subscription is active)
   useEffect(() => {
-    if (isSubscribed && channelRef.current && activeCharacter && localState) {
+    const myActorId = activeCharacter ? String(activeCharacter.id) : userProfile?.id;
+    const myName = activeCharacter?.nombre_ninja || userProfile?.username || 'Staff';
+    const myImg = activeCharacter?.url_img || userProfile?.url_avatar || '';
+    if (isSubscribed && channelRef.current && myActorId) {
       const payload = {
-        user_id: String(activeCharacter.id),
-        nombre: activeCharacter.nombre_ninja,
-        url_img: activeCharacter.url_img || '',
-        estado: localState,
+        user_id: myActorId,
+        nombre: myName,
+        url_img: myImg,
+        estado: localState || { vit: 0, maxVit: 0, ch: 0, maxCh: 0, vel: 0, kawarimi: 0, maxKawarimi: 0 },
         bando: myBando,
         isInCombat: myIsInCombat,
         cooldowns: Object.keys(myCooldowns).map(Number).map(techId => {
-          const pt = activeCharacter.personajes_tecnicas?.find(t => t.tecnica_id === techId);
+          const pt = activeCharacter?.personajes_tecnicas?.find(t => t.tecnica_id === techId);
           return {
             id: techId,
             nombre: pt?.info_glosario?.nombre_jp || pt?.info_glosario?.nombre_es || 'Técnica',
@@ -707,19 +736,19 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
           };
         }),
         tecnicasActivas: Object.keys(myActiveTecnicas).map(Number).map(techId => {
-          const pt = activeCharacter.personajes_tecnicas?.find(t => t.tecnica_id === techId);
+          const pt = activeCharacter?.personajes_tecnicas?.find(t => t.tecnica_id === techId);
           return {
             id: techId,
             nombre: pt?.info_glosario?.nombre_jp || pt?.info_glosario?.nombre_es || 'Técnica',
             cdRounds: myActiveTecnicas[techId].cdRounds
           };
         }),
-        rasgos: activeCharacter.personajes_rasgos?.map(r => ({
+        rasgos: activeCharacter?.personajes_rasgos?.map(r => ({
           id: r.info_rasgos?.id || r.rasgo_id,
           nombre: r.info_rasgos?.nombre || 'Rasgo',
-          usado: localState.usedTraits?.[r.info_rasgos?.id || r.rasgo_id] || false
+          usado: localState?.usedTraits?.[r.info_rasgos?.id || r.rasgo_id] || false
         })) || [],
-        equipo: activeCharacter.personajes_inventario?.filter(pi => pi.equipado).map(pi => ({
+        equipo: activeCharacter?.personajes_inventario?.filter(pi => pi.equipado).map(pi => ({
           id: pi.info_glosario?.id || pi.item_id,
           nombre: pi.info_glosario?.nombre_es || 'Objeto'
         })) || []
@@ -730,6 +759,8 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   }, [
     isSubscribed,
     activeCharacter?.id,
+    userProfile?.id,
+    userProfile?.username,
     activeCharacter?.personajes_rasgos,
     activeCharacter?.personajes_inventario,
     localState,
@@ -739,40 +770,41 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     myActiveTecnicas
   ]);
 
+  const sendBroadcast = (event: string, payload: any) => {
+    if (!channelRef.current || !currentActorId) return;
+    if (isSubscribed && channelRef.current.state === 'joined') {
+      channelRef.current.send({
+        type: 'broadcast',
+        event,
+        payload
+      });
+    } else if (typeof channelRef.current.httpSend === 'function') {
+      channelRef.current.httpSend(event, payload);
+    }
+  };
+
   const addLog = async (message: string) => {
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     const formatted = `[${time}] ${message}`;
     setLogs(prev => [...prev, formatted].slice(-40));
 
-    if (channelRef.current && activeCharacter) {
-      channelRef.current.send({
-        type: 'broadcast',
-        event: 'combat_log',
-        payload: {
-          message: formatted,
-          senderId: String(activeCharacter.id)
-        }
-      });
-    }
+    sendBroadcast('combat_log', {
+      message: formatted,
+      senderId: currentActorId
+    });
   };
 
   const broadcastGlobalState = (queue: string[], index: number, round: number, started: boolean, temps?: Record<string, Participant>) => {
-    if (channelRef.current && activeCharacter) {
-      channelRef.current.send({
-        type: 'broadcast',
-        event: 'combat_state_update',
-        payload: {
-          turnQueue: queue,
-          currentTurnIndex: index,
-          rondaActual: round,
-          combatStarted: started,
-          tempCharacters: temps ?? tempCharactersRef.current,
-          activeMusicVideoId: activeMusicVideoIdRef.current,
-          musicIsPlaying: musicIsPlayingRef.current,
-          senderId: String(activeCharacter.id)
-        }
-      });
-    }
+    sendBroadcast('combat_state_update', {
+      turnQueue: queue,
+      currentTurnIndex: index,
+      rondaActual: round,
+      combatStarted: started,
+      tempCharacters: temps ?? tempCharactersRef.current,
+      activeMusicVideoId: activeMusicVideoIdRef.current,
+      musicIsPlaying: musicIsPlayingRef.current,
+      senderId: currentActorId
+    });
   };
 
   const extractYoutubeId = (url: string): string | null => {
@@ -785,16 +817,10 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
 
   const broadcastMusic = (videoId: string | null) => {
     if (!canUseCombatMusic) return;
-    if (channelRef.current && activeCharacter) {
-      channelRef.current.send({
-        type: 'broadcast',
-        event: 'music_update',
-        payload: {
-          videoId,
-          senderId: String(activeCharacter.id)
-        }
-      });
-    }
+    sendBroadcast('music_update', {
+      videoId,
+      senderId: currentActorId
+    });
   };
 
   const updateGlobalCombatState = (queue: string[], index: number, round: number, started: boolean) => {
@@ -806,16 +832,10 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   };
 
   const broadcastTempCharacters = (temps: Record<string, Participant>) => {
-    if (channelRef.current && activeCharacter) {
-      channelRef.current.send({
-        type: 'broadcast',
-        event: 'temp_character_update',
-        payload: {
-          tempCharacters: temps,
-          senderId: String(activeCharacter.id)
-        }
-      });
-    }
+    sendBroadcast('temp_character_update', {
+      tempCharacters: temps,
+      senderId: currentActorId
+    });
   };
 
   const createTempCharacter = (tempChar: Participant) => {
@@ -994,9 +1014,9 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     setMyActiveTecnicas({});
     setTempCharacters(newTemps);
     addLog(`El combate ha sido reiniciado por completo.`);
-    if (channelRef.current && activeCharacter) {
+    if (channelRef.current && currentActorId) {
       channelRef.current.httpSend('combat_reset', {
-        senderId: String(activeCharacter.id)
+        senderId: currentActorId
       });
     }
 
@@ -1010,32 +1030,32 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   };
 
   const forceSync = () => {
-    if (channelRef.current && activeCharacter) {
+    if (channelRef.current && currentActorId) {
       // 1. Request the latest global state
       channelRef.current.send({
         type: 'broadcast',
         event: 'request_combat_state',
-        payload: { requesterId: String(activeCharacter.id) }
+        payload: { requesterId: currentActorId }
       });
       // 2. Request other players to broadcast/re-track their presence
       channelRef.current.send({
         type: 'broadcast',
         event: 'request_presence_update',
-        payload: { senderId: String(activeCharacter.id) }
+        payload: { senderId: currentActorId }
       });
     }
 
     // 3. Track ourselves immediately to publish/refresh our status for everyone
-    if (isSubscribed && channelRef.current && activeCharacter && localState) {
+    if (isSubscribed && channelRef.current && currentActorId) {
       const payload = {
-        user_id: String(activeCharacter.id),
-        nombre: activeCharacter.nombre_ninja,
-        url_img: activeCharacter.url_img || '',
-        estado: localState,
+        user_id: currentActorId,
+        nombre: currentActorName,
+        url_img: currentActorImg,
+        estado: localState || { vit: 0, maxVit: 0, ch: 0, maxCh: 0, vel: 0, kawarimi: 0, maxKawarimi: 0 },
         bando: myBando,
         isInCombat: myIsInCombat,
         cooldowns: Object.keys(myCooldowns).map(Number).map(techId => {
-          const pt = activeCharacter.personajes_tecnicas?.find(t => t.tecnica_id === techId);
+          const pt = activeCharacter?.personajes_tecnicas?.find(t => t.tecnica_id === techId);
           return {
             id: techId,
             nombre: pt?.info_glosario?.nombre_jp || pt?.info_glosario?.nombre_es || 'Técnica',
@@ -1043,19 +1063,19 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
           };
         }),
         tecnicasActivas: Object.keys(myActiveTecnicas).map(Number).map(techId => {
-          const pt = activeCharacter.personajes_tecnicas?.find(t => t.tecnica_id === techId);
+          const pt = activeCharacter?.personajes_tecnicas?.find(t => t.tecnica_id === techId);
           return {
             id: techId,
             nombre: pt?.info_glosario?.nombre_jp || pt?.info_glosario?.nombre_es || 'Técnica',
             cdRounds: myActiveTecnicas[techId].cdRounds
           };
         }),
-        rasgos: activeCharacter.personajes_rasgos?.map(r => ({
+        rasgos: activeCharacter?.personajes_rasgos?.map(r => ({
           id: r.info_rasgos?.id || r.rasgo_id,
           nombre: r.info_rasgos?.nombre || 'Rasgo',
-          usado: localState.usedTraits?.[r.info_rasgos?.id || r.rasgo_id] || false
+          usado: localState?.usedTraits?.[r.info_rasgos?.id || r.rasgo_id] || false
         })) || [],
-        equipo: activeCharacter.personajes_inventario?.filter(pi => pi.equipado).map(pi => ({
+        equipo: activeCharacter?.personajes_inventario?.filter(pi => pi.equipado).map(pi => ({
           id: pi.info_glosario?.id || pi.item_id,
           nombre: pi.info_glosario?.nombre_es || 'Objeto'
         })) || []
@@ -1348,13 +1368,54 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     }
   };
 
-  if (!activeCharacter) {
+  if (characterLoading || !rolesLoaded) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center p-8">
         <div className="w-16 h-16 border-4 border-oro/10 border-t-oro rounded-full animate-spin mb-8" />
         <h2 className="text-oro font-black uppercase tracking-[0.4em] text-xs xl:text-sm animate-pulse text-center">
           CARGANDO EXPEDIENTE NINJA...
         </h2>
+      </div>
+    );
+  }
+
+  if (!activeCharacter && !isAdminOrNarrator) {
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 relative overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-20 pointer-events-none"
+          style={{
+            backgroundImage: `url('/assets/ui/bg-combat/bg-combat-${bgNumber}.png')`,
+            filter: 'blur(4px)'
+          }}
+        />
+        <div className="ninja-card-oro p-8 max-w-md w-full text-center relative z-10 space-y-6">
+          <div className="w-16 h-16 mx-auto rounded-full bg-rojo-sangre/10 border border-rojo-sangre/30 flex items-center justify-center">
+            <Users className="w-8 h-8 text-rojo-sangre" />
+          </div>
+          <div>
+            <h2 className="ninja-title text-xl font-black uppercase tracking-wider mb-2 text-oro">
+              PERSONAJE REQUERIDO
+            </h2>
+            <p className="text-xs text-oro/70 leading-relaxed font-sans">
+              Para acceder a las salas de combate necesitas tener un personaje activo seleccionado en tu cuenta.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <Link
+              href="/crear-ficha"
+              className="ninja-btn-oro flex-1 py-2.5 text-xs font-black uppercase text-center block"
+            >
+              Crear Personaje
+            </Link>
+            <Link
+              href="/"
+              className="ninja-btn-ghost flex-1 py-2.5 text-xs font-black uppercase text-center block"
+            >
+              Ir al Inicio
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
@@ -1428,13 +1489,51 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     );
   }
 
-  // Group participants by bando (merge real participants + temp characters)
-  const allParticipantsMap = { ...participants, ...tempCharacters };
+  // Group participants by bando (merge real participants + local participant + temp characters)
+  const localParticipant: Participant | null = currentActorId ? {
+    user_id: currentActorId,
+    nombre: currentActorName,
+    url_img: currentActorImg,
+    estado: localState || { vit: 0, maxVit: 0, ch: 0, maxCh: 0, vel: 0, kawarimi: 0, maxKawarimi: 0 },
+    bando: myBando,
+    isInCombat: myIsInCombat,
+    cooldowns: Object.keys(myCooldowns).map(Number).map(techId => {
+      const pt = activeCharacter?.personajes_tecnicas?.find(t => t.tecnica_id === techId);
+      return {
+        id: techId,
+        nombre: pt?.info_glosario?.nombre_jp || pt?.info_glosario?.nombre_es || 'Técnica',
+        reusableAtRound: myCooldowns[techId]
+      };
+    }),
+    tecnicasActivas: Object.keys(myActiveTecnicas).map(Number).map(techId => {
+      const pt = activeCharacter?.personajes_tecnicas?.find(t => t.tecnica_id === techId);
+      return {
+        id: techId,
+        nombre: pt?.info_glosario?.nombre_jp || pt?.info_glosario?.nombre_es || 'Técnica',
+        cdRounds: myActiveTecnicas[techId].cdRounds
+      };
+    }),
+    rasgos: activeCharacter?.personajes_rasgos?.map(r => ({
+      id: r.info_rasgos?.id || r.rasgo_id,
+      nombre: r.info_rasgos?.nombre || 'Rasgo',
+      usado: localState?.usedTraits?.[r.info_rasgos?.id || r.rasgo_id] || false
+    })) || [],
+    equipo: activeCharacter?.personajes_inventario?.filter(pi => pi.equipado).map(pi => ({
+      id: pi.info_glosario?.id || pi.item_id,
+      nombre: pi.info_glosario?.nombre_es || 'Objeto'
+    })) || []
+  } : null;
+
+  const allParticipantsMap: Record<string, Participant> = {
+    ...participants,
+    ...(localParticipant ? { [localParticipant.user_id]: localParticipant } : {}),
+    ...tempCharacters
+  };
   const bandoAParticipants = Object.values(allParticipantsMap).filter(p => p.bando === 'A');
   const bandoBParticipants = Object.values(allParticipantsMap).filter(p => p.bando === 'B');
-  const spectatorParticipants = Object.values(participants).filter(p => p.bando === null);
+  const spectatorParticipants = Object.values(allParticipantsMap).filter(p => p.bando === null);
 
-  const isMyTurn = combatStarted && turnQueue.length > 0 && turnQueue[currentTurnIndex] === String(activeCharacter.id);
+  const isMyTurn = combatStarted && turnQueue.length > 0 && turnQueue[currentTurnIndex] === (activeCharacter ? String(activeCharacter.id) : userProfile?.id);
 
   return (
     <div className="min-h-screen flex flex-col relative text-oro selection:bg-oro/20 overflow-hidden">
@@ -1877,7 +1976,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                                         const newKawarimi = localState.kawarimi === num ? num - 1 : num;
                                         const updated = { ...localState, kawarimi: newKawarimi };
                                         setLocalState(updated);
-                                        addLog(`**${activeCharacter.nombre_ninja}** marca Kawarimi ${newKawarimi >= num ? 'usado' : 'recuperado'} (${newKawarimi}/${localState.maxKawarimi}).`);
+                                        addLog(`**${activeCharacter?.nombre_ninja || p.nombre}** marca Kawarimi ${newKawarimi >= num ? 'usado' : 'recuperado'} (${newKawarimi}/${localState.maxKawarimi}).`);
                                       }}
                                       className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center text-[8px] transition-all font-black ${isUsed
                                         ? 'bg-red-500/20 border-red-500 text-red-500'
@@ -1951,7 +2050,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                                           const updatedUsed = { ...currentUsed, [r.id]: !currentUsed[r.id] };
                                           const updated = { ...localState, usedTraits: updatedUsed };
                                           setLocalState(updated);
-                                          addLog(`**${activeCharacter.nombre_ninja}** marca el rasgo **${r.nombre}** como ${updatedUsed[r.id] ? 'usado' : 'disponible'}.`);
+                                          addLog(`**${activeCharacter?.nombre_ninja || p.nombre}** marca el rasgo **${r.nombre}** como ${updatedUsed[r.id] ? 'usado' : 'disponible'}.`);
                                         }
                                       }}
                                       className={`px-1.5 py-0.5 border text-[9px] font-black transition-all flex items-center gap-1 rounded-sm ${r.usado
@@ -2062,15 +2161,25 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
 
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-3 mb-6">
-                <button
-                  onClick={toggleJoinCombat}
-                  className={`px-5 py-2.5 text-xs ${myIsInCombat
-                    ? 'ninja-btn-rojo'
-                    : 'ninja-btn-oro'
-                    }`}
-                >
-                  {myIsInCombat ? 'Salir del Combate' : 'Unirse al Combate'}
-                </button>
+                {!activeCharacter ? (
+                  <button
+                    disabled
+                    className="px-5 py-2.5 text-xs bg-black/40 border border-oro/10 text-oro/40 cursor-not-allowed rounded-sm"
+                    title="Los usuarios sin personaje activo solo pueden estar como espectadores en la sala."
+                  >
+                    Modo Espectador (Sin personaje)
+                  </button>
+                ) : (
+                  <button
+                    onClick={toggleJoinCombat}
+                    className={`px-5 py-2.5 text-xs ${myIsInCombat
+                      ? 'ninja-btn-rojo'
+                      : 'ninja-btn-oro'
+                      }`}
+                  >
+                    {myIsInCombat ? 'Salir del Combate' : 'Unirse al Combate'}
+                  </button>
+                )}
 
                 {!combatStarted ? (
                   <button
@@ -2415,7 +2524,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                                         const newKawarimi = localState.kawarimi === num ? num - 1 : num;
                                         const updated = { ...localState, kawarimi: newKawarimi };
                                         setLocalState(updated);
-                                        addLog(`**${activeCharacter.nombre_ninja}** marca Kawarimi ${newKawarimi >= num ? 'usado' : 'recuperado'} (${newKawarimi}/${localState.maxKawarimi}).`);
+                                        addLog(`**${activeCharacter?.nombre_ninja || p.nombre}** marca Kawarimi ${newKawarimi >= num ? 'usado' : 'recuperado'} (${newKawarimi}/${localState.maxKawarimi}).`);
                                       }}
                                       className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center text-[8px] transition-all font-black ${isUsed
                                         ? 'bg-red-500/20 border-red-500 text-red-500'
@@ -2487,7 +2596,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                                           const currentUsed = localState.usedTraits || {};
                                           const updatedUsed = { ...currentUsed, [r.id]: !currentUsed[r.id] };
                                           setLocalState({ ...localState, usedTraits: updatedUsed });
-                                          addLog(`**${activeCharacter.nombre_ninja}** marca el rasgo **${r.nombre}** como ${updatedUsed[r.id] ? 'usado' : 'disponible'}.`);
+                                          addLog(`**${activeCharacter?.nombre_ninja || p.nombre}** marca el rasgo **${r.nombre}** como ${updatedUsed[r.id] ? 'usado' : 'disponible'}.`);
                                         }
                                       }}
                                       className={`px-1.5 py-0.5 border text-[9px] font-black transition-all flex items-center gap-1 rounded-sm ${r.usado ? 'bg-red-500/10 border-red-500/30 text-red-400 line-through' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'} ${canToggle ? 'cursor-pointer' : 'cursor-default'}`}
@@ -2588,582 +2697,588 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         )}
 
         {/* BOTTOM PANEL: PLAYER CONSOLE CONTROLS */}
-        <section className="ninja-card-oro p-6 md:p-8 relative" style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}>
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+        {!activeCharacter ? (
+          <div className="ninja-card-oro p-6 text-center text-oro/40 text-xs font-black uppercase tracking-widest">
+            Modo Espectador / Staff — Sin personaje activo seleccionado
+          </div>
+        ) : (
+          <section className="ninja-card-oro p-6 md:p-8 relative" style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}>
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
 
-            {/* 1. MY STATS */}
-            <div className="space-y-5 xl:col-span-3">
-              <h3 className="font-black text-sm uppercase tracking-[0.2em] border-b border-oro/10 pb-3 flex items-center gap-2.5">
-                TU ESTADO EN COMBATE
-              </h3>
+              {/* 1. MY STATS */}
+              <div className="space-y-5 xl:col-span-3">
+                <h3 className="font-black text-sm uppercase tracking-[0.2em] border-b border-oro/10 pb-3 flex items-center gap-2.5">
+                  TU ESTADO EN COMBATE
+                </h3>
 
-              {localState && (
-                <div className="space-y-5">
-                  <div>
-                    <div className="flex justify-between text-xs font-black mb-1.5">
-                      <span className="text-red-400">VITALIDAD (VIT)</span>
-                      <span>{localState.vit} / {localState.maxVit}</span>
-                    </div>
-                    <div className="h-4 bg-black/60 border border-oro/15 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-red-600 to-red-500 transition-all duration-300" style={{ width: `${(localState.vit / localState.maxVit) * 100}%` }} />
-                    </div>
-                  </div>
-
-                  {!isEventMode && (
+                {localState && (
+                  <div className="space-y-5">
                     <div>
                       <div className="flex justify-between text-xs font-black mb-1.5">
-                        <span className="text-blue-400">CHAKRA (CH)</span>
-                        <span>{localState.ch} / {localState.maxCh}</span>
+                        <span className="text-red-400">VITALIDAD (VIT)</span>
+                        <span>{localState.vit} / {localState.maxVit}</span>
                       </div>
                       <div className="h-4 bg-black/60 border border-oro/15 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-blue-600 to-blue-500 transition-all duration-300" style={{ width: `${(localState.ch / localState.maxCh) * 100}%` }} />
+                        <div className="h-full bg-gradient-to-r from-red-600 to-red-500 transition-all duration-300" style={{ width: `${(localState.vit / localState.maxVit) * 100}%` }} />
                       </div>
+                    </div>
+
+                    {!isEventMode && (
+                      <div>
+                        <div className="flex justify-between text-xs font-black mb-1.5">
+                          <span className="text-blue-400">CHAKRA (CH)</span>
+                          <span>{localState.ch} / {localState.maxCh}</span>
+                        </div>
+                        <div className="h-4 bg-black/60 border border-oro/15 rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-blue-600 to-blue-500 transition-all duration-300" style={{ width: `${(localState.ch / localState.maxCh) * 100}%` }} />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* VEL and KAWARIMI FOR SELF */}
+                    <div className="flex justify-between items-center text-xs font-black pt-3 border-t border-oro/10">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-amber-500 uppercase tracking-wider">VELOCIDAD:</span>
+                        <span className="text-white text-sm">{localState.vel}</span>
+                      </div>
+                      {!isEventMode && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-emerald-400 uppercase tracking-wider">KAWARIMI:</span>
+                          <div className="flex gap-1.5">
+                            {Array.from({ length: localState.maxKawarimi || 1 }, (_, i) => i + 1).map((num) => {
+                              const isUsed = localState.kawarimi >= num;
+                              return (
+                                <button
+                                  key={num}
+                                  onClick={() => {
+                                    const newKawarimi = localState.kawarimi === num ? num - 1 : num;
+                                    const updated = { ...localState, kawarimi: newKawarimi };
+                                    setLocalState(updated);
+                                    addLog(`**${activeCharacter.nombre_ninja}** marca Kawarimi ${newKawarimi >= num ? 'usado' : 'recuperado'} (${newKawarimi}/${localState.maxKawarimi}).`);
+                                  }}
+                                  className={`w-6 h-6 border rounded-sm flex items-center justify-center text-xs transition-all font-black ${isUsed
+                                    ? 'bg-red-500/20 border-red-500 text-red-500'
+                                    : 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30'
+                                    } cursor-pointer`}
+                                  title={`Marcar Kawarimi ${num} como ${isUsed ? 'disponible' : 'usado'}`}
+                                >
+                                  {isUsed ? '✕' : '✓'}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              {/* 2. STAT ADJUSTMENTS & DICE ROLLS */}
+              <div className="space-y-5 border-l border-r border-oro/10 px-0 xl:px-8 xl:col-span-3">
+                <h3 className="font-black text-sm uppercase tracking-[0.2em] border-b border-oro/10 pb-3 flex items-center gap-2.5">
+                  AJUSTES Y TIRADAS
+                </h3>
+
+                <div className="space-y-4">
+                  {/* Adjust Life (VIT) */}
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="Vida (Cant.)"
+                      value={vitInput}
+                      onChange={(e) => setVitInput(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-1/3 bg-black/50 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all"
+                    />
+                    <button
+                      onClick={handleApplyDamage}
+                      className="ninja-btn-rojo flex-1 py-2 text-xs text-center font-black"
+                    >
+                      Recibir
+                    </button>
+                    <button
+                      onClick={handleApplyHeal}
+                      className="ninja-btn-oro flex-1 py-2 text-xs text-center font-black"
+                    >
+                      Sanar
+                    </button>
+                  </div>
+
+                  {/* Adjust Chakra (CH) */}
+                  {!isEventMode && (
+                    <div className="flex gap-2 pt-3 border-t border-oro/10">
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="Chakra (Cant.)"
+                        value={chInput}
+                        onChange={(e) => setChInput(e.target.value === '' ? '' : Number(e.target.value))}
+                        className="w-1/3 bg-black/50 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all"
+                      />
+                      <button
+                        onClick={handleSpendChakra}
+                        className="ninja-btn-rojo flex-1 py-2 text-xs text-center font-black"
+                      >
+                        Gastar
+                      </button>
+                      <button
+                        onClick={handleRecoverChakra}
+                        className="ninja-btn-oro flex-1 py-2 text-xs text-center font-black"
+                      >
+                        Recuperar
+                      </button>
                     </div>
                   )}
 
-                  {/* VEL and KAWARIMI FOR SELF */}
-                  <div className="flex justify-between items-center text-xs font-black pt-3 border-t border-oro/10">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-amber-500 uppercase tracking-wider">VELOCIDAD:</span>
-                      <span className="text-white text-sm">{localState.vel}</span>
+                  <div className="flex gap-2 pt-3 border-t border-oro/10">
+                    <div className="flex items-center w-2/3 bg-black/50 border border-oro/20 px-3 focus-within:border-oro transition-all">
+                      <span className="text-oro/40 font-mono text-xs mr-2 whitespace-nowrap">{isEventMode ? "Dados (D)" : "Cansancio (D)"}</span>
+                      <input
+                        type="number"
+                        value={dadoInput}
+                        onChange={(e) => setDadoInput(Number(e.target.value))}
+                        className="bg-transparent text-oro text-xs font-black outline-none w-full py-2"
+                      />
                     </div>
-                    {!isEventMode && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-emerald-400 uppercase tracking-wider">KAWARIMI:</span>
-                        <div className="flex gap-1.5">
-                          {Array.from({ length: localState.maxKawarimi || 1 }, (_, i) => i + 1).map((num) => {
-                            const isUsed = localState.kawarimi >= num;
+                    <button
+                      onClick={rollDice}
+                      className="ninja-btn-oro flex-1 py-2 text-xs flex items-center justify-center gap-2 font-black"
+                    >
+                      <Dices className="w-4 h-4 text-rojo-sangre" /> Tirar
+                    </button>
+                  </div>
+
+                  {isEventMode && (
+                    <>
+                      <div className="flex gap-2 pt-3 border-t border-oro/10 justify-between">
+                        <button
+                          onClick={() => setRollMode('normal')}
+                          className={`flex-1 py-1.5 px-3 text-[10px] font-black uppercase tracking-widest transition-all border ${rollMode === 'normal'
+                            ? 'bg-oro text-black border-oro shadow-md shadow-oro/5'
+                            : 'border-oro/10 text-oro/60 bg-black/20'
+                            }`}
+                          style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
+                        >
+                          Normal
+                        </button>
+                        <button
+                          onClick={() => setRollMode('advantage')}
+                          className={`flex-1 py-1.5 px-3 text-[10px] font-black uppercase tracking-widest transition-all border ${rollMode === 'advantage'
+                            ? 'bg-oro text-black border-oro shadow-md shadow-oro/5'
+                            : 'border-oro/10 text-oro/60 bg-black/20'
+                            }`}
+                          style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
+                        >
+                          Ventaja
+                        </button>
+                        <button
+                          onClick={() => setRollMode('disadvantage')}
+                          className={`flex-1 py-1.5 px-3 text-[10px] font-black uppercase tracking-widest transition-all border ${rollMode === 'disadvantage'
+                            ? 'bg-oro text-black border-oro shadow-md shadow-oro/5'
+                            : 'border-oro/10 text-oro/60 bg-black/20'
+                            }`}
+                          style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
+                        >
+                          Desventaja
+                        </button>
+                      </div>
+
+                      {/* Bonificador Temporal */}
+                      <div className="flex items-center justify-between gap-3 pt-3 border-t border-oro/10 animate-in fade-in duration-300">
+                        <span className="text-[10px] font-black text-oro/40 uppercase tracking-wider whitespace-nowrap">Modificador Temporal:</span>
+                        <div className="flex items-center bg-black/50 border border-oro/20 rounded-sm overflow-hidden w-28 px-2 focus-within:border-oro transition-all">
+                          <button
+                            onClick={() => setTempModifier(prev => prev - 1)}
+                            className="text-oro hover:text-white font-black px-1.5 py-1 text-xs select-none"
+                            type="button"
+                          >
+                            -
+                          </button>
+                          <input
+                            type="number"
+                            value={tempModifier}
+                            onChange={(e) => setTempModifier(Number(e.target.value) || 0)}
+                            className="bg-transparent text-center text-white text-xs font-black w-full outline-none py-1 border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          />
+                          <button
+                            onClick={() => setTempModifier(prev => prev + 1)}
+                            className="text-oro hover:text-white font-black px-1.5 py-1 text-xs select-none"
+                            type="button"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+
+                      {isAdminOrNarrator && Object.keys(tempCharacters).length > 0 && (
+                        <div className="pt-3 border-t border-oro/10 flex items-center justify-between gap-3 animate-in fade-in duration-300">
+                          <span className="text-[10px] font-black text-oro/40 uppercase tracking-wider whitespace-nowrap">Tirar Como:</span>
+                          <select
+                            value={rollTargetId}
+                            onChange={(e) => setRollTargetId(e.target.value)}
+                            className="bg-black/50 border border-oro/20 text-oro text-xs font-black px-2 py-1 outline-none focus:border-oro transition-all rounded-sm max-w-[150px]"
+                          >
+                            <option value="self">Mi Ninja ({activeCharacter.nombre_ninja})</option>
+                            {Object.values(tempCharacters).map(tc => (
+                              <option key={tc.user_id} value={tc.user_id}>{tc.nombre}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <div className="pt-3 border-t border-oro/10 space-y-2 animate-in fade-in duration-300">
+                        <span className="text-[10px] font-black text-oro/40 block uppercase ml-1">Tiradas de Atributos (d20)</span>
+                        <div className="grid grid-cols-4 gap-1.5">
+                          {['NIN', 'TAI', 'GEN', 'INT', 'FUE', 'AGI', 'EST', 'SM'].map((s) => {
+                            let val = activeCharacter.stats_base[s as keyof CharacterStats] || 1;
+                            if (rollTargetId !== 'self' && tempCharacters[rollTargetId]) {
+                              val = tempCharacters[rollTargetId].stats_base?.[s] || 1;
+                            }
+                            const mod = getStatModifier(val);
+                            const modSign = mod >= 0 ? `+${mod}` : `${mod}`;
                             return (
                               <button
-                                key={num}
-                                onClick={() => {
-                                  const newKawarimi = localState.kawarimi === num ? num - 1 : num;
-                                  const updated = { ...localState, kawarimi: newKawarimi };
-                                  setLocalState(updated);
-                                  addLog(`**${activeCharacter.nombre_ninja}** marca Kawarimi ${newKawarimi >= num ? 'usado' : 'recuperado'} (${newKawarimi}/${localState.maxKawarimi}).`);
-                                }}
-                                className={`w-6 h-6 border rounded-sm flex items-center justify-center text-xs transition-all font-black ${isUsed
-                                  ? 'bg-red-500/20 border-red-500 text-red-500'
-                                  : 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30'
-                                  } cursor-pointer`}
-                                title={`Marcar Kawarimi ${num} como ${isUsed ? 'disponible' : 'usado'}`}
+                                key={s}
+                                onClick={() => rollStat(s)}
+                                className="bg-black/40 border border-oro/15 hover:border-oro py-1 text-[10px] font-black text-oro hover:bg-oro/10 transition-all flex flex-col items-center justify-center rounded-sm"
+                                title={`Tirar D20 + Modificador de ${s} (${modSign})`}
                               >
-                                {isUsed ? '✕' : '✓'}
+                                <span className="text-white/80">{s}</span>
+                                <span className="text-[9px] text-oro/60 font-bold">{modSign}</span>
                               </button>
                             );
                           })}
                         </div>
                       </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-            {/* 2. STAT ADJUSTMENTS & DICE ROLLS */}
-            <div className="space-y-5 border-l border-r border-oro/10 px-0 xl:px-8 xl:col-span-3">
-              <h3 className="font-black text-sm uppercase tracking-[0.2em] border-b border-oro/10 pb-3 flex items-center gap-2.5">
-                AJUSTES Y TIRADAS
-              </h3>
-
-              <div className="space-y-4">
-                {/* Adjust Life (VIT) */}
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="Vida (Cant.)"
-                    value={vitInput}
-                    onChange={(e) => setVitInput(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-1/3 bg-black/50 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all"
-                  />
-                  <button
-                    onClick={handleApplyDamage}
-                    className="ninja-btn-rojo flex-1 py-2 text-xs text-center font-black"
-                  >
-                    Recibir
-                  </button>
-                  <button
-                    onClick={handleApplyHeal}
-                    className="ninja-btn-oro flex-1 py-2 text-xs text-center font-black"
-                  >
-                    Sanar
-                  </button>
-                </div>
-
-                {/* Adjust Chakra (CH) */}
-                {!isEventMode && (
-                  <div className="flex gap-2 pt-3 border-t border-oro/10">
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="Chakra (Cant.)"
-                      value={chInput}
-                      onChange={(e) => setChInput(e.target.value === '' ? '' : Number(e.target.value))}
-                      className="w-1/3 bg-black/50 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all"
-                    />
-                    <button
-                      onClick={handleSpendChakra}
-                      className="ninja-btn-rojo flex-1 py-2 text-xs text-center font-black"
-                    >
-                      Gastar
-                    </button>
-                    <button
-                      onClick={handleRecoverChakra}
-                      className="ninja-btn-oro flex-1 py-2 text-xs text-center font-black"
-                    >
-                      Recuperar
-                    </button>
-                  </div>
-                )}
-
-                <div className="flex gap-2 pt-3 border-t border-oro/10">
-                  <div className="flex items-center w-2/3 bg-black/50 border border-oro/20 px-3 focus-within:border-oro transition-all">
-                    <span className="text-oro/40 font-mono text-xs mr-2 whitespace-nowrap">{isEventMode ? "Dados (D)" : "Cansancio (D)"}</span>
-                    <input
-                      type="number"
-                      value={dadoInput}
-                      onChange={(e) => setDadoInput(Number(e.target.value))}
-                      className="bg-transparent text-oro text-xs font-black outline-none w-full py-2"
-                    />
-                  </div>
-                  <button
-                    onClick={rollDice}
-                    className="ninja-btn-oro flex-1 py-2 text-xs flex items-center justify-center gap-2 font-black"
-                  >
-                    <Dices className="w-4 h-4 text-rojo-sangre" /> Tirar
-                  </button>
-                </div>
-
-                {isEventMode && (
-                  <>
-                    <div className="flex gap-2 pt-3 border-t border-oro/10 justify-between">
-                      <button
-                        onClick={() => setRollMode('normal')}
-                        className={`flex-1 py-1.5 px-3 text-[10px] font-black uppercase tracking-widest transition-all border ${rollMode === 'normal'
-                          ? 'bg-oro text-black border-oro shadow-md shadow-oro/5'
-                          : 'border-oro/10 text-oro/60 bg-black/20'
-                          }`}
-                        style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
-                      >
-                        Normal
-                      </button>
-                      <button
-                        onClick={() => setRollMode('advantage')}
-                        className={`flex-1 py-1.5 px-3 text-[10px] font-black uppercase tracking-widest transition-all border ${rollMode === 'advantage'
-                          ? 'bg-oro text-black border-oro shadow-md shadow-oro/5'
-                          : 'border-oro/10 text-oro/60 bg-black/20'
-                          }`}
-                        style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
-                      >
-                        Ventaja
-                      </button>
-                      <button
-                        onClick={() => setRollMode('disadvantage')}
-                        className={`flex-1 py-1.5 px-3 text-[10px] font-black uppercase tracking-widest transition-all border ${rollMode === 'disadvantage'
-                          ? 'bg-oro text-black border-oro shadow-md shadow-oro/5'
-                          : 'border-oro/10 text-oro/60 bg-black/20'
-                          }`}
-                        style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
-                      >
-                        Desventaja
-                      </button>
-                    </div>
-
-                    {/* Bonificador Temporal */}
-                    <div className="flex items-center justify-between gap-3 pt-3 border-t border-oro/10 animate-in fade-in duration-300">
-                      <span className="text-[10px] font-black text-oro/40 uppercase tracking-wider whitespace-nowrap">Modificador Temporal:</span>
-                      <div className="flex items-center bg-black/50 border border-oro/20 rounded-sm overflow-hidden w-28 px-2 focus-within:border-oro transition-all">
-                        <button
-                          onClick={() => setTempModifier(prev => prev - 1)}
-                          className="text-oro hover:text-white font-black px-1.5 py-1 text-xs select-none"
-                          type="button"
-                        >
-                          -
-                        </button>
-                        <input
-                          type="number"
-                          value={tempModifier}
-                          onChange={(e) => setTempModifier(Number(e.target.value) || 0)}
-                          className="bg-transparent text-center text-white text-xs font-black w-full outline-none py-1 border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        />
-                        <button
-                          onClick={() => setTempModifier(prev => prev + 1)}
-                          className="text-oro hover:text-white font-black px-1.5 py-1 text-xs select-none"
-                          type="button"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-
-                    {isAdminOrNarrator && Object.keys(tempCharacters).length > 0 && (
-                      <div className="pt-3 border-t border-oro/10 flex items-center justify-between gap-3 animate-in fade-in duration-300">
-                        <span className="text-[10px] font-black text-oro/40 uppercase tracking-wider whitespace-nowrap">Tirar Como:</span>
-                        <select
-                          value={rollTargetId}
-                          onChange={(e) => setRollTargetId(e.target.value)}
-                          className="bg-black/50 border border-oro/20 text-oro text-xs font-black px-2 py-1 outline-none focus:border-oro transition-all rounded-sm max-w-[150px]"
-                        >
-                          <option value="self">Mi Ninja ({activeCharacter.nombre_ninja})</option>
-                          {Object.values(tempCharacters).map(tc => (
-                            <option key={tc.user_id} value={tc.user_id}>{tc.nombre}</option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-
-                    <div className="pt-3 border-t border-oro/10 space-y-2 animate-in fade-in duration-300">
-                      <span className="text-[10px] font-black text-oro/40 block uppercase ml-1">Tiradas de Atributos (d20)</span>
-                      <div className="grid grid-cols-4 gap-1.5">
-                        {['NIN', 'TAI', 'GEN', 'INT', 'FUE', 'AGI', 'EST', 'SM'].map((s) => {
-                          let val = activeCharacter.stats_base[s as keyof CharacterStats] || 1;
-                          if (rollTargetId !== 'self' && tempCharacters[rollTargetId]) {
-                            val = tempCharacters[rollTargetId].stats_base?.[s] || 1;
-                          }
-                          const mod = getStatModifier(val);
-                          const modSign = mod >= 0 ? `+${mod}` : `${mod}`;
-                          return (
-                            <button
-                              key={s}
-                              onClick={() => rollStat(s)}
-                              className="bg-black/40 border border-oro/15 hover:border-oro py-1 text-[10px] font-black text-oro hover:bg-oro/10 transition-all flex flex-col items-center justify-center rounded-sm"
-                              title={`Tirar D20 + Modificador de ${s} (${modSign})`}
-                            >
-                              <span className="text-white/80">{s}</span>
-                              <span className="text-[9px] text-oro/60 font-bold">{modSign}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* 3. TECHNIQUE CASTING CONSOLE */}
-            <div className="space-y-5 xl:col-span-6">
-              <h3 className="font-black text-sm uppercase tracking-[0.2em] border-b border-oro/10 pb-3 flex items-center gap-2.5">
-                USO DE TÉCNICAS
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Left Column: Search & Select Ready Technique */}
-                <div className="relative">
-                  {/* Transparent overlay to close on outside click */}
-                  {isDropdownOpen && (
-                    <div className="fixed inset-0 z-40" onClick={() => { setIsDropdownOpen(false); setTecnicaSearch(''); }} />
+                    </>
                   )}
+                </div>
+              </div>
 
-                  <div
-                    onClick={() => {
-                      setIsDropdownOpen(prev => !prev);
-                      setIsCdDropdownOpen(false);
-                      setIsActiveDropdownOpen(false);
-                    }}
-                    className="w-full bg-black/60 border border-oro/20 text-oro px-4 py-2.5 text-xs font-black flex justify-between items-center cursor-pointer hover:border-oro transition-all relative z-40"
-                  >
-                    <span className="truncate pr-4">
-                      {selectedTecnicaId && !(myCooldowns[selectedTecnicaId] && getRemainingCD(myCooldowns[selectedTecnicaId], customCdRounds) > 0)
-                        ? (activeCharacter.personajes_tecnicas?.find(t => t.tecnica_id === selectedTecnicaId)?.info_glosario?.nombre_jp || activeCharacter.personajes_tecnicas?.find(t => t.tecnica_id === selectedTecnicaId)?.info_glosario?.nombre_es)
-                        : 'BUSCAR TÉCNICA'}
-                    </span>
-                    <span className="text-[10px] text-oro/60 shrink-0">▼</span>
-                  </div>
+              {/* 3. TECHNIQUE CASTING CONSOLE */}
+              <div className="space-y-5 xl:col-span-6">
+                <h3 className="font-black text-sm uppercase tracking-[0.2em] border-b border-oro/10 pb-3 flex items-center gap-2.5">
+                  USO DE TÉCNICAS
+                </h3>
 
-                  {isDropdownOpen && (
-                    <div className="absolute z-50 left-0 right-0 bottom-full mb-1 bg-black/95 border border-oro/30 shadow-2xl max-h-[300px] overflow-hidden flex flex-col backdrop-blur-md">
-                      {/* Search input field */}
-                      <input
-                        type="text"
-                        placeholder="Buscar técnica..."
-                        value={tecnicaSearch}
-                        onChange={(e) => setTecnicaSearch(e.target.value)}
-                        className="w-full bg-black/40 border-b border-oro/25 text-oro px-4 py-2 text-xs font-black outline-none focus:bg-black/20"
-                        autoFocus
-                      />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Left Column: Search & Select Ready Technique */}
+                  <div className="relative">
+                    {/* Transparent overlay to close on outside click */}
+                    {isDropdownOpen && (
+                      <div className="fixed inset-0 z-40" onClick={() => { setIsDropdownOpen(false); setTecnicaSearch(''); }} />
+                    )}
 
-                      {/* Options list */}
-                      <div className="overflow-y-auto max-h-[240px]">
-                        {tecnicaSearch.trim() === '' ? (
-                          <div className="px-4 py-4 text-xs text-oro/40 italic text-center">
-                            Escribe para buscar una técnica...
-                          </div>
-                        ) : (
-                          <>
-                            {(activeCharacter.personajes_tecnicas || [])
-                              .filter(pt => {
+                    <div
+                      onClick={() => {
+                        setIsDropdownOpen(prev => !prev);
+                        setIsCdDropdownOpen(false);
+                        setIsActiveDropdownOpen(false);
+                      }}
+                      className="w-full bg-black/60 border border-oro/20 text-oro px-4 py-2.5 text-xs font-black flex justify-between items-center cursor-pointer hover:border-oro transition-all relative z-40"
+                    >
+                      <span className="truncate pr-4">
+                        {selectedTecnicaId && !(myCooldowns[selectedTecnicaId] && getRemainingCD(myCooldowns[selectedTecnicaId], customCdRounds) > 0)
+                          ? (activeCharacter.personajes_tecnicas?.find(t => t.tecnica_id === selectedTecnicaId)?.info_glosario?.nombre_jp || activeCharacter.personajes_tecnicas?.find(t => t.tecnica_id === selectedTecnicaId)?.info_glosario?.nombre_es)
+                          : 'BUSCAR TÉCNICA'}
+                      </span>
+                      <span className="text-[10px] text-oro/60 shrink-0">▼</span>
+                    </div>
+
+                    {isDropdownOpen && (
+                      <div className="absolute z-50 left-0 right-0 bottom-full mb-1 bg-black/95 border border-oro/30 shadow-2xl max-h-[300px] overflow-hidden flex flex-col backdrop-blur-md">
+                        {/* Search input field */}
+                        <input
+                          type="text"
+                          placeholder="Buscar técnica..."
+                          value={tecnicaSearch}
+                          onChange={(e) => setTecnicaSearch(e.target.value)}
+                          className="w-full bg-black/40 border-b border-oro/25 text-oro px-4 py-2 text-xs font-black outline-none focus:bg-black/20"
+                          autoFocus
+                        />
+
+                        {/* Options list */}
+                        <div className="overflow-y-auto max-h-[240px]">
+                          {tecnicaSearch.trim() === '' ? (
+                            <div className="px-4 py-4 text-xs text-oro/40 italic text-center">
+                              Escribe para buscar una técnica...
+                            </div>
+                          ) : (
+                            <>
+                              {(activeCharacter.personajes_tecnicas || [])
+                                .filter(pt => {
+                                  const nameEs = pt.info_glosario?.nombre_es || '';
+                                  const nameJp = pt.info_glosario?.nombre_jp || '';
+                                  const isMatch = searchIncludes(nameEs, tecnicaSearch) || searchIncludes(nameJp, tecnicaSearch);
+                                  const isCD = myCooldowns[pt.tecnica_id] && getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) > 0;
+                                  return isMatch && !isCD; // Ready techniques only
+                                })
+                                .map(pt => {
+                                  const isSelected = selectedTecnicaId === pt.tecnica_id;
+
+                                  const handleSelect = () => {
+                                    setSelectedTecnicaId(pt.tecnica_id);
+                                    setIsDropdownOpen(false);
+                                    setTecnicaSearch('');
+                                    setCustomChCost(0);
+                                    setCustomCdRounds(1);
+                                    setIsConstantCh(false);
+                                    setConstantChCost(0);
+                                    setIsTechActive(false);
+                                  };
+
+                                  return (
+                                    <div
+                                      key={pt.tecnica_id}
+                                      onClick={handleSelect}
+                                      className={`px-4 py-2.5 text-xs font-black border-b border-oro/5 last:border-b-0 flex justify-between items-center transition-all text-white/80 hover:bg-oro/10 hover:text-oro cursor-pointer ${isSelected ? 'bg-oro/20 text-oro border-l-2 border-oro' : ''
+                                        }`}
+                                    >
+                                      <span className="truncate pr-2">
+                                        {pt.info_glosario?.nombre_jp || pt.info_glosario?.nombre_es}
+                                        {pt.info_glosario?.nombre_jp && pt.info_glosario?.nombre_es && (
+                                          <span className="text-oro/50 font-medium italic ml-1">
+                                            ({pt.info_glosario.nombre_es})
+                                          </span>
+                                        )}
+                                      </span>
+                                      <span className="text-[9px] text-oro/40 font-mono shrink-0">Disponible</span>
+                                    </div>
+                                  );
+                                })}
+
+                              {/* No results */}
+                              {(activeCharacter.personajes_tecnicas || []).filter(pt => {
                                 const nameEs = pt.info_glosario?.nombre_es || '';
                                 const nameJp = pt.info_glosario?.nombre_jp || '';
                                 const isMatch = searchIncludes(nameEs, tecnicaSearch) || searchIncludes(nameJp, tecnicaSearch);
                                 const isCD = myCooldowns[pt.tecnica_id] && getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) > 0;
-                                return isMatch && !isCD; // Ready techniques only
-                              })
-                              .map(pt => {
-                                const isSelected = selectedTecnicaId === pt.tecnica_id;
-
-                                const handleSelect = () => {
-                                  setSelectedTecnicaId(pt.tecnica_id);
-                                  setIsDropdownOpen(false);
-                                  setTecnicaSearch('');
-                                  setCustomChCost(0);
-                                  setCustomCdRounds(1);
-                                  setIsConstantCh(false);
-                                  setConstantChCost(0);
-                                  setIsTechActive(false);
-                                };
-
-                                return (
-                                  <div
-                                    key={pt.tecnica_id}
-                                    onClick={handleSelect}
-                                    className={`px-4 py-2.5 text-xs font-black border-b border-oro/5 last:border-b-0 flex justify-between items-center transition-all text-white/80 hover:bg-oro/10 hover:text-oro cursor-pointer ${isSelected ? 'bg-oro/20 text-oro border-l-2 border-oro' : ''
-                                      }`}
-                                  >
-                                    <span className="truncate pr-2">
-                                      {pt.info_glosario?.nombre_jp || pt.info_glosario?.nombre_es}
-                                      {pt.info_glosario?.nombre_jp && pt.info_glosario?.nombre_es && (
-                                        <span className="text-oro/50 font-medium italic ml-1">
-                                          ({pt.info_glosario.nombre_es})
-                                        </span>
-                                      )}
-                                    </span>
-                                    <span className="text-[9px] text-oro/40 font-mono shrink-0">Disponible</span>
+                                return isMatch && !isCD;
+                              }).length === 0 && (
+                                  <div className="px-4 py-4 text-xs text-oro/30 italic text-center">
+                                    No hay técnicas disponibles
                                   </div>
-                                );
-                              })}
-
-                            {/* No results */}
-                            {(activeCharacter.personajes_tecnicas || []).filter(pt => {
-                              const nameEs = pt.info_glosario?.nombre_es || '';
-                              const nameJp = pt.info_glosario?.nombre_jp || '';
-                              const isMatch = searchIncludes(nameEs, tecnicaSearch) || searchIncludes(nameJp, tecnicaSearch);
-                              const isCD = myCooldowns[pt.tecnica_id] && getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) > 0;
-                              return isMatch && !isCD;
-                            }).length === 0 && (
-                                <div className="px-4 py-4 text-xs text-oro/30 italic text-center">
-                                  No hay técnicas disponibles
-                                </div>
-                              )}
-                          </>
-                        )}
+                                )}
+                            </>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Center Column: Techniques in CD Dropdown */}
-                <div className="relative">
-                  {/* Transparent overlay to close on outside click */}
-                  {isCdDropdownOpen && (
-                    <div className="fixed inset-0 z-40" onClick={() => setIsCdDropdownOpen(false)} />
-                  )}
-
-                  <div
-                    onClick={() => {
-                      setIsCdDropdownOpen(prev => !prev);
-                      setIsDropdownOpen(false);
-                      setIsActiveDropdownOpen(false);
-                    }}
-                    className="w-full bg-black/60 border border-red-500/20 text-red-400 px-4 py-2.5 text-xs font-black flex justify-between items-center cursor-pointer hover:border-red-500 transition-all relative z-40"
-                  >
-                    <span className="truncate pr-4">
-                      {`TÉCNICAS EN CD (${(activeCharacter.personajes_tecnicas || []).filter(pt => {
-                        const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) : 0;
-                        return cd > 0;
-                      }).length})`}
-                    </span>
-                    <span className="text-[10px] text-red-500/60 shrink-0">▼</span>
+                    )}
                   </div>
 
-                  {isCdDropdownOpen && (
-                    <div className="absolute z-50 left-0 right-0 bottom-full mb-1 bg-black/95 border border-red-500/30 shadow-2xl max-h-[300px] overflow-y-auto flex flex-col backdrop-blur-md">
-                      {(activeCharacter.personajes_tecnicas || [])
-                        .filter(pt => {
+                  {/* Center Column: Techniques in CD Dropdown */}
+                  <div className="relative">
+                    {/* Transparent overlay to close on outside click */}
+                    {isCdDropdownOpen && (
+                      <div className="fixed inset-0 z-40" onClick={() => setIsCdDropdownOpen(false)} />
+                    )}
+
+                    <div
+                      onClick={() => {
+                        setIsCdDropdownOpen(prev => !prev);
+                        setIsDropdownOpen(false);
+                        setIsActiveDropdownOpen(false);
+                      }}
+                      className="w-full bg-black/60 border border-red-500/20 text-red-400 px-4 py-2.5 text-xs font-black flex justify-between items-center cursor-pointer hover:border-red-500 transition-all relative z-40"
+                    >
+                      <span className="truncate pr-4">
+                        {`TÉCNICAS EN CD (${(activeCharacter.personajes_tecnicas || []).filter(pt => {
                           const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) : 0;
                           return cd > 0;
-                        })
-                        .map(pt => {
+                        }).length})`}
+                      </span>
+                      <span className="text-[10px] text-red-500/60 shrink-0">▼</span>
+                    </div>
+
+                    {isCdDropdownOpen && (
+                      <div className="absolute z-50 left-0 right-0 bottom-full mb-1 bg-black/95 border border-red-500/30 shadow-2xl max-h-[300px] overflow-y-auto flex flex-col backdrop-blur-md">
+                        {(activeCharacter.personajes_tecnicas || [])
+                          .filter(pt => {
+                            const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) : 0;
+                            return cd > 0;
+                          })
+                          .map(pt => {
+                            const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) : 0;
+                            return (
+                              <div
+                                key={pt.tecnica_id}
+                                className="px-4 py-2.5 text-xs font-black border-b border-red-500/5 last:border-b-0 flex justify-between items-center bg-red-950/20 text-red-400 border-l-2 border-red-500"
+                              >
+                                <span className="truncate pr-2">
+                                  {pt.info_glosario?.nombre_jp || pt.info_glosario?.nombre_es}
+                                  {pt.info_glosario?.nombre_jp && pt.info_glosario?.nombre_es && (
+                                    <span className="text-red-400/50 font-medium italic ml-1">
+                                      ({pt.info_glosario.nombre_es})
+                                    </span>
+                                  )}
+                                </span>
+                                <span className="text-[9px] font-black uppercase text-red-500 bg-red-950 border border-red-500/30 px-1.5 py-0.5 rounded-sm shrink-0">
+                                  CD: {cd} rondas
+                                </span>
+                              </div>
+                            );
+                          })}
+
+                        {/* No results */}
+                        {(activeCharacter.personajes_tecnicas || []).filter(pt => {
                           const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) : 0;
+                          return cd > 0;
+                        }).length === 0 && (
+                            <div className="px-4 py-4 text-xs text-red-400/40 italic text-center">
+                              Ninguna técnica en cooldown
+                            </div>
+                          )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right Column: Active Techniques Dropdown */}
+                  <div className="relative">
+                    {/* Transparent overlay to close on outside click */}
+                    {isActiveDropdownOpen && (
+                      <div className="fixed inset-0 z-40" onClick={() => setIsActiveDropdownOpen(false)} />
+                    )}
+
+                    <div
+                      onClick={() => {
+                        setIsActiveDropdownOpen(prev => !prev);
+                        setIsDropdownOpen(false);
+                        setIsCdDropdownOpen(false);
+                      }}
+                      className="w-full bg-black/60 border border-emerald-500/20 text-emerald-400 px-4 py-2.5 text-xs font-black flex justify-between items-center cursor-pointer hover:border-emerald-500 transition-all relative z-40"
+                    >
+                      <span className="truncate pr-4">
+                        {`TÉCNICAS ACTIVAS (${Object.keys(myActiveTecnicas).length})`}
+                      </span>
+                      <span className="text-[10px] text-emerald-500/60 shrink-0">▼</span>
+                    </div>
+
+                    {isActiveDropdownOpen && (
+                      <div className="absolute z-50 left-0 right-0 bottom-full mb-1 bg-black/95 border border-emerald-500/30 shadow-2xl max-h-[300px] overflow-y-auto flex flex-col backdrop-blur-md">
+                        {Object.keys(myActiveTecnicas).map(Number).map(techId => {
+                          const pt = activeCharacter.personajes_tecnicas?.find(t => t.tecnica_id === techId);
+                          if (!pt) return null;
+                          const cd = myCooldowns[techId] ? getRemainingCD(myCooldowns[techId], myActiveTecnicas[techId].cdRounds) : 0;
+
                           return (
                             <div
-                              key={pt.tecnica_id}
-                              className="px-4 py-2.5 text-xs font-black border-b border-red-500/5 last:border-b-0 flex justify-between items-center bg-red-950/20 text-red-400 border-l-2 border-red-500"
+                              key={techId}
+                              className="px-4 py-2.5 text-xs font-black border-b border-emerald-500/5 last:border-b-0 flex justify-between items-center bg-emerald-950/20 text-emerald-400 border-l-2 border-emerald-500"
                             >
-                              <span className="truncate pr-2">
-                                {pt.info_glosario?.nombre_jp || pt.info_glosario?.nombre_es}
-                                {pt.info_glosario?.nombre_jp && pt.info_glosario?.nombre_es && (
-                                  <span className="text-red-400/50 font-medium italic ml-1">
-                                    ({pt.info_glosario.nombre_es})
-                                  </span>
-                                )}
-                              </span>
-                              <span className="text-[9px] font-black uppercase text-red-500 bg-red-950 border border-red-500/30 px-1.5 py-0.5 rounded-sm shrink-0">
-                                CD: {cd} rondas
-                              </span>
+                              <div className="flex flex-col min-w-0 pr-2">
+                                <span className="truncate text-white">
+                                  {pt.info_glosario?.nombre_jp || pt.info_glosario?.nombre_es}
+                                </span>
+                                <span className="text-[9px] text-oro/40 font-mono">
+                                  CD Pausado: {cd} rondas
+                                </span>
+                              </div>
+                              <button
+                                onClick={() => handleDeactivateTecnica(techId)}
+                                className="text-[9px] font-black uppercase text-red-400 bg-red-950/40 border border-red-500/30 px-2 py-1 rounded-sm shrink-0 hover:bg-red-500 hover:text-white transition-all"
+                              >
+                                Desactivar
+                              </button>
                             </div>
                           );
                         })}
 
-                      {/* No results */}
-                      {(activeCharacter.personajes_tecnicas || []).filter(pt => {
-                        const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) : 0;
-                        return cd > 0;
-                      }).length === 0 && (
-                          <div className="px-4 py-4 text-xs text-red-400/40 italic text-center">
-                            Ninguna técnica en cooldown
+                        {Object.keys(myActiveTecnicas).length === 0 && (
+                          <div className="px-4 py-4 text-xs text-emerald-400/40 italic text-center">
+                            Ninguna técnica activa
                           </div>
                         )}
-                    </div>
-                  )}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                {/* Right Column: Active Techniques Dropdown */}
-                <div className="relative">
-                  {/* Transparent overlay to close on outside click */}
-                  {isActiveDropdownOpen && (
-                    <div className="fixed inset-0 z-40" onClick={() => setIsActiveDropdownOpen(false)} />
-                  )}
-
-                  <div
-                    onClick={() => {
-                      setIsActiveDropdownOpen(prev => !prev);
-                      setIsDropdownOpen(false);
-                      setIsCdDropdownOpen(false);
-                    }}
-                    className="w-full bg-black/60 border border-emerald-500/20 text-emerald-400 px-4 py-2.5 text-xs font-black flex justify-between items-center cursor-pointer hover:border-emerald-500 transition-all relative z-40"
-                  >
-                    <span className="truncate pr-4">
-                      {`TÉCNICAS ACTIVAS (${Object.keys(myActiveTecnicas).length})`}
-                    </span>
-                    <span className="text-[10px] text-emerald-500/60 shrink-0">▼</span>
-                  </div>
-
-                  {isActiveDropdownOpen && (
-                    <div className="absolute z-50 left-0 right-0 bottom-full mb-1 bg-black/95 border border-emerald-500/30 shadow-2xl max-h-[300px] overflow-y-auto flex flex-col backdrop-blur-md">
-                      {Object.keys(myActiveTecnicas).map(Number).map(techId => {
-                        const pt = activeCharacter.personajes_tecnicas?.find(t => t.tecnica_id === techId);
-                        if (!pt) return null;
-                        const cd = myCooldowns[techId] ? getRemainingCD(myCooldowns[techId], myActiveTecnicas[techId].cdRounds) : 0;
-
-                        return (
-                          <div
-                            key={techId}
-                            className="px-4 py-2.5 text-xs font-black border-b border-emerald-500/5 last:border-b-0 flex justify-between items-center bg-emerald-950/20 text-emerald-400 border-l-2 border-emerald-500"
-                          >
-                            <div className="flex flex-col min-w-0 pr-2">
-                              <span className="truncate text-white">
-                                {pt.info_glosario?.nombre_jp || pt.info_glosario?.nombre_es}
-                              </span>
-                              <span className="text-[9px] text-oro/40 font-mono">
-                                CD Pausado: {cd} rondas
-                              </span>
-                            </div>
-                            <button
-                              onClick={() => handleDeactivateTecnica(techId)}
-                              className="text-[9px] font-black uppercase text-red-400 bg-red-950/40 border border-red-500/30 px-2 py-1 rounded-sm shrink-0 hover:bg-red-500 hover:text-white transition-all"
-                            >
-                              Desactivar
-                            </button>
-                          </div>
-                        );
-                      })}
-
-                      {Object.keys(myActiveTecnicas).length === 0 && (
-                        <div className="px-4 py-4 text-xs text-emerald-400/40 italic text-center">
-                          Ninguna técnica activa
+                {selectedTecnicaId !== null && (
+                  <div className="space-y-4 animate-in fade-in duration-300">
+                    <div className={isEventMode ? "grid grid-cols-1" : "grid grid-cols-2 gap-4"}>
+                      {!isEventMode && (
+                        <div>
+                          <label className="text-[10px] font-black text-oro/40 block mb-1 uppercase">COSTE CHAKRA (CH)</label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={customChCost}
+                            onChange={(e) => setCustomChCost(Number(e.target.value))}
+                            className="w-full bg-black/50 border border-oro/20 text-oro px-4 py-2 text-xs font-black outline-none focus:border-oro transition-all"
+                          />
                         </div>
                       )}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {selectedTecnicaId !== null && (
-                <div className="space-y-4 animate-in fade-in duration-300">
-                  <div className={isEventMode ? "grid grid-cols-1" : "grid grid-cols-2 gap-4"}>
-                    {!isEventMode && (
                       <div>
-                        <label className="text-[10px] font-black text-oro/40 block mb-1 uppercase">COSTE CHAKRA (CH)</label>
+                        <label className="text-[10px] font-black text-oro/40 block mb-1 uppercase">COOLDOWN (RONDAS)</label>
                         <input
                           type="number"
                           min="0"
-                          value={customChCost}
-                          onChange={(e) => setCustomChCost(Number(e.target.value))}
+                          value={customCdRounds}
+                          onChange={(e) => setCustomCdRounds(Number(e.target.value))}
                           className="w-full bg-black/50 border border-oro/20 text-oro px-4 py-2 text-xs font-black outline-none focus:border-oro transition-all"
                         />
                       </div>
-                    )}
-                    <div>
-                      <label className="text-[10px] font-black text-oro/40 block mb-1 uppercase">COOLDOWN (RONDAS)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={customCdRounds}
-                        onChange={(e) => setCustomCdRounds(Number(e.target.value))}
-                        className="w-full bg-black/50 border border-oro/20 text-oro px-4 py-2 text-xs font-black outline-none focus:border-oro transition-all"
-                      />
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-4 pt-2 border-t border-oro/10">
-                    <div className="flex flex-col gap-2">
-                      {!isEventMode && (
-                        <div className="flex items-center gap-2">
+                    <div className="grid grid-cols-2 gap-4 pt-2 border-t border-oro/10">
+                      <div className="flex flex-col gap-2">
+                        {!isEventMode && (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              id="is-constant-ch"
+                              checked={isConstantCh}
+                              onChange={(e) => {
+                                setIsConstantCh(e.target.checked);
+                                if (!e.target.checked) setConstantChCost(0);
+                              }}
+                              className="accent-oro cursor-pointer w-4 h-4"
+                            />
+                            <label htmlFor="is-constant-ch" className="text-[10px] font-black text-oro/40 uppercase cursor-pointer select-none">
+                              Chakra Constante
+                            </label>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 pt-1">
                           <input
                             type="checkbox"
-                            id="is-constant-ch"
-                            checked={isConstantCh}
-                            onChange={(e) => {
-                              setIsConstantCh(e.target.checked);
-                              if (!e.target.checked) setConstantChCost(0);
-                            }}
+                            id="is-tech-active"
+                            checked={isTechActive}
+                            onChange={(e) => setIsTechActive(e.target.checked)}
                             className="accent-oro cursor-pointer w-4 h-4"
                           />
-                          <label htmlFor="is-constant-ch" className="text-[10px] font-black text-oro/40 uppercase cursor-pointer select-none">
-                            Chakra Constante
+                          <label htmlFor="is-tech-active" className="text-[10px] font-black text-oro/40 uppercase cursor-pointer select-none">
+                            Técnica Activa (Pausar CD)
                           </label>
                         </div>
+                      </div>
+                      {!isEventMode && isConstantCh && (
+                        <div>
+                          <label className="text-[10px] font-black text-oro/40 block mb-1 uppercase">COST CH CONSTANTE / RONDA</label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={constantChCost}
+                            onChange={(e) => setConstantChCost(Number(e.target.value))}
+                            className="w-full bg-black/50 border border-oro/20 text-oro px-4 py-2 text-xs font-black outline-none focus:border-oro transition-all"
+                          />
+                        </div>
                       )}
-                      <div className="flex items-center gap-2 pt-1">
-                        <input
-                          type="checkbox"
-                          id="is-tech-active"
-                          checked={isTechActive}
-                          onChange={(e) => setIsTechActive(e.target.checked)}
-                          className="accent-oro cursor-pointer w-4 h-4"
-                        />
-                        <label htmlFor="is-tech-active" className="text-[10px] font-black text-oro/40 uppercase cursor-pointer select-none">
-                          Técnica Activa (Pausar CD)
-                        </label>
-                      </div>
                     </div>
-                    {!isEventMode && isConstantCh && (
-                      <div>
-                        <label className="text-[10px] font-black text-oro/40 block mb-1 uppercase">COST CH CONSTANTE / RONDA</label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={constantChCost}
-                          onChange={(e) => setConstantChCost(Number(e.target.value))}
-                          className="w-full bg-black/50 border border-oro/20 text-oro px-4 py-2 text-xs font-black outline-none focus:border-oro transition-all"
-                        />
-                      </div>
-                    )}
+
+                    <button
+                      onClick={handleUseTecnica}
+                      className="w-full ninja-btn-oro py-3 px-6 text-xs flex items-center justify-center gap-2"
+                    >
+                      Ejecutar Técnica
+                    </button>
                   </div>
+                )}
+              </div>
 
-                  <button
-                    onClick={handleUseTecnica}
-                    className="w-full ninja-btn-oro py-3 px-6 text-xs flex items-center justify-center gap-2"
-                  >
-                    Ejecutar Técnica
-                  </button>
-                </div>
-              )}
             </div>
-
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* CREATE NPC MODAL */}
         {showCreateTempModal && (
