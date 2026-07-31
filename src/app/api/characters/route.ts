@@ -57,19 +57,26 @@ export async function POST(request: Request) {
     if (branchIds.length > 0) {
       const { data: selectRamas, error: selectRamasError } = await supabase
         .from('info_ramas_clanes')
-        .select('id, nombre, tipo, es_especial')
+        .select('id, nombre, tipo, es_especial, config_iniciales')
         .in('id', branchIds);
 
       if (selectRamasError) throw selectRamasError;
 
       const clans = selectRamas?.filter(r => r.tipo === 'clan') || [];
       for (const clan of clans) {
+        if (clan.es_especial) {
+          const permitidos: number[] = clan.config_iniciales?.personajes_permitidos || [];
+          if (permitidos.length > 0) {
+            return NextResponse.json({ error: `El clan "${clan.nombre}" es un Clan Especial y requiere que un administrador autorice previamente a tu personaje.` }, { status: 400 });
+          }
+        }
+
         // 1. Obtener cupos_maximos_aldea de config para calcular el límite dinámico del clan
         const limitAldeaRaw = await MasterServerService.getConfiguracion(supabase, 'cupos_maximos_aldea');
         const C = limitAldeaRaw != null && limitAldeaRaw !== '' ? Number(limitAldeaRaw) : 10;
 
-        // Límite de clan = (es_especial ? 2 : 4) + FLOOR((C - 10) / 5)
-        const limitClan = (clan.es_especial ? 2 : 4) + Math.floor((C - 10) / 5);
+        // Límite de clan = 4 + FLOOR((C - 10) / 5)
+        const limitClan = 4 + Math.floor((C - 10) / 5);
 
         // 2. Contar personajes activos en este clan
         const { count: clanActiveCount, error: clanCountError } = await supabase

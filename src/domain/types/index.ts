@@ -76,6 +76,7 @@ export interface RamaClan {
   rasgo_id?: number | null;
   config_iniciales?: {
     clan_elemental?: boolean;
+    personajes_permitidos?: number[];
     opciones: Array<{
       rama_id?: number;            // Rama real del catálogo
       sub_especialidad_id?: number; // Subcategoría real (alternativa o complemento)

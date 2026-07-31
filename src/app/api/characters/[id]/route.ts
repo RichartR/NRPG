@@ -18,14 +18,14 @@ export async function PATCH(
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    
+
     // 1. Obtener datos actuales del personaje
     const character = await CharacterServerService.getCharacterById(supabase, characterId);
     if (!character) throw new Error(`Personaje no encontrado (ID: ${characterId})`);
 
     // 2. Verificar Permisos (Dueño o Admin)
     const isOwner = character.user_id === user.id;
-    
+
     // Obtener rol del perfil en la base de datos
     const profile = await ProfileService.getProfile(user.id, supabase);
 
@@ -131,42 +131,50 @@ export async function PATCH(
             }
           }
 
-          // Validar cupos máximos de los clanes seleccionados que sean NUEVOS para el personaje
+          // Validar cupos y permisos de los clanes seleccionados
           if (data.personajes_ramas) {
             const oldRamaIds = (character as any).personajes_ramas?.map((r: any) => Number(r.rama_id)).filter(Boolean) || [];
             const newRamasInput = data.personajes_ramas || [];
             const newRamaIds = newRamasInput.map((r: any) => Number(r.rama_id)).filter(Boolean);
-            const addedRamaIds = newRamaIds.filter((id: number) => !oldRamaIds.includes(id));
 
-            if (addedRamaIds.length > 0) {
+            if (newRamaIds.length > 0) {
               const { data: selectRamas, error: selectRamasError } = await supabase
                 .from('info_ramas_clanes')
-                .select('id, nombre, tipo, es_especial')
-                .in('id', addedRamaIds);
+                .select('id, nombre, tipo, es_especial, config_iniciales')
+                .in('id', newRamaIds);
 
               if (selectRamasError) throw selectRamasError;
 
               const clans = selectRamas?.filter(r => r.tipo === 'clan') || [];
               for (const clan of clans) {
-                // 1. Obtener cupos_maximos_aldea de config para calcular el límite dinámico del clan
-                const limitAldeaRaw = await MasterServerService.getConfiguracion(supabase, 'cupos_maximos_aldea');
-                const C = limitAldeaRaw != null && limitAldeaRaw !== '' ? Number(limitAldeaRaw) : 10;
+                // 1. Validar autorización estricta en clanes especiales
+                if (clan.es_especial) {
+                  const permitidos: number[] = clan.config_iniciales?.personajes_permitidos || [];
+                  const charIdNum = Number(characterId);
+                  if (!permitidos.includes(charIdNum)) {
+                    return NextResponse.json({ error: `Tu personaje no está autorizado para usar el Clan Especial "${clan.nombre}". Debes cambiar de clan.` }, { status: 400 });
+                  }
+                }
 
-                // Límite de clan = (es_especial ? 2 : 4) + Math.floor((C - 10) / 5)
-                const limitClan = (clan.es_especial ? 2 : 4) + Math.floor((C - 10) / 5);
+                // 2. Validar cupos si es un clan NUEVO para el personaje
+                const isNewClanForChar = !oldRamaIds.includes(clan.id);
+                if (isNewClanForChar) {
+                  const limitAldeaRaw = await MasterServerService.getConfiguracion(supabase, 'cupos_maximos_aldea');
+                  const C = limitAldeaRaw != null && limitAldeaRaw !== '' ? Number(limitAldeaRaw) : 10;
+                  const limitClan = 4 + Math.floor((C - 10) / 5);
 
-                // 2. Contar personajes activos en este clan
-                const { count: clanActiveCount, error: clanCountError } = await supabase
-                  .from('reg_personajes_ramas')
-                  .select('id, reg_characters!inner(id)', { count: 'exact', head: true })
-                  .eq('rama_id', clan.id)
-                  .eq('reg_characters.activo', true)
-                  .eq('reg_characters.eliminado_voluntario', false);
+                  const { count: clanActiveCount, error: clanCountError } = await supabase
+                    .from('reg_personajes_ramas')
+                    .select('id, reg_characters!inner(id)', { count: 'exact', head: true })
+                    .eq('rama_id', clan.id)
+                    .eq('reg_characters.activo', true)
+                    .eq('reg_characters.eliminado_voluntario', false);
 
-                if (clanCountError) throw clanCountError;
+                  if (clanCountError) throw clanCountError;
 
-                if (clanActiveCount !== null && clanActiveCount >= limitClan) {
-                  return NextResponse.json({ error: `El clan "${clan.nombre}" ya ha alcanzado el límite máximo de cupos (${clanActiveCount}/${limitClan}) y no permite nuevos miembros.` }, { status: 400 });
+                  if (clanActiveCount !== null && clanActiveCount >= limitClan) {
+                    return NextResponse.json({ error: `El clan "${clan.nombre}" ya ha alcanzado el límite máximo de cupos (${clanActiveCount}/${limitClan}) y no permite nuevos miembros.` }, { status: 400 });
+                  }
                 }
               }
             }
@@ -268,7 +276,7 @@ export async function PATCH(
             const itemsList = refundedItemsInfo.map(i => i.nombre).join(', ');
             const tecsList = refundedTecsInfo.map(t => t.nombre).join(', ');
             const trsList = refundedTrainingsInfo.map(t => t.nombre).join(', ');
-            
+
             const refundText = [
               refundXp > 0 && `${refundXp} EXP`,
               refundRyous > 0 && `${refundRyous} Ryous`,
@@ -338,12 +346,12 @@ export async function PATCH(
           const changes = [];
           for (const newR of newRamas) {
             const oldR = oldRamas.find((r: any) => r.slot === newR.slot);
-            
+
             // 1. Cambio de Rama/Subesp
             if (oldR && (oldR.rama_id !== newR.rama_id || oldR.sub_especialidad_id !== newR.sub_especialidad_id)) {
               const [{ data: ramaInfo }, { data: subInfo }] = await Promise.all([
                 adminClient.from('info_ramas_clanes').select('nombre, tipo').eq('id', newR.rama_id).single(),
-                newR.sub_especialidad_id 
+                newR.sub_especialidad_id
                   ? adminClient.from('info_sub_especialidades').select('nombre').eq('id', newR.sub_especialidad_id).single()
                   : Promise.resolve({ data: null })
               ]);
@@ -464,9 +472,9 @@ export async function PATCH(
         // Acompañantes y Componentes Kugutsu
         if (data.personajes_acompanantes) {
           updatePromises.push(CharacterServerService.bulkUpdateAcompanantes(
-            adminClient, 
-            characterId, 
-            data.personajes_acompanantes, 
+            adminClient,
+            characterId,
+            data.personajes_acompanantes,
             data.personajes_kugutsu_componentes || []
           ));
         }
@@ -515,7 +523,7 @@ export async function PATCH(
       case 'onrol':
         updateData = { edad: data.edad, sexo: data.sexo, url_img: data.url_img };
         break;
-      
+
       case 'inventario':
         if (data.personajes_inventario) {
           await CharacterServerService.replaceInventario(adminClient, characterId, data.personajes_inventario);
@@ -655,7 +663,7 @@ export async function DELETE(
 
     // 2. Verificar Permisos (Dueño o Admin)
     const isOwner = character.user_id === user.id;
-    
+
     // Obtener rol del perfil en la base de datos
     const profile = await ProfileService.getProfile(user.id, supabase);
 
@@ -733,7 +741,7 @@ export async function DELETE(
     if (force) {
       // 3. Eliminar mensajes de Discord y Personaje físicamente en paralelo
       const cleanupPromises: Promise<any>[] = [];
-      
+
       cleanupPromises.push(Promise.resolve(adminClient.from('reg_characters').delete().eq('id', characterId)));
 
       if (channelId) {
