@@ -83,9 +83,9 @@ export default async function AdminPage() {
       desc: 'Gestionar técnicas, jutsus y habilidades de combate.',
       icon: Sword,
       href: '/admin/combate',
-      color: 'text-rojo-sangre',
-      bgColor: 'bg-rojo-sangre/10',
-      borderColor: 'hover:border-rojo-sangre/50'
+      color: 'text-naranja-naruto',
+      bgColor: 'bg-naranja-naruto/10',
+      borderColor: 'hover:border-naranja-naruto/50'
     },
     {
       title: 'Lore y Archivo',
@@ -110,9 +110,9 @@ export default async function AdminPage() {
       desc: 'Configurar estados post-combate (Herido, Muerto, etc.).',
       icon: Sword,
       href: '/admin/combate-estados',
-      color: 'text-rojo-sangre',
-      bgColor: 'bg-rojo-sangre/10',
-      borderColor: 'hover:border-rojo-sangre/50'
+      color: 'text-naranja-naruto',
+      bgColor: 'bg-naranja-naruto/10',
+      borderColor: 'hover:border-naranja-naruto/50'
     },
     {
       title: 'Disputas',
@@ -173,9 +173,9 @@ export default async function AdminPage() {
       desc: 'Buscar usuarios, ver personajes, Discord y gestionar baneos temporales de cuentas e IPs.',
       icon: ShieldAlert,
       href: '/admin/usuarios',
-      color: 'text-rojo-sangre',
-      bgColor: 'bg-rojo-sangre/10',
-      borderColor: 'hover:border-rojo-sangre/50'
+      color: 'text-naranja-naruto',
+      bgColor: 'bg-naranja-naruto/10',
+      borderColor: 'hover:border-naranja-naruto/50'
     }
   ];
 
@@ -198,7 +198,7 @@ export default async function AdminPage() {
           </div>
           <h2 className="ninja-title text-6xl xl:text-8xl mb-8">ADMINISTRACIÓN</h2>
           <p className="text-gris-texto/60 text-lg xl:text-xl max-w-4xl leading-relaxed italic border-l-2 border-oro/10 pl-10 py-2">
-            Control total del motor NRPG. Gestiona el equilibrio del mundo, las técnicas sagradas y el destino de los shinobis.
+            Control total del motor NRPG. Gestiona el equilibrio del mundo, las técnicas sagradas y el destino de los shinobi.
           </p>
         </header>
 
