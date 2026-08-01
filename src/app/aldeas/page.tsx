@@ -56,7 +56,7 @@ export default async function AldeasPage() {
               categoryClassName="text-caption sm:text-xs md:text-sm lg:text-base xl:text-lg tracking-[0.2em] sm:tracking-[0.4em]"
               imageUrl={aldea.url_imagen}
               description={aldea.descripcion}
-              actionText="Ver Información"
+              actionText="VER FICHAS"
             />
           ))}
 
@@ -65,11 +65,11 @@ export default async function AldeasPage() {
             href="/mundo-ninja/renegados"
             title="RENEGADOS"
             titleClassName={getTitleFontSize('RENEGADOS')}
-            category="Shinobis sin afiliación"
+            category="shinobi sin afiliación"
             categoryClassName="text-caption sm:text-xs md:text-sm lg:text-base xl:text-lg tracking-[0.2em] sm:tracking-[0.4em]"
             imageUrl="/assets/images/renegados.jpg"
             description="Guerreros sin aldea oculta, exiliados o ronin que operan fuera del control de las grandes naciones."
-            actionText="Ver Información"
+            actionText="VER FICHAS"
           />
         </div>
       </main>

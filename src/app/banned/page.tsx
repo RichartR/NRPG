@@ -42,20 +42,20 @@ export default async function BannedPage() {
     <div
       className="min-h-screen flex flex-col justify-center items-center p-4 text-white relative overflow-hidden"
       style={{
-        backgroundImage: "url('/assets/ui/bg-list.jpg')",
+        backgroundImage: "url('/assets/ui/bg-list.png')",
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }}
     >
-      <div className="w-full max-w-[650px] bg-black/75 backdrop-blur-md border border-rojo-sangre/20 p-10 xl:p-14 relative rounded-lg">
+      <div className="w-full max-w-[650px] bg-black/75 backdrop-blur-md border border-naranja-naruto/20 p-10 xl:p-14 relative rounded-lg">
         {/* Red warning border accents */}
-        <div className="absolute top-0 left-0 w-10 h-[1px] bg-rojo-sangre" />
-        <div className="absolute top-0 left-0 w-[1px] h-10 bg-rojo-sangre" />
-        <div className="absolute bottom-0 right-0 w-10 h-[1px] bg-rojo-sangre" />
-        <div className="absolute bottom-0 right-0 w-[1px] h-10 bg-rojo-sangre" />
+        <div className="absolute top-0 left-0 w-10 h-[1px] bg-naranja-naruto" />
+        <div className="absolute top-0 left-0 w-[1px] h-10 bg-naranja-naruto" />
+        <div className="absolute bottom-0 right-0 w-10 h-[1px] bg-naranja-naruto" />
+        <div className="absolute bottom-0 right-0 w-[1px] h-10 bg-naranja-naruto" />
 
         <div className="flex justify-center mb-8">
-          <div className="w-28 h-28 rounded-full border-2 border-rojo-sangre bg-white overflow-hidden flex items-center justify-center transition-transform duration-300">
+          <div className="w-28 h-28 rounded-full border-2 border-naranja-naruto bg-white overflow-hidden flex items-center justify-center transition-transform duration-300">
             <img src="/assets/images/jiraiya_angry.png" alt="Jiraiya Enojado" className="w-full h-full object-cover" />
           </div>
         </div>
@@ -69,7 +69,7 @@ export default async function BannedPage() {
         </p>
 
         <div className="space-y-6 text-left mb-10">
-          <div className="p-6 border border-rojo-sangre/15 bg-rojo-sangre/[0.02] rounded">
+          <div className="p-6 border border-naranja-naruto/15 bg-naranja-naruto/[0.02] rounded">
             <h3 className="text-oro/40 text-caption font-black uppercase tracking-widest mb-2">
               Motivo de la Suspensión:
             </h3>
@@ -119,7 +119,7 @@ export default async function BannedPage() {
           <form action={handleSignOut} className="w-full">
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-3 bg-oro text-rojo-sangre py-4 px-6 font-black uppercase tracking-[0.2em] text-xs transition-all hover:brightness-110 active:scale-95 cursor-pointer"
+              className="w-full flex items-center justify-center gap-3 bg-oro text-naranja-naruto py-4 px-6 font-black uppercase tracking-[0.2em] text-xs transition-all hover:brightness-110 active:scale-95 cursor-pointer"
               style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
             >
               <LogOut className="w-4 h-4 stroke-[2.5]" />

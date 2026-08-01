@@ -22,8 +22,8 @@ export default async function AdminCombatePage() {
         </Link>
 
         <div className="flex items-center gap-6">
-          <div className="w-12 h-12 bg-rojo-sangre/[0.03] border border-rojo-sangre/10 flex items-center justify-center">
-            <Sword className="w-6 h-6 text-rojo-sangre" />
+          <div className="w-12 h-12 bg-naranja-naruto/[0.03] border border-naranja-naruto/10 flex items-center justify-center">
+            <Sword className="w-6 h-6 text-naranja-naruto" />
           </div>
           <div>
             <h1 className="ninja-title text-4xl xl:text-5xl italic">BIBLIOTECA DE COMBATE</h1>

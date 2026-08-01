@@ -14,7 +14,7 @@ export default function RamaList({ initialRamas, aldeas, rasgos, characters = []
   const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
   const [search, setSearch] = useState('');
   const [loadingId, setLoadingId] = useState<number | null>(null);
-  
+
   const router = useRouter();
   const addToast = useToastStore(state => state.addToast);
 
@@ -55,18 +55,17 @@ export default function RamaList({ initialRamas, aldeas, rasgos, characters = []
 
         <div className="flex gap-2 p-1.5 bg-black/40 border border-oro/10 ninja-box w-full min-[1600px]:w-auto justify-center">
           {['active', 'inactive'].map((tab) => (
-            <button 
+            <button
               key={tab}
               onClick={() => setActiveTab(tab as any)}
-              className={`flex-1 sm:flex-initial text-center px-4 sm:px-10 py-3 xl:py-4 font-black uppercase tracking-[0.2em] transition-all text-caption sm:text-caption xl:text-xs ${
-                activeTab === tab 
-                ? 'bg-oro text-rojo-sangre shadow-lg' 
-                : 'text-oro/40 hover:text-oro hover:bg-oro/5'
-              }`}
+              className={`flex-1 sm:flex-initial text-center px-4 sm:px-10 py-3 xl:py-4 font-black uppercase tracking-[0.2em] transition-all text-caption sm:text-caption xl:text-xs ${activeTab === tab
+                  ? 'bg-oro text-naranja-naruto shadow-lg'
+                  : 'text-oro/40 hover:text-oro hover:bg-oro/5'
+                }`}
               style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
             >
-              {tab === 'active' ? 'ACTIVOS' : 'ARCHIVADOS'} 
-              <span className={`ml-2 opacity-40 ${activeTab === tab ? 'text-rojo-sangre/60' : ''}`}>({initialRamas.filter(r => tab === 'active' ? r.activo : !r.activo).length})</span>
+              {tab === 'active' ? 'ACTIVOS' : 'ARCHIVADOS'}
+              <span className={`ml-2 opacity-40 ${activeTab === tab ? 'text-naranja-naruto/60' : ''}`}>({initialRamas.filter(r => tab === 'active' ? r.activo : !r.activo).length})</span>
             </button>
           ))}
         </div>
@@ -74,19 +73,19 @@ export default function RamaList({ initialRamas, aldeas, rasgos, characters = []
         <div className="flex flex-col sm:flex-row flex-wrap w-full min-[1600px]:w-auto gap-4 sm:gap-6 items-stretch sm:items-center">
           <div className="relative flex-1 sm:w-64 lg:w-72 xl:w-80">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-oro/40" />
-            <input 
-              type="text" 
-              placeholder="BUSCAR RAMA O CLAN..." 
+            <input
+              type="text"
+              placeholder="BUSCAR RAMA O CLAN..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-black/20 border border-oro/10 py-3 xl:py-4 pl-14 pr-8 text-caption sm:text-caption xl:text-xs font-black text-oro focus:border-oro/40 outline-none transition-all placeholder:text-oro/20 uppercase tracking-widest"
               style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
             />
           </div>
-          
-          <button 
+
+          <button
             onClick={() => setIsAdding(true)}
-            className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-10 py-3 xl:py-4 bg-rojo-sangre hover:brightness-125 text-oro font-black text-caption sm:text-caption xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-rojo-sangre/20 active:scale-95 whitespace-nowrap"
+            className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-10 py-3 xl:py-4 bg-naranja-naruto hover:brightness-125 text-oro font-black text-caption sm:text-caption xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-naranja-naruto/20 active:scale-95 whitespace-nowrap"
             style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
           >
             <PlusCircle className="w-5 h-5 shrink-0" />
@@ -114,10 +113,9 @@ export default function RamaList({ initialRamas, aldeas, rasgos, characters = []
                 <tr key={rama.id} className="hover:bg-oro/5 transition-colors group">
                   {/* Símbolo */}
                   <td className="py-5 px-8">
-                    <div 
-                      className={`w-12 h-12 bg-black/40 flex items-center justify-center border overflow-hidden shrink-0 transition-colors duration-300 ninja-clip-xs ${
-                        rama.activo ? 'border-oro/10' : 'border-oro/5'
-                      }`}
+                    <div
+                      className={`w-12 h-12 bg-black/40 flex items-center justify-center border overflow-hidden shrink-0 transition-colors duration-300 ninja-clip-xs ${rama.activo ? 'border-oro/10' : 'border-oro/5'
+                        }`}
                     >
                       {rama.url_imagen ? (
                         <img src={rama.url_imagen} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" referrerPolicy="no-referrer" />
@@ -134,8 +132,8 @@ export default function RamaList({ initialRamas, aldeas, rasgos, characters = []
 
                   {/* Tipo */}
                   <td className="py-5 px-8">
-                    <span 
-                      className="px-3 py-1 text-caption font-black bg-rojo-sangre text-oro uppercase tracking-widest leading-none inline-block ninja-clip-xs"
+                    <span
+                      className="px-3 py-1 text-caption font-black bg-naranja-naruto text-oro uppercase tracking-widest leading-none inline-block ninja-clip-xs"
                     >
                       {rama.tipo.toUpperCase()}
                     </span>
@@ -144,13 +142,13 @@ export default function RamaList({ initialRamas, aldeas, rasgos, characters = []
                   {/* Afiliación */}
                   <td className="py-5 px-8">
                     {rama.aldeas ? (
-                      <span 
+                      <span
                         className="flex items-center gap-1.5 text-caption text-oro font-black uppercase tracking-widest bg-oro/5 border border-oro/10 px-3 py-1 w-fit ninja-clip-xs"
                       >
                         <MapPin className="w-2.5 h-2.5 text-oro/60" /> {rama.aldeas.abreviatura || rama.aldeas.nombre_jap}
                       </span>
                     ) : (
-                      <span 
+                      <span
                         className="flex items-center gap-1.5 text-caption text-oro/40 font-black uppercase tracking-widest bg-black/20 border border-oro/5 px-3 py-1 w-fit ninja-clip-xs"
                       >
                         <MapPin className="w-2.5 h-2.5 opacity-30" /> GLOBAL
@@ -160,7 +158,7 @@ export default function RamaList({ initialRamas, aldeas, rasgos, characters = []
 
                   {/* Slug */}
                   <td className="py-5 px-8">
-                    <span 
+                    <span
                       className="px-3 py-1 bg-oro/5 border border-oro/10 text-caption font-black text-oro/60 uppercase tracking-widest font-mono italic inline-block ninja-clip-xs"
                     >
                       /{rama.slug}
@@ -170,21 +168,20 @@ export default function RamaList({ initialRamas, aldeas, rasgos, characters = []
                   {/* Acciones */}
                   <td className="py-5 px-8 text-right">
                     <div className="flex items-center justify-end gap-2.5">
-                      <button 
+                      <button
                         onClick={() => toggleActive(rama.id, rama.activo)}
                         disabled={loadingId === rama.id}
-                        className={`p-2.5 transition-all border ninja-clip-xs ${
-                          rama.activo 
-                            ? 'bg-oro/10 border-oro/20 text-oro hover:bg-oro hover:text-rojo-sangre' 
+                        className={`p-2.5 transition-all border ninja-clip-xs ${rama.activo
+                            ? 'bg-oro/10 border-oro/20 text-oro hover:bg-oro hover:text-naranja-naruto'
                             : 'bg-black/40 border-oro/5 text-oro/20 hover:border-oro/40 hover:text-oro'
-                        }`}
+                          }`}
                         title={rama.activo ? "Archivar Registro" : "Activar Registro"}
                       >
                         {loadingId === rama.id ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : (rama.activo ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />)}
                       </button>
-                      <button 
+                      <button
                         onClick={() => setEditingRama(rama)}
-                        className="p-2.5 bg-oro text-rojo-sangre hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-oro/10 ninja-clip-xs"
+                        className="p-2.5 bg-oro text-naranja-naruto hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-oro/10 ninja-clip-xs"
                         title="Editar Registro"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
@@ -207,15 +204,15 @@ export default function RamaList({ initialRamas, aldeas, rasgos, characters = []
       </div>
 
       {(editingRama || isAdding) && (
-        <RamaEditForm 
-          rama={editingRama} 
+        <RamaEditForm
+          rama={editingRama}
           aldeas={aldeas}
           rasgos={rasgos}
           characters={characters}
           onCancel={() => {
             setEditingRama(null);
             setIsAdding(false);
-          }} 
+          }}
         />
       )}
     </div>

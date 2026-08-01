@@ -620,7 +620,7 @@ export default function MapaAdminControls({
                         <label className="text-caption font-black uppercase tracking-[0.2em] text-oro/60 ml-1">
                           Conectar con:
                         </label>
-                        
+
                         <div className="relative">
                           <input
                             type="text"
@@ -666,10 +666,10 @@ export default function MapaAdminControls({
                               .filter((m) =>
                                 m.nombre.toLowerCase().includes(destSearchQuery.toLowerCase())
                               ).length === 0 && (
-                              <div className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-oro/40 text-center">
-                                No hay coincidencias
-                              </div>
-                            )}
+                                <div className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-oro/40 text-center">
+                                  No hay coincidencias
+                                </div>
+                              )}
                           </div>
                         )}
                       </div>
@@ -690,11 +690,10 @@ export default function MapaAdminControls({
                               key={t}
                               type="button"
                               onClick={() => setConnectionTipoIcono(t)}
-                              className={`flex-1 py-1.5 text-[9px] font-black uppercase tracking-widest border rounded transition-all ${
-                                connectionTipoIcono === t
+                              className={`flex-1 py-1.5 text-[9px] font-black uppercase tracking-widest border rounded transition-all ${connectionTipoIcono === t
                                   ? 'bg-oro text-zinc-950 border-oro'
                                   : 'bg-black/40 text-oro/60 border-oro/10 hover:border-oro/30'
-                              }`}
+                                }`}
                             >
                               {t === 'linea' ? '➖ Línea' : '🖼️ URL'}
                             </button>
@@ -735,7 +734,7 @@ export default function MapaAdminControls({
                         </button>
                         <button
                           onClick={() => setConnectingFromId(null)}
-                          className="px-4 py-2 border border-rojo-sangre/40 hover:bg-rojo-sangre/10 text-rojo-sangre font-black text-xs uppercase tracking-widest transition-all"
+                          className="px-4 py-2 border border-naranja-naruto/40 hover:bg-naranja-naruto/10 text-naranja-naruto font-black text-xs uppercase tracking-widest transition-all"
                         >
                           Cancelar
                         </button>
@@ -782,7 +781,7 @@ export default function MapaAdminControls({
                                 </button>
                                 <button
                                   onClick={() => handleRemoveConnection(conn)}
-                                  className="text-rojo-sangre/60 hover:text-rojo-sangre transition-colors"
+                                  className="text-naranja-naruto/60 hover:text-naranja-naruto transition-colors"
                                   title="Eliminar conexión"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -791,7 +790,7 @@ export default function MapaAdminControls({
                             </div>
 
                             {/* Inline Edit Form */}
-                              {isEditing && (
+                            {isEditing && (
                               <div className="flex flex-col gap-2.5 px-3 pb-3 pt-1 border-t border-oro/5 bg-black/20">
                                 <SelectField
                                   label="Color"
@@ -809,11 +808,10 @@ export default function MapaAdminControls({
                                         key={t}
                                         type="button"
                                         onClick={() => setEditConnTipoIcono(t)}
-                                        className={`flex-1 py-1.5 text-[9px] font-black uppercase tracking-widest border rounded transition-all ${
-                                          editConnTipoIcono === t
+                                        className={`flex-1 py-1.5 text-[9px] font-black uppercase tracking-widest border rounded transition-all ${editConnTipoIcono === t
                                             ? 'bg-oro text-zinc-950 border-oro'
                                             : 'bg-black/40 text-oro/60 border-oro/10 hover:border-oro/30'
-                                        }`}
+                                          }`}
                                       >
                                         {t === 'linea' ? '➖ Línea' : '🖼️ URL'}
                                       </button>
@@ -862,7 +860,7 @@ export default function MapaAdminControls({
                 {/* Delete marker action */}
                 <button
                   onClick={handleDeleteMarkerClick}
-                  className="w-full py-3 bg-rojo-sangre/10 border border-rojo-sangre/20 hover:bg-rojo-sangre hover:text-white text-rojo-sangre font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-naranja-naruto/10 border border-naranja-naruto/20 hover:bg-naranja-naruto hover:text-white text-naranja-naruto font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" /> Eliminar Marcador
                 </button>
@@ -884,7 +882,7 @@ export default function MapaAdminControls({
             <p className="text-[11px] text-oro/40 font-semibold leading-relaxed">
               Cambia el tipo, color o icono de todas las conexiones existentes en el mapa simultáneamente.
             </p>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end mt-2">
               <SelectField
                 label="Color de línea global"
@@ -901,11 +899,10 @@ export default function MapaAdminControls({
                       key={t}
                       type="button"
                       onClick={() => setBulkTipoIcono(t)}
-                      className={`flex-1 py-2 text-[9px] font-black uppercase tracking-widest border rounded transition-all ${
-                        bulkTipoIcono === t
+                      className={`flex-1 py-2 text-[9px] font-black uppercase tracking-widest border rounded transition-all ${bulkTipoIcono === t
                           ? 'bg-oro text-zinc-950 border-oro'
                           : 'bg-black/40 text-oro/60 border-oro/10 hover:border-oro/30'
-                      }`}
+                        }`}
                     >
                       {t === 'linea' ? '➖ Líneas' : '🖼️ Icono URL'}
                     </button>

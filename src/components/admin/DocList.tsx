@@ -71,13 +71,13 @@ export default function DocList({ initialDocs, categories, defaultCategory, show
               key={tab}
               onClick={() => setActiveTab(tab as any)}
               className={`flex-1 sm:flex-initial text-center px-4 sm:px-10 py-3 xl:py-4 font-black uppercase tracking-[0.2em] transition-all text-caption sm:text-caption xl:text-xs ${activeTab === tab
-                ? 'bg-oro text-rojo-sangre shadow-lg'
+                ? 'bg-oro text-naranja-naruto shadow-lg'
                 : 'text-oro/40 hover:text-oro hover:bg-oro/5'
                 }`}
               style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
             >
               {tab === 'active' ? 'ACTIVOS' : 'ARCHIVADOS'}
-              <span className={`ml-2 opacity-40 ${activeTab === tab ? 'text-rojo-sangre/60' : ''}`}>({initialDocs.filter(d => tab === 'active' ? d.activo : !d.activo).length})</span>
+              <span className={`ml-2 opacity-40 ${activeTab === tab ? 'text-naranja-naruto/60' : ''}`}>({initialDocs.filter(d => tab === 'active' ? d.activo : !d.activo).length})</span>
             </button>
           ))}
         </div>
@@ -109,7 +109,7 @@ export default function DocList({ initialDocs, categories, defaultCategory, show
 
           <button
             onClick={() => setIsAdding(true)}
-            className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-10 py-3 xl:py-4 bg-rojo-sangre hover:brightness-125 text-oro font-black text-caption sm:text-caption xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-rojo-sangre/20 active:scale-95 whitespace-nowrap"
+            className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-10 py-3 xl:py-4 bg-naranja-naruto hover:brightness-125 text-oro font-black text-caption sm:text-caption xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-naranja-naruto/20 active:scale-95 whitespace-nowrap"
             style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
           >
             <PlusCircle className="w-5 h-5 shrink-0" />
@@ -142,7 +142,7 @@ export default function DocList({ initialDocs, categories, defaultCategory, show
                     <div>
                       <p className="text-lg sm:text-xl xl:text-2xl font-black text-oro uppercase tracking-tight group-hover:text-oro transition-colors italic leading-none">{doc.titulo}</p>
                       <div className="flex items-center gap-2 sm:gap-3 mt-3">
-                        <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
+                        <div className="w-1 h-1 bg-naranja-naruto rotate-45" />
                         <p className="text-caption sm:text-caption text-oro/30 font-black uppercase tracking-[0.2em]">Sistema: {doc.clave}</p>
                       </div>
                     </div>
@@ -165,7 +165,7 @@ export default function DocList({ initialDocs, categories, defaultCategory, show
                     <button
                       onClick={() => toggleStatus(doc.id, doc.activo)}
                       disabled={loadingId === doc.id}
-                      className={`p-3 sm:p-4 transition-all border ${doc.activo ? 'bg-oro/10 border-oro/20 text-oro hover:bg-oro hover:text-rojo-sangre' : 'bg-black/40 border-oro/5 text-oro/20 hover:border-oro/40 hover:text-oro'}`}
+                      className={`p-3 sm:p-4 transition-all border ${doc.activo ? 'bg-oro/10 border-oro/20 text-oro hover:bg-oro hover:text-naranja-naruto' : 'bg-black/40 border-oro/5 text-oro/20 hover:border-oro/40 hover:text-oro'}`}
                       style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                     >
                       {loadingId === doc.id ? <RefreshCw className="w-5 h-5 animate-spin" /> : (doc.activo ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />)}
@@ -173,7 +173,7 @@ export default function DocList({ initialDocs, categories, defaultCategory, show
 
                     <button
                       onClick={() => setEditingDoc(doc)}
-                      className="p-3 sm:p-4 bg-oro text-rojo-sangre hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-oro/10"
+                      className="p-3 sm:p-4 bg-oro text-naranja-naruto hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-oro/10"
                       style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                     >
                       <Edit2 className="w-5 h-5" />
@@ -181,7 +181,7 @@ export default function DocList({ initialDocs, categories, defaultCategory, show
 
                     <button
                       onClick={() => handleDelete(doc.id, doc.titulo)}
-                      className="p-3 sm:p-4 bg-rojo-sangre/10 border border-rojo-sangre/20 text-rojo-sangre hover:bg-rojo-sangre hover:text-oro transition-all active:scale-95"
+                      className="p-3 sm:p-4 bg-naranja-naruto/10 border border-naranja-naruto/20 text-naranja-naruto hover:bg-naranja-naruto hover:text-oro transition-all active:scale-95"
                       style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                     >
                       <Trash2 className="w-5 h-5" />

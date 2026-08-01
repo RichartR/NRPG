@@ -33,7 +33,7 @@ export default function CombateMenu() {
   return (
     <div className="min-h-screen bg-transparent flex flex-col items-center justify-center p-8">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-rojo-sangre/5 rounded-full blur-[120px]"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-naranja-naruto/5 rounded-full blur-[120px]"></div>
       </div>
 
       <div className="w-full max-w-[550px] ninja-card-oro p-12 xl:p-16 relative z-10 overflow-hidden shadow-2xl">
@@ -49,7 +49,7 @@ export default function CombateMenu() {
             type="button"
             onClick={() => setRoomMode('normal')}
             className={`flex-1 py-3 px-4 text-xs font-black uppercase tracking-widest border transition-all ${roomMode === 'normal'
-              ? 'bg-oro text-rojo-sangre border-oro shadow-md shadow-oro/5'
+              ? 'bg-oro text-naranja-naruto border-oro shadow-md shadow-oro/5'
               : 'border-oro/10 text-oro/60 hover:text-oro bg-black/20'
               }`}
             style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
@@ -60,7 +60,7 @@ export default function CombateMenu() {
             type="button"
             onClick={() => setRoomMode('event')}
             className={`flex-1 py-3 px-4 text-xs font-black uppercase tracking-widest border transition-all ${roomMode === 'event'
-              ? 'bg-oro text-rojo-sangre border-oro shadow-md shadow-oro/5'
+              ? 'bg-oro text-naranja-naruto border-oro shadow-md shadow-oro/5'
               : 'border-oro/10 text-oro/60 hover:text-oro bg-black/20'
               }`}
             style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
@@ -96,7 +96,7 @@ export default function CombateMenu() {
           </div>
           <button
             type="submit"
-            className="w-full ninja-btn-rojo flex items-center justify-center gap-4 py-5 px-6 text-xs xl:text-sm shadow-lg shadow-rojo-sangre/20"
+            className="w-full ninja-btn-rojo flex items-center justify-center gap-4 py-5 px-6 text-xs xl:text-sm shadow-lg shadow-naranja-naruto/20"
           >
             <LogIn className="w-5 h-5" />
             ENTRAR A LA SALA
@@ -105,7 +105,7 @@ export default function CombateMenu() {
 
         <Link
           href="/"
-          className="w-full flex items-center justify-center gap-4 py-5 px-6 text-xs xl:text-sm shadow-lg shadow-rojo-sangre/20 border-oro/10 text-oro/60 hover:text-oro hover:bg-black/10 bg-black/20 mt-5 font-black uppercase tracking-[0.3em]"
+          className="w-full flex items-center justify-center gap-4 py-5 px-6 text-xs xl:text-sm shadow-lg shadow-naranja-naruto/20 border-oro/10 text-oro/60 hover:text-oro hover:bg-black/10 bg-black/20 mt-5 font-black uppercase tracking-[0.3em]"
           style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
         >
           RETROCEDER AL DASHBOARD

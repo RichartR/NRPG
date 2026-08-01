@@ -135,7 +135,7 @@ function CrearFichaAdminContent() {
         <button
           onClick={handleCreate}
           disabled={loading}
-          className="w-full py-6 bg-oro text-rojo-sangre font-black uppercase tracking-[0.3em] transition-all shadow-xl shadow-oro/5 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-4 hover:brightness-110 ninja-clip-md"
+          className="w-full py-6 bg-oro text-naranja-naruto font-black uppercase tracking-[0.3em] transition-all shadow-xl shadow-oro/5 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-4 hover:brightness-110 ninja-clip-md"
         >
           {loading ? <RefreshCw className="w-6 h-6 animate-spin" /> : (
             <>

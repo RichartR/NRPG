@@ -38,7 +38,7 @@ export function NinjaSearchInput({ placeholder = "Buscar shinobi por nombre...",
   return (
     <div className="relative w-full max-w-md">
       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-        <Search className={`w-4 h-4 ${isRenegado ? 'text-rojo-sangre/40' : 'text-oro/40'}`} />
+        <Search className={`w-4 h-4 ${isRenegado ? 'text-naranja-naruto/40' : 'text-oro/40'}`} />
       </div>
       <input
         type="text"
@@ -46,8 +46,8 @@ export function NinjaSearchInput({ placeholder = "Buscar shinobi por nombre...",
         onChange={(e) => handleSearch(e.target.value)}
         placeholder={placeholder}
         className={`w-full bg-black/80 border ${isRenegado
-            ? 'border-rojo-sangre/20 focus:border-rojo-sangre/60 focus:ring-1 focus:ring-rojo-sangre/20'
-            : 'border-oro/20 focus:border-oro/60 focus:ring-1 focus:ring-oro/20'
+          ? 'border-naranja-naruto/20 focus:border-naranja-naruto/60 focus:ring-1 focus:ring-naranja-naruto/20'
+          : 'border-oro/20 focus:border-oro/60 focus:ring-1 focus:ring-oro/20'
           } pl-12 pr-10 py-3 text-xs font-black uppercase tracking-widest text-oro placeholder:text-oro/20 outline-none transition-all`}
         style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
       />

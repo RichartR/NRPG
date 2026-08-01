@@ -99,7 +99,7 @@ export default function AdminMisionesPage() {
 
           <button
             onClick={() => setEditingMision({ rango: 'D', exp: 0, ryous: 0 })}
-            className="flex items-center gap-4 px-10 py-5 bg-rojo-sangre hover:brightness-125 text-oro font-black text-caption xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-rojo-sangre/20 active:scale-95 ninja-clip-md"
+            className="flex items-center gap-4 px-10 py-5 bg-naranja-naruto hover:brightness-125 text-oro font-black text-caption xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-naranja-naruto/20 active:scale-95 ninja-clip-md"
           >
             <Plus className="w-4 h-4" />
             NUEVA MISIÓN MAESTRA
@@ -213,7 +213,7 @@ export default function AdminMisionesPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="w-full py-5 bg-oro text-rojo-sangre font-black uppercase tracking-[0.2em] hover:brightness-110 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-4 shadow-xl shadow-oro/5 ninja-clip-md"
+            className="w-full py-5 bg-oro text-naranja-naruto font-black uppercase tracking-[0.2em] hover:brightness-110 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-4 shadow-xl shadow-oro/5 ninja-clip-md"
           >
             <Save className="w-4 h-4" />
             {saving ? 'PROCESANDO...' : 'GUARDAR CONFIGURACIÓN DE MISIÓN'}

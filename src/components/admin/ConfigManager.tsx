@@ -17,7 +17,7 @@ function KeyEditor({ initialKey, onRename }: { initialKey: string, onRename: (ne
   }, [initialKey]);
 
   return (
-    <input 
+    <input
       type="text"
       value={localKey}
       onChange={(e) => setLocalKey(e.target.value)}
@@ -63,8 +63,8 @@ function ConfigEditor({ path, value, onChange, onRenameKey, onAddProperty, onDel
 
           if (!isNestedObject) {
             return (
-              <div 
-                key={key} 
+              <div
+                key={key}
                 className="flex flex-col sm:flex-row items-stretch sm:items-end gap-4 p-4 bg-black/40 border border-oro/5 group/prop relative"
                 style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
               >
@@ -74,7 +74,7 @@ function ConfigEditor({ path, value, onChange, onRenameKey, onAddProperty, onDel
                 </div>
                 <div className="flex-[2] space-y-2">
                   <label className="text-caption font-black uppercase tracking-widest text-oro/30 ml-1">Valor</label>
-                  <input 
+                  <input
                     key={`val-${path.join('-')}-${key}`}
                     type="text"
                     value={val as string | number}
@@ -83,9 +83,9 @@ function ConfigEditor({ path, value, onChange, onRenameKey, onAddProperty, onDel
                     style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
                   />
                 </div>
-                <button 
+                <button
                   onClick={() => onDeleteProperty(path, key)}
-                  className="p-3 text-oro/30 hover:text-rojo-sangre transition-colors self-end"
+                  className="p-3 text-oro/30 hover:text-naranja-naruto transition-colors self-end"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -94,22 +94,22 @@ function ConfigEditor({ path, value, onChange, onRenameKey, onAddProperty, onDel
           }
 
           return (
-            <div 
-              key={key} 
+            <div
+              key={key}
               className="bg-black/30 border border-oro/10 overflow-hidden group/section relative"
               style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
             >
               <div className="w-full flex items-center justify-between p-5 text-left hover:bg-oro/5 transition-colors">
-                <button 
+                <button
                   onClick={() => toggleLocal(key)}
                   className="flex-1 text-caption font-black uppercase tracking-[0.2em] text-oro/70 text-left hover:text-oro"
                 >
                   {key.toUpperCase()}
                 </button>
                 <div className="flex items-center gap-2">
-                  <button 
+                  <button
                     onClick={() => onDeleteProperty(path, key)}
-                    className="p-2 text-oro/30 hover:text-rojo-sangre transition-colors opacity-0 group-hover/section:opacity-100"
+                    className="p-2 text-oro/30 hover:text-naranja-naruto transition-colors opacity-0 group-hover/section:opacity-100"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -118,11 +118,11 @@ function ConfigEditor({ path, value, onChange, onRenameKey, onAddProperty, onDel
                   </button>
                 </div>
               </div>
-              
+
               {isExpanded && (
                 <div className="p-6 pt-0 animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="grid grid-cols-1 gap-6 pt-4 border-t border-oro/10">
-                    <ConfigEditor 
+                    <ConfigEditor
                       path={[...path, key]}
                       value={val}
                       onChange={onChange}
@@ -136,8 +136,8 @@ function ConfigEditor({ path, value, onChange, onRenameKey, onAddProperty, onDel
             </div>
           );
         })}
-        
-        <button 
+
+        <button
           onClick={() => onAddProperty(path)}
           className="w-full py-4 border border-dashed border-oro/20 text-oro/40 hover:border-oro/60 hover:text-oro transition-all flex items-center justify-center gap-2 text-caption font-black uppercase tracking-widest bg-black/10"
           style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
@@ -152,7 +152,7 @@ function ConfigEditor({ path, value, onChange, onRenameKey, onAddProperty, onDel
     <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-6 w-full">
       <div className="flex-1 space-y-2">
         <label className="text-caption font-black uppercase tracking-widest text-oro/30 ml-1">Valor Principal</label>
-        <input 
+        <input
           type="text"
           value={value as string | number}
           onChange={(e) => onChange(path, e.target.value)}
@@ -160,7 +160,7 @@ function ConfigEditor({ path, value, onChange, onRenameKey, onAddProperty, onDel
           style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
         />
       </div>
-      <button 
+      <button
         onClick={() => onAddProperty(path)}
         className="px-6 py-4 bg-black/40 border border-oro/10 text-oro/60 hover:text-oro hover:border-oro/30 transition-all flex items-center justify-center gap-2 text-caption font-black uppercase tracking-widest"
         style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
@@ -179,11 +179,11 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
   const [expandedKeys, setExpandedKeys] = useState<Record<number, boolean>>({});
   const [editingValues, setEditingValues] = useState<Record<number, any>>({});
   const [isAddingNew, setIsAddingNew] = useState(false);
-  const [newConfig, setNewConfig] = useState<{ clave: string, titulo: string, descripcion: string, valor: any }>({ 
-    clave: '', 
-    titulo: '', 
-    descripcion: '', 
-    valor: '' 
+  const [newConfig, setNewConfig] = useState<{ clave: string, titulo: string, descripcion: string, valor: any }>({
+    clave: '',
+    titulo: '',
+    descripcion: '',
+    valor: ''
   });
   const addToast = useToastStore(state => state.addToast);
   const { confirm: confirmAction } = useConfirmStore();
@@ -199,9 +199,9 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
   const handleValueChange = (id: number, path: string[], newValue: any) => {
     setEditingValues(prev => {
       const updatedValor = JSON.parse(JSON.stringify(prev[id]));
-      
+
       if (path.length === 0) return { ...prev, [id]: newValue };
-      
+
       let current = updatedValor;
       for (let i = 0; i < path.length - 1; i++) {
         current = current[path[i]];
@@ -215,7 +215,7 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
   const handleRenameKey = (id: number, path: string[], oldKey: string, newKey: string) => {
     setEditingValues(prev => {
       const updatedValor = JSON.parse(JSON.stringify(prev[id]));
-      
+
       const renameInObject = (obj: any, oldK: string, newK: string) => {
         const newObj: any = {};
         Object.keys(obj).forEach(k => {
@@ -233,16 +233,16 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
       for (let i = 0; i < path.length; i++) {
         current = current[path[i]];
       }
-      
+
       let objToModify = updatedValor;
       for (let i = 0; i < path.length; i++) {
         objToModify = objToModify[path[i]];
       }
 
       const result = renameInObject(objToModify, oldKey, newKey);
-      
+
       if (path.length === 0) return { ...prev, [id]: result };
-      
+
       let setter = updatedValor;
       for (let i = 0; i < path.length - 1; i++) {
         setter = setter[path[i]];
@@ -256,7 +256,7 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
   const handleAddProperty = (id: number, path: string[]) => {
     setEditingValues(prev => {
       const updatedValor = JSON.parse(JSON.stringify(prev[id] ?? ""));
-      
+
       if (path.length === 0) {
         let newRoot = typeof updatedValor === 'object' && updatedValor !== null ? updatedValor : { valor_original: updatedValor };
         newRoot[`propiedad_${Date.now().toString().slice(-4)}`] = "";
@@ -272,7 +272,7 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
       if (typeof current[lastKey] !== 'object' || current[lastKey] === null) {
         current[lastKey] = { valor_original: current[lastKey] };
       }
-      
+
       current[lastKey][`propiedad_${Date.now().toString().slice(-4)}`] = "";
       return { ...prev, [id]: updatedValor };
     });
@@ -363,9 +363,9 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
         <div className="absolute top-0 right-0 w-64 h-64 bg-oro/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
 
         <div className="relative flex-1 min-w-[280px]">
-          <input 
-            type="text" 
-            placeholder="BUSCAR CONFIGURACIÓN..." 
+          <input
+            type="text"
+            placeholder="BUSCAR CONFIGURACIÓN..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full bg-black/20 border border-oro/10 py-3.5 pl-6 pr-6 text-caption sm:text-caption xl:text-xs font-black text-oro focus:border-oro/40 outline-none transition-all placeholder:text-oro/20 uppercase tracking-widest"
@@ -373,9 +373,9 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
           />
         </div>
 
-        <button 
+        <button
           onClick={() => setIsAddingNew(true)}
-          className="flex items-center justify-center gap-3 px-10 py-3.5 bg-rojo-sangre hover:brightness-125 text-oro font-black text-caption sm:text-caption xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-rojo-sangre/20 active:scale-95 whitespace-nowrap"
+          className="flex items-center justify-center gap-3 px-10 py-3.5 bg-naranja-naruto hover:brightness-125 text-oro font-black text-caption sm:text-caption xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-naranja-naruto/20 active:scale-95 whitespace-nowrap"
           style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
         >
           <Plus className="w-5 h-5 shrink-0" /> NUEVO PARÁMETRO
@@ -390,27 +390,27 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
             <button onClick={() => setIsAddingNew(false)} className="text-oro/40 hover:text-oro transition-colors font-black text-caption uppercase tracking-wider">Cancelar</button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <DataField label="Título Humano" value={newConfig.titulo} onChange={v => setNewConfig({...newConfig, titulo: v})} />
-            <DataField label="Clave Técnica" value={newConfig.clave} onChange={v => setNewConfig({...newConfig, clave: v})} />
+            <DataField label="Título Humano" value={newConfig.titulo} onChange={v => setNewConfig({ ...newConfig, titulo: v })} />
+            <DataField label="Clave Técnica" value={newConfig.clave} onChange={v => setNewConfig({ ...newConfig, clave: v })} />
             <div className="md:col-span-2">
-              <DataField label="Descripción" value={newConfig.descripcion} onChange={v => setNewConfig({...newConfig, descripcion: v})} />
+              <DataField label="Descripción" value={newConfig.descripcion} onChange={v => setNewConfig({ ...newConfig, descripcion: v })} />
             </div>
-            
+
             <div className="md:col-span-2 bg-black/40 p-6 border border-oro/5 space-y-4" style={{ clipPath: 'polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)' }}>
               <div className="flex justify-between items-center mb-4 border-b border-oro/5 pb-2">
                 <h3 className="text-caption font-black uppercase tracking-widest text-oro/40">Configuración Inicial</h3>
-                <button 
+                <button
                   onClick={() => {
                     const currentVal = newConfig.valor;
-                    const newVal = typeof currentVal === 'object' && currentVal !== null 
-                      ? currentVal 
+                    const newVal = typeof currentVal === 'object' && currentVal !== null
+                      ? currentVal
                       : { valor: currentVal || "" };
                     setNewConfig({
                       ...newConfig,
                       valor: { ...newVal, [`nueva_propiedad_${Date.now().toString().slice(-4)}`]: "" }
                     });
                   }}
-                  className="flex items-center gap-2 px-4 py-2 bg-oro/10 text-oro border border-oro/20 text-caption font-black uppercase tracking-widest hover:bg-oro hover:text-rojo-sangre transition-all"
+                  className="flex items-center gap-2 px-4 py-2 bg-oro/10 text-oro border border-oro/20 text-caption font-black uppercase tracking-widest hover:bg-oro hover:text-naranja-naruto transition-all"
                   style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
                 >
                   <Plus className="w-3 h-3" /> Añadir Propiedad
@@ -419,12 +419,12 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
 
               {typeof newConfig.valor === 'object' && newConfig.valor !== null ? (
                 <div className="space-y-4">
-                  <ConfigEditor 
+                  <ConfigEditor
                     path={[]}
                     value={newConfig.valor}
                     onChange={(path, val) => {
                       const updated = JSON.parse(JSON.stringify(newConfig.valor));
-                      
+
                       if (path.length === 1) {
                         updated[path[0]] = val;
                         setNewConfig({ ...newConfig, valor: updated });
@@ -438,7 +438,7 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
                     }}
                     onRenameKey={(path, old, key) => {
                       const updated = JSON.parse(JSON.stringify(newConfig.valor));
-                      
+
                       const renameInObject = (obj: any, oldK: string, newK: string) => {
                         const newObj: any = {};
                         Object.keys(obj).forEach(k => {
@@ -455,11 +455,11 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
 
                       let curr = updated;
                       for (let i = 0; i < path.length - 1; i++) curr = curr[path[i]];
-                      
+
                       const lastKey = path[path.length - 1];
                       const result = renameInObject(curr[lastKey], old, key);
                       curr[lastKey] = result;
-                      
+
                       setNewConfig({ ...newConfig, valor: updated });
                     }}
                     onAddProperty={(path) => {
@@ -479,18 +479,18 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
                   />
                 </div>
               ) : (
-                <DataField 
-                  label="Valor Inicial (Simple)" 
-                  value={newConfig.valor as string} 
-                  onChange={v => setNewConfig({...newConfig, valor: v})} 
+                <DataField
+                  label="Valor Inicial (Simple)"
+                  value={newConfig.valor as string}
+                  onChange={v => setNewConfig({ ...newConfig, valor: v })}
                   placeholder="Escribe un valor simple o añade una propiedad arriba para estructurar como JSON..."
                 />
               )}
             </div>
           </div>
-          <button 
+          <button
             onClick={handleCreateConfig}
-            className="w-full py-5 bg-oro text-rojo-sangre font-black uppercase tracking-[0.2em] hover:brightness-110 transition-all shadow-lg active:scale-[0.98]"
+            className="w-full py-5 bg-oro text-naranja-naruto font-black uppercase tracking-[0.2em] hover:brightness-110 transition-all shadow-lg active:scale-[0.98]"
             style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
           >
             Confirmar y Crear Parámetro
@@ -505,17 +505,17 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
           const hasChanges = JSON.stringify(config.valor) !== JSON.stringify(editingValues[config.id]);
 
           return (
-            <div 
-              key={config.id} 
+            <div
+              key={config.id}
               className={`border transition-all overflow-hidden bg-black/40 backdrop-blur-sm relative ${isExpanded ? 'border-oro/40' : 'border-oro/10 hover:border-oro/30'}`}
               style={{ clipPath: 'polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)' }}
             >
               <div className="w-full flex items-center justify-between p-6 sm:p-8 text-left group">
-                <button 
+                <button
                   onClick={() => toggleExpand(config.id)}
                   className="flex flex-1 items-center gap-6 text-left"
                 >
-                  <div className={`w-12 h-12 flex items-center justify-center transition-all border ${isExpanded ? 'bg-oro border-oro text-rojo-sangre' : 'bg-black/40 border-oro/10 text-oro/40 group-hover:text-oro'}`} style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                  <div className={`w-12 h-12 flex items-center justify-center transition-all border ${isExpanded ? 'bg-oro border-oro text-naranja-naruto' : 'bg-black/40 border-oro/10 text-oro/40 group-hover:text-oro'}`} style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
                     <Settings className="w-5 h-5" />
                   </div>
                   <div>
@@ -530,9 +530,9 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
                   </div>
                 </button>
                 <div className="flex items-center gap-4">
-                  <button 
+                  <button
                     onClick={() => handleDeleteConfig(config.id)}
-                    className="p-3 text-oro/30 hover:text-rojo-sangre transition-colors opacity-0 group-hover:opacity-100"
+                    className="p-3 text-oro/30 hover:text-naranja-naruto transition-colors opacity-0 group-hover:opacity-100"
                     title="Eliminar"
                   >
                     <Trash2 className="w-5 h-5" />
@@ -546,10 +546,10 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
               {isExpanded && (
                 <div className="p-6 sm:p-8 pt-0 animate-in fade-in slide-in-from-top-4 duration-300">
                   <div className="h-px bg-oro/10 mb-6" />
-                  
+
                   <div className="flex flex-col gap-6">
                     <div className="flex flex-wrap gap-6 bg-black/20 p-6 border border-oro/5" style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}>
-                      <ConfigEditor 
+                      <ConfigEditor
                         path={[]}
                         value={editingValues[config.id]}
                         onChange={(path, val) => handleValueChange(config.id, path, val)}
@@ -560,10 +560,10 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
                     </div>
 
                     {hasChanges && (
-                      <button 
+                      <button
                         onClick={() => handleSave(config.id)}
                         disabled={loadingId === config.id}
-                        className="w-full py-5 bg-rojo-sangre hover:brightness-125 text-oro font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-4 animate-in slide-in-from-bottom-4 duration-500 shadow-xl shadow-rojo-sangre/15"
+                        className="w-full py-5 bg-naranja-naruto hover:brightness-125 text-oro font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-4 animate-in slide-in-from-bottom-4 duration-500 shadow-xl shadow-naranja-naruto/15"
                         style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
                       >
                         {loadingId === config.id ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}

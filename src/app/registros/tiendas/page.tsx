@@ -164,7 +164,7 @@ export default function TiendasPage() {
     }
     try {
       await AdminService.reiniciarMonedasEvento();
-      addToast(`Se han reiniciado las ${eventCoinName} a 0 para todos los shinobis`, 'success');
+      addToast(`Se han reiniciado las ${eventCoinName} a 0 para todos los shinobi`, 'success');
       setIsResetConfirmOpen(false);
       setResetConfirmationText('');
     } catch (err: any) {
@@ -336,12 +336,12 @@ export default function TiendasPage() {
 
         {/* Global actions: History button */}
         <div className="flex justify-between items-center mb-8">
-          <p className="text-xs sm:text-sm font-black text-oro uppercase tracking-widest bg-rojo-sangre/80 p-2">
+          <p className="text-xs sm:text-sm font-black text-black uppercase tracking-widest">
             {loading ? 'Cargando Tiendas...' : `${listToShow.length} Tiendas Disponibles`}
           </p>
           <button
             onClick={() => setIsHistoryOpen(true)}
-            className="ninja-btn-ghost py-2 px-4 text-xs font-black uppercase tracking-widest flex items-center gap-2"
+            className="ninja-btn-oro py-2 px-4 text-xs font-black uppercase tracking-widest flex items-center gap-2"
           >
             <History className="w-4 h-4" />
             <span>Ver Historial de Compras</span>
@@ -683,7 +683,7 @@ export default function TiendasPage() {
               {(historyStartDate || historyEndDate) && (
                 <button
                   onClick={() => { setHistoryStartDate(''); setHistoryEndDate(''); }}
-                  className="text-xs font-black text-rojo-sangre uppercase tracking-widest hover:brightness-125 border-b border-rojo-sangre/30 pb-1 italic transition-all"
+                  className="text-xs font-black text-naranja-naruto uppercase tracking-widest hover:brightness-125 border-b border-naranja-naruto/30 pb-1 italic transition-all"
                 >
                   LIMPIAR FILTROS
                 </button>

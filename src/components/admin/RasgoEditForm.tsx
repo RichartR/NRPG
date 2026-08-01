@@ -84,7 +84,7 @@ export default function RasgoEditForm({ rasgo, characters, onCancel }: RasgoEdit
                 <div className={`absolute top-[2px] w-2.5 h-2.5 transition-all ${formData.activo ? 'right-[2px] bg-oro shadow-[0_0_10px_rgba(255,230,159,0.5)]' : 'left-[2px] bg-oro/10'}`} />
               </div>
             </label>
-            <button onClick={onCancel} className="p-2 text-oro/40 hover:text-rojo-sangre transition-all hover:rotate-90">
+            <button onClick={onCancel} className="p-2 text-oro/40 hover:text-naranja-naruto transition-all hover:rotate-90">
               <X className="w-8 h-8" />
             </button>
           </div>
@@ -116,7 +116,7 @@ export default function RasgoEditForm({ rasgo, characters, onCancel }: RasgoEdit
                         updateField('stat', null);
                       }
                     }}
-                    className={`flex-1 text-caption font-black uppercase tracking-widest transition-all ninja-clip-xs ${formData.categoria === cat ? 'bg-oro text-rojo-sangre shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
+                    className={`flex-1 text-caption font-black uppercase tracking-widest transition-all ninja-clip-xs ${formData.categoria === cat ? 'bg-oro text-naranja-naruto shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
                   >
                     {cat === 'Físico' ? 'Físico' : cat === 'Psicológico' ? 'Psico' : 'Habilidad'}
                   </button>
@@ -133,7 +133,7 @@ export default function RasgoEditForm({ rasgo, characters, onCancel }: RasgoEdit
                     key={r}
                     type="button"
                     onClick={() => updateField('rango', r)}
-                    className={`flex-1 text-caption font-black uppercase tracking-widest transition-all ninja-clip-xs ${formData.rango === r ? 'bg-oro text-rojo-sangre shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
+                    className={`flex-1 text-caption font-black uppercase tracking-widest transition-all ninja-clip-xs ${formData.rango === r ? 'bg-oro text-naranja-naruto shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
                   >
                     {r}
                   </button>
@@ -179,8 +179,8 @@ export default function RasgoEditForm({ rasgo, characters, onCancel }: RasgoEdit
                   onChange={(e) => updateField('especial', e.target.checked)}
                   className="hidden"
                 />
-                <div className={`w-10 h-5 rounded-none transition-all relative ${formData.especial ? 'bg-rojo-sangre/20 border-rojo-sangre/40' : 'bg-black/40 border-oro/10'} border`}>
-                  <div className={`absolute top-[3px] w-3 h-3 transition-all ${formData.especial ? 'right-[3px] bg-rojo-sangre shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'left-[3px] bg-oro/10'}`} />
+                <div className={`w-10 h-5 rounded-none transition-all relative ${formData.especial ? 'bg-naranja-naruto/20 border-naranja-naruto/40' : 'bg-black/40 border-oro/10'} border`}>
+                  <div className={`absolute top-[3px] w-3 h-3 transition-all ${formData.especial ? 'right-[3px] bg-naranja-naruto shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'left-[3px] bg-oro/10'}`} />
                 </div>
               </label>
             </div>
@@ -191,15 +191,15 @@ export default function RasgoEditForm({ rasgo, characters, onCancel }: RasgoEdit
                 <label className="text-caption font-black uppercase tracking-widest text-oro/60 ml-1">
                   Personajes Autorizados
                 </label>
-                
+
                 {/* Selected Character Tags */}
                 <div className="flex flex-wrap gap-2 mb-3">
                   {(formData.personajes || []).map((charId: number) => {
                     const char = characters.find(c => Number(c.id) === Number(charId));
                     return (
-                      <span 
+                      <span
                         key={charId}
-                        className="inline-flex items-center gap-2 px-3 py-1 bg-rojo-sangre/20 border border-rojo-sangre/40 text-oro text-caption font-black uppercase tracking-wider"
+                        className="inline-flex items-center gap-2 px-3 py-1 bg-naranja-naruto/20 border border-naranja-naruto/40 text-oro text-caption font-black uppercase tracking-wider"
                         style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}
                       >
                         {char ? char.nombre_ninja : `ID: ${charId}`}
@@ -236,7 +236,7 @@ export default function RasgoEditForm({ rasgo, characters, onCancel }: RasgoEdit
                   />
 
                   {showDropdown && charSearch.trim().length > 0 && (
-                    <div 
+                    <div
                       className="absolute z-[110] w-full mt-2 bg-neutral-900 border border-oro/20 shadow-[0_10px_30px_rgba(0,0,0,0.8)] overflow-hidden ninja-clip-sm"
                       onMouseLeave={() => setShowDropdown(false)}
                     >

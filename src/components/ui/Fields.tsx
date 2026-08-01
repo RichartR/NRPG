@@ -31,7 +31,7 @@ export function DataField({ label, value, onChange, disabled, type = "text", pla
           disabled={disabled}
           placeholder={placeholder}
           onChange={(e) => onChange?.(e.target.value)}
-          className={`w-full h-[58px] bg-black/40 border border-oro/10 px-6 py-4 text-oro font-black outline-none focus:border-oro/40 transition-all disabled:cursor-default placeholder:text-oro/20 text-sm xl:text-base ninja-clip-sm ${showLock ? 'pr-12' : ''}`}
+          className={`w-full h-[58px] bg-[#171717] border border-oro/10 px-6 py-4 text-oro font-black outline-none focus:border-oro/40 transition-all disabled:cursor-default placeholder:text-oro/20 text-sm xl:text-base ninja-clip-sm ${showLock ? 'pr-12' : ''}`}
         />
         {showLock && (
           <Lock className="w-3.5 h-3.5 text-oro/40 absolute right-5 top-1/2 -translate-y-1/2" />
@@ -150,7 +150,7 @@ export function NinjaSelect({
   };
 
   const triggerClass = {
-    default: 'h-[58px] bg-black/40 border border-oro/10 px-6 py-4 text-sm xl:text-base hover:border-oro/40 hover:bg-black/70 focus:border-oro/60 ninja-clip-sm',
+    default: 'h-[58px] bg-[#171717] border border-oro/10 px-6 py-4 text-sm xl:text-base hover:border-oro/40 hover:bg-[#1f1f1f] focus:border-oro/60 ninja-clip-sm',
     filter:  'bg-black/20 border border-oro/10 px-6 py-3 text-xs hover:border-oro/30 focus:border-oro/40 ninja-clip-xs',
     inline:  'bg-transparent border border-oro/10 px-4 py-3 text-xs hover:border-oro/20 focus:border-oro/30',
   }[variant];
@@ -166,7 +166,7 @@ export function NinjaSelect({
           }}
           onMouseDown={(e) => e.stopPropagation()}
           role="listbox"
-          className="bg-neutral-900 border border-oro/25 shadow-[0_10px_40px_rgba(0,0,0,0.9)] backdrop-blur-md overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+          className="bg-[#171717] border border-oro/25 shadow-[0_10px_40px_rgba(0,0,0,0.9)] overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         >
           {/* Línea oro superior */}
           <div className="h-[1px] bg-gradient-to-r from-transparent via-oro/40 to-transparent" />
@@ -365,7 +365,7 @@ export function SearchableSelect({ label, value, options, onChange, disabled, pl
         type="button"
         disabled={disabled}
         onClick={() => isOpen ? setIsOpen(false) : openDropdown()}
-        className="w-full h-[58px] bg-black/40 border border-oro/10 px-6 py-4 text-left text-oro font-black outline-none focus:border-oro/40 disabled:cursor-default flex justify-between items-center transition-all text-sm xl:text-base ninja-clip-sm"
+        className="w-full h-[58px] bg-[#171717] border border-oro/10 px-6 py-4 text-left text-oro font-black outline-none focus:border-oro/40 disabled:cursor-default flex justify-between items-center transition-all text-sm xl:text-base ninja-clip-sm"
       >
         <span className={`${!selectedOption ? 'text-oro/20' : ''} w-full text-left truncate`}>
           {selectedOption ? selectedOption.label : placeholder}
@@ -381,7 +381,7 @@ export function SearchableSelect({ label, value, options, onChange, disabled, pl
         <div
           ref={dropdownRef}
           style={{ ...dropdownStyle }}
-          className="z-[9999] bg-black/95 border border-oro/20 shadow-[0_10px_30px_rgba(0,0,0,0.8)] overflow-hidden animate-in fade-in zoom-in duration-200 ninja-clip-sm backdrop-blur-md"
+          className="z-[9999] bg-[#171717] border border-oro/20 shadow-[0_10px_30px_rgba(0,0,0,0.8)] overflow-hidden animate-in fade-in zoom-in duration-200 ninja-clip-sm"
         >
           <div className="p-4 border-b border-oro/10 bg-black/20">
             <input
@@ -537,7 +537,7 @@ export function SearchableMultiSelect({
         type="button"
         disabled={disabled}
         onClick={() => isOpen ? setIsOpen(false) : openDropdown()}
-        className="w-full h-[58px] bg-black/40 border border-oro/10 px-6 py-4 text-left text-oro font-black outline-none focus:border-oro/40 disabled:cursor-default flex justify-between items-center transition-all text-sm xl:text-base ninja-clip-sm"
+        className="w-full h-[58px] bg-[#171717] border border-oro/10 px-6 py-4 text-left text-oro font-black outline-none focus:border-oro/40 disabled:cursor-default flex justify-between items-center transition-all text-sm xl:text-base ninja-clip-sm"
       >
         <span className={`${selectedOptions.length === 0 ? 'text-oro/20' : 'text-oro'} w-full text-left truncate`}>
           {selectedOptions.length > 0 ? `${selectedOptions.length} seleccionados` : placeholder}
@@ -569,7 +569,7 @@ export function SearchableMultiSelect({
         <div
           ref={dropdownRef}
           style={dropdownStyle}
-          className="z-[9999] bg-black/95 border border-oro/20 shadow-[0_10px_30px_rgba(0,0,0,0.8)] overflow-hidden animate-in fade-in zoom-in duration-200 ninja-clip-sm backdrop-blur-md"
+          className="z-[9999] bg-[#171717] border border-oro/20 shadow-[0_10px_30px_rgba(0,0,0,0.8)] overflow-hidden animate-in fade-in zoom-in duration-200 ninja-clip-sm"
         >
           <div className="p-4 border-b border-oro/10 bg-black/20">
             <input

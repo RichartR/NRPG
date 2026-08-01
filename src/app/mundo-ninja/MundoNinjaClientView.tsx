@@ -18,15 +18,8 @@ interface MundoNinjaClientViewProps {
   initialConfigReseteo?: any;
 }
 
-function getTitleFontSize(name: string) {
-  const len = name.length;
-  if (len <= 4) {
-    return "text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-5xl 2xl:text-6xl";
-  }
-  if (len <= 7) {
-    return "text-2xl sm:text-3xl md:text-4xl lg:text-4xl xl:text-4xl 2xl:text-5xl";
-  }
-  return "text-xl sm:text-2xl md:text-3xl lg:text-3xl xl:text-3xl 2xl:text-4xl";
+function getTitleFontSize(name: string = '') {
+  return "text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-5xl";
 }
 
 export default function MundoNinjaClientView({
@@ -96,17 +89,14 @@ export default function MundoNinjaClientView({
       <main className="w-full max-w-[1750px] mx-auto flex-1">
         {viewMode === 'player' ? (
           <>
-            <div className="mb-10 ninja-card-oro p-8 sm:p-12 xl:p-16 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-12 opacity-[0.02] pointer-events-none group-hover:opacity-[0.05] transition-opacity">
-              </div>
+            <div className="mb-10 ninja-card-oro p-6 sm:p-8 xl:p-10 relative overflow-hidden group">
               <div className="flex items-center gap-6 mb-3 relative z-10">
                 <h1 className="ninja-title text-3xl sm:text-5xl xl:text-7xl uppercase leading-none">
                   Fichas Ninja
                 </h1>
               </div>
               <p className="text-gris-texto text-base sm:text-lg xl:text-2xl leading-relaxed relative z-10">
-                Explora el censo oficial de las Naciones y Organizaciones Shinobi. Descubre a los guerreros que
-                forjan la historia y el destino de cada aldea oculta.
+                Explora los censos y descubre toda la información de los ninjas de cada una de las Aldeas y Organizaciones.
               </p>
             </div>
 
@@ -121,17 +111,17 @@ export default function MundoNinjaClientView({
                     title={aldeaTitle}
                     titleClassName={getTitleFontSize(aldeaTitle)}
                     category={aldea.nombre_español}
-                    categoryClassName="text-caption sm:text-xs md:text-sm lg:text-base xl:text-lg font-black text-oro/40 uppercase tracking-[0.2em] sm:tracking-[0.4em] break-words"
+                    categoryClassName="text-caption sm:text-xs md:text-xs lg:text-sm xl:text-sm font-black text-oro/60 uppercase tracking-[0.1em] sm:tracking-[0.15em] whitespace-nowrap overflow-hidden text-ellipsis"
                     imageUrl={aldea.url_imagen || undefined}
                     description={aldea.descripcion || 'Sin descripción registrada.'}
-                    actionText="Ver información"
+                    actionText="Ver fichas"
                     headerOverlayRight={
                       <div className="flex flex-col items-start sm:items-end gap-0.5 shrink-0">
                         <span className="text-2xl md:text-3xl xl:text-4xl font-black text-oro tabular-nums leading-none">
                           {actuales}/{maxCupos}
                         </span>
-                        <span className="text-caption md:text-xs xl:text-sm font-black text-oro/20 uppercase tracking-widest">
-                          SHINOBIS
+                        <span className="text-caption md:text-xs xl:text-sm font-black text-oro/50 uppercase tracking-widest">
+                          SHINOBI
                         </span>
                       </div>
                     }
@@ -143,25 +133,20 @@ export default function MundoNinjaClientView({
               <NinjaCard
                 href="/mundo-ninja/renegados"
                 className="md:col-span-2 xl:col-span-1"
-                title="RENEGADOS"
-                titleClassName={getTitleFontSize('RENEGADOS')}
-                category="Shinobis sin afiliación"
-                categoryClassName="text-caption sm:text-xs md:text-sm lg:text-base xl:text-lg font-black text-oro/40 uppercase tracking-[0.2em] sm:tracking-[0.4em] break-words"
+                title="Renegados"
+                titleClassName={getTitleFontSize('Renegados')}
+                category="shinobi sin afiliación"
+                categoryClassName="text-caption sm:text-xs md:text-xs lg:text-sm xl:text-sm font-black text-oro/40 uppercase tracking-[0.1em] sm:tracking-[0.15em] whitespace-nowrap overflow-hidden text-ellipsis"
                 imageUrl="/assets/images/renegados.jpg"
                 description="Ninjas sin afiliación o exiliados que actuan fuera del control de las grandes naciones."
-                actionText="Ver información"
-                headerBgIcon={
-                  <div className="absolute top-6 right-6 opacity-[0.06] group-hover:opacity-[0.12] transition-opacity pointer-events-none">
-                    <Users className="w-32 h-32 text-oro rotate-12" />
-                  </div>
-                }
+                actionText="VER FICHAS"
                 headerOverlayRight={
                   <div className="flex flex-col items-start sm:items-end gap-0.5 shrink-0">
                     <span className="text-2xl md:text-3xl xl:text-4xl font-black text-oro tabular-nums leading-none">
                       {getCount(null)}
                     </span>
-                    <span className="text-caption md:text-xs xl:text-sm font-black text-oro/20 uppercase tracking-widest">
-                      SHINOBIS
+                    <span className="text-caption md:text-xs xl:text-sm font-black text-oro/250 uppercase tracking-widest">
+                      SHINOBI
                     </span>
                   </div>
                 }
@@ -195,7 +180,7 @@ export default function MundoNinjaClientView({
                     </p>
                   </div>
                   <div className="flex items-center gap-6 shrink-0">
-                    <span className={`text-xs font-black uppercase tracking-[0.2em] ${configReseteoValue ? 'text-emerald-400' : 'text-rojo-sangre'}`}>
+                    <span className={`text-xs font-black uppercase tracking-[0.2em] ${configReseteoValue ? 'text-emerald-400' : 'text-naranja-naruto'}`}>
                       {configReseteoValue ? 'GRATUITOS ACTIVADOS' : 'COSTE 25% ACTIVO'}
                     </span>
                     <button

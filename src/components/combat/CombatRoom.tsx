@@ -1390,8 +1390,8 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
           }}
         />
         <div className="ninja-card-oro p-8 max-w-md w-full text-center relative z-10 space-y-6">
-          <div className="w-16 h-16 mx-auto rounded-full bg-rojo-sangre/10 border border-rojo-sangre/30 flex items-center justify-center">
-            <Users className="w-8 h-8 text-rojo-sangre" />
+          <div className="w-16 h-16 mx-auto rounded-full bg-naranja-naruto/10 border border-naranja-naruto/30 flex items-center justify-center">
+            <Users className="w-8 h-8 text-naranja-naruto" />
           </div>
           <div>
             <h2 className="ninja-title text-xl font-black uppercase tracking-wider mb-2 text-oro">
@@ -1594,7 +1594,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                 className="ninja-btn-oro px-6 py-2.5 text-xs text-center flex items-center gap-2"
                 style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
               >
-                <Sparkles className="w-3.5 h-3.5 text-rojo-sangre" />
+                <Sparkles className="w-3.5 h-3.5 text-naranja-naruto" />
                 Crear NPC Temporal
               </button>
             )}
@@ -1757,7 +1757,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                       setActiveMusicVideoId(null);
                       broadcastMusic(null);
                     }}
-                    className="ninja-btn-rojo px-3 py-[5px] text-xs shrink-0 border border-rojo-sangre/30 leading-none whitespace-nowrap"
+                    className="ninja-btn-rojo px-3 py-[5px] text-xs shrink-0 border border-naranja-naruto/30 leading-none whitespace-nowrap"
                   >
                     Parar
                   </button>
@@ -2187,7 +2187,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                     disabled={turnQueue.length === 0}
                     className="ninja-btn-oro px-5 py-2.5 text-xs flex items-center gap-2"
                   >
-                    <Play className="w-3.5 h-3.5 fill-rojo-sangre" /> Iniciar Combate
+                    <Play className="w-3.5 h-3.5 fill-naranja-naruto" /> Iniciar Combate
                   </button>
                 ) : (
                   <button
@@ -2238,7 +2238,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                           {canDelete && (
                             <button
                               onClick={() => removeFromQueue(charId)}
-                              className="p-1 hover:bg-rojo-sangre/10 text-red-500/60 hover:text-red-400 rounded-sm transition-all"
+                              className="p-1 hover:bg-naranja-naruto/10 text-red-500/60 hover:text-red-400 rounded-sm transition-all"
                               title="Retirar de turnos"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -2257,7 +2257,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                           {part.nombre}
                         </span>
                         {isActive && (
-                          <span className="text-[9px] font-black uppercase text-rojo-sangre bg-oro px-1.5 py-0.5 rounded-sm animate-pulse">
+                          <span className="text-[9px] font-black uppercase text-naranja-naruto bg-oro px-1.5 py-0.5 rounded-sm animate-pulse">
                             Turno Activo
                           </span>
                         )}
@@ -2844,7 +2844,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                       onClick={rollDice}
                       className="ninja-btn-oro flex-1 py-2 text-xs flex items-center justify-center gap-2 font-black"
                     >
-                      <Dices className="w-4 h-4 text-rojo-sangre" /> Tirar
+                      <Dices className="w-4 h-4 text-naranja-naruto" /> Tirar
                     </button>
                   </div>
 

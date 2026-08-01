@@ -80,8 +80,8 @@ export default function DocEditForm({ doc, categories, onCancel, defaultCategory
 
         <header className="bg-black/40 p-4 sm:p-10 xl:p-12 flex flex-col md:flex-row justify-between items-center gap-6 border-b border-oro/10 relative z-10">
           <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-4 sm:gap-8 w-full md:w-auto">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-rojo-sangre/10 border border-rojo-sangre/20 flex items-center justify-center shrink-0" style={{ clipPath: 'polygon(20% 0, 80% 0, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0 80%, 0 20%)' }}>
-              <PlusCircle className="w-8 h-8 sm:w-10 sm:h-10 text-rojo-sangre" />
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-naranja-naruto/10 border border-naranja-naruto/20 flex items-center justify-center shrink-0" style={{ clipPath: 'polygon(20% 0, 80% 0, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0 80%, 0 20%)' }}>
+              <PlusCircle className="w-8 h-8 sm:w-10 sm:h-10 text-naranja-naruto" />
             </div>
             <div>
               <h2 className="ninja-title text-xl sm:text-3xl xl:text-5xl leading-none">
@@ -164,13 +164,13 @@ export default function DocEditForm({ doc, categories, onCancel, defaultCategory
           </div>
 
           <footer className="flex flex-col-reverse sm:flex-row justify-end items-center gap-6 sm:gap-12 pt-8 sm:pt-12 border-t border-oro/10">
-            <button type="button" onClick={onCancel} className="text-caption sm:text-caption xl:text-xs font-black uppercase tracking-[0.4em] text-oro/40 hover:text-rojo-sangre transition-colors italic bg-transparent border-none outline-none cursor-pointer">CANCELAR</button>
+            <button type="button" onClick={onCancel} className="text-caption sm:text-caption xl:text-xs font-black uppercase tracking-[0.4em] text-oro/40 hover:text-naranja-naruto transition-colors italic bg-transparent border-none outline-none cursor-pointer">CANCELAR</button>
             <button
               type="submit"
               disabled={loading}
               className="w-full sm:w-auto ninja-btn-oro px-10 sm:px-16 py-4 sm:py-6 flex items-center justify-center gap-4 sm:gap-6 shadow-2xl active:scale-95 disabled:opacity-50"
             >
-              {loading ? <RefreshCw className="w-5 h-5 sm:w-6 sm:h-6 animate-spin text-rojo-sangre" /> : <Save className="w-5 h-5 sm:w-6 sm:h-6 text-rojo-sangre" />}
+              {loading ? <RefreshCw className="w-5 h-5 sm:w-6 sm:h-6 animate-spin text-naranja-naruto" /> : <Save className="w-5 h-5 sm:w-6 sm:h-6 text-naranja-naruto" />}
               <span>{isCreate ? 'FINALIZAR REGISTRO' : 'CONFIRMAR CAMBIOS'}</span>
             </button>
           </footer>

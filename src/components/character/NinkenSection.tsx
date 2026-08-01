@@ -91,7 +91,7 @@ export default function NinkenSection({
 
               const template = inuzukaTemplates.find(t => Number(t.id) === Number(companion?.acompanante_id));
               const displayImage = companion?.url_image_personalizada || companion?.info_acompanantes?.url_default || template?.url_default || '/assets/images/ninken_placeholder.png';
-              const displayName = companion?.nombre_personalizado 
+              const displayName = companion?.nombre_personalizado
                 ? `${companion.nombre_personalizado} (${template?.nombre_jap || 'Ninken'})`
                 : (template?.nombre_jap || `Ninken #${idx + 1}`);
 
@@ -119,7 +119,7 @@ export default function NinkenSection({
                         <span className="inline-block w-1.5 h-1.5 bg-amber-950/40 rotate-45" />
                         {idx === 0 ? 'D/C-Rank' : idx === 1 ? 'B-Rank' : 'A/S-Rank'}
                       </span>
-                      <span className="text-[10px] text-rojo-sangre font-black font-mono">
+                      <span className="text-[10px] text-naranja-naruto font-black font-mono">
                         {idx === 0 ? '丙・丁' : idx === 1 ? '乙' : '甲'}
                       </span>
                     </div>

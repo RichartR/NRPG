@@ -50,7 +50,7 @@ export default function SistemasClientView({
       <main className="w-full max-w-[1750px] mx-auto flex-1">
         {viewMode === 'player' ? (
           <>
-            <div className="mb-10 ninja-card-oro p-8 sm:p-12 xl:p-16">
+            <div className="mb-10 ninja-card-oro p-6 sm:p-8 xl:p-10">
               <div className="flex items-center gap-6 mb-6">
                 <h1 className="ninja-title text-3xl sm:text-5xl xl:text-7xl">SISTEMAS</h1>
               </div>

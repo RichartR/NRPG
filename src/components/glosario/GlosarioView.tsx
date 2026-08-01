@@ -278,9 +278,9 @@ export default function GlosarioView({
           (i.rama_clan_id === null && ramaId === null) ||
           (Number(i.rama_clan_id) === Number(ramaId))
         );
-        const isElementalRama = 
-          String(ramaInfo.nombre || '').toLowerCase().includes('elemental') || 
-          String(ramaInfo.nombre || '').toLowerCase().includes('ninjutsu') || 
+        const isElementalRama =
+          String(ramaInfo.nombre || '').toLowerCase().includes('elemental') ||
+          String(ramaInfo.nombre || '').toLowerCase().includes('ninjutsu') ||
           String((ramaInfo as any).slug || '').toLowerCase().includes('elemental') ||
           String((ramaInfo as any).slug || '').toLowerCase().includes('ninjutsu');
         const ramaGroup: any = { info: ramaInfo, isElemental: isElementalRama, subespecialidades: [], elementos: [] };
@@ -378,7 +378,7 @@ export default function GlosarioView({
 
     const elements: React.ReactNode[] = [];
 
-    if (reqs.rango) elements.push(<span key="rango" className="text-rojo-sangre font-black">{reqs.rango}</span>);
+    if (reqs.rango) elements.push(<span key="rango" className="text-naranja-naruto font-black">{reqs.rango}</span>);
     if (reqs.rama_id) {
       const rama = ramas.find(r => r.id === reqs.rama_id);
       elements.push(<span key="rama" className="text-amber-800 font-black">{rama?.nombre || `ID: ${reqs.rama_id}`}</span>);
@@ -442,7 +442,7 @@ export default function GlosarioView({
 
     if (reqs.misiones && typeof reqs.misiones === 'object') {
       Object.entries(reqs.misiones).forEach(([rangoM, cant]) => {
-        if (cant && cant !== 0) elements.push(<span key={rangoM} className="text-rojo-sangre font-black">M.{rangoM}: <span className="text-zinc-900">{String(cant)}</span></span>);
+        if (cant && cant !== 0) elements.push(<span key={rangoM} className="text-naranja-naruto font-black">M.{rangoM}: <span className="text-zinc-900">{String(cant)}</span></span>);
       });
     }
 
@@ -548,16 +548,16 @@ export default function GlosarioView({
         {groupedData.map((aldeaGroup: any) => (
           <section key={aldeaGroup.info.id || 'general'} className="animate-in fade-in slide-in-from-bottom-10 duration-700">
             {/* NIVEL 1: ALDEA */}
-            <div className="relative py-6 mb-8 border-b-2 border-rojo-sangre/10">
+            <div className="relative py-6 mb-8 border-b-2 border-naranja-naruto/10">
               <div className="flex flex-col items-center text-center">
-                <span className="text-xs font-black text-rojo-sangre/40 uppercase tracking-[1em] mb-2">
+                <span className="text-xs font-black text-naranja-naruto/40 uppercase tracking-[1em] mb-2">
                   {aldeaGroup.info.categoria_id === 2 ? 'Organización' : 'Gran Nación'}
                 </span>
-                <h2 className="text-4xl xl:text-7xl font-black text-rojo-sangre uppercase tracking-[0.2em]">
+                <h2 className="text-4xl xl:text-7xl font-black text-naranja-naruto uppercase tracking-[0.2em]">
                   {aldeaGroup.info.nombre_completo}
                 </h2>
                 {aldeaGroup.info.id !== null && (
-                  <div className="mt-4 px-5 py-2 bg-rojo-sangre border border-oro/20 rounded-none text-xs font-black text-oro/70 tracking-[0.2em] uppercase inline-block shadow-[0_0_15px_rgba(212,175,55,0.05)]">
+                  <div className="mt-4 px-5 py-2 bg-naranja-naruto border border-oro/20 rounded-none text-xs font-black text-oro/70 tracking-[0.2em] uppercase inline-block shadow-[0_0_15px_rgba(212,175,55,0.05)]">
                     Cupos: <span className="text-oro">{countByAldea[aldeaGroup.info.id] ?? 0}</span> / <span className="text-oro">{aldeaGroup.info.categoria_id === 2 ? cuposMaximosOrganizacion : cuposMaximosAldea}</span>
                   </div>
                 )}
@@ -569,15 +569,15 @@ export default function GlosarioView({
               {aldeaGroup.ramas.map((ramaGroup: any) => (
                 <div key={ramaGroup.info.id || 'base'} className="space-y-6">
                   {/* NIVEL 2: RAMA / CLAN */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-l-4 border-rojo-sangre pl-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-l-4 border-naranja-naruto pl-6">
                     <div className="flex flex-col">
-                      <span className="text-caption font-black text-rojo-sangre/60 uppercase tracking-[0.5em] mb-1 italic">
+                      <span className="text-caption font-black text-naranja-naruto/60 uppercase tracking-[0.5em] mb-1 italic">
                         {ramaGroup.info.tipo === 'clan' ? 'Clan' : 'Rama'}
                       </span>
                       <h3 className="text-3xl xl:text-5xl font-black text-zinc-900 uppercase tracking-widest">
                         {ramaGroup.info.nombre}
                         {ramaGroup.info.tipo === 'clan' && ramaGroup.info.es_especial && (
-                          <span className="ml-3 text-caption bg-rojo-sangre/10 border border-rojo-sangre/20 text-rojo-sangre px-2 py-0.5 font-black tracking-wider uppercase rounded-sm italic align-middle text-2xl">Especial</span>
+                          <span className="ml-3 text-caption bg-naranja-naruto/10 border border-naranja-naruto/20 text-naranja-naruto px-2 py-0.5 font-black tracking-wider uppercase rounded-sm italic align-middle text-2xl">Especial</span>
                         )}
                       </h3>
                     </div>
@@ -594,7 +594,7 @@ export default function GlosarioView({
                         {/* NIVEL 3: ELEMENTO / SUBESPECIALIDAD */}
                         {subGroup.info.id !== null && (
                           <div className="flex items-center gap-4 border-b border-zinc-200 pb-4">
-                            <div className="w-2 h-2 bg-rojo-sangre" />
+                            <div className="w-2 h-2 bg-naranja-naruto" />
                             <h4 className="text-xl xl:text-3xl font-black text-zinc-800 uppercase tracking-widest italic">
                               {ramaGroup.isElemental ? (subGroup.info.nombre_jap || subGroup.info.nombre) : subGroup.info.nombre}
                             </h4>
@@ -606,7 +606,7 @@ export default function GlosarioView({
                             <div key={catGroup.info.id} className="space-y-4">
                               {/* NIVEL 4: CATEGORÍA */}
                               <div className="flex items-center gap-3 bg-oro/40 p-4 border border-oro/20">
-                                <Hash className="w-4 h-4 text-rojo-sangre" />
+                                <Hash className="w-4 h-4 text-naranja-naruto" />
                                 <h5 className="text-sm xl:text-lg font-black text-zinc-600 uppercase tracking-[0.3em]">{catGroup.info.nombre}</h5>
                               </div>
 
@@ -638,11 +638,11 @@ export default function GlosarioView({
                                             <td className="py-3 px-8">
                                               <div className="flex flex-col">
                                                 <div className="flex items-center gap-2">
-                                                  <h4 className="text-base xl:text-lg font-bold text-zinc-900 group-hover:text-rojo-sangre transition-colors uppercase tracking-tight">
+                                                  <h4 className="text-base xl:text-lg font-bold text-zinc-900 group-hover:text-naranja-naruto transition-colors uppercase tracking-tight">
                                                     {item.nombre_jp}
                                                   </h4>
                                                   {item.inicial && (
-                                                    <span className="text-[7px] bg-rojo-sangre text-white px-1.5 py-0.5 font-black uppercase tracking-widest rounded-sm">Inic.</span>
+                                                    <span className="text-[7px] bg-naranja-naruto text-white px-1.5 py-0.5 font-black uppercase tracking-widest rounded-sm">Inic.</span>
                                                   )}
                                                   {item.basica !== undefined && (
                                                     <span className={`text-[7px] ${item.basica ? 'bg-sky-600 text-white' : 'bg-green-800 text-white'} px-1.5 py-0.5 font-black uppercase tracking-widest rounded-sm`}>
@@ -728,7 +728,7 @@ export default function GlosarioView({
       {showScrollTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-8 right-8 w-12 h-12 bg-black/80 border border-oro/20 text-oro flex items-center justify-center hover:bg-oro hover:text-rojo-sangre transition-all z-[100] ninja-clip-sm shadow-2xl active:scale-90"
+          className="fixed bottom-8 right-8 w-12 h-12 bg-black/80 border border-oro/20 text-oro flex items-center justify-center hover:bg-oro hover:text-naranja-naruto transition-all z-[100] ninja-clip-sm shadow-2xl active:scale-90"
           title="Volver Arriba"
         >
           <ChevronUp className="w-5 h-5" />

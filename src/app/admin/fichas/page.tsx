@@ -28,14 +28,14 @@ export default async function AdminFichasArchivadasPage() {
           <div className="w-1.5 h-1.5 bg-oro/20 group-hover:bg-oro rotate-45 transition-colors" />
           VOLVER AL PANEL CENTRAL
         </Link>
-        
+
         <div className="flex items-center gap-6">
           <div className="w-12 h-12 bg-oro/[0.03] border border-oro/10 flex items-center justify-center">
             <ShieldAlert className="w-6 h-6 text-oro" />
           </div>
           <div>
             <h1 className="ninja-title text-4xl xl:text-5xl italic">EXPEDIENTES ARCHIVADOS</h1>
-            <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.4em] mt-2">RECUPERACIÓN Y ELIMINACIÓN DE SHINOBIS INACTIVOS</p>
+            <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.4em] mt-2">RECUPERACIÓN Y ELIMINACIÓN DE shinobi INACTIVOS</p>
           </div>
         </div>
       </header>

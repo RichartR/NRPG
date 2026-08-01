@@ -82,11 +82,11 @@ export default function KugutsuList({ initialComponents }: KugutsuListProps) {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 sm:flex-initial text-center px-4 sm:px-8 py-3 xl:py-4 font-black uppercase tracking-[0.2em] tracking-wider transition-all text-caption sm:text-caption xl:text-xs ${activeTab === tab ? 'bg-oro text-rojo-sangre shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
+              className={`flex-1 sm:flex-initial text-center px-4 sm:px-8 py-3 xl:py-4 font-black uppercase tracking-[0.2em] tracking-wider transition-all text-caption sm:text-caption xl:text-xs ${activeTab === tab ? 'bg-oro text-naranja-naruto shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
               style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
             >
               {tab === 'active' ? 'ACTIVOS' : 'INACTIVOS'}{' '}
-              <span className={`ml-2 opacity-40 ${activeTab === tab ? 'text-rojo-sangre/60' : ''}`}>
+              <span className={`ml-2 opacity-40 ${activeTab === tab ? 'text-naranja-naruto/60' : ''}`}>
                 ({initialComponents.filter((e) => (tab === 'active' ? e.activo : !e.activo)).length})
               </span>
             </button>
@@ -163,10 +163,10 @@ export default function KugutsuList({ initialComponents }: KugutsuListProps) {
                     {/* Tipo */}
                     <td className="py-3 px-6">
                       <span className={`inline-block px-2.5 py-1 text-[10px] font-black uppercase rounded ${c.tipo === 'cuerpo'
-                          ? 'bg-blue-500/10 border border-blue-500/20 text-blue-400'
-                          : c.tipo === 'extremidad'
-                            ? 'bg-amber-500/10 border border-amber-500/20 text-amber-400'
-                            : 'bg-purple-500/10 border border-purple-500/20 text-purple-400'
+                        ? 'bg-blue-500/10 border border-blue-500/20 text-blue-400'
+                        : c.tipo === 'extremidad'
+                          ? 'bg-amber-500/10 border border-amber-500/20 text-amber-400'
+                          : 'bg-purple-500/10 border border-purple-500/20 text-purple-400'
                         }`}>
                         {c.tipo === 'cuerpo' ? 'Kugutsu Sotai (Cuerpo de Marioneta)' : c.tipo === 'extremidad' ? 'Kugutsu Shishi (Extremidades de Marioneta)' : 'Kakushi Karakuri (Accesorio Oculto)'}
                       </span>
@@ -189,8 +189,8 @@ export default function KugutsuList({ initialComponents }: KugutsuListProps) {
                           onClick={() => toggleActive(c.id, c.activo)}
                           disabled={loadingId === c.id}
                           className={`p-2 border transition-all ninja-clip-xs ${c.activo
-                              ? 'border-emerald-500/30 hover:border-emerald-500 bg-emerald-500/5 text-emerald-400'
-                              : 'border-red-500/30 hover:border-red-500 bg-red-500/5 text-red-400'
+                            ? 'border-emerald-500/30 hover:border-emerald-500 bg-emerald-500/5 text-emerald-400'
+                            : 'border-red-500/30 hover:border-red-500 bg-red-500/5 text-red-400'
                             }`}
                           title={c.activo ? 'Desactivar Componente' : 'Activar Componente'}
                         >

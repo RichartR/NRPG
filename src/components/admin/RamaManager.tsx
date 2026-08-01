@@ -92,7 +92,7 @@ function HubCard({ title, desc, icon, count, onClick }: any) {
 
       <div className="relative z-10 w-full">
         <div className="flex items-center justify-between mb-12">
-          <div className="w-12 h-12 bg-oro/[0.03] border border-oro/10 flex items-center justify-center group-hover:bg-oro group-hover:text-rojo-sangre transition-all duration-500 ninja-clip-xs">
+          <div className="w-12 h-12 bg-oro/[0.03] border border-oro/10 flex items-center justify-center group-hover:bg-oro group-hover:text-naranja-naruto transition-all duration-500 ninja-clip-xs">
             <span className="text-oro/60 group-hover:text-inherit transition-colors">{icon}</span>
           </div>
           <div

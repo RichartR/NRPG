@@ -152,7 +152,7 @@ export default function ElementoEditForm({
                 <div className={`absolute top-[2px] w-2.5 h-2.5 transition-all ${formData.activo ? 'right-[2px] bg-oro shadow-[0_0_10px_rgba(255,230,159,0.5)]' : 'left-[2px] bg-oro/10'}`} />
               </div>
             </label>
-            <button onClick={onCancel} className="p-2 text-oro/40 hover:text-rojo-sangre transition-all hover:rotate-90">
+            <button onClick={onCancel} className="p-2 text-oro/40 hover:text-naranja-naruto transition-all hover:rotate-90">
               <X className="w-8 h-8" />
             </button>
           </div>
@@ -191,7 +191,7 @@ export default function ElementoEditForm({
                     key={t}
                     type="button"
                     onClick={() => updateField('tipo', t)}
-                    className={`flex-1 text-caption font-black uppercase tracking-widest transition-all ninja-clip-xs ${formData.tipo === t ? 'bg-oro text-rojo-sangre shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
+                    className={`flex-1 text-caption font-black uppercase tracking-widest transition-all ninja-clip-xs ${formData.tipo === t ? 'bg-oro text-naranja-naruto shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
                   >
                     {t === 'basico' ? 'Básico' : 'Avanzado'}
                   </button>
@@ -244,13 +244,13 @@ export default function ElementoEditForm({
                       {subName && ramaName && (
                         <span className="text-caption text-oro/40 font-black uppercase tracking-wider">/ {subName}</span>
                       )}
-                      <span className={`shrink-0 px-2 py-0.5 text-caption font-black uppercase tracking-widest ninja-clip-xs ${v.tipo === 'fijo' ? 'bg-rojo-sangre text-oro' : 'bg-oro/10 border border-oro/20 text-oro'}`}>
+                      <span className={`shrink-0 px-2 py-0.5 text-caption font-black uppercase tracking-widest ninja-clip-xs ${v.tipo === 'fijo' ? 'bg-naranja-naruto text-oro' : 'bg-oro/10 border border-oro/20 text-oro'}`}>
                         {v.tipo}
                       </span>
                     </div>
                     <button
                       onClick={() => handleDeleteVinculacion(v.id)}
-                      className="p-1.5 text-oro/20 hover:text-rojo-sangre transition-all shrink-0"
+                      className="p-1.5 text-oro/20 hover:text-naranja-naruto transition-all shrink-0"
                       title="Eliminar vinculación"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -286,7 +286,7 @@ export default function ElementoEditForm({
                         key={t}
                         type="button"
                         onClick={() => setNewVinc((prev) => ({ ...prev, tipo: t }))}
-                        className={`flex-1 text-caption font-black uppercase tracking-wider transition-all ninja-clip-xs ${newVinc.tipo === t ? 'bg-oro text-rojo-sangre' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
+                        className={`flex-1 text-caption font-black uppercase tracking-wider transition-all ninja-clip-xs ${newVinc.tipo === t ? 'bg-oro text-naranja-naruto' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
                       >
                         {t}
                       </button>
@@ -299,7 +299,7 @@ export default function ElementoEditForm({
                   type="button"
                   onClick={handleAddVinculacion}
                   disabled={vincLoading}
-                  className="flex items-center gap-2 px-6 py-3 bg-rojo-sangre hover:brightness-125 text-oro font-black text-caption uppercase tracking-widest transition-all ninja-clip-xs"
+                  className="flex items-center gap-2 px-6 py-3 bg-naranja-naruto hover:brightness-125 text-oro font-black text-caption uppercase tracking-widest transition-all ninja-clip-xs"
                   style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                 >
                   {vincLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}

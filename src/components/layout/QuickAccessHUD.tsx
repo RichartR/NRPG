@@ -50,18 +50,18 @@ export default function QuickAccessHUD() {
               href="https://discord.gg/WmKZ5B8ZDG"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-11 h-11 bg-oro/20 group-hover:bg-oro transition-all duration-300 flex items-center justify-center relative"
+              className="w-11 h-11 bg-white/20 group-hover:bg-naranja-naruto transition-all duration-300 flex items-center justify-center relative"
               style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}
             >
               <div 
-                className="absolute inset-[1px] bg-neutral-950 group-hover:bg-neutral-900 transition-all duration-300 flex items-center justify-center text-oro/70 group-hover:text-oro"
+                className="absolute inset-[1px] bg-neutral-950 group-hover:bg-neutral-900 transition-all duration-300 flex items-center justify-center text-white/70 group-hover:text-naranja-naruto"
                 style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}
               >
                 <DiscordIcon />
               </div>
             </a>
             {/* Tooltip */}
-            <span className="absolute bottom-14 scale-0 group-hover:scale-100 transition-all duration-200 bg-neutral-950 border border-oro/40 text-oro text-[10px] font-black uppercase tracking-widest px-3 py-1.5 whitespace-nowrap pointer-events-none shadow-xl z-20"
+            <span className="absolute bottom-14 scale-0 group-hover:scale-100 transition-all duration-200 bg-neutral-950 border border-naranja-naruto/40 text-naranja-naruto text-[10px] font-black uppercase tracking-widest px-3 py-1.5 whitespace-nowrap pointer-events-none shadow-xl z-20"
               style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
             >
               Discord Oficial
@@ -72,18 +72,18 @@ export default function QuickAccessHUD() {
           <div className="group relative flex justify-center">
             <Link
               href="/mapa"
-              className="w-11 h-11 bg-oro/20 group-hover:bg-oro transition-all duration-300 flex items-center justify-center relative"
+              className="w-11 h-11 bg-white/20 group-hover:bg-naranja-naruto transition-all duration-300 flex items-center justify-center relative"
               style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}
             >
               <div 
-                className="absolute inset-[1px] bg-neutral-950 group-hover:bg-neutral-900 transition-all duration-300 flex items-center justify-center text-oro/70 group-hover:text-oro"
+                className="absolute inset-[1px] bg-neutral-950 group-hover:bg-neutral-900 transition-all duration-300 flex items-center justify-center text-white/70 group-hover:text-naranja-naruto"
                 style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}
               >
                 <Map className="w-5 h-5" />
               </div>
             </Link>
             {/* Tooltip */}
-            <span className="absolute bottom-14 scale-0 group-hover:scale-100 transition-all duration-200 bg-neutral-950 border border-oro/40 text-oro text-[10px] font-black uppercase tracking-widest px-3 py-1.5 whitespace-nowrap pointer-events-none shadow-xl z-20"
+            <span className="absolute bottom-14 scale-0 group-hover:scale-100 transition-all duration-200 bg-neutral-950 border border-naranja-naruto/40 text-naranja-naruto text-[10px] font-black uppercase tracking-widest px-3 py-1.5 whitespace-nowrap pointer-events-none shadow-xl z-20"
               style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
             >
               Mapa Interactivo
@@ -96,18 +96,18 @@ export default function QuickAccessHUD() {
               href="https://hobba.tv"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-11 h-11 bg-oro/20 group-hover:bg-oro transition-all duration-300 flex items-center justify-center relative"
+              className="w-11 h-11 bg-white/20 group-hover:bg-naranja-naruto transition-all duration-300 flex items-center justify-center relative"
               style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}
             >
               <div 
-                className="absolute inset-[1px] bg-neutral-950 group-hover:bg-neutral-900 transition-all duration-300 flex items-center justify-center text-oro/70 group-hover:text-oro"
+                className="absolute inset-[1px] bg-neutral-950 group-hover:bg-neutral-900 transition-all duration-300 flex items-center justify-center text-white/70 group-hover:text-naranja-naruto"
                 style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}
               >
                 <Gamepad2 className="w-5 h-5" />
               </div>
             </a>
             {/* Tooltip */}
-            <span className="absolute bottom-14 scale-0 group-hover:scale-100 transition-all duration-200 bg-neutral-950 border border-oro/40 text-oro text-[10px] font-black uppercase tracking-widest px-3 py-1.5 whitespace-nowrap pointer-events-none shadow-xl z-20"
+            <span className="absolute bottom-14 scale-0 group-hover:scale-100 transition-all duration-200 bg-neutral-950 border border-naranja-naruto/40 text-naranja-naruto text-[10px] font-black uppercase tracking-widest px-3 py-1.5 whitespace-nowrap pointer-events-none shadow-xl z-20"
               style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
             >
               Jugar en Hobba.tv

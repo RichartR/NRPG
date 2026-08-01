@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Noto_Sans_JP, Shojumaru } from "next/font/google";
+import { Noto_Sans_JP, Oswald } from "next/font/google";
 import "./globals.css";
 import { ToastContainer } from "@/components/ui/Toast";
 import { ConfirmContainer } from "@/components/ui/ConfirmDialog";
@@ -14,10 +14,10 @@ const notoLines = Noto_Sans_JP({
   weight: ["400", "700", "900"],
 });
 
-const shojumaru = Shojumaru({
+const oswald = Oswald({
   variable: "--font-ninja",
   subsets: ["latin"],
-  weight: ["400"],
+  weight: ["600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -77,9 +77,9 @@ export default async function RootLayout({
   return (
     <html
       lang="es"
-      className={`${notoLines.variable} ${shojumaru.variable} h-full antialiased`}
+      className={`${notoLines.variable} ${oswald.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col selection:bg-rojo-sangre selection:text-oro">
+      <body className="min-h-full flex flex-col selection:bg-naranja-naruto selection:text-black">
         {children}
         <ToastContainer />
         <ConfirmContainer />

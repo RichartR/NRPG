@@ -78,7 +78,7 @@ export default function AdminNavbar({ userRoles = [] }: AdminNavbarProps) {
 
         <Link
           href="/"
-          className="flex items-center gap-3 px-6 py-3 bg-rojo-sangre/10 border border-rojo-sangre/20 hover:bg-rojo-sangre hover:text-oro text-rojo-sangre font-black text-caption sm:text-caption uppercase tracking-[0.2em] transition-all active:scale-95 italic"
+          className="flex items-center gap-3 px-6 py-3 bg-naranja-naruto/10 border border-naranja-naruto/20 hover:bg-naranja-naruto hover:text-oro text-naranja-naruto font-black text-caption sm:text-caption uppercase tracking-[0.2em] transition-all active:scale-95 italic"
           style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
         >
           <LogOut className="w-4 h-4 shrink-0" />
@@ -110,8 +110,8 @@ export default function AdminNavbar({ userRoles = [] }: AdminNavbarProps) {
                   href={item.href}
                   onClick={() => setDropdownOpen(false)}
                   className={`flex items-center gap-4 p-4 font-black text-xs uppercase tracking-wider transition-all rounded-sm ${isActive
-                      ? 'bg-oro text-rojo-sangre'
-                      : 'text-oro/60 hover:bg-oro/5 hover:text-oro'
+                    ? 'bg-oro text-naranja-naruto'
+                    : 'text-oro/60 hover:bg-oro/5 hover:text-oro'
                     }`}
                 >
                   <item.icon className="w-4 h-4 shrink-0" />
@@ -133,8 +133,8 @@ export default function AdminNavbar({ userRoles = [] }: AdminNavbarProps) {
               key={item.href}
               href={item.href}
               className={`flex items-center gap-2.5 px-5 py-3.5 font-black text-caption xl:text-xs uppercase tracking-widest transition-all relative shrink-0 ${isActive
-                  ? 'bg-oro text-rojo-sangre shadow-md shadow-oro/5'
-                  : 'bg-black/20 border border-oro/5 text-oro/40 hover:border-oro/20 hover:text-oro hover:bg-oro/5'
+                ? 'bg-oro text-naranja-naruto shadow-md shadow-oro/5'
+                : 'bg-black/20 border border-oro/5 text-oro/40 hover:border-oro/20 hover:text-oro hover:bg-oro/5'
                 }`}
               style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
             >

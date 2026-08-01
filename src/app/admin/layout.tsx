@@ -25,11 +25,11 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col selection:bg-rojo-sangre selection:text-oro">
+    <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col selection:bg-naranja-naruto selection:text-oro">
       {/* Fondo Global */}
       <div
         className="fixed inset-0 bg-cover bg-center bg-fixed z-[-10]"
-        style={{ backgroundImage: 'url("/assets/ui/bg-list.jpg")' }}
+        style={{ backgroundImage: 'url("/assets/ui/bg-list.png")' }}
       />
 
       {/* Top Navigation Admin */}

@@ -6,7 +6,7 @@ interface SectionCardProps {
   children: React.ReactNode;
   className?: string;
   headerAction?: React.ReactNode;
-  color?: 'oro' | 'rojo-sangre';
+  color?: 'oro' | 'naranja-naruto';
 }
 
 export function SectionCard({ title, icon: Icon, children, className = '', headerAction, color = "oro" }: SectionCardProps) {

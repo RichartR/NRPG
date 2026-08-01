@@ -9,14 +9,14 @@ import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { DataField, SelectField } from '@/components/ui/Fields';
 import { searchAny } from '@/lib/utils/search';
 
-export default function CombateList({ 
-  initialDocs, 
-  ramas, 
-  subEspecialidades 
-}: { 
-  initialDocs: any[], 
-  ramas: any[], 
-  subEspecialidades: any[] 
+export default function CombateList({
+  initialDocs,
+  ramas,
+  subEspecialidades
+}: {
+  initialDocs: any[],
+  ramas: any[],
+  subEspecialidades: any[]
 }) {
   const [docs, setDocs] = useState(initialDocs);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -47,7 +47,7 @@ export default function CombateList({
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredDocs.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredDocs, currentPage]);
-  
+
   const router = useRouter();
   const addToast = useToastStore(state => state.addToast);
   const { confirm: confirmAction } = useConfirmStore();
@@ -86,7 +86,7 @@ export default function CombateList({
       };
 
       const data = await AdminService.saveCombatDoc(payload);
-      
+
       if (isAdding) {
         setDocs([data, ...docs]);
       } else {
@@ -129,7 +129,7 @@ export default function CombateList({
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row gap-6 justify-between items-center bg-neutral-800/40 p-6 sm:p-8 border border-oro/5 backdrop-blur-md relative overflow-hidden ninja-clip-md">
         <div className="absolute top-0 right-0 w-64 h-64 bg-oro/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
-        
+
         <div className="relative flex-1 w-full">
           <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-oro/40 w-5 h-5" />
           <input
@@ -153,22 +153,22 @@ export default function CombateList({
           )}
         </div>
 
-        <button 
+        <button
           onClick={startAdding}
-          className="w-full md:w-auto px-8 py-4 bg-rojo-sangre hover:brightness-125 text-oro font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-rojo-sangre/20 active:scale-95 flex items-center justify-center gap-3 whitespace-nowrap"
+          className="w-full md:w-auto px-8 py-4 bg-naranja-naruto hover:brightness-125 text-oro font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-naranja-naruto/20 active:scale-95 flex items-center justify-center gap-3 whitespace-nowrap"
           style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
         >
-          <Plus className="w-4 h-4" /> 
+          <Plus className="w-4 h-4" />
           AÑADIR PROTOCOLO
         </button>
       </div>
 
       {(isAdding || editingId) && (
-        <div 
+        <div
           className="bg-neutral-800/60 border border-oro/10 p-10 shadow-2xl space-y-6 animate-in slide-in-from-top-4 duration-500 relative overflow-hidden ninja-clip-lg"
         >
           <div className="absolute top-0 right-0 w-64 h-64 bg-oro/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
-          
+
           <div className="flex items-center justify-between border-b border-oro/10 pb-8">
             <h3 className="text-2xl font-black text-oro uppercase italic tracking-tighter flex items-center gap-4">
               {editForm?.url_imagen ? (
@@ -176,65 +176,65 @@ export default function CombateList({
                   <img src={editForm.url_imagen} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                 </div>
               ) : (
-                <Sword className="w-8 h-8 text-rojo-sangre" />
+                <Sword className="w-8 h-8 text-naranja-naruto" />
               )}
               {isAdding ? 'Nueva Configuración de Combate' : 'Modificar Registro'}
             </h3>
-            <button onClick={() => {setEditingId(null); setIsAdding(false);}} className="text-oro/30 hover:text-oro transition-colors">
+            <button onClick={() => { setEditingId(null); setIsAdding(false); }} className="text-oro/30 hover:text-oro transition-colors">
               <X className="w-8 h-8" />
             </button>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <DataField 
-              label="Título de la Técnica" 
-              value={editForm.titulo} 
+            <DataField
+              label="Título de la Técnica"
+              value={editForm.titulo}
               onChange={v => {
                 setEditForm({
-                  ...editForm, 
+                  ...editForm,
                   titulo: v,
                   clave: v.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '')
                 });
-              }} 
+              }}
             />
-            <DataField label="Clave Operativa" value={editForm.clave} onChange={v => setEditForm({...editForm, clave: v})} />
-            
-            <SelectField 
-              label="Rama de Origen" 
-              value={editForm.rama_id} 
-              options={ramas.map(r => ({ label: r.nombre, value: r.id }))} 
-              onChange={v => setEditForm({...editForm, rama_id: v, sub_especialidad_id: ''})} 
+            <DataField label="Clave Operativa" value={editForm.clave} onChange={v => setEditForm({ ...editForm, clave: v })} />
+
+            <SelectField
+              label="Rama de Origen"
+              value={editForm.rama_id}
+              options={ramas.map(r => ({ label: r.nombre, value: r.id }))}
+              onChange={v => setEditForm({ ...editForm, rama_id: v, sub_especialidad_id: '' })}
             />
-            <SelectField 
-              label="Sub-Especialidad Táctica" 
-              value={editForm.sub_especialidad_id} 
-              options={subFiltradas.map(s => ({ label: s.nombre, value: s.id }))} 
-              onChange={v => setEditForm({...editForm, sub_especialidad_id: v})} 
+            <SelectField
+              label="Sub-Especialidad Táctica"
+              value={editForm.sub_especialidad_id}
+              options={subFiltradas.map(s => ({ label: s.nombre, value: s.id }))}
+              onChange={v => setEditForm({ ...editForm, sub_especialidad_id: v })}
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <DataField label="URL del Manual (Drive)" value={editForm.url_drive} onChange={v => setEditForm({...editForm, url_drive: v})} />
-            <DataField label="URL Imagen de Cabecera" value={editForm.url_imagen || ''} onChange={v => setEditForm({...editForm, url_imagen: v})} placeholder="https://i.imgur.com/..." />
+            <DataField label="URL del Manual (Drive)" value={editForm.url_drive} onChange={v => setEditForm({ ...editForm, url_drive: v })} />
+            <DataField label="URL Imagen de Cabecera" value={editForm.url_imagen || ''} onChange={v => setEditForm({ ...editForm, url_imagen: v })} placeholder="https://i.imgur.com/..." />
           </div>
 
           <div className="space-y-3">
             <label className="text-caption font-black uppercase tracking-widest text-oro/30 ml-2">Descripción Técnica</label>
-            <textarea 
-              value={editForm.descripcion} 
-              onChange={e => setEditForm({...editForm, descripcion: e.target.value})} 
-              rows={3} 
+            <textarea
+              value={editForm.descripcion}
+              onChange={e => setEditForm({ ...editForm, descripcion: e.target.value })}
+              rows={3}
               className="w-full bg-black/40 border border-oro/10 p-8 text-oro font-bold outline-none focus:border-oro/40 transition-all resize-none placeholder:text-oro/10 text-sm ninja-clip-md"
               placeholder="Detalla los efectos y condiciones de la técnica..."
             />
           </div>
 
           <div className="flex justify-end gap-6 pt-10 border-t border-oro/10">
-            <button onClick={() => {setEditingId(null); setIsAdding(false);}} className="text-caption font-black uppercase tracking-widest text-oro/40 hover:text-oro transition-all">Cancelar Operación</button>
-            <button 
-              onClick={handleSave} 
-              disabled={loading} 
-              className="px-12 py-5 bg-oro text-rojo-sangre font-black text-xs uppercase tracking-widest flex items-center gap-4 transition-all shadow-2xl shadow-oro/10 active:scale-95 disabled:opacity-50 hover:brightness-110"
+            <button onClick={() => { setEditingId(null); setIsAdding(false); }} className="text-caption font-black uppercase tracking-widest text-oro/40 hover:text-oro transition-all">Cancelar Operación</button>
+            <button
+              onClick={handleSave}
+              disabled={loading}
+              className="px-12 py-5 bg-oro text-naranja-naruto font-black text-xs uppercase tracking-widest flex items-center gap-4 transition-all shadow-2xl shadow-oro/10 active:scale-95 disabled:opacity-50 hover:brightness-110"
               style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
             >
               {loading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
@@ -246,15 +246,15 @@ export default function CombateList({
 
       <div className="grid grid-cols-1 gap-4">
         {paginatedDocs.map((doc) => (
-          <div 
-            key={doc.id} 
+          <div
+            key={doc.id}
             className="group flex items-center justify-between p-8 bg-neutral-800/40 border border-oro/5 hover:border-oro/20 backdrop-blur-sm transition-all relative overflow-hidden"
             style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' }}
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-oro/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-oro/10 transition-all duration-500 pointer-events-none" />
-            
+
             <div className="flex items-center gap-8 relative z-10">
-              <div 
+              <div
                 className="w-16 h-16 bg-black/40 border border-oro/10 flex items-center justify-center shrink-0 group-hover:border-oro/30 transition-all overflow-hidden"
                 style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
               >
@@ -268,14 +268,14 @@ export default function CombateList({
                 <div className="flex items-center gap-4 mb-2 flex-wrap">
                   <h4 className="text-xl font-black text-oro uppercase italic tracking-tighter leading-none">{doc.titulo}</h4>
                   <div className="flex items-center gap-2">
-                    <span 
+                    <span
                       className="text-caption font-black bg-oro/5 border border-oro/10 px-3 py-1 text-oro/60 uppercase tracking-widest ninja-clip-sm"
                     >
                       {doc.ramas_clanes?.nombre || 'General'}
                     </span>
                     {doc.sub_especialidades?.nombre && (
-                      <span 
-                        className="text-caption font-black bg-rojo-sangre/10 border border-rojo-sangre/20 px-3 py-1 text-oro uppercase tracking-widest ninja-clip-sm"
+                      <span
+                        className="text-caption font-black bg-naranja-naruto/10 border border-naranja-naruto/20 px-3 py-1 text-oro uppercase tracking-widest ninja-clip-sm"
                       >
                         {doc.sub_especialidades.nombre}
                       </span>
@@ -285,18 +285,18 @@ export default function CombateList({
                 <p className="text-oro/40 text-xs italic mt-1 line-clamp-1">{doc.descripcion || 'Sin descripción táctica registrada.'}</p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-4 relative z-10">
-              <button 
-                onClick={() => startEditing(doc)} 
-                className="p-4 bg-oro text-rojo-sangre hover:brightness-110 transition-all active:scale-[0.98] shadow-lg shadow-oro/10"
+              <button
+                onClick={() => startEditing(doc)}
+                className="p-4 bg-oro text-naranja-naruto hover:brightness-110 transition-all active:scale-[0.98] shadow-lg shadow-oro/10"
                 style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
               >
                 <Edit2 className="w-5 h-5" />
               </button>
-              <button 
-                onClick={() => deleteDoc(doc.id)} 
-                className="p-4 bg-rojo-sangre/10 text-rojo-sangre rounded-2xl hover:bg-rojo-sangre hover:text-oro transition-all active:scale-90 border border-rojo-sangre/20"
+              <button
+                onClick={() => deleteDoc(doc.id)}
+                className="p-4 bg-naranja-naruto/10 text-naranja-naruto rounded-2xl hover:bg-naranja-naruto hover:text-oro transition-all active:scale-90 border border-naranja-naruto/20"
                 style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
               >
                 <Trash2 className="w-5 h-5" />
@@ -306,7 +306,7 @@ export default function CombateList({
         ))}
 
         {filteredDocs.length === 0 && (
-          <div 
+          <div
             className="py-24 text-center bg-neutral-800/40 border border-oro/5 backdrop-blur-md ninja-clip-lg"
           >
             <p className="text-oro/10 font-black uppercase italic tracking-[0.3em] text-xs">Sin registros compatibles</p>
