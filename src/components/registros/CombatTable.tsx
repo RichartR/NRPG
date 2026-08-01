@@ -230,7 +230,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                         +{xpGained} EXP
                       </span>
                       {pcGained > 0 && (
-                        <span className="inline-block text-caption font-black text-success-text/90 tracking-wider bg-success-bg/30 border border-success-text/20 py-0.5 px-2 ninja-clip-xs mt-1 w-full text-center">
+                        <span className="inline-block text-caption xl:text-xs font-black text-success-text/90 tracking-wider bg-success-bg/30 border border-success-text/20 py-0.5 px-2 ninja-clip-xs mt-1 w-full text-center">
                           +{pcGained} PA
                         </span>
                       )}

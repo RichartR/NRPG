@@ -15,7 +15,7 @@ interface ProfileSettingsProps {
 
 export default function ProfileSettings({ profile, userId }: ProfileSettingsProps) {
   const [isOpen, setIsOpen] = useState(false);
-  
+
   // Prevent background scrolling when profile settings modal is open
   useScrollLock(isOpen);
   const [urlImg, setUrlImg] = useState(profile?.url_img || profile?.url_avatar || '');
@@ -82,7 +82,7 @@ export default function ProfileSettings({ profile, userId }: ProfileSettingsProp
             </button>
 
             <div className="flex items-center gap-4 mb-10">
-              <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45" />
+              <div className="w-1.5 h-1.5 bg-naranja-naruto rotate-45" />
               <h2 className="ninja-title text-xl sm:text-3xl">AJUSTES DE PERFIL</h2>
             </div>
 
@@ -101,7 +101,7 @@ export default function ProfileSettings({ profile, userId }: ProfileSettingsProp
                 <p className="text-caption text-oro/20 italic ml-2">Recomendado: 400x400px o superior. Formatos JPG, PNG, WEBP.</p>
               </div>
 
-               {/* Preview */}
+              {/* Preview */}
               <div className="flex justify-center py-6">
                 <div className="w-32 h-32 bg-black/40 border border-oro/20 overflow-hidden relative">
                   {urlImg ? (

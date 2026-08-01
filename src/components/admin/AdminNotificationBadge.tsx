@@ -209,7 +209,7 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
             <span className="group-hover:translate-x-1 transition-transform uppercase tracking-widest text-left">Disputas</span>
           </div>
           {count > 0 && (
-            <span className="px-2 py-0.5 bg-rojo-sangre text-oro text-caption font-black border border-oro/40 shadow-[0_0_8px_rgba(103,9,9,0.5)] ninja-clip-xs animate-pulse">
+            <span className="px-2 py-0.5 bg-naranja-naruto text-oro text-caption font-black border border-oro/40 shadow-[0_0_8px_rgba(103,9,9,0.5)] ninja-clip-xs animate-pulse">
               {count}
             </span>
           )}
@@ -220,14 +220,13 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
           <button
             ref={buttonRef}
             onClick={() => setIsOpen(!isOpen)}
-            className={`flex items-center gap-3 px-6 py-2.5 bg-rojo-sangre/20 text-oro border border-oro/20 hover:bg-rojo-sangre hover:border-oro/40 transition-all group font-black text-caption uppercase tracking-widest cursor-pointer ${isOpen ? 'bg-rojo-sangre border-oro/40' : ''}`}
+            className="flex items-center gap-3 px-6 py-3 bg-white text-naranja-naruto border border-white hover:bg-white/90 hover:brightness-110 transition-all group font-black text-xs uppercase tracking-[0.2em] cursor-pointer shadow-md"
             style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
           >
-            <ShieldAlert className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
             DISPUTAS ADMIN
           </button>
           {count > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-rojo-sangre text-oro text-caption font-black flex items-center justify-center border border-oro/40 shadow-[0_0_10px_rgba(103,9,9,0.8)] animate-bounce pointer-events-none z-10">
+            <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-naranja-naruto text-white text-caption font-black flex items-center justify-center border border-white shadow-[0_0_10px_rgba(250,148,39,0.8)] animate-bounce pointer-events-none z-10">
               {count}
             </span>
           )}
@@ -242,17 +241,17 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
             position: 'absolute',
             top: `${coords.top}px`,
             left: `${coords.left}px`,
-            backgroundImage: "url('/assets/ui/bg-list.jpg')",
+            backgroundImage: "url('/assets/ui/bg-list.png')",
           }}
           className="w-80 md:w-96 border border-black/10 shadow-[0_10px_45px_rgba(0,0,0,0.15),0_0_30px_rgba(103,9,9,0.05)] z-[9999] overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300 bg-cover bg-center"
         >
-          <div className="p-5 bg-gradient-to-r from-rojo-sangre/15 via-rojo-sangre/5 to-transparent border-b border-black/10 flex justify-between items-center relative">
-            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-rojo-sangre via-oro to-transparent" />
-            <h3 className="text-xs font-black uppercase tracking-[0.25em] text-rojo-sangre flex items-center gap-2.5">
-              <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45 shadow-[0_0_6px_rgba(103,9,9,0.3)]" />
+          <div className="p-5 bg-gradient-to-r from-naranja-naruto/15 via-naranja-naruto/5 to-transparent border-b border-black/10 flex justify-between items-center relative">
+            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-naranja-naruto via-oro to-transparent" />
+            <h3 className="text-xs font-black uppercase tracking-[0.25em] text-naranja-naruto flex items-center gap-2.5">
+              <div className="w-1.5 h-1.5 bg-naranja-naruto rotate-45 shadow-[0_0_6px_rgba(103,9,9,0.3)]" />
               Centro Disputas
             </h3>
-            <span className="text-caption font-black text-rojo-sangre/80 bg-rojo-sangre/5 border border-rojo-sangre/20 px-2 py-0.5 ninja-clip-xs tracking-wider">
+            <span className="text-caption font-black text-naranja-naruto/80 bg-naranja-naruto/5 border border-naranja-naruto/20 px-2 py-0.5 ninja-clip-xs tracking-wider">
               {count} ACTIVAS
             </span>
           </div>
@@ -260,13 +259,13 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
           <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
             {disputes.length === 0 ? (
               <div className="p-12 text-center">
-                <ShieldAlert className="w-12 h-12 text-rojo-sangre/15 mx-auto mb-4 animate-pulse" />
-                <p className="text-rojo-sangre/40 text-caption font-black uppercase tracking-[0.2em] italic">Sin disputas activas</p>
+                <ShieldAlert className="w-12 h-12 text-naranja-naruto/15 mx-auto mb-4 animate-pulse" />
+                <p className="text-naranja-naruto/40 text-caption font-black uppercase tracking-[0.2em] italic">Sin disputas activas</p>
               </div>
             ) : (
               <div className="divide-y divide-black/5">
                 {disputes.map((d) => (
-                  <div key={d.id} className="p-5 hover:bg-rojo-sangre/5 border-b border-black/5 transition-all duration-300 group">
+                  <div key={d.id} className="p-5 hover:bg-naranja-naruto/5 border-b border-black/5 transition-all duration-300 group">
                     <div className="flex flex-col gap-4">
                       <div className="flex justify-between items-start gap-4">
                         <div className="min-w-0 flex-1">
@@ -284,11 +283,11 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
                           </div>
 
                           {d.registro_id === null ? (
-                            <span className="text-caption font-black uppercase px-2 py-0.5 bg-oro text-rojo-sangre border border-oro/20 inline-block tracking-wider ninja-clip-xs mb-2">
+                            <span className="text-caption font-black uppercase px-2 py-0.5 bg-oro text-naranja-naruto border border-oro/20 inline-block tracking-wider ninja-clip-xs mb-2">
                               {d.personaje_id === null ? 'Alerta de IP' : 'Apelación de Shinobi'}
                             </span>
                           ) : (
-                            <span className="text-caption font-black uppercase px-2 py-0.5 bg-rojo-sangre text-oro border border-oro/20 inline-block tracking-wider ninja-clip-xs mb-2">
+                            <span className="text-caption font-black uppercase px-2 py-0.5 bg-naranja-naruto text-oro border border-oro/20 inline-block tracking-wider ninja-clip-xs mb-2">
                               Rechazo: {d.registro?.tipo}
                             </span>
                           )}
@@ -315,21 +314,21 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
                         <button
                           onClick={() => handleResolve(d.id, 'aceptada')}
                           disabled={loading}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-oro text-rojo-sangre text-caption font-black uppercase tracking-widest hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer shadow-[0_3px_10px_rgba(165,87,11,0.15)] ninja-clip-xs border border-oro-soft"
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-oro text-naranja-naruto text-caption font-black uppercase tracking-widest hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer shadow-[0_3px_10px_rgba(165,87,11,0.15)] ninja-clip-xs border border-oro-soft"
                         >
                           <Check className="w-3.5 h-3.5 stroke-[3]" /> Aceptar
                         </button>
                         <button
                           onClick={() => handleResolve(d.id, 'rechazada')}
                           disabled={loading}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-rojo-sangre/10 text-rojo-sangre border border-rojo-sangre/20 text-caption font-black uppercase tracking-widest hover:bg-rojo-sangre hover:text-oro active:scale-[0.98] transition-all cursor-pointer ninja-clip-xs"
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-naranja-naruto/10 text-naranja-naruto border border-naranja-naruto/20 text-caption font-black uppercase tracking-widest hover:bg-naranja-naruto hover:text-oro active:scale-[0.98] transition-all cursor-pointer ninja-clip-xs"
                         >
                           <X className="w-3.5 h-3.5 stroke-[3]" /> {d.registro_id === null ? 'Rechazar' : 'Invalidar'}
                         </button>
                         {d.registro_id !== null && (
                           <button
                             onClick={() => setSelectedRegistro(d.registro)}
-                            className="p-2 bg-black/5 text-black/50 hover:text-rojo-sangre hover:border-rojo-sangre/30 transition-all border border-black/10 active:scale-[0.98] cursor-pointer ninja-clip-xs"
+                            className="p-2 bg-black/5 text-black/50 hover:text-naranja-naruto hover:border-naranja-naruto/30 transition-all border border-black/10 active:scale-[0.98] cursor-pointer ninja-clip-xs"
                             title="Inspeccionar Registro Completo"
                           >
                             <Eye className="w-3.5 h-3.5" />
@@ -347,13 +346,13 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
             <Link
               href="/admin/disputas"
               onClick={() => setIsOpen(false)}
-              className="text-caption font-black text-oro hover:text-oro-soft bg-rojo-sangre/90 px-3 py-1.5 border border-oro/20 ninja-clip-xs uppercase tracking-wider transition-all"
+              className="text-caption font-black text-oro hover:text-oro-soft bg-naranja-naruto/90 px-3 py-1.5 border border-oro/20 ninja-clip-xs uppercase tracking-wider transition-all"
             >
               Ver Todo
             </Link>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-caption font-black text-rojo-sangre/70 hover:text-rojo-sangre uppercase tracking-[0.35em] transition-all hover:letter-spacing duration-300 flex items-center justify-center gap-2 cursor-pointer"
+              className="text-caption font-black text-naranja-naruto/70 hover:text-naranja-naruto uppercase tracking-[0.35em] transition-all hover:letter-spacing duration-300 flex items-center justify-center gap-2 cursor-pointer"
             >
               Cerrar
             </button>
@@ -370,15 +369,15 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
             onClick={() => setSelectedRegistro(null)}
           />
           <div className="relative w-full max-w-5xl max-h-[90vh] flex flex-col ninja-card-oro shadow-[0_0_80px_rgba(0,0,0,0.9)] animate-in zoom-in slide-in-from-bottom-8 duration-500 overflow-hidden">
-            <div className="flex-none p-8 border-b border-oro/15 flex justify-between items-center bg-gradient-to-r from-rojo-sangre/20 to-transparent backdrop-blur-md relative">
-              <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-oro via-rojo-sangre to-transparent" />
+            <div className="flex-none p-8 border-b border-oro/15 flex justify-between items-center bg-gradient-to-r from-naranja-naruto/20 to-transparent backdrop-blur-md relative">
+              <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-oro via-naranja-naruto to-transparent" />
               <div className="flex items-center gap-4">
-                <div className="w-2.5 h-2.5 bg-rojo-sangre rotate-45 shadow-[0_0_10px_#b82020] animate-pulse" />
+                <div className="w-2.5 h-2.5 bg-naranja-naruto rotate-45 shadow-[0_0_10px_#b82020] animate-pulse" />
                 <h3 className="text-oro font-black uppercase tracking-[0.35em] text-xs pt-1 ninja-title">Protocolo de Inspección en Disputa</h3>
               </div>
               <button
                 onClick={() => setSelectedRegistro(null)}
-                className="p-3 bg-rojo-sangre/15 text-rojo-sangre border border-rojo-sangre/30 hover:bg-rojo-sangre hover:text-oro transition-all active:scale-95 cursor-pointer ninja-clip-xs"
+                className="p-3 bg-naranja-naruto/15 text-naranja-naruto border border-naranja-naruto/30 hover:bg-naranja-naruto hover:text-oro transition-all active:scale-95 cursor-pointer ninja-clip-xs"
               >
                 <X className="w-5 h-5 stroke-[2.5]" />
               </button>

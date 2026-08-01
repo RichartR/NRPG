@@ -103,7 +103,7 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
 
   return (
     <div className="min-h-screen flex flex-col overflow-hidden">
-      <header className={`min-h-20 py-4 md:py-0 md:h-24 xl:h-28 flex flex-col md:flex-row items-center justify-between px-4 sm:px-6 xl:px-12 gap-4 shrink-0 z-50 border-b border-oro/10 relative transition-all duration-1000 ${loading ? 'bg-black' : 'bg-black/80 backdrop-blur-xl'}`}>
+      <header className={`min-h-20 py-4 md:py-0 md:h-24 xl:h-28 flex flex-col md:flex-row items-center justify-between px-4 sm:px-6 xl:px-12 gap-4 shrink-0 z-50 border-b border-oro/10 relative transition-all duration-1000 ${loading ? 'bg-black' : 'bg-black'}`}>
         <div className="flex items-center gap-4 xl:gap-10 min-w-0 flex-1 w-full justify-center md:justify-start">
           {breadcrumbs && breadcrumbs.length > 0 ? (
             <div className="w-full min-w-0">
@@ -115,7 +115,7 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
                 href={backUrl}
                 className="flex items-center gap-3 px-4 py-2 font-black text-caption xl:text-sm uppercase tracking-[0.2em] transition-all active:scale-95 text-oro/60 hover:text-oro group shrink-0"
               >
-                <div className="w-2 xl:w-2.5 h-2 xl:h-2.5 bg-rojo-sangre rotate-45 group-hover:bg-oro transition-colors" />
+                <div className="w-2 xl:w-2.5 h-2 xl:h-2.5 bg-naranja-naruto rotate-45 group-hover:bg-oro transition-colors" />
                 <span>VOLVER</span>
               </Link>
               <div className="h-8 w-px bg-oro/10 shrink-0 hidden sm:block" />
@@ -128,13 +128,13 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
 
         <div className="flex flex-wrap items-center justify-center md:justify-end gap-4 sm:gap-6 shrink-0 w-full md:w-auto">
           <div className="flex items-center gap-2 p-1.5 bg-black/60 border border-oro/10 ninja-box shadow-2xl">
-            <button onClick={handleZoomOut} className="p-2 md:p-2.5 hover:bg-rojo-sangre/20 transition-all text-oro/40 hover:text-oro">
+            <button onClick={handleZoomOut} className="p-2 md:p-2.5 hover:bg-naranja-naruto/20 transition-all text-oro/40 hover:text-oro">
               <div className="w-3 h-0.5 bg-current" />
             </button>
             <div className="text-caption xl:text-xs font-black w-12 text-center select-none text-oro/80 tabular-nums">
               {Math.round(zoom * 100)}%
             </div>
-            <button onClick={handleZoomIn} className="p-2 md:p-2.5 hover:bg-rojo-sangre/20 transition-all text-oro/40 hover:text-oro">
+            <button onClick={handleZoomIn} className="p-2 md:p-2.5 hover:bg-naranja-naruto/20 transition-all text-oro/40 hover:text-oro">
               <div className="relative w-3 h-3 flex items-center justify-center">
                 <div className="absolute w-3 h-0.5 bg-current" />
                 <div className="absolute w-0.5 h-3 bg-current" />
@@ -145,7 +145,7 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
           <a
             href={downloadUrl}
             download
-            className="flex items-center justify-center gap-4 px-6 md:px-8 py-2.5 md:py-3.5 bg-oro text-rojo-sangre font-black text-caption xl:text-xs uppercase tracking-[0.2em] transition-all shadow-[0_0_20px_rgba(255,230,159,0.2)] active:scale-95 hover:brightness-110 shrink-0"
+            className="flex items-center justify-center gap-4 px-6 md:px-8 py-2.5 md:py-3.5 bg-naranja-naruto text-black font-black text-caption xl:text-xs uppercase tracking-[0.2em] transition-all shadow-[0_0_20px_rgba(255,230,159,0.2)] active:scale-95 hover:brightness-110 shrink-0"
             style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
           >
             DESCARGAR PDF
@@ -217,7 +217,7 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
       {showScrollTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-6 right-6 z-50 p-4 bg-oro text-rojo-sangre hover:bg-[#ffe69f] hover:text-black font-black text-caption tracking-[0.1em] uppercase transition-all duration-300 shadow-[0_0_20px_rgba(255,230,159,0.3)] active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+          className="fixed bottom-6 right-6 z-50 p-4 bg-oro text-naranja-naruto hover:bg-[#ffe69f] hover:text-black font-black text-caption tracking-[0.1em] uppercase transition-all duration-300 shadow-[0_0_20px_rgba(255,230,159,0.3)] active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
           style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
         >
           <span className="text-xs">▲</span>
@@ -230,7 +230,7 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
           className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-4 bg-neutral-900 border border-oro/40 text-oro text-xs sm:text-sm font-black uppercase tracking-[0.15em] flex items-center gap-3 shadow-[0_0_30px_rgba(255,230,159,0.25)] animate-fade-in"
           style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
         >
-          <span className="text-rojo-sangre text-base">⚠️</span>
+          <span className="text-naranja-naruto text-base">⚠️</span>
           <span>Coloca el ratón sobre el documento para seguir leyendo</span>
         </div>
       )}

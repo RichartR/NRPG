@@ -160,7 +160,7 @@ export default function CharacterSheet() {
         <div className="flex flex-col gap-6 items-center sm:items-start">
           <div className="h-14 w-64 bg-oro/10 ninja-clip-sm" />
           <div className="flex gap-4">
-            <div className="h-8 w-24 bg-rojo-sangre/20" />
+            <div className="h-8 w-24 bg-naranja-naruto/20" />
             <div className="h-8 w-20 bg-oro/5" />
             <div className="h-8 w-20 bg-oro/5" />
           </div>
@@ -181,7 +181,7 @@ export default function CharacterSheet() {
     </div>
   );
 
-  if (error) return <div className="text-rojo-sangre bg-rojo-sangre/10 p-6 ninja-box ninja-border border-rojo-sangre/40 h-full flex items-center justify-center">Error: {error}</div>;
+  if (error) return <div className="text-naranja-naruto bg-naranja-naruto/10 p-6 ninja-box ninja-border border-naranja-naruto/40 h-full flex items-center justify-center">Error: {error}</div>;
   if (!activeCharacter) return <div className="text-oro/60 bg-black/60 p-8 ninja-box ninja-border h-full flex items-center justify-center">No tienes un personaje activo.</div>;
 
   const { stats_base, atributos_derivados, nombre_ninja, rango, xp, ryous } = activeCharacter;
@@ -195,10 +195,10 @@ export default function CharacterSheet() {
 
       <div className="relative z-10 w-full h-full flex flex-col justify-between gap-6">
         {activeCharacter.activo === false && (
-          <div className="bg-rojo-sangre/15 border border-rojo-sangre/30 p-5 ninja-clip-xs flex flex-col gap-4 relative overflow-hidden shadow-[0_0_20px_rgba(103,9,9,0.25)]">
-            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-rojo-sangre via-oro to-transparent" />
+          <div className="bg-naranja-naruto/15 border border-naranja-naruto/30 p-5 ninja-clip-xs flex flex-col gap-4 relative overflow-hidden shadow-[0_0_20px_rgba(103,9,9,0.25)]">
+            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-naranja-naruto via-oro to-transparent" />
             <div className="flex items-center gap-3 justify-center sm:justify-start">
-              <span className="text-rojo-sangre text-base animate-pulse">⚠️</span>
+              <span className="text-naranja-naruto text-base animate-pulse">⚠️</span>
               <span className="text-oro text-caption sm:text-xs font-black uppercase tracking-[0.2em] font-ninja">
                 Shinobi Archivado por Inactividad
               </span>
@@ -219,7 +219,7 @@ export default function CharacterSheet() {
                 <button
                   onClick={handleAppeal}
                   disabled={checkingAppeal || sendingAppeal}
-                  className="flex-1 py-2.5 bg-oro text-rojo-sangre border border-oro-soft hover:brightness-110 active:scale-[0.98] transition-all text-caption sm:text-xs font-black uppercase tracking-widest text-center cursor-pointer disabled:opacity-50"
+                  className="flex-1 py-2.5 bg-oro text-naranja-naruto border border-oro-soft hover:brightness-110 active:scale-[0.98] transition-all text-caption sm:text-xs font-black uppercase tracking-widest text-center cursor-pointer disabled:opacity-50"
                   style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
                 >
                   {sendingAppeal ? 'Enviando...' : 'Apelar Recuperación'}
@@ -228,7 +228,7 @@ export default function CharacterSheet() {
               <button
                 onClick={handleManualArchive}
                 disabled={updating}
-                className="flex-1 py-2.5 bg-rojo-sangre/20 text-red-400 border border-rojo-sangre/30 hover:bg-rojo-sangre hover:text-oro active:scale-[0.98] transition-all text-caption sm:text-xs font-black uppercase tracking-widest text-center cursor-pointer disabled:opacity-50"
+                className="flex-1 py-2.5 bg-naranja-naruto/20 text-red-400 border border-naranja-naruto/30 hover:bg-naranja-naruto hover:text-oro active:scale-[0.98] transition-all text-caption sm:text-xs font-black uppercase tracking-widest text-center cursor-pointer disabled:opacity-50"
                 style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
               >
                 {updating ? 'Archivando...' : 'Archivar Definitivamente'}
@@ -237,9 +237,9 @@ export default function CharacterSheet() {
           </div>
         )}
         <div className="flex flex-col gap-4 w-full relative">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left min-w-0 w-full">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left min-w-0 w-full pt-1 pl-1">
             <div className="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0">
-              <div className="relative w-full h-full bg-black/40 overflow-hidden flex items-center justify-center ninja-clip-md">
+              <div className="relative w-full h-full bg-black/60 border border-oro/30 shadow-[0_0_15px_rgba(255,230,159,0.1)] overflow-hidden flex items-center justify-center ninja-clip-md">
                 {activeCharacter.url_img ? (
                   <img
                     src={activeCharacter.url_img}
@@ -247,7 +247,7 @@ export default function CharacterSheet() {
                     alt="Avatar"
                   />
                 ) : (
-                  <User className="w-8 h-8 sm:w-10 sm:h-10 text-oro/20" />
+                  <User className="w-8 h-8 sm:w-10 sm:h-10 text-oro/30" />
                 )}
               </div>
             </div>
@@ -260,7 +260,7 @@ export default function CharacterSheet() {
               </h2>
               {/* Rango y Botón Ficha (En móvil, centrados) */}
               <div className="flex sm:hidden flex-col items-center gap-3 mb-3">
-                <span className="px-4 py-1.5 text-caption font-black bg-rojo-sangre text-oro uppercase tracking-[0.2em] whitespace-nowrap">
+                <span className="px-4 py-1.5 text-caption font-black bg-naranja-naruto text-oro uppercase tracking-[0.2em] whitespace-nowrap">
                   Rango {rango}
                 </span>
                 <div className="flex gap-2 w-full">
@@ -281,7 +281,7 @@ export default function CharacterSheet() {
 
               {/* Fila Rango + Botón Ficha (En desktop/tablet alineados a la misma altura, con flex-wrap para evitar desbordes) */}
               <div className="hidden sm:flex flex-wrap items-center gap-2 sm:gap-3 mt-3">
-                <span className="px-3.5 py-1 text-caption sm:text-xs xl:text-sm font-black bg-rojo-sangre text-oro uppercase tracking-[0.2em] whitespace-nowrap">
+                <span className="px-3.5 py-1 text-caption sm:text-xs xl:text-sm font-black bg-naranja-naruto text-oro uppercase tracking-[0.2em] whitespace-nowrap">
                   Rango {rango}
                 </span>
                 <Link
@@ -356,7 +356,7 @@ export default function CharacterSheet() {
             </div>
 
             <div className="grid grid-cols-2 gap-3 mt-4">
-              <div className="bg-rojo-sangre/10 border border-oro/20 p-2 sm:p-2.5 flex items-center justify-center px-4 group hover:bg-rojo-sangre/20 transition-all ninja-clip-xs" title={derivedElements.map(e => e?.nombre_esp).join(', ')}>
+              <div className="bg-[#171717] border border-oro/20 p-2 sm:p-2.5 flex items-center justify-center px-4 group transition-all ninja-clip-xs" title={derivedElements.map(e => e?.nombre_esp).join(', ')}>
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   {derivedElements.length > 0 ? (
                     derivedElements.map((e, index) => (
@@ -373,9 +373,8 @@ export default function CharacterSheet() {
                   )}
                 </div>
               </div>
-              <div className="bg-rojo-sangre/10 border border-oro/20 p-2 sm:p-2.5 flex items-center justify-between px-4 group hover:bg-rojo-sangre/20 transition-all ninja-clip-xs">
+              <div className="bg-[#171717] border border-oro/20 p-2 sm:p-2.5 flex items-center justify-between px-4 group transition-all ninja-clip-xs">
                 <div className="flex items-center gap-2 min-w-0">
-                  <div className="w-1 h-1 bg-oro/20 rotate-45 group-hover:bg-oro transition-colors shrink-0" />
                   <span className="text-oro/40 text-caption sm:text-caption font-black uppercase tracking-[0.15em] truncate">Velocidad</span>
                 </div>
                 <span className="text-base sm:text-lg font-black text-oro shrink-0">{atributos_derivados.VEL}</span>
@@ -389,7 +388,7 @@ export default function CharacterSheet() {
                   .filter((r: any) => r.info_ramas_clanes)
                   .sort((a: any, b: any) => a.slot - b.slot)
                   .map((rama: any) => (
-                    <div key={rama.slot} className="bg-black/40 border border-oro/10 p-2 sm:p-2.5 flex flex-col justify-center px-4 relative overflow-hidden ninja-clip-xs group hover:border-oro/30 transition-all">
+                    <div key={rama.slot} className="bg-[#171717] border border-oro/10 p-2 sm:p-2.5 flex flex-col justify-center px-4 relative overflow-hidden ninja-clip-xs group transition-all">
                       <div className="absolute top-0 right-0 w-16 h-16 bg-oro/5 rounded-full blur-xl -mr-8 -mt-8 pointer-events-none" />
 
                       <div className="flex items-center gap-2 min-w-0">
@@ -421,7 +420,7 @@ export default function CharacterSheet() {
             </h3>
 
             {/* Radar visible en todo momento */}
-            <div className="flex justify-center items-center w-full bg-black/20 border border-oro/10 p-2.5 ninja-clip-xs relative overflow-hidden flex-1">
+            <div className="flex justify-center items-center w-full bg-[#171717] border border-oro/10 p-2.5 ninja-clip-xs relative overflow-hidden flex-1">
               <div className="absolute top-0 right-0 w-32 h-32 bg-oro/5 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none" />
               <div className="w-full max-w-[400px] xl:max-w-[420px] mx-auto">
                 <CharacterRadarChart stats={stats_base} maxVal={10} />
@@ -440,9 +439,8 @@ export default function CharacterSheet() {
                 { label: 'EST', value: stats_base.EST },
                 { label: 'SM', value: stats_base.SM },
               ].map((stat) => (
-                <div key={stat.label} className="bg-black/40 border border-oro/10 p-2.5 sm:p-3 flex justify-between items-center group hover:border-oro/40 transition-all ninja-clip-xs overflow-hidden">
+                <div key={stat.label} className="bg-[#171717] border border-oro/10 p-2.5 sm:p-3 flex justify-between items-center group transition-all ninja-clip-xs overflow-hidden">
                   <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-1 h-1 bg-oro/20 group-hover:bg-oro transition-colors rotate-45 shrink-0" />
                     <span className="text-oro/60 text-caption sm:text-caption font-black uppercase tracking-widest truncate">{stat.label}</span>
                   </div>
                   <span className="text-base sm:text-lg font-black text-oro shrink-0">{stat.value}</span>

@@ -111,8 +111,8 @@ export function CharacterRadarChart({ stats, maxVal }: CharacterRadarChartProps)
           className="font-serif font-black"
           style={{
             fontSize: '24px',
-            fill: '#ef4444', // Rojo brillante / rojo-sangre
-            filter: 'drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.9))'
+            fill: '#FA9427', // Naranja Naruto
+            filter: 'drop-shadow(0px 2px 4px rgba(209, 175, 82, 0.56))'
           }}
         >
           {kanji}
@@ -160,15 +160,15 @@ export function CharacterRadarChart({ stats, maxVal }: CharacterRadarChartProps)
             tick={false}
             axisLine={false}
           />
-          {/* Polígono de estadísticas del Shinobi en rojo sangre con borde */}
+          {/* Polígono de estadísticas del Shinobi en Naranja Naruto con borde */}
           <Radar
             name="Estadísticas"
             dataKey="value"
-            stroke="#ef4444"
+            stroke="#D6852D"
             strokeWidth={2.5}
-            fill="#ef4444"
-            fillOpacity={0.3}
-            activeDot={{ r: 5, stroke: '#dfb857', strokeWidth: 1.5, fill: '#ef4444' }}
+            fill="#D6852D"
+            fillOpacity={0.35}
+            activeDot={{ r: 5, stroke: '#dfb857', strokeWidth: 1.5, fill: '#D6852D' }}
             isAnimationActive={false}
           />
           {/* Tooltip premium personalizado al pasar el ratón */}

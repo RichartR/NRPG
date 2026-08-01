@@ -5,24 +5,28 @@
      PALETA DE COLORES (SEMÁNTICA)
      ========================================================================== */
 
-  /* Sistema Principal (Oro) */
-  --color-primary-300: #ffefd3;
-  --color-primary-400: #ffe6ba;
-  --color-primary-500: #ffe69f;
-  --color-primary-700: #a5570b;
+  /* Sistema Principal (Oro -> Blanco) */
+  --color-primary-300: #ffffff;
+  --color-primary-400: #ffffff;
+  --color-primary-500: #ffffff;
+  --color-primary-700: #d4d4d4;
 
-  /* Sistema Secundario (Rojo Sangre) */
-  --color-secondary-500: #670909;
-  --color-secondary-900: #320d04;
+  /* Sistema Secundario (Naranja Naruto) */
+  --color-naranja-naruto: #D6852D;
+  --color-secondary-500: #D6852D;
+  --color-secondary-900: #572900;
 
   /* Neutros */
   --color-neutral-100: #ffffff;
   --color-neutral-200: #d4d4d4;
   --color-neutral-300: #d2d2d2;
+  --color-neutral-400: #a3a3a3;
+  --color-neutral-500: #737373;
   --color-neutral-600: #26262b;
   --color-neutral-700: #1a1a1c;
   --color-neutral-800: #0a0a0a;
   --color-neutral-900: #050309;
+  --color-gris-texto: #ffffff;
 
   /* Sistema Semántico */
   --color-success-bg: #064e3b;
@@ -65,6 +69,8 @@
   --color-neutral-100: var(--color-neutral-100);
   --color-neutral-200: var(--color-neutral-200);
   --color-neutral-300: var(--color-neutral-300);
+  --color-neutral-400: var(--color-neutral-400);
+  --color-neutral-500: var(--color-neutral-500);
   --color-neutral-600: var(--color-neutral-600);
   --color-neutral-700: var(--color-neutral-700);
   --color-neutral-800: var(--color-neutral-800);
@@ -81,12 +87,14 @@
   /* Legacy mappings (To be removed after refactor) */
   --color-oro: var(--color-primary-500);
   --color-oro-soft: var(--color-primary-400);
+  --color-gris-texto: #ffffff;
+  --color-naranja-naruto: #D6852D;
   --color-rojo-sangre: var(--color-secondary-500);
   --color-rojo-oscuro: var(--color-secondary-900);
   --color-negro-p: var(--color-neutral-900);
 
-  --font-ninja: "Shojumaru", system-ui;
-  --font-body: "Noto Sans JP", sans-serif;
+  --font-ninja: var(--font-ninja), sans-serif;
+  --font-body: var(--font-body), sans-serif;
 
   /* Tipografía Semántica */
   --font-size-h1: 2rem;
@@ -108,13 +116,28 @@ html {
 
 body {
   background-color: var(--color-neutral-900);
-  background-image: url('/assets/ui/bg-list.jpg');
+  background-image: url('/assets/ui/bg-list.png');
   background-attachment: fixed;
   background-size: cover;
   background-position: center;
   color: var(--color-neutral-200);
   font-family: var(--font-body);
   overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-ninja);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+img[src*="shuriken.png"] {
+  filter: brightness(0) invert(1);
 }
 
 select {
@@ -144,10 +167,15 @@ input[type=number] {
     background: linear-gradient(to bottom, var(--color-primary-300), var(--color-primary-500));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    transform: scaleY(1.4);
     display: inline-block;
     font-family: var(--font-ninja);
+    font-weight: 700;
+    text-transform: uppercase;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  }
+
+  .text-gris-texto {
+    color: #ffffff;
   }
 
   .ninja-clip-sm {
@@ -162,45 +190,103 @@ input[type=number] {
     clip-path: var(--radius-lg);
   }
 
+  .ninja-clip-top {
+    clip-path: polygon(30px 0, 100% 0, 100% 100%, 0 100%, 0 30px);
+  }
+
   /* Combined Card Patterns */
   .ninja-card {
-    background-image: linear-gradient(rgba(5, 3, 9, 0.6), rgba(5, 3, 9, 0.6)), url('/assets/ui/bg-list.jpg');
+    background-image: linear-gradient(rgba(5, 3, 9, 0.6), rgba(5, 3, 9, 0.6)), url('/assets/ui/bg-list.png');
     background-size: cover;
     background-position: center;
     @apply backdrop-blur-md relative;
   }
 
+  /* Tarjetas estándar (Paneles, Fichas, Cabecera, Contenedores sin imagen) */
   .ninja-card-oro {
-    background-color: var(--color-neutral-900);
-    background-image: radial-gradient(circle at center, rgba(255, 230, 159, 0.05) 0%, transparent 70%),
-      linear-gradient(rgba(5, 3, 9, 0.55), rgba(5, 3, 9, 0.55)),
-      url('/assets/ui/bg-list.jpg');
-    background-size: cover;
-    background-position: center;
-    box-shadow: var(--shadow-sutil);
-    @apply relative backdrop-blur-md;
+    background: transparent !important;
+    @apply relative;
     clip-path: var(--radius-lg);
+    transition: filter 0.3s ease-in-out;
   }
 
   .ninja-card-oro::before {
     content: "";
     position: absolute;
     inset: 0;
-    padding: 1px;
-    background: linear-gradient(to bottom right, var(--color-primary-300), var(--color-primary-500), var(--color-primary-700));
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
+    background: rgba(255, 255, 255, 0.75) !important;
     clip-path: var(--radius-lg);
     pointer-events: none;
-    opacity: 0.9;
+    z-index: 0;
+    transition: background 0.3s ease-in-out;
+  }
+
+  .ninja-card-oro::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    background: #000000 !important;
+    clip-path: polygon(29px 0, 100% 0, 100% calc(100% - 29px), calc(100% - 29px) 100%, 0 100%, 0 29px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Tarjetas con Imagen Ilustrada (NinjaCard con fotografía en la mitad superior) */
+  .ninja-card-image {
+    background: transparent !important;
+    @apply relative;
+    transition: filter 0.3s ease-in-out;
+  }
+
+  .ninja-card-image::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    background: rgba(255, 255, 255, 0.85);
+    clip-path: polygon(evenodd,
+        30px 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%, 0 30px,
+        calc(30px + 0.828px) 2px, calc(100% - 2px) 2px, calc(100% - 2px) calc(100% - 30.828px), calc(100% - 30.828px) calc(100% - 2px), 2px calc(100% - 2px), 2px calc(30px + 0.828px));
+    transition: background 0.3s ease-in-out;
+  }
+
+  .ninja-card-image::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: #000000 !important;
+    clip-path: var(--radius-lg);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  .hover-ninja:not(.no-hover):hover,
+  a.ninja-card-oro:not(.no-hover):hover,
+  div.ninja-card-oro:not(.no-hover):hover,
+  .ninja-card-oro.hover-ninja:not(.no-hover):hover,
+  .ninja-card-image:not(.no-hover):hover {
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.6)) drop-shadow(0 0 20px rgba(255, 255, 255, 0.3)) !important;
+  }
+
+  .hover-ninja:not(.no-hover):hover::before,
+  a.ninja-card-oro:not(.no-hover):hover::before,
+  div.ninja-card-oro:not(.no-hover):hover::before,
+  .ninja-card-oro.hover-ninja:not(.no-hover):hover::before,
+  .ninja-card-image:not(.no-hover):hover::before {
+    background: #ffffff !important;
+  }
+
+  .ninja-card-oro>*:not(.absolute) {
+    position: relative;
+    z-index: 1;
   }
 
   .ninja-card-rojo {
-    background-color: var(--color-neutral-900);
+    background-color: #000000;
     background-image: radial-gradient(circle at center, rgba(103, 9, 9, 0.1) 0%, transparent 70%),
-      linear-gradient(rgba(5, 3, 9, 0.55), rgba(5, 3, 9, 0.55)),
-      url('/assets/ui/bg-list.jpg');
+      linear-gradient(rgba(5, 7, 6, 0.55), rgba(5, 7, 6, 0.55)),
+      url('/assets/ui/bg-list.png');
     background-size: cover;
     background-position: center;
     box-shadow: 0 0 30px rgba(103, 9, 9, 0.2);
@@ -225,8 +311,15 @@ input[type=number] {
   .clip-only-br {
     clip-path: polygon(0 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%) !important;
   }
+
   .clip-only-br::before {
     clip-path: polygon(0 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%) !important;
+  }
+
+  .clip-only-br::after {
+    clip-path: polygon(evenodd,
+        0 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%,
+        1px 1px, calc(100% - 1px) 1px, calc(100% - 1px) calc(100% - 30.414px), calc(100% - 30.414px) calc(100% - 1px), 1px calc(100% - 1px)) !important;
   }
 
   /* Premium Table Styling (Sepia Charcoal Theme) */
@@ -298,14 +391,7 @@ input[type=number] {
     background: #800c0c;
   }
 
-  .hover-ninja {
-    transition: all 0.3s ease-in-out;
-  }
 
-  .hover-ninja:hover {
-    transform: scale(1.02);
-    filter: brightness(1.1);
-  }
 
   /* Fade-in buttery smooth RPG transition */
   @keyframes fadeIn {

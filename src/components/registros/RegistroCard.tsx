@@ -172,7 +172,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
               {new Date(registro.fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
             </span>
             {registro.data.fecha_modificacion && (
-              <span className="text-caption font-black text-rojo-sangre uppercase tracking-[0.2em] mt-1 flex items-center gap-1.5">
+              <span className="text-caption font-black text-naranja-naruto uppercase tracking-[0.2em] mt-1 flex items-center gap-1.5">
                 MODIFICADO: {new Date(registro.data.fecha_modificacion).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} - {new Date(registro.data.fecha_modificacion).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
               </span>
             )}
@@ -417,7 +417,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                       const totalRyous = (Number(registro.data.global_ryous) || 0) + (Number(p.ryous_extra) || 0);
                       const totalPa = (Number(registro.data.global_pa) || 0) + (Number(p.pa_extra) || 0);
                       const totalMonedas = (Number(registro.data.global_monedas_evento) || 0) + (Number(p.monedas_evento) || 0);
-                      
+
                       return (
                         <tr key={p.personaje_id} className="hover:bg-oro/[0.02] transition-colors">
                           <td className="py-4 px-6 text-xs font-black text-oro uppercase tracking-wider">{p.nombre_ninja}</td>

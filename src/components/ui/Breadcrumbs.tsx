@@ -19,19 +19,21 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
         return (
           <div key={index} className="flex items-center gap-3">
             {index > 0 && (
-              <div className="w-1.5 h-1.5 bg-[#670909] rotate-45 shadow-[0_0_8px_rgba(103,9,9,0.6)] shrink-0 animate-pulse" />
+              <div className="w-1.5 h-1.5 bg-[#D6852D] rotate-45 shadow-[0_0_8px_rgba(103,9,9,0.6)] shrink-0" />
             )}
-            
+
             {isLast || !item.href ? (
-              <span className="text-[#ffe69f] font-bold brightness-110 drop-shadow-[0_0_10px_rgba(255,230,159,0.25)]">
+              <span className="text-white font-bold brightness-110 drop-shadow-[0_0_10px_rgba(255,255,255,0.25)]">
                 {item.label}
               </span>
             ) : (
-              <Link 
+              <Link
                 href={item.href}
-                className="text-[#ffe69f]/40 hover:text-[#ffe69f] transition-all hover:scale-105 active:scale-95 duration-300"
+                className="group/crumb transition-all hover:scale-105 active:scale-95 duration-300 inline-block"
               >
-                {item.label}
+                <span className="text-neutral-300 group-hover/crumb:text-white font-bold transition-colors">
+                  {item.label}
+                </span>
               </Link>
             )}
           </div>

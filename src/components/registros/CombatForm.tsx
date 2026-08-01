@@ -313,7 +313,7 @@ export default function CombatForm({
                               <span className="text-caption font-black text-emerald-400">+{calculatePA('A', p.huye)} PA</span>
                             </div>
                           )}
-                          <button onClick={() => removeParticipant(p.id, 'A')} className="opacity-0 group-hover/item:opacity-100 p-2 text-oro/20 hover:text-rojo-sangre transition-all">
+                          <button onClick={() => removeParticipant(p.id, 'A')} className="opacity-0 group-hover/item:opacity-100 p-2 text-oro/20 hover:text-naranja-naruto transition-all">
                             <X className="w-4 h-4" />
                           </button>
                         </div>
@@ -342,7 +342,7 @@ export default function CombatForm({
                           </button>
                           <button
                             onClick={() => updateParticipantState(p.id, 'A', { huye: !p.huye })}
-                            className={`px-4 py-2 border text-caption font-black uppercase tracking-widest transition-all ${p.huye ? 'bg-rojo-sangre/20 border-rojo-sangre/40 text-rojo-sangre' : 'bg-black/20 border-oro/5 text-oro/20'}`}
+                            className={`px-4 py-2 border text-caption font-black uppercase tracking-widest transition-all ${p.huye ? 'bg-naranja-naruto/20 border-naranja-naruto/40 text-naranja-naruto' : 'bg-black/20 border-oro/5 text-oro/20'}`}
                           >
                             HUYE
                           </button>
@@ -419,7 +419,7 @@ export default function CombatForm({
                               <span className="text-caption font-black text-emerald-400">+{calculatePA('B', p.huye)} PA</span>
                             </div>
                           )}
-                          <button onClick={() => removeParticipant(p.id, 'B')} className="opacity-0 group-hover/item:opacity-100 p-2 text-oro/20 hover:text-rojo-sangre transition-all">
+                          <button onClick={() => removeParticipant(p.id, 'B')} className="opacity-0 group-hover/item:opacity-100 p-2 text-oro/20 hover:text-naranja-naruto transition-all">
                             <X className="w-4 h-4" />
                           </button>
                         </div>
@@ -448,7 +448,7 @@ export default function CombatForm({
                           </button>
                           <button
                             onClick={() => updateParticipantState(p.id, 'B', { huye: !p.huye })}
-                            className={`px-4 py-2 border text-caption font-black uppercase tracking-widest transition-all ${p.huye ? 'bg-rojo-sangre/20 border-rojo-sangre/40 text-rojo-sangre' : 'bg-black/20 border-oro/5 text-oro/20'}`}
+                            className={`px-4 py-2 border text-caption font-black uppercase tracking-widest transition-all ${p.huye ? 'bg-naranja-naruto/20 border-naranja-naruto/40 text-naranja-naruto' : 'bg-black/20 border-oro/5 text-oro/20'}`}
                           >
                             HUYE
                           </button>
@@ -488,9 +488,9 @@ export default function CombatForm({
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                   {[
-                    { id: 'A', label: 'VICTORIA A', color: 'bg-oro text-rojo-sangre border-oro' },
+                    { id: 'A', label: 'VICTORIA A', color: 'bg-oro text-naranja-naruto border-oro' },
                     { id: 'Empate', label: 'EMPATE', color: 'bg-white/10 text-white/60 border-white/20' },
-                    { id: 'B', label: 'VICTORIA B', color: 'bg-oro text-rojo-sangre border-oro' }
+                    { id: 'B', label: 'VICTORIA B', color: 'bg-oro text-naranja-naruto border-oro' }
                   ].map((opt) => (
                     <button
                       key={opt.id}

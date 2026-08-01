@@ -202,8 +202,8 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
 
         <header className="bg-black/40 p-4 sm:p-10 xl:p-12 flex flex-col md:flex-row justify-between items-center gap-6 border-b border-oro/10 relative z-10">
           <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-4 sm:gap-8 w-full md:w-auto">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-rojo-sangre/10 border border-rojo-sangre/20 flex items-center justify-center shrink-0" style={{ clipPath: 'polygon(20% 0, 80% 0, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0 80%, 0 20%)' }}>
-              <PlusCircle className="w-8 h-8 sm:w-10 sm:h-10 text-rojo-sangre" />
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-naranja-naruto/10 border border-naranja-naruto/20 flex items-center justify-center shrink-0" style={{ clipPath: 'polygon(20% 0, 80% 0, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0 80%, 0 20%)' }}>
+              <PlusCircle className="w-8 h-8 sm:w-10 sm:h-10 text-naranja-naruto" />
             </div>
             <div>
               <h2 className="ninja-title text-xl sm:text-3xl xl:text-5xl leading-none">
@@ -278,7 +278,7 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
                       <button
                         type="button"
                         onClick={() => togglePingRole(v)}
-                        className="text-oro/60 hover:text-rojo-sangre transition-colors"
+                        className="text-oro/60 hover:text-naranja-naruto transition-colors"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -309,15 +309,13 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
                           key={opt.value}
                           type="button"
                           onClick={() => { togglePingRole(opt.value); }}
-                          className={`w-full flex items-center gap-3 px-4 py-3 text-left text-xs font-black uppercase tracking-wider transition-colors border-b border-oro/5 last:border-0 ${
-                            isSelected
+                          className={`w-full flex items-center gap-3 px-4 py-3 text-left text-xs font-black uppercase tracking-wider transition-colors border-b border-oro/5 last:border-0 ${isSelected
                               ? 'bg-oro/10 text-oro'
                               : 'text-oro/50 hover:bg-oro/5 hover:text-oro/90'
-                          }`}
+                            }`}
                         >
-                          <span className={`w-4 h-4 border flex items-center justify-center shrink-0 transition-colors ${
-                            isSelected ? 'bg-oro border-oro' : 'border-oro/30 hover:border-oro/60'
-                          }`}>
+                          <span className={`w-4 h-4 border flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-oro border-oro' : 'border-oro/30 hover:border-oro/60'
+                            }`}>
                             {isSelected && <span className="text-negro text-[10px] font-black">✓</span>}
                           </span>
                           {opt.label}
@@ -353,7 +351,7 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
                     className="w-full bg-black/60 border border-oro/20 hover:border-oro/40 focus:border-oro/60 px-5 py-3 text-xs text-oro/90 font-bold outline-none transition-all placeholder:text-oro/20 uppercase tracking-wider resize-none"
                     style={{ clipPath: 'polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px)' }}
                   />
-                  <span className={`absolute bottom-3 right-4 text-caption font-black tabular-nums tracking-widest transition-colors ${(formData.descripcion?.length || 0) >= 90 ? 'text-rojo-sangre' : 'text-oro/30'}`}>
+                  <span className={`absolute bottom-3 right-4 text-caption font-black tabular-nums tracking-widest transition-colors ${(formData.descripcion?.length || 0) >= 90 ? 'text-naranja-naruto' : 'text-oro/30'}`}>
                     {formData.descripcion?.length || 0}/100
                   </span>
                 </div>
@@ -367,7 +365,7 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
                   <label className="text-caption sm:text-caption font-black uppercase tracking-[0.3em] text-oro/50">
                     CONTENIDO DEL EVENTO (MARKDOWN DE DISCORD)
                   </label>
-                  
+
                   {/* Legend / Guide of MD formats */}
                   <div className="bg-black/30 border border-oro/10 p-3.5 flex flex-wrap gap-x-5 gap-y-1.5 text-[10px] text-oro/50 font-bold uppercase tracking-wider" style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}>
                     <div><span className="text-oro font-black">**Negrita**</span></div>
@@ -397,7 +395,7 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
                           className="w-full flex-1 bg-black/60 border border-oro/20 hover:border-oro/40 focus:border-oro/60 px-5 py-4 text-xs text-oro/90 font-bold outline-none transition-all placeholder:text-oro/20 resize-none min-h-[250px]"
                           style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                         />
-                        <div className={`flex justify-end mt-2 text-caption font-black uppercase tracking-widest tabular-nums transition-colors ${discordContent.length >= 1700 ? 'text-rojo-sangre' : discordContent.length >= 1500 ? 'text-oro/60' : 'text-oro/30'}`}>
+                        <div className={`flex justify-end mt-2 text-caption font-black uppercase tracking-widest tabular-nums transition-colors ${discordContent.length >= 1700 ? 'text-naranja-naruto' : discordContent.length >= 1500 ? 'text-oro/60' : 'text-oro/30'}`}>
                           {discordContent.length} / 1800
                         </div>
                       </>
@@ -410,7 +408,7 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
                   <label className="text-caption sm:text-caption font-black uppercase tracking-[0.3em] text-oro/50">
                     VISTA PREVIA EN LA WEB (REPLICACIÓN DE DISEÑO)
                   </label>
-                  <div 
+                  <div
                     className="flex-1 ninja-card-oro w-full overflow-hidden flex flex-col relative shadow-[0_0_30px_rgba(0,0,0,0.5)] border border-oro/10 min-h-[350px] max-h-[500px]"
                     style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
                   >
@@ -429,7 +427,7 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
                       <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/50 to-transparent" />
 
                       <div className="absolute bottom-4 left-4 right-4 z-10 flex flex-col items-start gap-0.5">
-                        <span className="px-2.5 py-0.5 text-[9px] font-black bg-rojo-sangre text-oro uppercase tracking-[0.3em] inline-block" style={{ clipPath: 'polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px)' }}>
+                        <span className="px-2.5 py-0.5 text-[9px] font-black bg-naranja-naruto text-oro uppercase tracking-[0.3em] inline-block" style={{ clipPath: 'polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px)' }}>
                           {formData.categoria || 'Evento'}
                         </span>
                         <h2 className="block ninja-title text-base sm:text-lg leading-tight uppercase font-ninja truncate w-full">
@@ -455,13 +453,13 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
           </div>
 
           <footer className="flex flex-col-reverse sm:flex-row justify-end items-center gap-6 sm:gap-12 pt-8 sm:pt-12 border-t border-oro/10">
-            <button type="button" onClick={onCancel} className="text-caption sm:text-caption xl:text-xs font-black uppercase tracking-[0.4em] text-oro/40 hover:text-rojo-sangre transition-colors italic bg-transparent border-none outline-none cursor-pointer">CANCELAR</button>
+            <button type="button" onClick={onCancel} className="text-caption sm:text-caption xl:text-xs font-black uppercase tracking-[0.4em] text-oro/40 hover:text-naranja-naruto transition-colors italic bg-transparent border-none outline-none cursor-pointer">CANCELAR</button>
             <button
               type="submit"
               disabled={loading}
               className="w-full sm:w-auto ninja-btn-oro px-10 sm:px-16 py-4 sm:py-6 flex items-center justify-center gap-4 sm:gap-6 shadow-2xl active:scale-95 disabled:opacity-50"
             >
-              {loading ? <RefreshCw className="w-5 h-5 sm:w-6 sm:h-6 animate-spin text-rojo-sangre" /> : <Save className="w-5 h-5 sm:w-6 sm:h-6 text-rojo-sangre" />}
+              {loading ? <RefreshCw className="w-5 h-5 sm:w-6 sm:h-6 animate-spin text-naranja-naruto" /> : <Save className="w-5 h-5 sm:w-6 sm:h-6 text-naranja-naruto" />}
               <span>{isCreate ? 'FINALIZAR PUBLICACIÓN' : 'CONFIRMAR CAMBIOS'}</span>
             </button>
           </footer>

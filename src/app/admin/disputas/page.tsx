@@ -132,7 +132,7 @@ export default function AdminDisputePage() {
           </Link>
 
           <div className="flex items-center gap-6">
-            <div className="w-12 h-12 bg-rojo-sangre/10 border border-oro/25 flex items-center justify-center shadow-[0_0_15px_rgba(103,9,9,0.4)]">
+            <div className="w-12 h-12 bg-naranja-naruto/10 border border-oro/25 flex items-center justify-center shadow-[0_0_15px_rgba(103,9,9,0.4)]">
               <ShieldAlert className="w-6 h-6 text-oro animate-pulse" />
             </div>
             <div>
@@ -144,7 +144,7 @@ export default function AdminDisputePage() {
 
         {loading ? (
           <div className="py-24 text-center">
-            <div className="w-12 h-12 border-4 border-rojo-sangre/20 border-t-oro rounded-full animate-spin mx-auto mb-4" />
+            <div className="w-12 h-12 border-4 border-naranja-naruto/20 border-t-oro rounded-full animate-spin mx-auto mb-4" />
             <p className="text-oro/40 text-xs font-black uppercase tracking-[0.3em] italic">Cargando casos...</p>
           </div>
         ) : disputes.length === 0 ? (
@@ -156,7 +156,7 @@ export default function AdminDisputePage() {
           <div className="grid grid-cols-1 gap-10">
             {disputes.map((d) => (
               <div key={d.id} className="ninja-card-rojo p-10 xl:p-12 hover:scale-[1.005] hover:shadow-[0_0_40px_rgba(103,9,9,0.3)] transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-rojo-sangre/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-naranja-naruto/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
                 <div className="flex flex-col lg:flex-row justify-between gap-10">
                   <div className="flex-1 space-y-6">
                     <div className="flex items-center gap-4">
@@ -181,8 +181,8 @@ export default function AdminDisputePage() {
                       </div>
                     </div>
 
-                    <div className="p-6 bg-black/60 border border-rojo-sangre/20 relative shadow-inner ninja-clip-md">
-                      <MessageSquare className="absolute -top-3.5 -left-3.5 w-8 h-8 text-rojo-sangre/10 rotate-6 pointer-events-none" />
+                    <div className="p-6 bg-black/60 border border-naranja-naruto/20 relative shadow-inner ninja-clip-md">
+                      <MessageSquare className="absolute -top-3.5 -left-3.5 w-8 h-8 text-naranja-naruto/10 rotate-6 pointer-events-none" />
                       <p className="text-oro/85 text-sm leading-relaxed italic font-medium">"{d.mensaje}"</p>
                     </div>
 
@@ -191,7 +191,7 @@ export default function AdminDisputePage() {
                         <span className="text-caption font-black text-oro/30 uppercase tracking-[0.2em]">
                           {d.registro_id === null ? 'Tipo de Caso' : 'Tipo de Registro'}
                         </span>
-                        <span className="text-xs font-black text-oro uppercase mt-0.5 tracking-wider bg-rojo-sangre/20 border border-rojo-sangre/30 px-2.5 py-0.5 ninja-clip-xs">
+                        <span className="text-xs font-black text-oro uppercase mt-0.5 tracking-wider bg-naranja-naruto/20 border border-naranja-naruto/30 px-2.5 py-0.5 ninja-clip-xs">
                           {d.registro_id === null ? 'Apelación de Recuperación' : d.registro?.tipo}
                         </span>
                       </div>
@@ -212,7 +212,7 @@ export default function AdminDisputePage() {
                     </button>
                     <button
                       onClick={() => handleResolve(d.id, 'rechazada')}
-                      className="w-full py-3.5 bg-rojo-sangre/15 border border-rojo-sangre/30 text-red-400 text-caption font-black uppercase tracking-[0.25em] hover:bg-rojo-sangre hover:text-oro transition-all shadow-[0_0_15px_rgba(184,32,32,0.15)] flex items-center justify-center gap-2 cursor-pointer"
+                      className="w-full py-3.5 bg-naranja-naruto/15 border border-naranja-naruto/30 text-red-400 text-caption font-black uppercase tracking-[0.25em] hover:bg-naranja-naruto hover:text-oro transition-all shadow-[0_0_15px_rgba(184,32,32,0.15)] flex items-center justify-center gap-2 cursor-pointer"
                       style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                     >
                       <X className="w-4 h-4 stroke-[2.5]" /> {d.registro_id === null && d.personaje_id === null ? 'Archivar' : (d.registro_id === null ? 'RECHAZAR APELACIÓN' : 'INVALIDAR REGISTRO')}
@@ -220,7 +220,7 @@ export default function AdminDisputePage() {
                     {d.registro_id !== null && (
                       <button
                         onClick={() => setSelectedRegistro(d.registro)}
-                        className="w-full py-3.5 bg-oro text-rojo-sangre text-caption font-black uppercase tracking-[0.25em] hover:brightness-110 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_20px_rgba(255,230,159,0.15)]"
+                        className="w-full py-3.5 bg-oro text-naranja-naruto text-caption font-black uppercase tracking-[0.25em] hover:brightness-110 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_20px_rgba(255,230,159,0.15)]"
                         style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                       >
                         <Eye className="w-4 h-4 stroke-[2.5]" /> INSPECCIONAR REGISTRO
@@ -242,15 +242,15 @@ export default function AdminDisputePage() {
             onClick={() => setSelectedRegistro(null)}
           />
           <div className="relative w-full max-w-5xl max-h-[90vh] flex flex-col ninja-card-oro shadow-[0_0_80px_rgba(0,0,0,0.9)] animate-in zoom-in slide-in-from-bottom-8 duration-500 overflow-hidden">
-            <div className="flex-none p-8 border-b border-oro/15 flex justify-between items-center bg-gradient-to-r from-rojo-sangre/20 to-transparent backdrop-blur-md relative">
-              <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-oro via-rojo-sangre to-transparent" />
+            <div className="flex-none p-8 border-b border-oro/15 flex justify-between items-center bg-gradient-to-r from-naranja-naruto/20 to-transparent backdrop-blur-md relative">
+              <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-oro via-naranja-naruto to-transparent" />
               <div className="flex items-center gap-4">
-                <div className="w-2.5 h-2.5 bg-rojo-sangre rotate-45 shadow-[0_0_10px_#b82020] animate-pulse" />
+                <div className="w-2.5 h-2.5 bg-naranja-naruto rotate-45 shadow-[0_0_10px_#b82020] animate-pulse" />
                 <h3 className="text-oro font-black uppercase tracking-[0.35em] text-xs pt-1 ninja-title">Protocolo de Inspección en Disputa</h3>
               </div>
               <button
                 onClick={() => setSelectedRegistro(null)}
-                className="p-3 bg-rojo-sangre/15 text-rojo-sangre border border-rojo-sangre/30 hover:bg-rojo-sangre hover:text-oro transition-all active:scale-95 cursor-pointer ninja-clip-xs"
+                className="p-3 bg-naranja-naruto/15 text-naranja-naruto border border-naranja-naruto/30 hover:bg-naranja-naruto hover:text-oro transition-all active:scale-95 cursor-pointer ninja-clip-xs"
               >
                 <X className="w-5 h-5 stroke-[2.5]" />
               </button>

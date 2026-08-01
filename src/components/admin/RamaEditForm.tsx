@@ -136,7 +136,7 @@ export default function RamaEditForm({ rama, aldeas, rasgos, characters = [], on
                 <div className={`absolute top-[2px] w-2.5 h-2.5 transition-all ${formData.activo ? 'right-[2px] bg-oro shadow-[0_0_10px_rgba(255,230,159,0.5)]' : 'left-[2px] bg-oro/10'}`} />
               </div>
             </label>
-            <button onClick={onCancel} className="p-2 text-oro/40 hover:text-rojo-sangre transition-all hover:rotate-90">
+            <button onClick={onCancel} className="p-2 text-oro/40 hover:text-naranja-naruto transition-all hover:rotate-90">
               <X className="w-8 h-8" />
             </button>
           </div>
@@ -180,14 +180,14 @@ export default function RamaEditForm({ rama, aldeas, rasgos, characters = [], on
                     updateField('tipo', 'rama');
                     updateField('es_especial', false);
                   }}
-                  className={`flex-1 text-caption font-black uppercase tracking-widest transition-all ninja-clip-xs ${formData.tipo === 'rama' ? 'bg-oro text-rojo-sangre shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
+                  className={`flex-1 text-caption font-black uppercase tracking-widest transition-all ninja-clip-xs ${formData.tipo === 'rama' ? 'bg-oro text-naranja-naruto shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
                 >
                   Rama
                 </button>
                 <button
                   type="button"
                   onClick={() => updateField('tipo', 'clan')}
-                  className={`flex-1 text-caption font-black uppercase tracking-widest transition-all ninja-clip-xs ${formData.tipo === 'clan' ? 'bg-oro text-rojo-sangre shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
+                  className={`flex-1 text-caption font-black uppercase tracking-widest transition-all ninja-clip-xs ${formData.tipo === 'clan' ? 'bg-oro text-naranja-naruto shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
                 >
                   Clan
                 </button>
@@ -316,20 +316,20 @@ export default function RamaEditForm({ rama, aldeas, rasgos, characters = [], on
                     + Añadir Opción
                   </button>
                 </div>
-        <div className="space-y-6">
+                <div className="space-y-6">
                   {formData.config_iniciales?.opciones?.map((opt, oIdx) => {
                     const ramaElegida = ramasActivas.find(r => r.id === opt.rama_id);
                     const subElegida = subEsps.find(s => s.id === opt.sub_especialidad_id);
                     const subOpts = opt.rama_id
                       ? subEsps.filter(s => {
-                          if (s.rama_id !== opt.rama_id) return false;
-                          if (Number(opt.rama_id) === 4) {
-                            const isElemental = formData.config_iniciales?.clan_elemental === true;
-                            const isNinIIorIII = s.slug === 'ninjutsu-ii' || s.slug === 'ninjutsu-iii';
-                            return isElemental ? isNinIIorIII : !s.slug?.toLowerCase().startsWith('ninjutsu-');
-                          }
-                          return true;
-                        })
+                        if (s.rama_id !== opt.rama_id) return false;
+                        if (Number(opt.rama_id) === 4) {
+                          const isElemental = formData.config_iniciales?.clan_elemental === true;
+                          const isNinIIorIII = s.slug === 'ninjutsu-ii' || s.slug === 'ninjutsu-iii';
+                          return isElemental ? isNinIIorIII : !s.slug?.toLowerCase().startsWith('ninjutsu-');
+                        }
+                        return true;
+                      })
                       : [];
                     const optLabel = subElegida
                       ? `${ramaElegida?.nombre || '?'} › ${subElegida.nombre}`
@@ -347,7 +347,7 @@ export default function RamaEditForm({ rama, aldeas, rasgos, characters = [], on
                               const newOpciones = (formData.config_iniciales?.opciones || []).filter((_, idx) => idx !== oIdx);
                               updateField('config_iniciales', { ...formData.config_iniciales, opciones: newOpciones });
                             }}
-                            className="text-rojo-sangre hover:text-white text-[11px] font-black uppercase tracking-widest px-3 py-1.5 border border-rojo-sangre/20 hover:bg-rojo-sangre/10 transition-all"
+                            className="text-naranja-naruto hover:text-white text-[11px] font-black uppercase tracking-widest px-3 py-1.5 border border-naranja-naruto/20 hover:bg-naranja-naruto/10 transition-all"
                           >
                             Eliminar
                           </button>
@@ -362,10 +362,10 @@ export default function RamaEditForm({ rama, aldeas, rasgos, characters = [], on
                               value={opt.rama_id ?? ''}
                               options={ramasActivas.map(r => ({ label: r.nombre, value: r.id }))}
                               onChange={(v) => {
-                                 const newOpciones = [...(formData.config_iniciales?.opciones || [])];
-                                 newOpciones[oIdx] = { ...newOpciones[oIdx], rama_id: v ? Number(v) : undefined, sub_especialidad_id: undefined };
-                                 updateField('config_iniciales', { ...formData.config_iniciales, opciones: newOpciones });
-                               }}
+                                const newOpciones = [...(formData.config_iniciales?.opciones || [])];
+                                newOpciones[oIdx] = { ...newOpciones[oIdx], rama_id: v ? Number(v) : undefined, sub_especialidad_id: undefined };
+                                updateField('config_iniciales', { ...formData.config_iniciales, opciones: newOpciones });
+                              }}
                               placeholder="Seleccionar rama..."
                             />
                           </div>
@@ -376,10 +376,10 @@ export default function RamaEditForm({ rama, aldeas, rasgos, characters = [], on
                               value={opt.sub_especialidad_id ?? ''}
                               options={subOpts.map(s => ({ label: s.nombre, value: s.id }))}
                               onChange={(v) => {
-                                 const newOpciones = [...(formData.config_iniciales?.opciones || [])];
-                                 newOpciones[oIdx] = { ...newOpciones[oIdx], sub_especialidad_id: v ? Number(v) : undefined };
-                                 updateField('config_iniciales', { ...formData.config_iniciales, opciones: newOpciones });
-                               }}
+                                const newOpciones = [...(formData.config_iniciales?.opciones || [])];
+                                newOpciones[oIdx] = { ...newOpciones[oIdx], sub_especialidad_id: v ? Number(v) : undefined };
+                                updateField('config_iniciales', { ...formData.config_iniciales, opciones: newOpciones });
+                              }}
                               placeholder={opt.rama_id ? 'Toda la rama (sin subcategoría)' : 'Elige primero una rama'}
                             />
                           </div>
@@ -396,14 +396,14 @@ export default function RamaEditForm({ rama, aldeas, rasgos, characters = [], on
                                   <button
                                     type="button"
                                     onClick={() => {
-                                       const newOpciones = [...(formData.config_iniciales?.opciones || [])];
-                                       newOpciones[oIdx] = {
-                                         ...newOpciones[oIdx],
-                                         tecnicas_ids: newOpciones[oIdx].tecnicas_ids.filter(id => id !== tid)
-                                       };
-                                       updateField('config_iniciales', { ...formData.config_iniciales, opciones: newOpciones });
-                                     }}
-                                    className="text-rojo-sangre hover:text-white font-bold ml-1"
+                                      const newOpciones = [...(formData.config_iniciales?.opciones || [])];
+                                      newOpciones[oIdx] = {
+                                        ...newOpciones[oIdx],
+                                        tecnicas_ids: newOpciones[oIdx].tecnicas_ids.filter(id => id !== tid)
+                                      };
+                                      updateField('config_iniciales', { ...formData.config_iniciales, opciones: newOpciones });
+                                    }}
+                                    className="text-naranja-naruto hover:text-white font-bold ml-1"
                                   >
                                     ×
                                   </button>
@@ -452,13 +452,13 @@ export default function RamaEditForm({ rama, aldeas, rasgos, characters = [], on
                               onChange={(v) => {
                                 if (!v) return;
                                 const tId = Number(v);
-                                 const newOpciones = [...(formData.config_iniciales?.opciones || [])];
-                                 newOpciones[oIdx] = {
-                                   ...newOpciones[oIdx],
-                                   tecnicas_ids: [...newOpciones[oIdx].tecnicas_ids, tId]
-                                 };
-                                 updateField('config_iniciales', { ...formData.config_iniciales, opciones: newOpciones });
-                               }}
+                                const newOpciones = [...(formData.config_iniciales?.opciones || [])];
+                                newOpciones[oIdx] = {
+                                  ...newOpciones[oIdx],
+                                  tecnicas_ids: [...newOpciones[oIdx].tecnicas_ids, tId]
+                                };
+                                updateField('config_iniciales', { ...formData.config_iniciales, opciones: newOpciones });
+                              }}
                               placeholder="Buscar técnica de la rama..."
                             />
                           )}

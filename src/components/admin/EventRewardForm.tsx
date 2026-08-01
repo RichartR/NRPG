@@ -327,7 +327,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
               <label className="text-xs font-black uppercase tracking-[0.25em] text-oro/50 flex items-center gap-2">
                 <MessageSquare className="w-4 h-4 text-oro/60" /> NOTA / DESCRIPCIÓN DE ENTREGA DE PREMIOS (FORMATO DISCORD)
               </label>
-              <span className={`text-caption font-black tracking-widest tabular-nums ${textoEntrega.length >= 1400 ? 'text-rojo-sangre' : 'text-oro/40'}`}>
+              <span className={`text-caption font-black tracking-widest tabular-nums ${textoEntrega.length >= 1400 ? 'text-naranja-naruto' : 'text-oro/40'}`}>
                 {textoEntrega.length} / 1500
               </span>
             </div>
@@ -422,7 +422,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
 
           {/* Buscador de Participantes */}
           <div className="space-y-4">
-            <label className="text-xs font-black uppercase tracking-[0.25em] text-oro/50 ml-1">Seleccionar Shinobis del Evento</label>
+            <label className="text-xs font-black uppercase tracking-[0.25em] text-oro/50 ml-1">Seleccionar shinobi del Evento</label>
             <div className="relative">
               <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-oro/20" />
               <input
@@ -472,7 +472,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
                       </div>
                       <button
                         onClick={() => removeParticipant(p.id)}
-                        className="p-2 hover:bg-rojo-sangre/20 text-oro/30 hover:text-rojo-sangre transition-all ninja-clip-xs"
+                        className="p-2 hover:bg-naranja-naruto/20 text-oro/30 hover:text-naranja-naruto transition-all ninja-clip-xs"
                         title="Quitar Participante"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -537,7 +537,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
                             {item.nombre_es}
                             <button
                               onClick={() => removeGlosarioItemFromParticipant(p.id, item.id)}
-                              className="text-rojo-sangre/60 hover:text-rojo-sangre transition-all"
+                              className="text-naranja-naruto/60 hover:text-naranja-naruto transition-all"
                             >
                               <X className="w-3.5 h-3.5" />
                             </button>
@@ -550,7 +550,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
                             setActiveRasgoSelector(null);
                             setGlosarioSearchQuery('');
                           }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-oro/5 hover:bg-oro hover:text-rojo-sangre border border-oro/15 hover:border-oro text-caption font-black text-oro uppercase tracking-wider transition-all ninja-clip-xs"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-oro/5 hover:bg-oro hover:text-naranja-naruto border border-oro/15 hover:border-oro text-caption font-black text-oro uppercase tracking-wider transition-all ninja-clip-xs"
                         >
                           <Plus className="w-3.5 h-3.5" /> Añadir Glosario
                         </button>
@@ -613,7 +613,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
                             {rasgo.nombre}
                             <button
                               onClick={() => removeRasgoItemFromParticipant(p.id, rasgo.id)}
-                              className="text-rojo-sangre/60 hover:text-rojo-sangre transition-all"
+                              className="text-naranja-naruto/60 hover:text-naranja-naruto transition-all"
                             >
                               <X className="w-3.5 h-3.5" />
                             </button>
@@ -626,7 +626,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
                             setActiveGlosarioSelector(null);
                             setRasgoSearchQuery('');
                           }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-oro/5 hover:bg-oro hover:text-rojo-sangre border border-oro/15 hover:border-oro text-caption font-black text-oro uppercase tracking-wider transition-all ninja-clip-xs"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-oro/5 hover:bg-oro hover:text-naranja-naruto border border-oro/15 hover:border-oro text-caption font-black text-oro uppercase tracking-wider transition-all ninja-clip-xs"
                         >
                           <Plus className="w-3.5 h-3.5" /> Conceder Rasgo
                         </button>
@@ -678,7 +678,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
 
         {/* Botones de Operación */}
         <footer className="flex flex-col-reverse sm:flex-row justify-end items-center gap-6 sm:gap-8 p-4 sm:p-6 border-t border-oro/10 relative z-10 bg-black/40 flex-shrink-0">
-          <button type="button" onClick={onClose} className="text-caption sm:text-caption xl:text-xs font-black uppercase tracking-[0.4em] text-oro/40 hover:text-rojo-sangre transition-colors italic bg-transparent border-none outline-none cursor-pointer">CANCELAR</button>
+          <button type="button" onClick={onClose} className="text-caption sm:text-caption xl:text-xs font-black uppercase tracking-[0.4em] text-oro/40 hover:text-naranja-naruto transition-colors italic bg-transparent border-none outline-none cursor-pointer">CANCELAR</button>
           <button
             onClick={handleSubmit}
             disabled={loading}

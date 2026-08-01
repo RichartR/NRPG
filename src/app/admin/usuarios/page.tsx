@@ -306,7 +306,7 @@ export default function AdminUsuariosPage() {
 
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex items-center gap-6">
-            <div className="w-12 h-12 bg-rojo-sangre/10 border border-oro/25 flex items-center justify-center shadow-[0_0_15px_rgba(103,9,9,0.4)]">
+            <div className="w-12 h-12 bg-naranja-naruto/10 border border-oro/25 flex items-center justify-center shadow-[0_0_15px_rgba(103,9,9,0.4)]">
               <ShieldAlert className="w-6 h-6 text-oro" />
             </div>
             <div>
@@ -318,7 +318,7 @@ export default function AdminUsuariosPage() {
             <button
               onClick={handleSyncAldeasDiscord}
               disabled={syncingAldeas}
-              className="flex items-center gap-2 px-5 py-3 border border-rojo-sangre/20 hover:border-rojo-sangre/60 text-oro bg-black/40 hover:bg-rojo-sangre hover:text-oro transition-all font-black text-caption uppercase tracking-wider cursor-pointer self-stretch md:self-auto text-center justify-center disabled:opacity-50"
+              className="flex items-center gap-2 px-5 py-3 border border-naranja-naruto/20 hover:border-naranja-naruto/60 text-oro bg-black/40 hover:bg-naranja-naruto hover:text-oro transition-all font-black text-caption uppercase tracking-wider cursor-pointer self-stretch md:self-auto text-center justify-center disabled:opacity-50"
               style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 8px) 100%, 0 100%, 0 6px)' }}
             >
               <RefreshCw className={`w-4 h-4 ${syncingAldeas ? 'animate-spin' : ''}`} />
@@ -350,7 +350,7 @@ export default function AdminUsuariosPage() {
 
       {loading && users.length === 0 ? (
         <div className="py-24 text-center">
-          <div className="w-12 h-12 border-4 border-rojo-sangre/20 border-t-oro rounded-full animate-spin mx-auto mb-4" />
+          <div className="w-12 h-12 border-4 border-naranja-naruto/20 border-t-oro rounded-full animate-spin mx-auto mb-4" />
           <p className="text-oro/40 text-xs font-black uppercase tracking-[0.3em] italic">Cargando ninja list...</p>
         </div>
       ) : filteredUsers.length === 0 ? (
@@ -429,7 +429,7 @@ export default function AdminUsuariosPage() {
                           <button
                             onClick={() => handleOpenRoles(u)}
                             title="Gestionar Roles"
-                            className="px-2 py-0.5 border border-rojo-sangre/30 bg-rojo-sangre/5 text-rojo-sangre hover:bg-rojo-sangre hover:text-oro transition-all uppercase text-[10px] font-black cursor-pointer ninja-clip-xs ml-1"
+                            className="px-2 py-0.5 border border-naranja-naruto/30 bg-naranja-naruto/5 text-naranja-naruto hover:bg-naranja-naruto hover:text-oro transition-all uppercase text-[10px] font-black cursor-pointer ninja-clip-xs ml-1"
                           >
                             +
                           </button>
@@ -456,7 +456,7 @@ export default function AdminUsuariosPage() {
                         ) : (
                           <button
                             onClick={() => handleOpenBan(u)}
-                            className="px-4 py-2 border border-rojo-sangre/30 bg-rojo-sangre/10 text-red-400 hover:bg-rojo-sangre hover:text-oro transition-all font-black text-caption uppercase tracking-wider cursor-pointer"
+                            className="px-4 py-2 border border-naranja-naruto/30 bg-naranja-naruto/10 text-red-400 hover:bg-naranja-naruto hover:text-oro transition-all font-black text-caption uppercase tracking-wider cursor-pointer"
                             style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
                           >
                             <ShieldOff className="w-3.5 h-3.5 inline mr-1.5" />
@@ -514,7 +514,7 @@ export default function AdminUsuariosPage() {
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/85 backdrop-blur-md" onClick={() => setBanModalOpen(false)} />
           <div className="relative w-full max-w-2xl ninja-card-rojo p-8 shadow-[0_0_50px_rgba(0,0,0,0.8)] animate-in zoom-in-95">
-            <h3 className="text-xl font-black uppercase text-rojo-sangre mb-2 font-ninja tracking-wider">
+            <h3 className="text-xl font-black uppercase text-naranja-naruto mb-2 font-ninja tracking-wider">
               Suspender Cuenta e IP
             </h3>
             <p className="text-oro/40 text-caption font-black uppercase tracking-widest mb-6 border-b border-oro/10 pb-2">
@@ -531,7 +531,7 @@ export default function AdminUsuariosPage() {
                   placeholder="Especifica el motivo de la suspensión..."
                   value={banReason}
                   onChange={(e) => setBanReason(e.target.value)}
-                  className="w-full bg-black border border-oro/15 p-4 text-xs text-oro placeholder:text-oro/20 focus:border-rojo-sangre outline-none min-h-[100px] resize-none"
+                  className="w-full bg-black border border-oro/15 p-4 text-xs text-oro placeholder:text-oro/20 focus:border-naranja-naruto outline-none min-h-[100px] resize-none"
                 />
               </div>
 
@@ -554,7 +554,7 @@ export default function AdminUsuariosPage() {
                       onClick={() => setBanDuration(opt.val)}
                       type="button"
                       className={`py-2 px-3 border font-black text-caption uppercase tracking-wider transition-all cursor-pointer ${banDuration === opt.val
-                        ? 'bg-oro text-rojo-sangre border-oro shadow-[0_0_10px_rgba(255,230,159,0.2)]'
+                        ? 'bg-oro text-naranja-naruto border-oro shadow-[0_0_10px_rgba(255,230,159,0.2)]'
                         : 'border-oro/15 bg-black/40 text-oro/70 hover:border-oro/40'
                         }`}
                     >
@@ -574,7 +574,7 @@ export default function AdminUsuariosPage() {
                     type="datetime-local"
                     value={customDate}
                     onChange={(e) => setCustomDate(e.target.value)}
-                    className="w-full bg-black border border-oro/15 p-4 text-xs text-oro outline-none focus:border-rojo-sangre cursor-pointer"
+                    className="w-full bg-black border border-oro/15 p-4 text-xs text-oro outline-none focus:border-naranja-naruto cursor-pointer"
                     style={{ colorScheme: 'dark' }}
                     onClick={(e) => {
                       try {
@@ -587,8 +587,8 @@ export default function AdminUsuariosPage() {
 
               {/* Advertencia de IP */}
               {selectedUser.last_ip && (
-                <div className="p-4 border border-rojo-sangre/20 bg-rojo-sangre/5 text-left rounded flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-rojo-sangre shrink-0 mt-0.5" />
+                <div className="p-4 border border-naranja-naruto/20 bg-naranja-naruto/5 text-left rounded flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-naranja-naruto shrink-0 mt-0.5" />
                   <p className="text-xs text-red-300 leading-normal font-semibold">
                     **Nota**: Se bloqueará automáticamente el acceso a la IP **{selectedUser.last_ip}** durante el mismo periodo de tiempo.
                   </p>
@@ -608,7 +608,7 @@ export default function AdminUsuariosPage() {
                 <button
                   onClick={handleBan}
                   type="button"
-                  className="flex-1 py-3 bg-rojo-sangre text-oro hover:brightness-110 shadow-lg transition-all font-black text-caption uppercase tracking-[0.2em] cursor-pointer"
+                  className="flex-1 py-3 bg-naranja-naruto text-oro hover:brightness-110 shadow-lg transition-all font-black text-caption uppercase tracking-[0.2em] cursor-pointer"
                   style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
                 >
                   Aplicar Suspensión
@@ -679,7 +679,7 @@ export default function AdminUsuariosPage() {
                 <button
                   onClick={handleSaveRoles}
                   type="button"
-                  className="flex-1 py-3 bg-oro text-rojo-sangre hover:brightness-110 shadow-lg transition-all font-black text-caption uppercase tracking-[0.2em] cursor-pointer"
+                  className="flex-1 py-3 bg-oro text-naranja-naruto hover:brightness-110 shadow-lg transition-all font-black text-caption uppercase tracking-[0.2em] cursor-pointer"
                   style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
                 >
                   Guardar Roles
@@ -736,7 +736,7 @@ export default function AdminUsuariosPage() {
                 <button
                   onClick={handleSaveDiscordRoles}
                   type="button"
-                  className="flex-1 py-3 bg-oro text-rojo-sangre hover:brightness-110 shadow-lg transition-all font-black text-caption uppercase tracking-[0.2em] cursor-pointer"
+                  className="flex-1 py-3 bg-oro text-naranja-naruto hover:brightness-110 shadow-lg transition-all font-black text-caption uppercase tracking-[0.2em] cursor-pointer"
                   style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
                 >
                   Guardar Mapeo

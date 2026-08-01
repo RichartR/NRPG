@@ -390,7 +390,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
 
               {/* Buscador de Participantes */}
               <div className="space-y-4">
-                <label className="text-xs font-black uppercase tracking-[0.25em] text-oro/50 ml-1">Buscar Shinobis Participantes</label>
+                <label className="text-xs font-black uppercase tracking-[0.25em] text-oro/50 ml-1">Buscar shinobi Participantes</label>
                 <div className="relative">
                   <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-oro/20" />
                   <input
@@ -442,7 +442,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                       {images.length > 1 && (
                         <button
                           onClick={() => setImages(images.filter((_, idx) => idx !== i))}
-                          className="p-3 text-oro/20 hover:text-rojo-sangre transition-all"
+                          className="p-3 text-oro/20 hover:text-naranja-naruto transition-all"
                         >
                           <X className="w-5 h-5" />
                         </button>
@@ -498,7 +498,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                         </div>
                         <button
                           onClick={() => removeParticipant(p.id)}
-                          className="p-2 hover:bg-rojo-sangre/20 text-oro/30 hover:text-rojo-sangre transition-all ninja-clip-xs"
+                          className="p-2 hover:bg-naranja-naruto/20 text-oro/30 hover:text-naranja-naruto transition-all ninja-clip-xs"
                           title="Quitar Participante"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -563,7 +563,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                               {item.nombre_es}
                               <button
                                 onClick={() => removeGlosarioItemFromParticipant(p.id, item.id)}
-                                className="text-rojo-sangre/60 hover:text-rojo-sangre transition-all"
+                                className="text-naranja-naruto/60 hover:text-naranja-naruto transition-all"
                               >
                                 <X className="w-3.5 h-3.5" />
                               </button>
@@ -576,7 +576,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                               setActiveRasgoSelector(null);
                               setGlosarioSearchQuery('');
                             }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-oro/5 hover:bg-oro hover:text-rojo-sangre border border-oro/15 hover:border-oro text-caption font-black text-oro uppercase tracking-wider transition-all ninja-clip-xs"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-oro/5 hover:bg-oro hover:text-naranja-naruto border border-oro/15 hover:border-oro text-caption font-black text-oro uppercase tracking-wider transition-all ninja-clip-xs"
                           >
                             <Plus className="w-3.5 h-3.5" /> Añadir Objeto/Técnica
                           </button>
@@ -639,7 +639,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                               {rasgo.nombre}
                               <button
                                 onClick={() => removeRasgoItemFromParticipant(p.id, rasgo.id)}
-                                className="text-rojo-sangre/60 hover:text-rojo-sangre transition-all"
+                                className="text-naranja-naruto/60 hover:text-naranja-naruto transition-all"
                               >
                                 <X className="w-3.5 h-3.5" />
                               </button>
@@ -652,7 +652,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                               setActiveGlosarioSelector(null);
                               setRasgoSearchQuery('');
                             }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-oro/5 hover:bg-oro hover:text-rojo-sangre border border-oro/15 hover:border-oro text-caption font-black text-oro uppercase tracking-wider transition-all ninja-clip-xs"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-oro/5 hover:bg-oro hover:text-naranja-naruto border border-oro/15 hover:border-oro text-caption font-black text-oro uppercase tracking-wider transition-all ninja-clip-xs"
                           >
                             <Plus className="w-3.5 h-3.5" /> Conceder Rasgo
                           </button>

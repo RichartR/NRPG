@@ -127,7 +127,7 @@ export async function PATCH(
 
             if (count !== null && count >= maxCupos) {
               const tipoEntidad = aldeaInfo.categoria_id === 2 ? 'La organización' : 'La aldea';
-              return NextResponse.json({ error: `${tipoEntidad} "${aldeaInfo.nombre_completo}" ya ha alcanzado el límite máximo de cupos (${maxCupos}) y no permite nuevos shinobis.` }, { status: 400 });
+              return NextResponse.json({ error: `${tipoEntidad} "${aldeaInfo.nombre_completo}" ya ha alcanzado el límite máximo de cupos (${maxCupos}) y no permite nuevos shinobi.` }, { status: 400 });
             }
           }
 

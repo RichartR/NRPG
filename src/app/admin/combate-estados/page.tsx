@@ -103,8 +103,8 @@ export default function AdminEstadosCombatePage() {
 
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-10">
           <div className="flex items-center gap-6">
-            <div className="w-12 h-12 bg-rojo-sangre/[0.03] border border-rojo-sangre/10 flex items-center justify-center">
-              <Swords className="w-6 h-6 text-rojo-sangre" />
+            <div className="w-12 h-12 bg-naranja-naruto/[0.03] border border-naranja-naruto/10 flex items-center justify-center">
+              <Swords className="w-6 h-6 text-naranja-naruto" />
             </div>
             <div>
               <h1 className="ninja-title text-4xl xl:text-5xl italic">ESTADOS CRÍTICOS</h1>
@@ -114,7 +114,7 @@ export default function AdminEstadosCombatePage() {
 
           <button
             onClick={() => setEditingEstado({ nombre: '', activo: true })}
-            className="flex items-center gap-4 px-10 py-5 bg-rojo-sangre hover:brightness-125 text-oro font-black text-caption xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-rojo-sangre/20 active:scale-95 ninja-clip-md"
+            className="flex items-center gap-4 px-10 py-5 bg-naranja-naruto hover:brightness-125 text-oro font-black text-caption xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-naranja-naruto/20 active:scale-95 ninja-clip-md"
           >
             <Plus className="w-4 h-4" />
             NUEVO ESTADO CRÍTICO
@@ -163,7 +163,7 @@ export default function AdminEstadosCombatePage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="w-full py-5 bg-oro text-rojo-sangre font-black uppercase tracking-[0.2em] hover:brightness-110 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-4 shadow-xl shadow-oro/5 ninja-clip-md"
+            className="w-full py-5 bg-oro text-naranja-naruto font-black uppercase tracking-[0.2em] hover:brightness-110 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-4 shadow-xl shadow-oro/5 ninja-clip-md"
           >
             <Save className="w-4 h-4" />
             {saving ? 'PROCESANDO...' : 'GUARDAR CONFIGURACIÓN DE ESTADO'}
@@ -178,13 +178,13 @@ export default function AdminEstadosCombatePage() {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-10 py-4 font-black uppercase tracking-[0.2em] transition-all text-caption xl:text-xs ${activeTab === tab
-                  ? 'bg-oro text-rojo-sangre shadow-lg'
-                  : 'text-oro/40 hover:text-oro hover:bg-oro/5'
+                ? 'bg-oro text-naranja-naruto shadow-lg'
+                : 'text-oro/40 hover:text-oro hover:bg-oro/5'
                 }`}
               style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
             >
               {tab === 'active' ? 'ACTIVOS' : 'ARCHIVADOS'}
-              <span className={`ml-3 opacity-40 ${activeTab === tab ? 'text-rojo-sangre/60' : ''}`}>({estados.filter(e => tab === 'active' ? e.activo : !e.activo).length})</span>
+              <span className={`ml-3 opacity-40 ${activeTab === tab ? 'text-naranja-naruto/60' : ''}`}>({estados.filter(e => tab === 'active' ? e.activo : !e.activo).length})</span>
             </button>
           ))}
         </div>
@@ -224,8 +224,8 @@ export default function AdminEstadosCombatePage() {
                     </td>
                     <td className="px-8 py-6">
                       <span className={`px-3 py-1 rounded-lg text-caption font-black uppercase border inline-flex items-center gap-2 ${est.activo
-                          ? 'bg-emerald-500/10 border-success-text/20 text-emerald-500'
-                          : 'bg-zinc-900 border-zinc-800 text-zinc-600'
+                        ? 'bg-emerald-500/10 border-success-text/20 text-emerald-500'
+                        : 'bg-zinc-900 border-zinc-800 text-zinc-600'
                         }`}>
                         {est.activo ? <CheckCircle2 className="w-3 h-3" /> : <Archive className="w-3 h-3" />}
                         {est.activo ? 'Activo' : 'Archivado'}
@@ -237,8 +237,8 @@ export default function AdminEstadosCombatePage() {
                           onClick={() => toggleStatus(est)}
                           title={est.activo ? 'Archivar' : 'Activar'}
                           className={`p-3 rounded-xl transition-all ${est.activo
-                              ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white'
-                              : 'bg-emerald-600 text-black hover:bg-emerald-500'
+                            ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white'
+                            : 'bg-emerald-600 text-black hover:bg-emerald-500'
                             }`}
                         >
                           {est.activo ? <Archive className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}

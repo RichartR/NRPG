@@ -153,7 +153,7 @@ export default function NarracionPage() {
                       setStartDate('');
                       setEndDate('');
                     }}
-                    className="w-full lg:w-auto justify-self-start text-caption sm:text-xs font-black text-rojo-sangre uppercase tracking-[0.25em] sm:tracking-[0.3em] hover:brightness-125 transition-all border-b border-rojo-sangre/30 pb-1 italic"
+                    className="w-full lg:w-auto justify-self-start text-caption sm:text-xs font-black text-naranja-naruto uppercase tracking-[0.25em] sm:tracking-[0.3em] hover:brightness-125 transition-all border-b border-naranja-naruto/30 pb-1 italic"
                   >
                     LIMPIAR FILTROS
                   </button>
@@ -187,40 +187,40 @@ export default function NarracionPage() {
                     }}
                   />
 
-                   <div className="pt-10 sm:pt-16 border-t border-oro/10 w-full">
-                     <PaginationContainer maxWidthClass="max-w-md">
-                       <button
-                         disabled={data.page === 1}
-                         onClick={() => fetchData(data.page - 1)}
-                         className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center ninja-btn-oro shrink-0"
-                       >
-                         <ChevronLeft className="w-6 h-6 sm:w-7 sm:h-7" />
-                       </button>
+                  <div className="pt-10 sm:pt-16 border-t border-oro/10 w-full">
+                    <PaginationContainer maxWidthClass="max-w-md">
+                      <button
+                        disabled={data.page === 1}
+                        onClick={() => fetchData(data.page - 1)}
+                        className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center ninja-btn-oro shrink-0"
+                      >
+                        <ChevronLeft className="w-6 h-6 sm:w-7 sm:h-7" />
+                      </button>
 
-                       <div className="flex flex-col items-center px-3 text-center">
-                         <span className="text-caption sm:text-caption font-black text-oro/40 uppercase tracking-[0.25em] sm:tracking-[0.4em] mb-1">
-                           REGISTROS DE NARRACIÓN
-                         </span>
-                         <div className="flex items-center gap-1.5 justify-center text-caption sm:text-sm xl:text-base font-black text-oro uppercase tracking-[0.18em] sm:tracking-[0.2em] italic">
-                           PAGINA
-                           <PaginationPageInput
-                             currentPage={data.page}
-                             totalPages={Math.ceil(data.count / 15) || 1}
-                             onChangePage={(p) => fetchData(p)}
-                           />
-                           <span className="text-oro/40">DE {Math.ceil(data.count / 15) || 1}</span>
-                         </div>
-                       </div>
+                      <div className="flex flex-col items-center px-3 text-center">
+                        <span className="text-caption sm:text-caption font-black text-oro/40 uppercase tracking-[0.25em] sm:tracking-[0.4em] mb-1">
+                          REGISTROS DE NARRACIÓN
+                        </span>
+                        <div className="flex items-center gap-1.5 justify-center text-caption sm:text-sm xl:text-base font-black text-oro uppercase tracking-[0.18em] sm:tracking-[0.2em] italic">
+                          PAGINA
+                          <PaginationPageInput
+                            currentPage={data.page}
+                            totalPages={Math.ceil(data.count / 15) || 1}
+                            onChangePage={(p) => fetchData(p)}
+                          />
+                          <span className="text-oro/40">DE {Math.ceil(data.count / 15) || 1}</span>
+                        </div>
+                      </div>
 
-                       <button
-                         disabled={data.list.length < 15 || data.page * 15 >= data.count}
-                         onClick={() => fetchData(data.page + 1)}
-                         className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center ninja-btn-oro shrink-0"
-                       >
-                         <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7" />
-                       </button>
-                     </PaginationContainer>
-                   </div>
+                      <button
+                        disabled={data.list.length < 15 || data.page * 15 >= data.count}
+                        onClick={() => fetchData(data.page + 1)}
+                        className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center ninja-btn-oro shrink-0"
+                      >
+                        <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7" />
+                      </button>
+                    </PaginationContainer>
+                  </div>
                 </div>
               ) : (
                 <div className="py-24 sm:py-40 text-center ninja-card-oro opacity-50">

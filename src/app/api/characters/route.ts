@@ -8,7 +8,7 @@ import { createAdminClient } from '@/utils/supabase/admin';
 export async function POST(request: Request) {
   const supabase = await createClient();
   const { data } = await request.json();
-  
+
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
 
       if (count !== null && count >= maxCupos) {
         const tipoEntidad = aldeaInfo.categoria_id === 2 ? 'La organización' : 'La aldea';
-        return NextResponse.json({ error: `${tipoEntidad} "${aldeaInfo.nombre_completo}" ya ha alcanzado el límite máximo de cupos (${maxCupos}) y no permite nuevos shinobis.` }, { status: 400 });
+        return NextResponse.json({ error: `${tipoEntidad} "${aldeaInfo.nombre_completo}" ya ha alcanzado el límite máximo de cupos (${maxCupos}) y no permite nuevos shinobi.` }, { status: 400 });
       }
     }
 
@@ -159,7 +159,7 @@ export async function POST(request: Request) {
         sendDiscordMessage(channelId, `**APARIENCIA DE ${data.nombre_ninja}:**\n${data.apariencia || 'Pendiente'}`),
         sendDiscordMessage(channelId, `**HISTORIA DE ${data.nombre_ninja}:**\n${data.historia || 'Pendiente'}`)
       ]);
-      
+
       apMsgId = apRes.id;
       hiMsgId = hiRes.id;
 
@@ -227,7 +227,7 @@ export async function POST(request: Request) {
 
     // 8. Registro de Acción inicial
     const { data: aldea } = await supabase.from('info_aldeas').select('nombre_completo').eq('id', data.aldea_id).single();
-    
+
     // Obtener información de ramas y clanes para el título
     const ramaIds = data.personajes_ramas?.map((r: any) => r.rama_id) || [];
     const subIds = data.personajes_ramas?.map((r: any) => r.sub_especialidad_id).filter(Boolean) || [];
@@ -244,7 +244,7 @@ export async function POST(request: Request) {
       const rama = ramasMap.get(r.rama_id);
       if (!rama) return null;
       const sub = r.sub_especialidad_id ? subsMap.get(r.sub_especialidad_id) : null;
-      
+
       const articulo = rama.tipo === 'clan' ? 'el' : 'la';
       const subText = sub ? ` (${sub.nombre})` : '';
       return `${articulo} ${rama.tipo} ${rama.nombre}${subText}`;
@@ -255,7 +255,7 @@ export async function POST(request: Request) {
       const infoText = ramasInfo.join(' y ');
       tituloAccion += `. Con ${infoText}.`;
     }
-    
+
     const { data: registro } = await adminClient.from('reg_registros').insert({
       tipo: 'accion',
       autor_id: characterId,
@@ -285,7 +285,7 @@ export async function POST(request: Request) {
           if (training && rama) {
             const articulo = rama.tipo === 'clan' ? 'el' : 'la';
             const tituloEntrenamiento = `${data.nombre_ninja} ha elegido el ${training.nombre_esp} de ${articulo} ${rama.tipo} ${rama.nombre}`;
-            
+
             const { data: regEnt } = await adminClient.from('reg_registros').insert({
               tipo: 'accion',
               autor_id: characterId,

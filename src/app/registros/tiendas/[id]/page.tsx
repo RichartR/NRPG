@@ -128,6 +128,8 @@ export default function TiendaDetallePage() {
       const { data: { user } } = await AuthService.getUser();
       if (!user) return;
 
+      const activeCharId = await ProfileService.getActiveCharacterId(user.id).catch(() => null);
+
       const { data, error } = await supabase
         .from('reg_characters')
         .select(`
@@ -139,12 +141,31 @@ export default function TiendaDetallePage() {
         .eq('activo', true)
         .eq('eliminado_voluntario', false);
 
-      if (error) throw error;
-      setCharacters(data || []);
+      if (error) console.error('Error fetching user characters:', error);
 
-      // Auto-select the active one or first one
-      if (data && data.length > 0) {
-        const active = data.find(c => c.activo) || data[0];
+      let list: Character[] = data || [];
+
+      if (activeCharId && !list.some(c => c.id === activeCharId)) {
+        const { data: activeCharData, error: activeErr } = await supabase
+          .from('reg_characters')
+          .select(`
+            *,
+            personajes_tecnicas:reg_personajes_tecnicas!reg_personajes_tecnicas_personaje_id_fkey(*),
+            personajes_ramas:reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(*)
+          `)
+          .eq('id', activeCharId)
+          .single();
+
+        if (!activeErr && activeCharData && activeCharData.activo !== false && !activeCharData.eliminado_voluntario) {
+          list.push(activeCharData);
+        }
+      }
+
+      setCharacters(list);
+
+      // Auto-select the active character or first one
+      if (list.length > 0) {
+        const active = list.find(c => c.id === activeCharId) || list.find(c => c.activo) || list[0];
         setSelectedChar(active);
       }
     } catch (err) {
@@ -646,13 +667,6 @@ export default function TiendaDetallePage() {
                 { label: tienda.nombre }
               ]}
             />
-            <button
-              onClick={() => router.push('/registros/tiendas')}
-              className="ninja-btn-ghost py-2 px-4 text-xs font-black uppercase tracking-widest flex items-center gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Volver a Tiendas</span>
-            </button>
           </header>
 
           {/* Unified Banner & Buyer Selection Card */}
@@ -699,7 +713,7 @@ export default function TiendaDetallePage() {
                   ) : (
                     <p className="text-xs text-red-400 font-bold uppercase tracking-wider flex items-center gap-2">
                       <AlertCircle className="w-4 h-4" />
-                      <span>No tienes shinobis activos</span>
+                      <span>No tienes shinobi activos</span>
                     </p>
                   )}
                 </div>
@@ -744,7 +758,7 @@ export default function TiendaDetallePage() {
               {/* Search input */}
               {selectedCategory !== 'stats' && (
                 <div className="relative animate-in fade-in duration-300">
-                  <Search className="absolute left-4 top-3.5 w-4 h-4 text-oro/40" />
+                  <Search className="absolute right-2 top-3.5 w-4 h-4 text-oro/40" />
                   <input
                     type="text"
                     value={searchTerm}
@@ -803,7 +817,7 @@ export default function TiendaDetallePage() {
                               <h2 className="text-lg sm:text-xl font-black text-oro uppercase tracking-widest">
                                 Consola de Compra de Stats
                               </h2>
-                              <p className="text-caption text-gris-texto uppercase tracking-widest font-black">
+                              <p className="text-caption text-gris-texto uppercase tracking-widest">
                                 1 Punto de Stat = Aumento permanente en tu ficha
                               </p>
                             </div>
@@ -813,7 +827,7 @@ export default function TiendaDetallePage() {
                           <div className="grid grid-cols-3 gap-4 items-center bg-zinc-950/60 p-6 border border-oro/5 ninja-clip-md">
                             <div className="text-center">
                               <span className="block text-caption font-black text-oro/40 uppercase tracking-widest mb-1">Actual</span>
-                              <div className="inline-flex items-center justify-center w-14 h-14 rounded-none border border-oro/20 bg-zinc-900 text-2xl font-black text-oro">
+                              <div className="inline-flex items-center justify-center w-14 h-14 rounded-none text-2xl font-black text-oro">
                                 {selectedChar.puntos_stats || 0}
                               </div>
                             </div>
@@ -824,7 +838,7 @@ export default function TiendaDetallePage() {
 
                             <div className="text-center">
                               <span className="block text-caption font-black text-oro/40 uppercase tracking-widest mb-1">Objetivo</span>
-                              <div className="inline-flex items-center justify-center w-14 h-14 rounded-none border-2 border-oro bg-zinc-900 text-2xl font-black text-oro shadow-[0_0_15px_rgba(212,175,55,0.15)] animate-pulse">
+                              <div className="inline-flex items-center justify-center w-14 h-14 rounded-none text-2xl font-black text-oro shadow-[0_0_15px_rgba(212,175,55,0.15)]">
                                 {(selectedChar.puntos_stats || 0) + statPointsToBuy}
                               </div>
                             </div>
@@ -836,12 +850,12 @@ export default function TiendaDetallePage() {
                               Cantidad de Puntos a Comprar
                             </label>
                             <div className="flex flex-col sm:flex-row gap-4 items-center">
-                              <div className="flex items-center bg-zinc-950 border border-oro/20 p-1 w-full sm:w-auto" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
+                              <div className="flex items-center bg-white text-naranja-naruto p-1 w-full sm:w-auto" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
                                 <button
                                   type="button"
                                   onClick={handleDecrement}
                                   disabled={statPointsToBuy <= 1}
-                                  className="p-3 text-oro/60 hover:text-oro disabled:text-zinc-700 transition-all font-black text-lg"
+                                  className="p-3 text-naranja-naruto/70 hover:text-naranja-naruto disabled:opacity-30 transition-all font-black text-lg"
                                 >
                                   <Minus className="w-4 h-4" />
                                 </button>
@@ -883,12 +897,12 @@ export default function TiendaDetallePage() {
                                       setStatPointsToBuy(Math.max(1, qty));
                                     }
                                   }}
-                                  className="w-20 text-center font-black text-oro text-lg bg-transparent border-none focus:outline-none"
+                                  className="w-20 text-center font-black text-naranja-naruto text-lg bg-transparent border-none focus:outline-none"
                                 />
                                 <button
                                   type="button"
                                   onClick={handleIncrement}
-                                  className="p-3 text-oro/60 hover:text-oro transition-all font-black text-lg"
+                                  className="p-3 text-naranja-naruto/70 hover:text-naranja-naruto transition-all font-black text-lg"
                                 >
                                   <Plus className="w-4 h-4" />
                                 </button>
@@ -897,7 +911,7 @@ export default function TiendaDetallePage() {
                               <button
                                 type="button"
                                 onClick={handleSelectMax}
-                                className="w-full sm:w-auto ninja-btn-ghost py-3.5 px-6 text-caption font-black uppercase tracking-widest"
+                                className="w-full sm:w-auto ninja-btn ninja-clip-md py-2 px-4 text-caption font-black uppercase tracking-widest bg-naranja-naruto text-black hover:bg-naranja-naruto/80"
                               >
                                 Calcular Máximo Posible
                               </button>
@@ -952,7 +966,7 @@ export default function TiendaDetallePage() {
                                   disabled={!canAfford || isLevelBlocked || statPointsToBuy <= 0}
                                   onClick={() => setIsStatBuyConfirmOpen(true)}
                                   className={`w-full py-4 font-black text-xs uppercase tracking-widest flex items-center justify-center transition-all ${canAfford && !isLevelBlocked && statPointsToBuy > 0
-                                    ? 'ninja-btn-oro shadow-lg shadow-oro/5'
+                                    ? 'ninja-btn ninja-clip-md bg-naranja-naruto text-black hover:bg-naranja-naruto/80 shadow-lg shadow-naranja-naruto/10'
                                     : 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700/50 bg-black/20'
                                     }`}
                                   style={(!canAfford || isLevelBlocked || statPointsToBuy <= 0) ? { clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' } : undefined}
@@ -993,16 +1007,16 @@ export default function TiendaDetallePage() {
                                 let badgeText = '';
 
                                 if (lvl <= charLvl) {
-                                  badgeColor = 'border-zinc-800 text-zinc-500 bg-zinc-950/20';
+                                  badgeColor = 'text-black bg-naranja-naruto';
                                   badgeText = 'Adquirido';
                                 } else if (isTargeted) {
-                                  badgeColor = 'border-oro/30 text-oro bg-oro/10 animate-pulse';
+                                  badgeColor = 'text-naranja-naruto bg-white';
                                   badgeText = 'Comprando';
                                 } else if (lvl === charLvl + 1) {
                                   badgeColor = 'border-amber-600/30 text-amber-500 bg-amber-950/10';
                                   badgeText = 'Siguiente';
                                 } else {
-                                  badgeColor = 'border-zinc-800 text-zinc-400 bg-zinc-950/40';
+                                  badgeColor = 'border-oro/30 text-oro bg-oro/10';
                                   badgeText = 'Pendiente';
                                 }
 
@@ -1110,7 +1124,7 @@ export default function TiendaDetallePage() {
                                             <span
                                               className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-sm border ${isMet
                                                 ? 'bg-black/40 border-oro/10 text-oro/80'
-                                                : 'bg-rojo-oscuro/20 border-rojo-sangre/30 text-rojo-sangre'
+                                                : 'bg-rojo-oscuro/20 border-naranja-naruto/30 text-naranja-naruto'
                                                 }`}
                                             >
                                               Rango: <strong className="font-black text-oro">{itemReqs.rango}</strong>
@@ -1125,7 +1139,7 @@ export default function TiendaDetallePage() {
                                             <span
                                               className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-sm border ${isMet
                                                 ? 'bg-black/40 border-oro/10 text-oro/80'
-                                                : 'bg-rojo-oscuro/20 border-rojo-sangre/30 text-rojo-sangre'
+                                                : 'bg-rojo-oscuro/20 border-naranja-naruto/30 text-naranja-naruto'
                                                 }`}
                                             >
                                               PA: <strong className="font-black text-oro">{itemReqs.combates}</strong>
@@ -1145,7 +1159,7 @@ export default function TiendaDetallePage() {
                                                 key={k}
                                                 className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-sm border ${isMet
                                                   ? 'bg-black/40 border-oro/10 text-oro/80'
-                                                  : 'bg-rojo-oscuro/20 border-rojo-sangre/30 text-rojo-sangre'
+                                                  : 'bg-rojo-oscuro/20 border-naranja-naruto/30 text-naranja-naruto'
                                                   }`}
                                               >
                                                 {k.toUpperCase()}: <strong className="font-black text-oro">{v}</strong>
@@ -1167,7 +1181,7 @@ export default function TiendaDetallePage() {
                                             <span
                                               className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-sm border ${isMet
                                                 ? 'bg-black/40 border-oro/10 text-oro/80'
-                                                : 'bg-rojo-oscuro/20 border-rojo-sangre/30 text-rojo-sangre'
+                                                : 'bg-rojo-oscuro/20 border-naranja-naruto/30 text-naranja-naruto'
                                                 }`}
                                             >
                                               Entr: <strong className="font-black text-oro">{entNames}</strong>
@@ -1189,7 +1203,7 @@ export default function TiendaDetallePage() {
                                             <span
                                               className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-sm border ${isMet
                                                 ? 'bg-black/40 border-oro/10 text-oro/80'
-                                                : 'bg-rojo-oscuro/20 border-rojo-sangre/30 text-rojo-sangre'
+                                                : 'bg-rojo-oscuro/20 border-naranja-naruto/30 text-naranja-naruto'
                                                 }`}
                                             >
                                               Subcat: <strong className="font-black text-oro">{subLabel}</strong>

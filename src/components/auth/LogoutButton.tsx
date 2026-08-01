@@ -15,8 +15,8 @@ export default function LogoutButton() {
   return (
     <button
       onClick={handleLogout}
-      className="text-oro/60 hover:text-oro transition-all flex items-center gap-3 bg-rojo-sangre/10 px-8 py-2.5 border border-oro/20 hover:border-oro/40 hover:bg-rojo-sangre/20 font-black uppercase tracking-widest text-caption"
-      style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
+      className="text-black hover:text-white transition-all flex items-center gap-2.5 bg-naranja-naruto px-6 py-3 border border-oro/20 hover:border-naranja-naruto/60 hover:bg-naranja-naruto/80 font-black uppercase tracking-[0.2em] text-xs shadow-lg cursor-pointer"
+      style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
     >
       Salir
     </button>

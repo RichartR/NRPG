@@ -27,24 +27,24 @@ export default async function AldeaDetailPage({ params }: { params: Promise<{ sl
         <div className="flex items-center gap-4">
           <img src="/assets/icons/shuriken.png" className="w-5 xl:w-7 h-auto object-contain" alt="icon" />
           <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
-            Archivo de <span className="text-oro/40">Aldea</span>
+            Documentos de la <span className="text-oro/40">Aldea</span>
           </h1>
         </div>
       </header>
 
       <main className="w-full max-w-[1750px] mx-auto flex-1">
-        <div className="relative h-[400px] xl:h-[500px] overflow-hidden ninja-card-oro mb-10">
+        <div className="relative h-[400px] xl:h-[500px] ninja-card-image no-hover mb-10">
           {aldea.url_imagen && (
             <img
               src={aldea.url_imagen}
               alt=""
-              className="w-full h-full object-cover opacity-90 transition-all duration-1000"
+              className="w-[100%] h-[100%] object-cover opacity-90 transition-all duration-1000 ninja-clip-lg"
               referrerPolicy="no-referrer"
             />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-          <div className="absolute bottom-12 left-12 z-10">
-            <h1 className="ninja-title text-6xl xl:text-9xl leading-none mb-4 tracking-tighter">
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent ninja-clip-lg" />
+          <div className="absolute bottom-5 left-5 z-10">
+            <h1 className="ninja-title text-6xl xl:text-9xl leading-none tracking-tighter">
               {aldea.abreviatura || aldea.nombre_jap}
             </h1>
             <p className="text-oro/80 text-xl xl:text-3xl font-black tracking-widest uppercase italic">

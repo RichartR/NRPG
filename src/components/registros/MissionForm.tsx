@@ -223,14 +223,14 @@ export default function MissionForm({
                           <button
                             type="button"
                             onClick={() => setEsFallida(false)}
-                            className={`py-4 border text-xs font-black uppercase tracking-widest transition-all ${!esFallida ? 'bg-oro text-rojo-sangre border-oro' : 'bg-black/20 border-oro/5 text-oro/45'}`}
+                            className={`py-4 border text-xs font-black uppercase tracking-widest transition-all ${!esFallida ? 'bg-oro text-naranja-naruto border-oro' : 'bg-black/20 border-oro/5 text-oro/45'}`}
                           >
                             COMPLETADA (+{misionObj.exp} EXP{misionObj.pa_recompensa ? ` / +${misionObj.pa_recompensa} PA` : ''})
                           </button>
                           <button
                             type="button"
                             onClick={() => setEsFallida(true)}
-                            className={`py-4 border text-xs font-black uppercase tracking-widest transition-all ${esFallida ? 'bg-rojo-sangre border-rojo-sangre/40 text-oro' : 'bg-black/20 border-oro/5 text-oro/45'}`}
+                            className={`py-4 border text-xs font-black uppercase tracking-widest transition-all ${esFallida ? 'bg-naranja-naruto border-naranja-naruto/40 text-oro' : 'bg-black/20 border-oro/5 text-oro/45'}`}
                           >
                             FALLADA (+{misionObj.exp_fallida} EXP{misionObj.pa_recompensa_fallida ? ` / +${misionObj.pa_recompensa_fallida} PA` : ''})
                           </button>
@@ -289,7 +289,7 @@ export default function MissionForm({
                   {participants.map(p => (
                     <div key={p.id} className="px-6 py-4 bg-black/60 border border-oro/10 text-xs font-black text-oro uppercase tracking-widest flex items-center gap-4 ninja-clip-xs group animate-in fade-in slide-in-from-left-2">
                       <User className="w-4 h-4" /> {p.nombre_ninja}
-                      <button onClick={() => removeParticipant(p.id)} className="text-rojo-sangre/40 hover:text-rojo-sangre transition-all">
+                      <button onClick={() => removeParticipant(p.id)} className="text-naranja-naruto/40 hover:text-naranja-naruto transition-all">
                         <X className="w-4 h-4" />
                       </button>
                     </div>
@@ -321,7 +321,7 @@ export default function MissionForm({
                       {images.length > 1 && (
                         <button
                           onClick={() => setImages(images.filter((_, idx) => idx !== i))}
-                          className="p-4 text-oro/20 hover:text-rojo-sangre transition-all"
+                          className="p-4 text-oro/20 hover:text-naranja-naruto transition-all"
                         >
                           <X className="w-6 h-6" />
                         </button>

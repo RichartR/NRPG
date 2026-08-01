@@ -759,42 +759,42 @@ export function CharacterSheetView({
         return a.nombre.localeCompare(b.nombre, 'es');
       })
       .map((r: any) => {
-      const isClan = r.tipo === 'clan';
-      if (!isClan) {
+        const isClan = r.tipo === 'clan';
+        if (!isClan) {
+          return {
+            label: r.nombre,
+            value: r.id,
+            disabled: false
+          };
+        }
+
+        const activeCount = occupancy.countByClan[r.id] || 0;
+        const C = occupancy.cuposMaximosAldea;
+        const limit = 4 + Math.floor((C - 10) / 5);
+
+        const isOriginalClan = !isNew && originalCharacter?.personajes_ramas?.some((pr: any) => pr.rama_id === r.id);
+        const isFull = activeCount >= limit;
+
+        const isSpecial = r.es_especial === true;
+        if (isSpecial) {
+          const permitidos: number[] = r.config_iniciales?.personajes_permitidos || [];
+          const charId = Number(character?.id);
+          const isAuthorized = !!charId && permitidos.includes(charId);
+          // Si no está autorizado, no mostrar el clan en el selector
+          if (!isAuthorized) return null;
+        }
+
+        const shouldDisable = (isFull && !isOriginalClan) || otherIsClan;
+
+        const tagEspecial = isSpecial ? ' [Especial]' : '';
+        const label = `${r.nombre}${tagEspecial}\n(${activeCount}/${limit} cupos)${isFull && !isOriginalClan ? ' - LLENO' : ''}${otherIsClan ? ' - LÍMITE DE 1 CLAN' : ''}`;
+
         return {
-          label: r.nombre,
+          label,
           value: r.id,
-          disabled: false
+          disabled: shouldDisable
         };
-      }
-
-      const activeCount = occupancy.countByClan[r.id] || 0;
-      const C = occupancy.cuposMaximosAldea;
-      const limit = 4 + Math.floor((C - 10) / 5);
-
-      const isOriginalClan = !isNew && originalCharacter?.personajes_ramas?.some((pr: any) => pr.rama_id === r.id);
-      const isFull = activeCount >= limit;
-
-      const isSpecial = r.es_especial === true;
-      if (isSpecial) {
-        const permitidos: number[] = r.config_iniciales?.personajes_permitidos || [];
-        const charId = Number(character?.id);
-        const isAuthorized = !!charId && permitidos.includes(charId);
-        // Si no está autorizado, no mostrar el clan en el selector
-        if (!isAuthorized) return null;
-      }
-
-      const shouldDisable = (isFull && !isOriginalClan) || otherIsClan;
-
-      const tagEspecial = isSpecial ? ' [Especial]' : '';
-      const label = `${r.nombre}${tagEspecial}\n(${activeCount}/${limit} cupos)${isFull && !isOriginalClan ? ' - LLENO' : ''}${otherIsClan ? ' - LÍMITE DE 1 CLAN' : ''}`;
-
-      return {
-        label,
-        value: r.id,
-        disabled: shouldDisable
-      };
-    }).filter(Boolean);
+      }).filter(Boolean);
   };
 
   // Cálculos Memoizados para evitar trabajo redundante en cada render
@@ -1533,7 +1533,7 @@ export function CharacterSheetView({
     const elements: React.ReactNode[] = [];
 
     if (reqs.rango) {
-      elements.push(<span key="rango" className="text-rojo-sangre font-black">{reqs.rango}</span>);
+      elements.push(<span key="rango" className="text-naranja-naruto font-black">{reqs.rango}</span>);
     }
     if (reqs.rama_id) {
       const rama = (masters.ramas || []).find((r: any) => Number(r.id) === Number(reqs.rama_id));
@@ -1574,7 +1574,7 @@ export function CharacterSheetView({
       Object.entries(reqs.misiones).forEach(([rangoM, cant]) => {
         if (cant && cant !== 0) {
           elements.push(
-            <span key={rangoM} className="text-rojo-sangre font-black">
+            <span key={rangoM} className="text-naranja-naruto font-black">
               M.{rangoM}: <span className="text-oro">{String(cant)}</span>
             </span>
           );
@@ -1690,7 +1690,7 @@ export function CharacterSheetView({
   const ResourceDisplay = ({ character, totalExp, totalRyous, totalPuntosCombate, xpLimitUsage }: { character: Character, totalExp: number, totalRyous: number, totalPuntosCombate: number, xpLimitUsage?: number | null }) => (  // totalPuntosCombate now represents PA
     <div className="flex flex-wrap justify-center items-center gap-4 mb-8">
       <div className="flex items-center gap-3 px-5 py-3 ninja-card-oro group hover-ninja">
-        <div className="w-9 h-9 bg-rojo-sangre rotate-45 flex items-center justify-center shadow-[0_0_12px_rgba(103,9,9,0.4)] shrink-0">
+        <div className="w-9 h-9 bg-naranja-naruto rotate-45 flex items-center justify-center shadow-[0_0_12px_rgba(103,9,9,0.4)] shrink-0">
           <span className="text-oro font-black -rotate-45 text-base italic">¥</span>
         </div>
         <div>
@@ -1704,7 +1704,7 @@ export function CharacterSheetView({
       </div>
       <div className="flex items-center gap-3 px-5 py-3 ninja-card-oro group hover-ninja">
         <div className="w-9 h-9 bg-oro rotate-45 flex items-center justify-center shadow-[0_0_12px_rgba(255,230,159,0.25)] shrink-0">
-          <span className="text-rojo-sangre font-black -rotate-45 text-[10px] italic">EXP</span>
+          <span className="text-naranja-naruto font-black -rotate-45 text-[10px] italic">EXP</span>
         </div>
         <div>
           <p className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.2em] mb-0.5">
@@ -1723,7 +1723,7 @@ export function CharacterSheetView({
               )}
             </p>
             {xpLimitUsage && totalExp >= xpLimitUsage && (
-              <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-rojo-sangre/20 border border-rojo-sangre/40 text-rojo-sangre tracking-widest ninja-clip-xs animate-pulse">
+              <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto/20 border border-naranja-naruto/40 text-naranja-naruto tracking-widest ninja-clip-xs animate-pulse">
                 LÍMITE
               </span>
             )}
@@ -1790,7 +1790,7 @@ export function CharacterSheetView({
               <div className="min-w-0">
                 <h3 className="text-oro font-black uppercase tracking-[0.25em] text-sm xl:text-base italic mb-1 flex items-center gap-3">
                   <span>SHINOBI ARCHIVADO / INACTIVO</span>
-                  <span className="px-2 py-0.5 text-caption font-black uppercase bg-rojo-sangre text-oro tracking-widest ninja-clip-xs">
+                  <span className="px-2 py-0.5 text-caption font-black uppercase bg-naranja-naruto text-oro tracking-widest ninja-clip-xs">
                     {character.eliminado_voluntario ? 'VOLUNTARIO' : 'INACTIVIDAD'}
                   </span>
                 </h3>
@@ -1805,14 +1805,14 @@ export function CharacterSheetView({
                 <button
                   onClick={() => onRestore?.()}
                   disabled={saving}
-                  className="px-6 py-3 bg-oro text-rojo-sangre hover:bg-oro/80 text-caption xl:text-xs font-black uppercase tracking-widest transition-all duration-300 shadow-[0_0_20px_rgba(255,230,159,0.3)] disabled:opacity-50"
+                  className="px-6 py-3 bg-oro text-naranja-naruto hover:bg-oro/80 text-caption xl:text-xs font-black uppercase tracking-widest transition-all duration-300 shadow-[0_0_20px_rgba(255,230,159,0.3)] disabled:opacity-50"
                 >
                   RESTAURAR SHINOBI
                 </button>
                 <button
                   onClick={() => onDelete?.(true)}
                   disabled={saving}
-                  className="px-6 py-3 bg-rojo-sangre/20 border border-rojo-sangre/40 text-rojo-sangre hover:bg-rojo-sangre hover:text-oro text-caption xl:text-xs font-black uppercase tracking-widest transition-all duration-300 disabled:opacity-50"
+                  className="px-6 py-3 bg-naranja-naruto/20 border border-naranja-naruto/40 text-naranja-naruto hover:bg-naranja-naruto hover:text-oro text-caption xl:text-xs font-black uppercase tracking-widest transition-all duration-300 disabled:opacity-50"
                 >
                   ELIMINAR DEFINITIVAMENTE
                 </button>
@@ -1861,7 +1861,7 @@ export function CharacterSheetView({
                 {!isNew && canEdit && onDelete && (
                   <button
                     onClick={() => onDelete?.(false)}
-                    className="p-3 text-rojo-sangre hover:scale-105 active:scale-95 hover:brightness-125 transition-all"
+                    className="p-3 text-naranja-naruto hover:scale-105 active:scale-95 hover:brightness-125 transition-all"
                     title="Borrar Personaje"
                   >
                     <Trash2 className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -1881,7 +1881,7 @@ export function CharacterSheetView({
                 {(!isNew && canEdit) && (
                   <button
                     onClick={() => isEditing ? onCancel() : setIsEditing?.(true)}
-                    className={`px-5 sm:px-8 py-2.5 text-xs sm:text-sm font-black uppercase tracking-widest transition-all ${isEditing ? 'ninja-btn-oro' : 'ninja-btn-ghost'}`}
+                    className={`px-5 sm:px-8 py-2.5 text-xs sm:text-sm font-black uppercase tracking-widest transition-all ${isEditing ? 'ninja-btn-oro' : 'ninja-btn-oro'}`}
                   >
                     {isEditing ? 'CANCELAR' : 'EDITAR FICHA'}
                   </button>
@@ -1918,7 +1918,7 @@ export function CharacterSheetView({
               {/* Información del Personaje */}
               <div className="min-w-0 flex-1 flex flex-col items-center md:items-start w-full md:w-auto">
                 <div className="flex items-center gap-3 mb-2 justify-center md:justify-start">
-                  <div className="w-2 h-2 bg-rojo-sangre rotate-45" />
+                  <div className="w-2 h-2 bg-naranja-naruto rotate-45" />
                   <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.5em]">EXPEDIENTE NINJA</p>
                 </div>
 
@@ -1930,15 +1930,15 @@ export function CharacterSheetView({
                 </h1>
 
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 sm:gap-6 mt-4">
-                  <div className="px-5 py-1.5 sm:px-6 sm:py-2 bg-rojo-sangre text-oro text-caption sm:text-xs xl:text-sm font-black uppercase tracking-[0.3em] shadow-lg">
+                  <div className="px-5 py-1.5 sm:px-6 sm:py-2 bg-naranja-naruto text-oro text-caption sm:text-xs xl:text-sm font-black uppercase tracking-[0.3em] shadow-lg">
                     RANGO {character.rango}
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
-                    <div className="w-2 h-2 bg-rojo-sangre rotate-45" />
+                    <div className="w-2 h-2 bg-naranja-naruto rotate-45" />
                     <span className="text-oro font-bold text-xs xl:text-base uppercase tracking-widest">{character.rango_jerarquico}</span>
                     {(aldeaObj?.nombre_completo || character.aldeas?.nombre_completo) && (
                       <>
-                        <div className="w-2 h-2 bg-rojo-sangre rotate-45" />
+                        <div className="w-2 h-2 bg-naranja-naruto rotate-45" />
                         <span className="text-oro/60 font-bold text-xs xl:text-base uppercase tracking-widest">{aldeaObj?.nombre_completo || character.aldeas?.nombre_completo}</span>
                       </>
                     )}
@@ -1959,7 +1959,7 @@ export function CharacterSheetView({
                   key={tab}
                   onClick={() => onSetActiveTab(tab)}
                   className={`px-8 sm:px-12 py-4 text-[11px] xl:text-sm font-black uppercase tracking-widest transition-all duration-300 border ninja-clip-sm shrink-0 relative group ${isActive
-                    ? 'bg-oro text-rojo-sangre border-oro shadow-[0_0_30px_rgba(255,230,159,0.5)]'
+                    ? 'bg-oro text-naranja-naruto border-oro shadow-[0_0_30px_rgba(255,230,159,0.5)]'
                     : 'bg-black/60 text-oro/30 border-oro/10 hover:border-oro/60 hover:text-oro hover:bg-black/90'
                     }`}
                 >
@@ -2708,7 +2708,7 @@ export function CharacterSheetView({
                       {derivedElements.map((elem: any) => (
                         <div
                           key={elem.id}
-                          className="flex flex-col items-center justify-center p-6 bg-black/40 border border-oro/10 hover:border-oro/30 transition-all group relative overflow-hidden ninja-clip-sm"
+                          className="flex flex-col items-center justify-center p-6 bg-black/40 transition-all group relative overflow-hidden ninja-clip-sm"
                         >
                           <div className="absolute top-0 right-0 w-16 h-16 bg-oro/5 rounded-full blur-xl pointer-events-none" />
                           <div className="w-24 h-24 rounded-none flex items-center justify-center group-hover:scale-110 group-hover:border-oro/50 transition-all duration-500  relative mb-2">
@@ -2776,7 +2776,7 @@ export function CharacterSheetView({
                   {/* Estadísticas Base */}
                   <div className="lg:col-span-5 space-y-10">
                     <div className="flex items-center gap-4 mb-8">
-                      <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45" />
+                      <div className="w-1.5 h-1.5 bg-naranja-naruto rotate-45" />
                       <h3 className="text-xs xl:text-sm font-black text-oro/60 uppercase tracking-[0.4em]">Estadísticas Base</h3>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -2838,7 +2838,7 @@ export function CharacterSheetView({
                   {/* Atributos Calculados */}
                   <div className="lg:col-span-3 space-y-10 lg:border-l lg:border-oro/5 lg:pl-6 xl:pl-10">
                     <div className="flex items-center gap-4 mb-8">
-                      <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45" />
+                      <div className="w-1.5 h-1.5 bg-naranja-naruto rotate-45" />
                       <h3 className="text-xs xl:text-sm font-black text-oro/60 uppercase tracking-[0.4em]">Atributos</h3>
                     </div>
                     <div className="grid grid-cols-1 gap-3">
@@ -2862,7 +2862,7 @@ export function CharacterSheetView({
                   {/* Panel de Rasgos */}
                   <div className="lg:col-span-4 space-y-10 lg:border-l lg:border-oro/5 lg:pl-6 xl:pl-10">
                     <div className="flex items-center gap-4 mb-8">
-                      <div className="w-1.5 h-1.5 bg-rojo-sangre rotate-45" />
+                      <div className="w-1.5 h-1.5 bg-naranja-naruto rotate-45" />
                       <h3 className="text-xs xl:text-sm font-black text-oro/60 uppercase tracking-[0.4em]">Rasgos</h3>
                     </div>
 
@@ -2996,7 +2996,7 @@ export function CharacterSheetView({
                                             </div>
 
                                             {forced ? (
-                                              <span className="text-caption font-black text-rojo-sangre uppercase tracking-wider bg-rojo-sangre/10 px-2 py-0.5">Automático</span>
+                                              <span className="text-caption font-black text-naranja-naruto uppercase tracking-wider bg-naranja-naruto/10 px-2 py-0.5">Automático</span>
                                             ) : (isEditing || isNew) ? (
                                               <label className="flex items-center cursor-pointer">
                                                 <input
@@ -3075,7 +3075,7 @@ export function CharacterSheetView({
                       key={tab}
                       onClick={() => setInventarioSubTab(tab)}
                       className={`px-8 sm:px-16 py-4 text-[11px] xl:text-sm font-black uppercase tracking-widest transition-all duration-300 border ninja-clip-sm shrink-0 relative group flex items-center gap-4 ${isActive
-                        ? 'bg-oro text-rojo-sangre border-oro shadow-[0_0_30px_rgba(255,230,159,0.5)]'
+                        ? 'bg-oro text-naranja-naruto border-oro shadow-[0_0_30px_rgba(255,230,159,0.5)]'
                         : 'bg-black/60 text-oro/30 border-oro/10 hover:border-oro/60 hover:text-oro hover:bg-black/90'
                         }`}
                     >
@@ -3203,7 +3203,7 @@ export function CharacterSheetView({
                                     <div key={subName} className="space-y-4">
                                       {subName !== '' && (
                                         <h5 className="text-caption xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
-                                          <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
+                                          <div className="w-1 h-1 bg-naranja-naruto rotate-45" />
                                           {subName}
                                         </h5>
                                       )}
@@ -3492,13 +3492,13 @@ export function CharacterSheetView({
                                     </div>
                                   </td>
                                   <td className="py-3 px-5 text-center">
-                                    <span className="inline-block px-2.5 py-1 bg-oro/10 border border-oro/20 text-oro text-xs font-black rounded-sm uppercase">
+                                    <span className="inline-block px-2.5 py-1 bg-white border border-oro/20 text-naranja-naruto text-xs font-black rounded-sm uppercase">
                                       {pi.info_glosario?.zona_equipable || 'General'}
                                     </span>
                                   </td>
                                   <td className="py-3 px-5">
                                     {pi.equipado ? (
-                                      <span className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-600 uppercase tracking-widest bg-emerald-500/10 border border-emerald-500/30 px-2 py-1 rounded-sm">
+                                      <span className="inline-flex items-center gap-1.5 text-xs font-black text-black uppercase tracking-widest bg-naranja-naruto px-2 py-1 rounded-sm">
                                         Equipado
                                       </span>
                                     ) : (
@@ -3563,7 +3563,7 @@ export function CharacterSheetView({
                         key={tab}
                         onClick={() => setTecnicasSubTab(tab as any)}
                         className={`px-8 sm:px-16 py-4 text-[11px] xl:text-sm font-black uppercase tracking-widest transition-all duration-300 border ninja-clip-sm shrink-0 relative group flex items-center gap-4 ${isActive
-                          ? 'bg-oro text-rojo-sangre border-oro shadow-[0_0_30px_rgba(255,230,159,0.5)]'
+                          ? 'bg-oro text-naranja-naruto border-oro shadow-[0_0_30px_rgba(255,230,159,0.5)]'
                           : 'bg-black/60 text-oro/30 border-oro/10 hover:border-oro/60 hover:text-oro hover:bg-black/90'
                           }`}
                       >
@@ -3578,31 +3578,31 @@ export function CharacterSheetView({
               </div>
 
               {tecnicasSubTab !== 'kugutsu' && (
-              <div className="relative">
-                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-oro/40 pointer-events-none" />
-                <input
-                  value={techniqueSearch}
-                  onChange={(e) => setTechniqueSearch(e.target.value)}
-                  placeholder={
-                    tecnicasSubTab === 'jutsus'
-                      ? 'BUSCAR TÉCNICAS APRENDIDAS...'
-                      : tecnicasSubTab === 'pasivas'
-                        ? 'BUSCAR HABILIDADES PASIVAS...'
-                        : 'BUSCAR KUCHIYOSES...'
-                  }
-                  className="w-full bg-black/50 border border-oro/10 py-4 pl-12 pr-12 text-oro font-black uppercase tracking-widest text-xs outline-none focus:border-oro/40 transition-all placeholder:text-oro/20 ninja-clip-sm"
-                />
-                {techniqueSearch && (
-                  <button
-                    type="button"
-                    onClick={() => setTechniqueSearch('')}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-oro/30 hover:text-oro transition-colors"
-                    title="Limpiar búsqueda"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
+                <div className="relative">
+                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-oro/40 pointer-events-none" />
+                  <input
+                    value={techniqueSearch}
+                    onChange={(e) => setTechniqueSearch(e.target.value)}
+                    placeholder={
+                      tecnicasSubTab === 'jutsus'
+                        ? 'BUSCAR TÉCNICAS APRENDIDAS...'
+                        : tecnicasSubTab === 'pasivas'
+                          ? 'BUSCAR HABILIDADES PASIVAS...'
+                          : 'BUSCAR KUCHIYOSES...'
+                    }
+                    className="w-full bg-black/50 border border-oro/10 py-4 pl-12 pr-12 text-oro font-black uppercase tracking-widest text-xs outline-none focus:border-oro/40 transition-all placeholder:text-oro/20 ninja-clip-sm"
+                  />
+                  {techniqueSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setTechniqueSearch('')}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-oro/30 hover:text-oro transition-colors"
+                      title="Limpiar búsqueda"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               )}
 
               {tecnicasSubTab === 'jutsus' && (
@@ -3878,7 +3878,7 @@ export function CharacterSheetView({
                                       <div key={subName} className="space-y-4">
                                         {subName !== '' && (
                                           <h5 className="text-caption xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
-                                            <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
+                                            <div className="w-1 h-1 bg-naranja-naruto rotate-45" />
                                             {subName}
                                           </h5>
                                         )}
@@ -4111,7 +4111,7 @@ export function CharacterSheetView({
                                       <div key={subName} className="space-y-4">
                                         {subName !== '' && (
                                           <h5 className="text-caption xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
-                                            <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
+                                            <div className="w-1 h-1 bg-naranja-naruto rotate-45" />
                                             {subName}
                                           </h5>
                                         )}
@@ -4269,7 +4269,7 @@ export function CharacterSheetView({
                                       <div key={subName} className="space-y-4">
                                         {subName !== '' && (
                                           <h5 className="text-caption xl:text-xs font-black text-oro/40 uppercase tracking-[0.4em] ml-2 flex items-center gap-3">
-                                            <div className="w-1 h-1 bg-rojo-sangre rotate-45" />
+                                            <div className="w-1 h-1 bg-naranja-naruto rotate-45" />
                                             {subName}
                                           </h5>
                                         )}
@@ -4386,7 +4386,7 @@ export function CharacterSheetView({
                 </div>
               </SectionCard>
 
-              <SectionCard title="DESCRIPCIÓN FÍSICA Y APARIENCIA" icon={Sword} color="oro" headerAction={!isNew && canEdit && isEditing && <button onClick={() => onSave('apariencia')} className="px-8 py-3 bg-oro text-rojo-sangre text-caption font-black uppercase tracking-widest active:scale-95 shadow-xl shadow-oro/20" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>Guardar Apariencia</button>}>
+              <SectionCard title="DESCRIPCIÓN FÍSICA Y APARIENCIA" icon={Sword} color="oro" headerAction={!isNew && canEdit && isEditing && <button onClick={() => onSave('apariencia')} className="px-8 py-3 bg-oro text-naranja-naruto text-caption font-black uppercase tracking-widest active:scale-95 shadow-xl shadow-oro/20" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>Guardar Apariencia</button>}>
                 <div className="relative">
                   <textarea
                     value={character.apariencia}
@@ -4398,7 +4398,7 @@ export function CharacterSheetView({
                     style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' }}
                   />
                   {(isEditing || isNew) && (
-                    <div className={`flex justify-end mt-2 text-caption font-black uppercase tracking-widest tabular-nums transition-colors ${(character.apariencia?.length || 0) >= 1800 ? 'text-rojo-sangre' :
+                    <div className={`flex justify-end mt-2 text-caption font-black uppercase tracking-widest tabular-nums transition-colors ${(character.apariencia?.length || 0) >= 1800 ? 'text-naranja-naruto' :
                       (character.apariencia?.length || 0) >= 1500 ? 'text-oro/60' : 'text-oro/30'
                       }`}>
                       {character.apariencia?.length || 0} / 1800
@@ -4406,7 +4406,7 @@ export function CharacterSheetView({
                   )}
                 </div>
               </SectionCard>
-              <SectionCard title="HISTORIA Y CRÓNICA NINJA" icon={ScrollText} color="oro" headerAction={!isNew && canEdit && isEditing && <button onClick={() => onSave('historia')} className="px-8 py-3 bg-oro text-rojo-sangre text-caption font-black uppercase tracking-widest active:scale-95 shadow-xl shadow-oro/20" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>Guardar Historiaa</button>}>
+              <SectionCard title="HISTORIA Y CRÓNICA NINJA" icon={ScrollText} color="oro" headerAction={!isNew && canEdit && isEditing && <button onClick={() => onSave('historia')} className="px-8 py-3 bg-oro text-naranja-naruto text-caption font-black uppercase tracking-widest active:scale-95 shadow-xl shadow-oro/20" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>Guardar Historia</button>}>
                 <div className="relative">
                   <textarea
                     value={character.historia}
@@ -4418,7 +4418,7 @@ export function CharacterSheetView({
                     style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' }}
                   />
                   {(isEditing || isNew) && (
-                    <div className={`flex justify-end mt-2 text-caption font-black uppercase tracking-widest tabular-nums transition-colors ${(character.historia?.length || 0) >= 1800 ? 'text-rojo-sangre' :
+                    <div className={`flex justify-end mt-2 text-caption font-black uppercase tracking-widest tabular-nums transition-colors ${(character.historia?.length || 0) >= 1800 ? 'text-naranja-naruto' :
                       (character.historia?.length || 0) >= 1500 ? 'text-oro/60' : 'text-oro/30'
                       }`}>
                       {character.historia?.length || 0} / 1800
@@ -4451,7 +4451,7 @@ export function CharacterSheetView({
                           setRecordPage(1);
                         }}
                         className={`px-8 sm:px-16 py-4 text-[11px] xl:text-sm font-black uppercase tracking-widest transition-all duration-300 border ninja-clip-sm shrink-0 relative group flex items-center gap-4 ${isActive
-                          ? 'bg-oro text-rojo-sangre border-oro shadow-[0_0_30px_rgba(255,230,159,0.5)]'
+                          ? 'bg-oro text-naranja-naruto border-oro shadow-[0_0_30px_rgba(255,230,159,0.5)]'
                           : 'bg-black/60 text-oro/30 border-oro/10 hover:border-oro/60 hover:text-oro hover:bg-black/90'
                           }`}
                       >
@@ -4505,7 +4505,7 @@ export function CharacterSheetView({
                         setEndDate('');
                         setRecordPage(1);
                       }}
-                      className="text-caption font-black text-rojo-sangre uppercase tracking-[0.2em] hover:brightness-125 transition-all border-b border-rojo-sangre/30 pb-0.5"
+                      className="text-caption font-black text-naranja-naruto uppercase tracking-[0.2em] hover:brightness-125 transition-all border-b border-naranja-naruto/30 pb-0.5"
                     >
                       LIMPIAR FILTROS
                     </button>
@@ -4846,7 +4846,7 @@ export function CharacterSheetView({
       {showScrollTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-8 right-8 w-12 h-12 bg-black/80 border border-oro/20 text-oro flex items-center justify-center hover:bg-oro hover:text-rojo-sangre transition-all z-[100] ninja-clip-sm shadow-2xl active:scale-90"
+          className="fixed bottom-8 right-8 w-12 h-12 bg-black/80 border border-oro/20 text-oro flex items-center justify-center hover:bg-oro hover:text-naranja-naruto transition-all z-[100] ninja-clip-sm shadow-2xl active:scale-90"
           title="Volver Arriba"
         >
           <ChevronUp className="w-5 h-5" />

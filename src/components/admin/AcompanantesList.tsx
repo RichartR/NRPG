@@ -64,7 +64,7 @@ export default function AcompanantesList({ initialAcompanantes, ramasClanes }: A
   const filtered = useMemo(() => {
     return initialAcompanantes.filter((a) => {
       const matchesTab = activeTab === 'active' ? a.activo : !a.activo;
-      const matchesSearch = searchIncludes(a.nombre_esp, search) || 
+      const matchesSearch = searchIncludes(a.nombre_esp, search) ||
         searchIncludes(a.nombre_jap, search) ||
         searchIncludes(a.slug, search) ||
         (a.info_ramas_clanes?.nombre && searchIncludes(a.info_ramas_clanes.nombre, search));
@@ -84,11 +84,11 @@ export default function AcompanantesList({ initialAcompanantes, ramasClanes }: A
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 sm:flex-initial text-center px-4 sm:px-8 py-3 xl:py-4 font-black uppercase tracking-[0.2em] tracking-wider transition-all text-caption sm:text-caption xl:text-xs ${activeTab === tab ? 'bg-oro text-rojo-sangre shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
+              className={`flex-1 sm:flex-initial text-center px-4 sm:px-8 py-3 xl:py-4 font-black uppercase tracking-[0.2em] tracking-wider transition-all text-caption sm:text-caption xl:text-xs ${activeTab === tab ? 'bg-oro text-naranja-naruto shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
               style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
             >
               {tab === 'active' ? 'ACTIVOS' : 'INACTIVOS'}{' '}
-              <span className={`ml-2 opacity-40 ${activeTab === tab ? 'text-rojo-sangre/60' : ''}`}>
+              <span className={`ml-2 opacity-40 ${activeTab === tab ? 'text-naranja-naruto/60' : ''}`}>
                 ({initialAcompanantes.filter((e) => (tab === 'active' ? e.activo : !e.activo)).length})
               </span>
             </button>
@@ -111,7 +111,7 @@ export default function AcompanantesList({ initialAcompanantes, ramasClanes }: A
 
           <button
             onClick={() => setIsAdding(true)}
-            className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-10 py-3 xl:py-4 bg-rojo-sangre hover:brightness-125 text-oro font-black text-caption sm:text-caption xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-rojo-sangre/20 active:scale-95 whitespace-nowrap"
+            className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-10 py-3 xl:py-4 bg-naranja-naruto hover:brightness-125 text-oro font-black text-caption sm:text-caption xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-naranja-naruto/20 active:scale-95 whitespace-nowrap"
             style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
           >
             <PlusCircle className="w-5 h-5 shrink-0" />
@@ -166,14 +166,14 @@ export default function AcompanantesList({ initialAcompanantes, ramasClanes }: A
                       <button
                         onClick={() => toggleActive(a.id, a.activo)}
                         disabled={loadingId === a.id}
-                        className={`p-2.5 transition-all border ninja-clip-xs ${a.activo ? 'bg-oro/10 border-oro/20 text-oro hover:bg-oro hover:text-rojo-sangre' : 'bg-black/40 border-oro/5 text-oro/20 hover:border-oro/40 hover:text-oro'}`}
+                        className={`p-2.5 transition-all border ninja-clip-xs ${a.activo ? 'bg-oro/10 border-oro/20 text-oro hover:bg-oro hover:text-naranja-naruto' : 'bg-black/40 border-oro/5 text-oro/20 hover:border-oro/40 hover:text-oro'}`}
                         title={a.activo ? 'Desactivar' : 'Activar'}
                       >
                         {loadingId === a.id ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : a.activo ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                       </button>
                       <button
                         onClick={() => setEditingAcompanante(a)}
-                        className="p-2.5 bg-oro text-rojo-sangre hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-oro/10 ninja-clip-xs"
+                        className="p-2.5 bg-oro text-naranja-naruto hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-oro/10 ninja-clip-xs"
                         title="Editar"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
@@ -181,7 +181,7 @@ export default function AcompanantesList({ initialAcompanantes, ramasClanes }: A
                       <button
                         onClick={() => handleDelete(a.id, a.nombre_jap)}
                         disabled={loadingId === a.id}
-                        className="p-2.5 bg-rojo-sangre/20 border border-rojo-sangre/40 text-rojo-sangre hover:bg-rojo-sangre hover:text-oro transition-all active:scale-95 ninja-clip-xs"
+                        className="p-2.5 bg-naranja-naruto/20 border border-naranja-naruto/40 text-naranja-naruto hover:bg-naranja-naruto hover:text-oro transition-all active:scale-95 ninja-clip-xs"
                         title="Eliminar"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

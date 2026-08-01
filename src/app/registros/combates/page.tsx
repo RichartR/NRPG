@@ -70,7 +70,7 @@ export default function CombatesPage() {
   return (
     <div className="min-h-screen p-4 sm:p-8 xl:p-20 flex flex-col">
       <div className="max-w-[1750px] mx-auto w-full flex-1">
-        <header className="w-full mb-6 sm:mb-8 ninja-card-rojo p-4 sm:p-6 xl:p-8 z-50">
+        <header className="w-full mb-6 sm:mb-8 ninja-card-oro p-4 sm:p-6 xl:p-8 z-50">
           <div className="flex flex-col gap-6 w-full">
             {/* Row 1: Breadcrumbs & Action Button */}
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-b border-oro/10 pb-4 w-full">
@@ -98,7 +98,7 @@ export default function CombatesPage() {
             <div className="flex items-center justify-center py-2">
               <div className="flex items-center gap-4 sm:gap-6">
                 <h1 className="ninja-title text-3xl sm:text-5xl xl:text-7xl uppercase tracking-[0.3em] leading-none text-center">
-                  <span className="text-rojo-sangre">COMBATES</span>
+                  <span className="text-naranja-naruto">COMBATES</span>
                 </h1>
               </div>
             </div>
@@ -146,7 +146,7 @@ export default function CombatesPage() {
           />
         ) : (
           <div className="space-y-6">
-            <div className="flex flex-wrap items-center gap-6 sm:gap-10 p-6 sm:p-10 ninja-card-rojo animate-in fade-in slide-in-from-top-2 duration-500">
+            <div className="flex flex-wrap items-center gap-6 sm:gap-10 p-6 sm:p-10 ninja-card-oro animate-in fade-in slide-in-from-top-2 duration-500">
               <div className="flex items-center gap-6">
                 <span className="text-caption xl:text-xs font-black text-oro/40 uppercase tracking-[0.3em]">DESDE</span>
                 <input
@@ -168,7 +168,7 @@ export default function CombatesPage() {
               {(startDate || endDate) && (
                 <button
                   onClick={() => { setStartDate(''); setEndDate(''); }}
-                  className="text-caption xl:text-xs font-black text-rojo-sangre uppercase tracking-[0.3em] hover:brightness-125 transition-all border-b border-rojo-sangre/30 pb-1 italic"
+                  className="text-caption xl:text-xs font-black text-naranja-naruto uppercase tracking-[0.3em] hover:brightness-125 transition-all border-b border-naranja-naruto/30 pb-1 italic"
                 >
                   LIMPIAR FILTROS
                 </button>
@@ -179,12 +179,12 @@ export default function CombatesPage() {
               {loading ? (
                 <div className="py-60 flex flex-col items-center gap-10">
                   <div className="relative">
-                    <div className="w-16 h-16 border-4 border-rojo-sangre/20 border-t-rojo-sangre rounded-full animate-spin" />
+                    <div className="w-16 h-16 border-4 border-naranja-naruto/20 border-t-naranja-naruto rounded-full animate-spin" />
                     <div className="absolute inset-0 flex items-center justify-center">
                       <img src="/assets/icons/shuriken.png" className="w-5 h-5 object-contain" alt="Logo" />
                     </div>
                   </div>
-                  <p className="text-rojo-sangre font-black uppercase tracking-[0.6em] text-sm animate-pulse">Analizando Campo de Batalla...</p>
+                  <p className="text-naranja-naruto font-black uppercase tracking-[0.6em] text-sm animate-pulse">Analizando Campo de Batalla...</p>
                 </div>
               ) : data.list.length > 0 ? (
                 <div className="space-y-10">
@@ -235,9 +235,9 @@ export default function CombatesPage() {
                   </div>
                 </div>
               ) : (
-                <div className="py-60 text-center ninja-card-rojo opacity-50">
-                  <Swords className="w-24 h-24 text-rojo-sangre/10 mx-auto mb-8" />
-                  <p className="text-sm xl:text-lg font-black text-rojo-sangre/20 uppercase tracking-[0.6em] italic">NO HAY COMBATES REGISTRADOS TODAVÍA</p>
+                <div className="py-60 text-center ninja-card-oro opacity-50">
+                  <Swords className="w-24 h-24 text-naranja-naruto/10 mx-auto mb-8" />
+                  <p className="text-sm xl:text-lg font-black text-naranja-naruto/20 uppercase tracking-[0.6em] italic">NO HAY COMBATES REGISTRADOS TODAVÍA</p>
                 </div>
               )}
             </div>

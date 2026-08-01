@@ -53,7 +53,7 @@ export default function AcompananteEditForm({ acompanante, ramasClanes, onCancel
       return;
     }
 
-    const finalSlug = formData.slug?.trim() || 
+    const finalSlug = formData.slug?.trim() ||
       (formData.nombre_esp || formData.nombre_jap || '')
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
@@ -116,7 +116,7 @@ export default function AcompananteEditForm({ acompanante, ramasClanes, onCancel
                 <div className={`absolute top-[2px] w-2.5 h-2.5 transition-all ${formData.activo ? 'right-[2px] bg-oro shadow-[0_0_10px_rgba(255,230,159,0.5)]' : 'left-[2px] bg-oro/10'}`} />
               </div>
             </label>
-            <button onClick={onCancel} className="p-2 text-oro/40 hover:text-rojo-sangre transition-all hover:rotate-90">
+            <button onClick={onCancel} className="p-2 text-oro/40 hover:text-naranja-naruto transition-all hover:rotate-90">
               <X className="w-8 h-8" />
             </button>
           </div>

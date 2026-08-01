@@ -189,28 +189,25 @@ export default async function Home() {
             <img
               src="/assets/ui/logo.png"
               alt="Naruto Logo"
-              className="h-14 sm:h-20 md:h-24 xl:h-28 w-auto object-contain drop-shadow-[0_0_20px_rgba(255,230,159,0.3)]"
+              className="h-14 sm:h-20 md:h-28 xl:h-32 w-auto object-contain drop-shadow-[0_0_30px_rgba(255,255,255,0.4)]"
             />
-            <div>
-              <h1 className="ninja-title text-3xl sm:text-5xl lg:text-6xl xl:text-7xl leading-none">NRPG</h1>
-            </div>
           </div>
 
           {/* Controls and Navigation */}
-          <div className="flex flex-wrap items-center justify-center lg:justify-end gap-4 sm:gap-6 w-full lg:w-auto border-t lg:border-t-0 border-oro/5 pt-4 lg:pt-0">
+          <div className="flex flex-col justify-between items-center lg:items-end gap-4 w-full lg:w-auto self-stretch pt-2 pb-0">
             {user && (
-              <div className="flex items-center gap-4 sm:gap-6">
+              <div className="flex items-center gap-4 sm:gap-6 justify-center lg:justify-end">
                 <ProfileSettings profile={profile} userId={user.id} />
                 <NotificationBell />
               </div>
             )}
 
-            <nav className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+            <nav className="flex flex-wrap items-center justify-center lg:justify-end gap-3 sm:gap-4 mt-auto">
               {profile?.roles && profile.roles.some((role: string) => ['admin', 'moderador'].includes(role)) && (
                 <>
                   <Link
                     href="/admin"
-                    className="flex items-center gap-3 px-5 py-2.5 bg-oro/5 text-oro border border-oro/20 hover:bg-oro/10 hover:border-oro/40 transition-all group font-black text-caption uppercase tracking-widest cursor-pointer"
+                    className="flex items-center gap-3 px-6 py-3 bg-white text-naranja-naruto border border-white hover:bg-white/90 hover:brightness-110 transition-all group font-black text-xs uppercase tracking-[0.2em] cursor-pointer shadow-md"
                     style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                   >
                     PANEL ADMIN
@@ -313,7 +310,7 @@ export default async function Home() {
             </div>
 
             <div className="flex items-center gap-4 mb-6 pb-4 border-b border-oro/10 relative z-10">
-              <div className="w-2 xl:w-2.5 h-2 xl:h-2.5 bg-rojo-sangre rotate-45" />
+              <div className="w-2 xl:w-2.5 h-2 xl:h-2.5 bg-naranja-naruto rotate-45" />
               <h3 className="text-lg xl:text-2xl font-black text-oro tracking-[0.2em] uppercase font-ninja pt-1">
                 Última Actividad Ninja
               </h3>

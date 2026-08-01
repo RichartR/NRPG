@@ -77,13 +77,13 @@ export default function EntrenamientoList({ initialEntrenamientos, ramas, subEsp
               key={tab}
               onClick={() => setActiveTab(tab as any)}
               className={`flex-1 sm:flex-initial text-center px-4 sm:px-10 py-3 xl:py-4 font-black uppercase tracking-[0.2em] transition-all text-caption sm:text-caption xl:text-xs ${activeTab === tab
-                  ? 'bg-oro text-rojo-sangre shadow-lg'
-                  : 'text-oro/40 hover:text-oro hover:bg-oro/5'
+                ? 'bg-oro text-naranja-naruto shadow-lg'
+                : 'text-oro/40 hover:text-oro hover:bg-oro/5'
                 }`}
               style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
             >
               {tab === 'active' ? 'ACTIVOS' : 'ARCHIVADOS'}
-              <span className={`ml-2 opacity-40 ${activeTab === tab ? 'text-rojo-sangre/60' : ''}`}>({initialEntrenamientos.filter(e => tab === 'active' ? e.activo : !e.activo).length})</span>
+              <span className={`ml-2 opacity-40 ${activeTab === tab ? 'text-naranja-naruto/60' : ''}`}>({initialEntrenamientos.filter(e => tab === 'active' ? e.activo : !e.activo).length})</span>
             </button>
           ))}
         </div>
@@ -103,7 +103,7 @@ export default function EntrenamientoList({ initialEntrenamientos, ramas, subEsp
 
           <button
             onClick={() => setIsAdding(true)}
-            className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-10 py-3 xl:py-4 bg-rojo-sangre hover:brightness-125 text-oro font-black text-caption sm:text-caption xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-rojo-sangre/20 active:scale-95 whitespace-nowrap"
+            className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-10 py-3 xl:py-4 bg-naranja-naruto hover:brightness-125 text-oro font-black text-caption sm:text-caption xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-naranja-naruto/20 active:scale-95 whitespace-nowrap"
             style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
           >
             <PlusCircle className="w-5 h-5 shrink-0" />
@@ -170,8 +170,8 @@ export default function EntrenamientoList({ initialEntrenamientos, ramas, subEsp
                     {/* Estado */}
                     <td className="py-5 px-8 text-center">
                       <span className={`inline-block px-3 py-1 text-caption font-black border uppercase tracking-wider ninja-clip-xs ${ent.activo
-                          ? 'bg-oro/10 text-oro border-oro/20'
-                          : 'bg-black/60 text-oro/20 border-oro/5'
+                        ? 'bg-oro/10 text-oro border-oro/20'
+                        : 'bg-black/60 text-oro/20 border-oro/5'
                         }`}>
                         {ent.activo ? 'ACTIVO' : 'ARCHIVADO'}
                       </span>
@@ -184,8 +184,8 @@ export default function EntrenamientoList({ initialEntrenamientos, ramas, subEsp
                           onClick={() => toggleActive(ent)}
                           disabled={loadingId === ent.id}
                           className={`p-2.5 transition-all border ninja-clip-xs ${ent.activo
-                              ? 'bg-oro/10 border-oro/20 text-oro hover:bg-oro hover:text-rojo-sangre'
-                              : 'bg-black/40 border-oro/5 text-oro/20 hover:border-oro/40 hover:text-oro'
+                            ? 'bg-oro/10 border-oro/20 text-oro hover:bg-oro hover:text-naranja-naruto'
+                            : 'bg-black/40 border-oro/5 text-oro/20 hover:border-oro/40 hover:text-oro'
                             }`}
                           title={ent.activo ? "Archivar Registro" : "Activar Registro"}
                         >
@@ -193,14 +193,14 @@ export default function EntrenamientoList({ initialEntrenamientos, ramas, subEsp
                         </button>
                         <button
                           onClick={() => setEditingEnt(ent)}
-                          className="p-2.5 bg-oro text-rojo-sangre hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-oro/10 ninja-clip-xs"
+                          className="p-2.5 bg-oro text-naranja-naruto hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-oro/10 ninja-clip-xs"
                           title="Editar Registro"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleDelete(ent.id)}
-                          className="p-2.5 bg-rojo-sangre/10 border border-rojo-sangre/20 text-rojo-sangre hover:bg-rojo-sangre hover:text-oro transition-all active:scale-95 ninja-clip-xs"
+                          className="p-2.5 bg-naranja-naruto/10 border border-naranja-naruto/20 text-naranja-naruto hover:bg-naranja-naruto hover:text-oro transition-all active:scale-95 ninja-clip-xs"
                           title="Eliminar Registro"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

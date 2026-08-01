@@ -49,7 +49,7 @@ export default function LoginPage() {
         </div>
 
         {error && (
-          <div className="bg-rojo-sangre/10 border border-rojo-sangre/20 text-rojo-sangre p-4 mb-8 text-xs xl:text-sm font-bold uppercase tracking-widest text-center ninja-box">
+          <div className="bg-naranja-naruto/10 border border-naranja-naruto/20 text-naranja-naruto p-4 mb-8 text-xs xl:text-sm font-bold uppercase tracking-widest text-center ninja-box">
             {error}
           </div>
         )}
@@ -58,7 +58,7 @@ export default function LoginPage() {
           <button
             onClick={handleDiscordLogin}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-4 bg-oro text-rojo-sangre py-5 px-6 font-black uppercase tracking-[0.2em] text-xs xl:text-sm transition-all hover:brightness-110 active:scale-95 disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-4 bg-oro text-naranja-naruto py-5 px-6 font-black uppercase tracking-[0.2em] text-xs xl:text-sm transition-all hover:brightness-110 active:scale-95 disabled:opacity-50"
             style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
           >
             <svg className="w-5 h-5 xl:w-6 xl:h-6" viewBox="0 0 24 24" fill="currentColor">

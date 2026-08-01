@@ -193,7 +193,7 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
               key={cat.value}
               onClick={() => setSelectedCategory(cat.value)}
               className={`px-6 py-2.5 font-black uppercase tracking-[0.2em] transition-all text-caption sm:text-caption xl:text-xs select-none ${selectedCategory === cat.value
-                ? 'bg-oro text-rojo-sangre shadow-lg'
+                ? 'bg-oro text-naranja-naruto shadow-lg'
                 : 'bg-black/40 text-oro/40 hover:text-oro hover:bg-black/60 border border-oro/10'
                 }`}
               style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
@@ -284,14 +284,14 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
               {/* Botón de Cerrar Flotante */}
               <button
                 onClick={() => setActiveNews(null)}
-                className="absolute top-6 right-6 w-12 h-12 bg-black/80 hover:bg-rojo-sangre border border-oro/20 hover:border-oro/60 text-oro hover:text-white flex items-center justify-center transition-all cursor-pointer z-50 rounded-none shadow-[0_0_15px_rgba(0,0,0,0.5)] active:scale-95"
+                className="absolute top-6 right-6 w-12 h-12 bg-black/80 hover:bg-naranja-naruto border border-oro/20 hover:border-oro/60 text-oro hover:text-white flex items-center justify-center transition-all cursor-pointer z-50 rounded-none shadow-[0_0_15px_rgba(0,0,0,0.5)] active:scale-95"
                 style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
               >
                 <X className="w-5 h-5" />
               </button>
 
               <div className="absolute bottom-8 left-8 right-8 z-10 flex flex-col items-start gap-1">
-                <span className="px-4 py-1.5 text-xs font-black bg-rojo-sangre text-oro uppercase tracking-[0.3em] inline-block ninja-clip-sm">
+                <span className="px-4 py-1.5 text-xs font-black bg-naranja-naruto text-oro uppercase tracking-[0.3em] inline-block ninja-clip-sm">
                   {activeNews.categoria || 'Noticia'}
                 </span>
                 <h2 className="block ninja-title text-2xl sm:text-4xl md:text-5xl leading-tight uppercase font-ninja">
@@ -360,7 +360,7 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
                                   setEditingRegistry(null);
                                   setIsRewardFormOpen(true);
                                 }}
-                                className="px-6 py-2.5 bg-rojo-sangre hover:brightness-125 text-oro font-black text-caption xl:text-xs uppercase tracking-widest transition-all shadow-md select-none self-start sm:self-auto"
+                                className="px-6 py-2.5 bg-naranja-naruto hover:brightness-125 text-oro font-black text-caption xl:text-xs uppercase tracking-widest transition-all shadow-md select-none self-start sm:self-auto"
                                 style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                               >
                                 Repartir Premios

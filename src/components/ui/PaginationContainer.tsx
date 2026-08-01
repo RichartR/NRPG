@@ -13,10 +13,10 @@ export function PaginationContainer({
   className = '',
   maxWidthClass = 'max-w-xs',
 }: PaginationContainerProps) {
-  const borderColorClass = isRenegado ? 'bg-rojo-sangre/20' : 'bg-oro/20';
+  const borderColorClass = isRenegado ? 'bg-naranja-naruto/20' : 'bg-oro/20';
   const backgroundImageStyle = isRenegado
-    ? 'radial-gradient(circle at center, rgba(185, 28, 28, 0.05) 0%, transparent 70%), linear-gradient(rgba(5, 3, 9, 0.55), rgba(5, 3, 9, 0.55)), url("/assets/ui/bg-list.jpg")'
-    : 'radial-gradient(circle at center, rgba(255, 230, 159, 0.05) 0%, transparent 70%), linear-gradient(rgba(5, 3, 9, 0.55), rgba(5, 3, 9, 0.55)), url("/assets/ui/bg-list.jpg")';
+    ? 'radial-gradient(circle at center, rgba(185, 28, 28, 0.05) 0%, transparent 70%), linear-gradient(rgba(5, 3, 9, 0.55), rgba(5, 3, 9, 0.55)), url("/assets/ui/bg-list.png")'
+    : 'radial-gradient(circle at center, rgba(255, 230, 159, 0.05) 0%, transparent 70%), linear-gradient(rgba(5, 3, 9, 0.55), rgba(5, 3, 9, 0.55)), url("/assets/ui/bg-list.png")';
 
   return (
     <div

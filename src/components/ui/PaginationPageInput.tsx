@@ -45,11 +45,10 @@ export function PaginationPageInput({
           handlePageSubmit(e.currentTarget.value);
         }
       }}
-      className={`w-14 bg-black/60 border ${
-        isRenegado
-          ? 'border-rojo-sangre/30 focus:border-rojo-sangre/60 text-rojo-sangre'
+      className={`w-14 bg-black/60 border ${isRenegado
+          ? 'border-naranja-naruto/30 focus:border-naranja-naruto/60 text-naranja-naruto'
           : 'border-oro/30 focus:border-oro/60 text-oro'
-      } rounded text-center text-xs font-black outline-none py-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors`}
+        } rounded text-center text-xs font-black outline-none py-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors`}
     />
   );
 }
