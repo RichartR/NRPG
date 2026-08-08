@@ -54,7 +54,7 @@ export default function SistemasClientView({
               <div className="flex items-center gap-6 mb-6">
                 <h1 className="ninja-title text-3xl sm:text-5xl xl:text-7xl">SISTEMAS</h1>
               </div>
-              <p className="text-gris-texto text-base sm:text-lg xl:text-2xl leading-relaxed">Consulta las mecánicas detalladas, tablas de escalado y reglas de combate fundamentales para el desarrollo del rol.</p>
+              <p className="text-gris-texto text-base sm:text-lg xl:text-2xl leading-relaxed">Consulta todos los sistemas del RPG y aprende todo lo necesario para el desarrollo de tu personaje.</p>
             </div>
 
             {initialDocs.length === 0 && (

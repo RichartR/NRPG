@@ -24,7 +24,7 @@ export default function RegistrosLandingPage() {
           <div className="flex items-center gap-6 mb-4">
             <h1 className="ninja-title text-3xl sm:text-5xl xl:text-7xl">REGISTROS NINJA</h1>
           </div>
-          <p className="text-gris-texto text-base sm:text-lg xl:text-2xl leading-relaxed">Consulta el historial de misiones, registros de combate y transacciones económicas de todo el mundo ninja.</p>
+          <p className="text-gris-texto text-base sm:text-lg xl:text-2xl leading-relaxed">Consulta el historial de misiones, registros de combate y compras de todo el mundo ninja.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 xl:gap-16">

@@ -73,7 +73,7 @@ export default function MundoNinjaClientView({
         <div className="flex items-center gap-4">
           <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
           <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
-            INFORMACIÓN <span className="text-oro/40">NINJA</span>
+            INFORMACIÓN <span className="text-naranja-naruto">NINJA</span>
           </h1>
         </div>
       </header>
@@ -96,7 +96,7 @@ export default function MundoNinjaClientView({
                 </h1>
               </div>
               <p className="text-gris-texto text-base sm:text-lg xl:text-2xl leading-relaxed relative z-10">
-                Explora los censos y descubre toda la información de los ninjas de cada una de las Aldeas y Organizaciones.
+                Explora y descubre toda la información de los ninjas de cada una de las Aldeas y Organizaciones.
               </p>
             </div>
 

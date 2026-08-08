@@ -260,7 +260,7 @@ export default async function Home() {
                 <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
                 Noticias y Eventos
               </h3>
-              <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Anuncios oficiales y parches.</p>
+              <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Anuncios oficiales, eventos, noticias y parches.</p>
             </Link>
 
             {/* Sistemas */}
@@ -269,7 +269,7 @@ export default async function Home() {
                 <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
                 Sistemas
               </h3>
-              <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Mecánicas y glosario técnico.</p>
+              <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Aprende todos los sistemas del RPG.</p>
             </Link>
 
             {/* Registros */}
@@ -278,7 +278,7 @@ export default async function Home() {
                 <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
                 Tiendas y Registros
               </h3>
-              <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Historial de misiones, compras y combates.</p>
+              <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Registros de misiones, compras y combates. Conoce las mejores tiendas.</p>
             </Link>
 
             {/* Mundo Ninja */}

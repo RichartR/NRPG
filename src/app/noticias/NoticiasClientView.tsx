@@ -53,7 +53,7 @@ export default function NoticiasClientView({
               <div className="flex items-center gap-6 mb-6">
                 <h1 className="ninja-title text-3xl sm:text-5xl xl:text-7xl">NOTICIAS Y EVENTOS</h1>
               </div>
-              <p className="text-gris-texto text-base sm:text-lg xl:text-2xl leading-relaxed">Mantente al día con las últimas actualizaciones del servidor, eventos de rol y parches de equilibrio.</p>
+              <p className="text-gris-texto text-base sm:text-lg xl:text-2xl leading-relaxed">Mantente al día con las últimas actualizaciones, eventos de rol y parches.</p>
             </div>
 
             <NewsGrid newsList={newsList} isAdmin={isAdmin} />
