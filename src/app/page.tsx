@@ -250,7 +250,7 @@ export default async function Home() {
                   <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
                   Bienvenida
                 </h3>
-                <p className="text-gris-texto leading-relaxed text-sm xl:text-base max-w-2xl">Información general, reglas y primeros pasos.</p>
+                <p className="text-gris-texto leading-relaxed text-sm xl:text-base max-w-2xl">Guía de inicio, normativa de conducta e información general.</p>
               </div>
             </Link>
 
