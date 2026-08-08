@@ -181,7 +181,7 @@ export default function CombatesPage() {
                   <div className="relative">
                     <div className="w-16 h-16 border-4 border-naranja-naruto/20 border-t-naranja-naruto rounded-full animate-spin" />
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <img src="/assets/icons/shuriken.png" className="w-5 h-5 object-contain" alt="Logo" />
+                      <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="Logo" />
                     </div>
                   </div>
                   <p className="text-naranja-naruto font-black uppercase tracking-[0.6em] text-sm animate-pulse">Analizando Campo de Batalla...</p>

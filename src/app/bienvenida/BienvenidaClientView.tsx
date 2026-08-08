@@ -32,9 +32,9 @@ export default function BienvenidaClientView({
           ]}
         />
         <div className="flex items-center gap-4">
-          <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto" alt="icon" />
+          <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
           <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
-            BIENVENIDO <span className="text-oro/40">A NRPG</span>
+            BIENVENIDO <span className="text-naranja-naruto">A NRPG</span>
           </h1>
         </div>
       </header>
@@ -54,7 +54,7 @@ export default function BienvenidaClientView({
               <div className="flex items-center gap-6 mb-6">
                 <h1 className="ninja-title text-3xl sm:text-5xl xl:text-7xl uppercase tracking-[0.3em]">BIENVENIDA</h1>
               </div>
-              <p className="text-gris-texto text-base sm:text-lg xl:text-2xl leading-relaxed">Selecciona una sección para obtener más información sobre el mundo ninja y las reglas fundamentales.</p>
+              <p className="text-gris-texto text-base sm:text-lg xl:text-2xl leading-relaxed">Aquí encontrarás la información necesaria para comenzar tu aventura en el mundo ninja.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10 xl:gap-16">
@@ -77,7 +77,7 @@ export default function BienvenidaClientView({
             <header className="mb-6 ninja-card-oro p-8 xl:p-10">
               <div className="flex items-center gap-6">
                 <div className="w-12 h-12 bg-oro/[0.03] border border-oro/10 flex items-center justify-center">
-                  <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto" alt="icon" />
+                  <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
                 </div>
                 <div>
                   <h1 className="ninja-title text-4xl xl:text-5xl italic">REGLAS DE BIENVENIDA</h1>

@@ -136,9 +136,6 @@ h6 {
   text-transform: uppercase;
 }
 
-img[src*="shuriken.png"] {
-  filter: brightness(0) invert(1);
-}
 
 select {
   appearance: none !important;

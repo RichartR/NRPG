@@ -28,9 +28,9 @@ export default async function AldeasPage() {
           ]}
         />
         <div className="flex items-center gap-4">
-          <img src="/assets/icons/shuriken.png" className="w-5 xl:w-7 h-auto object-contain" alt="icon" />
+          <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
           <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
-            Naciones <span className="text-oro/40">Ocultas</span>
+            Naciones <span className="text-naranja-naruto">Ocultas</span>
           </h1>
         </div>
       </header>

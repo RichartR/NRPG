@@ -39,9 +39,9 @@ export default async function RamaDetailPage({ params }: { params: Promise<{ slu
       <header className="w-full max-w-[1750px] mx-auto flex flex-col md:flex-row justify-between items-center gap-10 mb-10 ninja-card-oro p-8 xl:p-10 z-50">
         <Breadcrumbs items={breadcrumbsItems} />
         <div className="flex items-center gap-4">
-          <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto" alt="icon" />
+          <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
           <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
-            Información <span className="text-oro/40">de Rama</span>
+            Información <span className="text-naranja-naruto">de Rama</span>
           </h1>
         </div>
       </header>

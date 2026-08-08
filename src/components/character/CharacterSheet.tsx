@@ -329,7 +329,7 @@ export default function CharacterSheet() {
           {/* Atributos Derivados */}
           <div className="space-y-4 w-full min-w-0">
             <h3 className="text-xs sm:text-base xl:text-xl font-black text-oro mb-3 flex items-center justify-center sm:justify-start gap-3 uppercase tracking-[0.3em]">
-              <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto object-contain" alt="icon" />
+              <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
               Estado Vital
             </h3>
 
@@ -414,8 +414,8 @@ export default function CharacterSheet() {
 
           {/* Stats Base */}
           <div className="space-y-4">
-            <h3 className="text-xs sm:text-base xl:text-xl font-black text-oro flex items-center justify-center sm:justify-start gap-3 uppercase tracking-[0.3em] my-0">
-              <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto object-contain" alt="icon" />
+            <h3 className="text-xs sm:text-base xl:text-xl font-black text-oro flex items-center justify-center sm:justify-start gap-3 uppercase tracking-[0.3em] mb-3 sm:mb-4">
+              <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
               Atributos Base
             </h3>
 

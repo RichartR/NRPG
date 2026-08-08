@@ -205,7 +205,7 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
                 <div className="relative">
                   <div className="w-20 h-20 border-4 border-oro/20 border-t-oro rounded-full animate-spin" />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <img src="/assets/icons/shuriken.png" className="w-6 h-6 object-contain" alt="Logo" />
+                    <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="Logo" />
                   </div>
                 </div>
               </div>

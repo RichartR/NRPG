@@ -247,7 +247,7 @@ export default async function Home() {
             <Link href="/bienvenida" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja md:col-span-2 flex flex-col justify-center min-h-[140px]">
               <div className="relative z-10">
                 <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
-                  <img src="/assets/icons/shuriken.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
+                  <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
                   Bienvenida
                 </h3>
                 <p className="text-gris-texto leading-relaxed text-sm xl:text-base max-w-2xl">Información general, reglas y primeros pasos.</p>
@@ -257,7 +257,7 @@ export default async function Home() {
             {/* Noticias */}
             <Link href="/noticias" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja flex flex-col justify-center min-h-[140px]">
               <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
-                <img src="/assets/icons/shuriken.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
+                <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
                 Noticias y Eventos
               </h3>
               <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Anuncios oficiales y parches.</p>
@@ -266,7 +266,7 @@ export default async function Home() {
             {/* Sistemas */}
             <Link href="/sistemas" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja flex flex-col justify-center min-h-[140px]">
               <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
-                <img src="/assets/icons/shuriken.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
+                <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
                 Sistemas
               </h3>
               <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Mecánicas y glosario técnico.</p>
@@ -275,7 +275,7 @@ export default async function Home() {
             {/* Registros */}
             <Link href="/registros" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja flex flex-col justify-center min-h-[140px]">
               <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
-                <img src="/assets/icons/shuriken.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
+                <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
                 Tiendas y Registros
               </h3>
               <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Historial de misiones, compras y combates.</p>
@@ -284,7 +284,7 @@ export default async function Home() {
             {/* Mundo Ninja */}
             <Link href="/mundo-ninja" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja flex flex-col justify-center min-h-[140px]">
               <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
-                <img src="/assets/icons/shuriken.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
+                <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
                 Mundo Ninja
               </h3>
               <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Fichas ninja y gestión de aldeas.</p>
@@ -294,7 +294,7 @@ export default async function Home() {
             <Link href="/documentos" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja md:col-span-2 flex flex-col justify-center min-h-[140px]">
               <div className="relative z-10">
                 <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4 tracking-widest">
-                  <img src="/assets/icons/shuriken.png" className="w-4 xl:w-5 h-auto object-contain" alt="icon" />
+                  <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
                   Documentos, Glosario y Mapa
                 </h3>
                 <p className="text-gris-texto leading-relaxed text-sm xl:text-base max-w-2xl">Consulta los documentos de las ramas, clanes, el mapa y el glosario.</p>

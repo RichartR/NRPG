@@ -14,10 +14,10 @@ export default function DocumentosPage() {
         />
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-oro/[0.03] border border-oro/10 flex items-center justify-center">
-            <img src="/assets/icons/shuriken.png" className="w-4 xl:w-6 h-auto" alt="icon" />
+            <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
           </div>
           <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
-            Biblioteca <span className="text-oro/40">Mundial</span>
+            Biblioteca <span className="text-naranja-naruto">Mundial</span>
           </h1>
         </div>
       </header>
