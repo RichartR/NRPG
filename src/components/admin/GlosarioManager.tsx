@@ -560,6 +560,11 @@ function ElementoCard({ elemento, categorias, subcategorias, onEdit, onDelete }:
         <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-2">
           <span className="bg-oro/10 text-oro border border-oro/20 px-3 py-1 rounded-full text-caption font-black uppercase tracking-tighter">{cat?.nombre || 'Sin Cat'}</span>
           {sub && <span className="bg-emerald-500/10 text-emerald-400 border border-success-text/20 px-3 py-1 rounded-full text-caption font-black uppercase tracking-tighter">{sub.nombre}</span>}
+          {elemento.obtenible === false && (
+            <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-1 rounded-full text-caption font-black uppercase tracking-tighter flex items-center gap-1">
+              🔒 No Obtenible
+            </span>
+          )}
           {elemento.zona_equipable && (
             <span className="bg-oro/10 text-oro border border-oro/20 px-3 py-1 rounded-full text-caption font-black uppercase tracking-tighter">
               🛡️ {elemento.zona_equipable} ({elemento.ocupa_espacio !== false ? 'Ocupa' : 'Sin Hueco'})
@@ -622,6 +627,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
         coste_exp: 0,
         coste_ryous: 0,
         activo: true,
+        obtenible: true,
         inicial: false,
         basica: true,
         rango: null,
@@ -638,6 +644,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
       sub_especialidad_id: initialData.sub_especialidad_id ?? null,
       elemento_id: initialData.elemento_id ?? null,
       coste_ryous: initialData.coste_ryous || 0,
+      obtenible: initialData.obtenible !== undefined ? initialData.obtenible : true,
       inicial: initialData.inicial || false,
       basica: initialData.basica !== undefined ? initialData.basica : true,
       rango: initialData.rango ?? null,
@@ -710,7 +717,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={onClose} />
       <div
-        className="relative bg-neutral-800 border border-oro/20 w-full max-w-5xl h-[90vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200 ninja-card-oro"
+        className="relative bg-neutral-800 border border-oro/20 w-full max-w-7xl h-[90vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200 ninja-card-oro"
         style={{
           clipPath: 'polygon(30px 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%, 0 30px)',
           overflow: 'hidden'
@@ -863,10 +870,14 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                     <input type="number" min="0" value={(formData as any).coste_puntos_aprendizaje ?? 0} onChange={(e) => setFormData({ ...formData, coste_puntos_aprendizaje: Math.max(0, Number(e.target.value)) } as any)} className="ninja-input w-full px-6 py-4 text-blue-400 bg-black/60 font-bold" />
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <button onClick={() => setFormData({ ...formData, activo: !formData.activo })} className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all ${formData.activo ? 'bg-oro/10 border-oro/20 text-oro shadow-lg' : 'bg-black/60 border-oro/5 text-oro/40'}`}>
                     <span className="font-black text-[10px] uppercase tracking-wider ml-1">{formData.activo ? 'Activo' : 'Archivado'}</span>
                     {formData.activo ? <Check size={16} /> : <Archive size={16} />}
+                  </button>
+                  <button type="button" onClick={() => setFormData({ ...formData, obtenible: formData.obtenible === false ? true : false })} className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all ${formData.obtenible !== false ? 'bg-oro/10 border-oro/20 text-oro shadow-lg' : 'bg-black/60 border-oro/5 text-oro/40'}`}>
+                    <span className="font-black text-[10px] uppercase tracking-wider ml-1">{formData.obtenible !== false ? 'Obtenible' : 'No Obtenible'}</span>
+                    {formData.obtenible !== false ? <Check size={16} /> : <X size={16} />}
                   </button>
                   <button onClick={() => setFormData({ ...formData, inicial: !formData.inicial })} className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all ${formData.inicial ? 'bg-oro text-black shadow-lg shadow-oro/10 border-oro' : 'bg-black/60 border-oro/5 text-oro/40'}`}>
                     <span className="font-black text-[10px] uppercase tracking-wider ml-1">{formData.inicial ? 'Inicial' : 'No Inicial'}</span>

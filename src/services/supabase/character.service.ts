@@ -39,8 +39,8 @@ export const CharacterService = {
       aldeas: data.info_aldeas || data.aldeas,
       personajes_ramas: data.reg_personajes_ramas || data.personajes_ramas || data.ramas || [],
       personajes_entrenamientos: data.reg_personajes_entrenamientos || data.personajes_entrenamientos || [],
-      personajes_inventario: data.reg_personajes_inventario || data.personajes_inventario || data.inventario || [],
-      personajes_tecnicas: data.reg_personajes_tecnicas || data.personajes_tecnicas || data.tecnicas || [],
+      personajes_inventario: (data.reg_personajes_inventario || data.personajes_inventario || data.inventario || []).filter((i: any) => i.info_glosario?.activo !== false),
+      personajes_tecnicas: (data.reg_personajes_tecnicas || data.personajes_tecnicas || data.tecnicas || []).filter((t: any) => t.info_glosario?.activo !== false),
       personajes_rasgos: data.reg_personajes_rasgos || data.personajes_rasgos || [],
       personajes_sentidos: data.reg_personajes_sentidos || data.personajes_sentidos || [],
       personajes_acompanantes: acomps,
@@ -75,9 +75,10 @@ export const CharacterService = {
     // 2. Obtener elementos iniciales del glosario
     const { data: initialItems } = await supabase
       .from('info_glosario')
-      .select('id, categoria_id')
+      .select('id, categoria_id, obtenible')
       .eq('inicial', true)
-      .eq('activo', true);
+      .eq('activo', true)
+      .neq('obtenible', false);
 
     if (initialItems && initialItems.length > 0) {
       const inventoryPack = initialItems
@@ -324,7 +325,7 @@ export const CharacterService = {
     }
   },
 
-  async getValidItems(personajeId: number, categoriaId?: number): Promise<Glosario[]> {
+  async getValidItems(personajeId: number, categoriaId?: number, includeNonObtenible: boolean = false): Promise<Glosario[]> {
     if (!personajeId || isNaN(personajeId)) return [];
 
     const supabase = createClient();
@@ -342,7 +343,9 @@ export const CharacterService = {
       return [];
     }
     
-    return (data || []).map((item: any) => ({
+    return (data || [])
+      .filter((item: any) => item.activo !== false && (includeNonObtenible || item.obtenible !== false))
+      .map((item: any) => ({
       ...item,
       info_glosario_categorias: item.info_glosario_categorias,
       info_glosario_subcategorias: item.info_glosario_subcategorias

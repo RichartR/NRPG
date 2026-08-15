@@ -107,7 +107,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
     if (validGlosarioItems[personajeId]) return;
     setLoadingGlosario(prev => ({ ...prev, [personajeId]: true }));
     try {
-      const items = await CharacterService.getValidItems(personajeId);
+      const items = await CharacterService.getValidItems(personajeId, undefined, true);
       setValidGlosarioItems(prev => ({ ...prev, [personajeId]: items }));
     } catch (err) {
       console.error(`Error loading glosario for ${personajeId}:`, err);

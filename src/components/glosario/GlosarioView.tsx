@@ -644,6 +644,11 @@ export default function GlosarioView({
                                                   {item.inicial && (
                                                     <span className="text-[7px] bg-naranja-naruto text-white px-1.5 py-0.5 font-black uppercase tracking-widest rounded-sm">Inic.</span>
                                                   )}
+                                                  {item.obtenible === false && (
+                                                    <span className="text-[7px] bg-amber-600 text-white px-1.5 py-0.5 font-black uppercase tracking-widest rounded-sm">
+                                                      🔒 No Obtenible
+                                                    </span>
+                                                  )}
                                                   {item.basica !== undefined && (
                                                     <span className={`text-[7px] ${item.basica ? 'bg-sky-600 text-white' : 'bg-green-800 text-white'} px-1.5 py-0.5 font-black uppercase tracking-widest rounded-sm`}>
                                                       {item.basica ? 'Básica' : 'Avanzada'}

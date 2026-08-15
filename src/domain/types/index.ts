@@ -145,6 +145,7 @@ export interface Glosario {
   coste_ryous: number;
   coste_puntos_aprendizaje: number;
   activo: boolean;
+  obtenible?: boolean;
   inicial?: boolean;
   basica?: boolean;
   es_tienda_exp?: boolean;

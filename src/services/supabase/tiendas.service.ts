@@ -52,7 +52,7 @@ export const TiendasService = {
       .order('id', { ascending: true });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).filter((item: any) => item.info_glosario?.activo !== false && item.info_glosario?.obtenible !== false);
   },
 
   async realizarCompra(personajeId: number, tiendaObjetoId: number) {

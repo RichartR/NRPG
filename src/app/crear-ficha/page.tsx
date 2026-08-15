@@ -232,7 +232,7 @@ function CrearFichaContent() {
       const isNinIIorIII = isNinIIorIIIInBranch || isNinIIorIIIInClan;
 
       const initialItems = glosarioCompleto
-        .filter((i: any) => i.inicial && i.categoria_id === 2 && meetsAllReqs(i))
+        .filter((i: any) => i.inicial && i.obtenible !== false && i.categoria_id === 2 && meetsAllReqs(i))
         .map((i: any) => ({ item_id: i.id, cantidad: 1, info_glosario: i }));
       
       // Check if they have an elemental clan
@@ -244,7 +244,7 @@ function CrearFichaContent() {
 
       const initialTecs = glosarioCompleto
         .filter((t: any) => {
-          if (t.inicial && t.categoria_id !== 2 && meetsAllReqs(t)) {
+          if (t.inicial && t.obtenible !== false && t.categoria_id !== 2 && meetsAllReqs(t)) {
             if (isNinIIorIII && Number(t.rama_clan_id) === 4) {
               return false;
             }
