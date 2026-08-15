@@ -58,8 +58,8 @@ export interface NinjaSelectProps {
   onChange?: (val: string) => void;
   disabled?: boolean;
   placeholder?: string;
-  /** default = formularios | filter = barras de filtro | inline = dentro de contenedores */
-  variant?: 'default' | 'filter' | 'inline';
+  /** default = formularios | filter = barras de filtro | inline = dentro de contenedores | compact = compacto para consolas */
+  variant?: 'default' | 'filter' | 'inline' | 'compact';
   className?: string;
 }
 
@@ -96,7 +96,7 @@ export function NinjaSelect({
   const openDropdown = () => {
     if (disabled || !triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
-    const estimatedHeight = Math.min(260, normalizedOptions.length * 44 + 56);
+    const estimatedHeight = Math.min(260, normalizedOptions.length * 36 + 40);
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
     const openUp = spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
@@ -153,6 +153,7 @@ export function NinjaSelect({
     default: 'h-[58px] bg-[#171717] border border-oro/10 px-6 py-4 text-sm xl:text-base hover:border-oro/40 hover:bg-[#1f1f1f] focus:border-oro/60 ninja-clip-sm',
     filter:  'bg-black/20 border border-oro/10 px-6 py-3 text-xs hover:border-oro/30 focus:border-oro/40 ninja-clip-xs',
     inline:  'bg-transparent border border-oro/10 px-4 py-3 text-xs hover:border-oro/20 focus:border-oro/30',
+    compact: 'bg-black/50 border border-oro/20 px-2.5 py-1.5 text-xs hover:border-oro focus:border-oro',
   }[variant];
 
   // El dropdown como portal — escapa de cualquier overflow/clip-path padre
@@ -162,7 +163,7 @@ export function NinjaSelect({
           ref={dropdownRef}
           style={{
             ...dropdownStyle,
-            clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)',
+            clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)',
           }}
           onMouseDown={(e) => e.stopPropagation()}
           role="listbox"
@@ -172,15 +173,19 @@ export function NinjaSelect({
           <div className="h-[1px] bg-gradient-to-r from-transparent via-oro/40 to-transparent" />
 
           <div className="max-h-64 overflow-y-auto overflow-x-hidden custom-scrollbar">
-            {/* Opción vacía/placeholder */}
-            <button
-              role="option"
-              type="button"
-              onClick={() => { onChange?.(''); setIsOpen(false); }}
-              className="w-full text-left px-6 py-3 text-caption font-black uppercase tracking-widest text-oro/30 hover:bg-oro/5 hover:text-oro/50 transition-all border-b border-oro/5"
-            >
-              {placeholder}
-            </button>
+            {/* Opción vacía/placeholder opcional */}
+            {placeholder && placeholder.trim() !== '' && (
+              <button
+                role="option"
+                type="button"
+                onClick={() => { onChange?.(''); setIsOpen(false); }}
+                className={`w-full text-left font-black uppercase tracking-widest text-oro/30 hover:bg-oro/5 hover:text-oro/50 transition-all border-b border-oro/5 ${
+                  variant === 'compact' ? 'px-3 py-2 text-caption' : 'px-6 py-3 text-caption'
+                }`}
+              >
+                {placeholder}
+              </button>
+            )}
 
             {normalizedOptions.map((o) => {
               const isSelected = String(o.value) === String(value);
@@ -195,9 +200,10 @@ export function NinjaSelect({
                     if (!o.disabled) { onChange?.(String(o.value)); setIsOpen(false); }
                   }}
                   className={`
-                    w-full text-left px-6 py-3 text-caption xl:text-xs font-black uppercase tracking-widest
+                    w-full text-left font-black uppercase tracking-widest
                     transition-all duration-150 border-b border-oro/[0.04] last:border-0
-                    flex items-center justify-between gap-4
+                    flex items-center justify-between gap-3
+                    ${variant === 'compact' ? 'px-3.5 py-2 text-xs' : 'px-6 py-3 text-caption xl:text-xs'}
                     ${o.disabled
                       ? 'text-zinc-600 line-through cursor-not-allowed'
                       : isSelected

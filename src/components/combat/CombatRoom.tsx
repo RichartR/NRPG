@@ -17,6 +17,7 @@ import CombatForm from '@/components/registros/CombatForm';
 import NarrationForm from '@/components/registros/NarrationForm';
 import { CharacterStats } from '@/domain/types';
 import { searchIncludes } from '@/lib/utils/search';
+import { NinjaSelect } from '@/components/ui/Fields';
 
 interface CombatState {
   vit: number;
@@ -98,6 +99,8 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   const [currentTurnIndex, setCurrentTurnIndex] = useState(0);
   const [rondaActual, setRondaActual] = useState(1);
   const [combatStarted, setCombatStarted] = useState(false);
+  const [turnStartTime, setTurnStartTime] = useState<number | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
 
   // Logs
   const [logs, setLogs] = useState<string[]>([]);
@@ -131,6 +134,90 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   const [masterItems, setMasterItems] = useState<any[]>([]);
   const [showCreateTempModal, setShowCreateTempModal] = useState(false);
   const [rollTargetId, setRollTargetId] = useState<string>('self');
+
+  // Dynamic Damage Calculator State
+  const [calcStats, setCalcStats] = useState<{ id: string; stat: string; val: number; multInput: string }[]>([
+    { id: 'stat-1', stat: 'NIN', val: 1, multInput: '1' }
+  ]);
+  const [calcWeapons, setCalcWeapons] = useState<{ id: string; damage: number }[]>([]);
+  const [calcPercents, setCalcPercents] = useState<{ id: string; percent: number }[]>([]);
+
+  useEffect(() => {
+    if (activeCharacter?.stats_base) {
+      setCalcStats(prev => prev.map(item => {
+        const baseVal = Number(activeCharacter.stats_base[item.stat as keyof CharacterStats]) || 1;
+        return { ...item, val: baseVal };
+      }));
+    }
+  }, [activeCharacter]);
+
+  const addCalcStat = () => {
+    const defaultStat = 'TAI';
+    const baseVal = activeCharacter?.stats_base
+      ? Number(activeCharacter.stats_base[defaultStat as keyof CharacterStats]) || 1
+      : 1;
+    setCalcStats(prev => [...prev, { id: `stat-${Date.now()}-${Math.random()}`, stat: defaultStat, val: baseVal, multInput: '1' }]);
+  };
+
+  const updateCalcStatName = (id: string, newStat: string) => {
+    const baseVal = activeCharacter?.stats_base
+      ? Number(activeCharacter.stats_base[newStat as keyof CharacterStats]) || 1
+      : 1;
+    setCalcStats(prev => prev.map(item => item.id === id ? { ...item, stat: newStat, val: baseVal } : item));
+  };
+
+  const updateCalcStatVal = (id: string, val: number) => {
+    setCalcStats(prev => prev.map(item => item.id === id ? { ...item, val } : item));
+  };
+
+  const updateCalcStatMult = (id: string, multInput: string) => {
+    setCalcStats(prev => prev.map(item => item.id === id ? { ...item, multInput } : item));
+  };
+
+  const removeCalcStat = (id: string) => {
+    setCalcStats(prev => prev.filter(item => item.id !== id));
+  };
+
+  const addCalcWeapon = () => {
+    setCalcWeapons(prev => [...prev, { id: `weapon-${Date.now()}-${Math.random()}`, damage: 0 }]);
+  };
+
+  const updateCalcWeapon = (id: string, damage: number) => {
+    setCalcWeapons(prev => prev.map(item => item.id === id ? { ...item, damage } : item));
+  };
+
+  const removeCalcWeapon = (id: string) => {
+    setCalcWeapons(prev => prev.filter(item => item.id !== id));
+  };
+
+  const addCalcPercent = () => {
+    setCalcPercents(prev => [...prev, { id: `percent-${Date.now()}-${Math.random()}`, percent: 0 }]);
+  };
+
+  const updateCalcPercent = (id: string, percent: number) => {
+    setCalcPercents(prev => prev.map(item => item.id === id ? { ...item, percent } : item));
+  };
+
+  const removeCalcPercent = (id: string) => {
+    setCalcPercents(prev => prev.filter(item => item.id !== id));
+  };
+
+  const calculateTotalDamage = () => {
+    const statsDamage = calcStats.reduce((sum, item) => {
+      const mult = parseFloat(item.multInput.replace(',', '.')) || 0;
+      return sum + (item.val * mult);
+    }, 0);
+
+    const weaponsDamage = calcWeapons.reduce((sum, item) => sum + (item.damage || 0), 0);
+
+    const subtotal = statsDamage + weaponsDamage;
+
+    const totalPercent = calcPercents.reduce((sum, item) => sum + (item.percent || 0), 0);
+
+    const rawTotal = subtotal * (1 + totalPercent / 100);
+    if (rawTotal <= 0) return 0;
+    return Math.ceil(rawTotal / 5) * 5;
+  };
 
   // NPC Form States
   const [npcName, setNpcName] = useState('');
@@ -314,6 +401,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
           setCurrentTurnIndex(savedGlobal.currentTurnIndex || 0);
           setRondaActual(savedGlobal.rondaActual || 1);
           setCombatStarted(savedGlobal.combatStarted || false);
+          setTurnStartTime(savedGlobal.turnStartTime || null);
           setLogs(savedGlobal.logs || []);
           setTempCharacters(savedGlobal.tempCharacters || {});
         } else {
@@ -417,6 +505,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         currentTurnIndex,
         rondaActual,
         combatStarted,
+        turnStartTime,
         logs,
         tempCharacters,
         timestamp: Date.now()
@@ -432,6 +521,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   const currentTurnIndexRef = useRef(currentTurnIndex);
   const rondaActualRef = useRef(rondaActual);
   const combatStartedRef = useRef(combatStarted);
+  const turnStartTimeRef = useRef(turnStartTime);
   const localStateRef = useRef(localState);
   const myBandoRef = useRef(myBando);
   const myIsInCombatRef = useRef(myIsInCombat);
@@ -484,6 +574,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   useEffect(() => { currentTurnIndexRef.current = currentTurnIndex; }, [currentTurnIndex]);
   useEffect(() => { rondaActualRef.current = rondaActual; }, [rondaActual]);
   useEffect(() => { combatStartedRef.current = combatStarted; }, [combatStarted]);
+  useEffect(() => { turnStartTimeRef.current = turnStartTime; }, [turnStartTime]);
   useEffect(() => { localStateRef.current = localState; }, [localState]);
   useEffect(() => { myBandoRef.current = myBando; }, [myBando]);
   useEffect(() => { myIsInCombatRef.current = myIsInCombat; }, [myIsInCombat]);
@@ -492,6 +583,29 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   useEffect(() => { activeCharacterRef.current = activeCharacter; }, [activeCharacter]);
   useEffect(() => { tempCharactersRef.current = tempCharacters; }, [tempCharacters]);
   useEffect(() => { myActiveTecnicasRef.current = myActiveTecnicas; }, [myActiveTecnicas]);
+
+  // Turn timer hook for PvP mode
+  useEffect(() => {
+    if (!combatStarted || isEventMode || !turnStartTime) {
+      setElapsedSeconds(0);
+      return;
+    }
+
+    const updateTimer = () => {
+      const diff = Math.max(0, Math.floor((Date.now() - turnStartTime) / 1000));
+      setElapsedSeconds(diff);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [combatStarted, isEventMode, turnStartTime]);
+
+  const formatTimer = (totalSecs: number) => {
+    const mins = Math.floor(totalSecs / 60).toString().padStart(2, '0');
+    const secs = (totalSecs % 60).toString().padStart(2, '0');
+    return `[${mins}:${secs}]`;
+  };
 
   const userProfileRef = useRef(userProfile);
   useEffect(() => { userProfileRef.current = userProfile; }, [userProfile]);
@@ -559,6 +673,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
               currentTurnIndex: currentTurnIndexRef.current,
               rondaActual: rondaActualRef.current,
               combatStarted: combatStartedRef.current,
+              turnStartTime: turnStartTimeRef.current,
               logs: logsRef.current,
               tempCharacters: tempCharactersRef.current,
               activeMusicVideoId: activeMusicVideoIdRef.current,
@@ -575,6 +690,9 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
           setCurrentTurnIndex(payload.currentTurnIndex);
           setRondaActual(payload.rondaActual);
           setCombatStarted(payload.combatStarted);
+          if (payload.turnStartTime !== undefined) {
+            setTurnStartTime(payload.turnStartTime);
+          }
           if (payload.logs && payload.logs.length > 0) {
             setLogs(payload.logs);
           }
@@ -794,12 +912,13 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     });
   };
 
-  const broadcastGlobalState = (queue: string[], index: number, round: number, started: boolean, temps?: Record<string, Participant>) => {
+  const broadcastGlobalState = (queue: string[], index: number, round: number, started: boolean, temps?: Record<string, Participant>, startTime?: number | null) => {
     sendBroadcast('combat_state_update', {
       turnQueue: queue,
       currentTurnIndex: index,
       rondaActual: round,
       combatStarted: started,
+      turnStartTime: startTime !== undefined ? startTime : turnStartTimeRef.current,
       tempCharacters: temps ?? tempCharactersRef.current,
       activeMusicVideoId: activeMusicVideoIdRef.current,
       musicIsPlaying: musicIsPlayingRef.current,
@@ -823,12 +942,14 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     });
   };
 
-  const updateGlobalCombatState = (queue: string[], index: number, round: number, started: boolean) => {
+  const updateGlobalCombatState = (queue: string[], index: number, round: number, started: boolean, startTime?: number | null) => {
+    const newStartTime = startTime !== undefined ? startTime : turnStartTime;
     setTurnQueue(queue);
     setCurrentTurnIndex(index);
     setRondaActual(round);
     setCombatStarted(started);
-    broadcastGlobalState(queue, index, round, started);
+    setTurnStartTime(newStartTime);
+    broadcastGlobalState(queue, index, round, started, undefined, newStartTime);
   };
 
   const broadcastTempCharacters = (temps: Record<string, Participant>) => {
@@ -953,7 +1074,8 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
       addToast("Debe haber al menos 1 ninja en los turnos para iniciar.", "error");
       return;
     }
-    updateGlobalCombatState(turnQueue, 0, 1, true);
+    const now = Date.now();
+    updateGlobalCombatState(turnQueue, 0, 1, true, now);
     addLog(`**¡EL COMBATE HA COMENZADO!** (Ronda 1)`);
     const activePlayerName = participants[turnQueue[0]]?.nombre || tempCharactersRef.current[turnQueue[0]]?.nombre || 'Shinobi';
     addLog(`Es el turno de **${activePlayerName}**.`);
@@ -1007,7 +1129,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     resetLocalStateToDefault();
 
     const newTemps: Record<string, Participant> = {};
-    updateGlobalCombatState([], 0, 1, false);
+    updateGlobalCombatState([], 0, 1, false, null);
     setMyBando(null);
     setMyIsInCombat(false);
     setMyCooldowns({});
@@ -1091,6 +1213,16 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     const activeCharId = turnQueue[currentTurnIndex];
     const activeParticipantName = participants[activeCharId]?.nombre || tempCharactersRef.current[activeCharId]?.nombre || 'Shinobi';
 
+    let durationText = '';
+    if (!isEventMode) {
+      const now = Date.now();
+      const startTime = turnStartTimeRef.current || now;
+      const durationSec = Math.max(0, Math.floor((now - startTime) / 1000));
+      const mins = Math.floor(durationSec / 60).toString().padStart(2, '0');
+      const secs = (durationSec % 60).toString().padStart(2, '0');
+      durationText = ` (Duración: ${mins}:${secs})`;
+    }
+
     let nextIndex = currentTurnIndex + 1;
     let nextRound = rondaActual;
     let roundEnded = false;
@@ -1101,8 +1233,9 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
       roundEnded = true;
     }
 
-    updateGlobalCombatState(turnQueue, nextIndex, nextRound, true);
-    addLog(`Fin del turno de **${activeParticipantName}**.`);
+    const nextTurnStart = Date.now();
+    updateGlobalCombatState(turnQueue, nextIndex, nextRound, true, nextTurnStart);
+    addLog(`Fin del turno de **${activeParticipantName}**${durationText}.`);
 
     if (roundEnded) {
       addLog(`**Ronda ${nextRound} Iniciada**`);
@@ -1420,75 +1553,6 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     );
   }
 
-  if (showRegisterForm) {
-    if (isEventMode) {
-      const activeParticipantsList = Object.values(participants).map(p => ({
-        id: Number(p.user_id),
-        nombre_ninja: p.nombre
-      }));
-
-      return (
-        <div className="min-h-screen flex flex-col relative text-oro p-4 lg:p-8 overflow-hidden">
-          <div
-            className="absolute inset-0 bg-cover bg-center pointer-events-none z-0"
-            style={{
-              backgroundImage: `url('/assets/ui/bg-combat/bg-combat-${bgNumber}.png')`,
-              filter: 'blur(4px)',
-              transform: 'scale(1.03)'
-            }}
-          />
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-none z-10" />
-          <div className="w-full max-w-[1400px] mx-auto relative z-20 py-6">
-            <NarrationForm
-              onCreated={() => setShowRegisterForm(false)}
-              initialParticipants={activeParticipantsList}
-            />
-          </div>
-        </div>
-      );
-    }
-
-    const bandoAParticipants = Object.values(participants).filter(p => p.bando === 'A' && p.isInCombat);
-    const bandoBParticipants = Object.values(participants).filter(p => p.bando === 'B' && p.isInCombat);
-
-    const prefilledData = {
-      data: {
-        equipo_a: bandoAParticipants.map(p => ({
-          id: Number(p.user_id),
-          nombre_ninja: p.nombre,
-          rango: 'D'
-        })),
-        equipo_b: bandoBParticipants.map(p => ({
-          id: Number(p.user_id),
-          nombre_ninja: p.nombre,
-          rango: 'D'
-        })),
-        ganador: 'Empate'
-      }
-    };
-
-    return (
-      <div className="min-h-screen flex flex-col relative text-oro p-4 lg:p-8 overflow-hidden">
-        {/* Subtle blurred background layer to prevent pixelation */}
-        <div
-          className="absolute inset-0 bg-cover bg-center pointer-events-none z-0"
-          style={{
-            backgroundImage: `url('/assets/ui/bg-combat/bg-combat-${bgNumber}.png')`,
-            filter: 'blur(4px)',
-            transform: 'scale(1.03)'
-          }}
-        />
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-none z-10" />
-        <div className="w-full max-w-[1400px] mx-auto relative z-20 py-6">
-          <CombatForm
-            onCreated={() => setShowRegisterForm(false)}
-            initialData={prefilledData as any}
-          />
-        </div>
-      </div>
-    );
-  }
-
   // Group participants by bando (merge real participants + local participant + temp characters)
   const localParticipant: Participant | null = currentActorId ? {
     user_id: currentActorId,
@@ -1524,14 +1588,95 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     })) || []
   } : null;
 
-  const allParticipantsMap: Record<string, Participant> = {
+  // Real human participants (connected via presence or local active user, excluding NPCs)
+  const realParticipantsMap: Record<string, Participant> = {
     ...participants,
-    ...(localParticipant ? { [localParticipant.user_id]: localParticipant } : {}),
+    ...(localParticipant ? { [localParticipant.user_id]: localParticipant } : {})
+  };
+
+  // Full map including NPCs for room display and turn management
+  const allParticipantsMap: Record<string, Participant> = {
+    ...realParticipantsMap,
     ...tempCharacters
   };
+
   const bandoAParticipants = Object.values(allParticipantsMap).filter(p => p.bando === 'A');
   const bandoBParticipants = Object.values(allParticipantsMap).filter(p => p.bando === 'B');
   const spectatorParticipants = Object.values(allParticipantsMap).filter(p => p.bando === null);
+
+  if (showRegisterForm) {
+    // Only real human characters assigned to Bando A or B (excluding Spectators & NPCs)
+    const realBandoA = Object.values(realParticipantsMap).filter(
+      p => p.bando === 'A' && !tempCharacters[p.user_id] && !String(p.user_id).startsWith('temp-')
+    );
+    const realBandoB = Object.values(realParticipantsMap).filter(
+      p => p.bando === 'B' && !tempCharacters[p.user_id] && !String(p.user_id).startsWith('temp-')
+    );
+
+    if (isEventMode) {
+      const activeParticipantsList = [...realBandoA, ...realBandoB].map(p => ({
+        id: Number(p.user_id),
+        nombre_ninja: p.nombre
+      }));
+
+      return (
+        <div className="min-h-screen flex flex-col relative text-oro p-4 lg:p-8 overflow-hidden">
+          <div
+            className="absolute inset-0 bg-cover bg-center pointer-events-none z-0"
+            style={{
+              backgroundImage: `url('/assets/ui/bg-combat/bg-combat-${bgNumber}.png')`,
+              filter: 'blur(4px)',
+              transform: 'scale(1.03)'
+            }}
+          />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-none z-10" />
+          <div className="w-full max-w-[1400px] mx-auto relative z-20 py-6">
+            <NarrationForm
+              onCreated={() => setShowRegisterForm(false)}
+              initialParticipants={activeParticipantsList}
+            />
+          </div>
+        </div>
+      );
+    }
+
+    const prefilledData = {
+      data: {
+        equipo_a: realBandoA.map(p => ({
+          id: Number(p.user_id),
+          nombre_ninja: p.nombre,
+          rango: 'D'
+        })),
+        equipo_b: realBandoB.map(p => ({
+          id: Number(p.user_id),
+          nombre_ninja: p.nombre,
+          rango: 'D'
+        })),
+        ganador: 'Empate'
+      }
+    };
+
+    return (
+      <div className="min-h-screen flex flex-col relative text-oro p-4 lg:p-8 overflow-hidden">
+        {/* Subtle blurred background layer to prevent pixelation */}
+        <div
+          className="absolute inset-0 bg-cover bg-center pointer-events-none z-0"
+          style={{
+            backgroundImage: `url('/assets/ui/bg-combat/bg-combat-${bgNumber}.png')`,
+            filter: 'blur(4px)',
+            transform: 'scale(1.03)'
+          }}
+        />
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-none z-10" />
+        <div className="w-full max-w-[1400px] mx-auto relative z-20 py-6">
+          <CombatForm
+            onCreated={() => setShowRegisterForm(false)}
+            initialData={prefilledData as any}
+          />
+        </div>
+      </div>
+    );
+  }
 
   const isMyTurn = combatStarted && turnQueue.length > 0 && turnQueue[currentTurnIndex] === (activeCharacter ? String(activeCharacter.id) : userProfile?.id);
 
@@ -2154,8 +2299,13 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                 <div className="flex items-center gap-3">
                   <h2 className="font-black text-sm uppercase tracking-[0.2em]">ORDEN DE TURNOS</h2>
                 </div>
-                <div className="text-caption font-black text-oro/50 uppercase tracking-widest">
-                  Ronda: <span className="text-oro font-bold text-base">{rondaActual}</span>
+                <div className="text-caption font-black text-oro/50 uppercase tracking-widest flex items-center gap-2">
+                  <span>Ronda: <span className="text-oro font-bold text-base">{rondaActual}</span></span>
+                  {!isEventMode && (
+                    <span className="font-mono text-base font-bold text-amber-400 bg-black/40 border border-amber-500/20 px-2 py-0.5 rounded-sm">
+                      {formatTimer(elapsedSeconds)}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -2321,7 +2471,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
           </div>
 
           {/* COLUMN 4: BANDO B */}
-          <div className="lg:col-span-1 flex flex-col gap-4 ninja-card-rojo p-6 relative overflow-hidden">
+          <div className="lg:col-span-1 flex flex-col gap-4 ninja-card-oro p-6 relative overflow-hidden">
             <div className="flex items-center justify-between border-b border-oro/10 pb-4 mb-2 gap-2">
               <h2 className="font-black text-sm uppercase tracking-[0.2em] flex items-center gap-2 shrink-0">
                 BANDO B
@@ -2330,7 +2480,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
               {myIsInCombat && myBando !== 'B' && (
                 <button
                   onClick={() => selectBando('B')}
-                  className="ninja-btn-rojo py-1.5 px-4 text-xs text-center"
+                  className="ninja-btn-oro py-1.5 px-4 text-xs text-center"
                 >
                   Unirse
                 </button>
@@ -2986,7 +3136,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                     </div>
 
                     {isDropdownOpen && (
-                      <div className="absolute z-50 left-0 right-0 bottom-full mb-1 bg-black/95 border border-oro/30 shadow-2xl max-h-[300px] overflow-hidden flex flex-col backdrop-blur-md">
+                      <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-black/95 border border-oro/30 shadow-2xl max-h-[300px] overflow-hidden flex flex-col backdrop-blur-md">
                         {/* Search input field */}
                         <input
                           type="text"
@@ -3091,7 +3241,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                     </div>
 
                     {isCdDropdownOpen && (
-                      <div className="absolute z-50 left-0 right-0 bottom-full mb-1 bg-black/95 border border-red-500/30 shadow-2xl max-h-[300px] overflow-y-auto flex flex-col backdrop-blur-md">
+                      <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-black/95 border border-red-500/30 shadow-2xl max-h-[300px] overflow-y-auto flex flex-col backdrop-blur-md">
                         {(activeCharacter.personajes_tecnicas || [])
                           .filter(pt => {
                             const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) : 0;
@@ -3154,7 +3304,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                     </div>
 
                     {isActiveDropdownOpen && (
-                      <div className="absolute z-50 left-0 right-0 bottom-full mb-1 bg-black/95 border border-emerald-500/30 shadow-2xl max-h-[300px] overflow-y-auto flex flex-col backdrop-blur-md">
+                      <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-black/95 border border-emerald-500/30 shadow-2xl max-h-[300px] overflow-y-auto flex flex-col backdrop-blur-md">
                         {Object.keys(myActiveTecnicas).map(Number).map(techId => {
                           const pt = activeCharacter.personajes_tecnicas?.find(t => t.tecnica_id === techId);
                           if (!pt) return null;
@@ -3274,6 +3424,198 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                     </button>
                   </div>
                 )}
+                {/* 4. DAMAGE CALCULATOR */}
+                <div className="pt-5 border-t border-oro/10 space-y-4">
+                  <div className="flex items-center justify-between flex-wrap gap-2 border-b border-oro/10 pb-3">
+                    <h3 className="font-black text-sm uppercase tracking-[0.2em] text-oro">
+                      CALCULADORA DE DAÑO
+                    </h3>
+                    {/* Add-on Toggles */}
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={addCalcStat}
+                        className="ninja-btn-ghost px-3 py-1 text-xs font-black uppercase"
+                      >
+                        + Stat Extra
+                      </button>
+                      <button
+                        type="button"
+                        onClick={addCalcWeapon}
+                        className="ninja-btn-ghost px-3 py-1 text-xs font-black uppercase"
+                      >
+                        + Arma
+                      </button>
+                      <button
+                        type="button"
+                        onClick={addCalcPercent}
+                        className="ninja-btn-ghost px-3 py-1 text-xs font-black uppercase"
+                      >
+                        + Modificador %
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Calculator Input Rows */}
+                  <div className="space-y-4 bg-black/40 p-4 border border-oro/10">
+                    {/* Dynamic Stats List */}
+                    {calcStats.map((item, index) => {
+                      const numericMult = parseFloat(item.multInput.replace(',', '.')) || 0;
+                      return (
+                        <div
+                          key={item.id}
+                          className={`flex flex-wrap items-center gap-3 ${index > 0 ? 'pt-3 border-t border-oro/10 animate-in fade-in duration-200' : ''}`}
+                        >
+                          <span className="text-xs font-black text-oro/40 uppercase w-16 shrink-0">
+                            Stat {index + 1}:
+                          </span>
+
+                          <NinjaSelect
+                            value={item.stat}
+                            options={['NIN', 'TAI', 'GEN', 'INT', 'FUE', 'AGI', 'EST', 'SM']}
+                            onChange={(val) => updateCalcStatName(item.id, val)}
+                            placeholder=""
+                            variant="compact"
+                            className="w-20"
+                          />
+
+                          {/* Stat Value Input */}
+                          <div className="flex items-center bg-black/50 border border-oro/20 w-28 px-2 focus-within:border-oro transition-all">
+                            <button
+                              type="button"
+                              onClick={() => updateCalcStatVal(item.id, Math.max(1, item.val - 1))}
+                              className="text-oro hover:text-white font-black px-1.5 py-1 text-xs select-none"
+                            >-</button>
+                            <input
+                              type="number"
+                              value={item.val}
+                              onChange={(e) => updateCalcStatVal(item.id, Number(e.target.value) || 0)}
+                              className="bg-transparent text-center text-white text-xs font-black w-full outline-none py-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => updateCalcStatVal(item.id, item.val + 1)}
+                              className="text-oro hover:text-white font-black px-1.5 py-1 text-xs select-none"
+                            >+</button>
+                          </div>
+
+                          <span className="text-oro/40 font-black text-xs">×</span>
+
+                          {/* Multiplier Input */}
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-black text-oro/40 uppercase">Mult:</span>
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              value={item.multInput}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === '' || /^[0-9]*[.,]?[0-9]*$/.test(val)) {
+                                  updateCalcStatMult(item.id, val);
+                                }
+                              }}
+                              className="w-20 bg-black/50 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro text-center transition-all"
+                            />
+                          </div>
+
+                          <div className="ml-auto flex items-center gap-3">
+                            <span className="text-xs font-mono text-oro font-black">
+                              = {item.val * numericMult}
+                            </span>
+                            {calcStats.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => removeCalcStat(item.id)}
+                                className="text-naranja-naruto hover:text-red-400 text-xs font-black uppercase tracking-wider"
+                              >
+                                Quitar
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Dynamic Weapons List */}
+                    {calcWeapons.map((item, index) => (
+                      <div
+                        key={item.id}
+                        className="flex flex-wrap items-center gap-3 pt-3 border-t border-oro/10 animate-in fade-in duration-200"
+                      >
+                        <span className="text-xs font-black text-oro/40 uppercase w-16 shrink-0">
+                          {calcWeapons.length > 1 ? `Arma ${index + 1}:` : 'Daño Arma:'}
+                        </span>
+                        <input
+                          type="number"
+                          placeholder="Daño de arma..."
+                          value={item.damage}
+                          onChange={(e) => updateCalcWeapon(item.id, Number(e.target.value) || 0)}
+                          className="w-36 bg-black/50 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all"
+                        />
+                        <div className="ml-auto flex items-center gap-3">
+                          <span className="text-xs font-mono text-oro font-black">
+                            + {item.damage}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeCalcWeapon(item.id)}
+                            className="text-naranja-naruto hover:text-red-400 text-xs font-black uppercase tracking-wider"
+                          >
+                            Quitar
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Dynamic Percentage Modifiers List */}
+                    {calcPercents.map((item, index) => (
+                      <div
+                        key={item.id}
+                        className="flex flex-wrap items-center gap-3 pt-3 border-t border-oro/10 animate-in fade-in duration-200"
+                      >
+                        <span className="text-xs font-black text-oro/40 uppercase w-16 shrink-0">
+                          {calcPercents.length > 1 ? `Mod % ${index + 1}:` : 'Mod %:'}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            placeholder="+10 o -20..."
+                            value={item.percent}
+                            onChange={(e) => updateCalcPercent(item.id, Number(e.target.value) || 0)}
+                            className="w-32 bg-black/50 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all"
+                          />
+                          <span className="text-xs font-black text-oro">%</span>
+                        </div>
+                        <div className="ml-auto flex items-center gap-3">
+                          <span className="text-xs font-mono text-oro font-black">
+                            {item.percent >= 0 ? `+${item.percent}%` : `${item.percent}%`}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeCalcPercent(item.id)}
+                            className="text-naranja-naruto hover:text-red-400 text-xs font-black uppercase tracking-wider"
+                          >
+                            Quitar
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Final Result Card */}
+                    <div className="pt-4 border-t border-oro/10 flex items-center justify-between flex-wrap gap-4">
+                      <div className="text-xs font-mono text-oro/60 truncate max-w-[70%]">
+                        Fórmula: {calcStats.map(s => `(${s.stat}: ${s.val} × ${s.multInput || '0'})`).join(' + ')}
+                        {calcWeapons.length > 0 && ` ${calcWeapons.map(w => `+ ${w.damage} Arma`).join(' ')}`}
+                        {calcPercents.length > 0 && ` (${calcPercents.map(p => `${p.percent >= 0 ? '+' : ''}${p.percent}%`).join(' ')})`}
+                      </div>
+                      <div className="flex items-center gap-3 bg-black/60 border border-oro/20 px-5 py-2">
+                        <span className="text-xs font-black text-oro/60 uppercase">DAÑO TOTAL:</span>
+                        <span className="text-xl font-black text-oro font-mono">{calculateTotalDamage()}</span>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
               </div>
 
             </div>
