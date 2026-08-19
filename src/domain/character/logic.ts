@@ -24,7 +24,8 @@ export const StatsLogic = {
     glosarioTecnicas: any[] = [],
     subEspecialidades: any[] = [],
     eleccionClan: any = null,
-    elementos: any[] = []
+    elementos: any[] = [],
+    inventarioPersonaje: any[] = []
   ): string {
     const rulesEntries = Object.entries(rules);
     // Sort ranks by min threshold ascending (D, C, B, A, S, etc.)
@@ -213,9 +214,12 @@ export const StatsLogic = {
           return false;
         });
 
-        // Verify player has all of these mandatory techniques
+        // Verify player has all of these mandatory techniques or items
         const playerTechIds = tecnicasPersonaje.map(pt => Number(pt.tecnica_id));
-        const hasAllMandatory = mandatoryTechs.every(mt => playerTechIds.includes(mt.id));
+        const playerItemIds = inventarioPersonaje.map(pi => Number(pi.item_id || pi.id));
+        const playerOwnedIds = [...playerTechIds, ...playerItemIds];
+
+        const hasAllMandatory = mandatoryTechs.every(mt => playerOwnedIds.includes(mt.id));
 
         if (!hasAllMandatory) {
           break; // Blocked: player hasn't purchased all mandatory techniques of currentRankCheck

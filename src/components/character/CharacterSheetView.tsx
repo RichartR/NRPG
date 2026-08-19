@@ -2617,13 +2617,6 @@ export function CharacterSheetView({
 
                             {/* ACOMPAÑANTES DEL CLAN (Para Kamizuru y Aburame) */}
                             {(() => {
-                              console.log("DEBUG COMPANIONS RENDER:", {
-                                slot,
-                                rama_id: pr?.rama_id,
-                                isKamizuru: pr?.rama_id ? Number(pr.rama_id) === 21 : false,
-                                isAburame: pr?.rama_id ? Number(pr.rama_id) === 31 : false,
-                                companionsListLength: companionsList.length
-                              });
                               if (!pr?.rama_id) return null;
                               const isKamizuru = Number(pr.rama_id) === 21;
                               const isAburame = Number(pr.rama_id) === 31;

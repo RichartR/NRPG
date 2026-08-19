@@ -31,7 +31,6 @@ export default function KugutsuKoboSection({
   useEffect(() => {
     CharacterService.getKugutsuComponents()
       .then(data => {
-        console.log("Kugutsu components catalog loaded:", data);
         setCatalog(data);
         setLoadingCatalog(false);
       })
@@ -40,8 +39,6 @@ export default function KugutsuKoboSection({
         setLoadingCatalog(false);
       });
   }, []);
-
-  console.log("Catalog status:", { catalogLength: catalog.length, loadingCatalog });
 
   // 2. Buscar plantilla de acompañante "Kugutsu - Marioneta" (slug = 'kugutsu')
   const kugutsuTemplate = companionsList.find(c => c.slug === 'kugutsu');
@@ -126,7 +123,6 @@ export default function KugutsuKoboSection({
 
   // Actualizar componentes seleccionados
   const updateMarionetteComponent = (slotKey: string, componentType: 'cuerpo_id' | 'extremidad_id' | 'accesorio_id', value: number | null) => {
-    console.log("updateMarionetteComponent called:", { slotKey, componentType, value });
     const list = character.personajes_kugutsu_componentes || [];
     const companion = (character.personajes_acompanantes || []).find((a: any) => a.origen === slotKey);
 
@@ -155,11 +151,8 @@ export default function KugutsuKoboSection({
       updated.push(newComp);
     }
 
-    console.log("Updated personajes_kugutsu_componentes list:", updated);
     onUpdateField('personajes_kugutsu_componentes', updated);
   };
-
-  console.log("Rendering selectors options:", { cuerpoOptions, extremidadOptions, accesorioOptions });
 
   return (
     <div className="space-y-8 animate-fade-in">

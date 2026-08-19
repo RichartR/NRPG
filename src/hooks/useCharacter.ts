@@ -123,6 +123,7 @@ export function useCharacter(characterId: string) {
 
   // Auto Rank Effect
   const tecsSignature = JSON.stringify(character?.personajes_tecnicas?.map(t => t.tecnica_id) || []);
+  const invSignature = JSON.stringify(character?.personajes_inventario?.map(i => i.item_id) || []);
   const ramasSignature = JSON.stringify(character?.personajes_ramas?.map(r => [r.rama_id, r.sub_especialidad_id, r.elemento_principal_id, r.elemento_secundario_id, r.elemento_terciario_id]) || []);
   const subEspecialidadesSignature = JSON.stringify(masters.subEspecialidades || []);
   const glosarioLength = glosarioCompleto?.length || 0;
@@ -138,12 +139,13 @@ export function useCharacter(characterId: string) {
       glosarioCompleto,
       masters.subEspecialidades || [],
       character.eleccion_tecnicas_clan,
-      masters.elementos || []
+      masters.elementos || [],
+      character.personajes_inventario || []
     );
     if (newRango !== character.rango) {
       setCharacter(prev => prev ? { ...prev, rango: newRango } : null);
     }
-  }, [character?.puntos_stats, rangoRulesSignature, tecsSignature, ramasSignature, glosarioLength, subEspecialidadesSignature, character?.eleccion_tecnicas_clan, masters.elementos]);
+  }, [character?.puntos_stats, rangoRulesSignature, tecsSignature, invSignature, ramasSignature, glosarioLength, subEspecialidadesSignature, character?.eleccion_tecnicas_clan, masters.elementos]);
 
   const updateField = (field: keyof Character, value: any) => {
     setCharacter(prev => prev ? { ...prev, [field]: value } : null);

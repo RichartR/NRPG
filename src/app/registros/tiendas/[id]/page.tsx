@@ -135,6 +135,7 @@ export default function TiendaDetallePage() {
         .select(`
           *,
           personajes_tecnicas:reg_personajes_tecnicas!reg_personajes_tecnicas_personaje_id_fkey(*),
+          personajes_inventario:reg_personajes_inventario!reg_personajes_inventario_personaje_id_fkey(*),
           personajes_ramas:reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(*)
         `)
         .eq('user_id', user.id)
@@ -151,6 +152,7 @@ export default function TiendaDetallePage() {
           .select(`
             *,
             personajes_tecnicas:reg_personajes_tecnicas!reg_personajes_tecnicas_personaje_id_fkey(*),
+            personajes_inventario:reg_personajes_inventario!reg_personajes_inventario_personaje_id_fkey(*),
             personajes_ramas:reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(*)
           `)
           .eq('id', activeCharId)
@@ -185,7 +187,8 @@ export default function TiendaDetallePage() {
       glosarioActivo,
       masters.subEspecialidades || [],
       selectedChar.eleccion_tecnicas_clan,
-      masters.elementos || []
+      masters.elementos || [],
+      selectedChar.personajes_inventario || []
     );
   };
 
@@ -498,16 +501,19 @@ export default function TiendaDetallePage() {
     const currentStat = Number(selectedChar.puntos_stats) || 0;
     if (!isStatIncreaseAllowed(currentStat + statPointsToBuy)) {
       addToast('No puedes superar el límite máximo de stats de tu rango sin cumplir los requisitos de técnicas obligatorias para ascender.', 'error');
+      setIsStatBuyConfirmOpen(false);
       return;
     }
     const { total: totalCost, isLevelBlocked } = calculateTotalExpCost(currentStat, statPointsToBuy);
 
     if (isLevelBlocked) {
       addToast('Uno de los niveles a comprar no está configurado o está bloqueado', 'error');
+      setIsStatBuyConfirmOpen(false);
       return;
     }
     if (selectedChar.xp < totalCost) {
       addToast('Experiencia insuficiente', 'error');
+      setIsStatBuyConfirmOpen(false);
       return;
     }
 
@@ -523,6 +529,7 @@ export default function TiendaDetallePage() {
       }
     } catch (err: any) {
       addToast(err.message || 'Error al procesar la compra de stats', 'error');
+      setIsStatBuyConfirmOpen(false);
     } finally {
       setIsSubmittingStatBuy(false);
     }
