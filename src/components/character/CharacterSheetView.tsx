@@ -1009,7 +1009,20 @@ export function CharacterSheetView({
     }
 
     // 2. Stats
-    if (req.stats && typeof req.stats === 'object') {
+    if (req.stats_opciones && Array.isArray(req.stats_opciones) && req.stats_opciones.length > 0) {
+      const satisfiesAnyOption = req.stats_opciones.some((optionGroup: Record<string, number>) => {
+        if (!optionGroup || typeof optionGroup !== 'object') return false;
+        return Object.entries(optionGroup).every(([stat, value]) => {
+          const reqValue = Number(value);
+          if (isNaN(reqValue) || reqValue <= 0) return true;
+          const sKey = stat.toUpperCase();
+          // @ts-ignore
+          const baseVal = Number(character.stats_base?.[sKey] || 0);
+          return baseVal >= reqValue;
+        });
+      });
+      if (!satisfiesAnyOption) return false;
+    } else if (req.stats && typeof req.stats === 'object') {
       for (const [stat, value] of Object.entries(req.stats)) {
         const reqValue = Number(value);
         if (isNaN(reqValue) || reqValue <= 0) continue;
@@ -1017,11 +1030,7 @@ export function CharacterSheetView({
         const sKey = stat.toUpperCase();
         // @ts-ignore
         const baseVal = Number(character.stats_base?.[sKey] || 0);
-        // @ts-ignore
-        const derivVal = Number(character.atributos_derivados?.[sKey] || 0);
-        const currentVal = Math.max(baseVal, derivVal);
-
-        if (currentVal < reqValue) return false;
+        if (baseVal < reqValue) return false;
       }
     }
 
