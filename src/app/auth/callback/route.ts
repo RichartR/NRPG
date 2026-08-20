@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   const code = requestUrl.searchParams.get('code')
   const next = requestUrl.searchParams.get('next') ?? '/'
 
-  // En producción (Vercel/proxies), request.url puede venir como http:// en vez de https://
+  // En producción (Vercel/proxies/Cloudflare), request.url puede venir como http:// en vez de https://
   const forwardedHost = request.headers.get('x-forwarded-host')
   const forwardedProto = request.headers.get('x-forwarded-proto')
   const isLocal = process.env.NODE_ENV === 'development'
@@ -47,6 +47,9 @@ export async function GET(request: Request) {
       status: 200,
       headers: {
         'content-type': 'text/html; charset=utf-8',
+        'cache-control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        'pragma': 'no-cache',
+        'expires': '0',
       },
     })
 
