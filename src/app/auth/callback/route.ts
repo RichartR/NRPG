@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createClient } from '@/utils/supabase/server'
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
@@ -8,7 +7,6 @@ export async function GET(request: Request) {
   const next = requestUrl.searchParams.get('next') ?? '/'
 
   // En producción (Vercel/proxies), request.url puede venir como http:// en vez de https://
-  // Obtenemos el origen correcto usando las cabeceras x-forwarded-* o la variable de entorno
   const forwardedHost = request.headers.get('x-forwarded-host')
   const forwardedProto = request.headers.get('x-forwarded-proto')
   const isLocal = process.env.NODE_ENV === 'development'
@@ -23,36 +21,12 @@ export async function GET(request: Request) {
   }
 
   if (code) {
-    const redirectUrl = `${origin}${next}`
-    const response = NextResponse.redirect(redirectUrl)
-    const cookieStore = await cookies()
-
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              try {
-                cookieStore.set(name, value, options)
-              } catch {
-                // Ignore if called from read-only context
-              }
-              response.cookies.set(name, value, options)
-            })
-          },
-        },
-      }
-    )
-
+    const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
+      const redirectUrl = `${origin}${next}`
       console.log('Auth success, redirecting to:', redirectUrl);
-      return response
+      return NextResponse.redirect(redirectUrl)
     }
     console.error('Auth exchange error:', error.message);
   }
@@ -62,7 +36,6 @@ export async function GET(request: Request) {
     console.error('Auth server error:', error_description);
   }
 
-  // Return the user to an error page with instructions
   return NextResponse.redirect(`${origin}/login?error=auth-error`)
 }
 

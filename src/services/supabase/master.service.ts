@@ -12,7 +12,7 @@ export const MasterService = {
     if (!data) return [];
 
     const mainIds = [1, 2, 3, 4, 5];
-    return data.sort((a, b) => {
+    return data.sort((a: any, b: any) => {
       const aIsMain = mainIds.includes(a.id);
       const bIsMain = mainIds.includes(b.id);
       if (aIsMain && !bIsMain) return -1;
@@ -119,7 +119,7 @@ export const MasterService = {
     }
 
     const configs: Record<string, any> = {};
-    data?.forEach(row => {
+    data?.forEach((row: any) => {
       configs[row.clave] = row.valor;
     });
     return configs;
@@ -198,7 +198,7 @@ export const MasterService = {
     if (!data) return [];
 
     const mainIds = [1, 2, 3, 4, 5];
-    return data.sort((a, b) => {
+    return data.sort((a: any, b: any) => {
       const aIsMain = mainIds.includes(a.id);
       const bIsMain = mainIds.includes(b.id);
       if (aIsMain && !bIsMain) return -1;

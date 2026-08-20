@@ -374,12 +374,12 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   useEffect(() => {
     if (isAdminOrNarrator && isEventMode) {
       supabase.from('info_rasgos').select('*').eq('activo', true).order('nombre')
-        .then(({ data }) => {
+        .then(({ data }: any) => {
           if (data) setMasterTraits(data);
         });
 
       supabase.from('info_glosario').select('*').eq('categoria_id', 2).eq('activo', true).order('nombre_es')
-        .then(({ data }) => {
+        .then(({ data }: any) => {
           if (data) setMasterItems(data);
         });
     }
@@ -644,13 +644,13 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         console.log("Processed activeParticipants:", activeParticipants);
         setParticipants(activeParticipants);
       })
-      .on('broadcast', { event: 'combat_log' }, ({ payload }) => {
+      .on('broadcast', { event: 'combat_log' }, ({ payload }: { payload: any }) => {
         const myActorId = activeCharacterRef.current ? String(activeCharacterRef.current.id) : userProfileRef.current?.id;
         if (payload.senderId !== myActorId) {
           setLogs(prev => [...prev, payload.message].slice(-40));
         }
       })
-      .on('broadcast', { event: 'request_combat_state' }, ({ payload }) => {
+      .on('broadcast', { event: 'request_combat_state' }, ({ payload }: { payload: any }) => {
         const requesterId = payload?.requesterId;
         const presenceState = channel.presenceState();
         const activeResponders = Object.keys(presenceState).filter(key => {
@@ -683,7 +683,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
           });
         }
       })
-      .on('broadcast', { event: 'combat_state_update' }, ({ payload }) => {
+      .on('broadcast', { event: 'combat_state_update' }, ({ payload }: { payload: any }) => {
         const myActorId = activeCharacterRef.current ? String(activeCharacterRef.current.id) : userProfileRef.current?.id;
         if (payload.senderId !== myActorId) {
           setTurnQueue(payload.turnQueue);
@@ -719,20 +719,20 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
           }
         }
       })
-      .on('broadcast', { event: 'temp_character_update' }, ({ payload }) => {
+      .on('broadcast', { event: 'temp_character_update' }, ({ payload }: { payload: any }) => {
         const myActorId = activeCharacterRef.current ? String(activeCharacterRef.current.id) : userProfileRef.current?.id;
         if (payload.senderId !== myActorId) {
           setTempCharacters(payload.tempCharacters);
         }
       })
-      .on('broadcast', { event: 'music_update' }, ({ payload }) => {
+      .on('broadcast', { event: 'music_update' }, ({ payload }: { payload: any }) => {
         const myActorId = activeCharacterRef.current ? String(activeCharacterRef.current.id) : userProfileRef.current?.id;
         if (isEventMode && payload.senderId !== myActorId) {
           setActiveMusicVideoId(payload.videoId ?? null);
           setMusicIsPlaying(true);
         }
       })
-      .on('broadcast', { event: 'music_control' }, ({ payload }) => {
+      .on('broadcast', { event: 'music_control' }, ({ payload }: { payload: any }) => {
         const myActorId = activeCharacterRef.current ? String(activeCharacterRef.current.id) : userProfileRef.current?.id;
         if (isEventMode && payload.senderId !== myActorId) {
           if (payload.action === 'play') {
@@ -812,7 +812,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
           localStorage.removeItem(storageKey);
         }
       })
-      .subscribe(async (status) => {
+      .subscribe(async (status: any) => {
         if (status === 'SUBSCRIBED') {
           setIsSubscribed(true);
           channel.send({

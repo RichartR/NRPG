@@ -112,7 +112,7 @@ export const RegistrosService = {
     
     if (error) throw error;
     return (data || [])
-      .filter(character => searchAny(trimmedQuery, [character.nombre_ninja, character.hobba_name]))
+      .filter((character: any) => searchAny(trimmedQuery, [character.nombre_ninja, character.hobba_name]))
       .slice(0, 5);
   },
 

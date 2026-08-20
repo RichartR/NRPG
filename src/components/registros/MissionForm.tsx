@@ -70,7 +70,7 @@ export default function MissionForm({
     }
     try {
       const results = await RegistrosService.searchCharacters(query);
-      setSearchResults(results.filter(r =>
+      setSearchResults(results.filter((r: any) =>
         Number(r.id) !== Number(activeCharacter?.id) &&
         !participants.find(p => Number(p.id) === Number(r.id))
       ));
