@@ -9,6 +9,7 @@ import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { DataField, SearchableSelect } from '@/components/ui/Fields';
 import { Sentido, RamaClan, SubEspecialidad, RamaSentido } from '@/domain/types';
 import { useMasterStore } from '@/store/useMasterStore';
+import { Portal } from '@/components/ui/Portal';
 
 interface SentidoEditFormProps {
   sentido?: Sentido;
@@ -159,8 +160,9 @@ export default function SentidoEditForm({
   const displayVinculaciones = isCreate ? localVinculaciones : vinculaciones;
 
   return (
-    <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-start sm:items-center justify-center p-4 sm:p-6 xl:p-12 overflow-y-auto">
-      <div className="relative w-full max-w-3xl ninja-card-oro p-6 sm:p-10 xl:p-12 my-auto animate-in fade-in zoom-in duration-300">
+    <Portal>
+      <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-start sm:items-center justify-center p-4 sm:p-6 xl:p-12 overflow-y-auto">
+      <div className="relative w-full max-w-5xl ninja-card-oro no-hover p-6 sm:p-10 xl:p-12 my-auto animate-in fade-in zoom-in duration-300">
         <div className="absolute top-0 right-0 w-96 h-96 bg-oro/5 rounded-full blur-[100px] -mr-48 -mt-48 pointer-events-none" />
 
         {/* Header */}
@@ -308,5 +310,6 @@ export default function SentidoEditForm({
         </div>
       </div>
     </div>
+    </Portal>
   );
 }

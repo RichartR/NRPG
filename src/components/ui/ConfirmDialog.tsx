@@ -1,7 +1,8 @@
 'use client';
 
+import { createPortal } from 'react-dom';
 import { create } from 'zustand';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { useScrollLock } from '@/hooks/useScrollLock';
 
@@ -55,7 +56,7 @@ export function ConfirmContainer() {
   const isInvalid = options.requireValidation && inputValue.toLowerCase() !== validWord;
   const isDanger = options.variant === 'danger';
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/45 backdrop-blur-sm animate-in fade-in duration-300">
       <div
         className={`w-full max-w-md p-10 shadow-2xl animate-in zoom-in-95 duration-300 relative overflow-hidden ${isDanger ? 'ninja-card-rojo' : 'ninja-card-oro'
@@ -155,6 +156,7 @@ export function ConfirmContainer() {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

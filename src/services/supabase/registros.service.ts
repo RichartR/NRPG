@@ -45,6 +45,28 @@ export const RegistrosService = {
     return { data: (data as Registro[]) || [], count: count || 0 };
   },
 
+  async getRegistroById(id: number): Promise<Registro | null> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('reg_registros')
+      .select(`
+        *,
+        autor: reg_characters!reg_registros_autor_id_fkey(nombre_ninja, url_img, profiles!user_id(username, url_avatar, url_img)),
+        participantes: reg_registros_participantes!reg_registros_participantes_registro_id_fkey(
+          *,
+          personaje: reg_characters!reg_registros_participantes_personaje_id_fkey(nombre_ninja, url_img, profiles!user_id(username, url_avatar, url_img))
+        )
+      `)
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      console.error('Error fetching registro by id:', error);
+      return null;
+    }
+    return data as Registro;
+  },
+
   async getMisionesByRango(rango: string): Promise<MisionMaster[]> {
     const supabase = createClient();
     const { data, error } = await supabase

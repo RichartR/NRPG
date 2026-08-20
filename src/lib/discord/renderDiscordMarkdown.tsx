@@ -40,28 +40,12 @@ function renderInline(str: string, keyPrefix: string): React.ReactNode[] {
     const raw = match[0];
     const k = `${keyPrefix}-${match.index}`;
 
-    if (raw.startsWith('<@&') && raw.endsWith('>')) {
-      parts.push(
-        <span key={k} className="inline-flex items-center px-2 py-0.5 bg-indigo-950/80 border border-indigo-500/40 text-indigo-300 font-black rounded text-caption select-none my-0.5">
-          @Rol
-        </span>
-      );
-    } else if (raw.startsWith('<@') && raw.endsWith('>')) {
-      parts.push(
-        <span key={k} className="inline-flex items-center px-2 py-0.5 bg-indigo-950/80 border border-indigo-500/40 text-indigo-300 font-black rounded text-caption select-none my-0.5">
-          @Usuario
-        </span>
-      );
+    if ((raw.startsWith('<@') && raw.endsWith('>')) || raw === '@everyone' || raw === '@here') {
+      // Omitir menciones y pings en la web
     } else if (raw.startsWith('<#') && raw.endsWith('>')) {
       parts.push(
         <span key={k} className="inline-flex items-center px-2 py-0.5 bg-indigo-950/80 border border-indigo-500/40 text-indigo-300 font-black rounded text-caption select-none my-0.5">
           #canal
-        </span>
-      );
-    } else if (raw === '@everyone' || raw === '@here') {
-      parts.push(
-        <span key={k} className="inline-flex items-center px-2 py-0.5 bg-indigo-950/80 border border-indigo-500/40 text-indigo-300 font-black rounded text-caption select-none my-0.5">
-          {raw}
         </span>
       );
     } else if (raw.startsWith('**') && raw.endsWith('**')) {
@@ -119,8 +103,13 @@ function renderInline(str: string, keyPrefix: string): React.ReactNode[] {
    Block-level parser
 ────────────────────────────────────────────── */
 export function renderDiscordMarkdown(content: string): React.ReactNode {
-  // Strip leading ping / mention lines from the start of the event content for clean web display
-  const cleanContent = (content || '').replace(/^(?:<@&\d+>|<@!?\d+>|<#\d+>|@everyone|@here)\s*\n?/, '');
+  // Omitir pings / menciones de rol y usuarios de Discord para una lectura limpia en la web
+  const cleanContent = (content || '')
+    .replace(/<@&\d+>/g, '')
+    .replace(/<@!?\d+>/g, '')
+    .replace(/@everyone/g, '')
+    .replace(/@here/g, '');
+
   const lines = cleanContent.split('\n');
   const nodes: React.ReactNode[] = [];
   let i = 0;

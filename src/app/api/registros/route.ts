@@ -3,8 +3,160 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { RewardLogic } from '@/domain/character/logic';
 import { ProfileService } from '@/services/supabase/profile.service';
-import { sendDiscordMessage } from '@/lib/discord';
+import { sendDiscordMessage, sendDiscordEmbed, editDiscordEmbed, deleteDiscordMessage } from '@/lib/discord';
 import { MasterServerService } from '@/services/supabase/master.server.service';
+
+async function getNarrationChannelId(adminClient: any, destinatarioTipo?: string, destinatarioId?: number | null): Promise<string | null> {
+  let channelId: string | null = null;
+
+  if (destinatarioId && (destinatarioTipo === 'aldea' || destinatarioTipo === 'organizacion')) {
+    const { data: aldea } = await adminClient
+      .from('info_aldeas')
+      .select('id_narracion_discord')
+      .eq('id', destinatarioId)
+      .single();
+    if (aldea?.id_narracion_discord && aldea.id_narracion_discord.trim() !== '') {
+      channelId = aldea.id_narracion_discord.trim();
+    }
+  }
+
+  // Fallback al canal global de narración
+  if (!channelId) {
+    channelId = await MasterServerService.getConfiguracion(adminClient, 'discord_global_narration_channel_id');
+  }
+
+  return channelId || null;
+}
+
+async function buildMentionText(adminClient: any, pingRoles: unknown): Promise<string> {
+  const rolesArray: string[] = Array.isArray(pingRoles) ? pingRoles.filter(Boolean) : ['default'];
+  if (rolesArray.length === 0 || rolesArray.includes('none')) return '';
+
+  const jugadorRoleId = rolesArray.includes('default')
+    ? await MasterServerService.getConfiguracion(adminClient, 'discord_jugador_role_id')
+    : null;
+
+  const mentions = rolesArray
+    .map((role) => {
+      if (role === 'everyone') return '@everyone';
+      if (role === 'here') return '@here';
+      if (role === 'default') return jugadorRoleId ? `<@&${jugadorRoleId}>` : '';
+      return `<@&${role}>`;
+    })
+    .filter(Boolean);
+
+  return Array.from(new Set(mentions)).join(' ');
+}
+
+async function syncNarrationDiscordMessage(
+  adminClient: any,
+  requestUrl: string,
+  registroId: number,
+  data: any,
+  oldData?: any
+) {
+  try {
+    const origin = new URL(requestUrl).origin;
+    const registroUrl = `${origin}/registros/narracion?id=${registroId}`;
+
+    const channelId = await getNarrationChannelId(adminClient, data.destinatario_tipo, data.destinatario_id);
+    const oldChannelId = oldData?.discord_channel_id;
+    const oldMessageId = oldData?.discord_message_id;
+
+    if (!data.discord_message_text && !oldMessageId) {
+      return data;
+    }
+
+    const discordImageUrl = data.discord_image_url?.trim() || null;
+    const rawText = data.discord_message_text || '';
+    const formattedText = rawText.length > 4000 ? rawText.substring(0, 3997) + '...' : rawText;
+
+    const customEmojiId = await MasterServerService.getConfiguracion(adminClient, 'discord_scroll_emoji_id');
+    const scrollIcon = customEmojiId && String(customEmojiId).trim() ? `<:naruto_scroll:${String(customEmojiId).trim()}>` : '📜';
+
+    const embed: any = {
+      description: formattedText,
+      color: 0xD6852D, // Naranja Naruto (#D6852D)
+      fields: [
+        {
+          name: `${scrollIcon} Ver Registro y Recompensas`,
+          value: `[Haz clic aquí para consultar los premios en la web](${registroUrl})`,
+          inline: false
+        }
+      ],
+      footer: {
+        text: `Narrador: ${data.narrador || 'Sistema'} • NRPG`
+      },
+      timestamp: new Date().toISOString()
+    };
+
+    if (discordImageUrl && discordImageUrl.startsWith('http')) {
+      embed.image = { url: discordImageUrl };
+    }
+
+    // Resolver la mención de rol de Discord según el tipo de destinatario
+    let mentionContent: string | undefined = undefined;
+    if (data.destinatario_tipo === 'global') {
+      const jugadorRoleId = await MasterServerService.getConfiguracion(adminClient, 'discord_jugador_role_id');
+      if (jugadorRoleId && String(jugadorRoleId).trim()) {
+        mentionContent = `<@&${String(jugadorRoleId).trim()}>`;
+      }
+    } else if ((data.destinatario_tipo === 'aldea' || data.destinatario_tipo === 'organizacion') && data.destinatario_id) {
+      const { data: aldea } = await adminClient
+        .from('info_aldeas')
+        .select('id_rol_discord')
+        .eq('id', data.destinatario_id)
+        .single();
+      if (aldea?.id_rol_discord && String(aldea.id_rol_discord).trim()) {
+        mentionContent = `<@&${String(aldea.id_rol_discord).trim()}>`;
+      }
+    }
+
+    let newMessageId = oldMessageId;
+    let finalChannelId = channelId;
+
+    if (oldMessageId && oldChannelId) {
+      if (channelId && channelId === oldChannelId) {
+        const updated = await editDiscordEmbed(channelId, oldMessageId, embed, mentionContent);
+        if (!updated) {
+          const created = await sendDiscordEmbed(channelId, embed, mentionContent);
+          newMessageId = created?.id;
+        }
+      } else {
+        if (oldChannelId) {
+          try { await deleteDiscordMessage(oldChannelId, oldMessageId); } catch (_) {}
+        }
+        if (channelId) {
+          const created = await sendDiscordEmbed(channelId, embed, mentionContent);
+          newMessageId = created?.id;
+        } else {
+          newMessageId = null;
+          finalChannelId = null;
+        }
+      }
+    } else if (channelId) {
+      const created = await sendDiscordEmbed(channelId, embed, mentionContent);
+      newMessageId = created?.id;
+    }
+
+    const updatedPayloadData = {
+      ...oldData,
+      ...data,
+      fecha_modificacion: data.fecha_modificacion || oldData?.fecha_modificacion || new Date().toISOString(),
+      discord_message_id: newMessageId || null,
+      discord_channel_id: finalChannelId || null
+    };
+    await adminClient
+      .from('reg_registros')
+      .update({ data: updatedPayloadData })
+      .eq('id', registroId);
+
+    return updatedPayloadData;
+  } catch (err) {
+    console.error('Error syncing narration message to Discord:', err);
+    return data;
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -138,7 +290,7 @@ export async function POST(request: Request) {
         }
       }
 
-      // 4. Notificar por Discord si es un reparto de premios de evento
+      // 4. Notificar por Discord si es un reparto de premios de evento (como Embed)
       if (payload.subtipo === 'evento_premios') {
         try {
           const announcementChannelId = (await MasterServerService.getConfiguracion(adminClient, 'discord_event_announcement_channel_id'))
@@ -146,20 +298,42 @@ export async function POST(request: Request) {
 
           if (announcementChannelId) {
             const origin = new URL(request.url).origin;
-            const jugadorRoleId = await MasterServerService.getConfiguracion(adminClient, 'discord_jugador_role_id');
-            const roleMention = jugadorRoleId ? `<@&${jugadorRoleId}>` : '';
+            const roleMention = await buildMentionText(adminClient, payload.data?.ping_roles);
+
+            const eventoId = payload.data?.evento_id;
+            const targetUrl = eventoId ? `${origin}/noticias?id=${eventoId}` : `${origin}/noticias`;
 
             const titulo = payload.data?.titulo || 'Reparto de Premios de Evento';
+            const notaEntrega = payload.data?.texto_entrega?.trim() || '';
 
-            let announcementText = `**¡ENTREGA DE PREMIOS DE EVENTO!**\n**Evento:** ${titulo}`;
-            announcementText += `\n**Ver detalles en la web:** ${origin}/noticias`;
-            if (roleMention) announcementText += `\n${roleMention}`;
+            const embedImageUrl = payload.data?.url_imagen?.trim() || payload.data?.evento_url_imagen?.trim() || undefined;
 
-            await sendDiscordMessage(announcementChannelId, announcementText);
+            const announcementEmbed = {
+              title: titulo.toUpperCase(),
+              description: `${notaEntrega ? notaEntrega + '\n\n' : ''}🔗 **[Ver Desglose de Premios en la Web](${targetUrl})**`,
+              color: 0xD6852D,
+              image: embedImageUrl ? { url: embedImageUrl } : undefined,
+              footer: { text: 'NRPG • PREMIOS DE EVENTO' }
+            };
+
+            const discordMsg = await sendDiscordEmbed(announcementChannelId, announcementEmbed, roleMention || undefined);
+
+            // Guardar IDs de Discord y eliminar el texto de la BD para ahorrar espacio en Supabase
+            const cleanData = { ...registro.data, discord_message_id: discordMsg?.id || null, discord_channel_id: announcementChannelId };
+            delete cleanData.texto_entrega;
+
+            await adminClient.from('reg_registros').update({ data: cleanData }).eq('id', registro.id);
+            registro.data = cleanData;
           }
         } catch (discordErr) {
           console.error('Error sending event rewards notification to Discord:', discordErr);
         }
+      }
+
+      // 5. Notificar por Discord si es una narración
+      if (payload.subtipo === 'narracion') {
+        const updatedData = await syncNarrationDiscordMessage(adminClient, request.url, registro.id, payload.data);
+        registro.data = updatedData;
       }
 
       return NextResponse.json(registro);
@@ -173,6 +347,8 @@ export async function POST(request: Request) {
       if (!oldRegistro) throw new Error('Registro no encontrado');
 
       const updatedData = {
+        discord_message_id: oldRegistro.data?.discord_message_id || null,
+        discord_channel_id: oldRegistro.data?.discord_channel_id || null,
         ...payload.data,
         fecha_modificacion: new Date().toISOString()
       };
@@ -187,6 +363,50 @@ export async function POST(request: Request) {
         .eq('id', id);
 
       if (updateError) throw updateError;
+
+      if (payload.subtipo === 'evento_premios') {
+        try {
+          const announcementChannelId = oldRegistro.data?.discord_channel_id
+            || (await MasterServerService.getConfiguracion(adminClient, 'discord_event_announcement_channel_id'))
+            || (await MasterServerService.getConfiguracion(adminClient, 'discord_event_channel_id'));
+
+          const messageId = oldRegistro.data?.discord_message_id;
+
+          if (announcementChannelId) {
+            const origin = new URL(request.url).origin;
+            const roleMention = await buildMentionText(adminClient, payload.data?.ping_roles);
+
+            const eventoId = payload.data?.evento_id;
+            const targetUrl = eventoId ? `${origin}/noticias?id=${eventoId}` : `${origin}/noticias`;
+
+            const titulo = payload.data?.titulo || 'Reparto de Premios de Evento';
+            const notaEntrega = payload.data?.texto_entrega?.trim() || '';
+
+            const embedImageUrl = payload.data?.url_imagen?.trim() || payload.data?.evento_url_imagen?.trim() || undefined;
+
+            const announcementEmbed = {
+              title: titulo.toUpperCase(),
+              description: `${notaEntrega ? notaEntrega + '\n\n' : ''}🔗 **[Ver Desglose de Premios en la Web](${targetUrl})**`,
+              color: 0xD6852D,
+              image: embedImageUrl ? { url: embedImageUrl } : undefined,
+              footer: { text: 'NRPG • PREMIOS DE EVENTO' }
+            };
+
+            if (messageId) {
+              await editDiscordEmbed(announcementChannelId, messageId, announcementEmbed, roleMention || undefined);
+            } else {
+              const discordMsg = await sendDiscordEmbed(announcementChannelId, announcementEmbed, roleMention || undefined);
+              updatedData.discord_message_id = discordMsg?.id || null;
+              updatedData.discord_channel_id = announcementChannelId;
+            }
+          }
+        } catch (discordErr) {
+          console.error('Error updating event rewards notification in Discord:', discordErr);
+        }
+
+        delete updatedData.texto_entrega;
+        await adminClient.from('reg_registros').update({ data: updatedData }).eq('id', id);
+      }
 
       if (!payload.participantes_ids) return NextResponse.json({ success: true });
 
@@ -370,6 +590,10 @@ export async function POST(request: Request) {
         }
       }
 
+      if (payload.subtipo === 'narracion') {
+        await syncNarrationDiscordMessage(adminClient, request.url, id, updatedData, oldRegistro.data);
+      }
+
       return NextResponse.json({ success: true });
     }
 
@@ -379,6 +603,14 @@ export async function POST(request: Request) {
       const { data: participantes } = await adminClient.from('reg_registros_participantes').select('*').eq('registro_id', id);
 
       if (registro) {
+        if (registro.subtipo === 'narracion' && registro.data?.discord_message_id && registro.data?.discord_channel_id) {
+          try {
+            await deleteDiscordMessage(registro.data.discord_channel_id, registro.data.discord_message_id);
+          } catch (dErr) {
+            console.error('Error deleting narration message in Discord:', dErr);
+          }
+        }
+
         if (participantes) {
           for (const p of participantes) {
             if (p.estado === 'aceptado') {

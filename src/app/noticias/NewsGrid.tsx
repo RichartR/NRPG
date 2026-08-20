@@ -86,6 +86,20 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
     fetchEventRegistries();
   }, [activeNews]);
 
+  // Auto-open target news/patch/event modal if ?id= parameter is present in URL
+  useEffect(() => {
+    if (typeof window !== 'undefined' && newsList && newsList.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const targetId = params.get('id') || params.get('newsId');
+      if (targetId) {
+        const found = newsList.find(n => String(n.id) === String(targetId));
+        if (found) {
+          setActiveNews(found);
+        }
+      }
+    }
+  }, [newsList]);
+
   // Fetch discord message contents lazily when modal opens
   useEffect(() => {
     if (!activeNews) return;
@@ -215,7 +229,7 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
             category={news.categoria || 'NOTICIA'}
             imageUrl={news.url_imagen}
             description={news.descripcion || ''}
-            actionText="Ver Anuncio"
+            actionText={`Ver ${news.categoria.toUpperCase()}`}
           />
         ))}
 
@@ -264,11 +278,11 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
           onClick={() => setActiveNews(null)}
         >
           <div
-            className="w-full max-w-4xl h-[85vh] overflow-hidden ninja-card-oro flex flex-col relative"
+            className="w-full max-w-7xl 2xl:max-w-[1600px] h-[85vh] overflow-hidden ninja-card-oro p-[2px] flex flex-col relative"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Cabecera del Modal con Imagen */}
-            <div className="h-40 sm:h-52 md:h-60 relative overflow-hidden bg-black flex-shrink-0">
+            <div className="h-40 sm:h-52 md:h-60 relative overflow-hidden bg-black flex-shrink-0" style={{ clipPath: 'polygon(28px 0, 100% 0, 100% 100%, 0 100%, 0 28px)' }}>
               {activeNews.url_imagen ? (
                 <img
                   src={activeNews.url_imagen}
@@ -334,12 +348,6 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
                   ) : (
                     /* Renderizado de Markdown para Eventos */
                     <>
-                      <div className="flex items-center gap-6 mb-8 text-oro/60 text-xs sm:text-sm font-bold uppercase tracking-wider border-b border-oro/5 pb-6">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-oro" />
-                          <span>{formatDate(loadedContent[activeNews.discord_msg_id]?.timestamp)}</span>
-                        </div>
-                      </div>
 
                       <div className="prose prose-invert max-w-none text-gris-texto text-base sm:text-lg md:text-xl leading-relaxed">
                         {renderDiscordMarkdown(loadedContent[activeNews.discord_msg_id]?.content || "Contenido no disponible.")}
