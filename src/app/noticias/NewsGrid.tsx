@@ -282,7 +282,7 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Cabecera del Modal con Imagen */}
-            <div className="h-56 sm:h-72 md:h-80 xl:h-96 relative overflow-hidden bg-black flex-shrink-0">
+            <div className="h-40 sm:h-52 md:h-60 relative overflow-hidden bg-black flex-shrink-0" style={{ clipPath: 'polygon(28px 0, 100% 0, 100% 100%, 0 100%, 0 28px)' }}>
               {activeNews.url_imagen ? (
                 <img
                   src={activeNews.url_imagen}
