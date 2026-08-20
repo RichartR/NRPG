@@ -50,7 +50,12 @@ export async function GET(request: Request) {
         }, { status: 200 });
       }
 
-      return NextResponse.json(discordMsg);
+      const extractedContent = discordMsg.embeds?.[0]?.description || discordMsg.content || "Contenido no disponible.";
+
+      return NextResponse.json({
+        content: extractedContent,
+        timestamp: discordMsg.timestamp || new Date().toISOString()
+      });
     } catch (discordError: any) {
       console.error(`[Discord API] Error recuperando mensaje ${messageId} en canal ${channelId}:`, discordError.message);
 

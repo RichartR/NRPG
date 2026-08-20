@@ -1,8 +1,9 @@
 'use client';
 
 import { createPortal } from 'react-dom';
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Link from 'next/link';
+import { Portal } from '@/components/ui/Portal';
 import { Plus, Trash2, Save, Search, Filter, Layers, Tag, Box, Check, X, ArrowRight, Archive, Eye, User, Swords, ScrollText, Trophy, Star, ChevronDown, ChevronLeft, ChevronRight, Sparkles, Flame } from 'lucide-react';
 import { AdminService, type GlosarioAldeaFilter } from '@/services/supabase/admin.service';
 import {
@@ -714,10 +715,11 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
   const isNinjutsuElemental = Number(formData.rama_clan_id) === 4;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <Portal>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={onClose} />
       <div
-        className="relative bg-neutral-800 border border-oro/20 w-full max-w-7xl h-[90vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200 ninja-card-oro"
+        className="relative bg-neutral-800 border border-oro/20 w-full max-w-7xl h-[90vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200 ninja-card-oro no-hover"
         style={{
           clipPath: 'polygon(30px 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%, 0 30px)',
           overflow: 'hidden'
@@ -1013,6 +1015,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
         </div>
       </div>
     </div>
+    </Portal>
   );
 }
 
@@ -1141,9 +1144,13 @@ function SearchableMultiSelect({ label, icon, options, value, onChange, placehol
   const selectedOptions = options.filter((o: any) => selectedIds.includes(Number(o.id)));
   const filteredOptions = options.filter((o: any) => searchIncludes(o.label, search));
 
-  const openDropdown = () => {
+  const updatePosition = useCallback(() => {
     if (!triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
+    if (rect.bottom < 0 || rect.top > window.innerHeight) {
+      setOpen(false);
+      return;
+    }
     const estimatedHeight = 260;
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
@@ -1152,9 +1159,13 @@ function SearchableMultiSelect({ label, icon, options, value, onChange, placehol
 
     setDropdownStyle(
       openUp
-        ? { position: 'fixed', left: rect.left, bottom: window.innerHeight - rect.top + 4, width: rect.width, maxWidth: maxW, zIndex: 9999 }
-        : { position: 'fixed', left: rect.left, top: rect.bottom + 4, width: rect.width, maxWidth: maxW, zIndex: 9999 }
+        ? { position: 'fixed', left: rect.left, bottom: window.innerHeight - rect.top + 4, width: rect.width, maxWidth: maxW, zIndex: 99999 }
+        : { position: 'fixed', left: rect.left, top: rect.bottom + 4, width: rect.width, maxWidth: maxW, zIndex: 99999 }
     );
+  }, []);
+
+  const openDropdown = () => {
+    updatePosition();
     setOpen(true);
   };
 
@@ -1166,9 +1177,9 @@ function SearchableMultiSelect({ label, icon, options, value, onChange, placehol
     };
     const handleScroll = (e: Event) => {
       if (dropdownRef.current?.contains(e.target as Node)) return;
-      setOpen(false);
+      updatePosition();
     };
-    const handleResize = () => setOpen(false);
+    const handleResize = () => updatePosition();
 
     document.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('resize', handleResize);
@@ -1178,7 +1189,7 @@ function SearchableMultiSelect({ label, icon, options, value, onChange, placehol
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('scroll', handleScroll, true);
     };
-  }, [open]);
+  }, [open, updatePosition]);
 
   const toggleOption = (id: number) => {
     const isSelected = selectedIds.includes(id);
@@ -1283,10 +1294,11 @@ function GenericForm({ title, initialData, fields, onClose, onSave, loading }: a
     setFormData(newData);
   };
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <Portal>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={onClose} />
       <div
-        className="relative bg-neutral-800 border border-oro/20 w-full max-w-lg rounded-none shadow-2xl animate-in zoom-in-95 ninja-card-oro"
+        className="relative bg-neutral-800 border border-oro/20 w-full max-w-2xl rounded-none shadow-2xl animate-in zoom-in-95 ninja-card-oro no-hover"
         style={{ clipPath: 'polygon(24px 0, 100% 0, 100% calc(100% - 24px), calc(100% - 24px) 100%, 0 100%, 0 24px)' }}
       >
         <div className="p-10 space-y-8">
@@ -1314,6 +1326,7 @@ function GenericForm({ title, initialData, fields, onClose, onSave, loading }: a
         </div>
       </div>
     </div>
+    </Portal>
   );
 }
 

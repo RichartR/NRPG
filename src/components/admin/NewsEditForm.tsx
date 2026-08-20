@@ -7,6 +7,7 @@ import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { DataField, SelectField } from '@/components/ui/Fields';
 import { renderDiscordMarkdown } from '@/lib/discord/renderDiscordMarkdown';
+import { Portal } from '@/components/ui/Portal';
 
 interface NewsEditFormProps {
   newsItem?: any;
@@ -76,11 +77,9 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
 
     document.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('resize', handleClose);
-    window.addEventListener('scroll', handleClose, true);
     return () => {
       document.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('resize', handleClose);
-      window.removeEventListener('scroll', handleClose, true);
     };
   }, [roleDropdownOpen]);
 
@@ -109,8 +108,8 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
         setLoading(false);
         return;
       }
-      if (discordContent.length > 1800) {
-        addToast("El contenido excede el límite de 1800 caracteres", "error");
+      if (discordContent.length > 3800) {
+        addToast("El contenido excede el límite de 3800 caracteres", "error");
         setLoading(false);
         return;
       }
@@ -196,8 +195,9 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
     allRoleOptions.find(o => o.value === value)?.label ?? value;
 
   return (
-    <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-start sm:items-center justify-center p-4 sm:p-6 xl:p-12 overflow-y-auto">
-      <div className="ninja-card-oro w-full max-w-5xl shadow-[0_0_100px_rgba(0,0,0,0.9)] my-8 sm:my-auto overflow-hidden relative">
+    <Portal>
+      <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-start sm:items-center justify-center p-4 sm:p-6 xl:p-12 overflow-y-auto">
+      <div className="ninja-card-oro no-hover w-full max-w-6xl shadow-[0_0_100px_rgba(0,0,0,0.9)] my-8 sm:my-auto overflow-hidden relative">
         <div className="absolute top-0 right-0 w-96 h-96 bg-oro/5 rounded-full blur-[100px] -mr-48 -mt-48 pointer-events-none" />
 
         <header className="bg-black/40 p-4 sm:p-10 xl:p-12 flex flex-col md:flex-row justify-between items-center gap-6 border-b border-oro/10 relative z-10">
@@ -388,15 +388,15 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
                     ) : (
                       <>
                         <textarea
-                          maxLength={1800}
+                          maxLength={3800}
                           value={discordContent}
                           onChange={e => setDiscordContent(e.target.value)}
                           placeholder="Escribe el cuerpo del evento utilizando markdown de Discord... **negrita**, *cursiva*, `código`, listados, etc."
                           className="w-full flex-1 bg-black/60 border border-oro/20 hover:border-oro/40 focus:border-oro/60 px-5 py-4 text-xs text-oro/90 font-bold outline-none transition-all placeholder:text-oro/20 resize-none min-h-[250px]"
                           style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                         />
-                        <div className={`flex justify-end mt-2 text-caption font-black uppercase tracking-widest tabular-nums transition-colors ${discordContent.length >= 1700 ? 'text-naranja-naruto' : discordContent.length >= 1500 ? 'text-oro/60' : 'text-oro/30'}`}>
-                          {discordContent.length} / 1800
+                        <div className={`flex justify-end mt-2 text-caption font-black uppercase tracking-widest tabular-nums transition-colors ${discordContent.length >= 3600 ? 'text-naranja-naruto' : discordContent.length >= 3200 ? 'text-oro/60' : 'text-oro/30'}`}>
+                          {discordContent.length} / 3800
                         </div>
                       </>
                     )}
@@ -466,5 +466,6 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
         </form>
       </div>
     </div>
+    </Portal>
   );
 }

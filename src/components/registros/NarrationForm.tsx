@@ -3,12 +3,15 @@
 import { useState, useEffect } from 'react';
 import { RegistrosService } from '@/services/supabase/registros.service';
 import { CharacterService } from '@/services/supabase/character.service';
-import { Glosario, Registro, Rasgo } from '@/domain/types';
+import { MasterService } from '@/services/supabase/master.service';
+import { Glosario, Registro, Rasgo, Aldea } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { AdminService } from '@/services/supabase/admin.service';
-import { X, Search, UserPlus, User, Trash2, Coins, Sparkles, Plus, BookOpen, Link as LinkIcon, Shield } from 'lucide-react';
+import { X, Search, UserPlus, User, Trash2, Coins, Sparkles, Plus, BookOpen, Link as LinkIcon, Shield, Radio } from 'lucide-react';
 import { searchIncludes } from '@/lib/utils/search';
+import { NinjaSelect } from '@/components/ui/Fields';
+import { renderDiscordMarkdown } from '@/lib/discord/renderDiscordMarkdown';
 
 interface NarrationFormProps {
   onCreated: () => void;
@@ -24,6 +27,13 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
   // General fields
   const [narrador, setNarrador] = useState(initialData?.data?.narrador || '');
   const [images, setImages] = useState<string[]>(initialData?.data?.urls_imagenes || ['']);
+
+  // Channel & Discord fields
+  const [aldeas, setAldeas] = useState<Aldea[]>([]);
+  const [destinatarioTipo, setDestinatarioTipo] = useState<'global' | 'aldea' | 'organizacion'>(initialData?.data?.destinatario_tipo || 'global');
+  const [destinatarioId, setDestinatarioId] = useState<number | null>(initialData?.data?.destinatario_id || null);
+  const [discordMessageText, setDiscordMessageText] = useState<string>(initialData?.data?.discord_message_text || '');
+  const [discordImageUrl, setDiscordImageUrl] = useState<string>(initialData?.data?.discord_image_url || '');
 
   // Rewards states (Global)
   const [globalXp, setGlobalXp] = useState<number>(Number(initialData?.data?.global_xp) || 0);
@@ -54,12 +64,20 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
     AdminService.getRasgos().then(data => {
       setAllRasgos(data.filter(r => r.activo !== false));
     }).catch(err => console.error('Error loading traits:', err));
+
+    MasterService.getAldeas().then(data => {
+      setAldeas(data);
+    }).catch(err => console.error('Error loading aldeas:', err));
   }, []);
 
   // Load editing registry participants if editing
   useEffect(() => {
     if (initialData) {
       setNarrador(initialData.data?.narrador || '');
+      setDestinatarioTipo(initialData.data?.destinatario_tipo || 'global');
+      setDestinatarioId(initialData.data?.destinatario_id || null);
+      setDiscordMessageText(initialData.data?.discord_message_text || '');
+      setDiscordImageUrl(initialData.data?.discord_image_url || '');
       setGlobalXp(Number(initialData.data?.global_xp) || 0);
       setGlobalRyous(Number(initialData.data?.global_ryous) || 0);
       setGlobalPa(Number(initialData.data?.global_pa) || 0);
@@ -101,7 +119,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
         loadValidGlosarioItems(p.id);
       });
     }
-  }, [initialData, activeCharacter?.id, initialParticipants]);
+  }, [initialData?.id]);
 
   const loadValidGlosarioItems = async (personajeId: number) => {
     if (validGlosarioItems[personajeId]) return;
@@ -254,8 +272,12 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
         autor_id: activeCharacter.id,
         participantes_ids: participants.map(p => p.id),
         data: {
-          titulo: `Evento de Narración: Narrador ${narrador}`,
+          titulo: narrador.trim() ? `Narrador: ${narrador.trim()}` : 'Narración',
           narrador: narrador.trim(),
+          destinatario_tipo: destinatarioTipo,
+          destinatario_id: destinatarioId,
+          discord_message_text: discordMessageText.trim(),
+          discord_image_url: discordImageUrl.trim(),
           global_xp: globalXp,
           global_ryous: globalRyous,
           global_pa: globalPa,
@@ -304,18 +326,18 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
 
         <div className="relative z-10 space-y-10 sm:space-y-14">
           {/* Header */}
-          <div className="flex justify-between items-start border-b border-oro/10 pb-8">
+          <div className="flex justify-between items-start border-b border-white pb-8">
             <div className="space-y-2">
               <h3 className="ninja-title text-2xl sm:text-4xl md:text-5xl text-oro">
                 {initialData ? 'EDITAR REGISTRO NARRACIÓN' : 'REGISTRAR NARRACIÓN'}
               </h3>
-              <p className="text-xs sm:text-sm font-black text-oro/40 uppercase tracking-[0.4em]">Sincronizando con el archivo histórico de crónicas</p>
+              <p className="text-xs sm:text-sm font-black uppercase tracking-[0.4em]">Sincronizando con el archivo histórico de crónicas</p>
             </div>
             <button
               onClick={onCreated}
-              className="group p-4 bg-black/40 border border-oro/10 hover:border-oro/40 transition-all ninja-clip-xs"
+              className="group p-4 bg-black/40 border border-white hover:border-oro/40 transition-all ninja-clip-xs"
             >
-              <X className="w-6 h-6 text-oro/40 group-hover:text-oro" />
+              <X className="w-6 h-6 group-hover:text-oro" />
             </button>
           </div>
 
@@ -323,7 +345,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
             <div className="space-y-8 sm:space-y-10">
               {/* Narrador Field */}
               <div className="space-y-4">
-                <label className="text-xs font-black uppercase tracking-[0.3em] text-oro/40 ml-2">Nombre del Narrador (Texto libre)</label>
+                <label className="text-xs font-black uppercase tracking-[0.3em] ml-2">Nombre del Narrador (Texto libre)</label>
                 <input
                   type="text"
                   value={narrador}
@@ -333,12 +355,167 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                 />
               </div>
 
+              {/* Canal Destinatario (Discord) */}
+              <div className="p-6 bg-black/40 border border-white ninja-clip-sm space-y-4">
+                <span className="text-xs font-black uppercase tracking-[0.25em] block">Canal Discord</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-white/70 ml-1">Tipo de Canal</label>
+                    <NinjaSelect
+                      value={destinatarioTipo}
+                      onChange={(val) => {
+                        const v = val as 'global' | 'aldea' | 'organizacion';
+                        setDestinatarioTipo(v);
+                        if (v === 'global') setDestinatarioId(null);
+                      }}
+                      options={[
+                        { label: 'CANAL GLOBAL DE NARRACIÓN', value: 'global' },
+                        { label: 'ALDEA ESPECÍFICA', value: 'aldea' },
+                        { label: 'ORGANIZACIÓN ESPECÍFICA', value: 'organizacion' }
+                      ]}
+                      variant="filter"
+                    />
+                  </div>
+
+                  {destinatarioTipo !== 'global' && (
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-white/70 ml-1">
+                        {destinatarioTipo === 'aldea' ? 'Seleccionar Aldea' : 'Seleccionar Organización'}
+                      </label>
+                      <NinjaSelect
+                        value={destinatarioId ? String(destinatarioId) : ''}
+                        onChange={(val) => setDestinatarioId(val ? Number(val) : null)}
+                        placeholder="-- SELECCIONAR --"
+                        options={aldeas
+                          .filter(a => destinatarioTipo === 'aldea' ? (a.categoria_id === 1 || !a.categoria_id) : a.categoria_id === 2)
+                          .map(a => ({
+                            label: (a.nombre_español || a.nombre_jap).toUpperCase(),
+                            value: String(a.id)
+                          }))
+                        }
+                        variant="filter"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Mensaje Markdown para Discord con Vista Previa en Tiempo Real */}
+                <div className="space-y-4 pt-2">
+                  <div className="flex justify-between items-center ml-1">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-white/70">Aviso / Resumen en Markdown</label>
+                    <span className={`text-xs font-mono font-bold ${discordMessageText.length > 4000 ? 'text-red-400 font-black animate-pulse' : 'text-white/40'}`}>
+                      {discordMessageText.length} / 4000
+                    </span>
+                  </div>
+                  <textarea
+                    rows={5}
+                    value={discordMessageText}
+                    onChange={(e) => setDiscordMessageText(e.target.value)}
+                    placeholder="Escribe el resumen del evento en Markdown para el Embed de Discord (**negrita**, *cursiva*, __subrayado__, `código`, listados, etc.)..."
+                    className={`w-full ninja-input py-3 text-xs font-mono normal-case placeholder:normal-case ${discordMessageText.length > 4000 ? 'border-red-500 focus:border-red-500' : ''}`}
+                  />
+                  {discordMessageText.length > 4000 && (
+                    <p className="text-[11px] text-red-400 font-bold ml-1">
+                      ⚠️ El mensaje supera los 4.000 caracteres recomendados para Embeds y podría recortarse en Discord.
+                    </p>
+                  )}
+
+                  {/* Imagen Banner para Discord Embed */}
+                  <div className="space-y-2 pt-2">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-white/70 ml-1">Imagen Banner para Discord Embed (URL Opcional)</label>
+                    <div className="relative">
+                      <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                      <input
+                        type="text"
+                        value={discordImageUrl}
+                        onChange={(e) => setDiscordImageUrl(e.target.value)}
+                        placeholder="HTTPS://..."
+                        className="w-full ninja-input pl-12 py-3 text-xs font-bold"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Vista Previa en Tiempo Real del Embed de Discord */}
+                  <div className="space-y-2 pt-2 border-t border-white/10">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-oro flex items-center gap-2 ml-1">
+                      <Radio className="w-3.5 h-3.5 animate-pulse text-oro" /> Vista Previa en Tiempo Real (Discord Embed)
+                    </label>
+
+                    <div className="bg-[#2b2d31] p-4 border-l-4 border-[#D6852D] font-sans space-y-3 shadow-2xl text-left rounded-r-md">
+                      {/* Cabecera del Bot */}
+                      <div className="flex items-center gap-2 pb-2 border-b border-white/5">
+                        <img
+                          src="/assets/ui/logo.png"
+                          alt="NRPG"
+                          className="w-6 h-6 rounded-full object-cover border border-oro/30 shrink-0"
+                        />
+                        <span className="text-xs font-bold text-white">NRPG</span>
+                        <span className="bg-[#5865f2] text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">BOT</span>
+                        <span className="text-[10px] text-[#949ba4] ml-auto">HOY</span>
+                      </div>
+
+                      {/* Mención del Rol correspondiente */}
+                      <div className="text-[11px] text-[#c9cdfb] font-semibold bg-[#5865f2]/20 border border-[#5865f2]/40 px-2 py-0.5 rounded w-fit flex items-center gap-1 my-1">
+                        <span>
+                          {destinatarioTipo === 'global'
+                            ? '@Jugador'
+                            : `@${aldeas.find(a => Number(a.id) === Number(destinatarioId))?.nombre_español || (destinatarioTipo === 'aldea' ? 'Rol de Aldea' : 'Rol de Organización')}`
+                          }
+                        </span>
+                      </div>
+
+                      {/* Cuerpo procesado con renderDiscordMarkdown */}
+                      <div className="text-xs text-[#dbdee1] leading-relaxed prose prose-invert max-w-none break-words">
+                        {discordMessageText.trim() ? (
+                          renderDiscordMarkdown(discordMessageText)
+                        ) : (
+                          <span className="text-[#949ba4] italic select-none">
+                            Escribe el cuerpo o resumen en el campo superior para ver la vista previa en tiempo real...
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Imagen adjunta en el Embed si hay URL válida en discordImageUrl */}
+                      {discordImageUrl.trim().startsWith('http') && (
+                        <div className="rounded border border-white/10 overflow-hidden my-2 max-h-56 bg-black/40">
+                          <img src={discordImageUrl.trim()} alt="Embed Media" className="w-full h-56 object-cover" />
+                        </div>
+                      )}
+
+                      {/* Campo Enlace */}
+                      <div className="pt-2 border-t border-white/5 space-y-1">
+                        <span className="text-sm sm:text-base font-extrabold text-[#f2f3f5] flex items-center gap-2.5">
+                          <img src="/assets/icons/naruto_scroll.png" alt="Scroll" className="w-7 h-7 object-contain shrink-0" />
+                          Ver Registro y Recompensas
+                        </span>
+                        <span className="text-xs font-semibold text-[#00a8fc] underline block truncate">
+                          https://nrpg.app/registros?id=preview
+                        </span>
+                      </div>
+
+                      {/* Pie de Página Footer */}
+                      <div className="text-[10px] text-[#949ba4] font-medium pt-1 flex flex-wrap justify-between items-center gap-2">
+                        <span>Narrador: {narrador.trim() || 'Sistema'} • NRPG</span>
+                        <span className="bg-black/30 px-2 py-0.5 rounded text-[9px] uppercase tracking-wider text-oro/80 border border-white/5">
+                          {destinatarioTipo === 'global'
+                            ? '🌐 Canal Global'
+                            : destinatarioTipo === 'aldea'
+                              ? `🍃 ${aldeas.find(a => Number(a.id) === Number(destinatarioId))?.nombre_español || 'Aldea Especificada'}`
+                              : `👥 ${aldeas.find(a => Number(a.id) === Number(destinatarioId))?.nombre_español || 'Organización Especificada'}`
+                          }
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Premios Globales */}
-              <div className="p-6 bg-black/40 border border-oro/10 ninja-clip-sm space-y-6">
-                <span className="text-xs font-black uppercase tracking-[0.25em] text-oro/50 block">Recompensas Globales (Para todos)</span>
+              <div className="p-6 bg-black/40 border border-white ninja-clip-sm space-y-6">
+                <span className="text-xs font-black uppercase tracking-[0.25em]  block">Recompensas Globales (Para todos)</span>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="space-y-2">
-                    <label className="text-caption font-black uppercase tracking-[0.2em] text-oro/40 flex items-center gap-1.5">
+                    <label className="text-caption font-black uppercase tracking-[0.2em]  flex items-center gap-1.5">
                       EXP GLOBAL
                     </label>
                     <input
@@ -350,7 +527,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-caption font-black uppercase tracking-[0.2em] text-oro/40 flex items-center gap-1.5">
+                    <label className="text-caption font-black uppercase tracking-[0.2em]  flex items-center gap-1.5">
                       RYOUS GLOBAL
                     </label>
                     <input
@@ -362,7 +539,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-caption font-black uppercase tracking-[0.2em] text-oro/40 flex items-center gap-1.5">
+                    <label className="text-caption font-black uppercase tracking-[0.2em]  flex items-center gap-1.5">
                       PA GLOBAL
                     </label>
                     <input
@@ -374,7 +551,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-caption font-black uppercase tracking-[0.2em] text-oro/40 flex items-center gap-1.5">
+                    <label className="text-caption font-black uppercase tracking-[0.2em]  flex items-center gap-1.5">
                       M. EVENTO
                     </label>
                     <input
@@ -390,7 +567,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
 
               {/* Buscador de Participantes */}
               <div className="space-y-4">
-                <label className="text-xs font-black uppercase tracking-[0.25em] text-oro/50 ml-1">Buscar shinobi Participantes</label>
+                <label className="text-xs font-black uppercase tracking-[0.25em]  ml-1">Buscar shinobi Participantes</label>
                 <div className="relative">
                   <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-oro/20" />
                   <input
@@ -422,7 +599,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
             <div className="space-y-8">
               {/* Pruebas */}
               <div className="space-y-6">
-                <label className="text-xs font-black uppercase tracking-[0.3em] text-oro/40 ml-2">Pruebas del Evento (URLs)</label>
+                <label className="text-xs font-black uppercase tracking-[0.3em]  ml-2">Pruebas del Evento (URLs)</label>
                 <div className="space-y-4">
                   {images.map((img, i) => (
                     <div key={i} className="flex gap-4 group">
@@ -451,7 +628,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                   ))}
                   <button
                     onClick={() => setImages([...images, ''])}
-                    className="flex items-center gap-4 text-xs font-black uppercase tracking-[0.3em] text-oro/40 hover:text-oro transition-all ml-2 group"
+                    className="flex items-center gap-4 text-xs font-black uppercase tracking-[0.3em]  hover:text-oro transition-all ml-2 group"
                   >
                     <div className="w-6 h-[1px] bg-oro/20 group-hover:bg-oro transition-all" />
                     AÑADIR OTRO REGISTRO VISUAL
@@ -472,8 +649,8 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
           </div>
 
           {/* Listado de Participantes con Premios Propios */}
-          <div className="space-y-6 pt-4 border-t border-oro/10">
-            <h4 className="text-xs font-black uppercase tracking-[0.25em] text-oro/40">
+          <div className="space-y-6 pt-4 border-t border-white">
+            <h4 className="text-xs font-black uppercase tracking-[0.25em] ">
               Desglose Individual de Premios ({participants.length} Participantes)
             </h4>
 
@@ -486,7 +663,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                 {participants.map((p) => {
                   const isAuthor = Number(p.id) === Number(activeCharacter?.id);
                   return (
-                    <div key={p.id} className="p-6 bg-black/50 border border-oro/10 hover:border-oro/30 transition-all ninja-clip-sm space-y-6 animate-in fade-in slide-in-from-left-2 duration-300">
+                    <div key={p.id} className="p-6 bg-black/50 border border-white hover:border-oro/30 transition-all ninja-clip-sm space-y-6 animate-in fade-in slide-in-from-left-2 duration-300">
                       <div className="flex justify-between items-center border-b border-oro/5 pb-4">
                         <div className="flex items-center gap-3">
                           <div className="p-1.5 bg-oro/10 border border-oro/20 ninja-clip-xs">
@@ -507,7 +684,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
 
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div className="space-y-2">
-                          <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">EXP EXTRA</label>
+                          <label className="text-caption font-black uppercase tracking-widest  ml-1">EXP EXTRA</label>
                           <input
                             type="number"
                             min="0"
@@ -517,7 +694,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">RYOUS EXTRA</label>
+                          <label className="text-caption font-black uppercase tracking-widest  ml-1">RYOUS EXTRA</label>
                           <input
                             type="number"
                             min="0"
@@ -527,7 +704,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">PA EXTRA</label>
+                          <label className="text-caption font-black uppercase tracking-widest  ml-1">PA EXTRA</label>
                           <input
                             type="number"
                             min="0"
@@ -537,7 +714,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">MONEDAS EVENTO</label>
+                          <label className="text-caption font-black uppercase tracking-widest  ml-1">MONEDAS EVENTO</label>
                           <input
                             type="number"
                             min="0"
@@ -550,7 +727,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
 
                       {/* Glosario Premios del Personaje */}
                       <div className="space-y-3 pt-2">
-                        <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1 flex items-center gap-1.5">
+                        <label className="text-caption font-black uppercase tracking-widest  ml-1 flex items-center gap-1.5">
                           <BookOpen className="w-3.5 h-3.5" /> Objetos o Técnicas Especiales (Glosario)
                         </label>
 
@@ -595,7 +772,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
 
                             {loadingGlosario[p.id] ? (
                               <div className="flex items-center gap-2 py-4 justify-center">
-                                <span className="text-caption font-black uppercase text-oro/40 animate-pulse">Cargando ítems disponibles...</span>
+                                <span className="text-caption font-black uppercase  animate-pulse">Cargando ítems disponibles...</span>
                               </div>
                             ) : (
                               <div className="max-h-48 overflow-y-auto custom-scrollbar divide-y divide-oro/5">
@@ -625,7 +802,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
 
                       {/* Rasgos Especiales del Personaje */}
                       <div className="space-y-3 pt-2 border-t border-oro/5">
-                        <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1 flex items-center gap-1.5">
+                        <label className="text-caption font-black uppercase tracking-widest  ml-1 flex items-center gap-1.5">
                           Rasgos Especiales / Concedidos
                         </label>
 
@@ -682,7 +859,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                                       {rasgo.especial && <span className="text-[9px] bg-purple-950 text-purple-300 border border-purple-500/30 px-1.5 py-0.5 rounded font-black">ESPECIAL</span>}
                                       {rasgo.nombre}
                                     </span>
-                                    <span className="text-caption font-bold text-oro/40">{rasgo.categoria} ({rasgo.rango})</span>
+                                    <span className="text-caption font-bold ">{rasgo.categoria} ({rasgo.rango})</span>
                                   </button>
                                 ))}
 

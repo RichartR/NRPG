@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { DataField, SelectField } from '@/components/ui/Fields';
+import { Portal } from '@/components/ui/Portal';
 
 export default function DocEditForm({ doc, categories, onCancel, defaultCategory, showSubcategory = true }: { doc?: any, categories: any[], onCancel: () => void, defaultCategory?: string, showSubcategory?: boolean }) {
   const isCreate = !doc;
@@ -74,8 +75,9 @@ export default function DocEditForm({ doc, categories, onCancel, defaultCategory
   };
 
   return (
-    <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-start sm:items-center justify-center p-4 sm:p-6 xl:p-12 overflow-y-auto">
-      <div className="ninja-card-oro w-full max-w-4xl shadow-[0_0_100px_rgba(0,0,0,0.9)] my-8 sm:my-auto overflow-hidden relative">
+    <Portal>
+      <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-start sm:items-center justify-center p-4 sm:p-6 xl:p-12 overflow-y-auto">
+        <div className="ninja-card-oro no-hover w-full max-w-5xl shadow-[0_0_100px_rgba(0,0,0,0.9)] my-8 sm:my-auto overflow-hidden relative">
         <div className="absolute top-0 right-0 w-96 h-96 bg-oro/5 rounded-full blur-[100px] -mr-48 -mt-48 pointer-events-none" />
 
         <header className="bg-black/40 p-4 sm:p-10 xl:p-12 flex flex-col md:flex-row justify-between items-center gap-6 border-b border-oro/10 relative z-10">
@@ -177,5 +179,6 @@ export default function DocEditForm({ doc, categories, onCancel, defaultCategory
         </form>
       </div>
     </div>
+    </Portal>
   );
 }

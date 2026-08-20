@@ -6,7 +6,7 @@ import { useCharacterStore } from '@/store/useCharacterStore';
 import { RegistrosService } from '@/services/supabase/registros.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { RewardLogic } from '@/domain/character/logic';
 import { renderDiscordMarkdown } from '@/lib/discord/renderDiscordMarkdown';
 
@@ -25,6 +25,20 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
   const { confirm: confirmAction } = useConfirmStore();
   const [loading, setLoading] = useState(false);
   const [showFullDetails, setShowFullDetails] = useState(false);
+  const [discordContent, setDiscordContent] = useState<string | null>(registro.data?.texto_entrega || null);
+
+  useEffect(() => {
+    if (!discordContent && registro.data?.discord_message_id) {
+      fetch(`/api/discord/messages?messageId=${registro.data.discord_message_id}&categoria=evento`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.content) {
+            setDiscordContent(data.content);
+          }
+        })
+        .catch(err => console.error('Error fetching rewards text from Discord:', err));
+    }
+  }, [registro.data?.discord_message_id]);
 
   const isOwner = activeCharacter?.id === registro.autor_id;
   const canManage = registro.tipo === 'accion' ? isAdmin : (isOwner || isAdmin);
@@ -265,88 +279,102 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
           </div>
         ) : registro.subtipo === 'evento_premios' ? (
           <div className="p-6 bg-black/40 border border-oro/10 ninja-clip-sm space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-oro/5 pb-4 gap-4">
-              <div>
-                <h4 className="text-lg sm:text-xl font-black text-oro uppercase tracking-wider mb-1">
-                  {registro.data.titulo || 'Reparto de Premios'}
-                </h4>
-                <p className="text-caption font-bold text-oro/40 uppercase tracking-widest">REGISTRO DE PREMIOS DE EVENTO</p>
+            <div className="border-b border-oro/5 pb-4">
+              <h4 className="text-lg sm:text-xl font-black text-oro uppercase tracking-wider mb-1">
+                {registro.data.titulo || 'Reparto de Premios'}
+              </h4>
+              <p className="text-caption font-bold text-oro/40 uppercase tracking-widest">REGISTRO DE PREMIOS DE EVENTO</p>
+            </div>
+
+            {registro.data.url_imagen && (
+              <div className="overflow-hidden border border-oro/20 ninja-clip-sm max-h-[300px] bg-black/60">
+                <img
+                  src={registro.data.url_imagen}
+                  alt="Banner del Reparto de Premios"
+                  className="w-full h-full object-cover object-center"
+                  referrerPolicy="no-referrer"
+                />
               </div>
-              <div className="flex flex-wrap items-center gap-4 sm:gap-6 p-3 bg-oro/5 border border-oro/10 ninja-clip-xs shrink-0 text-caption sm:text-xs font-black text-oro">
+            )}
+
+            {discordContent && (
+              <div className="p-4 bg-black/40 border-l-2 border-oro/40 text-lg text-oro/90 font-medium italic">
+                {renderDiscordMarkdown(discordContent)}
+              </div>
+            )}
+
+            {/* Premios Globales */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2">
+              <span className="text-sm sm:text-base font-black text-white uppercase tracking-[0.25em]">PREMIOS GLOBALES (PARA TODOS):</span>
+              <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm sm:text-base font-black text-oro">
                 <div className="flex items-center gap-1.5">EXP: +{registro.data.global_xp || 0}</div>
-                <div className="w-px h-4 bg-oro/10" />
+                <div className="w-px h-5 bg-oro/20" />
                 <div className="flex items-center gap-1.5">RYOUS: +{registro.data.global_ryous || 0}</div>
                 {Number(registro.data.global_pa) > 0 && (
                   <>
-                    <div className="w-px h-4 bg-oro/10" />
+                    <div className="w-px h-5 bg-oro/20" />
                     <div className="flex items-center gap-1.5 text-emerald-400">PA: +{registro.data.global_pa}</div>
                   </>
                 )}
                 {registro.data.global_monedas_evento > 0 && (
                   <>
-                    <div className="w-px h-4 bg-oro/10" />
+                    <div className="w-px h-5 bg-oro/20" />
                     <div className="flex items-center gap-1.5">M. EVENTO: +{registro.data.global_monedas_evento}</div>
                   </>
                 )}
               </div>
             </div>
 
-            {registro.data.texto_entrega && (
-              <div className="p-4 bg-black/40 border-l-2 border-oro/40 text-xs text-oro/90 font-medium">
-                {renderDiscordMarkdown(registro.data.texto_entrega)}
-              </div>
-            )}
-
             <div className="space-y-4">
-              <span className="text-caption font-black text-oro/30 uppercase tracking-[0.25em] block">PREMIOS INDIVIDUALES POR SHINOBI:</span>
-              <div className="overflow-x-auto custom-scrollbar border border-oro/10 ninja-clip-sm bg-black/45">
-                <table className="w-full text-left border-collapse text-xs">
+              <span className="text-sm sm:text-base font-black text-white uppercase tracking-[0.25em] block">PREMIOS INDIVIDUALES POR SHINOBI:</span>
+              <div className="overflow-x-auto custom-scrollbar border-2 border-oro/30 ninja-clip-sm bg-black/60 shadow-xl shadow-black/80">
+                <table className="w-full text-left border-collapse text-sm sm:text-base">
                   <thead>
-                    <tr className="border-b border-oro/10 bg-black/40 text-caption font-black uppercase tracking-[0.2em] text-oro/50">
-                      <th className="py-4 px-6">Shinobi</th>
-                      <th className="py-4 px-6 text-center">EXP Extra</th>
-                      <th className="py-4 px-6 text-center">Ryous Extra</th>
-                      <th className="py-4 px-6 text-center">PA Extra</th>
-                      <th className="py-4 px-6 text-center">Monedas Evento</th>
-                      <th className="py-4 px-6">Otros / Rasgos</th>
+                    <tr className="border-b-2 border-oro/30 bg-black/70 text-xs sm:text-sm font-black uppercase tracking-[0.2em] text-white">
+                      <th className="py-4 px-6 border-r border-oro/15 last:border-r-0">Shinobi</th>
+                      <th className="py-4 px-6 text-center border-r border-oro/15 last:border-r-0">EXP Extra</th>
+                      <th className="py-4 px-6 text-center border-r border-oro/15 last:border-r-0">Ryous Extra</th>
+                      <th className="py-4 px-6 text-center border-r border-oro/15 last:border-r-0">PA Extra</th>
+                      <th className="py-4 px-6 text-center border-r border-oro/15 last:border-r-0">Monedas Evento</th>
+                      <th className="py-4 px-6 border-r border-oro/15 last:border-r-0">Otros / Rasgos</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-oro/5 font-bold text-oro/70 uppercase">
+                  <tbody className="divide-y divide-oro/15 font-bold text-oro/70 uppercase">
                     {registro.data.participantes_premios?.map((p: any) => (
-                      <tr key={p.personaje_id} className="hover:bg-oro/[0.02] transition-colors">
-                        <td className="py-4 px-6 text-xs font-black text-oro uppercase tracking-wider">{p.nombre_ninja}</td>
-                        <td className="py-4 px-6 text-center text-[11px]">
+                      <tr key={p.personaje_id} className="hover:bg-oro/[0.04] transition-colors">
+                        <td className="py-4 px-6 text-sm sm:text-base font-black uppercase tracking-wider text-white border-r border-oro/15 last:border-r-0">{p.nombre_ninja}</td>
+                        <td className="py-4 px-6 text-center text-sm sm:text-base border-r border-oro/15 last:border-r-0">
                           {p.xp_extra > 0 ? (
-                            <span className="text-oro font-black">+{p.xp_extra} EXP</span>
+                            <span className="text-white font-black">+{p.xp_extra} EXP</span>
                           ) : (
-                            <span className="text-oro/20">-</span>
+                            <span className="text-white/40">-</span>
                           )}
                         </td>
-                        <td className="py-4 px-6 text-center text-[11px]">
+                        <td className="py-4 px-6 text-center text-sm sm:text-base border-r border-oro/15 last:border-r-0">
                           {p.ryous_extra > 0 ? (
-                            <span className="text-oro font-black">+{p.ryous_extra} RYOUS</span>
+                            <span className="text-white font-black">+{p.ryous_extra} RYOUS</span>
                           ) : (
-                            <span className="text-oro/20">-</span>
+                            <span className="text-white/40">-</span>
                           )}
                         </td>
-                        <td className="py-4 px-6 text-center text-[11px]">
+                        <td className="py-4 px-6 text-center text-sm sm:text-base border-r border-oro/15 last:border-r-0">
                           {p.pa_extra > 0 ? (
                             <span className="text-emerald-400 font-black">+{p.pa_extra} PA</span>
                           ) : (
-                            <span className="text-oro/20">-</span>
+                            <span className="text-white/40">-</span>
                           )}
                         </td>
-                        <td className="py-4 px-6 text-center text-[11px]">
+                        <td className="py-4 px-6 text-center text-sm sm:text-base border-r border-oro/15 last:border-r-0">
                           {p.monedas_evento > 0 ? (
-                            <span className="text-oro font-black">+{p.monedas_evento} M. EVENTO</span>
+                            <span className="text-white font-black">+{p.monedas_evento} M. EVENTO</span>
                           ) : (
-                            <span className="text-oro/20">-</span>
+                            <span className="text-white/40">-</span>
                           )}
                         </td>
-                        <td className="py-4 px-6">
-                          <div className="flex flex-wrap gap-1.5">
+                        <td className="py-4 px-6 border-r border-oro/15 last:border-r-0">
+                          <div className="flex flex-wrap gap-2">
                             {p.glosario_items?.map((i: any) => (
-                              <span key={i.id} className="text-caption font-black bg-oro/10 border border-oro/20 text-oro px-2.5 py-0.5 ninja-clip-xs">
+                              <span key={i.id} className="text-xs sm:text-sm font-black bg-oro/10 border border-oro/20 text-white px-3.5 py-1.5 ninja-clip-xs">
                                 {i.nombre_es}
                               </span>
                             ))}

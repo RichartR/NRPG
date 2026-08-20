@@ -9,7 +9,6 @@ import NarrationTable from '@/components/registros/NarrationTable';
 import { ScrollText, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { AuthService } from '@/services/supabase/auth.service';
 import { ProfileService } from '@/services/supabase/profile.service';
-import { createClient } from '@/utils/supabase/client';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { PaginationPageInput } from '@/components/ui/PaginationPageInput';
 import { PaginationContainer } from '@/components/ui/PaginationContainer';
@@ -26,11 +25,23 @@ export default function NarracionPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [canCreate, setCanCreate] = useState(false);
   const [editingRegistro, setEditingRegistro] = useState<Registro | null>(null);
+  const [targetRegistro, setTargetRegistro] = useState<Registro | null>(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
     fetchActiveCharacter();
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const targetId = params.get('id') || params.get('registroId');
+      if (targetId) {
+        RegistrosService.getRegistroById(Number(targetId))
+          .then((reg) => {
+            if (reg) setTargetRegistro(reg);
+          })
+          .catch((err) => console.error('Error fetching target registro:', err));
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -180,6 +191,7 @@ export default function NarracionPage() {
                     narraciones={data.list}
                     onRefresh={() => fetchData(data.page)}
                     isAdmin={isAdmin}
+                    initialViewingRegistro={targetRegistro}
                     onEdit={(r) => {
                       setEditingRegistro(r);
                       setShowForm(false);

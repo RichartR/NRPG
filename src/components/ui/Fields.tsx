@@ -92,10 +92,13 @@ export function NinjaSelect({
 
   const selectedOption = normalizedOptions.find(o => String(o.value) === String(value));
 
-  /** Calcula la posición fixed del dropdown y abre */
-  const openDropdown = () => {
-    if (disabled || !triggerRef.current) return;
+  const updatePosition = React.useCallback(() => {
+    if (!triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
+    if (rect.bottom < 0 || rect.top > window.innerHeight) {
+      setIsOpen(false);
+      return;
+    }
     const estimatedHeight = Math.min(260, normalizedOptions.length * 36 + 40);
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
@@ -104,18 +107,23 @@ export function NinjaSelect({
 
     setDropdownStyle(
       openUp
-        ? { position: 'fixed', left: rect.left, bottom: window.innerHeight - rect.top + 4, minWidth: rect.width, width: 'max-content', maxWidth: maxW, zIndex: 9999 }
-        : { position: 'fixed', left: rect.left, top: rect.bottom + 4, minWidth: rect.width, width: 'max-content', maxWidth: maxW, zIndex: 9999 }
+        ? { position: 'fixed', left: rect.left, bottom: window.innerHeight - rect.top + 4, minWidth: rect.width, width: 'max-content', maxWidth: maxW, zIndex: 99999 }
+        : { position: 'fixed', left: rect.left, top: rect.bottom + 4, minWidth: rect.width, width: 'max-content', maxWidth: maxW, zIndex: 99999 }
     );
+  }, [normalizedOptions.length]);
+
+  /** Calcula la posición fixed del dropdown y abre */
+  const openDropdown = () => {
+    if (disabled) return;
+    updatePosition();
     setIsOpen(true);
   };
 
-  // Cierra el dropdown al hacer click fuera, scroll externo, o resize
+  // Cierra el dropdown al hacer click fuera o reposiciona en scroll
   React.useEffect(() => {
     if (!isOpen) return;
 
     const handleMouseDown = (e: MouseEvent) => {
-      // No cerrar si el click es dentro del dropdown o del trigger
       if (
         dropdownRef.current?.contains(e.target as Node) ||
         triggerRef.current?.contains(e.target as Node)
@@ -124,12 +132,11 @@ export function NinjaSelect({
     };
 
     const handleScroll = (e: Event) => {
-      // No cerrar si el scroll ocurre dentro del dropdown
       if (dropdownRef.current?.contains(e.target as Node)) return;
-      setIsOpen(false);
+      updatePosition();
     };
 
-    const handleResize = () => setIsOpen(false);
+    const handleResize = () => updatePosition();
 
     document.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('resize', handleResize);
@@ -139,7 +146,7 @@ export function NinjaSelect({
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('scroll', handleScroll, true);
     };
-  }, [isOpen]);
+  }, [isOpen, updatePosition]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') setIsOpen(false);
@@ -328,9 +335,13 @@ export function SearchableSelect({ label, value, options, onChange, disabled, pl
 
   const selectedOption = normalizedOptions.find(o => String(o.value) === String(value));
 
-  const openDropdown = () => {
-    if (disabled || !triggerRef.current) return;
+  const updatePosition = React.useCallback(() => {
+    if (!triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
+    if (rect.bottom < 0 || rect.top > window.innerHeight) {
+      setIsOpen(false);
+      return;
+    }
     const estimatedHeight = 330;
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
@@ -339,9 +350,14 @@ export function SearchableSelect({ label, value, options, onChange, disabled, pl
 
     setDropdownStyle(
       openUp
-        ? { position: 'fixed', left: rect.left, bottom: window.innerHeight - rect.top + 4, minWidth: rect.width, width: 'max-content', maxWidth: maxW, zIndex: 9999 }
-        : { position: 'fixed', left: rect.left, top: rect.bottom + 4, minWidth: rect.width, width: 'max-content', maxWidth: maxW, zIndex: 9999 }
+        ? { position: 'fixed', left: rect.left, bottom: window.innerHeight - rect.top + 4, minWidth: rect.width, width: 'max-content', maxWidth: maxW, zIndex: 99999 }
+        : { position: 'fixed', left: rect.left, top: rect.bottom + 4, minWidth: rect.width, width: 'max-content', maxWidth: maxW, zIndex: 99999 }
     );
+  }, []);
+
+  const openDropdown = () => {
+    if (disabled) return;
+    updatePosition();
     setIsOpen(true);
   };
 
@@ -353,15 +369,19 @@ export function SearchableSelect({ label, value, options, onChange, disabled, pl
     };
     const handleScroll = (e: Event) => {
       if (dropdownRef.current?.contains(e.target as Node)) return;
-      setIsOpen(false);
+      updatePosition();
     };
+    const handleResize = () => updatePosition();
+
     document.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('resize', handleResize);
     window.addEventListener('scroll', handleScroll, true);
     return () => {
       document.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('resize', handleResize);
       window.removeEventListener('scroll', handleScroll, true);
     };
-  }, [isOpen]);
+  }, [isOpen, updatePosition]);
 
   return (
     <div className="space-y-3 relative">
@@ -481,9 +501,13 @@ export function SearchableMultiSelect({
     return options.filter((o: any) => searchIncludes(o.label, search));
   }, [options, search]);
 
-  const openDropdown = () => {
-    if (disabled || !triggerRef.current) return;
+  const updatePosition = React.useCallback(() => {
+    if (!triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
+    if (rect.bottom < 0 || rect.top > window.innerHeight) {
+      setIsOpen(false);
+      return;
+    }
     const estimatedHeight = 330;
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
@@ -492,9 +516,14 @@ export function SearchableMultiSelect({
 
     setDropdownStyle(
       openUp
-        ? { position: 'fixed', left: rect.left, bottom: window.innerHeight - rect.top + 4, width: rect.width, maxWidth: maxW, zIndex: 9999 }
-        : { position: 'fixed', left: rect.left, top: rect.bottom + 4, width: rect.width, maxWidth: maxW, zIndex: 9999 }
+        ? { position: 'fixed', left: rect.left, bottom: window.innerHeight - rect.top + 4, width: rect.width, maxWidth: maxW, zIndex: 99999 }
+        : { position: 'fixed', left: rect.left, top: rect.bottom + 4, width: rect.width, maxWidth: maxW, zIndex: 99999 }
     );
+  }, []);
+
+  const openDropdown = () => {
+    if (disabled) return;
+    updatePosition();
     setIsOpen(true);
   };
 
@@ -506,9 +535,9 @@ export function SearchableMultiSelect({
     };
     const handleScroll = (e: Event) => {
       if (dropdownRef.current?.contains(e.target as Node)) return;
-      setIsOpen(false);
+      updatePosition();
     };
-    const handleResize = () => setIsOpen(false);
+    const handleResize = () => updatePosition();
 
     document.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('resize', handleResize);
@@ -518,7 +547,7 @@ export function SearchableMultiSelect({
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('scroll', handleScroll, true);
     };
-  }, [isOpen]);
+  }, [isOpen, updatePosition]);
 
   const toggleOption = (optId: any) => {
     const normId = typeof optId === 'number' ? optId : String(optId);

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { Aldea } from '@/domain/types';
+import { Portal } from '@/components/ui/Portal';
 
 interface AldeaEditFormProps {
   aldea?: Aldea;
@@ -30,7 +31,8 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
       return {
         ...aldea,
         categoria_id: aldea.categoria_id ?? 1,
-        id_rol_discord: aldea.id_rol_discord ?? ''
+        id_rol_discord: aldea.id_rol_discord ?? '',
+        id_narracion_discord: aldea.id_narracion_discord ?? ''
       };
     }
     return {
@@ -44,7 +46,8 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
       url_icono: '',
       activo: true,
       categoria_id: 1,
-      id_rol_discord: ''
+      id_rol_discord: '',
+      id_narracion_discord: ''
     };
   });
   const [loading, setLoading] = useState(false);
@@ -77,14 +80,15 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-3xl ninja-card-oro p-6 sm:p-10 xl:p-12 my-auto animate-in fade-in zoom-in duration-300">
-        <header className="flex flex-col sm:flex-row justify-between items-center gap-6 mb-10">
-          <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-4">
-            <div className="p-4 border border-oro/20 bg-oro/10 text-oro ninja-clip-sm shrink-0">
-              <MapPin className="w-6 h-6" />
-            </div>
-            <div>
+    <Portal>
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 xl:p-10 bg-black/80 backdrop-blur-md overflow-y-auto">
+        <div className="relative w-full max-w-5xl ninja-card-oro no-hover p-6 sm:p-10 xl:p-12 my-auto animate-in fade-in zoom-in duration-300">
+          <header className="flex flex-col sm:flex-row justify-between items-center gap-6 mb-10">
+            <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-4">
+              <div className="p-4 border border-oro/20 bg-oro/10 text-oro ninja-clip-sm shrink-0">
+                <MapPin className="w-6 h-6" />
+              </div>
+              <div>
               <h2 className="ninja-title text-xl sm:text-3xl">
                 {isCreate ? 'Nueva Aldea' : 'Editar Aldea'}
               </h2>
@@ -191,6 +195,16 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
                 className="w-full ninja-input py-4"
               />
             </div>
+            <div className="space-y-3">
+              <label className="text-caption font-black uppercase tracking-widest text-oro/40 ml-1">ID Canal Narración (Discord)</label>
+              <input
+                type="text"
+                value={formData.id_narracion_discord || ''}
+                onChange={(e) => updateField('id_narracion_discord', e.target.value)}
+                placeholder="Ej: 1504157038215823600"
+                className="w-full ninja-input py-4"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-8">
@@ -268,5 +282,6 @@ export default function AldeaEditForm({ aldea, onCancel }: AldeaEditFormProps) {
         </form>
       </div>
     </div>
+    </Portal>
   );
 }

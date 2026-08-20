@@ -21,6 +21,53 @@ export async function sendDiscordMessage(channelId: string, content: string) {
   return response.json();
 }
 
+export async function sendDiscordEmbed(channelId: string, embedData: any, content?: string) {
+  if (!BOT_TOKEN) throw new Error('DISCORD_BOT_TOKEN no configurado');
+
+  const bodyPayload: any = { embeds: Array.isArray(embedData) ? embedData : [embedData] };
+  if (content) bodyPayload.content = content;
+
+  const response = await fetch(`${DISCORD_API_URL}/channels/${channelId}/messages`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bot ${BOT_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(bodyPayload),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(`Error de Discord (POST Embed): ${JSON.stringify(error)}`);
+  }
+
+  return response.json();
+}
+
+export async function editDiscordEmbed(channelId: string, messageId: string, embedData: any, content?: string) {
+  if (!BOT_TOKEN) throw new Error('DISCORD_BOT_TOKEN no configurado');
+
+  const bodyPayload: any = { embeds: Array.isArray(embedData) ? embedData : [embedData] };
+  if (content !== undefined) bodyPayload.content = content;
+
+  const response = await fetch(`${DISCORD_API_URL}/channels/${channelId}/messages/${messageId}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bot ${BOT_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(bodyPayload),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    if (error?.code === 10008) return null;
+    throw new Error(`Error de Discord (PATCH Embed): ${JSON.stringify(error)}`);
+  }
+
+  return response.json();
+}
+
 export async function editDiscordMessage(channelId: string, messageId: string, content: string) {
   if (!BOT_TOKEN) throw new Error('DISCORD_BOT_TOKEN no configurado');
 

@@ -36,6 +36,7 @@ export interface Aldea {
   activo: boolean;
   categoria_id?: number | null;
   id_rol_discord?: string | null;
+  id_narracion_discord?: string | null;
   descripcion?: string;
 }
 

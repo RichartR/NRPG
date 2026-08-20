@@ -232,6 +232,7 @@ input[type=number] {
   .ninja-card-image {
     background: transparent !important;
     @apply relative;
+    clip-path: var(--radius-lg);
     transition: filter 0.3s ease-in-out;
   }
 
@@ -244,7 +245,7 @@ input[type=number] {
     background: rgba(255, 255, 255, 0.85);
     clip-path: polygon(evenodd,
         30px 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%, 0 30px,
-        calc(30px + 0.828px) 2px, calc(100% - 2px) 2px, calc(100% - 2px) calc(100% - 30.828px), calc(100% - 30.828px) calc(100% - 2px), 2px calc(100% - 2px), 2px calc(30px + 0.828px));
+        25.172px 2px, calc(100% - 2px) 2px, calc(100% - 2px) calc(100% - 25.172px), calc(100% - 25.172px) calc(100% - 2px), 2px calc(100% - 2px), 2px 25.172px);
     transition: background 0.3s ease-in-out;
   }
 
@@ -260,7 +261,7 @@ input[type=number] {
 
   .hover-ninja:not(.no-hover):hover,
   a.ninja-card-oro:not(.no-hover):hover,
-  div.ninja-card-oro:not(.no-hover):hover,
+  button.ninja-card-oro:not(.no-hover):hover,
   .ninja-card-oro.hover-ninja:not(.no-hover):hover,
   .ninja-card-image:not(.no-hover):hover {
     filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.6)) drop-shadow(0 0 20px rgba(255, 255, 255, 0.3)) !important;
@@ -268,7 +269,7 @@ input[type=number] {
 
   .hover-ninja:not(.no-hover):hover::before,
   a.ninja-card-oro:not(.no-hover):hover::before,
-  div.ninja-card-oro:not(.no-hover):hover::before,
+  button.ninja-card-oro:not(.no-hover):hover::before,
   .ninja-card-oro.hover-ninja:not(.no-hover):hover::before,
   .ninja-card-image:not(.no-hover):hover::before {
     background: #ffffff !important;
@@ -355,7 +356,7 @@ input[type=number] {
   }
 
   .ninja-input {
-    @apply bg-neutral-900/80 border border-primary-500/20 px-6 py-4 text-primary-500 font-black focus:border-primary-500/60 focus:bg-neutral-900/90 focus:shadow-sutil outline-none transition-all uppercase placeholder:text-primary-500/20;
+    @apply bg-neutral-900/80 border px-6 py-4 text-white font-black focus:border-primary-500/60 focus:bg-neutral-900/90 focus:shadow-sutil outline-none transition-all uppercase placeholder-white/60;
     clip-path: var(--radius-sm);
 
     &:hover {
