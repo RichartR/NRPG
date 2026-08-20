@@ -25,7 +25,31 @@ export async function GET(request: Request) {
 
   if (code) {
     const cookieStore = await cookies()
-    const response = NextResponse.redirect(redirectUrl)
+    
+    // Respuesta HTML que establece las cookies HTTP Set-Cookie y luego fuerza recarga/navegación completa del navegador
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <meta http-equiv="refresh" content="0;url=${redirectUrl}" />
+          <title>Autenticando...</title>
+        </head>
+        <body style="background: #0a0a0a; color: #d6852d; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; font-weight: bold;">
+          <p>Sincronizando sesión shinobi y redirigiendo...</p>
+          <script>
+            window.location.href = ${JSON.stringify(redirectUrl)};
+          </script>
+        </body>
+      </html>
+    `
+
+    const response = new NextResponse(htmlContent, {
+      status: 200,
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+      },
+    })
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
