@@ -28,42 +28,14 @@ export async function GET(request: Request) {
 
   if (code) {
     const cookieStore = await cookies()
-    
-    const safeSuccessUrl = JSON.stringify(successUrl).replace(/</g, '\\u003c')
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8" />
-          <meta name="robots" content="noindex" />
-          <title>Autenticando...</title>
-        </head>
-        <body style="background: #0a0a0a; color: #d6852d; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; font-weight: bold;">
-          <p>Sincronizando sesión...</p>
-          <script>
-            // La ruta intermedia realiza una petición nueva con las cookies ya
-            // aplicadas antes de solicitar el dashboard.
-            window.setTimeout(function () {
-              window.location.replace(${safeSuccessUrl});
-            }, 100);
-          </script>
-          <noscript><a href=${safeSuccessUrl}>Continuar</a></noscript>
-        </body>
-      </html>
-    `
-
-    const response = new NextResponse(htmlContent, {
-      status: 200,
-      headers: {
-        'content-type': 'text/html; charset=utf-8',
-        'cache-control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-        'cdn-cache-control': 'no-store',
-        'cloudflare-cdn-cache-control': 'no-store',
-        'vercel-cdn-cache-control': 'no-store',
-        'pragma': 'no-cache',
-        'expires': '0',
-      },
-    })
+    // Redirección HTTP real: no depende de JavaScript inline que un proxy como
+    // Cloudflare pueda retrasar o transformar. El navegador aplica primero las
+    // cookies de esta respuesta y después solicita la página intermedia.
+    const response = NextResponse.redirect(successUrl, 303)
+    response.headers.set('cache-control', 'private, no-store, no-cache, max-age=0, must-revalidate')
+    response.headers.set('cdn-cache-control', 'no-store')
+    response.headers.set('cloudflare-cdn-cache-control', 'no-store')
+    response.headers.set('vercel-cdn-cache-control', 'no-store')
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
