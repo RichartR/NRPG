@@ -116,6 +116,29 @@ export default function ProfileSettings({ profile, userId }: ProfileSettingsProp
 
               <div className="flex gap-4 pt-4">
                 <button
+                  onClick={async () => {
+                    setLoading(true);
+                    try {
+                      const res = await fetch('/api/discord/sync-profile', { method: 'POST' });
+                      const data = await res.json();
+                      if (data.success) {
+                        addToast(data.message || 'Datos de Discord sincronizados', 'success');
+                        router.refresh();
+                      } else {
+                        addToast(data.error || 'Error al sincronizar con Discord', 'error');
+                      }
+                    } catch (err: any) {
+                      addToast('Error de red al sincronizar', 'error');
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  disabled={loading}
+                  className="flex-1 bg-indigo-950/60 hover:bg-indigo-900/80 border border-indigo-500/40 text-indigo-200 py-4 text-xs tracking-[0.2em] font-black transition-all"
+                >
+                  SINCRONIZAR DISCORD
+                </button>
+                <button
                   onClick={handleSave}
                   disabled={loading}
                   className="flex-1 ninja-btn-oro py-4 text-xs tracking-[0.3em] font-black"
