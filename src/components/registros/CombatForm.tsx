@@ -86,7 +86,7 @@ export default function CombatForm({
     try {
       const results = await RegistrosService.searchCharacters(query);
       const allParticipants = [...teamA, ...teamB];
-      setSearchResults(results.filter((r: any) =>
+      setSearchResults(results.filter(r =>
         !allParticipants.find(p => Number(p.id) === Number(r.id))
       ));
     } catch (err) {

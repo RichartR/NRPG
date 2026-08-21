@@ -142,7 +142,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
     }
     try {
       const results = await RegistrosService.searchCharacters(query);
-      setSearchResults(results.filter((r: any) =>
+      setSearchResults(results.filter(r =>
         !participants.find(p => Number(p.id) === Number(r.id))
       ));
     } catch (err) {

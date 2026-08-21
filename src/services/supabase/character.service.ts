@@ -82,12 +82,12 @@ export const CharacterService = {
 
     if (initialItems && initialItems.length > 0) {
       const inventoryPack = initialItems
-        .filter((i: any) => i.categoria_id === 2) // Solo Objetos
-        .map((i: any) => ({ personaje_id: newChar.id, item_id: i.id }));
+        .filter(i => i.categoria_id === 2) // Solo Objetos
+        .map(i => ({ personaje_id: newChar.id, item_id: i.id }));
 
       const techniquesPack = initialItems
-        .filter((i: any) => i.categoria_id !== 2) // Todo lo que no sea objeto (Técnicas, Pasivas, etc)
-        .map((i: any) => ({ personaje_id: newChar.id, tecnica_id: i.id }));
+        .filter(i => i.categoria_id !== 2) // Todo lo que no sea objeto (Técnicas, Pasivas, etc)
+        .map(i => ({ personaje_id: newChar.id, tecnica_id: i.id }));
 
       // 3. Insertar packs (si existen)
       if (inventoryPack.length > 0) {
@@ -134,7 +134,7 @@ export const CharacterService = {
     await supabase.from('reg_personajes_ramas').delete().eq('personaje_id', id);
     if (ramas.length > 0) {
       const { error } = await supabase.from('reg_personajes_ramas').insert(
-        ramas.map((r: any) => ({
+        ramas.map(r => ({
           personaje_id: id,
           rama_id: r.rama_id,
           sub_especialidad_id: r.sub_especialidad_id,
@@ -150,7 +150,7 @@ export const CharacterService = {
     await supabase.from('reg_personajes_entrenamientos').delete().eq('personaje_id', id);
     if (entrenamientos && entrenamientos.length > 0) {
       const { error } = await supabase.from('reg_personajes_entrenamientos').insert(
-        entrenamientos.map((e: any) => ({
+        entrenamientos.map(e => ({
           personaje_id: id,
           rama_id: e.rama_id,
           entrenamiento_id: e.entrenamiento_id
@@ -165,7 +165,7 @@ export const CharacterService = {
     await supabase.from('reg_personajes_inventario').delete().eq('personaje_id', id);
     if (items.length > 0) {
       const { error } = await supabase.from('reg_personajes_inventario').insert(
-        items.map((i: any) => ({ 
+        items.map(i => ({ 
           personaje_id: id, 
           item_id: i.item_id,
           equipado: i.equipado || false
@@ -180,7 +180,7 @@ export const CharacterService = {
     await supabase.from('reg_personajes_tecnicas').delete().eq('personaje_id', id);
     if (tecnicas.length > 0) {
       const { error } = await supabase.from('reg_personajes_tecnicas').insert(
-        tecnicas.map((t: any) => ({ 
+        tecnicas.map(t => ({ 
           personaje_id: id, 
           tecnica_id: t.tecnica_id 
         }))

@@ -171,11 +171,11 @@ export default function MundoNinjaVillageClientView({
 
   useEffect(() => {
     async function fetchUserRole() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const profile = await ProfileService.getProfile(user.id);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const profile = await ProfileService.getProfile(session.user.id);
         const isAdmin = profile?.roles?.includes('admin') || false;
-        const myChar = ninjas.find((n) => n.user_id === user.id);
+        const myChar = ninjas.find((n) => n.user_id === session.user.id);
         setUserRole({
           character: myChar || null,
           isAdmin,

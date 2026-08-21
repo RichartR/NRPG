@@ -5,32 +5,16 @@ import { createServerClient } from '@supabase/ssr';
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  const createResponse = () => {
-    // Se crea después de cualquier actualización de cookies. Si se reutiliza una
-    // copia anterior, los Server Components reciben la sesión previa hasta que el
-    // navegador hace una segunda petición (por ejemplo, al recargar manualmente).
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set('x-pathname', pathname);
-
-    return NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    });
-  };
-
-  const preventPageCaching = (response: NextResponse) => {
-    // El layout depende de la cookie de sesión. Estas cabeceras también evitan que
-    // un CDN situado delante de Next sirva el HTML anónimo tras iniciar sesión.
-    response.headers.set('Cache-Control', 'private, no-store, no-cache, max-age=0, must-revalidate');
-    response.headers.set('CDN-Cache-Control', 'no-store');
-    response.headers.set('Cloudflare-CDN-Cache-Control', 'no-store');
-    response.headers.set('Vercel-CDN-Cache-Control', 'no-store');
-    return response;
-  };
+  // Inyectar cabecera x-pathname para que los Server Layouts conozcan la ruta actual
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-pathname', pathname);
 
   // 1. Inicializar Supabase client y refrescar la sesión (si es necesario)
-  let supabaseResponse = createResponse();
+  let supabaseResponse = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -46,7 +30,11 @@ export async function proxy(request: NextRequest) {
           },
           setAll(cookiesToSet) {
             cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-            supabaseResponse = createResponse()
+            supabaseResponse = NextResponse.next({
+              request: {
+                headers: requestHeaders,
+              },
+            })
             cookiesToSet.forEach(({ name, value, options }) =>
               supabaseResponse.cookies.set(name, value, options)
             )
@@ -68,8 +56,6 @@ export async function proxy(request: NextRequest) {
   ) {
     return supabaseResponse;
   }
-
-  preventPageCaching(supabaseResponse);
 
   // Si ya está en las páginas de restricción, permitir el paso sin volver a evaluar la IP
   if (pathname === '/blocked' || pathname === '/banned') {
@@ -106,7 +92,6 @@ export async function proxy(request: NextRequest) {
           
           // Crear la respuesta de redirección
           const redirectResponse = NextResponse.redirect(redirectUrl);
-          preventPageCaching(redirectResponse);
           
           // Asegurar que copiamos las cookies de la sesión actualizada por Supabase a la respuesta de redirección
           supabaseResponse.cookies.getAll().forEach(cookie => {
