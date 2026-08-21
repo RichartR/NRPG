@@ -5,7 +5,10 @@ import { cookies } from 'next/headers'
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
-  const next = requestUrl.searchParams.get('next') ?? '/'
+  const requestedNext = requestUrl.searchParams.get('next') ?? '/'
+  const next = requestedNext.startsWith('/') && !requestedNext.startsWith('//')
+    ? requestedNext
+    : '/'
 
   // En producción (Vercel/proxies/Cloudflare), request.url puede venir como http:// en vez de https://
   const forwardedHost = request.headers.get('x-forwarded-host')
@@ -21,12 +24,12 @@ export async function GET(request: Request) {
     }
   }
 
-  const redirectUrl = `${origin}${next}`
+  const successUrl = `${origin}/auth/success?next=${encodeURIComponent(next)}`
 
   if (code) {
     const cookieStore = await cookies()
     
-    const safeRedirectUrl = JSON.stringify(redirectUrl).replace(/</g, '\\u003c')
+    const safeSuccessUrl = JSON.stringify(successUrl).replace(/</g, '\\u003c')
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -36,16 +39,15 @@ export async function GET(request: Request) {
           <title>Autenticando...</title>
         </head>
         <body style="background: #0a0a0a; color: #d6852d; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; font-weight: bold;">
-          <p>Sincronizando sesión e iniciando navegación...</p>
+          <p>Sincronizando sesión...</p>
           <script>
-            // Una navegación nativa evita reutilizar un payload prefetched antes
-            // del login. La pequeña espera permite aplicar los Set-Cookie de esta
-            // respuesta antes de solicitar el dashboard en navegadores/proxies lentos.
+            // La ruta intermedia realiza una petición nueva con las cookies ya
+            // aplicadas antes de solicitar el dashboard.
             window.setTimeout(function () {
-              window.location.replace(${safeRedirectUrl});
-            }, 250);
+              window.location.replace(${safeSuccessUrl});
+            }, 100);
           </script>
-          <noscript><a href=${safeRedirectUrl}>Continuar</a></noscript>
+          <noscript><a href=${safeSuccessUrl}>Continuar</a></noscript>
         </body>
       </html>
     `
