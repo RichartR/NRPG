@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ShoppingBag, Plus, Trash2, Edit3, RotateCcw, History, X, Check, Loader2, Settings, Lock, ChevronLeft, ChevronRight, Link as LinkIcon } from 'lucide-react';
+import { ShoppingBag, Plus, Trash2, Edit3, RotateCcw, History, X, Check, Loader2, Settings, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AuthService } from '@/services/supabase/auth.service';
 import { MasterService } from '@/services/supabase/master.service';
 import { TiendasService } from '@/services/supabase/tiendas.service';
@@ -336,7 +336,7 @@ export default function TiendasPage() {
 
         {/* Global actions: History button */}
         <div className="flex justify-between items-center mb-8">
-          <p className="text-xs sm:text-sm font-black text-black uppercase tracking-widest">
+          <p className="text-xs sm:text-sm font-black text-white uppercase tracking-widest">
             {loading ? 'Cargando Tiendas...' : `${listToShow.length} Tiendas Disponibles`}
           </p>
           <button
@@ -707,7 +707,6 @@ export default function TiendasPage() {
                           <th className="py-6 px-8">Fecha/Hora</th>
                           <th className="py-6 px-8">Objeto Adquirido</th>
                           <th className="py-6 px-8 text-center">Inversión</th>
-                          <th className="py-6 px-8 text-center">Pruebas</th>
                           {isAdmin && viewMode === 'admin' && <th className="py-6 px-8 text-right">Acciones</th>}
                         </tr>
                       </thead>
@@ -765,26 +764,6 @@ export default function TiendasPage() {
                                   )}
                                   {(reg.data.coste_exp || 0) === 0 && (reg.data.coste_ryous || 0) === 0 && (reg.data.coste_moneda_evento || 0) === 0 && (
                                     <span className="text-caption text-oro/20 uppercase tracking-widest italic">Gratis</span>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="py-6 px-8">
-                                <div className="flex flex-wrap justify-center gap-2">
-                                  {reg.data.urls_imagenes && reg.data.urls_imagenes.length > 0 ? (
-                                    reg.data.urls_imagenes.map((url: string, i: number) => (
-                                      <a
-                                        key={i}
-                                        href={url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-1.5 px-3 py-1 bg-oro/5 border border-oro/10 hover:border-oro/40 hover:bg-oro/10 text-caption font-black text-oro/70 hover:text-oro uppercase tracking-widest transition-all ninja-clip-xs"
-                                      >
-                                        <LinkIcon className="w-2.5 h-2.5" />
-                                        <span>Prueba {i + 1}</span>
-                                      </a>
-                                    ))
-                                  ) : (
-                                    <span className="text-caption font-bold text-oro/20 uppercase tracking-widest italic">Sin pruebas</span>
                                   )}
                                 </div>
                               </td>
