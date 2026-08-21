@@ -2,9 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { AuthService } from '@/services/supabase/auth.service'
 import { ArrowLeft } from 'lucide-react'
-import { getURL } from '@/lib/utils/url'
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
@@ -13,14 +11,7 @@ export default function LoginPage() {
   const handleDiscordLogin = async () => {
     setLoading(true)
     setError(null)
-    const { error } = await AuthService.signInWithDiscord(
-      `${getURL()}auth/callback`
-    )
-
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-    }
+    window.location.assign('/auth/start')
   }
 
   return (
