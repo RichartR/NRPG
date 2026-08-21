@@ -169,132 +169,138 @@ export default function NotificationBell() {
             position: 'absolute',
             top: `${coords.top + 6}px`,
             left: `${coords.left}px`,
-            backgroundImage: "url('/assets/ui/bg-list.png')",
+            clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)',
           }}
-          className="w-80 md:w-96 border border-black/10 shadow-[0_10px_45px_rgba(0,0,0,0.15),0_0_30px_rgba(103,9,9,0.05)] z-[9999] overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300 bg-cover bg-center"
+          className="w-80 md:w-96 bg-black border-2 border-white/70 shadow-[0_10px_45px_rgba(0,0,0,0.9)] z-[9999] overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300"
         >
-          <div className="p-5 bg-gradient-to-r from-naranja-naruto/15 via-naranja-naruto/5 to-transparent border-b border-black/10 flex justify-between items-center relative">
-            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-naranja-naruto via-oro to-transparent" />
+          <div className="p-4 bg-neutral-900/80 border-b border-white/30 flex justify-between items-center relative">
             <h3 className="text-xs font-black uppercase tracking-[0.25em] text-naranja-naruto flex items-center gap-2.5">
-              <div className="w-1.5 h-1.5 bg-naranja-naruto rotate-45 shadow-[0_0_6px_rgba(103,9,9,0.3)]" />
+              <div className="w-1.5 h-1.5 bg-naranja-naruto rotate-45" />
               Notificaciones
             </h3>
-            <span className="text-caption font-black text-naranja-naruto/80 bg-naranja-naruto/5 border border-naranja-naruto/20 px-2 py-0.5 ninja-clip-xs tracking-wider">
+            <span className="text-caption font-black text-naranja-naruto bg-naranja-naruto/10 border border-naranja-naruto/30 px-2 py-0.5 tracking-wider">
               {notifications.length} PENDIENTES
             </span>
           </div>
 
-          <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+          <div className="max-h-[400px] overflow-y-auto custom-scrollbar p-3 space-y-3">
             {notifications.length === 0 ? (
-              <div className="p-12 text-center">
-                <Bell className="w-12 h-12 text-naranja-naruto/15 mx-auto mb-4 animate-pulse" />
-                <p className="text-naranja-naruto/40 text-caption font-black uppercase tracking-[0.2em] italic">Todo en orden, ninja</p>
+              <div className="p-10 text-center">
+                <Bell className="w-10 h-10 text-naranja-naruto/30 mx-auto mb-3 animate-pulse" />
+                <p className="text-white/60 text-caption font-black uppercase tracking-[0.2em] italic">Todo en orden, ninja</p>
               </div>
             ) : (
-              <div className="divide-y divide-black/5">
-                {notifications.map((n) => {
-                  const rewards = RewardLogic.calculateReward(n.registro, activeCharacter.id);
-                  return (
-                    <div key={n.registro_id} className="p-5 hover:bg-naranja-naruto/5 border-b border-black/5 transition-all duration-300 group">
-                      <div className="flex flex-col gap-4">
-                        <div className="flex justify-between items-start gap-4">
-                          <div className="min-w-0 flex-1">
-                            <span className="text-caption font-black uppercase px-2 py-0.5 bg-naranja-naruto text-oro border border-oro/20 mb-2 inline-block tracking-wider ninja-clip-xs">
-                              {n.registro.tipo}
+              notifications.map((n) => {
+                const rewards = RewardLogic.calculateReward(n.registro, activeCharacter.id);
+                return (
+                  <div
+                    key={n.registro_id}
+                    className="p-4 bg-neutral-900/80 border border-white/40 transition-all duration-300 group"
+                    style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                  >
+                    <div className="flex flex-col gap-2.5">
+                      <div className="flex justify-between items-center gap-2">
+                        <span className="text-caption font-black uppercase px-2.5 py-1 bg-naranja-naruto text-white tracking-wider">
+                          {n.registro.tipo}
+                        </span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {rewards.xp > 0 && (
+                            <span className="text-caption font-black text-naranja-naruto bg-naranja-naruto/10 border border-naranja-naruto/30 px-2 py-0.5 tracking-wider">
+                              +{rewards.xp} EXP
                             </span>
-                            <h4 className="text-xs font-black text-black/85 uppercase tracking-wider group-hover:text-naranja-naruto group-hover:translate-x-0.5 transition-all duration-300">
-                              {n.registro.autor?.nombre_ninja} puso un registro
-                            </h4>
-                            {n.registro.tipo !== 'combate' && (
-                              <span className="text-caption text-black/50 font-semibold line-clamp-1 italic mt-1 block">
-                                "{n.registro.data?.titulo || 'Sin título'}"
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-right flex flex-col items-end gap-1 shrink-0">
-                            {rewards.xp > 0 && (
-                              <span className="text-caption font-black text-naranja-naruto bg-naranja-naruto/5 border border-naranja-naruto/15 px-1.5 py-0.5 tracking-wider ninja-clip-xs block">
-                                +{rewards.xp} EXP
-                              </span>
-                            )}
-                            {rewards.ryous > 0 && (
-                              <span className="text-caption font-black text-black/75 bg-black/5 border border-black/10 px-1.5 py-0.5 tracking-wider ninja-clip-xs block">
-                                +{rewards.ryous} R
-                              </span>
-                            )}
-                            {rewards.pa > 0 && (
-                              <span className="text-caption font-black text-emerald-600 bg-emerald-500/5 border border-success-text/15 px-1.5 py-0.5 tracking-wider ninja-clip-xs block">
-                                +{rewards.pa} PA
-                              </span>
-                            )}
+                          )}
+                          {rewards.ryous > 0 && (
+                            <span className="text-caption font-black text-white bg-white/10 border border-white/20 px-2 py-0.5 tracking-wider">
+                              +{rewards.ryous} R
+                            </span>
+                          )}
+                          {rewards.pa > 0 && (
+                            <span className="text-caption font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 tracking-wider">
+                              +{rewards.pa} PA
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="min-w-0">
+                        <h4 className="text-xs font-black text-white uppercase tracking-wider">
+                          Nuevo registro en el que participas
+                        </h4>
+                        {n.registro.tipo !== 'combate' && (
+                          <span className="text-caption text-white/70 font-semibold truncate italic mt-0.5 block" title={n.registro.data?.titulo}>
+                            "{n.registro.data?.titulo || 'Sin título'}"
+                          </span>
+                        )}
+                      </div>
+
+                      {rejectingId === n.registro_id ? (
+                        <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                          <textarea
+                            placeholder="¿Por qué rechazas este registro?"
+                            value={comment}
+                            onChange={(e) => setComment(e.target.value)}
+                            className="w-full bg-black border border-neutral-700 p-3 text-caption text-white focus:border-naranja-naruto outline-none min-h-[65px] placeholder:text-neutral-500 font-medium"
+                            style={{ textTransform: 'none' }}
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleAction(n.registro_id, 'rechazar')}
+                              disabled={!comment.trim() || loading}
+                              className="flex-1 py-2 bg-naranja-naruto text-white text-caption font-black uppercase tracking-widest hover:bg-naranja-naruto/90 active:scale-[0.98] transition-all disabled:opacity-40 cursor-pointer border border-naranja-naruto/50"
+                            >
+                              Enviar Disputa
+                            </button>
+                            <button
+                              onClick={() => setRejectingId(null)}
+                              className="p-2 bg-white text-naranja-naruto hover:bg-white/90 active:scale-[0.98] transition-all cursor-pointer border border-white/80"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
                           </div>
                         </div>
-
-                        {rejectingId === n.registro_id ? (
-                          <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                            <textarea
-                              placeholder="¿Por qué rechazas este registro?"
-                              value={comment}
-                              onChange={(e) => setComment(e.target.value)}
-                              className="w-full bg-white/50 border border-black/10 p-3 text-caption text-black focus:border-naranja-naruto/40 outline-none min-h-[65px] placeholder:text-black/30 ninja-clip-xs font-medium"
-                              style={{ textTransform: 'none' }}
-                            />
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => handleAction(n.registro_id, 'rechazar')}
-                                disabled={!comment.trim() || loading}
-                                className="flex-1 py-2 bg-naranja-naruto text-oro text-caption font-black uppercase tracking-widest hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-40 cursor-pointer ninja-clip-xs"
-                              >
-                                Enviar Disputa
-                              </button>
-                              <button
-                                onClick={() => setRejectingId(null)}
-                                className="p-2 bg-black/5 text-black/60 hover:text-black hover:bg-black/10 active:scale-[0.98] transition-all cursor-pointer ninja-clip-xs border border-black/10"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
+                      ) : (
+                        <div className="flex flex-col gap-2 pt-1">
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleAction(n.registro_id, 'aceptar')}
                               disabled={loading}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-oro text-naranja-naruto text-caption font-black uppercase tracking-widest hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer shadow-[0_3px_10px_rgba(165,87,11,0.15)] ninja-clip-xs border border-oro-soft"
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white text-naranja-naruto text-caption font-black uppercase tracking-widest hover:bg-white/90 active:scale-[0.98] transition-all cursor-pointer border border-white/80 shadow-sm"
+                              style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
                             >
                               <Check className="w-3.5 h-3.5 stroke-[3]" /> Aceptar
                             </button>
                             <button
                               onClick={() => setRejectingId(n.registro_id)}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-naranja-naruto/10 text-naranja-naruto border border-naranja-naruto/20 text-caption font-black uppercase tracking-widest hover:bg-naranja-naruto hover:text-oro active:scale-[0.98] transition-all cursor-pointer ninja-clip-xs"
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-naranja-naruto text-white text-caption font-black uppercase tracking-widest hover:bg-naranja-naruto/90 active:scale-[0.98] transition-all cursor-pointer border border-naranja-naruto/50 shadow-sm"
+                              style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
                             >
                               <X className="w-3.5 h-3.5 stroke-[3]" /> Rechazar
                             </button>
-                            <button
-                              onClick={() => setSelectedRegistro(n.registro)}
-                              className="p-2 bg-black/5 text-black/50 hover:text-naranja-naruto hover:border-naranja-naruto/30 transition-all border border-black/10 active:scale-[0.98] cursor-pointer ninja-clip-xs"
-                              title="Ver Registro Completo"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                            </button>
                           </div>
-                        )}
-                      </div>
+                          <button
+                            onClick={() => setSelectedRegistro(n.registro)}
+                            className="w-full flex items-center justify-center gap-1.5 py-2 bg-neutral-900 text-white hover:text-white border border-white/80 text-caption font-black uppercase tracking-widest hover:bg-neutral-800 active:scale-[0.98] cursor-pointer transition-all"
+                            style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                          >
+                            <Eye className="w-3.5 h-3.5" /> Ver registro
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                );
+              })
             )}
           </div>
 
-          <div className="p-3 bg-transparent border-t border-black/10 text-center">
+          <div className="p-3 bg-neutral-900/80 border-t border-white/20 text-center">
             <button
               onClick={() => setIsOpen(false)}
-              className="text-caption font-black text-naranja-naruto/70 hover:text-naranja-naruto uppercase tracking-[0.35em] transition-all hover:letter-spacing duration-300 flex items-center justify-center gap-2 mx-auto cursor-pointer"
+              className="text-caption font-black text-naranja-naruto hover:text-white uppercase tracking-[0.35em] transition-all flex items-center justify-center gap-2 mx-auto cursor-pointer"
             >
-              <div className="w-1.5 h-1.5 bg-naranja-naruto/40 rotate-45" />
+              <div className="w-1.5 h-1.5 bg-naranja-naruto rotate-45" />
               Cerrar Panel
-              <div className="w-1.5 h-1.5 bg-naranja-naruto/40 rotate-45" />
+              <div className="w-1.5 h-1.5 bg-naranja-naruto rotate-45" />
             </button>
           </div>
         </div>,
@@ -303,21 +309,17 @@ export default function NotificationBell() {
 
       {/* Modal de Registro */}
       {selectedRegistro && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-black/85 backdrop-blur-md transition-all duration-500"
-            onClick={() => setSelectedRegistro(null)}
-          />
-          <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col ninja-card-oro shadow-[0_0_80px_rgba(0,0,0,0.8)] animate-in zoom-in slide-in-from-bottom-8 duration-500 overflow-hidden">
-            <div className="flex-none p-6 border-b border-oro/15 flex justify-between items-center bg-gradient-to-r from-naranja-naruto/20 to-transparent backdrop-blur-md relative">
-              <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-oro via-naranja-naruto to-transparent" />
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col bg-black border-2 border-white/70 shadow-[0_0_80px_rgba(0,0,0,0.9)] animate-in zoom-in-95 duration-300 overflow-hidden" style={{ clipPath: 'polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)' }}>
+            <div className="flex-none p-6 border-b border-white/30 flex justify-between items-center bg-neutral-900/80 relative">
               <div className="flex items-center gap-4">
-                <div className="w-2.5 h-2.5 bg-naranja-naruto rotate-45 shadow-[0_0_10px_#b82020]" />
-                <h3 className="text-oro font-black uppercase tracking-[0.35em] text-xs pt-1 ninja-title">Inspección de Registro</h3>
+                <div className="w-2.5 h-2.5 bg-naranja-naruto rotate-45" />
+                <h3 className="text-white font-black uppercase tracking-[0.35em] text-xs pt-1">Inspección de Registro</h3>
               </div>
               <button
                 onClick={() => setSelectedRegistro(null)}
-                className="p-2.5 bg-naranja-naruto/10 text-naranja-naruto border border-naranja-naruto/30 hover:bg-naranja-naruto hover:text-oro transition-all active:scale-95 cursor-pointer ninja-clip-xs"
+                className="p-2.5 bg-white text-naranja-naruto border border-white/80 hover:bg-white/90 transition-all active:scale-95 cursor-pointer"
+                style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
               >
                 <X className="w-4 h-4 stroke-[2.5]" />
               </button>
@@ -329,15 +331,14 @@ export default function NotificationBell() {
             </div>
 
             {/* Acciones en el Modal */}
-            <div className="flex-none p-6 bg-gradient-to-r from-naranja-naruto/10 via-black/40 to-transparent border-t border-oro/15 backdrop-blur-md relative">
-              <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-naranja-naruto via-oro to-transparent" />
+            <div className="flex-none p-6 bg-neutral-900/80 border-t border-white/30 relative">
               {rejectingId === selectedRegistro.id ? (
                 <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-300">
                   <textarea
                     placeholder="Motivo del rechazo..."
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                    className="w-full bg-black/60 border border-oro/15 p-5 text-xs text-oro focus:border-naranja-naruto focus:bg-black/80 focus:shadow-[0_0_20px_rgba(103,9,9,0.15)] outline-none min-h-[120px] placeholder:text-oro/20 transition-all ninja-clip-xs font-semibold"
+                    className="w-full bg-black border border-neutral-700 p-5 text-xs text-white focus:border-naranja-naruto outline-none min-h-[120px] placeholder:text-neutral-500 transition-all font-semibold"
                     style={{ textTransform: 'none' }}
                   />
                   <div className="flex gap-4">
@@ -347,13 +348,15 @@ export default function NotificationBell() {
                         setSelectedRegistro(null);
                       }}
                       disabled={!comment.trim() || loading}
-                      className="flex-1 py-4 bg-naranja-naruto text-oro font-black uppercase tracking-[0.2em] text-xs hover:brightness-110 active:scale-95 shadow-[0_0_15px_rgba(103,9,9,0.3)] transition-all cursor-pointer ninja-clip-md"
+                      className="flex-1 py-4 bg-naranja-naruto text-white font-black uppercase tracking-[0.2em] text-xs hover:bg-naranja-naruto/90 active:scale-95 shadow-[0_0_15px_rgba(214,133,45,0.25)] transition-all cursor-pointer border border-naranja-naruto/50"
+                      style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
                     >
                       Confirmar Rechazo
                     </button>
                     <button
                       onClick={() => setRejectingId(null)}
-                      className="px-8 py-4 bg-black/40 text-oro/60 border border-oro/15 hover:text-oro hover:border-oro/40 transition-all font-black text-xs uppercase tracking-[0.2em] active:scale-95 cursor-pointer ninja-clip-md"
+                      className="px-8 py-4 bg-white hover:bg-white/90 text-naranja-naruto border border-white/80 transition-all font-black text-xs uppercase tracking-[0.2em] active:scale-95 cursor-pointer"
+                      style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
                     >
                       Cancelar
                     </button>
@@ -367,13 +370,15 @@ export default function NotificationBell() {
                       setSelectedRegistro(null);
                     }}
                     disabled={loading}
-                    className="flex-1 flex items-center justify-center gap-3 py-4 bg-oro text-naranja-naruto text-xs font-black uppercase tracking-[0.2em] hover:brightness-110 transition-all active:scale-95 shadow-[0_0_20px_rgba(255,230,159,0.15)] cursor-pointer ninja-clip-md"
+                    className="flex-1 flex items-center justify-center gap-3 py-4 bg-white text-naranja-naruto text-xs font-black uppercase tracking-[0.2em] hover:bg-white/90 transition-all active:scale-95 cursor-pointer border border-white/80 shadow-md"
+                    style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
                   >
                     <Check className="w-5 h-5 stroke-[2.5]" /> Aceptar Registro
                   </button>
                   <button
                     onClick={() => setRejectingId(selectedRegistro.id)}
-                    className="flex-1 flex items-center justify-center gap-3 py-4 bg-naranja-naruto/20 text-naranja-naruto border border-naranja-naruto/30 text-xs font-black uppercase tracking-[0.2em] hover:bg-naranja-naruto hover:text-oro transition-all active:scale-95 cursor-pointer ninja-clip-md"
+                    className="flex-1 flex items-center justify-center gap-3 py-4 bg-naranja-naruto text-white border border-naranja-naruto/50 text-xs font-black uppercase tracking-[0.2em] hover:bg-naranja-naruto/90 transition-all active:scale-95 cursor-pointer shadow-md"
+                    style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
                   >
                     <X className="w-5 h-5 stroke-[2.5]" /> Iniciar Disputa
                   </button>
