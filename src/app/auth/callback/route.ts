@@ -26,19 +26,26 @@ export async function GET(request: Request) {
   if (code) {
     const cookieStore = await cookies()
     
+    const safeRedirectUrl = JSON.stringify(redirectUrl).replace(/</g, '\\u003c')
     const htmlContent = `
       <!DOCTYPE html>
       <html>
         <head>
           <meta charset="utf-8" />
-          <meta http-equiv="refresh" content="0;url=${redirectUrl}" />
+          <meta name="robots" content="noindex" />
           <title>Autenticando...</title>
         </head>
         <body style="background: #0a0a0a; color: #d6852d; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; font-weight: bold;">
           <p>Sincronizando sesión e iniciando navegación...</p>
           <script>
-            window.location.href = ${JSON.stringify(redirectUrl)};
+            // Una navegación nativa evita reutilizar un payload prefetched antes
+            // del login. La pequeña espera permite aplicar los Set-Cookie de esta
+            // respuesta antes de solicitar el dashboard en navegadores/proxies lentos.
+            window.setTimeout(function () {
+              window.location.replace(${safeRedirectUrl});
+            }, 250);
           </script>
+          <noscript><a href=${safeRedirectUrl}>Continuar</a></noscript>
         </body>
       </html>
     `
@@ -48,6 +55,9 @@ export async function GET(request: Request) {
       headers: {
         'content-type': 'text/html; charset=utf-8',
         'cache-control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        'cdn-cache-control': 'no-store',
+        'cloudflare-cdn-cache-control': 'no-store',
+        'vercel-cdn-cache-control': 'no-store',
         'pragma': 'no-cache',
         'expires': '0',
       },
