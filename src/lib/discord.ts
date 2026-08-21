@@ -238,3 +238,24 @@ export async function getDiscordUser(userId: string) {
   }
 }
 
+export async function updateDiscordMemberNickname(guildId: string, userId: string, nick: string) {
+  if (!BOT_TOKEN) throw new Error('DISCORD_BOT_TOKEN no configurado');
+
+  const response = await fetch(`${DISCORD_API_URL}/guilds/${guildId}/members/${userId}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bot ${BOT_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ nick }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(`Error de Discord (PATCH member nick): ${JSON.stringify(error)}`);
+  }
+
+  return response.json();
+}
+
+
