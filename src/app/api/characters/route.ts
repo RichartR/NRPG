@@ -172,7 +172,7 @@ export async function POST(request: Request) {
     // USAR CLIENTE ADMIN PARA BYPASSEAR RLS EN TABLAS RESTRINGIDAS
     const adminClient = createAdminClient();
 
-    // Sincronización de rol de Discord por Aldea / Renegado y Jugador al crear (en segundo plano)
+    // Sincronización de rol y apodo de Discord al crear (en segundo plano)
     (async () => {
       try {
         const { data: userProfile } = await adminClient
@@ -182,7 +182,7 @@ export async function POST(request: Request) {
           .single();
 
         if (userProfile?.discord_id) {
-          const { getDiscordGuildId, assignDiscordRole } = await import('@/lib/discord');
+          const { getDiscordGuildId, assignDiscordRole, updateDiscordMemberNickname } = await import('@/lib/discord');
           const guildId = await getDiscordGuildId(adminClient);
 
           if (guildId) {
@@ -200,18 +200,24 @@ export async function POST(request: Request) {
             }
 
             if (roleIdToAssign) {
-              await assignDiscordRole(guildId, userProfile.discord_id, roleIdToAssign);
+              await assignDiscordRole(guildId, userProfile.discord_id, roleIdToAssign).catch(e => console.error('Error al asignar rol de aldea:', e));
             }
 
             // 2. Asignar rol de jugador activo
             const jugadorRoleId = await MasterServerService.getConfiguracion(adminClient, 'discord_jugador_role_id');
             if (jugadorRoleId) {
-              await assignDiscordRole(guildId, userProfile.discord_id, jugadorRoleId);
+              await assignDiscordRole(guildId, userProfile.discord_id, jugadorRoleId).catch(e => console.error('Error al asignar rol de jugador:', e));
+            }
+
+            // 3. Actualizar apodo (nickname) en el servidor de Discord
+            if (data.nombre_ninja) {
+              await updateDiscordMemberNickname(guildId, userProfile.discord_id, data.nombre_ninja)
+                .catch(err => console.error('Error al actualizar el apodo en Discord al crear:', err));
             }
           }
         }
       } catch (discordRoleError) {
-        console.error('Error al asignar roles de Discord al crear personaje (background):', discordRoleError);
+        console.error('Error al asignar roles/apodo de Discord al crear personaje (background):', discordRoleError);
       }
     })();
 

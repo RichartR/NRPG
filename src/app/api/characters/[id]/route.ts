@@ -580,48 +580,53 @@ export async function PATCH(
     if (Object.keys(updateData).length > 0) {
       await CharacterServerService.updateCharacterFields(supabase, characterId, updateData);
 
-      // Sincronizar roles de Discord si cambió de aldea/organización (en segundo plano)
-      if (updateData.hasOwnProperty('aldea_id') && Number(updateData.aldea_id) !== Number(character.aldea_id)) {
-        (async () => {
-          try {
-            const { data: userProfile } = await adminClient
-              .from('profiles')
-              .select('discord_id')
-              .eq('id', character.user_id)
-              .single();
+      // Sincronizar roles y apodo de Discord tras actualización (en segundo plano)
+      (async () => {
+        try {
+          const { data: userProfile } = await adminClient
+            .from('profiles')
+            .select('discord_id')
+            .eq('id', character.user_id)
+            .single();
 
-            if (userProfile?.discord_id) {
-              let oldRoleId = null;
-              let newRoleId = null;
+          if (userProfile?.discord_id) {
+            const { getDiscordGuildId, assignDiscordRole, removeDiscordRole, updateDiscordMemberNickname } = await import('@/lib/discord');
+            const guildId = await getDiscordGuildId(adminClient);
 
-              // Obtener rol antiguo
-              if (character.aldea_id) {
-                const { data: oldAldea } = await adminClient
-                  .from('info_aldeas')
-                  .select('id_rol_discord')
-                  .eq('id', character.aldea_id)
-                  .single();
-                oldRoleId = oldAldea?.id_rol_discord;
-              } else {
-                oldRoleId = await MasterServerService.getConfiguracion(adminClient, 'discord_renegado_role_id');
+            if (guildId) {
+              // 1. Si cambió el nombre ninja, actualizar apodo en el servidor de Discord
+              if (updateData.nombre_ninja && updateData.nombre_ninja !== character.nombre_ninja) {
+                await updateDiscordMemberNickname(guildId, userProfile.discord_id, String(updateData.nombre_ninja))
+                  .catch(err => console.error('Error al cambiar apodo en Discord:', err));
               }
 
-              // Obtener rol nuevo
-              if (updateData.aldea_id) {
-                const { data: newAldea } = await adminClient
-                  .from('info_aldeas')
-                  .select('id_rol_discord')
-                  .eq('id', updateData.aldea_id)
-                  .single();
-                newRoleId = newAldea?.id_rol_discord;
-              } else {
-                newRoleId = await MasterServerService.getConfiguracion(adminClient, 'discord_renegado_role_id');
-              }
+              // 2. Si cambió de aldea, actualizar roles
+              if (updateData.hasOwnProperty('aldea_id') && Number(updateData.aldea_id) !== Number(character.aldea_id)) {
+                let oldRoleId = null;
+                let newRoleId = null;
 
-              const { getDiscordGuildId, assignDiscordRole, removeDiscordRole } = await import('@/lib/discord');
-              const guildId = await getDiscordGuildId(adminClient);
+                if (character.aldea_id) {
+                  const { data: oldAldea } = await adminClient
+                    .from('info_aldeas')
+                    .select('id_rol_discord')
+                    .eq('id', character.aldea_id)
+                    .single();
+                  oldRoleId = oldAldea?.id_rol_discord;
+                } else {
+                  oldRoleId = await MasterServerService.getConfiguracion(adminClient, 'discord_renegado_role_id');
+                }
 
-              if (guildId) {
+                if (updateData.aldea_id) {
+                  const { data: newAldea } = await adminClient
+                    .from('info_aldeas')
+                    .select('id_rol_discord')
+                    .eq('id', updateData.aldea_id)
+                    .single();
+                  newRoleId = newAldea?.id_rol_discord;
+                } else {
+                  newRoleId = await MasterServerService.getConfiguracion(adminClient, 'discord_renegado_role_id');
+                }
+
                 if (oldRoleId && oldRoleId !== newRoleId) {
                   await removeDiscordRole(guildId, userProfile.discord_id, oldRoleId).catch(err => console.error('Error al quitar rol antiguo:', err));
                 }
@@ -630,11 +635,11 @@ export async function PATCH(
                 }
               }
             }
-          } catch (discordRoleError) {
-            console.error('Error al actualizar roles de Discord tras cambio de aldea (background):', discordRoleError);
           }
-        })();
-      }
+        } catch (discordError) {
+          console.error('Error al actualizar roles/apodo de Discord tras edición (background):', discordError);
+        }
+      })();
     }
 
     return NextResponse.json({ success: true });
