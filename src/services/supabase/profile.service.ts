@@ -63,6 +63,11 @@ export const ProfileService = {
       return;
     }
 
+    // Sincronizar el username de Discord si no se ha sincronizado en los últimos 7 días
+    this.syncDiscordProfileIfNeeded(userId, client).catch(err => {
+      console.error('Error en sincronización pasiva de Discord:', err);
+    });
+
     try {
       // 2. Comprobar si la IP está en la white list
       const { data: whitelisted, error: whiteError } = await supabase
@@ -269,5 +274,62 @@ export const ProfileService = {
     }
 
     if (error) throw error;
+  },
+
+  async syncDiscordProfileIfNeeded(userId: string, client?: any, existingProfile?: any) {
+    const supabase = client || createClient();
+
+    let profile = existingProfile;
+
+    // 1. Si no nos pasaron el perfil, o no trae last_discord_sync/discord_id, consultarlo
+    if (!profile || profile.last_discord_sync === undefined || !profile.discord_id) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, discord_id, username, last_discord_sync')
+        .eq('id', userId)
+        .single();
+      if (error || !data || !data.discord_id) return;
+      profile = data;
+    }
+
+    // 2. Comprobar si ya se sincronizó en los últimos 7 días (604,800,000 ms)
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    if (profile.last_discord_sync) {
+      const lastSync = new Date(profile.last_discord_sync).getTime();
+      if (Date.now() - lastSync < SEVEN_DAYS_MS) {
+        return; // No requiere sincronización aún (0 peticiones a Discord / 0 escrituras extra)
+      }
+    }
+
+    // 3. Consultar la API de Discord por el ID inmutable
+    const { getDiscordUser } = await import('@/lib/discord');
+    const discordUser = await getDiscordUser(profile.discord_id);
+    if (!discordUser || !discordUser.username) return;
+
+    // 4. Si el username de Discord cambió, actualizarlo (así como el timestamp)
+    const newUsername = discordUser.username.replace(/\s+/g, '_');
+    const updates: any = {
+      last_discord_sync: new Date().toISOString()
+    };
+
+    if (newUsername && newUsername !== profile.username) {
+      // Verificar conflicto de username en perfiles
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', newUsername)
+        .neq('id', userId)
+        .maybeSingle();
+
+      if (!existing) {
+        updates.username = newUsername;
+      }
+    }
+
+    await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', userId);
   }
 };
+

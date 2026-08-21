@@ -218,3 +218,23 @@ export async function getDiscordGuildRoles(guildId: string) {
 
   return response.json();
 }
+
+export async function getDiscordUser(userId: string) {
+  if (!BOT_TOKEN) return null;
+
+  try {
+    const response = await fetch(`${DISCORD_API_URL}/users/${userId}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bot ${BOT_TOKEN}`,
+      },
+    });
+
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (err) {
+    console.error(`[Discord API] Error obteniendo usuario ${userId}:`, err);
+    return null;
+  }
+}
+
