@@ -33,7 +33,7 @@ export default async function RootLayout({
 }>) {
   // Obtener IP pública del cliente y pathname actual
   const headerList = await headers();
-  const ip = headerList.get('x-forwarded-for')?.split(',')[0].trim() || headerList.get('x-real-ip') || '127.0.0.1';
+  const ip = headerList.get('cf-connecting-ip') || headerList.get('x-forwarded-for')?.split(',')[0].trim() || headerList.get('x-real-ip') || '127.0.0.1';
   const pathname = headerList.get('x-pathname') || '';
 
   // Evitar bucles de redirección en las páginas de bloqueo
