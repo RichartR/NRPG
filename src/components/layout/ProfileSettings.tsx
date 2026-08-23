@@ -76,17 +76,18 @@ export default function ProfileSettings({ profile, userId }: ProfileSettingsProp
           >
             <button
               onClick={() => setIsOpen(false)}
-              className="absolute top-6 right-6 text-oro/40 hover:text-oro transition-colors"
+              className="absolute top-6 right-6 z-20 text-oro/60 hover:text-oro transition-colors p-2 bg-black/60 border border-oro/20 hover:border-oro ninja-clip-xs"
+              title="Cerrar"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center gap-4 mb-10">
+            <div className="flex items-center gap-4 mb-10 relative z-10">
               <div className="w-1.5 h-1.5 bg-naranja-naruto rotate-45" />
               <h2 className="ninja-title text-xl sm:text-3xl">AJUSTES DE PERFIL</h2>
             </div>
 
-            <div className="space-y-8">
+            <div className="space-y-8 relative z-10">
               <div className="space-y-4">
                 <label className="text-caption font-black text-oro/40 uppercase tracking-[0.4em] ml-2">URL de Imagen de Perfil</label>
                 <div className="relative">
@@ -102,7 +103,7 @@ export default function ProfileSettings({ profile, userId }: ProfileSettingsProp
               </div>
 
               {/* Preview */}
-              <div className="flex justify-center py-6">
+              <div className="flex justify-center py-4">
                 <div className="w-32 h-32 bg-black/40 border border-oro/20 overflow-hidden relative">
                   {urlImg ? (
                     <img src={urlImg} className="w-full h-full object-cover" alt="Preview" />
@@ -114,29 +115,29 @@ export default function ProfileSettings({ profile, userId }: ProfileSettingsProp
                 </div>
               </div>
 
-              <div className="flex gap-4 pt-4">
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <button
+                  type="button"
                   onClick={async () => {
                     setLoading(true);
                     try {
-                      const res = await fetch('/api/discord/sync-profile', { method: 'POST' });
-                      const data = await res.json();
-                      if (data.success) {
-                        addToast(data.message || 'Datos de Discord sincronizados', 'success');
-                        router.refresh();
-                      } else {
-                        addToast(data.error || 'Error al sincronizar con Discord', 'error');
+                      const res = await fetch('/api/auth/sync-discord-name', { method: 'POST' });
+                      if (!res.ok) {
+                        const data = await res.json().catch(() => ({}));
+                        throw new Error(data.error || 'No se pudo sincronizar el nombre con Discord');
                       }
+                      addToast('Nombre de Discord sincronizado correctamente', 'success');
+                      router.refresh();
                     } catch (err: any) {
-                      addToast('Error de red al sincronizar', 'error');
+                      addToast(err.message || 'Error al sincronizar nombre de Discord', 'error');
                     } finally {
                       setLoading(false);
                     }
                   }}
                   disabled={loading}
-                  className="flex-1 bg-indigo-950/60 hover:bg-indigo-900/80 border border-indigo-500/40 text-indigo-200 py-4 text-xs tracking-[0.2em] font-black transition-all"
+                  className="flex-1 px-4 py-4 bg-indigo-950/60 border border-indigo-500/40 hover:border-indigo-400 text-indigo-200 text-xs tracking-widest font-black uppercase transition-all ninja-clip-md hover:bg-indigo-900/60"
                 >
-                  SINCRONIZAR DISCORD
+                  SINCRONIZAR NOMBRE DISCORD
                 </button>
                 <button
                   onClick={handleSave}

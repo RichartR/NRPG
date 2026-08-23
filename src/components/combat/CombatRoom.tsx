@@ -3424,198 +3424,200 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                     </button>
                   </div>
                 )}
-                {/* 4. DAMAGE CALCULATOR */}
-                <div className="pt-5 border-t border-oro/10 space-y-4">
-                  <div className="flex items-center justify-between flex-wrap gap-2 border-b border-oro/10 pb-3">
-                    <h3 className="font-black text-sm uppercase tracking-[0.2em] text-oro">
-                      CALCULADORA DE DAÑO
-                    </h3>
-                    {/* Add-on Toggles */}
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={addCalcStat}
-                        className="ninja-btn-ghost px-3 py-1 text-xs font-black uppercase"
-                      >
-                        + Stat Extra
-                      </button>
-                      <button
-                        type="button"
-                        onClick={addCalcWeapon}
-                        className="ninja-btn-ghost px-3 py-1 text-xs font-black uppercase"
-                      >
-                        + Arma
-                      </button>
-                      <button
-                        type="button"
-                        onClick={addCalcPercent}
-                        className="ninja-btn-ghost px-3 py-1 text-xs font-black uppercase"
-                      >
-                        + Modificador %
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Calculator Input Rows */}
-                  <div className="space-y-4 bg-black/40 p-4 border border-oro/10">
-                    {/* Dynamic Stats List */}
-                    {calcStats.map((item, index) => {
-                      const numericMult = parseFloat(item.multInput.replace(',', '.')) || 0;
-                      return (
-                        <div
-                          key={item.id}
-                          className={`flex flex-wrap items-center gap-3 ${index > 0 ? 'pt-3 border-t border-oro/10 animate-in fade-in duration-200' : ''}`}
+                {/* 4. DAMAGE CALCULATOR (Solo en salas PvP, no en Eventos) */}
+                {!isEventMode && (
+                  <div className="pt-5 border-t border-oro/10 space-y-4">
+                    <div className="flex items-center justify-between flex-wrap gap-2 border-b border-oro/10 pb-3">
+                      <h3 className="font-black text-sm uppercase tracking-[0.2em] text-oro">
+                        CALCULADORA DE DAÑO
+                      </h3>
+                      {/* Add-on Toggles */}
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={addCalcStat}
+                          className="ninja-btn-ghost px-3 py-1 text-xs font-black uppercase"
                         >
-                          <span className="text-xs font-black text-oro/40 uppercase w-16 shrink-0">
-                            Stat {index + 1}:
-                          </span>
+                          + Stat Extra
+                        </button>
+                        <button
+                          type="button"
+                          onClick={addCalcWeapon}
+                          className="ninja-btn-ghost px-3 py-1 text-xs font-black uppercase"
+                        >
+                          + Arma
+                        </button>
+                        <button
+                          type="button"
+                          onClick={addCalcPercent}
+                          className="ninja-btn-ghost px-3 py-1 text-xs font-black uppercase"
+                        >
+                          + Modificador %
+                        </button>
+                      </div>
+                    </div>
 
-                          <NinjaSelect
-                            value={item.stat}
-                            options={['NIN', 'TAI', 'GEN', 'INT', 'FUE', 'AGI', 'EST', 'SM']}
-                            onChange={(val) => updateCalcStatName(item.id, val)}
-                            placeholder=""
-                            variant="compact"
-                            className="w-20"
-                          />
-
-                          {/* Stat Value Input */}
-                          <div className="flex items-center bg-black/50 border border-oro/20 w-28 px-2 focus-within:border-oro transition-all">
-                            <button
-                              type="button"
-                              onClick={() => updateCalcStatVal(item.id, Math.max(1, item.val - 1))}
-                              className="text-oro hover:text-white font-black px-1.5 py-1 text-xs select-none"
-                            >-</button>
-                            <input
-                              type="number"
-                              value={item.val}
-                              onChange={(e) => updateCalcStatVal(item.id, Number(e.target.value) || 0)}
-                              className="bg-transparent text-center text-white text-xs font-black w-full outline-none py-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => updateCalcStatVal(item.id, item.val + 1)}
-                              className="text-oro hover:text-white font-black px-1.5 py-1 text-xs select-none"
-                            >+</button>
-                          </div>
-
-                          <span className="text-oro/40 font-black text-xs">×</span>
-
-                          {/* Multiplier Input */}
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-black text-oro/40 uppercase">Mult:</span>
-                            <input
-                              type="text"
-                              inputMode="decimal"
-                              value={item.multInput}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val === '' || /^[0-9]*[.,]?[0-9]*$/.test(val)) {
-                                  updateCalcStatMult(item.id, val);
-                                }
-                              }}
-                              className="w-20 bg-black/50 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro text-center transition-all"
-                            />
-                          </div>
-
-                          <div className="ml-auto flex items-center gap-3">
-                            <span className="text-xs font-mono text-oro font-black">
-                              = {item.val * numericMult}
+                    {/* Calculator Input Rows */}
+                    <div className="space-y-4 bg-black/40 p-4 border border-oro/10">
+                      {/* Dynamic Stats List */}
+                      {calcStats.map((item, index) => {
+                        const numericMult = parseFloat(item.multInput.replace(',', '.')) || 0;
+                        return (
+                          <div
+                            key={item.id}
+                            className={`flex flex-wrap items-center gap-3 ${index > 0 ? 'pt-3 border-t border-oro/10 animate-in fade-in duration-200' : ''}`}
+                          >
+                            <span className="text-xs font-black text-oro/40 uppercase w-16 shrink-0">
+                              Stat {index + 1}:
                             </span>
-                            {calcStats.length > 1 && (
+
+                            <NinjaSelect
+                              value={item.stat}
+                              options={['NIN', 'TAI', 'GEN', 'INT', 'FUE', 'AGI', 'EST', 'SM']}
+                              onChange={(val) => updateCalcStatName(item.id, val)}
+                              placeholder=""
+                              variant="compact"
+                              className="w-20"
+                            />
+
+                            {/* Stat Value Input */}
+                            <div className="flex items-center bg-black/50 border border-oro/20 w-28 px-2 focus-within:border-oro transition-all">
                               <button
                                 type="button"
-                                onClick={() => removeCalcStat(item.id)}
-                                className="text-naranja-naruto hover:text-red-400 text-xs font-black uppercase tracking-wider"
-                              >
-                                Quitar
-                              </button>
-                            )}
+                                onClick={() => updateCalcStatVal(item.id, Math.max(1, item.val - 1))}
+                                className="text-oro hover:text-white font-black px-1.5 py-1 text-xs select-none"
+                              >-</button>
+                              <input
+                                type="number"
+                                value={item.val}
+                                onChange={(e) => updateCalcStatVal(item.id, Number(e.target.value) || 0)}
+                                className="bg-transparent text-center text-white text-xs font-black w-full outline-none py-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => updateCalcStatVal(item.id, item.val + 1)}
+                                className="text-oro hover:text-white font-black px-1.5 py-1 text-xs select-none"
+                              >+</button>
+                            </div>
+
+                            <span className="text-oro/40 font-black text-xs">×</span>
+
+                            {/* Multiplier Input */}
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-black text-oro/40 uppercase">Mult:</span>
+                              <input
+                                type="text"
+                                inputMode="decimal"
+                                value={item.multInput}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  if (val === '' || /^[0-9]*[.,]?[0-9]*$/.test(val)) {
+                                    updateCalcStatMult(item.id, val);
+                                  }
+                                }}
+                                className="w-20 bg-black/50 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro text-center transition-all"
+                              />
+                            </div>
+
+                            <div className="ml-auto flex items-center gap-3">
+                              <span className="text-xs font-mono text-oro font-black">
+                                = {item.val * numericMult}
+                              </span>
+                              {calcStats.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => removeCalcStat(item.id)}
+                                  className="text-naranja-naruto hover:text-red-400 text-xs font-black uppercase tracking-wider"
+                                >
+                                  Quitar
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
 
-                    {/* Dynamic Weapons List */}
-                    {calcWeapons.map((item, index) => (
-                      <div
-                        key={item.id}
-                        className="flex flex-wrap items-center gap-3 pt-3 border-t border-oro/10 animate-in fade-in duration-200"
-                      >
-                        <span className="text-xs font-black text-oro/40 uppercase w-16 shrink-0">
-                          {calcWeapons.length > 1 ? `Arma ${index + 1}:` : 'Daño Arma:'}
-                        </span>
-                        <input
-                          type="number"
-                          placeholder="Daño de arma..."
-                          value={item.damage}
-                          onChange={(e) => updateCalcWeapon(item.id, Number(e.target.value) || 0)}
-                          className="w-36 bg-black/50 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all"
-                        />
-                        <div className="ml-auto flex items-center gap-3">
-                          <span className="text-xs font-mono text-oro font-black">
-                            + {item.damage}
+                      {/* Dynamic Weapons List */}
+                      {calcWeapons.map((item, index) => (
+                        <div
+                          key={item.id}
+                          className="flex flex-wrap items-center gap-3 pt-3 border-t border-oro/10 animate-in fade-in duration-200"
+                        >
+                          <span className="text-xs font-black text-oro/40 uppercase w-16 shrink-0">
+                            {calcWeapons.length > 1 ? `Arma ${index + 1}:` : 'Daño Arma:'}
                           </span>
-                          <button
-                            type="button"
-                            onClick={() => removeCalcWeapon(item.id)}
-                            className="text-naranja-naruto hover:text-red-400 text-xs font-black uppercase tracking-wider"
-                          >
-                            Quitar
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-
-                    {/* Dynamic Percentage Modifiers List */}
-                    {calcPercents.map((item, index) => (
-                      <div
-                        key={item.id}
-                        className="flex flex-wrap items-center gap-3 pt-3 border-t border-oro/10 animate-in fade-in duration-200"
-                      >
-                        <span className="text-xs font-black text-oro/40 uppercase w-16 shrink-0">
-                          {calcPercents.length > 1 ? `Mod % ${index + 1}:` : 'Mod %:'}
-                        </span>
-                        <div className="flex items-center gap-2">
                           <input
                             type="number"
-                            placeholder="+10 o -20..."
-                            value={item.percent}
-                            onChange={(e) => updateCalcPercent(item.id, Number(e.target.value) || 0)}
-                            className="w-32 bg-black/50 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all"
+                            placeholder="Daño de arma..."
+                            value={item.damage}
+                            onChange={(e) => updateCalcWeapon(item.id, Number(e.target.value) || 0)}
+                            className="w-36 bg-black/50 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all"
                           />
-                          <span className="text-xs font-black text-oro">%</span>
+                          <div className="ml-auto flex items-center gap-3">
+                            <span className="text-xs font-mono text-oro font-black">
+                              + {item.damage}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => removeCalcWeapon(item.id)}
+                              className="text-naranja-naruto hover:text-red-400 text-xs font-black uppercase tracking-wider"
+                            >
+                              Quitar
+                            </button>
+                          </div>
                         </div>
-                        <div className="ml-auto flex items-center gap-3">
-                          <span className="text-xs font-mono text-oro font-black">
-                            {item.percent >= 0 ? `+${item.percent}%` : `${item.percent}%`}
+                      ))}
+
+                      {/* Dynamic Percentage Modifiers List */}
+                      {calcPercents.map((item, index) => (
+                        <div
+                          key={item.id}
+                          className="flex flex-wrap items-center gap-3 pt-3 border-t border-oro/10 animate-in fade-in duration-200"
+                        >
+                          <span className="text-xs font-black text-oro/40 uppercase w-16 shrink-0">
+                            {calcPercents.length > 1 ? `Mod % ${index + 1}:` : 'Mod %:'}
                           </span>
-                          <button
-                            type="button"
-                            onClick={() => removeCalcPercent(item.id)}
-                            className="text-naranja-naruto hover:text-red-400 text-xs font-black uppercase tracking-wider"
-                          >
-                            Quitar
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              placeholder="+10 o -20..."
+                              value={item.percent}
+                              onChange={(e) => updateCalcPercent(item.id, Number(e.target.value) || 0)}
+                              className="w-32 bg-black/50 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all"
+                            />
+                            <span className="text-xs font-black text-oro">%</span>
+                          </div>
+                          <div className="ml-auto flex items-center gap-3">
+                            <span className="text-xs font-mono text-oro font-black">
+                              {item.percent >= 0 ? `+${item.percent}%` : `${item.percent}%`}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => removeCalcPercent(item.id)}
+                              className="text-naranja-naruto hover:text-red-400 text-xs font-black uppercase tracking-wider"
+                            >
+                              Quitar
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Final Result Card */}
+                      <div className="pt-4 border-t border-oro/10 flex items-center justify-between flex-wrap gap-4">
+                        <div className="text-xs font-mono text-oro/60 truncate max-w-[70%]">
+                          Fórmula: {calcStats.map(s => `(${s.stat}: ${s.val} × ${s.multInput || '0'})`).join(' + ')}
+                          {calcWeapons.length > 0 && ` ${calcWeapons.map(w => `+ ${w.damage} Arma`).join(' ')}`}
+                          {calcPercents.length > 0 && ` (${calcPercents.map(p => `${p.percent >= 0 ? '+' : ''}${p.percent}%`).join(' ')})`}
+                        </div>
+                        <div className="flex items-center gap-3 bg-black/60 border border-oro/20 px-5 py-2">
+                          <span className="text-xs font-black text-oro/60 uppercase">DAÑO TOTAL:</span>
+                          <span className="text-xl font-black text-oro font-mono">{calculateTotalDamage()}</span>
                         </div>
                       </div>
-                    ))}
 
-                    {/* Final Result Card */}
-                    <div className="pt-4 border-t border-oro/10 flex items-center justify-between flex-wrap gap-4">
-                      <div className="text-xs font-mono text-oro/60 truncate max-w-[70%]">
-                        Fórmula: {calcStats.map(s => `(${s.stat}: ${s.val} × ${s.multInput || '0'})`).join(' + ')}
-                        {calcWeapons.length > 0 && ` ${calcWeapons.map(w => `+ ${w.damage} Arma`).join(' ')}`}
-                        {calcPercents.length > 0 && ` (${calcPercents.map(p => `${p.percent >= 0 ? '+' : ''}${p.percent}%`).join(' ')})`}
-                      </div>
-                      <div className="flex items-center gap-3 bg-black/60 border border-oro/20 px-5 py-2">
-                        <span className="text-xs font-black text-oro/60 uppercase">DAÑO TOTAL:</span>
-                        <span className="text-xl font-black text-oro font-mono">{calculateTotalDamage()}</span>
-                      </div>
                     </div>
-
                   </div>
-                </div>
+                )}
               </div>
 
             </div>
