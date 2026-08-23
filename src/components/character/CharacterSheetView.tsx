@@ -2119,7 +2119,7 @@ export function CharacterSheetView({
                       value={character.aldea_id}
                       options={aldeaOptions}
                       disabled={!isEditing && !isNew}
-                      placeholder="SIN ALDEA"
+                      placeholder="Seleccionar Aldea..."
                       onChange={(v) => onUpdateField('aldea_id', v ? Number(v) : null)}
                     />
                     <DataField label="RANGO DE PODER" value={`RANGO ${character.rango}`} disabled={true} />
@@ -2777,20 +2777,23 @@ export function CharacterSheetView({
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-10">
                   {/* Estadísticas Base */}
                   <div className="lg:col-span-5 space-y-10">
-                    <div className="flex items-center gap-4 mb-8">
-                      <div className="w-1.5 h-1.5 bg-naranja-naruto rotate-45" />
-                      <h3 className="text-xs xl:text-sm font-black text-oro/60 uppercase tracking-[0.4em]">Estadísticas Base</h3>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-8 border-b border-oro/10 pb-3">
+                      <div className="flex items-center gap-4">
+                        <div className="w-1.5 h-1.5 bg-naranja-naruto rotate-45" />
+                        <h3 className="text-xs xl:text-sm font-black text-oro/80 uppercase tracking-[0.4em]">Estadísticas Base</h3>
+                      </div>
+                      <span className="text-caption font-black text-oro/70 uppercase tracking-widest bg-oro/10 border border-oro/20 px-3 py-1 ninja-clip-xs">
+                        LÍMITE MÁXIMO DE STAT: {masters.rangoRules?.[character.rango]?.stat_max || 10}
+                      </span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {['NIN', 'GEN', 'TAI', 'SM', 'FUE', 'AGI', 'EST', 'INT'].map((s) => {
                         const val = character.stats_base[s as keyof CharacterStats] || 0;
-                        const max = masters.rangoRules?.[character.rango]?.stat_max || 10;
                         return (
-                          <div key={s} className="bg-black/40 border border-oro/10 py-3 px-5 flex justify-between items-center relative group hover:border-oro/40 transition-all overflow-hidden" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 0px)' }}>
+                          <div key={s} className="bg-black/60 border border-oro/20 py-3 px-5 flex justify-between items-center relative group hover:border-oro/50 transition-all overflow-hidden" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 0px)' }}>
                             <div className="absolute top-0 right-0 w-12 h-12 bg-oro/5 rotate-45 -mr-6 -mt-6 pointer-events-none" />
                             <div className="flex flex-col items-start relative z-10">
-                              <span className="text-xs font-black text-oro/60 uppercase tracking-[0.2em]">{s}</span>
-                              <span className="text-caption font-black text-oro/20 mt-0.5 uppercase tracking-wider whitespace-nowrap">LÍMITE: {max}</span>
+                              <span className="text-sm font-black text-oro/90 uppercase tracking-[0.2em]">{s}</span>
                             </div>
                             <div className="flex items-center gap-1.5 relative z-10">
                               <input
@@ -2804,26 +2807,16 @@ export function CharacterSheetView({
                                 <div className="flex flex-col gap-0 justify-center items-center select-none">
                                   <button
                                     type="button"
-                                    onClick={() => {
-                                      const newVal = val + 1;
-                                      if (newVal <= max) {
-                                        onUpdateStat(s as keyof CharacterStats, newVal);
-                                      }
-                                    }}
-                                    className="text-oro/40 hover:text-oro active:scale-75 transition-all p-0.5"
+                                    onClick={() => onUpdateStat(s as keyof CharacterStats, val + 1)}
+                                    className="text-oro/60 hover:text-oro active:scale-75 transition-all p-0.5"
                                     title="Incrementar"
                                   >
                                     <ChevronUp className="w-3.5 h-3.5 stroke-[3]" />
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={() => {
-                                      const newVal = val - 1;
-                                      if (newVal >= 0) {
-                                        onUpdateStat(s as keyof CharacterStats, newVal);
-                                      }
-                                    }}
-                                    className="text-oro/40 hover:text-oro active:scale-75 transition-all p-0.5"
+                                    onClick={() => onUpdateStat(s as keyof CharacterStats, val - 1)}
+                                    className="text-oro/60 hover:text-oro active:scale-75 transition-all p-0.5"
                                     title="Decrementar"
                                   >
                                     <ChevronDown className="w-3.5 h-3.5 stroke-[3]" />
@@ -2838,21 +2831,21 @@ export function CharacterSheetView({
                   </div>
 
                   {/* Atributos Calculados */}
-                  <div className="lg:col-span-3 space-y-10 lg:border-l lg:border-oro/5 lg:pl-6 xl:pl-10">
+                  <div className="lg:col-span-3 space-y-10 lg:border-l lg:border-oro/10 lg:pl-6 xl:pl-10">
                     <div className="flex items-center gap-4 mb-8">
                       <div className="w-1.5 h-1.5 bg-naranja-naruto rotate-45" />
-                      <h3 className="text-xs xl:text-sm font-black text-oro/60 uppercase tracking-[0.4em]">Atributos</h3>
+                      <h3 className="text-xs xl:text-sm font-black text-oro/80 uppercase tracking-[0.4em]">Atributos</h3>
                     </div>
                     <div className="grid grid-cols-1 gap-3">
                       {[
                         { label: 'VIT', val: character.atributos_derivados.VIT, color: 'text-red-600' },
                         { label: 'CH', val: character.atributos_derivados.CH, color: 'text-blue-500' },
                         { label: 'VEL', val: character.atributos_derivados.VEL, color: 'text-oro' },
-                        { label: 'VR', val: character.atributos_derivados.VR, color: 'text-oro/60' },
-                        { label: 'DET', val: character.atributos_derivados.DET, color: 'text-oro/40' },
+                        { label: 'VR', val: character.atributos_derivados.VR, color: 'text-oro/90' },
+                        { label: 'DET', val: character.atributos_derivados.DET, color: 'text-oro/90' },
                       ].map(attr => (
-                        <div key={attr.label} className="bg-black/60 border border-oro/10 p-5 flex justify-between items-center group hover:border-oro/40 transition-all" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}>
-                          <span className="text-xs font-black text-oro/40 uppercase tracking-[0.2em]">{attr.label}</span>
+                        <div key={attr.label} className="bg-black/60 border border-oro/20 p-5 flex justify-between items-center group hover:border-oro/50 transition-all" style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}>
+                          <span className="text-xs font-black text-oro/70 uppercase tracking-[0.2em]">{attr.label}</span>
                           <span className={`text-2xl font-black ${attr.color} italic leading-none`}>
                             {String(attr.val || 0)}
                           </span>
@@ -2862,10 +2855,10 @@ export function CharacterSheetView({
                   </div>
 
                   {/* Panel de Rasgos */}
-                  <div className="lg:col-span-4 space-y-10 lg:border-l lg:border-oro/5 lg:pl-6 xl:pl-10">
+                  <div className="lg:col-span-4 space-y-10 lg:border-l lg:border-oro/10 lg:pl-6 xl:pl-10">
                     <div className="flex items-center gap-4 mb-8">
                       <div className="w-1.5 h-1.5 bg-naranja-naruto rotate-45" />
-                      <h3 className="text-xs xl:text-sm font-black text-oro/60 uppercase tracking-[0.4em]">Rasgos</h3>
+                      <h3 className="text-xs xl:text-sm font-black text-oro/80 uppercase tracking-[0.4em]">Rasgos</h3>
                     </div>
 
                     <div className="space-y-6">
@@ -2938,9 +2931,9 @@ export function CharacterSheetView({
                               const selected = getSelectedTrait(slot.category, slot.rank);
 
                               return (
-                                <div key={slot.label} className="bg-black/30 border border-oro/10 p-4 relative" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+                                <div key={slot.label} className="bg-black/50 border border-oro/20 p-4 relative" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
                                   <div className="flex justify-between items-center mb-1">
-                                    <span className="text-caption font-black text-oro/60 uppercase tracking-widest">{slot.label}</span>
+                                    <span className="text-caption font-black text-oro/80 uppercase tracking-widest">{slot.label}</span>
                                   </div>
 
                                   {forced ? (
@@ -2959,7 +2952,7 @@ export function CharacterSheetView({
                                     </div>
                                   ) : (
                                     <div className="text-sm font-black text-oro italic uppercase mt-1">
-                                      {selected?.nombre || <span className="text-oro/20 text-xs">SIN RASGO</span>}
+                                      {selected?.nombre || <span className="text-oro/50 text-xs">SIN RASGO</span>}
                                     </div>
                                   )}
                                 </div>
