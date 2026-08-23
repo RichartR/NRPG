@@ -178,6 +178,10 @@ export function useCharacter(characterId: string) {
     setSaving(true);
     try {
       if (!section) {
+        if (!character.aldea_id) {
+          throw new Error('Selecciona una aldea obligatoriamente.');
+        }
+
         // VALIDAR LÍMITES DE TÉCNICAS BÁSICAS DE NINJUTSU II Y III ANTES DE GUARDAR
         const validation = NinjutsuLogic.validateNinjutsuLimits(
           character.personajes_ramas || [],
@@ -348,6 +352,41 @@ export function useCharacter(characterId: string) {
               rango_nuevo: newRank
             }
           });
+        }
+
+        // Check Stats Base change
+        if (originalCharacter && originalCharacter.stats_base && character.stats_base) {
+          const oldStats = originalCharacter.stats_base;
+          const newStats = character.stats_base;
+          const statKeys = ['NIN', 'TAI', 'GEN', 'INT', 'FUE', 'AGI', 'EST', 'SM'] as const;
+
+          const changedStats: string[] = [];
+          for (const key of statKeys) {
+            const oldVal = Number(oldStats[key] || 0);
+            const newVal = Number(newStats[key] || 0);
+            if (oldVal !== newVal) {
+              changedStats.push(`${key}: ${oldVal} → ${newVal}`);
+            }
+          }
+
+          if (changedStats.length > 0) {
+            const oldStr = statKeys.map(k => `${k}: ${oldStats[k] || 0}`).join(', ');
+            const newStr = statKeys.map(k => `${k}: ${newStats[k] || 0}`).join(', ');
+
+            await RegistrosService.createRegistro({
+              tipo: 'accion',
+              autor_id: Number(characterId),
+              participantes_ids: [Number(characterId)],
+              data: {
+                titulo: `${character.nombre_ninja} actualizó sus atributos: ${changedStats.join(', ')}`,
+                subtitulo: `Anteriores: [ ${oldStr} ] | Nuevas: [ ${newStr} ]`,
+                tipo_accion: 'actualizacion_stats',
+                stats_anteriores: oldStats,
+                stats_nuevas: newStats,
+                cambios: changedStats
+              }
+            });
+          }
         }
         
         
