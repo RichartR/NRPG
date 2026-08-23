@@ -7,7 +7,7 @@ import { ProfileService } from '@/services/supabase/profile.service';
 import {
   Dices, Users, Play,
   RotateCcw, ChevronUp, ChevronDown,
-  Trash2, Copy, Sparkles, Eye, EyeOff, RefreshCw
+  Trash2, Copy, Sparkles, Eye, EyeOff, RefreshCw, Image as ImageIcon
 } from 'lucide-react';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
@@ -45,6 +45,23 @@ interface Participant {
   equipo?: Array<{ id: number; nombre: string }>;
   stats_base?: Record<string, number>; // Added for temp characters
   ocultar_vit?: boolean;
+}
+
+interface GridElement {
+  id: string;
+  name: string;
+  color: string;
+  cells: string[];
+  durationUnit: 'rondas' | 'acciones';
+  durationValue: number;
+  createdByName: string;
+  createdById?: string;
+  createdInTurnKey?: string;
+}
+
+interface GridConfig {
+  width: number;
+  height: number;
 }
 
 export default function CombatRoom({ roomId }: { roomId: string }) {
@@ -134,6 +151,159 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   const [masterItems, setMasterItems] = useState<any[]>([]);
   const [showCreateTempModal, setShowCreateTempModal] = useState(false);
   const [rollTargetId, setRollTargetId] = useState<string>('self');
+
+  // PvE Log Image State
+  const [logImageUrl, setLogImageUrl] = useState('');
+  const [logImageCaption, setLogImageCaption] = useState('');
+  const [expandedImage, setExpandedImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && expandedImage) {
+        setExpandedImage(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [expandedImage]);
+
+  const handleSendImageToLog = () => {
+    if (!logImageUrl.trim()) {
+      addToast("Introduce una URL de imagen válida.", "error");
+      return;
+    }
+    const url = logImageUrl.trim();
+    const caption = logImageCaption.trim();
+    const captionText = caption ? ` - **${caption}**` : '';
+    addLog(`**[IMAGEN]**${captionText}\n[IMG:${url}]`);
+    setLogImageUrl('');
+    setLogImageCaption('');
+  };
+
+  // PvP Combat Area Grid State
+  const [pvpTab, setPvpTab] = useState<'logs' | 'grid'>('logs');
+  const [gridConfig, setGridConfig] = useState<GridConfig | null>(null);
+  const [gridElements, setGridElements] = useState<GridElement[]>([]);
+  const [selectedCells, setSelectedCells] = useState<string[]>([]);
+  const [elementNameInput, setElementNameInput] = useState('');
+  const [elementDurationUnit, setElementDurationUnit] = useState<'rondas' | 'acciones'>('rondas');
+  const [elementDurationVal, setElementDurationVal] = useState<number>(3);
+  const [gridWidthInput, setGridWidthInput] = useState<number>(10);
+  const [gridHeightInput, setGridHeightInput] = useState<number>(10);
+  const [gridZoom, setGridZoom] = useState<number>(1);
+
+  const handleZoomIn = () => setGridZoom(prev => Math.min(2.5, +(prev + 0.1).toFixed(1)));
+  const handleZoomOut = () => setGridZoom(prev => Math.max(0.2, +(prev - 0.1).toFixed(1)));
+  const handleResetZoom = () => setGridZoom(1);
+
+  const gridConfigRef = useRef(gridConfig);
+  const gridElementsRef = useRef(gridElements);
+  useEffect(() => { gridConfigRef.current = gridConfig; }, [gridConfig]);
+  useEffect(() => { gridElementsRef.current = gridElements; }, [gridElements]);
+
+  const ELEMENT_COLORS = [
+    '#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6',
+    '#ec4899', '#06b6d4', '#f97316', '#84cc16', '#6366f1',
+    '#14b8a6', '#d946ef'
+  ];
+
+  const getRandomElementColor = () => {
+    const randomIndex = Math.floor(Math.random() * ELEMENT_COLORS.length);
+    return ELEMENT_COLORS[randomIndex];
+  };
+
+  const getCellLabel = (row: number, col: number) => {
+    let rowLetter = '';
+    let temp = row;
+    while (temp >= 0) {
+      rowLetter = String.fromCharCode(65 + (temp % 26)) + rowLetter;
+      temp = Math.floor(temp / 26) - 1;
+    }
+    return `${rowLetter}${col + 1}`;
+  };
+
+  const broadcastGridState = (config: GridConfig | null, elements: GridElement[]) => {
+    sendBroadcast('grid_state_update', {
+      gridConfig: config,
+      gridElements: elements,
+      senderId: currentActorId
+    });
+  };
+
+  const processTerrainDecay = (
+    elements: GridElement[],
+    options: { advanceAction: boolean; roundsAdvanced: number; currentTurnKey: string }
+  ) => {
+    if (elements.length === 0) return { updatedElements: [], expiredNames: [] };
+
+    const expiredNames: string[] = [];
+    const updatedElements: GridElement[] = [];
+
+    elements.forEach(el => {
+      // If created in this exact turn, preserve duration on this placement pass and clear key
+      if (el.createdInTurnKey && el.createdInTurnKey === options.currentTurnKey) {
+        updatedElements.push({ ...el, createdInTurnKey: undefined });
+        return;
+      }
+
+      let val = el.durationValue;
+      let isExpired = false;
+
+      if (el.durationUnit === 'acciones' && options.advanceAction) {
+        val -= 1;
+        if (val < 0) isExpired = true;
+      } else if (el.durationUnit === 'rondas' && options.roundsAdvanced > 0) {
+        val -= options.roundsAdvanced;
+        if (val < 0) isExpired = true;
+      }
+
+      if (isExpired) {
+        if (!expiredNames.includes(el.name)) {
+          expiredNames.push(el.name);
+        }
+      } else {
+        updatedElements.push({ ...el, durationValue: val, createdInTurnKey: undefined });
+      }
+    });
+
+    return { updatedElements, expiredNames };
+  };
+
+  // Drag selection state for Grid
+  const [isMouseDown, setIsMouseDown] = useState(false);
+  const [dragMode, setDragMode] = useState<'select' | 'deselect'>('select');
+
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      setIsMouseDown(false);
+    };
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, []);
+
+  const handleCellMouseDown = (cellKey: string) => {
+    setIsMouseDown(true);
+    if (selectedCells.includes(cellKey)) {
+      setDragMode('deselect');
+      setSelectedCells(prev => prev.filter(c => c !== cellKey));
+    } else {
+      setDragMode('select');
+      setSelectedCells(prev => [...prev, cellKey]);
+    }
+  };
+
+  const handleCellMouseEnter = (cellKey: string) => {
+    if (!isMouseDown) return;
+    if (dragMode === 'select') {
+      if (!selectedCells.includes(cellKey)) {
+        setSelectedCells(prev => [...prev, cellKey]);
+      }
+    } else {
+      if (selectedCells.includes(cellKey)) {
+        setSelectedCells(prev => prev.filter(c => c !== cellKey));
+      }
+    }
+  };
 
   // Dynamic Damage Calculator State
   const [calcStats, setCalcStats] = useState<{ id: string; stat: string; val: number; multInput: string }[]>([
@@ -413,74 +583,72 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     }
   }, [roomId]);
 
-  // Initializing local character stats
+  // Initializing local participant stats & bando from localStorage
   useEffect(() => {
-    if (activeCharacter) {
-      if (!localState) {
-        const storageKey = `combat_room_${roomId}_${activeCharacter.id}`;
-        const savedDataStr = localStorage.getItem(storageKey);
-        let restored = false;
+    const actorId = activeCharacter ? String(activeCharacter.id) : userProfile?.id;
+    if (!actorId) return;
 
-        if (savedDataStr) {
-          try {
-            const savedData = JSON.parse(savedDataStr);
-            if (savedData.timestamp && Date.now() - savedData.timestamp <= 7200000) {
-              setLocalState(savedData.localState);
-              setMyBando(savedData.myBando);
-              setMyIsInCombat(savedData.myIsInCombat);
-              setMyCooldowns(savedData.myCooldowns || {});
-              setMyActiveTecnicas(savedData.myActiveTecnicas || {});
-              restored = true;
-            } else {
-              localStorage.removeItem(storageKey);
-            }
-          } catch (e) {
-            console.error("Error parsing saved combat state:", e);
-          }
+    const storageKey = `combat_room_${roomId}_${actorId}`;
+    const savedDataStr = localStorage.getItem(storageKey);
+    let restored = false;
+
+    if (savedDataStr) {
+      try {
+        const savedData = JSON.parse(savedDataStr);
+        if (savedData.timestamp && Date.now() - savedData.timestamp <= 7200000) {
+          if (savedData.localState) setLocalState(savedData.localState);
+          if (savedData.myBando !== undefined) setMyBando(savedData.myBando);
+          if (savedData.myIsInCombat !== undefined) setMyIsInCombat(savedData.myIsInCombat);
+          if (savedData.myCooldowns) setMyCooldowns(savedData.myCooldowns);
+          if (savedData.myActiveTecnicas) setMyActiveTecnicas(savedData.myActiveTecnicas);
+          restored = true;
+        } else {
+          localStorage.removeItem(storageKey);
         }
-
-        if (!restored) {
-          let vit = activeCharacter.atributos_derivados.VIT;
-          let maxVit = activeCharacter.atributos_derivados.VIT;
-
-          if (isEventMode) {
-            const rankVal = (activeCharacter.rango || 'D').toUpperCase();
-            const rankVits: Record<string, number> = {
-              'D': 15,
-              'C': 25,
-              'B': 50,
-              'A': 80,
-              'S': 100
-            };
-            const evVit = rankVits[rankVal] ?? 15;
-            vit = evVit;
-            maxVit = evVit;
-          }
-
-          setLocalState({
-            vit: vit,
-            maxVit: maxVit,
-            ch: activeCharacter.atributos_derivados.CH,
-            maxCh: activeCharacter.atributos_derivados.CH,
-            vel: activeCharacter.atributos_derivados.VEL || 0,
-            kawarimi: 0,
-            maxKawarimi: 1,
-            usedTraits: {},
-            chConstanteActive: false,
-            chConstanteCost: 0,
-          });
-        }
-      } else if (localState.vel !== activeCharacter.atributos_derivados.VEL) {
-        setLocalState(prev => prev ? { ...prev, vel: activeCharacter.atributos_derivados.VEL || 0 } : null);
+      } catch (e) {
+        console.error("Error parsing saved combat state:", e);
       }
     }
-  }, [activeCharacter, localState?.vel, isEventMode, roomId]);
 
-  // Save local active character state to localStorage on changes
+    if (!restored && activeCharacter && !localState) {
+      let vit = activeCharacter.atributos_derivados.VIT;
+      let maxVit = activeCharacter.atributos_derivados.VIT;
+
+      if (isEventMode) {
+        const rankVal = (activeCharacter.rango || 'D').toUpperCase();
+        const rankVits: Record<string, number> = {
+          'D': 15,
+          'C': 25,
+          'B': 50,
+          'A': 80,
+          'S': 100
+        };
+        const evVit = rankVits[rankVal] ?? 15;
+        vit = evVit;
+        maxVit = evVit;
+      }
+
+      setLocalState({
+        vit: vit,
+        maxVit: maxVit,
+        ch: activeCharacter.atributos_derivados.CH,
+        maxCh: activeCharacter.atributos_derivados.CH,
+        vel: activeCharacter.atributos_derivados.VEL || 0,
+        kawarimi: 0,
+        maxKawarimi: 1,
+        usedTraits: {},
+        chConstanteActive: false,
+        chConstanteCost: 0,
+      });
+    }
+  }, [activeCharacter?.id ? String(activeCharacter.id) : '', userProfile?.id || '', isEventMode, roomId]);
+
+  // Save local participant state to localStorage on changes
   useEffect(() => {
-    if (activeCharacter && localState) {
-      const storageKey = `combat_room_${roomId}_${activeCharacter.id}`;
-      if (myIsInCombat || myBando !== null) {
+    const actorId = activeCharacter ? String(activeCharacter.id) : userProfile?.id;
+    if (actorId) {
+      const storageKey = `combat_room_${roomId}_${actorId}`;
+      if (myIsInCombat || myBando !== null || localState !== null) {
         const dataToSave = {
           localState,
           myBando,
@@ -494,12 +662,12 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         localStorage.removeItem(storageKey);
       }
     }
-  }, [roomId, activeCharacter?.id, localState, myBando, myIsInCombat, myCooldowns, myActiveTecnicas]);
+  }, [roomId, activeCharacter?.id ? String(activeCharacter.id) : '', userProfile?.id || '', localState, myBando, myIsInCombat, myCooldowns, myActiveTecnicas]);
 
   // Save global room state to localStorage on changes
   useEffect(() => {
     const globalStorageKey = `combat_room_global_${roomId}`;
-    if (combatStarted && turnQueue.length > 0) {
+    if (logs.length > 0 || turnQueue.length > 0 || combatStarted || Object.keys(tempCharacters).length > 0) {
       const globalData = {
         turnQueue,
         currentTurnIndex,
@@ -532,11 +700,6 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   const lastProcessedRoundRef = useRef<number>(rondaActual);
 
   useEffect(() => {
-    if (!combatStarted || isEventMode || !localState || !activeCharacter) {
-      lastProcessedRoundRef.current = rondaActual;
-      return;
-    }
-
     const previousRound = lastProcessedRoundRef.current;
     if (rondaActual <= previousRound) {
       lastProcessedRoundRef.current = rondaActual;
@@ -544,27 +707,57 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     }
 
     const roundsAdvanced = rondaActual - previousRound;
-    const cost = localState.chConstanteCost ?? 0;
 
-    if (localState.chConstanteActive && cost > 0) {
-      const totalCost = cost * roundsAdvanced;
-      const newCh = Math.max(0, localState.ch - totalCost);
-      setLocalState(prev => prev ? { ...prev, ch: newCh } : null);
-      addLog(`**${activeCharacter.nombre_ninja}** consume **${totalCost}** CH por mantenimiento constante de técnica al iniciar la Ronda ${rondaActual}. CH: ${newCh}/${localState.maxCh}.`);
+    // 1. Mantenimiento constante de CH y Cooldowns de personaje activo
+    if (combatStarted && !isEventMode && localState && activeCharacter) {
+      const cost = localState.chConstanteCost ?? 0;
+      if (localState.chConstanteActive && cost > 0) {
+        const totalCost = cost * roundsAdvanced;
+        const newCh = Math.max(0, localState.ch - totalCost);
+        setLocalState(prev => prev ? { ...prev, ch: newCh } : null);
+        addLog(`**${activeCharacter.nombre_ninja}** consume **${totalCost}** CH por mantenimiento constante de técnica al iniciar la Ronda ${rondaActual}. CH: ${newCh}/${localState.maxCh}.`);
+      }
+
+      // Shift reusableAtRound forward for active techniques to freeze their cooldowns
+      const activeTechIds = Object.keys(myActiveTecnicas).map(Number);
+      if (activeTechIds.length > 0) {
+        setMyCooldowns(prev => {
+          const updated = { ...prev };
+          activeTechIds.forEach(techId => {
+            if (updated[techId]) {
+              updated[techId] = updated[techId] + roundsAdvanced;
+            }
+          });
+          return updated;
+        });
+      }
     }
 
-    // Shift reusableAtRound forward for active techniques to freeze their cooldowns
-    const activeTechIds = Object.keys(myActiveTecnicas).map(Number);
-    if (activeTechIds.length > 0) {
-      setMyCooldowns(prev => {
-        const updated = { ...prev };
-        activeTechIds.forEach(techId => {
-          if (updated[techId]) {
-            updated[techId] = updated[techId] + roundsAdvanced;
+    // 2. Decrement terrain elements duration in rondas (ALWAYS runs on round advancement)
+    if (gridElementsRef.current.length > 0) {
+      const updatedElements: GridElement[] = [];
+      const expiredNames: string[] = [];
+
+      gridElementsRef.current.forEach(el => {
+        if (el.durationUnit === 'rondas') {
+          const newVal = el.durationValue - roundsAdvanced;
+          if (newVal >= 0) {
+            updatedElements.push({ ...el, durationValue: newVal });
+          } else {
+            expiredNames.push(el.name);
           }
-        });
-        return updated;
+        } else {
+          updatedElements.push(el);
+        }
       });
+
+      if (expiredNames.length > 0 || updatedElements.length !== gridElementsRef.current.length) {
+        setGridElements(updatedElements);
+        broadcastGridState(gridConfigRef.current, updatedElements);
+        expiredNames.forEach(name => {
+          addLog(`**[TERRENO]** El elemento **${name}** ha expirado y desaparece del terreno de combate.`);
+        });
+      }
     }
 
     lastProcessedRoundRef.current = rondaActual;
@@ -678,6 +871,8 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
               tempCharacters: tempCharactersRef.current,
               activeMusicVideoId: activeMusicVideoIdRef.current,
               musicIsPlaying: musicIsPlayingRef.current,
+              gridConfig: gridConfigRef.current,
+              gridElements: gridElementsRef.current,
               senderId: myActorId
             }
           });
@@ -698,6 +893,12 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
           }
           if (payload.tempCharacters !== undefined) {
             setTempCharacters(payload.tempCharacters);
+          }
+          if (payload.gridConfig !== undefined) {
+            setGridConfig(payload.gridConfig);
+          }
+          if (payload.gridElements !== undefined) {
+            setGridElements(payload.gridElements);
           }
           if (isEventMode && payload.activeMusicVideoId !== undefined) {
             setActiveMusicVideoId(payload.activeMusicVideoId);
@@ -723,6 +924,13 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         const myActorId = activeCharacterRef.current ? String(activeCharacterRef.current.id) : userProfileRef.current?.id;
         if (payload.senderId !== myActorId) {
           setTempCharacters(payload.tempCharacters);
+        }
+      })
+      .on('broadcast', { event: 'grid_state_update' }, ({ payload }) => {
+        const myActorId = activeCharacterRef.current ? String(activeCharacterRef.current.id) : userProfileRef.current?.id;
+        if (payload.senderId !== myActorId) {
+          if (payload.gridConfig !== undefined) setGridConfig(payload.gridConfig);
+          if (payload.gridElements !== undefined) setGridElements(payload.gridElements);
         }
       })
       .on('broadcast', { event: 'music_update' }, ({ payload }) => {
@@ -830,7 +1038,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
       channelRef.current = null;
       setIsSubscribed(false);
     };
-  }, [roomId, activeCharacter?.id, userProfile?.id]);
+  }, [roomId, activeCharacter?.id ? String(activeCharacter.id) : '', userProfile?.id || '']);
 
   // Track presence reactively when stats, bando, or combat status changes (only after subscription is active)
   useEffect(() => {
@@ -871,7 +1079,6 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
           nombre: pi.info_glosario?.nombre_es || 'Objeto'
         })) || []
       };
-      console.log("Tracking local player presence. Payload:", payload);
       channelRef.current.track(payload);
     }
   }, [
@@ -912,7 +1119,15 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     });
   };
 
-  const broadcastGlobalState = (queue: string[], index: number, round: number, started: boolean, temps?: Record<string, Participant>, startTime?: number | null) => {
+  const broadcastGlobalState = (
+    queue: string[],
+    index: number,
+    round: number,
+    started: boolean,
+    temps?: Record<string, Participant>,
+    startTime?: number | null,
+    overrideGridElements?: GridElement[]
+  ) => {
     sendBroadcast('combat_state_update', {
       turnQueue: queue,
       currentTurnIndex: index,
@@ -922,6 +1137,8 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
       tempCharacters: temps ?? tempCharactersRef.current,
       activeMusicVideoId: activeMusicVideoIdRef.current,
       musicIsPlaying: musicIsPlayingRef.current,
+      gridConfig: gridConfigRef.current,
+      gridElements: overrideGridElements ?? gridElementsRef.current,
       senderId: currentActorId
     });
   };
@@ -942,14 +1159,49 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     });
   };
 
-  const updateGlobalCombatState = (queue: string[], index: number, round: number, started: boolean, startTime?: number | null) => {
+  const updateGlobalCombatState = (
+    queue: string[],
+    index: number,
+    round: number,
+    started: boolean,
+    startTime?: number | null,
+    overrideGridElements?: GridElement[]
+  ) => {
     const newStartTime = startTime !== undefined ? startTime : turnStartTime;
+    let finalElements = overrideGridElements ?? gridElementsRef.current;
+
+    // Check if round advanced without explicit grid elements override
+    if (round > rondaActualRef.current && finalElements.length > 0 && !overrideGridElements) {
+      const roundsAdvanced = round - rondaActualRef.current;
+      const updatedElements: GridElement[] = [];
+      const expiredNames: string[] = [];
+
+      finalElements.forEach(el => {
+        if (el.durationUnit === 'rondas') {
+          const newVal = el.durationValue - roundsAdvanced;
+          if (newVal >= 0) {
+            updatedElements.push({ ...el, durationValue: newVal });
+          } else {
+            expiredNames.push(el.name);
+          }
+        } else {
+          updatedElements.push(el);
+        }
+      });
+
+      finalElements = updatedElements;
+      expiredNames.forEach(name => {
+        addLog(`**[TERRENO]** El elemento **${name}** ha expirado y desaparece del terreno de combate.`);
+      });
+    }
+
+    setGridElements(finalElements);
     setTurnQueue(queue);
     setCurrentTurnIndex(index);
     setRondaActual(round);
     setCombatStarted(started);
     setTurnStartTime(newStartTime);
-    broadcastGlobalState(queue, index, round, started, undefined, newStartTime);
+    broadcastGlobalState(queue, index, round, started, undefined, newStartTime, finalElements);
   };
 
   const broadcastTempCharacters = (temps: Record<string, Participant>) => {
@@ -1208,42 +1460,45 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   };
 
   const passTurn = () => {
-    if (turnQueue.length === 0) return;
-
-    const activeCharId = turnQueue[currentTurnIndex];
-    const activeParticipantName = participants[activeCharId]?.nombre || tempCharactersRef.current[activeCharId]?.nombre || 'Shinobi';
-
-    let durationText = '';
-    if (!isEventMode) {
-      const now = Date.now();
-      const startTime = turnStartTimeRef.current || now;
-      const durationSec = Math.max(0, Math.floor((now - startTime) / 1000));
-      const mins = Math.floor(durationSec / 60).toString().padStart(2, '0');
-      const secs = (durationSec % 60).toString().padStart(2, '0');
-      durationText = ` (Duración: ${mins}:${secs})`;
-    }
-
     let nextIndex = currentTurnIndex + 1;
     let nextRound = rondaActual;
     let roundEnded = false;
 
-    if (nextIndex >= turnQueue.length) {
+    if (turnQueue.length === 0 || nextIndex >= turnQueue.length) {
       nextIndex = 0;
       nextRound = rondaActual + 1;
       roundEnded = true;
     }
 
-    const nextTurnStart = Date.now();
-    updateGlobalCombatState(turnQueue, nextIndex, nextRound, true, nextTurnStart);
-    addLog(`Fin del turno de **${activeParticipantName}**${durationText}.`);
+    const currentTurnKey = `${rondaActual}_${currentTurnIndex}`;
+    const roundsAdvanced = roundEnded ? Math.max(1, nextRound - rondaActual) : 0;
+    const { updatedElements, expiredNames } = processTerrainDecay(gridElementsRef.current, {
+      advanceAction: true,
+      roundsAdvanced,
+      currentTurnKey
+    });
 
+    expiredNames.forEach(name => {
+      addLog(`**[TERRENO]** El elemento **${name}** ha expirado y desaparece del terreno de combate.`);
+    });
+
+    const nextTurnStart = Date.now();
+    setGridElements(updatedElements);
+    updateGlobalCombatState(turnQueue, nextIndex, nextRound, true, nextTurnStart, updatedElements);
+
+    const activeCharId = turnQueue[currentTurnIndex];
+    const activeParticipantName = participants[activeCharId]?.nombre || tempCharactersRef.current[activeCharId]?.nombre || currentActorName;
+
+    addLog(`Fin del turno de **${activeParticipantName}**.`);
     if (roundEnded) {
       addLog(`**Ronda ${nextRound} Iniciada**`);
     }
 
-    const nextCharId = turnQueue[nextIndex];
-    const nextPlayerName = participants[nextCharId]?.nombre || tempCharactersRef.current[nextCharId]?.nombre || 'Siguiente shinobi';
-    addLog(`Es el turno de **${nextPlayerName}**.`);
+    if (turnQueue.length > 0) {
+      const nextCharId = turnQueue[nextIndex];
+      const nextPlayerName = participants[nextCharId]?.nombre || tempCharactersRef.current[nextCharId]?.nombre || 'Siguiente shinobi';
+      addLog(`Es el turno de **${nextPlayerName}**.`);
+    }
   };
 
   // Local actions for VIT & CH
@@ -2026,29 +2281,27 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                           </div>
                         </div>
                       )}
-                      {!isEventMode && (
-                        <div>
-                          <div className="flex justify-between text-[10px] font-black mb-1">
-                            <span className="text-blue-400">CH</span>
-                            <span>
-                              {String(activeCharacter?.id) === p.user_id ? (localState?.ch ?? p.estado?.ch) : p.estado?.ch}
-                              {' / '}
-                              {String(activeCharacter?.id) === p.user_id ? (localState?.maxCh ?? p.estado?.maxCh) : p.estado?.maxCh}
-                            </span>
+                      {!isEventMode && (() => {
+                        const chVal = String(activeCharacter?.id) === p.user_id ? (localState?.ch ?? p.estado?.ch ?? 0) : (p.estado?.ch ?? 0);
+                        const maxChVal = String(activeCharacter?.id) === p.user_id ? (localState?.maxCh ?? p.estado?.maxCh ?? 0) : (p.estado?.maxCh ?? 0);
+                        const chPct = maxChVal > 0 ? Math.round((chVal / maxChVal) * 100) : 0;
+                        return (
+                          <div>
+                            <div className="flex justify-between text-[10px] font-black mb-1">
+                              <span className="text-blue-400">CH</span>
+                              <span>
+                                {chVal} / {maxChVal} <span className="text-blue-300/80 font-mono font-bold text-[9px]">({chPct}%)</span>
+                              </span>
+                            </div>
+                            <div className="h-2 bg-black/60 border border-oro/5 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-blue-500 transition-all duration-300"
+                                style={{ width: `${maxChVal > 0 ? (chVal / maxChVal) * 100 : 0}%` }}
+                              />
+                            </div>
                           </div>
-                          <div className="h-2 bg-black/60 border border-oro/5 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-blue-500 transition-all duration-300"
-                              style={{
-                                width: `${(
-                                  (String(activeCharacter?.id) === p.user_id ? (localState?.ch ?? p.estado?.ch) : p.estado?.ch) /
-                                  (String(activeCharacter?.id) === p.user_id ? (localState?.maxCh ?? p.estado?.maxCh) : p.estado?.maxCh)
-                                ) * 100}%`
-                              }}
-                            />
-                          </div>
-                        </div>
-                      )}
+                        );
+                      })()}
 
                       {/* NPC Inline Controls */}
                       {canControlTemp && (
@@ -2299,7 +2552,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                 <div className="flex items-center gap-3">
                   <h2 className="font-black text-sm uppercase tracking-[0.2em]">ORDEN DE TURNOS</h2>
                 </div>
-                <div className="text-caption font-black text-oro/50 uppercase tracking-widest flex items-center gap-2">
+                <div className="text-caption font-black text-oro/50 uppercase tracking-widest flex items-center gap-3">
                   <span>Ronda: <span className="text-oro font-bold text-base">{rondaActual}</span></span>
                   {!isEventMode && (
                     <span className="font-mono text-base font-bold text-amber-400 bg-black/40 border border-amber-500/20 px-2 py-0.5 rounded-sm">
@@ -2444,29 +2697,474 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
               </div>
             </div>
 
-            {/* COMBAT LOGS */}
-            <div className="ninja-card-oro p-6 flex flex-col relative overflow-hidden h-[500px] min-h-[300px] max-h-[500px]">
-              <h3 className="font-black text-sm uppercase tracking-[0.2em] border-b border-oro/10 pb-4 mb-4">
-                REGISTRO DE COMBATE
-              </h3>
+            {/* COMBAT LOGS & AREA DE COMBATE PANEL */}
+            <div className="ninja-card-oro p-6 flex flex-col relative overflow-hidden h-[600px] min-h-[400px]">
 
-              <div className="flex-1 overflow-y-auto space-y-3.5 pr-2 font-mono text-xs text-oro/75 custom-scrollbar">
-                {[...logs].reverse().map((log, i) => (
-                  <div
-                    key={i}
-                    className="border-b border-oro/5 pb-2 last:border-0 leading-relaxed animate-fade-in"
-                    dangerouslySetInnerHTML={{
-                      __html: log
-                        .replace(/\*\*(.*?)\*\*/g, '<strong class="text-oro font-black">$1</strong>')
-                    }}
-                  />
-                ))}
-                {logs.length === 0 && (
-                  <div className="text-oro/20 italic text-center py-12 uppercase tracking-widest">
-                    Esperando sucesos en el campo de batalla...
+              {/* Header Tab Bar (Only in PvP mode) */}
+              <div className="flex items-center justify-between border-b border-oro/10 pb-3 mb-3 gap-2">
+                {!isEventMode ? (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPvpTab('logs')}
+                      className={`px-4 py-1.5 text-xs font-black uppercase tracking-wider transition-all border rounded-sm ${pvpTab === 'logs'
+                        ? 'bg-oro text-black border-oro shadow-sm'
+                        : 'bg-black/40 text-oro/60 border-oro/10 hover:text-oro'
+                        }`}
+                    >
+                      Registro
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPvpTab('grid')}
+                      className={`px-4 py-1.5 text-xs font-black uppercase tracking-wider transition-all border rounded-sm flex items-center gap-1.5 ${pvpTab === 'grid'
+                        ? 'bg-oro text-black border-oro shadow-sm'
+                        : 'bg-black/40 text-oro/60 border-oro/10 hover:text-oro'
+                        }`}
+                    >
+                      <span>Área de Combate</span>
+                      {gridElements.length > 0 && (
+                        <span className="bg-naranja-naruto text-white text-[9px] font-mono px-1.5 py-0.2 rounded-full">
+                          {gridElements.length}
+                        </span>
+                      )}
+                    </button>
                   </div>
+                ) : (
+                  <h3 className="font-black text-sm uppercase tracking-[0.2em]">
+                    REGISTRO DE COMBATE
+                  </h3>
+                )}
+
+                {!isEventMode && pvpTab === 'grid' && gridConfig && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const isConfirmed = await confirm({
+                        title: "Reiniciar Tablero",
+                        message: "¿Deseas limpiar y reiniciar la cuadrícula del terreno de combate?",
+                        confirmLabel: "Reiniciar",
+                        cancelLabel: "Cancelar",
+                        variant: "danger"
+                      });
+                      if (isConfirmed) {
+                        setGridConfig(null);
+                        setGridElements([]);
+                        setSelectedCells([]);
+                        broadcastGridState(null, []);
+                        addLog(`**[TERRENO]** El terreno de combate ha sido reiniciado.`);
+                      }
+                    }}
+                    className="text-[10px] font-black text-red-400 hover:text-red-300 uppercase tracking-wider bg-red-950/30 border border-red-500/20 px-2.5 py-1 rounded-sm transition-all"
+                  >
+                    Reiniciar Tablero
+                  </button>
                 )}
               </div>
+
+              {/* VIEW 1: REGISTRO DE COMBATE (Default for PvE and when tab is 'logs') */}
+              {(isEventMode || pvpTab === 'logs') && (
+                <div className="flex-1 flex flex-col min-h-0">
+                  {/* Form to insert image (ONLY in PVE / Event mode AND for Admin / Narrator) */}
+                  {isEventMode && isAdminOrNarrator && (
+                    <div className="flex flex-col sm:flex-row gap-2 mb-3 p-2 bg-black/40 border border-oro/15 rounded-sm shrink-0">
+                      <input
+                        type="text"
+                        placeholder="URL de la imagen..."
+                        value={logImageUrl}
+                        onChange={(e) => setLogImageUrl(e.target.value)}
+                        className="flex-1 bg-black/60 border border-oro/20 text-oro text-xs font-mono px-3 py-1.5 outline-none focus:border-oro transition-all rounded-sm min-w-0"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Descripción (opcional)..."
+                        value={logImageCaption}
+                        onChange={(e) => setLogImageCaption(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSendImageToLog();
+                        }}
+                        className="sm:w-36 bg-black/60 border border-oro/20 text-oro text-xs px-3 py-1.5 outline-none focus:border-oro transition-all rounded-sm min-w-0"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSendImageToLog}
+                        className="ninja-btn-oro px-3 py-1.5 text-xs font-black shrink-0 flex items-center justify-center gap-1.5"
+                      >
+                        <ImageIcon className="w-3.5 h-3.5" />
+                        Enviar Imagen
+                      </button>
+                    </div>
+                  )}
+
+                  <div
+                    className="flex-1 overflow-y-auto space-y-3.5 pr-2 font-mono text-xs text-oro/75 custom-scrollbar"
+                    onClick={(e) => {
+                      const target = e.target as HTMLElement;
+                      if (target.tagName === 'IMG' && target.dataset.imgUrl) {
+                        setExpandedImage(target.dataset.imgUrl);
+                      }
+                    }}
+                  >
+                    {[...logs].reverse().map((log, i) => (
+                      <div
+                        key={i}
+                        className="border-b border-oro/5 pb-2 last:border-0 leading-relaxed animate-fade-in"
+                        dangerouslySetInnerHTML={{
+                          __html: log
+                            .replace(/\*\*(.*?)\*\*/g, '<strong class="text-oro font-black">$1</strong>')
+                            .replace(
+                              /\[IMG:(.*?)\]/g,
+                              '<div class="mt-2 mb-1"><img src="$1" alt="Ilustración" class="combat-log-img h-20 max-w-[180px] object-cover rounded border border-oro/30 cursor-pointer hover:border-oro hover:scale-[1.03] transition-all shadow-md" data-img-url="$1" title="Haz clic para ampliar imagen" /></div>'
+                            )
+                        }}
+                      />
+                    ))}
+                    {logs.length === 0 && (
+                      <div className="text-oro/20 italic text-center py-12 uppercase tracking-widest">
+                        Esperando sucesos en el campo de batalla...
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* VIEW 2: AREA DE COMBATE GRID (PvP Mode Only) */}
+              {!isEventMode && pvpTab === 'grid' && (
+                <div className="flex-1 flex flex-col min-h-0 overflow-y-auto pr-1 space-y-4 custom-scrollbar">
+                  {!gridConfig ? (
+                    /* Setup Grid Configuration Form */
+                    <div className="p-6 bg-black/40 border border-oro/15 rounded-sm flex flex-col items-center justify-center space-y-5 my-auto">
+                      <h4 className="ninja-title text-base font-black text-oro uppercase tracking-[0.2em] text-center">
+                        CONFIGURACIÓN DEL TABLERO DE COMBATE
+                      </h4>
+                      <p className="text-xs text-oro/60 text-center max-w-md">
+                        Indica las dimensiones de casillas (ancho x alto) para crear la cuadrícula del terreno de combate.
+                      </p>
+                      <div className="flex items-center gap-4">
+                        <div className="flex flex-col items-center">
+                          <label className="text-[10px] font-black text-oro/50 uppercase mb-1">Ancho (Cols)</label>
+                          <input
+                            type="number"
+                            min="3"
+                            max="100"
+                            value={gridWidthInput}
+                            onChange={(e) => setGridWidthInput(Math.max(3, Math.min(100, Number(e.target.value) || 3)))}
+                            className="w-20 bg-black/60 border border-oro/20 text-center text-white font-mono text-sm font-black p-2 outline-none focus:border-oro rounded-sm"
+                          />
+                        </div>
+                        <span className="text-oro font-black text-lg pt-4">×</span>
+                        <div className="flex flex-col items-center">
+                          <label className="text-[10px] font-black text-oro/50 uppercase mb-1">Alto (Filas)</label>
+                          <input
+                            type="number"
+                            min="3"
+                            max="100"
+                            value={gridHeightInput}
+                            onChange={(e) => setGridHeightInput(Math.max(3, Math.min(100, Number(e.target.value) || 3)))}
+                            className="w-20 bg-black/60 border border-oro/20 text-center text-white font-mono text-sm font-black p-2 outline-none focus:border-oro rounded-sm"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const config = { width: gridWidthInput, height: gridHeightInput };
+                          setGridConfig(config);
+                          broadcastGridState(config, gridElements);
+                          addLog(`**[TABLERO]** **${currentActorName}** crea un tablero de combate de **${gridWidthInput}x${gridHeightInput}** casillas.`);
+                        }}
+                        className="ninja-btn-oro px-6 py-2.5 text-xs font-black uppercase tracking-wider"
+                      >
+                        Crear Tablero de Combate
+                      </button>
+                    </div>
+                  ) : (
+                    /* Active Grid Display & Interaction */
+                    <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0">
+
+                      {/* Left / Top: Interactive Grid Canvas */}
+                      <div
+                        className="flex-1 flex flex-col items-center justify-start overflow-auto p-3 bg-black/50 border border-oro/15 rounded-sm min-h-[320px] max-h-[480px] custom-scrollbar select-none relative"
+                        onWheel={(e) => {
+                          if (e.ctrlKey || e.metaKey) {
+                            e.preventDefault();
+                            if (e.deltaY < 0) {
+                              handleZoomIn();
+                            } else {
+                              handleZoomOut();
+                            }
+                          }
+                        }}
+                      >
+                        {/* Zoom Bar */}
+                        <div className="flex items-center justify-between w-full mb-2 shrink-0 px-1 border-b border-oro/10 pb-1.5 z-30">
+                          <span className="text-[10px] font-mono font-black text-oro/60 uppercase">
+                            Zoom: <span className="text-oro font-bold">{Math.round(gridZoom * 100)}%</span>
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={handleZoomOut}
+                              className="px-2 py-0.5 bg-black/60 border border-oro/20 text-oro text-xs font-black hover:border-oro rounded-sm"
+                              title="Alejar (Zoom Out)"
+                            >
+                              -
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleResetZoom}
+                              className="px-2 py-0.5 bg-black/60 border border-oro/20 text-oro text-[9px] font-mono hover:border-oro rounded-sm"
+                              title="Restablecer Zoom (100%)"
+                            >
+                              100%
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleZoomIn}
+                              className="px-2 py-0.5 bg-black/60 border border-oro/20 text-oro text-xs font-black hover:border-oro rounded-sm"
+                              title="Acercar (Zoom In)"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+
+                        <div
+                          className="inline-block select-none transition-transform duration-150 origin-top"
+                          style={{ transform: `scale(${gridZoom})` }}
+                        >
+                          {/* Column Labels Header */}
+                          <div className="flex select-none">
+                            <div className="w-6 h-6 shrink-0" />
+                            {Array.from({ length: gridConfig.width }, (_, colIdx) => (
+                              <div key={colIdx} className="w-7 sm:w-7.5 h-6 flex items-center justify-center text-[10px] font-mono font-black text-oro/60 shrink-0 select-none">
+                                {colIdx + 1}
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Grid Rows */}
+                          {Array.from({ length: gridConfig.height }, (_, rowIdx) => (
+                            <div key={rowIdx} className="flex items-center select-none">
+                              {/* Row Label */}
+                              <div className="w-6 h-7 sm:h-7.5 flex items-center justify-center text-[10px] font-mono font-black text-oro/60 shrink-0 select-none">
+                                {getCellLabel(rowIdx, 0).replace(/\d+$/, '')}
+                              </div>
+
+                              {/* Row Cells */}
+                              {Array.from({ length: gridConfig.width }, (_, colIdx) => {
+                                const cellKey = getCellLabel(rowIdx, colIdx);
+                                const isSelected = selectedCells.includes(cellKey);
+                                const matchingEls = gridElements.filter(el => el.cells.includes(cellKey));
+                                const topElement = matchingEls[0];
+
+                                return (
+                                  <button
+                                    key={colIdx}
+                                    type="button"
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
+                                      handleCellMouseDown(cellKey);
+                                    }}
+                                    onMouseEnter={() => handleCellMouseEnter(cellKey)}
+                                    className={`w-7 h-7 sm:w-7.5 sm:h-7.5 m-[1px] rounded-xs border-2 select-none flex flex-col items-center justify-center relative cursor-pointer group ${isSelected
+                                      ? 'border-oro bg-oro/40 text-white font-black z-20 shadow-md shadow-oro/20'
+                                      : topElement
+                                        ? 'border-transparent shadow-sm'
+                                        : 'border-oro/15 bg-black/60 hover:border-oro/50 hover:bg-oro/10 text-oro/30'
+                                      }`}
+                                    style={{
+                                      backgroundColor: topElement ? `${topElement.color}45` : undefined,
+                                      borderColor: topElement ? topElement.color : undefined
+                                    }}
+                                    title={topElement ? `${cellKey}: ${topElement.name} (Por: ${topElement.createdByName} | ⏳ ${topElement.durationValue} ${topElement.durationUnit})` : cellKey}
+                                  >
+                                    {topElement ? (
+                                      <span className="text-[10px] font-black uppercase text-white drop-shadow-md select-none">
+                                        {topElement.name.charAt(0)}
+                                      </span>
+                                    ) : (
+                                      <span className="text-[8px] font-mono text-oro/30 group-hover:text-oro/80 select-none">
+                                        {cellKey}
+                                      </span>
+                                    )}
+
+                                    {/* Tooltip on hover */}
+                                    {topElement && (
+                                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:flex flex-col bg-black/95 border border-oro/40 text-[9px] font-mono p-1.5 rounded shadow-2xl z-30 whitespace-nowrap pointer-events-none">
+                                        <span className="font-bold text-white">{topElement.name}</span>
+                                        <span className="text-oro/60">Casilla: {cellKey}</span>
+                                        <span className="text-amber-400">⏳ {topElement.durationValue} {topElement.durationUnit}</span>
+                                      </div>
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Right / Bottom: Controls & Active Elements Panel */}
+                      <div className="w-full lg:w-72 flex flex-col gap-3 shrink-0">
+
+                        {/* Form to Add Element */}
+                        <div className="p-3 bg-black/40 border border-oro/15 rounded-sm space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black text-oro/60 uppercase">NUEVO ELEMENTO:</span>
+                            {selectedCells.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => setSelectedCells([])}
+                                className="text-[9px] font-black text-oro/40 hover:text-oro underline"
+                              >
+                                Limpiar ({selectedCells.length})
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="text-[10px] font-mono text-oro font-black bg-black/60 border border-oro/10 p-1.5 rounded-sm min-h-[28px] truncate">
+                            {selectedCells.length > 0 ? `Casillas: ${selectedCells.join(', ')}` : <span className="text-oro/30 italic">Haz clic en casillas del tablero</span>}
+                          </div>
+
+                          <input
+                            type="text"
+                            placeholder="Nombre (Ej: Muro de Tierra)..."
+                            value={elementNameInput}
+                            onChange={(e) => setElementNameInput(e.target.value)}
+                            className="w-full bg-black/60 border border-oro/20 text-oro text-xs font-sans px-2.5 py-1.5 outline-none focus:border-oro transition-all rounded-sm"
+                          />
+
+                          <div className="flex gap-2">
+                            <div className="flex-1 flex flex-col">
+                              <label className="text-[9px] font-black text-oro/40 uppercase mb-0.5">Duración</label>
+                              <input
+                                type="number"
+                                min="1"
+                                value={elementDurationVal}
+                                onChange={(e) => setElementDurationVal(Math.max(1, Number(e.target.value) || 1))}
+                                className="bg-black/60 border border-oro/20 text-white text-xs font-mono px-2 py-1 outline-none focus:border-oro rounded-sm"
+                              />
+                            </div>
+                            <div className="flex-1 flex flex-col">
+                              <label className="text-[9px] font-black text-oro/40 uppercase mb-0.5">Unidad</label>
+                              <select
+                                value={elementDurationUnit}
+                                onChange={(e) => setElementDurationUnit(e.target.value as 'rondas' | 'acciones')}
+                                className="bg-black/60 border border-oro/20 text-oro text-xs font-black px-2 py-1 outline-none focus:border-oro rounded-sm"
+                              >
+                                <option value="rondas">Rondas</option>
+                                <option value="acciones">Acciones</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (selectedCells.length === 0) {
+                                addToast("Selecciona al menos una casilla en el tablero.", "error");
+                                return;
+                              }
+                              if (!elementNameInput.trim()) {
+                                addToast("Ingresa un nombre para el elemento del terreno.", "error");
+                                return;
+                              }
+                              const color = getRandomElementColor();
+                              const newEl: GridElement = {
+                                id: `el_${Date.now()}_${Math.random()}`,
+                                name: elementNameInput.trim(),
+                                color,
+                                cells: [...selectedCells],
+                                durationUnit: elementDurationUnit,
+                                durationValue: elementDurationVal,
+                                createdByName: currentActorName,
+                                createdById: currentActorId,
+                                createdInTurnKey: `${rondaActual}_${currentTurnIndex}`
+                              };
+                              const updated = [...gridElements, newEl];
+                              setGridElements(updated);
+                              setSelectedCells([]);
+                              setElementNameInput('');
+                              broadcastGridState(gridConfig, updated);
+                              addLog(`**[TERRENO]** **${currentActorName}** coloca **${newEl.name}** en ${newEl.cells.join(', ')} (${newEl.durationValue} ${newEl.durationUnit}).`);
+                            }}
+                            className="w-full ninja-btn-oro py-2 text-xs font-black uppercase tracking-wider"
+                          >
+                            Colocar Elemento
+                          </button>
+                        </div>
+
+                        {/* Active Elements Legend / List */}
+                        <div className="flex-1 bg-black/40 border border-oro/15 rounded-sm p-3 flex flex-col min-h-[140px] max-h-[220px]">
+                          <span className="text-[10px] font-black text-oro/60 uppercase mb-2 block border-b border-oro/10 pb-1">
+                            ELEMENTOS EN TERRENO ({gridElements.length})
+                          </span>
+
+                          <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                            {gridElements.map((el) => {
+                              const isAdminOrMod = userRoles.some(r => ['admin', 'moderador'].includes(r));
+                              const isCreator = (el.createdById && el.createdById === currentActorId) || (el.createdByName && el.createdByName === currentActorName);
+                              const canDeleteElement = isCreator || isAdminOrMod;
+
+                              return (
+                                <div
+                                  key={el.id}
+                                  className="bg-black/60 border border-oro/10 p-2 rounded-sm flex items-center justify-between text-xs gap-2"
+                                >
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <span
+                                      className="w-3 h-3 rounded-xs shrink-0"
+                                      style={{ backgroundColor: el.color }}
+                                    />
+                                    <div className="flex flex-col min-w-0">
+                                      <span className="font-bold text-white truncate text-[11px]">{el.name}</span>
+                                      <span className="text-[9px] font-mono text-oro/50 truncate">
+                                        {el.cells.join(', ')} | {el.durationValue} {el.durationUnit} ({el.createdByName})
+                                      </span>
+                                    </div>
+                                  </div>
+                                  {canDeleteElement ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const updated = gridElements.filter(e => e.id !== el.id);
+                                        setGridElements(updated);
+                                        broadcastGridState(gridConfig, updated);
+                                        addLog(`**[TERRENO]** Elemento **${el.name}** retirado por **${currentActorName}**.`);
+                                      }}
+                                      className="text-red-400/60 hover:text-red-400 p-1 shrink-0 transition-all"
+                                      title="Eliminar elemento"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  ) : (
+                                    <span
+                                      className="text-oro/20 p-1 shrink-0 cursor-not-allowed"
+                                      title={`Solo ${el.createdByName} puede eliminar este elemento`}
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5 opacity-25" />
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+
+                            {gridElements.length === 0 && (
+                              <div className="text-[10px] text-oro/30 italic text-center py-4">
+                                Sin elementos en el terreno
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                      </div>
+
+                    </div>
+                  )}
+                </div>
+              )}
+
             </div>
           </div>
 
@@ -2580,29 +3278,27 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                           </div>
                         </div>
                       )}
-                      {!isEventMode && (
-                        <div>
-                          <div className="flex justify-between text-[10px] font-black mb-1">
-                            <span className="text-blue-400">CH</span>
-                            <span>
-                              {String(activeCharacter?.id) === p.user_id ? (localState?.ch ?? p.estado?.ch) : p.estado?.ch}
-                              {' / '}
-                              {String(activeCharacter?.id) === p.user_id ? (localState?.maxCh ?? p.estado?.maxCh) : p.estado?.maxCh}
-                            </span>
+                      {!isEventMode && (() => {
+                        const chVal = String(activeCharacter?.id) === p.user_id ? (localState?.ch ?? p.estado?.ch ?? 0) : (p.estado?.ch ?? 0);
+                        const maxChVal = String(activeCharacter?.id) === p.user_id ? (localState?.maxCh ?? p.estado?.maxCh ?? 0) : (p.estado?.maxCh ?? 0);
+                        const chPct = maxChVal > 0 ? Math.round((chVal / maxChVal) * 100) : 0;
+                        return (
+                          <div>
+                            <div className="flex justify-between text-[10px] font-black mb-1">
+                              <span className="text-blue-400">CH</span>
+                              <span>
+                                {chVal} / {maxChVal} <span className="text-blue-300/80 font-mono font-bold text-[9px]">({chPct}%)</span>
+                              </span>
+                            </div>
+                            <div className="h-2 bg-black/60 border border-oro/5 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-blue-500 transition-all duration-300"
+                                style={{ width: `${maxChVal > 0 ? (chVal / maxChVal) * 100 : 0}%` }}
+                              />
+                            </div>
                           </div>
-                          <div className="h-2 bg-black/60 border border-oro/5 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-blue-500 transition-all duration-300"
-                              style={{
-                                width: `${(
-                                  (String(activeCharacter?.id) === p.user_id ? (localState?.ch ?? p.estado?.ch) : p.estado?.ch) /
-                                  (String(activeCharacter?.id) === p.user_id ? (localState?.maxCh ?? p.estado?.maxCh) : p.estado?.maxCh)
-                                ) * 100}%`
-                              }}
-                            />
-                          </div>
-                        </div>
-                      )}
+                        );
+                      })()}
 
                       {/* NPC Inline Controls */}
                       {canControlTemp && (
@@ -2877,7 +3573,12 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                       <div>
                         <div className="flex justify-between text-xs font-black mb-1.5">
                           <span className="text-blue-400">CHAKRA (CH)</span>
-                          <span>{localState.ch} / {localState.maxCh}</span>
+                          <span>
+                            {localState.ch} / {localState.maxCh}{' '}
+                            <span className="text-blue-300/80 font-mono font-bold text-xs">
+                              ({localState.maxCh > 0 ? Math.round((localState.ch / localState.maxCh) * 100) : 0}%)
+                            </span>
+                          </span>
                         </div>
                         <div className="h-4 bg-black/60 border border-oro/15 rounded-full overflow-hidden">
                           <div className="h-full bg-gradient-to-r from-blue-600 to-blue-500 transition-all duration-300" style={{ width: `${(localState.ch / localState.maxCh) * 100}%` }} />
@@ -3933,6 +4634,29 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                 </div>
 
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* EXPANDED IMAGE LIGHTBOX MODAL */}
+        {expandedImage && (
+          <div
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200 cursor-zoom-out"
+            onClick={() => setExpandedImage(null)}
+          >
+            <div className="relative max-w-5xl max-h-[90vh] flex flex-col items-center">
+              <button
+                onClick={() => setExpandedImage(null)}
+                className="absolute -top-10 right-0 text-oro/80 hover:text-white font-black text-xs bg-black/80 border border-oro/30 px-3 py-1 rounded-sm tracking-wider uppercase"
+              >
+                ✕ CERRAR (ESC)
+              </button>
+              <img
+                src={expandedImage}
+                alt="Ilustración ampliada"
+                className="max-w-full max-h-[85vh] object-contain rounded border border-oro/40 shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              />
             </div>
           </div>
         )}
