@@ -298,7 +298,7 @@ export default function MundoNinjaVillageClientView({
   return (
     <div className="pt-24 pb-20 px-4">
       <div className="max-w-[1750px] mx-auto w-full">
-        <header className={`mb-12 ${isRenegado ? 'ninja-card-rojo' : 'ninja-card-oro'} p-8 xl:p-12 relative overflow-hidden`}>
+        <header className="mb-12 ninja-card-oro p-8 xl:p-12 relative overflow-hidden">
           {/* Imagen de fondo de la aldea */}
           {(isRenegado || aldea?.url_imagen) && (
             <div className="absolute inset-0 z-0 opacity-[0.08] pointer-events-none scale-105">
@@ -318,7 +318,7 @@ export default function MundoNinjaVillageClientView({
 
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10 relative z-10">
             <div className="flex items-center gap-8">
-              <div className={`w-24 h-24 xl:w-32 xl:h-32 bg-black/40 border ${isRenegado ? 'border-naranja-naruto/20' : 'border-oro/20'} ninja-clip-md overflow-hidden flex items-center justify-center shadow-2xl backdrop-blur-sm`}>
+              <div className="w-24 h-24 xl:w-32 xl:h-32 bg-black/40 border border-oro/20 ninja-clip-md overflow-hidden flex items-center justify-center shadow-2xl backdrop-blur-sm">
                 {isRenegado ? (
                   <img src="/assets/images/renegados.jpg" alt="Renegados" className="w-full h-full object-cover filter brightness-95" />
                 ) : aldea?.url_imagen ? (
@@ -332,10 +332,10 @@ export default function MundoNinjaVillageClientView({
                   {isRenegado ? 'RENEGADOS' : aldea?.nombre_completo}
                 </h1>
                 <div className="flex items-center gap-4">
-                  <span className={`text-caption xl:text-xs font-black ${isRenegado ? 'text-naranja-naruto/60' : 'text-oro/60'} uppercase tracking-[0.3em]`}>
+                  <span className="text-caption xl:text-xs font-black text-oro/60 uppercase tracking-[0.3em]">
                     SHINOBI REGISTRADOS
                   </span>
-                  <div className={`w-1 h-1 ${isRenegado ? 'bg-naranja-naruto/20' : 'bg-oro/20'} rotate-45`} />
+                  <div className="w-1 h-1 bg-oro/20 rotate-45" />
                   <span className="text-xl xl:text-2xl font-black text-oro italic leading-none">
                     {isRenegado ? ninjas.length : `${ninjas.length}/${maxCupos}`}
                   </span>
@@ -348,7 +348,7 @@ export default function MundoNinjaVillageClientView({
               {puedeCrearFicha && (
                 <Link
                   href={`/crear-ficha${aldeaParam}`}
-                  className={`flex items-center justify-center gap-4 px-10 py-5 ${isRenegado ? 'ninja-btn-rojo' : 'ninja-btn-oro'} text-xs xl:text-sm`}
+                  className="flex items-center justify-center gap-4 px-10 py-5 ninja-btn-oro text-xs xl:text-sm"
                 >
                   <UserPlus className="w-5 h-5" /> CREAR PERSONAJE
                 </Link>
@@ -396,7 +396,7 @@ export default function MundoNinjaVillageClientView({
             <>
               {searchQuery && filteredNinjas.length > 0 && (
                 <div className="flex justify-end pr-2">
-                  <span className={`text-caption font-black ${isRenegado ? 'text-naranja-naruto/40' : 'text-oro/40'} uppercase tracking-[0.2em] italic`}>
+                  <span className="text-caption font-black text-oro/40 uppercase tracking-[0.2em] italic">
                     Encontrados {filteredNinjas.length} de {ninjas.length} registrados
                   </span>
                 </div>
@@ -404,22 +404,22 @@ export default function MundoNinjaVillageClientView({
 
               {filteredNinjas.length > 0 ? (
                 <>
-                  <div className={`ninja-card-oro overflow-hidden border ${isRenegado ? 'border-naranja-naruto/20' : 'border-oro/20'} bg-black/40 backdrop-blur-sm`}>
+                  <div className="ninja-card-oro overflow-hidden border border-oro/20 bg-black/40 backdrop-blur-sm">
                     <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse min-w-[700px]">
                         <thead>
-                          <tr className={`border-b ${isRenegado ? 'border-naranja-naruto/10' : 'border-oro/10'} text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.3em]`}>
+                          <tr className="border-b border-oro/10 text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.3em]">
                             <th className="py-6 px-8 w-24 whitespace-nowrap">Apariencia</th>
                             <th className="py-6 px-8 w-full whitespace-nowrap">SHINOBI</th>
                             <th className="py-6 px-8 text-center whitespace-nowrap">JERARQUÍA</th>
                             <th className="py-6 px-8 text-right whitespace-nowrap">RANGO</th>
                           </tr>
                         </thead>
-                        <tbody className={`divide-y ${isRenegado ? 'divide-naranja-naruto/5' : 'divide-oro/5'}`}>
+                        <tbody className="divide-y divide-oro/5">
                           {paginatedNinjas.map((ninja) => (
                             <tr key={ninja.id} className="group hover:bg-oro/5 transition-all duration-300 relative cursor-pointer">
                               <td className="py-5 px-8">
-                                <div className={`w-12 h-12 shrink-0 border ${isRenegado ? 'border-naranja-naruto/20' : 'border-oro/20'} bg-black/40 overflow-hidden flex items-center justify-center ninja-clip-xs`}>
+                                <div className="w-12 h-12 shrink-0 border border-oro/20 bg-black/40 overflow-hidden flex items-center justify-center ninja-clip-xs">
                                   {ninja.url_img ? (
                                     <img
                                       src={ninja.url_img}
@@ -427,7 +427,7 @@ export default function MundoNinjaVillageClientView({
                                       alt="Avatar"
                                     />
                                   ) : (
-                                    <User className={`w-6 h-6 ${isRenegado ? 'text-naranja-naruto/40' : 'text-oro/25'}`} />
+                                    <User className="w-6 h-6 text-oro/25" />
                                   )}
                                 </div>
                               </td>
@@ -442,12 +442,12 @@ export default function MundoNinjaVillageClientView({
                                 </Link>
                               </td>
                               <td className="py-5 px-8 text-center whitespace-nowrap">
-                                <span className={`text-caption xl:text-xs font-black ${isRenegado ? 'text-naranja-naruto/60' : 'text-oro/60'} uppercase tracking-widest whitespace-nowrap`}>
+                                <span className="text-caption xl:text-xs font-black text-oro/60 uppercase tracking-widest whitespace-nowrap">
                                   {ninja.rango_jerarquico || 'SIN RANGO'}
                                 </span>
                               </td>
                               <td className="py-5 px-8 text-right whitespace-nowrap">
-                                <span className={`inline-block px-4 py-1.5 ${isRenegado ? 'bg-naranja-naruto/20 text-naranja-naruto border-naranja-naruto/40' : 'bg-oro/10 text-oro border-oro/20'} text-caption xl:text-xs font-black border uppercase tracking-widest ninja-clip-xs whitespace-nowrap`}>
+                                <span className="inline-block px-4 py-1.5 bg-oro/10 text-oro border-oro/20 text-caption xl:text-xs font-black border uppercase tracking-widest ninja-clip-xs whitespace-nowrap">
                                   RANGO {ninja.rango}
                                 </span>
                               </td>
@@ -465,7 +465,7 @@ export default function MundoNinjaVillageClientView({
                         {currentPage > 1 ? (
                           <Link
                             href={`/mundo-ninja/${id}?page=${currentPage - 1}${searchParamSuffix}`}
-                            className={`px-4 py-2 border ${isRenegado ? 'border-naranja-naruto/30 hover:bg-naranja-naruto/20 text-naranja-naruto hover:text-white' : 'border-oro/30 hover:bg-oro/20 text-oro hover:text-white'} transition-all text-xs font-black uppercase tracking-widest`}
+                            className="px-4 py-2 border border-oro/30 hover:bg-oro/20 text-oro hover:text-white transition-all text-xs font-black uppercase tracking-widest"
                             style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
                           >
                             Anterior
@@ -494,7 +494,7 @@ export default function MundoNinjaVillageClientView({
                         {currentPage < totalPages ? (
                           <Link
                             href={`/mundo-ninja/${id}?page=${currentPage + 1}${searchParamSuffix}`}
-                            className={`px-4 py-2 border ${isRenegado ? 'border-naranja-naruto/30 hover:bg-naranja-naruto/20 text-naranja-naruto hover:text-white' : 'border-oro/30 hover:bg-oro/20 text-oro hover:text-white'} transition-all text-xs font-black uppercase tracking-widest`}
+                            className="px-4 py-2 border border-oro/30 hover:bg-oro/20 text-oro hover:text-white transition-all text-xs font-black uppercase tracking-widest"
                             style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
                           >
                             Siguiente
@@ -512,7 +512,7 @@ export default function MundoNinjaVillageClientView({
                   )}
                 </>
               ) : ninjas.length > 0 ? (
-                <div className={`py-32 text-center ${isRenegado ? 'ninja-card-rojo' : 'ninja-card-oro'} opacity-75 flex flex-col items-center gap-6`}>
+                <div className="py-32 text-center ninja-card-oro opacity-75 flex flex-col items-center gap-6">
                   <User className="w-16 h-16 text-oro/10 animate-pulse" />
                   <div className="space-y-2">
                     <h3 className="text-lg xl:text-xl font-black text-oro/40 uppercase tracking-[0.3em] italic leading-none">NO SE ENCONTRARON shinobi</h3>
@@ -520,14 +520,14 @@ export default function MundoNinjaVillageClientView({
                   </div>
                   <Link
                     href={`/mundo-ninja/${id}`}
-                    className={`px-6 py-3 border ${isRenegado ? 'border-naranja-naruto/30 hover:bg-naranja-naruto/20 text-naranja-naruto' : 'border-oro/30 hover:bg-oro/20 text-oro'} text-caption xl:text-xs font-black uppercase tracking-widest mt-2`}
+                    className="px-6 py-3 border border-oro/30 hover:bg-oro/20 text-oro text-caption xl:text-xs font-black uppercase tracking-widest mt-2"
                     style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
                   >
                     Limpiar búsqueda
                   </Link>
                 </div>
               ) : (
-                <div className={`py-48 text-center ${isRenegado ? 'ninja-card-rojo' : 'ninja-card-oro'} opacity-50 flex flex-col items-center gap-8`}>
+                <div className="py-48 text-center ninja-card-oro opacity-50 flex flex-col items-center gap-8">
                   <User className="w-24 h-24 text-oro/10" />
                   <div className="space-y-2">
                     <h3 className="text-xl xl:text-2xl font-black text-oro/40 uppercase tracking-[0.4em] italic leading-none">AÚN NO HAY shinobi EN ESTA REGIÓN</h3>
@@ -536,7 +536,6 @@ export default function MundoNinjaVillageClientView({
                 </div>
               )}
             </>
-
           ) : (
             /* ═══════════════════════ VISTA GESTIÓN — FORO ═══════════════════════ */
             <div className="animate-in fade-in duration-500 space-y-0">
@@ -637,32 +636,34 @@ export default function MundoNinjaVillageClientView({
                   <div className="animate-in fade-in slide-in-from-right-4 duration-300">
                     {/* Imagen de la aldea con overlay */}
                     {aldea?.url_imagen && (
-                      <div className="w-full h-64 xl:h-[450px] overflow-hidden bg-black/20 relative group/img">
-                        <img
-                          src={aldea.url_imagen}
-                          alt={aldea?.nombre_completo}
-                          className="w-full h-full object-cover filter brightness-90 group-hover/img:scale-105 transition-transform duration-700"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/25 to-transparent pointer-events-none" />
-                        <div className="absolute bottom-8 left-8 right-8 z-10 pointer-events-none">
-                          <div className="flex flex-col gap-4 w-full items-start">
-                            <div className="flex flex-col gap-1 min-w-0">
-                              <h3 className="ninja-title text-3xl sm:text-5xl xl:text-6xl transition-all leading-tight py-1">
-                                {aldea?.nombre_completo}
-                              </h3>
-                              {aldea?.nombre_jap && (
-                                <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">
-                                  {aldea.nombre_jap}
+                      <div className="p-8 xl:p-12 pb-0">
+                        <div className="w-full h-64 xl:h-[450px] overflow-hidden bg-black/20 relative border border-oro/20 ninja-clip-md">
+                          <img
+                            src={aldea.url_imagen}
+                            alt={aldea?.nombre_completo}
+                            className="w-full h-full object-cover filter brightness-90"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/25 to-transparent pointer-events-none" />
+                          <div className="absolute bottom-8 left-8 right-8 z-10 pointer-events-none">
+                            <div className="flex flex-col gap-4 w-full items-start">
+                              <div className="flex flex-col gap-1 min-w-0">
+                                <h3 className="ninja-title text-3xl sm:text-5xl xl:text-6xl transition-all leading-tight py-1">
+                                  {aldea?.nombre_completo}
+                                </h3>
+                                {aldea?.nombre_jap && (
+                                  <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">
+                                    {aldea.nombre_jap}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex flex-col items-start gap-0.5 shrink-0">
+                                <span className="text-2xl md:text-3xl xl:text-4xl font-black text-oro tabular-nums leading-none">
+                                  {ninjas.length}/{maxCupos}
                                 </span>
-                              )}
-                            </div>
-                            <div className="flex flex-col items-start gap-0.5 shrink-0">
-                              <span className="text-2xl md:text-3xl xl:text-4xl font-black text-oro tabular-nums leading-none">
-                                {ninjas.length}/{maxCupos}
-                              </span>
-                              <span className="text-caption md:text-xs xl:text-sm font-black text-oro/20 uppercase tracking-widest">
-                                shinobi
-                              </span>
+                                <span className="text-caption md:text-xs xl:text-sm font-black text-oro/20 uppercase tracking-widest">
+                                  shinobi
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -727,21 +728,21 @@ export default function MundoNinjaVillageClientView({
                       </div>
 
                       {/* Equipos Activos */}
-                      {equipos.length > 0 && (
-                        <div className="space-y-6 pt-4 border-t border-oro/10">
-                          <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-black text-oro uppercase tracking-[0.25em] flex items-center gap-3">
-                              Equipos Activos
-                            </h3>
-                            <span className="text-[10px] font-black text-oro/30 uppercase tracking-widest">
-                              {equipos.length} {equipos.length === 1 ? 'EQUIPO' : 'EQUIPOS'}
-                            </span>
-                          </div>
-                          <div className="ninja-card-oro clip-only-br overflow-hidden border border-oro/20 bg-neutral-900/80 backdrop-blur-sm">
+                      <div className="space-y-6 pt-4 border-t border-oro/10">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-xl font-black text-oro uppercase tracking-[0.25em] flex items-center gap-3">
+                            Equipos Activos
+                          </h3>
+                          <span className="text-[10px] font-black text-oro/30 uppercase tracking-widest">
+                            {equipos.length} {equipos.length === 1 ? 'EQUIPO' : 'EQUIPOS'}
+                          </span>
+                        </div>
+                        {equipos.length > 0 ? (
+                          <div className="ninja-card-oro overflow-hidden border border-oro/20 bg-black/40 backdrop-blur-sm">
                             <div className="overflow-x-auto">
                               <table className="w-full text-left border-collapse min-w-[700px]">
                                 <thead>
-                                  <tr className="border-b border-oro/10 text-oro/80 text-caption xl:text-xs font-bold uppercase tracking-[0.3em] bg-black/45">
+                                  <tr className="border-b border-oro/10 text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.3em] bg-black/40">
                                     <th className="py-5 px-8 whitespace-nowrap">Nombre de Equipo</th>
                                     <th className="py-5 px-8 whitespace-nowrap">Líder</th>
                                     <th className="py-5 px-8 whitespace-nowrap">Integrantes</th>
@@ -752,7 +753,7 @@ export default function MundoNinjaVillageClientView({
                                   {equipos.map((equipo) => {
                                     const members = [equipo.integrante_1, equipo.integrante_2, equipo.integrante_3].filter(Boolean);
                                     return (
-                                      <tr key={equipo.id} className="hover:bg-oro/5 transition-colors bg-neutral-600/45">
+                                      <tr key={equipo.id} className="hover:bg-oro/5 transition-all duration-200">
                                         <td className="py-5 px-8">
                                           <p className="ninja-title text-xl xl:text-2xl leading-tight">{equipo.nombre_equipo}</p>
                                         </td>
@@ -792,8 +793,14 @@ export default function MundoNinjaVillageClientView({
                               </table>
                             </div>
                           </div>
-                        </div>
-                      )}
+                        ) : (
+                          <div className="py-12 text-center bg-black/20 border border-dashed border-oro/10 ninja-clip-xs">
+                            <p className="text-xs font-black text-oro/30 uppercase tracking-[0.2em]">
+                              Sin equipos activos registrados en esta aldea
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -914,11 +921,11 @@ export default function MundoNinjaVillageClientView({
                     )}
 
                     {/* Tabla de equipos */}
-                    <div className="ninja-card-oro clip-only-br overflow-hidden border border-oro/20 bg-neutral-900/80 backdrop-blur-sm">
+                    <div className="ninja-card-oro overflow-hidden border border-oro/20 bg-black/40 backdrop-blur-sm">
                       <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse min-w-[700px]">
                           <thead>
-                            <tr className="border-b border-oro/10 text-oro/80 text-caption xl:text-xs font-bold uppercase tracking-[0.3em] bg-black/45">
+                            <tr className="border-b border-oro/10 text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.3em] bg-black/40">
                               <th className="py-5 px-8 whitespace-nowrap">Nombre de Equipo</th>
                               <th className="py-5 px-8 whitespace-nowrap">Líder</th>
                               <th className="py-5 px-8 whitespace-nowrap">Integrantes</th>
@@ -934,7 +941,7 @@ export default function MundoNinjaVillageClientView({
                               const canDisolve = userRole?.isAdmin || isLider || isMember;
 
                               return (
-                                <tr key={equipo.id} className="hover:bg-oro/5 transition-colors bg-neutral-600/35">
+                                <tr key={equipo.id} className="hover:bg-oro/5 transition-all duration-200">
                                   <td className="py-5 px-8">
                                     <p className="ninja-title text-xl xl:text-2xl leading-tight">{equipo.nombre_equipo}</p>
                                   </td>
@@ -985,8 +992,8 @@ export default function MundoNinjaVillageClientView({
                             })}
                             {equipos.length === 0 && (
                               <tr>
-                                <td colSpan={userRole ? 5 : 4} className="py-16 text-center">
-                                  <p className="text-caption font-black text-oro/20 uppercase tracking-[0.4em]">No hay equipos ninja registrados en esta aldea.</p>
+                                <td colSpan={userRole ? 5 : 4} className="py-16 text-center bg-black/20">
+                                  <p className="text-xs font-black text-oro/30 uppercase tracking-[0.25em]">No hay equipos ninja registrados en esta aldea.</p>
                                 </td>
                               </tr>
                             )}
