@@ -98,7 +98,7 @@ export default function CombatesPage() {
             <div className="flex items-center justify-center py-2">
               <div className="flex items-center gap-4 sm:gap-6">
                 <h1 className="ninja-title text-3xl sm:text-5xl xl:text-7xl uppercase tracking-[0.3em] leading-none text-center">
-                  <span className="text-naranja-naruto">COMBATES</span>
+                  <span className="text-naranja-naruto">COMBATES Y SANACIONES</span>
                 </h1>
               </div>
             </div>
