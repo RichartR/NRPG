@@ -22,7 +22,7 @@ export default function RegistrosLandingPage() {
       <main className="w-full max-w-[1750px] mx-auto flex-1">
         <div className="mb-10 ninja-card-oro p-8 sm:p-12 xl:p-16">
           <div className="flex items-center gap-6 mb-4">
-            <h1 className="ninja-title text-3xl sm:text-5xl xl:text-7xl">REGISTROS NINJA</h1>
+            <h1 className="ninja-title text-3xl sm:text-5xl xl:text-7xl">TIENDAS Y REGISTROS</h1>
           </div>
           <p className="text-gris-texto text-base sm:text-lg xl:text-2xl leading-relaxed">Consulta el historial de misiones, registros de combate y compras de todo el mundo ninja.</p>
         </div>
@@ -42,7 +42,7 @@ export default function RegistrosLandingPage() {
           {/* Tarjeta Combates */}
           <NinjaCard
             href="/registros/combates"
-            title="Combates"
+            title="Combates y Sanaciones"
             titleClassName="text-3xl sm:text-4xl md:text-4xl"
             category="REGISTROS"
             imageUrl="/assets/images/combate.png"

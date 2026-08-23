@@ -19,7 +19,8 @@ import {
   MessageSquare,
   UserPlus,
   BookOpen,
-  RefreshCw
+  RefreshCw,
+  HeartPulse
 } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -130,9 +131,11 @@ export default async function Home() {
       targetLink = `/ficha/${reg.autor_id}`;
     }
 
+    const isSanacionReg = reg.subtipo === 'sanacion' || reg.data?.subtipo === 'sanacion';
+
     events.push({
       id: `reg-${reg.id}`,
-      tipo: reg.subtipo === 'evento_premios' ? 'evento_premios' : reg.subtipo === 'narracion' ? 'narracion' : reg.subtipo === 'reseteo' ? 'reseteo' : reg.tipo,
+      tipo: isSanacionReg ? 'sanacion' : reg.subtipo === 'evento_premios' ? 'evento_premios' : reg.subtipo === 'narracion' ? 'narracion' : reg.subtipo === 'reseteo' ? 'reseteo' : reg.tipo,
       fecha: reg.fecha,
       timestamp: new Date(reg.fecha).getTime(),
       data: reg.data,
@@ -428,6 +431,12 @@ export default async function Home() {
                         );
                       }
                       break;
+                    case 'sanacion':
+                      typeLabel = 'Sanación';
+                      typeColor = 'border-emerald-500/30 text-emerald-400 bg-emerald-950/20';
+                      titleText = `Sanación a ${event.data?.sanado?.nombre_ninja || 'Ninja'}`;
+                      iconElement = <HeartPulse className="w-4 h-4 text-emerald-400/60" />;
+                      break;
                     case 'combate':
                       typeLabel = 'Combate';
                       typeColor = 'border-red-600/40 text-red-500 bg-red-950/20';
@@ -524,6 +533,7 @@ export default async function Home() {
                             {event.tipo === 'nuevo_personaje' && <UserPlus className="w-2.5 h-2.5 text-green-400" />}
                             {event.tipo === 'evento_premios' && <Sparkles className="w-2.5 h-2.5 text-amber-400" />}
                             {event.tipo === 'mision' && <ScrollText className="w-2.5 h-2.5 text-oro" />}
+                            {event.tipo === 'sanacion' && <HeartPulse className="w-2.5 h-2.5 text-emerald-400" />}
                             {event.tipo === 'combate' && <Swords className="w-2.5 h-2.5 text-red-500" />}
                             {event.tipo === 'compra' && <ShoppingBag className="w-2.5 h-2.5 text-amber-500" />}
                             {event.tipo === 'narracion' && <BookOpen className="w-2.5 h-2.5 text-purple-400" />}
