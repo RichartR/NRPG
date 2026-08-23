@@ -301,7 +301,7 @@ export default function MissionForm({
             <div className="space-y-10 sm:space-y-14">
               {/* Imágenes */}
               <div className="space-y-8">
-                <label className="text-xs font-black uppercase tracking-[0.3em] text-oro/40 ml-2">Pruebas del Pergamino (URLs)</label>
+                <label className="text-xs font-black uppercase tracking-[0.3em] text-oro/40 ml-2">Pruebas de la Misión (URLs)</label>
                 <div className="space-y-6">
                   {images.map((img, i) => (
                     <div key={i} className="flex gap-4 group">
@@ -344,7 +344,7 @@ export default function MissionForm({
                   disabled={loading}
                   className={`w-full py-8 sm:py-10 ninja-btn-oro text-xl sm:text-2xl ${loading ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
                 >
-                  {loading ? 'SELLANDO PERGAMINO...' : initialData ? 'ACTUALIZAR REGISTRO' : 'PUBLICAR EN EL ARCHIVO'}
+                  {loading ? 'SELLANDO PERGAMINO...' : initialData ? 'ACTUALIZAR REGISTRO' : 'REGISTRAR MISIÓN'}
                 </button>
               </div>
             </div>
