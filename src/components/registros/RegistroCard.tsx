@@ -1,7 +1,7 @@
 'use client';
 
 import { Registro } from '@/domain/types';
-import { Zap, ScrollText, Swords, User, Link as LinkIcon, Trash2, Edit3, Loader2, ShoppingBag, Sparkles, Swords as VS, Users, Coins } from 'lucide-react';
+import { Zap, ScrollText, Swords, User, Link as LinkIcon, Trash2, Edit3, Loader2, ShoppingBag, Sparkles, Swords as VS, Users, Coins, HeartPulse, Dices } from 'lucide-react';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { RegistrosService } from '@/services/supabase/registros.service';
 import { useToastStore } from '@/components/ui/Toast';
@@ -41,7 +41,8 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
   }, [registro.data?.discord_message_id]);
 
   const isOwner = activeCharacter?.id === registro.autor_id;
-  const canManage = registro.tipo === 'accion' ? isAdmin : (isOwner || isAdmin);
+  const canEdit = registro.tipo === 'accion' ? isAdmin : (isOwner || isAdmin);
+  const canDelete = (registro.tipo === 'combate' || registro.tipo === 'accion') ? isAdmin : (isOwner || isAdmin);
 
   const handleDelete = async () => {
     const ok = await confirmAction({
@@ -65,6 +66,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
   };
 
   const getIcon = () => {
+    if (registro.subtipo === 'sanacion' || registro.data?.subtipo === 'sanacion') return HeartPulse;
     if (registro.subtipo === 'narracion') return Sparkles;
     switch (registro.tipo) {
       case 'mision': return ScrollText;
@@ -194,23 +196,27 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
         </div>
 
         <div className="flex items-center gap-4">
-          {canManage && (
+          {(canEdit || canDelete) && (
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => onEdit?.(registro)}
-                className="w-11 h-11 flex items-center justify-center bg-oro/10 border border-oro/30 hover:border-oro hover:bg-oro/20 text-oro/80 hover:text-oro transition-all ninja-clip-xs shadow-lg shadow-black/20"
-                title="Editar Registro"
-              >
-                <Edit3 className="w-5 h-5" />
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={loading}
-                className="w-11 h-11 flex items-center justify-center bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs shadow-lg shadow-black/20"
-                title="Eliminar Registro"
-              >
-                {loading ? <Loader2 className="w-5 h-5 animate-spin text-oro" /> : <Trash2 className="w-5 h-5" />}
-              </button>
+              {canEdit && (
+                <button
+                  onClick={() => onEdit?.(registro)}
+                  className="w-11 h-11 flex items-center justify-center bg-oro/10 border border-oro/30 hover:border-oro hover:bg-oro/20 text-oro/80 hover:text-oro transition-all ninja-clip-xs shadow-lg shadow-black/20"
+                  title="Editar Registro"
+                >
+                  <Edit3 className="w-5 h-5" />
+                </button>
+              )}
+              {canDelete && (
+                <button
+                  onClick={handleDelete}
+                  disabled={loading}
+                  className="w-11 h-11 flex items-center justify-center bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs shadow-lg shadow-black/20"
+                  title="Eliminar Registro"
+                >
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin text-oro" /> : <Trash2 className="w-5 h-5" />}
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -274,6 +280,49 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
               <span className="text-caption font-black text-oro/30 uppercase tracking-widest mb-2">INVERSIÓN</span>
               <div className="flex items-center gap-2 text-oro font-black text-base sm:text-xl tracking-widest">
                 <Coins className="w-4 h-4" /> {registro.data.coste_ryous || 0} R
+              </div>
+            </div>
+          </div>
+        ) : (registro.subtipo === 'sanacion' || registro.data?.subtipo === 'sanacion') ? (
+          <div className="p-4 sm:p-5 bg-black/40 ninja-clip-sm space-y-3">
+            <div className="border-b border-oro/20 pb-2.5">
+              <p className="text-caption font-bold text-oro/40 uppercase tracking-widest mt-0.5">
+                NINJA SANADO: <span className="text-emerald-300 font-black">{registro.data.sanado?.nombre_ninja || 'Sin especificar'}</span>
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Médicos */}
+              <div className="p-3 bg-black/40 border border-oro/10 ninja-clip-xs space-y-2">
+                <span className="text-caption font-black text-oro/40 uppercase tracking-[0.2em] block">MÉDICOS PARTICIPANTES:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {registro.data.medicos && registro.data.medicos.length > 0 ? (
+                    registro.data.medicos.map((m: any, idx: number) => (
+                      <span key={idx} className="text-caption font-black text-oro bg-oro/10 border border-oro/20 px-2.5 py-0.5 ninja-clip-xs flex items-center gap-1.5">
+                        <User className="w-3 h-3 text-oro/60" /> {m.nombre_ninja} <span className="text-emerald-400">+1 EXP</span>
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-caption font-bold text-oro/30 italic">Sin médicos adicionales</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Desglose Tirada */}
+              <div className="p-3 bg-black/40 border border-emerald-500/10 ninja-clip-xs space-y-1 text-xs font-bold uppercase tracking-wider">
+                <span className="text-caption font-black text-emerald-400/60 block tracking-[0.2em]">DESGLOSE DEL EFECTO:</span>
+                <div className="flex justify-between text-oro/70 text-caption">
+                  <span>Base técnica + médicos:</span>
+                  <span>{registro.data.horas_base || (2 + ((registro.data.medicos?.length || 0) * 2))}h ({2}h + {registro.data.medicos?.length || 0} med)</span>
+                </div>
+                <div className="flex justify-between text-oro/70 text-caption">
+                  <span>Tirada d10:</span>
+                  <span>+{registro.data.tirada_d10 || 0}h</span>
+                </div>
+                <div className="flex justify-between text-emerald-400 font-black border-t border-emerald-500/10 pt-1 text-caption sm:text-xs">
+                  <span>Total horas restadas:</span>
+                  <span>{registro.data.horas_restadas || 0} horas</span>
+                </div>
               </div>
             </div>
           </div>
@@ -700,7 +749,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
 
         {registro.data.urls_imagenes && registro.data.urls_imagenes.length > 0 && (
           <div className="mt-4 flex flex-wrap items-center gap-4 relative z-10">
-            <span className="text-caption font-black text-oro/20 uppercase tracking-widest mr-2">PRUEBAS VISUALES:</span>
+            <span className="text-caption font-black text-oro/20 uppercase tracking-widest mr-2">PRUEBAS:</span>
             <div className="flex flex-wrap gap-3">
               {registro.data.urls_imagenes.map((url: string, i: number) => (
                 <a

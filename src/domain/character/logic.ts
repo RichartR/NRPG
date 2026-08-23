@@ -284,6 +284,19 @@ export const RewardLogic = {
       };
     }
 
+    if (registro.subtipo === 'sanacion' || data?.subtipo === 'sanacion') {
+      const sanadoId = Number(data?.sanado?.id);
+      if (Number(personajeId) === sanadoId) {
+        return { xp: 0, ryous: 0, pa: 0 };
+      }
+      const medicos = data?.medicos || [];
+      const isMedico = medicos.some((m: any) => Number(m.id) === Number(personajeId));
+      if (isMedico || (sanadoId && Number(personajeId) !== sanadoId)) {
+        return { xp: 1, ryous: 0, pa: 0 };
+      }
+      return { xp: 0, ryous: 0, pa: 0 };
+    }
+
     if (tipo === 'combate') {
       const isTeamA = data.equipo_a?.some((p: any) => Number(p.id) === Number(personajeId));
       const isTeamB = data.equipo_b?.some((p: any) => Number(p.id) === Number(personajeId));

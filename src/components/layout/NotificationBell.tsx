@@ -201,7 +201,7 @@ export default function NotificationBell() {
                     <div className="flex flex-col gap-2.5">
                       <div className="flex justify-between items-center gap-2">
                         <span className="text-caption font-black uppercase px-2.5 py-1 bg-naranja-naruto text-white tracking-wider">
-                          {n.registro.tipo}
+                          {(n.registro.subtipo === 'sanacion' || n.registro.data?.subtipo === 'sanacion') ? 'sanacion' : n.registro.tipo}
                         </span>
                         <div className="flex items-center gap-1.5 shrink-0">
                           {rewards.xp > 0 && (

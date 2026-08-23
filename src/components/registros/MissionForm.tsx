@@ -188,7 +188,7 @@ export default function MissionForm({
               {formType === 'mision' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12">
                   <div className="space-y-4">
-                    <label className="text-xs font-black uppercase tracking-[0.3em] text-oro/40 ml-2">Rango del Pergamino</label>
+                    <label className="text-xs font-black uppercase tracking-[0.3em] text-oro/40 ml-2">Rango de la Misión</label>
                     <NinjaSelect
                       value={rango}
                       onChange={(val) => {
