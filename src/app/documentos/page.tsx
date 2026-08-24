@@ -77,6 +77,17 @@ export default function DocumentosPage() {
             description="Explora la geografía del mundo ninja y sus caminos shinobi a través de la cartografía interactiva."
             actionText="Ver Mapa"
           />
+
+          {/* Tarjeta Calculadora de Stats */}
+          <NinjaCard
+            href="/documentos/calculadora"
+            title="CALCULADORA DE STATS"
+            titleClassName="text-3xl sm:text-3xl md:text-4xl"
+            category="HERRAMIENTA"
+            imageUrl="/assets/images/simulador-builds.jpeg"
+            description="Prueba distintas combinaciones de estadísticas para tu personaje antes de tomar la decisión final sobre como repartir tus STATs."
+            actionText="Probar calculadora"
+          />
         </div>
       </main>
     </div>
