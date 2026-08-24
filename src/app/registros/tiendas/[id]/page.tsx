@@ -579,7 +579,31 @@ export default function TiendaDetallePage() {
       }
 
       // Stats check
-      if (reqs.stats) {
+      if (reqs.stats_opciones && Array.isArray(reqs.stats_opciones) && reqs.stats_opciones.length > 0) {
+        const charStats = char.stats_base || {};
+        const satisfiesAny = reqs.stats_opciones.some((group: Record<string, number>) => {
+          if (!group || typeof group !== 'object') return false;
+          return Object.entries(group).every(([statKey, reqVal]) => {
+            const val = Number(reqVal);
+            if (isNaN(val) || val <= 0) return true;
+            const charVal = Number(charStats[statKey.toUpperCase() as keyof typeof charStats] || 0);
+            return charVal >= val;
+          });
+        });
+        if (!satisfiesAny) {
+          allowed = false;
+          const optionsFormatted = reqs.stats_opciones
+            .map((group: Record<string, number>) =>
+              Object.entries(group)
+                .filter(([_, v]) => Number(v) > 0)
+                .map(([k, v]) => `${k.toUpperCase()} ${v}`)
+                .join(', ')
+            )
+            .filter((s: string) => s.length > 0)
+            .join(' Ó ');
+          reasons.push(`Estadísticas insuficientes (Requerido: ${optionsFormatted})`);
+        }
+      } else if (reqs.stats) {
         const charStats = char.stats_base || {};
         for (const statKey in reqs.stats) {
           const reqVal = reqs.stats[statKey];

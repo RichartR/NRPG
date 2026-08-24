@@ -77,16 +77,19 @@ export default function RasgoEditForm({ rasgo, characters, onCancel }: RasgoEdit
 
           <div className="flex items-center gap-4">
             {/* Toggle Activo */}
-            <label className="flex items-center gap-3 cursor-pointer bg-oro/5 px-4 py-2 border border-oro/10 hover:border-oro/30 transition-all">
-              <span className={`text-caption font-black uppercase tracking-widest transition-colors ${formData.activo ? 'text-oro' : 'text-oro/20'}`}>
+            <button
+              type="button"
+              onClick={() => updateField('activo', !formData.activo)}
+              className={`flex items-center gap-3 cursor-pointer px-4 py-2 border transition-all ${formData.activo ? 'bg-oro/10 border-oro/40 text-oro shadow-lg' : 'bg-black/60 border-oro/20 text-oro/40 hover:border-oro/30'}`}
+            >
+              <span className={`text-caption font-black uppercase tracking-widest transition-colors ${formData.activo ? 'text-oro' : 'text-oro/30'}`}>
                 {formData.activo ? 'ACTIVO' : 'OCULTO'}
               </span>
-              <input type="checkbox" checked={formData.activo} onChange={(e) => updateField('activo', e.target.checked)} className="hidden" />
-              <div className={`w-8 h-4 rounded-none transition-all relative ${formData.activo ? 'bg-oro/20 border-oro/40' : 'bg-black/40 border-oro/10'} border`}>
-                <div className={`absolute top-[2px] w-2.5 h-2.5 transition-all ${formData.activo ? 'right-[2px] bg-oro shadow-[0_0_10px_rgba(255,230,159,0.5)]' : 'left-[2px] bg-oro/10'}`} />
+              <div className={`w-11 h-6 rounded-full transition-all relative border ${formData.activo ? 'bg-oro/30 border-oro' : 'bg-neutral-800 border-oro/30'}`}>
+                <div className={`absolute top-0.5 w-4 h-4 rounded-full transition-all ${formData.activo ? 'right-0.5 bg-oro shadow-[0_0_10px_rgba(255,230,159,0.8)]' : 'left-0.5 bg-oro/40'}`} />
               </div>
-            </label>
-            <button onClick={onCancel} className="p-2 text-oro/40 hover:text-naranja-naruto transition-all hover:rotate-90">
+            </button>
+            <button onClick={onCancel} type="button" className="p-2 text-oro/40 hover:text-naranja-naruto transition-all hover:rotate-90">
               <X className="w-8 h-8" />
             </button>
           </div>
@@ -167,24 +170,41 @@ export default function RasgoEditForm({ rasgo, characters, onCancel }: RasgoEdit
             )}
 
             {/* Toggle Especial */}
-            <div className="sm:col-span-2 flex items-center justify-between p-4 bg-black/40 border border-oro/10 ninja-clip-sm">
-              <div className="flex flex-col">
-                <span className="text-caption font-black uppercase tracking-widest text-oro">Rasgo Especial</span>
-                <span className="text-caption font-black text-oro/40 uppercase tracking-wider mt-1">
-                  Solo seleccionable por personajes autorizados explícitamente.
-                </span>
-              </div>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.especial}
-                  onChange={(e) => updateField('especial', e.target.checked)}
-                  className="hidden"
-                />
-                <div className={`w-10 h-5 rounded-none transition-all relative ${formData.especial ? 'bg-naranja-naruto/20 border-naranja-naruto/40' : 'bg-black/40 border-oro/10'} border`}>
-                  <div className={`absolute top-[3px] w-3 h-3 transition-all ${formData.especial ? 'right-[3px] bg-naranja-naruto shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'left-[3px] bg-oro/10'}`} />
+            <div
+              onClick={() => updateField('especial', !formData.especial)}
+              className={`sm:col-span-2 flex items-center justify-between p-5 border cursor-pointer select-none transition-all ninja-clip-sm ${
+                formData.especial
+                  ? 'bg-naranja-naruto/15 border-naranja-naruto/60 shadow-[0_0_20px_rgba(234,88,12,0.2)]'
+                  : 'bg-black/60 border-oro/20 hover:border-oro/40 hover:bg-oro/5'
+              }`}
+            >
+              <div className="flex items-center gap-4">
+                <div className={`p-3 border transition-colors ${formData.especial ? 'bg-naranja-naruto/20 border-naranja-naruto text-naranja-naruto' : 'bg-oro/5 border-oro/20 text-oro/40'}`}>
+                  <Shield className="w-5 h-5" />
                 </div>
-              </label>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-3">
+                    <span className={`text-sm font-black uppercase tracking-widest transition-colors ${formData.especial ? 'text-naranja-naruto' : 'text-oro'}`}>
+                      Rasgo Especial
+                    </span>
+                    <span className={`px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest rounded transition-colors ${formData.especial ? 'bg-naranja-naruto text-black font-extrabold shadow-[0_0_10px_rgba(234,88,12,0.4)]' : 'bg-black/80 text-oro/40 border border-oro/20'}`}>
+                      {formData.especial ? 'ACTIVADO' : 'DESACTIVADO'}
+                    </span>
+                  </div>
+                  <span className="text-caption font-bold text-oro/60 uppercase tracking-wider mt-1">
+                    Solo seleccionable por personajes autorizados explícitamente.
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 shrink-0">
+                <span className={`text-caption font-black uppercase tracking-widest hidden sm:inline ${formData.especial ? 'text-naranja-naruto font-extrabold' : 'text-oro/40'}`}>
+                  {formData.especial ? 'SÍ' : 'NO'}
+                </span>
+                <div className={`w-12 h-6 rounded-full transition-all relative border ${formData.especial ? 'bg-naranja-naruto/30 border-naranja-naruto' : 'bg-neutral-800 border-oro/30'}`}>
+                  <div className={`absolute top-0.5 w-4 h-4 rounded-full transition-all ${formData.especial ? 'right-0.5 bg-naranja-naruto shadow-[0_0_10px_rgba(234,88,12,0.9)]' : 'left-0.5 bg-oro/40'}`} />
+                </div>
+              </div>
             </div>
 
             {/* Personajes Autorizados (solo si es Especial) */}
