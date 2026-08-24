@@ -867,6 +867,40 @@ export function CharacterSheetView({
     originalCharacter?.personajes_tecnicas
   ]);
 
+  // DETERMINAR SI EL PERSONAJE POSEE CLAN O ESPECIALIDAD ELEMENTAL
+  const isElementalCharacter = useMemo(() => {
+    if (!character?.personajes_ramas) return false;
+
+    const hasClanElemental = character.personajes_ramas.some((pr: any) => {
+      const clanInfo = pr.info_ramas_clanes || (masters.ramas || []).find((r: any) => r.id === Number(pr.rama_id));
+      return checkClanElemental(clanInfo);
+    });
+    if (hasClanElemental) return true;
+
+    const clanEleccion = character.eleccion_tecnicas_clan;
+    if (clanEleccion && Number(clanEleccion.rama_id) === 4 && clanEleccion.sub_especialidad_id) return true;
+
+    const ninjutsuPr = character.personajes_ramas.find((pr: any) => Number(pr.rama_id) === 4);
+    if (ninjutsuPr && ninjutsuPr.sub_especialidad_id) {
+      const sub = (masters.subEspecialidades || []).find((s: any) => s.id === Number(ninjutsuPr.sub_especialidad_id));
+      if (sub && (sub.slug === 'ninjutsu-i' || sub.slug === 'ninjutsu-ii' || sub.slug === 'ninjutsu-iii')) {
+        return true;
+      }
+    }
+
+    return false;
+  }, [character?.personajes_ramas, character?.eleccion_tecnicas_clan, masters.ramas, masters.subEspecialidades]);
+
+  const canSelectFreeElement = !isElementalCharacter;
+
+  const freeElementId = useMemo(() => {
+    if (!canSelectFreeElement || !character?.personajes_ramas) return null;
+    const slot1 = character.personajes_ramas.find((pr: any) => Number(pr.slot) === 1);
+    if (slot1?.elemento_principal_id) return Number(slot1.elemento_principal_id);
+    const anyPr = character.personajes_ramas.find((pr: any) => pr.elemento_principal_id);
+    return anyPr?.elemento_principal_id ? Number(anyPr.elemento_principal_id) : null;
+  }, [canSelectFreeElement, character?.personajes_ramas]);
+
   // DERIVACIÓN DE ELEMENTOS TOTALES DEL PERSONAJE
   const derivedElements = useMemo(() => {
     if (!character || !masters.elementos || !masters.ramaElementos) return [];
@@ -934,7 +968,12 @@ export function CharacterSheetView({
       }
     });
 
-    // 3. Mapear a objetos Elemento completos y ordenar avanzados primero
+    // 3. Elemento Libre si no posee clan elemental
+    if (canSelectFreeElement && freeElementId) {
+      fijosSet.add(freeElementId);
+    }
+
+    // 4. Mapear a objetos Elemento completos y ordenar avanzados primero
     return Array.from(fijosSet)
       .map((id) => masters.elementos.find((e: any) => e.id === id))
       .filter(Boolean)
@@ -942,7 +981,7 @@ export function CharacterSheetView({
         const order = (tipo: string) => tipo === 'avanzado' ? 0 : 1;
         return order(a?.tipo || '') - order(b?.tipo || '');
       });
-  }, [character, masters.elementos, masters.ramaElementos]);
+  }, [character, masters.elementos, masters.ramaElementos, canSelectFreeElement, freeElementId]);
 
   const meetsRequirements = (item: Glosario) => {
     if (!character) return true;
@@ -974,18 +1013,28 @@ export function CharacterSheetView({
       }
     }
 
-    if (!item.requisitos) return true;
     let req = item.requisitos;
     if (typeof req === 'string') {
-      try { req = JSON.parse(req); } catch { return true; }
+      try { req = JSON.parse(req); } catch { req = null; }
     }
 
     // Check de elemento_id
-    if (req.elemento_id) {
-      const elementId = Number(req.elemento_id);
+    const targetElementId = item.elemento_id || req?.elemento_id;
+    if (targetElementId) {
+      const elementId = Number(targetElementId);
       const characterElementIds = derivedElements.map(e => Number(e.id));
       if (!characterElementIds.includes(elementId)) {
         return false;
+      }
+
+      // Restricción de Elemento Libre: si el elemento del jugador proviene únicamente de su Elemento Libre,
+      // solo se permite si la técnica NO requiere ninguna rama o clan específico.
+      if (canSelectFreeElement && Number(freeElementId) === elementId) {
+        const hasBranchReq = item.rama_clan_id !== null && item.rama_clan_id !== undefined && Number(item.rama_clan_id) > 0;
+        const hasReqRamaId = req?.rama_id !== null && req?.rama_id !== undefined && Number(req.rama_id) > 0;
+        if (hasBranchReq || hasReqRamaId) {
+          return false;
+        }
       }
     }
 
@@ -2727,6 +2776,46 @@ export function CharacterSheetView({
 
                 {/* BLOQUE GRÁFICO DE ELEMENTOS DEL PERSONAJE */}
                 <SectionCard title="AFINIDADES ELEMENTALES" color="oro">
+                  {canSelectFreeElement && (
+                    <div className="mb-6 p-4 bg-oro/5 border border-oro/10 ninja-clip-sm">
+                      <h5 className="text-caption font-black text-oro uppercase tracking-[0.2em] mb-2">Elemento Libre (Sin Clan Elemental)</h5>
+                      <p className="text-xs text-gris-texto mb-3">
+                        Al no poseer un clan o especialidad elemental, puedes seleccionar 1 elemento básico. Este te permitirá aprender únicamente técnicas elementales generales (sin requisitos de rama o clan).
+                      </p>
+                      <SelectField
+                        label="SELECCIONAR ELEMENTO LIBRE"
+                        value={freeElementId}
+                        options={(masters.elementos || [])
+                          .filter((e: any) => e.tipo === 'basico')
+                          .map((e: any) => ({
+                            label: e.nombre_jap
+                              ? `${e.nombre_jap.toUpperCase()} (${e.nombre_esp.toUpperCase()})`
+                              : e.nombre_esp.toUpperCase(),
+                            value: e.id
+                          }))}
+                        disabled={!isEditing && !isNew}
+                        onChange={(v) => {
+                          const val = v ? Number(v) : null;
+                          const currentRamas = character.personajes_ramas || [];
+                          const slot1 = currentRamas.find((r: any) => Number(r.slot) === 1);
+                          let newRamas: any[];
+                          if (slot1) {
+                            newRamas = [
+                              ...currentRamas.filter((r: any) => Number(r.slot) !== 1),
+                              { ...slot1, elemento_principal_id: val }
+                            ];
+                          } else {
+                            newRamas = [
+                              ...currentRamas,
+                              { slot: 1, rama_id: null, sub_especialidad_id: null, elemento_principal_id: val }
+                            ];
+                          }
+                          onUpdateField('personajes_ramas', newRamas);
+                        }}
+                      />
+                    </div>
+                  )}
+
                   {derivedElements.length === 0 ? (
                     <div className="py-12 text-center rounded-[4px] border border-oro/10 bg-black/20 text-xs font-black text-oro/30 uppercase tracking-[0.25em]">
                       Este shinobi no posee afinidades elementales

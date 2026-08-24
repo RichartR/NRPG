@@ -652,6 +652,46 @@ export default function TiendaDetallePage() {
           }
         }
       }
+
+      // Elemento check
+      const targetElementId = obj.info_glosario?.elemento_id || reqs.elemento_id;
+      if (targetElementId) {
+        const reqElId = Number(targetElementId);
+        const playerBranchElements = (char.personajes_ramas || []).reduce((acc: number[], pr: any) => {
+          if (pr.elemento_principal_id) acc.push(Number(pr.elemento_principal_id));
+          if (pr.elemento_secundario_id) acc.push(Number(pr.elemento_secundario_id));
+          if (pr.elemento_terciario_id) acc.push(Number(pr.elemento_terciario_id));
+          return acc;
+        }, []);
+
+        const hasClanElemental = (char.personajes_ramas || []).some((pr: any) => {
+          const clanInfo = pr.info_ramas_clanes || (masters.ramas || []).find((r: any) => r.id === Number(pr.rama_id));
+          if (!clanInfo) return false;
+          let config = clanInfo.config_iniciales;
+          if (typeof config === 'string') { try { config = JSON.parse(config); } catch { return false; } }
+          return config?.clan_elemental === true;
+        });
+
+        const isElementalChar = hasClanElemental ||
+          (char.personajes_ramas || []).some((pr: any) => Number(pr.rama_id) === 4 && pr.sub_especialidad_id) ||
+          (char.eleccion_tecnicas_clan && Number(char.eleccion_tecnicas_clan.rama_id) === 4 && char.eleccion_tecnicas_clan.sub_especialidad_id);
+
+        if (!isElementalChar) {
+          const freeElId = (char.personajes_ramas || []).find((pr: any) => Number(pr.slot) === 1)?.elemento_principal_id;
+          const hasBranchReq = (obj.info_glosario?.rama_clan_id !== null && obj.info_glosario?.rama_clan_id !== undefined && Number(obj.info_glosario?.rama_clan_id) > 0) ||
+                               (reqs.rama_id !== null && reqs.rama_id !== undefined && Number(reqs.rama_id) > 0);
+          if (Number(freeElId) === reqElId && hasBranchReq) {
+            allowed = false;
+            reasons.push(`El elemento libre solo permite comprar técnicas elementales generales (sin requisito de rama o clan)`);
+          } else if (Number(freeElId) !== reqElId && !playerBranchElements.includes(reqElId)) {
+            allowed = false;
+            reasons.push(`No posees el elemento requerido`);
+          }
+        } else if (!playerBranchElements.includes(reqElId)) {
+          allowed = false;
+          reasons.push(`No posees el elemento requerido`);
+        }
+      }
     }
 
     // 3. Unique technique check (technique categories are 1)

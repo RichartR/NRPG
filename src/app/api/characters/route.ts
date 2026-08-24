@@ -313,6 +313,34 @@ export async function POST(request: Request) {
       }
     }
 
+    // 10. Registro de Elección de Elemento Libre al crear (si aplica)
+    const slot1 = (data.personajes_ramas || []).find((r: any) => Number(r.slot) === 1);
+    const selectedFreeElemId = slot1?.elemento_principal_id ? Number(slot1.elemento_principal_id) : null;
+    if (selectedFreeElemId) {
+      const { data: elemObj } = await supabase.from('info_elementos').select('nombre_esp, nombre_jap').eq('id', selectedFreeElemId).single();
+      if (elemObj) {
+        const elemName = elemObj.nombre_jap ? `${elemObj.nombre_jap} (${elemObj.nombre_esp})` : elemObj.nombre_esp;
+        const { data: regElem } = await adminClient.from('reg_registros').insert({
+          tipo: 'accion',
+          autor_id: characterId,
+          data: {
+            titulo: `${data.nombre_ninja} elige ${elemName} como su Elemento Libre`,
+            tipo_accion: 'eleccion_elemento_libre',
+            elemento_id: selectedFreeElemId,
+            elemento_nombre: elemName
+          }
+        }).select().single();
+
+        if (regElem) {
+          await adminClient.from('reg_registros_participantes').insert({
+            registro_id: regElem.id,
+            personaje_id: characterId,
+            estado: 'aceptado'
+          });
+        }
+      }
+    }
+
     return NextResponse.json({ success: true, id: characterId });
   } catch (error: any) {
     console.error('Create Error:', error);

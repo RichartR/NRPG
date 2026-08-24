@@ -388,8 +388,74 @@ export function useCharacter(characterId: string) {
             });
           }
         }
-        
-        
+
+        // Check Free Element choice / change (Elemento Libre)
+        const checkIsElemental = (charObj: Character | null) => {
+          if (!charObj?.personajes_ramas) return false;
+          const hasClanElem = charObj.personajes_ramas.some((pr: any) => {
+            const clanInfo = pr.info_ramas_clanes || (masters.ramas || []).find((r: any) => r.id === Number(pr.rama_id));
+            if (!clanInfo) return false;
+            let cfg = clanInfo.config_iniciales;
+            if (typeof cfg === 'string') { try { cfg = JSON.parse(cfg); } catch { return false; } }
+            return cfg?.clan_elemental === true;
+          });
+          if (hasClanElem) return true;
+          if (charObj.eleccion_tecnicas_clan && Number(charObj.eleccion_tecnicas_clan.rama_id) === 4 && charObj.eleccion_tecnicas_clan.sub_especialidad_id) return true;
+          const ninPr = charObj.personajes_ramas.find((pr: any) => Number(pr.rama_id) === 4);
+          if (ninPr && ninPr.sub_especialidad_id) {
+            const sub = (masters.subEspecialidades || []).find((s: any) => s.id === Number(ninPr.sub_especialidad_id));
+            if (sub && (sub.slug === 'ninjutsu-i' || sub.slug === 'ninjutsu-ii' || sub.slug === 'ninjutsu-iii')) return true;
+          }
+          return false;
+        };
+
+        const oldIsElemental = checkIsElemental(originalCharacter);
+        const newIsElemental = checkIsElemental(character);
+
+        const oldFreeElId = !oldIsElemental ? (originalCharacter?.personajes_ramas?.find((r: any) => Number(r.slot) === 1)?.elemento_principal_id || null) : null;
+        const newFreeElId = !newIsElemental ? (character?.personajes_ramas?.find((r: any) => Number(r.slot) === 1)?.elemento_principal_id || null) : null;
+
+        if (oldFreeElId !== newFreeElId) {
+          const getElemName = (id: number | null) => {
+            if (!id) return '';
+            const el = (masters.elementos || []).find((e: any) => Number(e.id) === Number(id));
+            if (!el) return `ID ${id}`;
+            return el.nombre_jap ? `${el.nombre_jap} (${el.nombre_esp})` : el.nombre_esp;
+          };
+
+          if (!oldFreeElId && newFreeElId) {
+            // Elección inicial de elemento libre
+            const elemName = getElemName(Number(newFreeElId));
+            await RegistrosService.createRegistro({
+              tipo: 'accion',
+              autor_id: Number(characterId),
+              participantes_ids: [Number(characterId)],
+              data: {
+                titulo: `${character.nombre_ninja} elige ${elemName} como su Elemento Libre`,
+                tipo_accion: 'eleccion_elemento_libre',
+                elemento_id: Number(newFreeElId),
+                elemento_nombre: elemName
+              }
+            });
+          } else if (oldFreeElId && newFreeElId && Number(oldFreeElId) !== Number(newFreeElId)) {
+            // Cambio de elemento libre
+            const oldElemName = getElemName(Number(oldFreeElId));
+            const newElemName = getElemName(Number(newFreeElId));
+            await RegistrosService.createRegistro({
+              tipo: 'accion',
+              autor_id: Number(characterId),
+              participantes_ids: [Number(characterId)],
+              data: {
+                titulo: `${character.nombre_ninja} cambia su Elemento Libre: ${oldElemName} → ${newElemName}`,
+                tipo_accion: 'cambio_elemento_libre',
+                elemento_anterior_id: Number(oldFreeElId),
+                elemento_nuevo_id: Number(newFreeElId),
+                elemento_anterior_nombre: oldElemName,
+                elemento_nuevo_nombre: newElemName
+              }
+            });
+          }
+        }
         // Check new items
         const currentInv = character.personajes_inventario || [];
         const oldInv = originalCharacter?.personajes_inventario || [];
