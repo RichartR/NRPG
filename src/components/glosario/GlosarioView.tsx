@@ -448,7 +448,14 @@ export default function GlosarioView({
       if (optionTexts.length > 0) {
         elements.push(
           <span key="stats_opciones" className="text-zinc-500 font-black">
-            STATS: <span className="text-zinc-900">{optionTexts.join(' ó ')}</span>
+            STATS: <span className="text-zinc-900">{
+              optionTexts.map((optStr: string, idx: number) => (
+                <React.Fragment key={idx}>
+                  {idx > 0 && <span className="lowercase font-bold text-zinc-500"> o </span>}
+                  {optStr}
+                </React.Fragment>
+              ))
+            }</span>
           </span>
         );
       }
@@ -568,9 +575,6 @@ export default function GlosarioView({
             {/* NIVEL 1: ALDEA */}
             <div className="relative py-6 mb-8 border-b-2 border-naranja-naruto/10">
               <div className="flex flex-col items-center text-center">
-                <span className="text-xs font-black text-naranja-naruto/40 uppercase tracking-[1em] mb-2">
-                  {aldeaGroup.info.categoria_id === 2 ? 'Organización' : 'Gran Nación'}
-                </span>
                 <h2 className="text-4xl xl:text-7xl font-black text-naranja-naruto uppercase tracking-[0.2em]">
                   {aldeaGroup.info.nombre_completo}
                 </h2>
@@ -595,7 +599,7 @@ export default function GlosarioView({
                       <h3 className="text-3xl xl:text-5xl font-black text-zinc-900 uppercase tracking-widest">
                         {ramaGroup.info.nombre}
                         {ramaGroup.info.tipo === 'clan' && ramaGroup.info.es_especial && (
-                          <span className="ml-3 text-caption bg-naranja-naruto/10 border border-naranja-naruto/20 text-naranja-naruto px-2 py-0.5 font-black tracking-wider uppercase rounded-sm italic align-middle text-2xl">Especial</span>
+                          <span className="ml-3 text-caption bg-white text-naranja-naruto border border-naranja-naruto/30 px-2 py-0.5 font-black tracking-wider uppercase rounded-sm italic align-middle text-2xl shadow-sm">Especial</span>
                         )}
                       </h3>
                     </div>
@@ -628,7 +632,7 @@ export default function GlosarioView({
                                 <h5 className="text-sm xl:text-lg font-black text-zinc-600 uppercase tracking-[0.3em]">{catGroup.info.nombre}</h5>
                               </div>
 
-                               <div className="overflow-x-auto rounded-lg shadow-xl border border-zinc-200">
+                              <div className="overflow-x-auto rounded-lg shadow-xl border border-zinc-200">
                                 <table className="w-full table-fixed text-left border-collapse min-w-[900px] bg-white/60 backdrop-blur-sm">
                                   <thead>
                                     <tr className="bg-zinc-900 text-caption font-black uppercase tracking-[0.2em] text-oro">

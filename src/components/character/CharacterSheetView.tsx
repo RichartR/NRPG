@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import {
   User, Briefcase, Zap, Save,
   Sword, Swords, ScrollText, GitBranch, UserCircle, X, Heart, Trash2, Edit3,
@@ -1581,7 +1582,14 @@ export function CharacterSheetView({
       if (optionTexts.length > 0) {
         elements.push(
           <span key="stats_opciones" className="text-oro/50 font-black">
-            STATS: <span className="text-oro">{optionTexts.join(' ó ')}</span>
+            STATS: <span className="text-oro">{
+              optionTexts.map((optStr: string, idx: number) => (
+                <React.Fragment key={idx}>
+                  {idx > 0 && <span className="lowercase font-bold text-oro/50"> o </span>}
+                  {optStr}
+                </React.Fragment>
+              ))
+            }</span>
           </span>
         );
       }

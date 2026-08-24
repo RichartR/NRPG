@@ -600,7 +600,7 @@ export default function TiendaDetallePage() {
                 .join(', ')
             )
             .filter((s: string) => s.length > 0)
-            .join(' Ó ');
+            .join(' o ');
           reasons.push(`Estadísticas insuficientes (Requerido: ${optionsFormatted})`);
         }
       } else if (reqs.stats) {
