@@ -259,6 +259,28 @@ export const StatsLogic = {
       return { valid: false, message: "No tienes suficientes puntos" };
     }
 
+    if (rulesForRank.limites) {
+      const candidateStats: CharacterStats = {
+        ...currentStats,
+        [statName]: newValue
+      };
+
+      for (const [valStr, maxAllowed] of Object.entries(rulesForRank.limites)) {
+        const targetVal = Number(valStr);
+        const limitCount = Number(maxAllowed);
+        if (isNaN(targetVal) || isNaN(limitCount)) continue;
+
+        const countAtOrAbove = Object.values(candidateStats).filter(val => Number(val || 0) >= targetVal).length;
+
+        if (countAtOrAbove > limitCount) {
+          return {
+            valid: false,
+            message: `LÍMITE ALCANZADO: Solo se permiten hasta ${limitCount} estadística${limitCount > 1 ? 's' : ''} con valor ${targetVal} o superior en Rango ${rango}.`
+          };
+        }
+      }
+    }
+
     return { valid: true };
   }
 };

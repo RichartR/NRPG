@@ -169,6 +169,7 @@ export interface RangoRules {
     vel_base: number;
     min: number; // Para el cálculo de auto-rango
     max?: number;
+    limites?: Record<string | number, number>;
   };
 }
 

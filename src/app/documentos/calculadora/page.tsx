@@ -139,25 +139,38 @@ export default function BuildSimulatorPage() {
 
   // Manejar cambio de stats con validaciones
   const handleUpdateStat = (statName: keyof CharacterStats, val: number) => {
-    const statMax = rangoBaseRules.stat_max || 10;
     const currentVal = stats[statName] || 0;
 
-    if (val < 1) {
-      addToast('El valor mínimo para cualquier estadística es 1', 'error');
-      return;
-    }
+    if (masters.rangoRules) {
+      const validation = StatsLogic.validateStatChange(
+        statName,
+        val,
+        stats,
+        rangoCalculado,
+        puntosEfectivos,
+        masters.rangoRules
+      );
 
-    if (val > statMax) {
-      addToast(`El límite máximo de estadística para ${rangoCalculado} es ${statMax}`, 'error');
-      return;
-    }
-
-    // Si está en modo límite, verificar que no supere el cupo disponible
-    if (modoPuntos === 'limite') {
-      const diff = val - currentVal;
-      if (diff > 0 && puntosLibres < diff) {
-        addToast('No tienes suficientes puntos disponibles en tu total asignado', 'error');
+      if (!validation.valid && validation.message) {
+        addToast(validation.message, 'error');
         return;
+      }
+    } else {
+      const statMax = rangoBaseRules.stat_max || 10;
+      if (val < 1) {
+        addToast('El valor mínimo para cualquier estadística es 1', 'error');
+        return;
+      }
+      if (val > statMax) {
+        addToast(`El límite máximo de estadística para ${rangoCalculado} es ${statMax}`, 'error');
+        return;
+      }
+      if (modoPuntos === 'limite') {
+        const diff = val - currentVal;
+        if (diff > 0 && puntosLibres < diff) {
+          addToast('No tienes suficientes puntos disponibles en tu total asignado', 'error');
+          return;
+        }
       }
     }
 
