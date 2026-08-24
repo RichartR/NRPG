@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Edit2, Save, X, Sword, Plus, Trash2, RefreshCw, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Edit2, Save, X, Sword, Plus, Trash2, RefreshCw, Search, ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
@@ -23,20 +23,39 @@ export default function CombateList({
   const [editForm, setEditForm] = useState<any>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingId, setLoadingId] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
 
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
+  const toggleStatus = async (id: number, currentStatus: boolean) => {
+    setLoadingId(id);
+    try {
+      const data = await AdminService.saveCombatDoc({ id, activo: !currentStatus });
+      setDocs(prev => prev.map(d => d.id === id ? { ...d, activo: !currentStatus } : d));
+      addToast(`Documento ${!currentStatus ? 'activado' : 'archivado'}`, 'success');
+      router.refresh();
+    } catch (err: any) {
+      addToast(err.message, 'error');
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
   const filteredDocs = useMemo(() => {
     return docs.filter(doc => {
-      return searchAny(search, [
+      const isDocActive = doc.activo !== false;
+      const matchesTab = activeTab === 'active' ? isDocActive : !isDocActive;
+      const matchesSearch = searchAny(search, [
         doc.titulo,
         doc.clave,
         doc.ramas_clanes?.nombre,
         doc.sub_especialidades?.nombre
       ]);
+      return matchesTab && matchesSearch;
     });
-  }, [docs, search]);
+  }, [docs, activeTab, search]);
 
   const ITEMS_PER_PAGE = 15;
   const totalPages = Math.max(1, Math.ceil(filteredDocs.length / ITEMS_PER_PAGE));
@@ -127,8 +146,30 @@ export default function CombateList({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row gap-6 justify-between items-center bg-neutral-800/40 p-6 sm:p-8 border border-oro/5 backdrop-blur-md relative overflow-hidden ninja-clip-md">
+      <div className="flex flex-col min-[1600px]:flex-row flex-wrap gap-6 justify-between items-stretch min-[1600px]:items-center bg-neutral-800/40 p-6 sm:p-8 border border-oro/5 backdrop-blur-md relative overflow-hidden ninja-clip-md">
         <div className="absolute top-0 right-0 w-64 h-64 bg-oro/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
+
+        <div className="flex gap-2 p-1.5 bg-black/40 border border-oro/10 ninja-box w-full min-[1600px]:w-auto justify-center">
+          {['active', 'inactive'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => {
+                setActiveTab(tab as any);
+                setCurrentPage(1);
+              }}
+              className={`flex-1 sm:flex-initial text-center px-4 sm:px-8 py-3 font-black uppercase tracking-[0.2em] transition-all text-xs ${activeTab === tab
+                ? 'bg-oro text-naranja-naruto shadow-lg'
+                : 'text-oro/40 hover:text-oro hover:bg-oro/5'
+                }`}
+              style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+            >
+              {tab === 'active' ? 'ACTIVOS' : 'ARCHIVADOS'}
+              <span className={`ml-2 opacity-40 ${activeTab === tab ? 'text-naranja-naruto/60' : ''}`}>
+                ({docs.filter(d => tab === 'active' ? d.activo !== false : d.activo === false).length})
+              </span>
+            </button>
+          ))}
+        </div>
 
         <div className="relative flex-1 w-full">
           <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-oro/40 w-5 h-5" />
@@ -287,6 +328,21 @@ export default function CombateList({
             </div>
 
             <div className="flex items-center gap-4 relative z-10">
+              <button
+                onClick={() => toggleStatus(doc.id, doc.activo !== false)}
+                disabled={loadingId === doc.id}
+                title={doc.activo !== false ? 'Archivar documento' : 'Activar documento'}
+                className={`p-4 transition-all border ${doc.activo !== false ? 'bg-oro/10 border-oro/20 text-oro hover:bg-oro hover:text-naranja-naruto' : 'bg-black/40 border-oro/5 text-oro/20 hover:border-oro/40 hover:text-oro'}`}
+                style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+              >
+                {loadingId === doc.id ? (
+                  <RefreshCw className="w-5 h-5 animate-spin" />
+                ) : doc.activo !== false ? (
+                  <Eye className="w-5 h-5" />
+                ) : (
+                  <EyeOff className="w-5 h-5" />
+                )}
+              </button>
               <button
                 onClick={() => startEditing(doc)}
                 className="p-4 bg-oro text-naranja-naruto hover:brightness-110 transition-all active:scale-[0.98] shadow-lg shadow-oro/10"
