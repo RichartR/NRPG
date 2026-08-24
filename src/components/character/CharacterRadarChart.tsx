@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   Radar,
   RadarChart,
@@ -11,6 +11,17 @@ import {
   Tooltip
 } from 'recharts';
 import { CharacterStats } from '@/domain/types';
+
+const KANJI_MAP: Record<string, string> = {
+  NIN: '忍',
+  TAI: '体',
+  GEN: '幻',
+  INT: '賢',
+  FUE: '力',
+  AGI: '速',
+  EST: '精',
+  SM: '印',
+};
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
@@ -33,6 +44,62 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
+// Renderizador estático pura fuera del ciclo de vida del componente
+const renderCustomTick = (props: any) => {
+  const { payload, x, y, cx, cy } = props;
+  if (!payload) return null;
+
+  const dx = x - cx;
+  const dy = y - cy;
+  const distance = Math.sqrt(dx * dx + dy * dy) || 1;
+
+  const nx = dx / distance;
+  const ny = dy / distance;
+
+  const kanjiOffset = 16;
+  const kanjiX = x + nx * kanjiOffset;
+  const kanjiY = y + ny * kanjiOffset;
+
+  const abbrOffset = 42;
+  const abbrX = x + nx * abbrOffset;
+  const abbrY = y + ny * abbrOffset;
+
+  const kanji = KANJI_MAP[payload.value] || '';
+
+  return (
+    <g className="select-none pointer-events-none">
+      <text
+        x={kanjiX}
+        y={kanjiY}
+        textAnchor="middle"
+        dominantBaseline="central"
+        className="font-serif font-black"
+        style={{
+          fontSize: '24px',
+          fill: '#FA9427',
+          filter: 'drop-shadow(0px 2px 4px rgba(209, 175, 82, 0.56))'
+        }}
+      >
+        {kanji}
+      </text>
+      <text
+        x={abbrX}
+        y={abbrY}
+        textAnchor="middle"
+        dominantBaseline="central"
+        className="font-mono font-bold tracking-widest"
+        style={{
+          fontSize: '10px',
+          fill: '#dfb857',
+          filter: 'drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.9))'
+        }}
+      >
+        {payload.value}
+      </text>
+    </g>
+  );
+};
+
 interface CharacterRadarChartProps {
   stats: CharacterStats;
   maxVal: number;
@@ -41,10 +108,20 @@ interface CharacterRadarChartProps {
 export function CharacterRadarChart({ stats, maxVal }: CharacterRadarChartProps) {
   const [mounted, setMounted] = useState(false);
 
-  // Evitar advertencias de hidratación de SSR y IDs duplicados en Next.js
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const data = useMemo(() => [
+    { subject: 'NIN', value: stats.NIN || 0, fullMark: maxVal, kanji: '忍' },
+    { subject: 'TAI', value: stats.TAI || 0, fullMark: maxVal, kanji: '体' },
+    { subject: 'GEN', value: stats.GEN || 0, fullMark: maxVal, kanji: '幻' },
+    { subject: 'INT', value: stats.INT || 0, fullMark: maxVal, kanji: '賢' },
+    { subject: 'FUE', value: stats.FUE || 0, fullMark: maxVal, kanji: '力' },
+    { subject: 'AGI', value: stats.AGI || 0, fullMark: maxVal, kanji: '速' },
+    { subject: 'EST', value: stats.EST || 0, fullMark: maxVal, kanji: '精' },
+    { subject: 'SM', value: stats.SM || 0, fullMark: maxVal, kanji: '印' },
+  ], [stats.NIN, stats.TAI, stats.GEN, stats.INT, stats.FUE, stats.AGI, stats.EST, stats.SM, maxVal]);
 
   if (!mounted) {
     return (
@@ -54,105 +131,20 @@ export function CharacterRadarChart({ stats, maxVal }: CharacterRadarChartProps)
     );
   }
 
-  // Orden exacto de las 8 estadísticas (en sentido horario, empezando desde las 12 en punto)
-  // 1. NIN (忍) - 12:00
-  // 2. TAI (体) - 01:30
-  // 3. GEN (幻) - 03:00
-  // 4. INT (賢) - 04:30
-  // 5. FUE (力) - 06:00
-  // 6. AGI (速) - 07:30
-  // 7. EST (精) - 09:00
-  // 8. SM (印) - 10:30
-  const data = [
-    { subject: 'NIN', value: stats.NIN || 0, fullMark: maxVal, kanji: '忍' },
-    { subject: 'TAI', value: stats.TAI || 0, fullMark: maxVal, kanji: '体' },
-    { subject: 'GEN', value: stats.GEN || 0, fullMark: maxVal, kanji: '幻' },
-    { subject: 'INT', value: stats.INT || 0, fullMark: maxVal, kanji: '賢' },
-    { subject: 'FUE', value: stats.FUE || 0, fullMark: maxVal, kanji: '力' },
-    { subject: 'AGI', value: stats.AGI || 0, fullMark: maxVal, kanji: '速' },
-    { subject: 'EST', value: stats.EST || 0, fullMark: maxVal, kanji: '精' },
-    { subject: 'SM', value: stats.SM || 0, fullMark: maxVal, kanji: '印' },
-  ];
-
-  // Renderizado personalizado de las etiquetas (ticks) usando vectores para desplazarlas radialmente
-  const renderCustomTick = (props: any) => {
-    const { payload, x, y, cx, cy, index } = props;
-    if (!payload) return null;
-
-    // Calcular vector de dirección desde el centro
-    const dx = x - cx;
-    const dy = y - cy;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    // Vector unitario normalizado
-    const nx = dx / distance;
-    const ny = dy / distance;
-
-    // Ajustar las distancias (en píxeles) para alejar las etiquetas del gráfico y separarlas entre sí
-    const kanjiOffset = 16;
-    const kanjiX = x + nx * kanjiOffset;
-    const kanjiY = y + ny * kanjiOffset;
-
-    const abbrOffset = 42;
-    const abbrX = x + nx * abbrOffset;
-    const abbrY = y + ny * abbrOffset;
-
-    const item = data[index];
-    const kanji = item ? item.kanji : '';
-
-    return (
-      <g className="select-none pointer-events-none">
-        {/* Kanji grande en rojo brillante */}
-        <text
-          x={kanjiX}
-          y={kanjiY}
-          textAnchor="middle"
-          dominantBaseline="central"
-          className="font-serif font-black"
-          style={{
-            fontSize: '24px',
-            fill: '#FA9427', // Naranja Naruto
-            filter: 'drop-shadow(0px 2px 4px rgba(209, 175, 82, 0.56))'
-          }}
-        >
-          {kanji}
-        </text>
-        {/* Abreviación pequeña en oro */}
-        <text
-          x={abbrX}
-          y={abbrY}
-          textAnchor="middle"
-          dominantBaseline="central"
-          className="font-mono font-bold tracking-widest"
-          style={{
-            fontSize: '10px',
-            fill: '#dfb857', // Oro
-            filter: 'drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.9))'
-          }}
-        >
-          {payload.value}
-        </text>
-      </g>
-    );
-  };
-
   return (
-    <div className="w-full max-w-[485px] min-w-0 mx-auto flex items-center justify-center relative my-0">
+    <div className="w-full max-w-[400px] sm:max-w-[485px] min-w-0 mx-auto flex items-center justify-center relative my-0">
       <ResponsiveContainer width="100%" aspect={1} minWidth={0}>
         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
-          {/* Rejilla octagonal en oro sutil y líneas radiales */}
           <PolarGrid
             gridType="polygon"
             stroke="#dfb857"
             strokeOpacity={0.25}
             strokeWidth={1}
           />
-          {/* Ejes angulares con nuestro renderizador de Kanji y Abreviación */}
           <PolarAngleAxis
             dataKey="subject"
             tick={renderCustomTick}
           />
-          {/* Eje de radio invisible para guiar los límites dinámicos */}
           <PolarRadiusAxis
             angle={90}
             domain={[0, maxVal]}
@@ -160,7 +152,6 @@ export function CharacterRadarChart({ stats, maxVal }: CharacterRadarChartProps)
             tick={false}
             axisLine={false}
           />
-          {/* Polígono de estadísticas del Shinobi en Naranja Naruto con borde */}
           <Radar
             name="Estadísticas"
             dataKey="value"
@@ -171,7 +162,6 @@ export function CharacterRadarChart({ stats, maxVal }: CharacterRadarChartProps)
             activeDot={{ r: 5, stroke: '#dfb857', strokeWidth: 1.5, fill: '#D6852D' }}
             isAnimationActive={false}
           />
-          {/* Tooltip premium personalizado al pasar el ratón */}
           <Tooltip content={<CustomTooltip />} />
         </RadarChart>
       </ResponsiveContainer>
