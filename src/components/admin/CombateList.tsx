@@ -159,7 +159,7 @@ export default function CombateList({
           style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
         >
           <Plus className="w-4 h-4" />
-          AÑADIR PROTOCOLO
+          AÑADIR DOCUMENTO
         </button>
       </div>
 

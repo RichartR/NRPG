@@ -1567,7 +1567,25 @@ export function CharacterSheetView({
       );
     }
 
-    if (reqs.stats && typeof reqs.stats === 'object') {
+    if (reqs.stats_opciones && Array.isArray(reqs.stats_opciones) && reqs.stats_opciones.length > 0) {
+      const optionTexts = reqs.stats_opciones
+        .map((group: Record<string, number>) => {
+          if (!group || typeof group !== 'object') return '';
+          return Object.entries(group)
+            .filter(([_, val]) => Number(val) > 0)
+            .map(([stat, val]) => `${stat.toUpperCase()}: ${val}`)
+            .join(', ');
+        })
+        .filter((str: string) => str.length > 0);
+
+      if (optionTexts.length > 0) {
+        elements.push(
+          <span key="stats_opciones" className="text-oro/50 font-black">
+            STATS: <span className="text-oro">{optionTexts.join(' ó ')}</span>
+          </span>
+        );
+      }
+    } else if (reqs.stats && typeof reqs.stats === 'object') {
       Object.entries(reqs.stats).forEach(([stat, val]) => {
         if (val && val !== 0) {
           elements.push(
@@ -1623,7 +1641,7 @@ export function CharacterSheetView({
     }
 
     Object.entries(reqs).forEach(([key, value]) => {
-      if (['rango', 'rama_id', 'elemento_id', 'stats', 'misiones', 'personaje_id', 'combates', 'entrenamiento_id', 'sub_especialidad_id'].includes(key)) return;
+      if (['rango', 'rama_id', 'elemento_id', 'stats', 'stats_opciones', 'misiones', 'personaje_id', 'combates', 'entrenamiento_id', 'sub_especialidad_id'].includes(key)) return;
       if (value === null || value === undefined || value === 0 || value === false || value === '') return;
       elements.push(
         <span key={key} className="text-oro/50 font-black">

@@ -656,6 +656,91 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
     };
   });
 
+  const initialStatsOpciones = (() => {
+    const req = formData.requisitos;
+    if (req && Array.isArray(req.stats_opciones) && req.stats_opciones.length > 0) return req.stats_opciones;
+    if (req && req.stats && typeof req.stats === 'object') {
+      const active: Record<string, number> = {};
+      Object.entries(req.stats).forEach(([k, v]) => {
+        if (Number(v) > 0) active[k.toUpperCase()] = Number(v);
+      });
+      if (Object.keys(active).length > 0) return [active];
+    }
+    return [];
+  })();
+
+  const [statsOpciones, setStatsOpciones] = useState<Array<Record<string, number>>>(initialStatsOpciones);
+
+  const handleAddOptionGroup = () => {
+    setStatsOpciones(prev => [...prev, {}]);
+  };
+
+  const handleRemoveOptionGroup = (index: number) => {
+    setStatsOpciones(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUpdateGroupStat = (groupIndex: number, statKey: string, val: number) => {
+    setStatsOpciones(prev => {
+      const copy = [...prev];
+      const currentGroup = { ...copy[groupIndex] };
+      const sKey = statKey.toUpperCase();
+      if (val <= 0) {
+        delete currentGroup[sKey];
+      } else {
+        currentGroup[sKey] = val;
+      }
+      copy[groupIndex] = currentGroup;
+      return copy;
+    });
+  };
+
+  const handleAddStatToGroup = (groupIndex: number, statKey: string) => {
+    setStatsOpciones(prev => {
+      const copy = [...prev];
+      const currentGroup = { ...copy[groupIndex] };
+      const sKey = statKey.toUpperCase();
+      if (!(sKey in currentGroup)) {
+        currentGroup[sKey] = 1;
+      }
+      copy[groupIndex] = currentGroup;
+      return copy;
+    });
+  };
+
+  const handleRemoveStatFromGroup = (groupIndex: number, statKey: string) => {
+    setStatsOpciones(prev => {
+      const copy = [...prev];
+      const currentGroup = { ...copy[groupIndex] };
+      const sKey = statKey.toUpperCase();
+      delete currentGroup[sKey];
+      copy[groupIndex] = currentGroup;
+      return copy;
+    });
+  };
+
+  const handleSaveForm = () => {
+    const cleanOpciones = statsOpciones
+      .map(group => {
+        const cleanGroup: Record<string, number> = {};
+        for (const [k, v] of Object.entries(group)) {
+          if (Number(v) > 0) cleanGroup[k.toUpperCase()] = Number(v);
+        }
+        return cleanGroup;
+      })
+      .filter(group => Object.keys(group).length > 0);
+
+    const newReqs = { ...(formData.requisitos || {}) };
+    if (cleanOpciones.length > 0) {
+      newReqs.stats_opciones = cleanOpciones;
+      delete newReqs.stats;
+    } else {
+      delete newReqs.stats_opciones;
+      delete newReqs.stats;
+    }
+
+    onSave({ ...formData, requisitos: newReqs });
+  };
+
   const filteredSubs = subcategorias.filter((s: any) => s.categoria_id === formData.categoria_id);
   const selectedSub = subcategorias.find((s: any) => s.id === formData.subcategoria_id);
   const filteredRamas = ramas.filter((r: any) => {
@@ -920,37 +1005,114 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                 style={{ clipPath: 'polygon(24px 0, 100% 0, 100% calc(100% - 24px), calc(100% - 24px) 100%, 0 100%, 0 24px)' }}
               >
                 <div className="flex items-center justify-between"><h3 className="flex items-center gap-3 text-lg font-black text-white uppercase tracking-tighter"><ScrollText size={20} className="text-oro" /> Requisitos del Sistema</h3></div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Opciones de Atributos Necesarios (OR) */}
+                <div className="space-y-4 pt-2 border-t border-oro/10">
+                  <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                      <label className="flex items-center gap-2 text-caption font-black uppercase tracking-widest text-oro ml-1">
+                        <Swords size={14} className="text-oro" /> Opciones de Atributos Necesarios (OR)
+                      </label>
+                      <p className="text-caption font-bold text-white/60 mt-1">El personaje debe cumplir AL MENOS UNA de estas opciones para aprender o equipar.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddOptionGroup}
+                      className="ninja-btn-oro text-caption px-4 py-2 flex items-center gap-2"
+                    >
+                      <Plus size={14} /> Añadir Opción de Stats (OR)
+                    </button>
+                  </div>
+
+                  {statsOpciones.length === 0 ? (
+                    <div className="p-4 bg-black/40 border border-oro/10 text-caption font-black text-oro/30 uppercase tracking-widest text-center">
+                      Sin requisitos de stats base mínimas
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {statsOpciones.map((group, groupIdx) => {
+                        const ALL_STAT_KEYS = ['NIN', 'GEN', 'TAI', 'SM', 'FUE', 'AGI', 'EST', 'INT'];
+                        const availableStatsToAdd = ALL_STAT_KEYS.filter(s => !(s in group));
+                        return (
+                          <div key={groupIdx} className="p-4 bg-black/60 border border-oro/20 ninja-clip-sm space-y-3">
+                            <div className="flex justify-between items-center border-b border-oro/10 pb-2">
+                              <span className="text-caption font-black text-oro uppercase tracking-wider">
+                                Opción {groupIdx + 1} {groupIdx > 0 ? '(Alternativa OR)' : ''}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveOptionGroup(groupIdx)}
+                                className="text-xs text-naranja-naruto hover:underline font-bold"
+                              >
+                                Eliminar Opción
+                              </button>
+                            </div>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                              {Object.entries(group).map(([statKey, val]) => (
+                                <div key={statKey} className="flex flex-col gap-1 bg-oro/5 p-2 border border-oro/10 relative">
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-caption font-black text-oro">{statKey} Mínimo</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveStatFromGroup(groupIdx, statKey)}
+                                      className="text-oro/40 hover:text-naranja-naruto text-xs font-bold"
+                                    >
+                                      ×
+                                    </button>
+                                  </div>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    value={val || ''}
+                                    onChange={(e) => handleUpdateGroupStat(groupIdx, statKey, Number(e.target.value))}
+                                    className="bg-black/60 border border-oro/20 px-2 py-1 text-sm font-bold text-oro outline-none focus:border-oro"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+
+                            {availableStatsToAdd.length > 0 && (
+                              <div className="flex items-center gap-2 pt-2">
+                                <span className="text-caption text-white font-bold uppercase shrink-0">+ Agregar Stat:</span>
+                                <NinjaSelect
+                                  options={availableStatsToAdd.map(s => ({ label: s, value: s }))}
+                                  value=""
+                                  placeholder="Seleccionar stat..."
+                                  variant="compact"
+                                  onChange={(val) => {
+                                    if (val) {
+                                      handleAddStatToGroup(groupIdx, val);
+                                    }
+                                  }}
+                                  className="w-48"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-oro/10">
                   <div className="space-y-4">
-                    <label className="flex items-center gap-2 text-caption font-black uppercase tracking-widest text-oro/40 ml-1"><Swords size={12} /> Atributos Necesarios</label>
-                    <div className="grid grid-cols-1 gap-2">
-                      {STATS_LIST.map(s => (
-                        <div key={s.key} className="flex items-center justify-between bg-black/60 p-2 pl-4 rounded-xl border border-oro/10 group hover:border-oro/30 transition-all">
-                          <span className="text-caption font-bold text-oro/50 uppercase tracking-widest">{s.label}</span>
-                          <input type="number" min="0" value={formData.requisitos?.stats?.[s.key] ?? ''} placeholder="0" onChange={(e) => updateNestedReq('stats', s.key, e.target.value)} className="w-16 bg-black border border-oro/20 rounded-lg px-2 py-1.5 text-center text-oro font-black text-xs outline-none focus:border-oro transition-all" />
-                        </div>
+                    <label className="flex items-center gap-2 text-caption font-black uppercase tracking-widest text-oro/40 ml-1"><Star size={12} /> Rango Mínimo</label>
+                    <div className="flex gap-1 bg-black p-1 rounded-xl border border-oro/10">
+                      {RANGOS.map(r => (
+                        <button key={r} onClick={() => updateReq('rango', formData.requisitos?.rango === r ? null : r)} className={`flex-1 py-3 rounded-lg font-black text-xs transition-all ${formData.requisitos?.rango === r ? 'bg-oro text-black' : 'text-oro/40 hover:bg-oro/5'}`}>{r}</button>
                       ))}
                     </div>
                   </div>
-                  <div className="space-y-8">
-                    <div className="space-y-4">
-                      <label className="flex items-center gap-2 text-caption font-black uppercase tracking-widest text-oro/40 ml-1"><Star size={12} /> Rango Mínimo</label>
-                      <div className="flex gap-1 bg-black p-1 rounded-xl border border-oro/10">
-                        {RANGOS.map(r => (
-                          <button key={r} onClick={() => updateReq('rango', formData.requisitos?.rango === r ? null : r)} className={`flex-1 py-3 rounded-lg font-black text-xs transition-all ${formData.requisitos?.rango === r ? 'bg-oro text-black' : 'text-oro/40 hover:bg-oro/5'}`}>{r}</button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="space-y-4">
-                      <label className="flex items-center gap-2 text-caption font-black uppercase tracking-widest text-oro/40 ml-1"><Trophy size={12} /> Misiones por Rango</label>
-                      <div className="grid grid-cols-5 gap-2">
-                        {RANGOS.map(r => (
-                          <div key={`mis-${r}`} className="space-y-1">
-                            <span className="block text-center text-caption font-black text-oro/40">{r}</span>
-                            <input type="number" min="0" value={formData.requisitos?.misiones?.[r] ?? 0} onChange={(e) => updateNestedReq('misiones', r, e.target.value)} className="w-full bg-black border border-oro/20 rounded-lg py-2 text-center text-oro font-black text-xs outline-none focus:border-oro transition-all" />
-                          </div>
-                        ))}
-                      </div>
+                  <div className="space-y-4">
+                    <label className="flex items-center gap-2 text-caption font-black uppercase tracking-widest text-oro/40 ml-1"><Trophy size={12} /> Misiones por Rango</label>
+                    <div className="grid grid-cols-5 gap-2">
+                      {RANGOS.map(r => (
+                        <div key={`mis-${r}`} className="space-y-1">
+                          <span className="block text-center text-caption font-black text-oro/40">{r}</span>
+                          <input type="number" min="0" value={formData.requisitos?.misiones?.[r] ?? 0} onChange={(e) => updateNestedReq('misiones', r, e.target.value)} className="w-full bg-black border border-oro/20 rounded-lg py-2 text-center text-oro font-black text-xs outline-none focus:border-oro transition-all" />
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -1009,7 +1171,7 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
 
         {/* Pie de Página Fijo */}
         <div className="px-12 py-6 border-t border-oro/10 flex justify-end shrink-0 bg-[#07050A]">
-          <button onClick={() => onSave(formData)} disabled={loading} className="ninja-btn-oro px-16 py-5 text-sm flex items-center gap-4 shadow-2xl active:scale-95">
+          <button onClick={handleSaveForm} disabled={loading} className="ninja-btn-oro px-16 py-5 text-sm flex items-center gap-4 shadow-2xl active:scale-95">
             <Save size={20} /> Finalizar y Guardar
           </button>
         </div>

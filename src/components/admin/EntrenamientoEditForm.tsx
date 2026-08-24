@@ -52,7 +52,7 @@ export default function EntrenamientoEditForm({ entrenamiento, ramas, subEspecia
   const filteredSubs = subEspecialidades.filter(s => s.rama_id === formData.id_ramaclan);
 
   const handleAddOptionGroup = () => {
-    setStatsOpciones(prev => [...prev, { FUE: 1 }]);
+    setStatsOpciones(prev => [...prev, {}]);
   };
 
   const handleRemoveOptionGroup = (index: number) => {

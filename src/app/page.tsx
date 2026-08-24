@@ -27,6 +27,9 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const publicClient = createSupabaseClient(supabaseUrl, supabaseAnonKey);
 
+// Cambiar a true cuando se quiera volver a mostrar el botón de Iniciar Sesión en la navegación
+const SHOW_LOGIN_BUTTON = false;
+
 const getCachedRegistros = unstable_cache(
   async () => {
     const { data } = await publicClient
@@ -222,14 +225,14 @@ export default async function Home() {
               )}
               {user ? (
                 <LogoutButton />
-              ) : (
+              ) : SHOW_LOGIN_BUTTON ? (
                 <Link
                   href="/login"
                   className="px-6 py-3.5 ninja-btn-oro text-xs sm:text-sm font-black uppercase tracking-widest text-center"
                 >
                   INICIAR SESIÓN
                 </Link>
-              )}
+              ) : null}
             </nav>
           </div>
         </div>

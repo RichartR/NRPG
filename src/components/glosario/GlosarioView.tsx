@@ -434,7 +434,25 @@ export default function GlosarioView({
       );
     }
 
-    if (reqs.stats && typeof reqs.stats === 'object') {
+    if (reqs.stats_opciones && Array.isArray(reqs.stats_opciones) && reqs.stats_opciones.length > 0) {
+      const optionTexts = reqs.stats_opciones
+        .map((group: Record<string, number>) => {
+          if (!group || typeof group !== 'object') return '';
+          return Object.entries(group)
+            .filter(([_, val]) => Number(val) > 0)
+            .map(([stat, val]) => `${stat.toUpperCase()}: ${val}`)
+            .join(', ');
+        })
+        .filter((str: string) => str.length > 0);
+
+      if (optionTexts.length > 0) {
+        elements.push(
+          <span key="stats_opciones" className="text-zinc-500 font-black">
+            STATS: <span className="text-zinc-900">{optionTexts.join(' ó ')}</span>
+          </span>
+        );
+      }
+    } else if (reqs.stats && typeof reqs.stats === 'object') {
       Object.entries(reqs.stats).forEach(([stat, val]) => {
         if (val && val !== 0) elements.push(<span key={stat} className="text-zinc-500 font-black">{stat.toUpperCase()}: <span className="text-zinc-900">{String(val)}</span></span>);
       });
@@ -447,7 +465,7 @@ export default function GlosarioView({
     }
 
     Object.entries(reqs).forEach(([key, value]) => {
-      if (['rango', 'rama_id', 'elemento_id', 'stats', 'misiones', 'personaje_id', 'combates', 'entrenamiento_id', 'sub_especialidad_id', 'objeto_id'].includes(key)) return;
+      if (['rango', 'rama_id', 'elemento_id', 'stats', 'stats_opciones', 'misiones', 'personaje_id', 'combates', 'entrenamiento_id', 'sub_especialidad_id', 'objeto_id'].includes(key)) return;
       if (value === null || value === undefined || value === 0 || value === false || value === '') return;
       elements.push(<span key={key} className="text-zinc-500 font-black">{key.replace('_', ' ').toUpperCase()}: <span className="text-zinc-900">{String(value)}</span></span>);
     });
@@ -610,15 +628,15 @@ export default function GlosarioView({
                                 <h5 className="text-sm xl:text-lg font-black text-zinc-600 uppercase tracking-[0.3em]">{catGroup.info.nombre}</h5>
                               </div>
 
-                              <div className="overflow-x-auto rounded-lg shadow-xl border border-zinc-200">
-                                <table className="w-full text-left border-collapse min-w-[900px] bg-white/60 backdrop-blur-sm">
+                               <div className="overflow-x-auto rounded-lg shadow-xl border border-zinc-200">
+                                <table className="w-full table-fixed text-left border-collapse min-w-[900px] bg-white/60 backdrop-blur-sm">
                                   <thead>
                                     <tr className="bg-zinc-900 text-caption font-black uppercase tracking-[0.2em] text-oro">
-                                      <th className="py-5 px-8">Nombre</th>
-                                      <th className="py-5 px-8">Requisitos</th>
-                                      <th className="py-5 px-8 text-center w-32">Coste EXP</th>
-                                      <th className="py-5 px-8 text-center w-32">Coste RYOUS</th>
-                                      <th className="py-5 px-8 text-center w-32">Coste PA</th>
+                                      <th className="py-5 px-6 w-[30%]">Nombre</th>
+                                      <th className="py-5 px-6 w-[46%]">Requisitos</th>
+                                      <th className="py-5 px-4 text-center w-[8%]">Coste EXP</th>
+                                      <th className="py-5 px-4 text-center w-[8%]">Coste RYOUS</th>
+                                      <th className="py-5 px-4 text-center w-[8%]">Coste PA</th>
                                     </tr>
                                   </thead>
                                   <tbody className="divide-y divide-zinc-100">
@@ -635,22 +653,22 @@ export default function GlosarioView({
 
                                         {subcat.items.map((item: Glosario) => (
                                           <tr key={item.id} className="bg-zinc-50 group hover:bg-oro/20 transition-all duration-300">
-                                            <td className="py-3 px-8">
+                                            <td className="py-3 px-6 align-middle w-[30%]">
                                               <div className="flex flex-col">
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-2 flex-wrap">
                                                   <h4 className="text-base xl:text-lg font-bold text-zinc-900 group-hover:text-naranja-naruto transition-colors uppercase tracking-tight">
                                                     {item.nombre_jp}
                                                   </h4>
                                                   {item.inicial && (
-                                                    <span className="text-[7px] bg-naranja-naruto text-white px-1.5 py-0.5 font-black uppercase tracking-widest rounded-sm">Inic.</span>
+                                                    <span className="text-[7px] bg-naranja-naruto text-white px-1.5 py-0.5 font-black uppercase tracking-widest rounded-sm shrink-0">Inic.</span>
                                                   )}
                                                   {item.obtenible === false && (
-                                                    <span className="text-[7px] bg-amber-600 text-white px-1.5 py-0.5 font-black uppercase tracking-widest rounded-sm">
+                                                    <span className="text-[7px] bg-amber-600 text-white px-1.5 py-0.5 font-black uppercase tracking-widest rounded-sm shrink-0">
                                                       🔒 No Obtenible
                                                     </span>
                                                   )}
                                                   {item.basica !== undefined && (
-                                                    <span className={`text-[7px] ${item.basica ? 'bg-sky-600 text-white' : 'bg-green-800 text-white'} px-1.5 py-0.5 font-black uppercase tracking-widest rounded-sm`}>
+                                                    <span className={`text-[7px] ${item.basica ? 'bg-sky-600 text-white' : 'bg-green-800 text-white'} px-1.5 py-0.5 font-black uppercase tracking-widest rounded-sm shrink-0`}>
                                                       {item.basica ? 'Básica' : 'Avanzada'}
                                                     </span>
                                                   )}
@@ -662,24 +680,24 @@ export default function GlosarioView({
                                                 )}
                                               </div>
                                             </td>
-                                            <td className="py-3 px-8">
+                                            <td className="py-3 px-6 align-middle w-[46%]">
                                               <div className="text-black">
                                                 {renderRequisitos(item.requisitos)}
                                               </div>
                                             </td>
-                                            <td className="py-3 px-8 text-center">
+                                            <td className="py-3 px-4 text-center align-middle w-[8%]">
                                               <div className="flex flex-col items-center">
                                                 <span className="text-base font-black text-zinc-900">{item.coste_exp.toLocaleString()}</span>
                                                 <span className="text-[7px] text-zinc-400 uppercase font-black tracking-widest">Puntos</span>
                                               </div>
                                             </td>
-                                            <td className="py-3 px-8 text-center">
+                                            <td className="py-3 px-4 text-center align-middle w-[8%]">
                                               <div className="flex flex-col items-center">
                                                 <span className="text-base font-black text-zinc-900">{item.coste_ryous.toLocaleString()}</span>
                                                 <span className="text-[7px] text-zinc-400 uppercase font-black tracking-widest">Ryous</span>
                                               </div>
                                             </td>
-                                            <td className="py-3 px-8 text-center">
+                                            <td className="py-3 px-4 text-center align-middle w-[8%]">
                                               <div className="flex flex-col items-center">
                                                 <span className="text-base font-black text-zinc-900">{item.coste_puntos_aprendizaje || 0}</span>
                                                 <span className="text-[7px] text-zinc-400 uppercase font-black tracking-widest">PA</span>
