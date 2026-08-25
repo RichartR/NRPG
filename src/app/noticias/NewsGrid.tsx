@@ -44,6 +44,34 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
   const [loadedContent, setLoadedContent] = useState<Record<string, { content: string, timestamp: string }>>({});
   const [loadingMsg, setLoadingMsg] = useState(false);
 
+  // Mobile detection for PDF viewer matching DocViewer
+  const [mounted, setMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768 || (typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches);
+      setIsMobile(mobile);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const getEmbedUrl = (url: string) => {
+    if (!url) return '';
+    // Regex robusto para extraer ID de Google Drive/Docs
+    const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+    const fileId = match ? match[1] : null;
+
+    if (isMobile && fileId) {
+      const proxyPdfUrl = `/api/proxy-pdf?fileId=${fileId}`;
+      return `/pdf-viewer.html?file=${encodeURIComponent(proxyPdfUrl)}`;
+    }
+    return convertDriveUrl(url);
+  };
+
   // Scroll warning when mouse is over container instead of document iframe
   const [showScrollWarning, setShowScrollWarning] = useState(false);
   const modalBodyRef = useRef<HTMLDivElement>(null);
@@ -360,39 +388,78 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
               ) : (
                 <>
                   {activeNews.discord_msg_id?.startsWith('http') && activeNews.categoria?.toLowerCase() !== 'evento' ? (
-                    /* Documento embebido para Noticias y Parches estilo DocViewer */
-                    <div
-                      ref={modalBodyRef}
-                      onWheel={handleModalWheel}
-                      className="flex-1 w-full h-full overflow-y-auto custom-scrollbar bg-[#050309] bg-cover bg-center p-4 sm:p-8 flex flex-col items-center justify-center relative"
-                      style={{ backgroundImage: "url('/assets/ui/bg-list.png')" }}
-                    >
-                      <div
-                        className="bg-[#ffe6ba] shadow-[0_0_80px_rgba(0,0,0,0.8)] overflow-hidden relative my-auto shrink-0 transition-all duration-300"
-                        style={{
-                          width: '794px',
-                          maxWidth: '95vw',
-                          height: '1120px',
-                          maxHeight: 'calc(85vh - 220px)',
-                        }}
-                      >
-                        <div
-                          className="absolute"
-                          style={{
-                            width: '950px',
-                            height: 'calc(100% + 40px)',
-                            left: '-70px',
-                            top: '-20px',
-                          }}
-                        >
-                          <iframe
-                            src={convertDriveUrl(activeNews.discord_msg_id)}
-                            className="w-full h-full border-none bg-[#ffe6ba]"
-                            allow="autoplay"
-                          />
+                    /* Documento embebido para Noticias y Parches */
+                    isMobile ? (
+                      /* ── VISTA MÓVIL FULL-SCREEN ESTILO DOCVIEWER ── */
+                      <div className="fixed inset-0 z-[9999] bg-black flex flex-col overflow-hidden">
+                        {/* Cabecera Móvil estilo DocViewer */}
+                        <div className="h-16 bg-black border-b border-oro/20 flex items-center justify-between px-4 shrink-0">
+                          <button
+                            onClick={() => setActiveNews(null)}
+                            className="flex items-center gap-2 text-oro/60 hover:text-oro font-black text-xs uppercase tracking-widest active:scale-95 transition-all"
+                          >
+                            <div className="w-2 h-2 bg-naranja-naruto rotate-45" />
+                            <span>VOLVER</span>
+                          </button>
+                          <h2 className="text-xs sm:text-sm font-black tracking-wider uppercase text-oro font-ninja truncate max-w-[50vw]">
+                            {activeNews.titulo}
+                          </h2>
+                          <button
+                            onClick={() => setActiveNews(null)}
+                            className="p-2 text-oro/60 hover:text-oro active:scale-95 transition-all"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+
+                        {/* Visor PDF Móvil a Pantalla Completa */}
+                        <div className="flex-1 w-full h-full bg-white relative">
+                          {mounted && (
+                            <iframe
+                              src={getEmbedUrl(activeNews.discord_msg_id)}
+                              className="w-full h-full border-none bg-white"
+                              allow="autoplay"
+                            />
+                          )}
                         </div>
                       </div>
-                    </div>
+                    ) : (
+                      /* ── VISTA ESCRITORIO ENMARCADA EN HOJA ── */
+                      <div
+                        ref={modalBodyRef}
+                        onWheel={handleModalWheel}
+                        className="flex-1 w-full h-full overflow-y-auto custom-scrollbar bg-[#050309] bg-cover bg-center p-8 flex flex-col items-center justify-center relative"
+                        style={{ backgroundImage: "url('/assets/ui/bg-list.png')" }}
+                      >
+                        <div
+                          className="bg-[#ffe6ba] shadow-[0_0_80px_rgba(0,0,0,0.8)] overflow-hidden relative my-auto shrink-0 transition-all duration-300 w-[794px] h-[1120px]"
+                          style={{
+                            width: '794px',
+                            maxWidth: '98vw',
+                            height: '1120px',
+                            maxHeight: 'calc(85vh - 220px)',
+                          }}
+                        >
+                          {mounted && (
+                            <div
+                              className="absolute inset-0"
+                              style={{
+                                width: '950px',
+                                height: 'calc(100% + 40px)',
+                                left: '-70px',
+                                top: '-20px',
+                              }}
+                            >
+                              <iframe
+                                src={getEmbedUrl(activeNews.discord_msg_id)}
+                                className="w-full h-full border-none bg-[#ffe6ba]"
+                                allow="autoplay"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
                   ) : (
                     /* Renderizado de Markdown para Eventos */
                     <>
