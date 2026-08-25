@@ -472,7 +472,11 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
                       {/* Embed Description Body */}
                       <div className="prose prose-invert max-w-none text-xs sm:text-sm text-[#dbdee1] leading-relaxed select-text">
                         {discordContent.trim() ? (
-                          renderDiscordMarkdown(discordContent)
+                          renderDiscordMarkdown(
+                            (discordContent.includes('Ver enlace') || discordContent.includes('Ver en la Web'))
+                              ? discordContent
+                              : `${discordContent}\n\n🔗 **[Ver enlace](${typeof window !== 'undefined' ? window.location.origin : ''}/noticias?id=${newsItem?.id || 'ID'})**`
+                          )
                         ) : (
                           <span className="text-[#949ba4] italic select-none">Escribe contenido para ver la vista previa del embed...</span>
                         )}

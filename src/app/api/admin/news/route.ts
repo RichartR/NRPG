@@ -5,6 +5,7 @@ import { MasterServerService } from '@/services/supabase/master.server.service';
 import { sendDiscordMessage, editDiscordMessage, sendDiscordEmbed, editDiscordEmbed } from '@/lib/discord';
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
+import { getURL } from '@/lib/utils/url';
 
 async function buildMentionText(adminClient: any, pingRoles: unknown): Promise<string> {
   const rolesArray: string[] = Array.isArray(pingRoles) ? pingRoles.filter(Boolean) : ['default'];
@@ -68,15 +69,19 @@ export async function POST(request: Request) {
 
       const mentionText = await buildMentionText(adminClient, ping_roles);
       const typeTag = (categoria || 'NOTICIA').toUpperCase();
-      const origin = new URL(request.url).origin;
+      const origin = getURL().replace(/\/$/, '');
 
       if (id) {
         // Edit existing item
         const targetUrl = `${origin}/noticias?id=${id}`;
+        const webLinkText = `🔗 **[Ver enlace](${targetUrl})**`;
+        const descriptionWithLink = (discord_content.includes('Ver enlace') || discord_content.includes('Ver en la Web'))
+          ? discord_content
+          : `${discord_content}\n\n${webLinkText}`;
+
         const embedData = {
           title: titulo,
-          url: targetUrl,
-          description: `${discord_content}\n\n🔗 **[Ver en la Web](${targetUrl})**`,
+          description: descriptionWithLink,
           color: 0xD6852D,
           image: url_imagen?.trim() ? { url: url_imagen.trim() } : undefined,
           footer: { text: `NRPG • ${typeTag}` }
@@ -114,8 +119,7 @@ export async function POST(request: Request) {
           if (announcementChannelId && existingItem.discord_announcement_msg_id) {
             const announcementEmbed = {
               title: `¡NUEVO EVENTO: ${titulo}!`,
-              url: targetUrl,
-              description: `${descripcion?.trim() ? descripcion.trim() + '\n\n' : ''}🔗 **[Ver Evento en la Web](${targetUrl})**`,
+              description: `${descripcion?.trim() ? descripcion.trim() + '\n\n' : ''}🔗 **[Ver enlace](${targetUrl})**`,
               color: 0xD6852D,
               image: url_imagen?.trim() ? { url: url_imagen.trim() } : undefined,
               footer: { text: 'NRPG • EVENTO' }
@@ -151,10 +155,14 @@ export async function POST(request: Request) {
         if (insertErr) throw insertErr;
 
         const targetUrl = `${origin}/noticias?id=${inserted.id}`;
+        const webLinkText = `🔗 **[Ver enlace](${targetUrl})**`;
+        const descriptionWithLink = (discord_content.includes('Ver enlace') || discord_content.includes('Ver en la Web'))
+          ? discord_content
+          : `${discord_content}\n\n${webLinkText}`;
+
         const embedData = {
           title: titulo,
-          url: targetUrl,
-          description: `${discord_content}\n\n🔗 **[Ver en la Web](${targetUrl})**`,
+          description: descriptionWithLink,
           color: 0xD6852D,
           image: url_imagen?.trim() ? { url: url_imagen.trim() } : undefined,
           footer: { text: `NRPG • ${typeTag}` }
@@ -179,8 +187,7 @@ export async function POST(request: Request) {
           if (announcementChannelId) {
             const announcementEmbed = {
               title: `¡NUEVO EVENTO: ${titulo}!`,
-              url: targetUrl,
-              description: `${descripcion?.trim() ? descripcion.trim() + '\n\n' : ''}🔗 **[Ver Evento en la Web](${targetUrl})**`,
+              description: `${descripcion?.trim() ? descripcion.trim() + '\n\n' : ''}🔗 **[Ver enlace](${targetUrl})**`,
               color: 0xD6852D,
               image: url_imagen?.trim() ? { url: url_imagen.trim() } : undefined,
               footer: { text: 'NRPG • EVENTO' }
@@ -237,8 +244,7 @@ export async function POST(request: Request) {
 
             const announcementEmbed = {
               title: `¡${typeLabel}: ${titulo}!`,
-              url: targetUrl,
-              description: `${descripcion?.trim() ? descripcion.trim() + '\n\n' : ''}${docLink}🔗 **[Ver en la Web](${targetUrl})**`,
+              description: `${descripcion?.trim() ? descripcion.trim() + '\n\n' : ''}${docLink}🔗 **[Ver enlace](${targetUrl})**`,
               color: 0xD6852D,
               image: url_imagen?.trim() ? { url: url_imagen.trim() } : undefined,
               footer: { text: `NRPG • ${categoria.toUpperCase()}` }
@@ -280,8 +286,7 @@ export async function POST(request: Request) {
 
             const announcementEmbed = {
               title: `¡${typeLabel}: ${titulo}!`,
-              url: targetUrl,
-              description: `${descripcion?.trim() ? descripcion.trim() + '\n\n' : ''}${docLink}🔗 **[Ver en la Web](${targetUrl})**`,
+              description: `${descripcion?.trim() ? descripcion.trim() + '\n\n' : ''}${docLink}🔗 **[Ver enlace](${targetUrl})**`,
               color: 0xD6852D,
               image: url_imagen?.trim() ? { url: url_imagen.trim() } : undefined,
               footer: { text: `NRPG • ${categoria.toUpperCase()}` }
