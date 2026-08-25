@@ -33,6 +33,7 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
   const roleDropdownRef = useRef<HTMLDivElement>(null);
   const [discordContent, setDiscordContent] = useState('');
   const [fetchingContent, setFetchingContent] = useState(false);
+  const [previewTab, setPreviewTab] = useState<'discord' | 'web'>('discord');
   const [loading, setLoading] = useState(false);
   const [discordRoles, setDiscordRoles] = useState<{ id: string; name: string }[]>([]);
   const router = useRouter();
@@ -50,19 +51,25 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
       .catch(err => console.error('Error fetching discord roles:', err));
   }, []);
 
-  // Fetch Discord message content if editing an event
+  // Fetch Discord message content if editing any news item with a Discord message ID
   useEffect(() => {
-    if (!isCreate && formData.categoria === 'Evento' && formData.discord_msg_id) {
-      setFetchingContent(true);
+    if (!isCreate && formData.discord_msg_id && !formData.discord_msg_id.startsWith('http')) {
+      let isSubscribed = true;
+      Promise.resolve().then(() => {
+        if (isSubscribed) setFetchingContent(true);
+      });
       fetch(`/api/discord/messages?messageId=${formData.discord_msg_id}&categoria=${formData.categoria}`)
         .then(res => res.json())
         .then(data => {
-          if (data && data.content) {
+          if (isSubscribed && data && data.content) {
             setDiscordContent(data.content);
           }
         })
-        .catch(err => console.error("Error fetching event message from Discord:", err))
-        .finally(() => setFetchingContent(false));
+        .catch(err => console.error("Error fetching message from Discord:", err))
+        .finally(() => {
+          if (isSubscribed) setFetchingContent(false);
+        });
+      return () => { isSubscribed = false; };
     }
   }, [isCreate, formData.discord_msg_id, formData.categoria]);
 
@@ -102,23 +109,19 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
       return;
     }
 
-    if (categoria === 'Evento') {
-      if (!discordContent.trim()) {
-        addToast("El contenido de Discord para el evento es obligatorio", "error");
-        setLoading(false);
-        return;
-      }
-      if (discordContent.length > 3800) {
-        addToast("El contenido excede el límite de 3800 caracteres", "error");
-        setLoading(false);
-        return;
-      }
-    } else {
-      if (!discord_msg_id) {
-        addToast("El enlace del documento es obligatorio", "error");
-        setLoading(false);
-        return;
-      }
+    if (!discordContent.trim() && !discord_msg_id) {
+      addToast("Debes escribir el contenido en Markdown o incluir un enlace de documento", "error");
+      setLoading(false);
+      return;
+    }
+
+    if (discordContent.trim() && discordContent.length > 3800) {
+      addToast("El contenido excede el límite de 3800 caracteres para Discord", "error");
+      setLoading(false);
+      return;
+    }
+
+    if (discord_msg_id && discord_msg_id.startsWith('http') && !discordContent.trim()) {
       if (!discord_msg_id.startsWith('http')) {
         addToast("El enlace del documento debe ser una URL válida (comenzar con http/https)", "error");
         setLoading(false);
@@ -132,18 +135,13 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
         categoria,
         url_imagen: formData.url_imagen?.trim() || null,
         descripcion: formData.descripcion?.trim().slice(0, 100) || null,
-        activo: formData.activo
+        activo: formData.activo,
+        discord_content: discordContent.trim() || null,
+        ping_roles: pingRoles
       };
 
-      if (categoria === 'Evento') {
-        cleanData.discord_content = discordContent;
-        cleanData.ping_roles = pingRoles;
-        if (!isCreate) {
-          cleanData.discord_msg_id = formData.discord_msg_id;
-        }
-      } else {
+      if (discord_msg_id) {
         cleanData.discord_msg_id = discord_msg_id;
-        cleanData.ping_roles = pingRoles;
       }
 
       await AdminService.saveNewsItem({
@@ -251,14 +249,14 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
               onChange={v => setFormData({ ...formData, categoria: v })}
             />
 
-            {formData.categoria !== 'Evento' && (
+            <div className="md:col-span-2">
               <DataField
-                label="ENLACE DEL DOCUMENTO (URL)"
+                label="ENLACE DEL DOCUMENTO EXTERNO (OPCIONAL)"
                 value={formData.discord_msg_id}
                 onChange={v => setFormData({ ...formData, discord_msg_id: v })}
                 placeholder="Ej. https://drive.google.com/..."
               />
-            )}
+            </div>
 
             {/* ── Multi-role ping selector — always visible ── */}
             <div className="flex flex-col gap-2">
@@ -358,56 +356,143 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
               </div>
             </div>
 
-            {formData.categoria === 'Evento' && (
-              <div className="md:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-8 border-t border-oro/10 pt-8 mt-4">
-                {/* Markdown Editor */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-caption sm:text-caption font-black uppercase tracking-[0.3em] text-oro/50">
-                    CONTENIDO DEL EVENTO (MARKDOWN DE DISCORD)
-                  </label>
+            <div className="md:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-8 border-t border-oro/10 pt-8 mt-4">
+              {/* Markdown Editor */}
+              <div className="flex flex-col gap-2">
+                <label className="text-caption sm:text-caption font-black uppercase tracking-[0.3em] text-oro/50">
+                  CONTENIDO DEL ANUNCIO (MARKDOWN DE DISCORD)
+                </label>
 
-                  {/* Legend / Guide of MD formats */}
-                  <div className="bg-black/30 border border-oro/10 p-3.5 flex flex-wrap gap-x-5 gap-y-1.5 text-[10px] text-oro/50 font-bold uppercase tracking-wider" style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}>
-                    <div><span className="text-oro font-black">**Negrita**</span></div>
-                    <div><span className="text-oro font-black">*Cursiva*</span></div>
-                    <div><span className="text-oro font-black">__Subrayado__</span></div>
-                    <div><span className="text-oro font-black">~~Tachado~~</span></div>
-                    <div><span className="text-oro font-black">`Código`</span></div>
-                    <div><span className="text-oro font-black">```Bloque Código```</span></div>
-                    <div><span className="text-oro font-black">- Lista</span></div>
-                    <div><span className="text-oro font-black"># H1 | ## H2</span></div>
-                    <div><span className="text-oro font-black">&gt; Cita</span></div>
-                    <div><span className="text-oro font-black">[Enlace](url)</span></div>
-                  </div>
+                {/* Legend / Guide of MD formats */}
+                <div className="bg-black/30 border border-oro/10 p-3.5 flex flex-wrap gap-x-5 gap-y-1.5 text-[10px] text-oro/50 font-bold uppercase tracking-wider" style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}>
+                  <div><span className="text-oro font-black">**Negrita**</span></div>
+                  <div><span className="text-oro font-black">*Cursiva*</span></div>
+                  <div><span className="text-oro font-black">__Subrayado__</span></div>
+                  <div><span className="text-oro font-black">~~Tachado~~</span></div>
+                  <div><span className="text-oro font-black">`Código`</span></div>
+                  <div><span className="text-oro font-black">```Bloque Código```</span></div>
+                  <div><span className="text-oro font-black">- Lista</span></div>
+                  <div><span className="text-oro font-black"># H1 | ## H2</span></div>
+                  <div><span className="text-oro font-black">&gt; Cita</span></div>
+                  <div><span className="text-oro font-black">[Enlace](url)</span></div>
+                </div>
 
-                  <div className="relative flex-1 min-h-[300px] flex flex-col">
-                    {fetchingContent ? (
-                      <div className="flex-1 bg-black/60 border border-oro/20 flex items-center justify-center">
-                        <RefreshCw className="w-6 h-6 animate-spin text-oro" />
+                <div className="relative flex-1 min-h-[300px] flex flex-col">
+                  {fetchingContent ? (
+                    <div className="flex-1 bg-black/60 border border-oro/20 flex items-center justify-center">
+                      <RefreshCw className="w-6 h-6 animate-spin text-oro" />
+                    </div>
+                  ) : (
+                    <>
+                      <textarea
+                        maxLength={3800}
+                        value={discordContent}
+                        onChange={e => setDiscordContent(e.target.value)}
+                        placeholder="Escribe el cuerpo del anuncio utilizando markdown de Discord... **negrita**, *cursiva*, `código`, listados, etc."
+                        className="w-full flex-1 bg-black/60 border border-oro/20 hover:border-oro/40 focus:border-oro/60 px-5 py-4 text-xs text-oro/90 font-bold outline-none transition-all placeholder:text-oro/20 resize-none min-h-[250px]"
+                        style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                      />
+                      <div className={`flex justify-end mt-2 text-caption font-black uppercase tracking-widest tabular-nums transition-colors ${discordContent.length >= 3600 ? 'text-naranja-naruto' : discordContent.length >= 3200 ? 'text-oro/60' : 'text-oro/30'}`}>
+                        {discordContent.length} / 3800
                       </div>
-                    ) : (
-                      <>
-                        <textarea
-                          maxLength={3800}
-                          value={discordContent}
-                          onChange={e => setDiscordContent(e.target.value)}
-                          placeholder="Escribe el cuerpo del evento utilizando markdown de Discord... **negrita**, *cursiva*, `código`, listados, etc."
-                          className="w-full flex-1 bg-black/60 border border-oro/20 hover:border-oro/40 focus:border-oro/60 px-5 py-4 text-xs text-oro/90 font-bold outline-none transition-all placeholder:text-oro/20 resize-none min-h-[250px]"
-                          style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
-                        />
-                        <div className={`flex justify-end mt-2 text-caption font-black uppercase tracking-widest tabular-nums transition-colors ${discordContent.length >= 3600 ? 'text-naranja-naruto' : discordContent.length >= 3200 ? 'text-oro/60' : 'text-oro/30'}`}>
-                          {discordContent.length} / 3800
-                        </div>
-                      </>
-                    )}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Live Preview Column (Web & Discord Embed tabs) */}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between gap-2">
+                  <label className="text-caption sm:text-caption font-black uppercase tracking-[0.3em] text-oro/50">
+                    VISTA PREVIA ({previewTab === 'discord' ? 'EMBED DE DISCORD' : 'WEB'})
+                  </label>
+                  <div className="flex items-center gap-1 bg-black/60 p-1 border border-oro/20" style={{ clipPath: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)' }}>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewTab('discord')}
+                      className={`px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-all border ${
+                        previewTab === 'discord'
+                          ? 'bg-[#5865F2] border-[#5865F2] text-white shadow-[0_0_10px_rgba(88,101,242,0.4)]'
+                          : 'border-transparent text-oro/50 hover:text-oro'
+                      }`}
+                      style={{ clipPath: 'polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px)' }}
+                    >
+                      💬 Discord Embed
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewTab('web')}
+                      className={`px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-all border ${
+                        previewTab === 'web'
+                          ? 'bg-oro border-oro text-black font-black shadow-[0_0_10px_rgba(203,162,75,0.4)]'
+                          : 'border-transparent text-oro/50 hover:text-oro'
+                      }`}
+                      style={{ clipPath: 'polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px)' }}
+                    >
+                      🌐 Web
+                    </button>
                   </div>
                 </div>
 
-                {/* Web Live Preview */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-caption sm:text-caption font-black uppercase tracking-[0.3em] text-oro/50">
-                    VISTA PREVIA EN LA WEB (REPLICACIÓN DE DISEÑO)
-                  </label>
+                {previewTab === 'discord' ? (
+                  /* ── DISCORD EMBED REPLICA ── */
+                  <div className="flex-1 w-full bg-[#313338] text-[#dbdee1] p-4 sm:p-5 font-sans rounded-md shadow-2xl overflow-y-auto max-h-[500px] min-h-[350px] custom-scrollbar border border-white/5 flex flex-col gap-3">
+                    {/* Bot Message Header */}
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-[#D6852D]/20 border border-[#D6852D]/40 flex items-center justify-center text-[#D6852D] font-black shrink-0 text-xs shadow">
+                        NRPG
+                      </div>
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-white text-sm">NRPG Bot</span>
+                          <span className="bg-[#5865F2] text-white text-[9px] px-1 py-0.5 rounded font-bold uppercase tracking-wider">BOT</span>
+                          <span className="text-[11px] text-[#949ba4]">Hoy a las {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+
+                        {/* Mention Roles Tag Line */}
+                        {pingRoles.filter(r => r !== 'none').length > 0 && (
+                          <div className="mt-1.5 text-xs text-[#c9cdfb] font-medium flex flex-wrap gap-1">
+                            {pingRoles.map(r => (
+                              <span key={r} className="bg-[#5865F2]/20 text-[#c9cdfb] px-1.5 py-0.5 rounded hover:bg-[#5865F2]/30 transition-colors">
+                                {r === 'everyone' ? '@everyone' : r === 'here' ? '@here' : r === 'default' ? '@Jugador' : `@${roleLabel(r)}`}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Discord Embed Box */}
+                    <div className="ml-0 sm:ml-12 border-l-4 border-[#D6852D] bg-[#2b2d31] p-3.5 sm:p-4 rounded-r flex flex-col gap-2.5 shadow-md">
+                      {/* Embed Title */}
+                      <h3 className="font-bold text-white text-base leading-snug">
+                        {formData.titulo || 'Sin título'}
+                      </h3>
+
+                      {/* Embed Description Body */}
+                      <div className="prose prose-invert max-w-none text-xs sm:text-sm text-[#dbdee1] leading-relaxed select-text">
+                        {discordContent.trim() ? (
+                          renderDiscordMarkdown(discordContent)
+                        ) : (
+                          <span className="text-[#949ba4] italic select-none">Escribe contenido para ver la vista previa del embed...</span>
+                        )}
+                      </div>
+
+                      {/* Embed Image */}
+                      {formData.url_imagen && (
+                        <div className="mt-2 rounded overflow-hidden max-h-60 bg-black/40 border border-white/5">
+                          <img src={formData.url_imagen} alt="Cabecera" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        </div>
+                      )}
+
+                      {/* Embed Footer */}
+                      <div className="flex items-center gap-2 pt-2 border-t border-white/5 text-[11px] text-[#949ba4] font-medium uppercase tracking-wider">
+                        <span>NRPG • {(formData.categoria || 'NOTICIA').toUpperCase()}</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* ── WEB PREVIEW REPLICA ── */
                   <div
                     className="flex-1 ninja-card-oro w-full overflow-hidden flex flex-col relative shadow-[0_0_30px_rgba(0,0,0,0.5)] border border-oro/10 min-h-[350px] max-h-[500px]"
                     style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
@@ -428,7 +513,7 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
 
                       <div className="absolute bottom-4 left-4 right-4 z-10 flex flex-col items-start gap-0.5">
                         <span className="px-2.5 py-0.5 text-[9px] font-black bg-naranja-naruto text-oro uppercase tracking-[0.3em] inline-block" style={{ clipPath: 'polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px)' }}>
-                          {formData.categoria || 'Evento'}
+                          {formData.categoria || 'Noticia'}
                         </span>
                         <h2 className="block ninja-title text-base sm:text-lg leading-tight uppercase font-ninja truncate w-full">
                           {formData.titulo || 'SIN TÍTULO'}
@@ -446,9 +531,9 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
-            )}
+            </div>
 
           </div>
 

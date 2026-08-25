@@ -52,23 +52,33 @@ export async function POST(request: Request) {
     if (discord_msg_id !== undefined) cleanData.discord_msg_id = discord_msg_id?.trim() || null;
     if (discord_announcement_msg_id !== undefined) cleanData.discord_announcement_msg_id = discord_announcement_msg_id?.trim() || null;
 
-    if (categoria === 'Evento' && discord_content) {
-      const eventChannelId = await MasterServerService.getConfiguracion(adminClient, 'discord_event_channel_id');
-      if (!eventChannelId) {
-        return NextResponse.json({ error: 'Canal de Discord para eventos (discord_event_channel_id) no configurado en el sistema' }, { status: 400 });
+    const isNoticia = categoria === 'Noticia';
+    const isParche = categoria === 'Parche';
+    const channelKey = isNoticia
+      ? 'discord_news_channel_id'
+      : isParche
+      ? 'discord_patch_channel_id'
+      : 'discord_event_channel_id';
+
+    if (discord_content) {
+      const targetChannelId = await MasterServerService.getConfiguracion(adminClient, channelKey);
+      if (!targetChannelId) {
+        return NextResponse.json({ error: `Canal de Discord (${channelKey}) no configurado en el sistema` }, { status: 400 });
       }
 
       const mentionText = await buildMentionText(adminClient, ping_roles);
+      const typeTag = (categoria || 'NOTICIA').toUpperCase();
 
       const embedData = {
         title: titulo,
         description: discord_content,
         color: 0xD6852D,
         image: url_imagen?.trim() ? { url: url_imagen.trim() } : undefined,
+        footer: { text: `NRPG • ${typeTag}` }
       };
 
       if (id) {
-        // Edit existing event
+        // Edit existing item
         const { data: existingItem, error: fetchErr } = await adminClient
           .from('info_noticias_index')
           .select('discord_msg_id, discord_announcement_msg_id')
@@ -76,38 +86,45 @@ export async function POST(request: Request) {
           .single();
 
         if (fetchErr || !existingItem) {
-          return NextResponse.json({ error: 'No se encontró el evento a actualizar' }, { status: 404 });
+          return NextResponse.json({ error: 'No se encontró el elemento a actualizar' }, { status: 404 });
         }
 
         const msgId = existingItem.discord_msg_id;
-        if (msgId) {
+        if (msgId && !msgId.startsWith('http')) {
           try {
-            await editDiscordEmbed(eventChannelId, msgId, embedData, mentionText || undefined);
+            await editDiscordEmbed(targetChannelId, msgId, embedData, mentionText || undefined);
           } catch (discordErr: any) {
-            console.error('Error updating Discord event embed:', discordErr);
+            console.error(`Error updating Discord ${categoria} embed:`, discordErr);
           }
-        }
-
-        // Also update announcement embed in announcement channel if exists
-        const announcementChannelId = await MasterServerService.getConfiguracion(adminClient, 'discord_event_announcement_channel_id');
-        if (announcementChannelId && existingItem.discord_announcement_msg_id) {
-          const origin = new URL(request.url).origin;
-          const targetUrl = `${origin}/noticias?id=${id}`;
-          const announcementEmbed = {
-            title: `¡NUEVO EVENTO: ${titulo}!`,
-            description: `${descripcion?.trim() ? descripcion.trim() + '\n\n' : ''}🔗 **[Ver Evento en la Web](${targetUrl})**`,
-            color: 0xD6852D,
-            image: url_imagen?.trim() ? { url: url_imagen.trim() } : undefined,
-            footer: { text: 'NRPG • EVENTO' }
-          };
+        } else {
           try {
-            await editDiscordEmbed(announcementChannelId, existingItem.discord_announcement_msg_id, announcementEmbed, mentionText || undefined);
-          } catch (annErr) {
-            console.error('Error updating Discord event announcement embed:', annErr);
+            const newMsg = await sendDiscordEmbed(targetChannelId, embedData, mentionText || undefined);
+            if (newMsg?.id) cleanData.discord_msg_id = newMsg.id;
+          } catch (discordErr: any) {
+            console.error(`Error posting new Discord ${categoria} embed on edit:`, discordErr);
           }
         }
 
-        cleanData.discord_msg_id = msgId;
+        // Also update announcement embed if category is Evento and announcement channel exists
+        if (categoria === 'Evento') {
+          const announcementChannelId = await MasterServerService.getConfiguracion(adminClient, 'discord_event_announcement_channel_id');
+          if (announcementChannelId && existingItem.discord_announcement_msg_id) {
+            const origin = new URL(request.url).origin;
+            const targetUrl = `${origin}/noticias?id=${id}`;
+            const announcementEmbed = {
+              title: `¡NUEVO EVENTO: ${titulo}!`,
+              description: `${descripcion?.trim() ? descripcion.trim() + '\n\n' : ''}🔗 **[Ver Evento en la Web](${targetUrl})**`,
+              color: 0xD6852D,
+              image: url_imagen?.trim() ? { url: url_imagen.trim() } : undefined,
+              footer: { text: 'NRPG • EVENTO' }
+            };
+            try {
+              await editDiscordEmbed(announcementChannelId, existingItem.discord_announcement_msg_id, announcementEmbed, mentionText || undefined);
+            } catch (annErr) {
+              console.error('Error updating Discord event announcement embed:', annErr);
+            }
+          }
+        }
 
         const { data: updated, error: updateErr } = await adminClient
           .from('info_noticias_index')
@@ -122,8 +139,8 @@ export async function POST(request: Request) {
 
         return NextResponse.json(updated);
       } else {
-        // Create new event
-        const discordMsg = await sendDiscordEmbed(eventChannelId, embedData, mentionText || undefined);
+        // Create new item
+        const discordMsg = await sendDiscordEmbed(targetChannelId, embedData, mentionText || undefined);
         cleanData.discord_msg_id = discordMsg.id;
 
         const { data: inserted, error: insertErr } = await adminClient
@@ -134,28 +151,30 @@ export async function POST(request: Request) {
 
         if (insertErr) throw insertErr;
 
-        // Post announcement to the announcements channel if configured (as Embed)
-        const announcementChannelId = await MasterServerService.getConfiguracion(adminClient, 'discord_event_announcement_channel_id');
-        if (announcementChannelId) {
-          const origin = new URL(request.url).origin;
-          const targetUrl = `${origin}/noticias?id=${inserted.id}`;
-          const announcementEmbed = {
-            title: `¡NUEVO EVENTO: ${titulo}!`,
-            description: `${descripcion?.trim() ? descripcion.trim() + '\n\n' : ''}🔗 **[Ver Evento en la Web](${targetUrl})**`,
-            color: 0xD6852D,
-            image: url_imagen?.trim() ? { url: url_imagen.trim() } : undefined,
-            footer: { text: 'NRPG • EVENTO' }
-          };
-          try {
-            const annMsg = await sendDiscordEmbed(announcementChannelId, announcementEmbed, mentionText || undefined);
-            if (annMsg?.id) {
-              await adminClient
-                .from('info_noticias_index')
-                .update({ discord_announcement_msg_id: annMsg.id })
-                .eq('id', inserted.id);
+        // Post announcement to event announcement channel if category is Evento
+        if (categoria === 'Evento') {
+          const announcementChannelId = await MasterServerService.getConfiguracion(adminClient, 'discord_event_announcement_channel_id');
+          if (announcementChannelId) {
+            const origin = new URL(request.url).origin;
+            const targetUrl = `${origin}/noticias?id=${inserted.id}`;
+            const announcementEmbed = {
+              title: `¡NUEVO EVENTO: ${titulo}!`,
+              description: `${descripcion?.trim() ? descripcion.trim() + '\n\n' : ''}🔗 **[Ver Evento en la Web](${targetUrl})**`,
+              color: 0xD6852D,
+              image: url_imagen?.trim() ? { url: url_imagen.trim() } : undefined,
+              footer: { text: 'NRPG • EVENTO' }
+            };
+            try {
+              const annMsg = await sendDiscordEmbed(announcementChannelId, announcementEmbed, mentionText || undefined);
+              if (annMsg?.id) {
+                await adminClient
+                  .from('info_noticias_index')
+                  .update({ discord_announcement_msg_id: annMsg.id })
+                  .eq('id', inserted.id);
+              }
+            } catch (announcementErr) {
+              console.error('Error sending event announcement Embed to Discord:', announcementErr);
             }
-          } catch (announcementErr) {
-            console.error('Error sending event announcement Embed to Discord:', announcementErr);
           }
         }
 
@@ -164,7 +183,7 @@ export async function POST(request: Request) {
         return NextResponse.json(inserted);
       }
     } else {
-      // Standard flow (Noticia, Parche, or Evento without direct discord_content)
+      // Fallback flow (Noticia, Parche, or Evento without direct discord_content, using document URL)
       if (id) {
         const { data: existingItem } = await adminClient
           .from('info_noticias_index')
@@ -182,16 +201,12 @@ export async function POST(request: Request) {
         if (updateErr) throw updateErr;
 
         // Update announcement Embed if it exists
-        const isNoticia = categoria === 'Noticia';
-        const isParche = categoria === 'Parche';
-        const channelKey = isNoticia ? 'discord_news_channel_id' : isParche ? 'discord_patch_channel_id' : null;
-
         if (channelKey && existingItem?.discord_announcement_msg_id) {
           const targetChannelId = await MasterServerService.getConfiguracion(adminClient, channelKey);
           if (targetChannelId) {
             const origin = new URL(request.url).origin;
             const targetUrl = `${origin}/noticias?id=${id}`;
-            const typeLabel = isNoticia ? 'NUEVA NOTICIA' : 'NUEVO PARCHE';
+            const typeLabel = isNoticia ? 'NUEVA NOTICIA' : isParche ? 'NUEVO PARCHE' : 'NUEVO ANUNCIO';
 
             const mentionText = await buildMentionText(adminClient, ping_roles);
 
@@ -228,16 +243,12 @@ export async function POST(request: Request) {
         if (insertErr) throw insertErr;
 
         // Post announcement to the news/patch channel if configured (as Embed)
-        const isNoticia = categoria === 'Noticia';
-        const isParche = categoria === 'Parche';
-        const channelKey = isNoticia ? 'discord_news_channel_id' : isParche ? 'discord_patch_channel_id' : null;
-
         if (channelKey) {
           const targetChannelId = await MasterServerService.getConfiguracion(adminClient, channelKey);
           if (targetChannelId) {
             const origin = new URL(request.url).origin;
             const targetUrl = `${origin}/noticias?id=${inserted.id}`;
-            const typeLabel = isNoticia ? 'NUEVA NOTICIA' : 'NUEVO PARCHE';
+            const typeLabel = isNoticia ? 'NUEVA NOTICIA' : isParche ? 'NUEVO PARCHE' : 'NUEVO ANUNCIO';
 
             const mentionText = await buildMentionText(adminClient, ping_roles);
 
