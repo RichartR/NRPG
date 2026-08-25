@@ -199,6 +199,13 @@ input[type=number] {
     @apply backdrop-blur-md relative;
   }
 
+  .ninja-bg-pattern {
+    background-color: #050309;
+    background-image: url('/assets/ui/bg-list.png');
+    background-size: cover;
+    background-position: center;
+  }
+
   /* Tarjetas estándar (Paneles, Fichas, Cabecera, Contenedores sin imagen) */
   .ninja-card-oro {
     background: transparent !important;

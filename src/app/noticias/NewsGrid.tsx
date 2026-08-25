@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Calendar, User, Search, RefreshCw, Gift } from 'lucide-react';
 import NinjaCard from '@/components/ui/NinjaCard';
 import { renderDiscordMarkdown } from '@/lib/discord/renderDiscordMarkdown';
@@ -43,6 +43,35 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
   useScrollLock(!!activeNews);
   const [loadedContent, setLoadedContent] = useState<Record<string, { content: string, timestamp: string }>>({});
   const [loadingMsg, setLoadingMsg] = useState(false);
+
+  // Scroll warning when mouse is over container instead of document iframe
+  const [showScrollWarning, setShowScrollWarning] = useState(false);
+  const modalBodyRef = useRef<HTMLDivElement>(null);
+  const warningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (warningTimeoutRef.current) {
+        clearTimeout(warningTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleModalWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    const target = modalBodyRef.current;
+    if (!target) return;
+
+    const isAtBottom = target.scrollHeight - target.scrollTop <= target.clientHeight + 10;
+    if (isAtBottom && e.deltaY > 0) {
+      setShowScrollWarning(true);
+      if (warningTimeoutRef.current) {
+        clearTimeout(warningTimeoutRef.current);
+      }
+      warningTimeoutRef.current = setTimeout(() => {
+        setShowScrollWarning(false);
+      }, 2500);
+    }
+  };
 
   // States for Event Prizes
   const [eventRegistries, setEventRegistries] = useState<any[]>([]);
@@ -318,7 +347,10 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
             <div className="h-px bg-oro/20 flex-shrink-0" />
 
             {/* Contenido en Scroll / Iframe */}
-            <div className={`overflow-y-auto flex-1 custom-scrollbar bg-[#ffe6ba] ${activeNews.discord_msg_id?.startsWith('http') ? 'p-0 overflow-hidden flex flex-col' : 'p-8 sm:p-12 bg-neutral-900'}`}>
+            <div
+              className={`overflow-y-auto flex-1 custom-scrollbar ${activeNews.discord_msg_id?.startsWith('http') && activeNews.categoria?.toLowerCase() !== 'evento' ? 'bg-[#050309] bg-cover bg-center p-0 overflow-hidden flex flex-col' : 'p-8 sm:p-12 bg-neutral-900'}`}
+              style={activeNews.discord_msg_id?.startsWith('http') && activeNews.categoria?.toLowerCase() !== 'evento' ? { backgroundImage: "url('/assets/ui/bg-list.png')" } : undefined}
+            >
               {loadingMsg ? (
                 /* Spinner de Carga Premium */
                 <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -327,30 +359,50 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
                 </div>
               ) : (
                 <>
-                  {activeNews.discord_msg_id?.startsWith('http') ? (
-                    /* Documento embebido para Noticias y Parches */
-                    <div className="flex-1 w-full h-full relative bg-[#ffe6ba] flex flex-col">
-                      <iframe
-                        src={convertDriveUrl(activeNews.discord_msg_id)}
-                        className="w-full h-full flex-1 border-none min-h-[450px]"
+                  {activeNews.discord_msg_id?.startsWith('http') && activeNews.categoria?.toLowerCase() !== 'evento' ? (
+                    /* Documento embebido para Noticias y Parches estilo DocViewer */
+                    <div
+                      ref={modalBodyRef}
+                      onWheel={handleModalWheel}
+                      className="flex-1 w-full h-full overflow-y-auto custom-scrollbar bg-[#050309] bg-cover bg-center p-4 sm:p-8 flex flex-col items-center justify-center relative"
+                      style={{ backgroundImage: "url('/assets/ui/bg-list.png')" }}
+                    >
+                      <div
+                        className="bg-[#ffe6ba] shadow-[0_0_80px_rgba(0,0,0,0.8)] overflow-hidden relative my-auto shrink-0 transition-all duration-300"
                         style={{
-                          position: 'absolute',
-                          width: '100%',
-                          height: '100%',
-                          left: '0',
-                          top: '-50px', // Oculta la barra de herramientas superior de Google
-                          transform: 'scale(1.15)', // Magnifica el documento para que los márgenes queden fuera de la pantalla
-                          transformOrigin: 'center top'
+                          width: '794px',
+                          maxWidth: '95vw',
+                          height: '1120px',
+                          maxHeight: 'calc(85vh - 220px)',
                         }}
-                        allow="autoplay"
-                      />
+                      >
+                        <div
+                          className="absolute"
+                          style={{
+                            width: '950px',
+                            height: 'calc(100% + 40px)',
+                            left: '-70px',
+                            top: '-20px',
+                          }}
+                        >
+                          <iframe
+                            src={convertDriveUrl(activeNews.discord_msg_id)}
+                            className="w-full h-full border-none bg-[#ffe6ba]"
+                            allow="autoplay"
+                          />
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     /* Renderizado de Markdown para Eventos */
                     <>
 
                       <div className="prose prose-invert max-w-none text-gris-texto text-base sm:text-lg md:text-xl leading-relaxed">
-                        {renderDiscordMarkdown(loadedContent[activeNews.discord_msg_id]?.content || "Contenido no disponible.")}
+                        {renderDiscordMarkdown(
+                          (loadedContent[activeNews.discord_msg_id]?.content || "Contenido no disponible.")
+                            .replace(/\n*🔗\s*\*\*\[Ver (?:enlace|en la Web|Evento en la Web)\]\([^)]+\)\*\*/gi, '')
+                            .trim()
+                        )}
                       </div>
 
                       {activeNews.categoria?.toLowerCase() === 'evento' && (
@@ -409,6 +461,15 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
                 </>
               )}
             </div>
+            {showScrollWarning && (
+              <div
+                className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-6 py-4 bg-neutral-900 border border-oro/40 text-oro text-xs sm:text-sm font-black uppercase tracking-[0.15em] flex items-center gap-3 shadow-[0_0_30px_rgba(255,230,159,0.25)] animate-fade-in pointer-events-none"
+                style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
+              >
+                <span className="text-naranja-naruto text-base">⚠️</span>
+                <span>Coloca el ratón sobre el documento para seguir leyendo</span>
+              </div>
+            )}
           </div>
         </div>
       )}

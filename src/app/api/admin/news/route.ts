@@ -145,7 +145,27 @@ export async function POST(request: Request) {
 
         return NextResponse.json(updated);
       } else {
-        // Create new item - insert first to get the generated ID for the link
+        // Create new item - send Discord embed first to get a unique discord_msg_id for DB insert
+        const initialEmbedData = {
+          title: titulo,
+          description: discord_content,
+          color: 0xD6852D,
+          image: url_imagen?.trim() ? { url: url_imagen.trim() } : undefined,
+          footer: { text: `NRPG • ${typeTag}` }
+        };
+
+        let discordMsgId: string | null = null;
+        try {
+          const discordMsg = await sendDiscordEmbed(targetChannelId, initialEmbedData, mentionText || undefined);
+          if (discordMsg?.id) discordMsgId = discordMsg.id;
+        } catch (discordErr: any) {
+          console.error(`Error posting initial Discord ${categoria} embed:`, discordErr);
+        }
+
+        if (discordMsgId && !cleanData.discord_msg_id?.startsWith('http')) {
+          cleanData.discord_msg_id = discordMsgId;
+        }
+
         const { data: inserted, error: insertErr } = await adminClient
           .from('info_noticias_index')
           .insert([cleanData])
@@ -155,30 +175,27 @@ export async function POST(request: Request) {
         if (insertErr) throw insertErr;
 
         const targetUrl = `${origin}/noticias?id=${inserted.id}`;
-        const webLinkText = `🔗 **[Ver enlace](${targetUrl})**`;
-        const descriptionWithLink = (discord_content.includes('Ver enlace') || discord_content.includes('Ver en la Web'))
-          ? discord_content
-          : `${discord_content}\n\n${webLinkText}`;
 
-        const embedData = {
-          title: titulo,
-          description: descriptionWithLink,
-          color: 0xD6852D,
-          image: url_imagen?.trim() ? { url: url_imagen.trim() } : undefined,
-          footer: { text: `NRPG • ${typeTag}` }
-        };
+        // Now edit the Discord embed to include the URL with inserted.id
+        if (discordMsgId) {
+          const webLinkText = `🔗 **[Ver enlace](${targetUrl})**`;
+          const descriptionWithLink = (discord_content.includes('Ver enlace') || discord_content.includes('Ver en la Web'))
+            ? discord_content
+            : `${discord_content}\n\n${webLinkText}`;
 
-        try {
-          const discordMsg = await sendDiscordEmbed(targetChannelId, embedData, mentionText || undefined);
-          if (discordMsg?.id) {
-            await adminClient
-              .from('info_noticias_index')
-              .update({ discord_msg_id: discordMsg.id })
-              .eq('id', inserted.id);
-            inserted.discord_msg_id = discordMsg.id;
+          const finalEmbedData = {
+            title: titulo,
+            description: descriptionWithLink,
+            color: 0xD6852D,
+            image: url_imagen?.trim() ? { url: url_imagen.trim() } : undefined,
+            footer: { text: `NRPG • ${typeTag}` }
+          };
+
+          try {
+            await editDiscordEmbed(targetChannelId, discordMsgId, finalEmbedData, mentionText || undefined);
+          } catch (editErr: any) {
+            console.error(`Error updating Discord ${categoria} embed with target link:`, editErr);
           }
-        } catch (discordErr: any) {
-          console.error(`Error posting Discord ${categoria} embed:`, discordErr);
         }
 
         // Post announcement to event announcement channel if category is Evento
@@ -238,13 +255,9 @@ export async function POST(request: Request) {
 
             const mentionText = await buildMentionText(adminClient, ping_roles);
 
-            const docLink = cleanData.discord_msg_id?.startsWith('http')
-              ? `📄 **[Ver Documento](${cleanData.discord_msg_id})**\n`
-              : '';
-
             const announcementEmbed = {
               title: `¡${typeLabel}: ${titulo}!`,
-              description: `${descripcion?.trim() ? descripcion.trim() + '\n\n' : ''}${docLink}🔗 **[Ver enlace](${targetUrl})**`,
+              description: `${descripcion?.trim() ? descripcion.trim() + '\n\n' : ''}🔗 **[Ver enlace](${targetUrl})**`,
               color: 0xD6852D,
               image: url_imagen?.trim() ? { url: url_imagen.trim() } : undefined,
               footer: { text: `NRPG • ${categoria.toUpperCase()}` }
@@ -280,13 +293,9 @@ export async function POST(request: Request) {
 
             const mentionText = await buildMentionText(adminClient, ping_roles);
 
-            const docLink = cleanData.discord_msg_id?.startsWith('http')
-              ? `📄 **[Ver Documento](${cleanData.discord_msg_id})**\n`
-              : '';
-
             const announcementEmbed = {
               title: `¡${typeLabel}: ${titulo}!`,
-              description: `${descripcion?.trim() ? descripcion.trim() + '\n\n' : ''}${docLink}🔗 **[Ver enlace](${targetUrl})**`,
+              description: `${descripcion?.trim() ? descripcion.trim() + '\n\n' : ''}🔗 **[Ver enlace](${targetUrl})**`,
               color: 0xD6852D,
               image: url_imagen?.trim() ? { url: url_imagen.trim() } : undefined,
               footer: { text: `NRPG • ${categoria.toUpperCase()}` }
