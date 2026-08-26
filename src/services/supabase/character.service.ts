@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client';
-import { Character, PersonajeRama, PersonajeItem, PersonajeTecnica, Registro, Glosario, Rasgo, PersonajeSentido, PersonajeAcompanante, AcompananteInfo, KugutsuComponente } from '@/domain/types';
+import { Character, PersonajeRama, PersonajeItem, PersonajeTecnica, Registro, Glosario, Rasgo, PersonajeSentido, PersonajeAcompanante, AcompananteInfo, KugutsuComponente, PersonajeInventarioRegistro } from '@/domain/types';
 import { RewardLogic } from '@/domain/character/logic';
 
 export const CharacterService = {
@@ -11,7 +11,7 @@ export const CharacterService = {
         *, 
         profiles!user_id(username, url_avatar, url_img),
         info_aldeas(*), 
-        reg_personajes_inventario!reg_personajes_inventario_personaje_id_fkey(*, info_glosario(*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre, slug))), 
+        reg_personajes_inventario!reg_personajes_inventario_personaje_id_fkey(*, info_glosario(*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre, slug)), reg_personajes_inventario_registros(*)), 
         reg_personajes_tecnicas!reg_personajes_tecnicas_personaje_id_fkey(*, info_glosario(*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre, slug))), 
         reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(*, info_ramas_clanes(*), info_sub_especialidades(*)),
         reg_personajes_entrenamientos!reg_personajes_entrenamientos_personaje_id_fkey(*, info_entrenamientos(*)),
@@ -34,12 +34,19 @@ export const CharacterService = {
       return match ? { ...c, origen: match.origen } : c;
     });
 
+    const inventarioNormalized = (data.reg_personajes_inventario || data.personajes_inventario || data.inventario || [])
+      .filter((i: any) => i.info_glosario?.activo !== false)
+      .map((i: any) => ({
+        ...i,
+        registros: i.reg_personajes_inventario_registros || i.registros || []
+      }));
+
     return {
       ...data,
       aldeas: data.info_aldeas || data.aldeas,
       personajes_ramas: data.reg_personajes_ramas || data.personajes_ramas || data.ramas || [],
       personajes_entrenamientos: data.reg_personajes_entrenamientos || data.personajes_entrenamientos || [],
-      personajes_inventario: (data.reg_personajes_inventario || data.personajes_inventario || data.inventario || []).filter((i: any) => i.info_glosario?.activo !== false),
+      personajes_inventario: inventarioNormalized,
       personajes_tecnicas: (data.reg_personajes_tecnicas || data.personajes_tecnicas || data.tecnicas || []).filter((t: any) => t.info_glosario?.activo !== false),
       personajes_rasgos: data.reg_personajes_rasgos || data.personajes_rasgos || [],
       personajes_sentidos: data.reg_personajes_sentidos || data.personajes_sentidos || [],
@@ -444,5 +451,42 @@ export const CharacterService = {
       .order('nombre_esp', { ascending: true });
     if (error) throw error;
     return (data || []) as KugutsuComponente[];
+  },
+
+  async getItemSlots(inventarioId: number): Promise<PersonajeInventarioRegistro[]> {
+    const res = await fetch(`/api/characters/inventario/registros?inventario_id=${inventarioId}`);
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Error al obtener registros');
+    return json.data || [];
+  },
+
+  async createItemSlot(inventarioId: number, data: { nombre: string; pantallazo_url: string; slot_num?: number }): Promise<PersonajeInventarioRegistro> {
+    const res = await fetch('/api/characters/inventario/registros', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ inventario_id: inventarioId, ...data })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Error al crear registro');
+    return json.data;
+  },
+
+  async updateItemSlot(id: number, data: { nombre?: string; pantallazo_url?: string }): Promise<PersonajeInventarioRegistro> {
+    const res = await fetch('/api/characters/inventario/registros', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...data })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Error al actualizar registro');
+    return json.data;
+  },
+
+  async deleteItemSlot(id: number): Promise<void> {
+    const res = await fetch(`/api/characters/inventario/registros?id=${id}`, {
+      method: 'DELETE'
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Error al eliminar registro');
   }
 };

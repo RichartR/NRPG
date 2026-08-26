@@ -34,6 +34,7 @@ import CombatForm from '@/components/registros/CombatForm';
 import { CharacterRadarChart } from './CharacterRadarChart';
 import NinkenSection from './NinkenSection';
 import KugutsuKoboSection from './KugutsuKoboSection';
+import { ObjetoSlotsModal } from './ObjetoSlotsModal';
 import { useState, useMemo, useEffect, Fragment } from 'react';
 import { resolveAldeaIcono } from '@/utils/aldea-icon';
 import { createClient } from '@/utils/supabase/client';
@@ -134,6 +135,7 @@ export function CharacterSheetView({
   const [equipmentSearch, setEquipmentSearch] = useState('');
   const [techniqueSearch, setTechniqueSearch] = useState('');
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [slotsModalItem, setSlotsModalItem] = useState<PersonajeItem | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -3344,6 +3346,20 @@ export function CharacterSheetView({
                                                             {pi.info_glosario.zona_equipable}
                                                           </span>
                                                         )}
+                                                        {(Number(pi.item_id) === 82 || Number(pi.item_id) === 393) && (
+                                                          <button
+                                                            onClick={() => setSlotsModalItem(pi)}
+                                                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-caption font-black text-oro bg-oro/10 border border-oro/30 hover:bg-oro/20 hover:border-oro/50 ninja-clip-xs transition-all tracking-wider uppercase ml-1"
+                                                            title="Gestionar registros del objeto"
+                                                          >
+                                                            <img
+                                                              src={Number(pi.item_id) === 393 ? "/assets/images/veneno.png" : "/assets/images/antidoto.png"}
+                                                              alt="Icono objeto"
+                                                              className="w-5 h-5 object-contain"
+                                                            />
+                                                            <span>Registros ({pi.registros?.length || 0}/10) ▾</span>
+                                                          </button>
+                                                        )}
                                                       </span>
                                                       {pi.info_glosario?.nombre_jp && (
                                                         <span className="text-caption text-oro/30 uppercase font-black tracking-tighter mt-0.5">
@@ -3591,12 +3607,26 @@ export function CharacterSheetView({
                                 <tr key={`${pi.item_id}-${idx}`} className="hover:bg-oro/5 transition-colors group">
                                   <td className="py-3 px-5">
                                     <div className="flex flex-col">
-                                      <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
+                                      <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2 flex-wrap">
                                         {pi.info_glosario?.nombre_es}
                                         {pi.info_glosario?.ocupa_espacio === false && (
                                           <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 tracking-widest rounded-sm">
                                             Sin Hueco
                                           </span>
+                                        )}
+                                        {(Number(pi.item_id) === 82 || Number(pi.item_id) === 393) && (
+                                          <button
+                                            onClick={() => setSlotsModalItem(pi)}
+                                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-caption font-black text-oro bg-oro/10 border border-oro/30 hover:bg-oro/20 hover:border-oro/50 ninja-clip-xs transition-all tracking-wider uppercase ml-1"
+                                            title="Gestionar registros del objeto"
+                                          >
+                                            <img
+                                              src={Number(pi.item_id) === 393 ? "/assets/images/veneno.png" : "/assets/images/antidoto.png"}
+                                              alt="Icono objeto"
+                                              className="w-5 h-5 object-contain"
+                                            />
+                                            <span>Registros ({pi.registros?.length || 0}/10) ▾</span>
+                                          </button>
                                         )}
                                       </span>
                                     </div>
@@ -4953,6 +4983,15 @@ export function CharacterSheetView({
           )}
         </main>
       </div>
+      {slotsModalItem && (
+        <ObjetoSlotsModal
+          isOpen={!!slotsModalItem}
+          item={slotsModalItem}
+          canEdit={isEditing && (canEdit || isAdmin)}
+          onClose={() => setSlotsModalItem(null)}
+          onRefresh={onRefresh}
+        />
+      )}
       {showScrollTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}

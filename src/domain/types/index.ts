@@ -312,12 +312,23 @@ export interface NotificacionAdmin {
   personaje?: { nombre_ninja: string; url_img?: string | null };
 }
 
+export interface PersonajeInventarioRegistro {
+  id: number;
+  inventario_id: number;
+  slot_num: number;
+  nombre: string;
+  pantallazo_url: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface PersonajeItem {
   id?: number;
   personaje_id: number;
   item_id: number;
   equipado?: boolean;
   info_glosario?: Glosario;
+  registros?: PersonajeInventarioRegistro[];
 }
 
 export interface PersonajeTecnica {
