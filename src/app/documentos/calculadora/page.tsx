@@ -8,8 +8,9 @@ import { useMasterStore } from '@/store/useMasterStore';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { StatsLogic } from '@/domain/character/logic';
 import { CharacterStats } from '@/domain/types';
-import { Heart, ChevronUp, ChevronDown, RefreshCw, UserCheck, ShieldAlert, Sparkles } from 'lucide-react';
+import { Heart, ChevronUp, ChevronDown, RefreshCw } from 'lucide-react';
 import { useToastStore } from '@/components/ui/Toast';
+import { NinjaSelect } from '@/components/ui/Fields';
 
 const LOCAL_STORAGE_KEY = 'nrpg_build_simulator_state';
 
@@ -36,6 +37,85 @@ export default function BuildSimulatorPage() {
   const [puntosTotalesInput, setPuntosTotalesInput] = useState<string>('8');
   const [puntosTotales, setPuntosTotales] = useState<number>(8);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // Estado de Calculadora Dinámica de Daño
+  const [calcStats, setCalcStats] = useState<{ id: string; stat: string; val: number; multInput: string }[]>([
+    { id: 'stat-1', stat: 'NIN', val: 1, multInput: '1' }
+  ]);
+  const [calcWeapons, setCalcWeapons] = useState<{ id: string; damage: number }[]>([]);
+  const [calcPercents, setCalcPercents] = useState<{ id: string; percent: number }[]>([]);
+
+  // Actualizar valores de stats en la calculadora de daño al modificar los stats base
+  useEffect(() => {
+    setCalcStats(prev => prev.map(item => {
+      const currentVal = Number(stats[item.stat as keyof CharacterStats]) || 1;
+      return { ...item, val: currentVal };
+    }));
+  }, [stats]);
+
+  const addCalcStat = () => {
+    const defaultStat = 'TAI';
+    const baseVal = Number(stats[defaultStat as keyof CharacterStats]) || 1;
+    setCalcStats(prev => [...prev, { id: `stat-${Date.now()}-${Math.random()}`, stat: defaultStat, val: baseVal, multInput: '1' }]);
+  };
+
+  const updateCalcStatName = (id: string, newStat: string) => {
+    const baseVal = Number(stats[newStat as keyof CharacterStats]) || 1;
+    setCalcStats(prev => prev.map(item => item.id === id ? { ...item, stat: newStat, val: baseVal } : item));
+  };
+
+  const updateCalcStatVal = (id: string, val: number) => {
+    setCalcStats(prev => prev.map(item => item.id === id ? { ...item, val } : item));
+  };
+
+  const updateCalcStatMult = (id: string, multInput: string) => {
+    setCalcStats(prev => prev.map(item => item.id === id ? { ...item, multInput } : item));
+  };
+
+  const removeCalcStat = (id: string) => {
+    setCalcStats(prev => prev.filter(item => item.id !== id));
+  };
+
+  const addCalcWeapon = () => {
+    setCalcWeapons(prev => [...prev, { id: `weapon-${Date.now()}-${Math.random()}`, damage: 0 }]);
+  };
+
+  const updateCalcWeapon = (id: string, damage: number) => {
+    setCalcWeapons(prev => prev.map(item => item.id === id ? { ...item, damage } : item));
+  };
+
+  const removeCalcWeapon = (id: string) => {
+    setCalcWeapons(prev => prev.filter(item => item.id !== id));
+  };
+
+  const addCalcPercent = () => {
+    setCalcPercents(prev => [...prev, { id: `percent-${Date.now()}-${Math.random()}`, percent: 0 }]);
+  };
+
+  const updateCalcPercent = (id: string, percent: number) => {
+    setCalcPercents(prev => prev.map(item => item.id === id ? { ...item, percent } : item));
+  };
+
+  const removeCalcPercent = (id: string) => {
+    setCalcPercents(prev => prev.filter(item => item.id !== id));
+  };
+
+  const calculateTotalDamage = () => {
+    const statsDamage = calcStats.reduce((sum, item) => {
+      const mult = parseFloat(item.multInput.replace(',', '.')) || 0;
+      return sum + (item.val * mult);
+    }, 0);
+
+    const weaponsDamage = calcWeapons.reduce((sum, item) => sum + (item.damage || 0), 0);
+
+    const subtotal = statsDamage + weaponsDamage;
+
+    const totalPercent = calcPercents.reduce((sum, item) => sum + (item.percent || 0), 0);
+
+    const rawTotal = subtotal * (1 + totalPercent / 100);
+    if (rawTotal <= 0) return 0;
+    return Math.ceil(rawTotal / 5) * 5;
+  };
 
   // Cargar masters al montar
   useEffect(() => {
@@ -256,21 +336,6 @@ export default function BuildSimulatorPage() {
                 Prueba distintas combinaciones de estadísticas para tu personaje antes de tomar la decisión final sobre cómo repartir tus STATs.
               </p>
             </div>
-
-            {/* Acciones del calculadora */}
-            <div className="flex flex-wrap items-center gap-3 shrink-0">
-              {activeCharacter && (
-                <button
-                  type="button"
-                  onClick={handleLoadCharacterStats}
-                  className="ninja-btn-oro py-3 px-5 text-xs xl:text-sm font-black uppercase tracking-wider flex items-center gap-2"
-                  style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
-                >
-                  <UserCheck className="w-4 h-4" />
-                  Cargar mi PJ ({activeCharacter.nombre_ninja})
-                </button>
-              )}
-            </div>
           </div>
         </div>
 
@@ -338,6 +403,18 @@ export default function BuildSimulatorPage() {
                   <RefreshCw className="w-3.5 h-3.5" />
                   Reiniciar
                 </button>
+
+                {/* Botón Cargar mi PJ a la derecha de Reiniciar */}
+                {activeCharacter && (
+                  <button
+                    type="button"
+                    onClick={handleLoadCharacterStats}
+                    className="ninja-btn-oro py-2 px-3.5 text-xs font-black uppercase tracking-wider flex items-center gap-1.5"
+                    style={{ clipPath: 'polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px)' }}
+                  >
+                    Cargar mi PJ ({activeCharacter.nombre_ninja})
+                  </button>
+                )}
               </div>
 
               {modoPuntos === 'limite' ? (
@@ -358,7 +435,7 @@ export default function BuildSimulatorPage() {
                     <span className="text-caption font-black text-oro/40 uppercase tracking-[0.3em] mb-1">Puntos Disponibles</span>
                     <span className="text-2xl xl:text-3xl font-black text-oro italic">
                       {puntosLibres}
-                      <span className="text-oro/20 text-xs xl:text-sm ml-1.5 font-normal">/ {puntosTotales}</span>
+                      <span className="text-oro/60 text-xs xl:text-sm ml-1.5 font-normal">/ {puntosTotales}</span>
                     </span>
                   </div>
                 </div>
@@ -440,9 +517,14 @@ export default function BuildSimulatorPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
-                  { label: 'VIT', val: derivados.VIT, desc: `Vitalidad máxima (FUE × ${masters.escaladoRules?.fue_a_vit ?? 10})`, color: 'text-red-500' },
-                  { label: 'CH', val: derivados.CH, desc: `Chakra máximo (EST × ${masters.escaladoRules?.est_a_ch ?? 15})`, color: 'text-blue-400' },
-                  { label: 'VEL', val: derivados.VEL, desc: 'Velocidad de combate (AGI / 10)', color: 'text-oro' },
+                  { label: 'VIT', val: derivados.VIT, desc: 'Vitalidad máxima', color: 'text-red-500' },
+                  { label: 'CH', val: derivados.CH, desc: 'Chakra máximo', color: 'text-blue-400' },
+                  { 
+                    label: 'VEL', 
+                    val: derivados.VEL, 
+                    desc: `Velocidad de combate (${rangoBaseRules.vel_base ?? 5} + ${Math.floor((Number(stats.AGI) || 0) / (masters.escaladoRules?.agi_a_vel_factor ?? 10))})`, 
+                    color: 'text-oro' 
+                  },
                   { label: 'VR', val: derivados.VR, desc: '', color: 'text-oro/90' },
                   { label: 'DET', val: derivados.DET, desc: '', color: 'text-oro/90' },
                 ].map(attr => (
@@ -460,6 +542,201 @@ export default function BuildSimulatorPage() {
                     <span className="text-xs sm:text-sm text-oro/75 font-medium leading-tight">{attr.desc}</span>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Sección de Calculadora de Daño (idéntica a CombatRoom PvP) */}
+          <div className="mt-12 pt-8 border-t border-oro/15 space-y-6">
+            <div className="flex items-center justify-between flex-wrap gap-4 border-b border-oro/10 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-1.5 h-1.5 bg-naranja-naruto rotate-45" />
+                <h3 className="text-base sm:text-lg font-black text-oro uppercase tracking-[0.3em]">
+                  Calculadora de Daño
+                </h3>
+              </div>
+              {/* Botones de extensión */}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={addCalcStat}
+                  className="ninja-btn-ghost px-3 py-1.5 text-xs font-black uppercase"
+                >
+                  + Stat Extra
+                </button>
+                <button
+                  type="button"
+                  onClick={addCalcWeapon}
+                  className="ninja-btn-ghost px-3 py-1.5 text-xs font-black uppercase"
+                >
+                  + Arma
+                </button>
+                <button
+                  type="button"
+                  onClick={addCalcPercent}
+                  className="ninja-btn-ghost px-3 py-1.5 text-xs font-black uppercase"
+                >
+                  + Modificador %
+                </button>
+              </div>
+            </div>
+
+            {/* Filas de entrada de la calculadora */}
+            <div className="space-y-4 bg-black/40 p-6 border border-oro/10">
+              {/* Lista de Stats Dinámicos */}
+              {calcStats.map((item, index) => {
+                const numericMult = parseFloat(item.multInput.replace(',', '.')) || 0;
+                return (
+                  <div
+                    key={item.id}
+                    className={`flex flex-wrap items-center gap-3 ${index > 0 ? 'pt-3 border-t border-oro/10 animate-in fade-in duration-200' : ''}`}
+                  >
+                    <span className="text-xs font-black text-oro/40 uppercase w-16 shrink-0">
+                      Stat {index + 1}:
+                    </span>
+
+                    <NinjaSelect
+                      value={item.stat}
+                      options={['NIN', 'TAI', 'GEN', 'INT', 'FUE', 'AGI', 'EST', 'SM']}
+                      onChange={(val) => updateCalcStatName(item.id, val)}
+                      placeholder=""
+                      variant="compact"
+                      className="w-20"
+                    />
+
+                    {/* Input de Valor de Stat */}
+                    <div className="flex items-center bg-black/50 border border-oro/20 w-28 px-2 focus-within:border-oro transition-all">
+                      <button
+                        type="button"
+                        onClick={() => updateCalcStatVal(item.id, Math.max(1, item.val - 1))}
+                        className="text-oro hover:text-white font-black px-1.5 py-1 text-xs select-none"
+                      >-</button>
+                      <input
+                        type="number"
+                        value={item.val}
+                        onChange={(e) => updateCalcStatVal(item.id, Number(e.target.value) || 0)}
+                        className="bg-transparent text-center text-white text-xs font-black w-full outline-none py-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => updateCalcStatVal(item.id, item.val + 1)}
+                        className="text-oro hover:text-white font-black px-1.5 py-1 text-xs select-none"
+                      >+</button>
+                    </div>
+
+                    <span className="text-oro/40 font-black text-xs">×</span>
+
+                    {/* Input de Multiplicador */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black text-oro/40 uppercase">Mult:</span>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={item.multInput}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === '' || new RegExp('^[0-9]*[.,]?[0-9]*$').test(val)) {
+                            updateCalcStatMult(item.id, val);
+                          }
+                        }}
+                        className="w-20 bg-black/50 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro text-center transition-all"
+                      />
+                    </div>
+
+                    <div className="ml-auto flex items-center gap-3">
+                      <span className="text-xs font-mono text-oro font-black">
+                        = {item.val * numericMult}
+                      </span>
+                      {calcStats.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeCalcStat(item.id)}
+                          className="text-naranja-naruto hover:text-red-400 text-xs font-black uppercase tracking-wider"
+                        >
+                          Quitar
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Lista Dinámica de Armas */}
+              {calcWeapons.map((item, index) => (
+                <div
+                  key={item.id}
+                  className="flex flex-wrap items-center gap-3 pt-3 border-t border-oro/10 animate-in fade-in duration-200"
+                >
+                  <span className="text-xs font-black text-oro/40 uppercase w-16 shrink-0">
+                    {calcWeapons.length > 1 ? `Arma ${index + 1}:` : 'Daño Arma:'}
+                  </span>
+                  <input
+                    type="number"
+                    placeholder="Daño de arma..."
+                    value={item.damage}
+                    onChange={(e) => updateCalcWeapon(item.id, Number(e.target.value) || 0)}
+                    className="w-36 bg-black/50 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all"
+                  />
+                  <div className="ml-auto flex items-center gap-3">
+                    <span className="text-xs font-mono text-oro font-black">
+                      + {item.damage}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeCalcWeapon(item.id)}
+                      className="text-naranja-naruto hover:text-red-400 text-xs font-black uppercase tracking-wider"
+                    >
+                      Quitar
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {/* Lista Dinámica de Modificadores Porcentuales */}
+              {calcPercents.map((item, index) => (
+                <div
+                  key={item.id}
+                  className="flex flex-wrap items-center gap-3 pt-3 border-t border-oro/10 animate-in fade-in duration-200"
+                >
+                  <span className="text-xs font-black text-oro/40 uppercase w-16 shrink-0">
+                    {calcPercents.length > 1 ? `Mod % ${index + 1}:` : 'Mod %:'}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      placeholder="+10 o -20..."
+                      value={item.percent}
+                      onChange={(e) => updateCalcPercent(item.id, Number(e.target.value) || 0)}
+                      className="w-32 bg-black/50 border border-oro/20 text-oro px-3 py-2 text-xs font-black outline-none focus:border-oro transition-all"
+                    />
+                    <span className="text-xs font-black text-oro">%</span>
+                  </div>
+                  <div className="ml-auto flex items-center gap-3">
+                    <span className="text-xs font-mono text-oro font-black">
+                      {item.percent >= 0 ? `+${item.percent}%` : `${item.percent}%`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeCalcPercent(item.id)}
+                      className="text-naranja-naruto hover:text-red-400 text-xs font-black uppercase tracking-wider"
+                    >
+                      Quitar
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {/* Tarjeta de Resultado Final */}
+              <div className="pt-4 border-t border-oro/10 flex items-center justify-between flex-wrap gap-4">
+                <div className="text-xs font-mono text-oro/60 truncate max-w-[70%]">
+                  Fórmula: {calcStats.map(s => '(' + s.stat + ': ' + s.val + ' × ' + (s.multInput || '0') + ')').join(' + ')}
+                  {calcWeapons.length > 0 && ' + ' + calcWeapons.map(w => w.damage + ' Arma').join(' + ')}
+                  {calcPercents.length > 0 && ' (' + calcPercents.map(p => (p.percent >= 0 ? '+' : '') + p.percent + '%').join(' ') + ')'}
+                </div>
+                <div className="flex items-center gap-3 bg-black/60 border border-oro/20 px-5 py-2">
+                  <span className="text-xs font-black text-oro/60 uppercase">DAÑO TOTAL:</span>
+                  <span className="text-xl font-black text-oro font-mono">{calculateTotalDamage()}</span>
+                </div>
               </div>
             </div>
           </div>
