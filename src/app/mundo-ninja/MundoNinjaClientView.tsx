@@ -92,7 +92,7 @@ export default function MundoNinjaClientView({
             <div className="mb-10 ninja-card-oro p-6 sm:p-8 xl:p-10 relative overflow-hidden group">
               <div className="flex items-center gap-6 mb-3 relative z-10">
                 <h1 className="ninja-title text-3xl sm:text-5xl xl:text-7xl uppercase leading-none">
-                  Fichas Ninja
+                  Mundo Ninja
                 </h1>
               </div>
               <p className="text-gris-texto text-base sm:text-lg xl:text-2xl leading-relaxed relative z-10">

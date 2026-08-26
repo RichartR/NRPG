@@ -2778,7 +2778,7 @@ export function CharacterSheetView({
 
                 {/* BLOQUE GRÁFICO DE ELEMENTOS DEL PERSONAJE */}
                 <SectionCard title="AFINIDADES ELEMENTALES" color="oro">
-                  {canSelectFreeElement && (
+                  {canSelectFreeElement && (isEditing || isNew) && (
                     <div className="mb-6 p-4 bg-oro/5 border border-oro/10 ninja-clip-sm">
                       <h5 className="text-caption font-black text-oro uppercase tracking-[0.2em] mb-2">Elemento Libre (Sin Clan Elemental)</h5>
                       <p className="text-xs text-gris-texto mb-3">
