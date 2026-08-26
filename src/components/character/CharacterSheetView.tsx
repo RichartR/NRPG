@@ -3342,20 +3342,24 @@ export function CharacterSheetView({
                                                           </span>
                                                         )}
                                                         {pi.info_glosario?.zona_equipable && (
-                                                           <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-oro/10 border border-oro/30 text-oro tracking-widest rounded-sm">
-                                                             {pi.info_glosario.zona_equipable}
-                                                           </span>
-                                                         )}
-                                                         {(Number(pi.item_id) === 82 || Number(pi.item_id) === 393) && (
-                                                           <button
-                                                             onClick={() => setSlotsModalItem(pi)}
-                                                             className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-bold text-amber-300 bg-amber-500/20 border border-amber-500/40 hover:bg-amber-500/30 hover:border-amber-400 rounded transition-all shadow-sm normal-case tracking-normal ml-1"
-                                                             title="Gestionar registros del objeto"
-                                                           >
-                                                             <ScrollText className="w-3.5 h-3.5 text-amber-400" />
-                                                             <span>Registros ({pi.registros?.length || 0}/10) ▾</span>
-                                                           </button>
-                                                         )}
+                                                          <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-oro/10 border border-oro/30 text-oro tracking-widest rounded-sm">
+                                                            {pi.info_glosario.zona_equipable}
+                                                          </span>
+                                                        )}
+                                                        {(Number(pi.item_id) === 82 || Number(pi.item_id) === 393) && (
+                                                          <button
+                                                            onClick={() => setSlotsModalItem(pi)}
+                                                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-caption font-black text-oro bg-oro/10 border border-oro/30 hover:bg-oro/20 hover:border-oro/50 ninja-clip-xs transition-all tracking-wider uppercase ml-1"
+                                                            title="Gestionar registros del objeto"
+                                                          >
+                                                            <img
+                                                              src={Number(pi.item_id) === 393 ? "/assets/images/veneno.png" : "/assets/images/antidoto.png"}
+                                                              alt="Icono objeto"
+                                                              className="w-5 h-5 object-contain"
+                                                            />
+                                                            <span>Registros ({pi.registros?.length || 0}/10) ▾</span>
+                                                          </button>
+                                                        )}
                                                       </span>
                                                       {pi.info_glosario?.nombre_jp && (
                                                         <span className="text-caption text-oro/30 uppercase font-black tracking-tighter mt-0.5">
@@ -3611,15 +3615,19 @@ export function CharacterSheetView({
                                           </span>
                                         )}
                                         {(Number(pi.item_id) === 82 || Number(pi.item_id) === 393) && (
-                                           <button
-                                             onClick={() => setSlotsModalItem(pi)}
-                                             className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-bold text-amber-300 bg-amber-500/20 border border-amber-500/40 hover:bg-amber-500/30 hover:border-amber-400 rounded transition-all shadow-sm normal-case tracking-normal ml-1"
-                                             title="Gestionar registros del objeto"
-                                           >
-                                             <ScrollText className="w-3.5 h-3.5 text-amber-400" />
-                                             <span>Registros ({pi.registros?.length || 0}/10) ▾</span>
-                                           </button>
-                                         )}
+                                          <button
+                                            onClick={() => setSlotsModalItem(pi)}
+                                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-caption font-black text-oro bg-oro/10 border border-oro/30 hover:bg-oro/20 hover:border-oro/50 ninja-clip-xs transition-all tracking-wider uppercase ml-1"
+                                            title="Gestionar registros del objeto"
+                                          >
+                                            <img
+                                              src={Number(pi.item_id) === 393 ? "/assets/images/veneno.png" : "/assets/images/antidoto.png"}
+                                              alt="Icono objeto"
+                                              className="w-5 h-5 object-contain"
+                                            />
+                                            <span>Registros ({pi.registros?.length || 0}/10) ▾</span>
+                                          </button>
+                                        )}
                                       </span>
                                     </div>
                                   </td>
@@ -4979,7 +4987,7 @@ export function CharacterSheetView({
         <ObjetoSlotsModal
           isOpen={!!slotsModalItem}
           item={slotsModalItem}
-          canEdit={canEdit || isAdmin}
+          canEdit={isEditing && (canEdit || isAdmin)}
           onClose={() => setSlotsModalItem(null)}
           onRefresh={onRefresh}
         />
