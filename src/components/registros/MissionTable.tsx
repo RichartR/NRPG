@@ -138,17 +138,12 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
 
                   {/* Recompensa */}
                   <td className="py-3 px-5">
-                    <div className="flex flex-col gap-1.5 justify-center">
-                      <div className="flex items-center gap-2 text-xs font-black text-green-700 tracking-wider">
-                        <span>+{m.data.recompensa_xp || 0} EXP</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs font-black text-green-700 tracking-wider">
-                        <span>+{m.data.recompensa_ryous || 0} Ryos</span>
-                      </div>
-                      {(m.data.recompensa_pa || 0) > 0 && (
-                        <div className="flex items-center gap-2 text-xs font-black text-emerald-500 tracking-wider">
-                          <span>+{m.data.recompensa_pa} PA</span>
-                        </div>
+                    <div className="flex flex-col gap-1 justify-center text-emerald-400 font-bold text-[11px] tracking-wide">
+                      {(m.data.recompensa_xp || 0) > 0 && <div>+{m.data.recompensa_xp} EXP</div>}
+                      {(m.data.recompensa_ryous || 0) > 0 && <div>+{m.data.recompensa_ryous} Ryos</div>}
+                      {(m.data.recompensa_pa || 0) > 0 && <div>+{m.data.recompensa_pa} PA</div>}
+                      {(m.data.recompensa_xp || 0) === 0 && (m.data.recompensa_ryous || 0) === 0 && (m.data.recompensa_pa || 0) === 0 && (
+                        <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
                       )}
                     </div>
                   </td>

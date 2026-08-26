@@ -362,7 +362,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                 {Number(registro.data.global_pa) > 0 && (
                   <>
                     <div className="w-px h-5 bg-oro/20" />
-                    <div className="flex items-center gap-1.5 text-emerald-400">PA: +{registro.data.global_pa}</div>
+                    <div className="flex items-center gap-1.5">PA: +{registro.data.global_pa}</div>
                   </>
                 )}
                 {registro.data.global_monedas_evento > 0 && (
@@ -391,7 +391,14 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                   <tbody className="divide-y divide-oro/15 font-bold text-oro/70 uppercase">
                     {registro.data.participantes_premios?.map((p: any) => (
                       <tr key={p.personaje_id} className="hover:bg-oro/[0.04] transition-colors">
-                        <td className="py-4 px-6 text-sm sm:text-base font-black uppercase tracking-wider text-white border-r border-oro/15 last:border-r-0">{p.nombre_ninja}</td>
+                        <td className="py-4 px-6 text-sm sm:text-base font-black uppercase tracking-wider text-white border-r border-oro/15 last:border-r-0 flex items-center justify-between gap-2">
+                          <span>{p.nombre_ninja}</span>
+                          {p.recuperado && (
+                            <span className="text-[10px] bg-naranja-naruto/20 border border-naranja-naruto/40 text-naranja-naruto px-2 py-0.5 ninja-clip-xs font-black tracking-widest">
+                              Recuperado
+                            </span>
+                          )}
+                        </td>
                         <td className="py-4 px-6 text-center text-sm sm:text-base border-r border-oro/15 last:border-r-0">
                           {p.xp_extra > 0 ? (
                             <span className="text-white font-black">+{p.xp_extra} EXP</span>
@@ -441,6 +448,43 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        ) : registro.subtipo === 'recuperacion_evento' ? (
+          <div className="p-6 bg-black/40 border border-oro/10 ninja-clip-sm space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-oro/5 pb-4 gap-4">
+              <div>
+                <h4 className="text-lg sm:text-xl font-black text-oro uppercase tracking-wider mb-1">
+                  {registro.data?.titulo || 'Recuperación de Evento'}
+                </h4>
+                <p className="text-caption font-bold text-oro/40 uppercase tracking-widest">
+                  SOLICITUD DE RECUPERACIÓN DE RECOMPENSAS BASE
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-4 sm:gap-6 p-3 bg-oro/5 border border-oro/10 ninja-clip-xs shrink-0 text-caption sm:text-xs font-black text-oro">
+                <div className="flex items-center gap-1.5">EXP: +{registro.data?.recuperado_xp ?? registro.data?.global_xp ?? 0}</div>
+                <div className="w-px h-4 bg-oro/10" />
+                <div className="flex items-center gap-1.5">RYOUS: +{registro.data?.recuperado_ryous ?? registro.data?.global_ryous ?? 0}</div>
+                {(Number(registro.data?.recuperado_pa ?? registro.data?.global_pa) > 0) && (
+                  <>
+                    <div className="w-px h-4 bg-oro/10" />
+                    <div className="flex items-center gap-1.5">PA: +{registro.data?.recuperado_pa ?? registro.data?.global_pa}</div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <span className="text-caption font-black text-oro/30 uppercase tracking-[0.25em] block">
+                PARTICIPANTES EN LA ESCENA DE ROLEO:
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {participants.map((p: any, i: number) => (
+                  <span key={i} className="text-xs font-black text-oro uppercase tracking-wider px-3.5 py-1.5 bg-oro/5 border border-oro/10 ninja-clip-xs">
+                    {p.nombre_ninja}
+                  </span>
+                ))}
               </div>
             </div>
           </div>

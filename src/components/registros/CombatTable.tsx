@@ -207,34 +207,31 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                   {/* Resultado */}
                   <td className="py-6 px-8">
                     {isSanacion ? (
-                      <span className="inline-flex items-center gap-1.5 text-caption font-black text-emerald-400 border border-emerald-500/30 px-2.5 py-0.5 ninja-clip-xs bg-emerald-950/40 tracking-widest">
-                        -{m.data.horas_restadas || 0}H HG
+                      <span className="font-black text-emerald-400 text-xs tracking-wider uppercase">
+                        -{m.data.horas_restadas || 0}h HG
                       </span>
                     ) : isEmpate ? (
-                      <span className="inline-block text-caption font-black text-oro border border-oro/30 px-2.5 py-0.5 ninja-clip-xs bg-oro/5 tracking-widest shadow-[0_0_8px_rgba(223,184,87,0.08)]">
-                        EMPATE
+                      <span className="font-black text-oro/70 text-xs tracking-wider uppercase">
+                        Empate
                       </span>
                     ) : won ? (
-                      <span className="inline-block text-caption font-black text-success-text border border-success-text/30 px-2.5 py-0.5 ninja-clip-xs bg-success-bg/80 tracking-widest shadow-[0_0_10px_rgba(52,211,153,0.12)]">
-                        VICTORIA
+                      <span className="font-black text-emerald-400 text-xs tracking-wider uppercase">
+                        Victoria
                       </span>
                     ) : (
-                      <span className="inline-block text-caption font-black text-error-text border border-error-text/30 px-2.5 py-0.5 ninja-clip-xs bg-error-bg/80 tracking-widest shadow-[0_0_10px_rgba(239,68,68,0.12)]">
-                        DERROTA
+                      <span className="font-black text-red-400 text-xs tracking-wider uppercase">
+                        Derrota
                       </span>
                     )}
                   </td>
 
                   {/* Recompensa */}
                   <td className="py-6 px-8">
-                    <div className="flex flex-col gap-1 items-start">
-                      <span className="inline-block text-caption xl:text-xs font-black text-success-text tracking-wider bg-success-bg/30 border border-success-text/20 py-1 px-3 ninja-clip-xs shadow-[0_0_10px_rgba(52,211,153,0.05)] text-center w-full">
-                        +{xpGained} EXP
-                      </span>
-                      {pcGained > 0 && (
-                        <span className="inline-block text-caption xl:text-xs font-black text-success-text/90 tracking-wider bg-success-bg/30 border border-success-text/20 py-0.5 px-2 ninja-clip-xs mt-1 w-full text-center">
-                          +{pcGained} PA
-                        </span>
+                    <div className="flex flex-col gap-1 justify-center text-emerald-400 font-bold text-[11px] tracking-wide">
+                      {xpGained > 0 && <div>+{xpGained} EXP</div>}
+                      {pcGained > 0 && <div>+{pcGained} PA</div>}
+                      {xpGained === 0 && pcGained === 0 && (
+                        <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
                       )}
                     </div>
                   </td>
@@ -320,20 +317,20 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                 </div>
                 <div>
                   {isSanacion ? (
-                    <span className="inline-flex items-center gap-1 text-caption font-black text-emerald-400 border border-emerald-500/30 px-2.5 py-0.5 ninja-clip-xs bg-emerald-950/40 tracking-widest">
-                      <Dices className="w-3 h-3" /> -{m.data.horas_restadas || 0}H HG
+                    <span className="font-black text-emerald-400 text-xs tracking-wider uppercase">
+                      -{m.data.horas_restadas || 0}h HG
                     </span>
                   ) : isEmpate ? (
-                    <span className="inline-block text-caption font-black text-oro border border-oro/30 px-2.5 py-0.5 ninja-clip-xs bg-oro/5 tracking-widest">
-                      EMPATE
+                    <span className="font-black text-oro/70 text-xs tracking-wider uppercase">
+                      Empate
                     </span>
                   ) : won ? (
-                    <span className="inline-block text-caption font-black text-success-text border border-success-text/30 px-2.5 py-0.5 ninja-clip-xs bg-success-bg/80 tracking-widest">
-                      VICTORIA
+                    <span className="font-black text-emerald-400 text-xs tracking-wider uppercase">
+                      Victoria
                     </span>
                   ) : (
-                    <span className="inline-block text-caption font-black text-error-text border border-error-text/30 px-2.5 py-0.5 ninja-clip-xs bg-error-bg/80 tracking-widest">
-                      DERROTA
+                    <span className="font-black text-red-400 text-xs tracking-wider uppercase">
+                      Derrota
                     </span>
                   )}
                 </div>
@@ -370,10 +367,12 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
               </div>
 
               <div className="flex justify-between items-center gap-4 mt-1">
-                <div className="flex gap-2">
-                  <span className="inline-block text-caption font-black text-success-text tracking-wider bg-success-bg/30 border border-success-text/20 py-0.5 px-2 ninja-clip-xs">
-                    +{xpGained} EXP
-                  </span>
+                <div className="flex flex-col gap-1 justify-center text-emerald-400 font-bold text-[11px] tracking-wide">
+                  {xpGained > 0 && <div>+{xpGained} EXP</div>}
+                  {pcGained > 0 && <div>+{pcGained} PA</div>}
+                  {xpGained === 0 && pcGained === 0 && (
+                    <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2">

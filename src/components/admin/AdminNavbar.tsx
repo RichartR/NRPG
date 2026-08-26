@@ -21,6 +21,7 @@ export default function AdminNavbar({ userRoles = [] }: AdminNavbarProps) {
 
   const isAdmin = userRoles.includes('admin');
   const isModerator = userRoles.includes('moderador');
+  const isNarrator = userRoles.includes('narrador');
 
   const menuItems: MenuItem[] = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -47,6 +48,7 @@ export default function AdminNavbar({ userRoles = [] }: AdminNavbarProps) {
 
   const allowedMenuItems = menuItems.filter(item => {
     if (item.href === '/admin') return true;
+    if (item.href === '/admin/disputas') return isAdmin || isModerator || isNarrator;
     if (item.href === '/admin/usuarios' || item.href === '/admin/fichas') {
       return isAdmin;
     }
