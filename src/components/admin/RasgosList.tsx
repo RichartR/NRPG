@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Edit2, Eye, EyeOff, Search, PlusCircle, RefreshCw, Shield } from 'lucide-react';
+import { Edit2, Eye, EyeOff, Search, PlusCircle, RefreshCw, Shield, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import RasgoEditForm from './RasgoEditForm';
 import { AdminService } from '@/services/supabase/admin.service';
@@ -21,6 +21,7 @@ export default function RasgosList({ initialRasgos, characters }: RasgosListProp
   const [activeCategory, setActiveCategory] = useState<'todos' | 'Físico' | 'Psicológico' | 'Habilidad'>('todos');
   const [search, setSearch] = useState('');
   const [loadingId, setLoadingId] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const router = useRouter();
   const addToast = useToastStore((s) => s.addToast);
@@ -47,6 +48,16 @@ export default function RasgosList({ initialRasgos, characters }: RasgosListProp
     });
   }, [initialRasgos, activeTab, activeCategory, search]);
 
+  const ITEMS_PER_PAGE = 10;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const pageStart = filtered.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1;
+  const pageEnd = Math.min(currentPage * ITEMS_PER_PAGE, filtered.length);
+
+  const paginatedRasgos = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filtered, currentPage]);
+
   return (
     <div className="space-y-6">
       {/* Controles Superiores */}
@@ -58,7 +69,10 @@ export default function RasgosList({ initialRasgos, characters }: RasgosListProp
           {(['active', 'inactive'] as const).map((tab) => (
             <button
               key={tab}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => {
+                setActiveTab(tab);
+                setCurrentPage(1);
+              }}
               className={`flex-1 sm:flex-initial text-center px-4 sm:px-8 py-3 xl:py-4 font-black uppercase tracking-[0.2em] transition-all text-caption sm:text-caption xl:text-xs ${activeTab === tab ? 'bg-oro text-naranja-naruto shadow-lg' : 'text-oro/40 hover:text-oro hover:bg-oro/5'}`}
               style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
             >
@@ -77,7 +91,10 @@ export default function RasgosList({ initialRasgos, characters }: RasgosListProp
             {(['todos', 'Físico', 'Psicológico', 'Habilidad'] as const).map((cat) => (
               <button
                 key={cat}
-                onClick={() => setActiveCategory(cat)}
+                onClick={() => {
+                  setActiveCategory(cat);
+                  setCurrentPage(1);
+                }}
                 className={`px-4 py-2 text-caption font-black uppercase tracking-widest transition-all ${activeCategory === cat ? 'bg-oro/20 text-oro border border-oro/30' : 'text-oro/30 hover:text-oro'}`}
               >
                 {cat === 'todos' ? 'Todos' : cat}
@@ -91,7 +108,10 @@ export default function RasgosList({ initialRasgos, characters }: RasgosListProp
               type="text"
               placeholder="BUSCAR RASGO..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full bg-black/20 border border-oro/10 py-3 xl:py-4 pl-12 pr-6 text-caption sm:text-caption xl:text-xs font-black text-oro focus:border-oro/40 outline-none transition-all placeholder:text-oro/20 uppercase tracking-widest"
               style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
             />
@@ -122,7 +142,7 @@ export default function RasgosList({ initialRasgos, characters }: RasgosListProp
               </tr>
             </thead>
             <tbody className="divide-y divide-oro/5 bg-black/40">
-              {filtered.map((r) => (
+              {paginatedRasgos.map((r) => (
                 <tr key={r.id} className="hover:bg-oro/5 transition-colors group">
                   {/* Nombre */}
                   <td className="py-5 px-8">
@@ -195,6 +215,36 @@ export default function RasgosList({ initialRasgos, characters }: RasgosListProp
         </div>
       </div>
 
+      {/* Paginación */}
+      {filtered.length > 0 && (
+        <div className="ninja-card-oro bg-neutral-800/40 border border-oro/5 p-5 flex flex-col md:flex-row items-center justify-between gap-4 ninja-clip-md backdrop-blur-sm">
+          <div className="flex items-center gap-3 text-caption font-black uppercase tracking-[0.2em] text-oro/50">
+            <span>{pageStart}-{pageEnd} de {filtered.length}</span>
+            <span className="w-1 h-1 bg-oro/30 rotate-45" />
+            <span>Página {currentPage} / {totalPages}</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              className="p-3 bg-black/40 border border-oro/10 rounded-xl text-oro disabled:opacity-30 disabled:cursor-not-allowed hover:bg-oro hover:text-black transition-all"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              type="button"
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              className="p-3 bg-black/40 border border-oro/10 rounded-xl text-oro disabled:opacity-30 disabled:cursor-not-allowed hover:bg-oro hover:text-black transition-all"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Modal crear/editar */}
       {(editingRasgo || isAdding) && (
         <RasgoEditForm
@@ -209,3 +259,4 @@ export default function RasgosList({ initialRasgos, characters }: RasgosListProp
     </div>
   );
 }
+
