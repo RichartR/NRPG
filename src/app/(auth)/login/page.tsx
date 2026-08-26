@@ -31,7 +31,7 @@ export default function LoginPage() {
         {/* Volver */}
         <Link href="/" className="inline-flex items-center gap-2 text-oro/40 hover:text-oro transition-all mb-8 uppercase font-black tracking-widest text-caption">
           <ArrowLeft className="w-3 h-3" />
-          Volver al Dashboard
+          Volver a inicio
         </Link>
 
         {/* Logo superior */}

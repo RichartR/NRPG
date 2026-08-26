@@ -36,11 +36,11 @@ export default function CombateMenu() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-naranja-naruto/5 rounded-full blur-[120px]"></div>
       </div>
 
-      <div className="w-full max-w-[550px] ninja-card-oro p-12 xl:p-16 relative z-10 overflow-hidden shadow-2xl">
+      <div className="w-full max-w-[680px] ninja-card-oro p-12 xl:p-16 relative z-10 overflow-hidden shadow-2xl">
         <div className="absolute top-0 right-0 w-64 h-64 bg-oro/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
 
         <div className="flex flex-col items-center mb-12">
-          <h1 className="ninja-title text-4xl xl:text-6xl text-center">CAMPO DE BATALLA</h1>
+          <h1 className="ninja-title text-4xl xl:text-6xl text-center">SALAS DE COMBATE</h1>
           <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.3em] mt-4 text-center">CREA TU SALA O ÚNETE A LA UNA YA CREADA</p>
         </div>
 
@@ -50,7 +50,7 @@ export default function CombateMenu() {
             onClick={() => setRoomMode('normal')}
             className={`flex-1 py-3 px-4 text-xs font-black uppercase tracking-widest border transition-all ${roomMode === 'normal'
               ? 'bg-oro text-naranja-naruto border-oro shadow-md shadow-oro/5'
-              : 'border-oro/10 text-oro/60 hover:text-oro bg-black/20'
+              : 'border-oro/10 text-oro/60 hover:text-oro bg-black/20 border-oro/50'
               }`}
             style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
           >
@@ -61,7 +61,7 @@ export default function CombateMenu() {
             onClick={() => setRoomMode('event')}
             className={`flex-1 py-3 px-4 text-xs font-black uppercase tracking-widest border transition-all ${roomMode === 'event'
               ? 'bg-oro text-naranja-naruto border-oro shadow-md shadow-oro/5'
-              : 'border-oro/10 text-oro/60 hover:text-oro bg-black/20'
+              : 'border-oro/10 text-oro/60 hover:text-oro bg-black/20 border-oro/50'
               }`}
             style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
           >
@@ -79,7 +79,7 @@ export default function CombateMenu() {
 
         <hr className='border-oro/20 m-5' />
 
-        <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.3em] mb-4 text-center">ÚNETE A UN COMBATE EXISTENTE</p>
+        <p className="text-oro/80 text-caption xl:text-xs font-black uppercase tracking-[0.3em] mb-4 text-center">ÚNETE A UN COMBATE EXISTENTE</p>
 
         <form onSubmit={handleJoin} className="space-y-6">
           <div className="relative">
@@ -88,7 +88,7 @@ export default function CombateMenu() {
               required
               value={roomId}
               onChange={(e) => setRoomId(e.target.value.toUpperCase())}
-              className="w-full bg-black/60 border border-oro/20 text-oro py-5 px-6 text-center text-2xl xl:text-4xl tracking-[0.4em] font-black outline-none hover:border-oro/40 focus:border-oro/80 transition-all uppercase placeholder:tracking-normal placeholder:text-oro/10 selection:bg-oro/20"
+              className="w-full bg-black/60 border border-oro/20 text-oro py-5 px-6 text-center text-2xl xl:text-4xl tracking-[0.4em] font-black outline-none hover:border-oro/60 focus:border-oro/80 transition-all uppercase placeholder:tracking-normal placeholder:text-oro/50 selection:bg-oro/20"
               placeholder="CÓDIGO"
               maxLength={10}
               style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
@@ -105,10 +105,10 @@ export default function CombateMenu() {
 
         <Link
           href="/"
-          className="w-full flex items-center justify-center gap-4 py-5 px-6 text-xs xl:text-sm shadow-lg shadow-naranja-naruto/20 border-oro/10 text-oro/60 hover:text-oro hover:bg-black/10 bg-black/20 mt-5 font-black uppercase tracking-[0.3em]"
+          className="w-full flex items-center justify-center gap-4 py-5 px-6 text-xs xl:text-sm shadow-lg shadow-naranja-naruto/20 text-oro/60 hover:text-oro hover:bg-black/10 bg-black/20 mt-5 font-black uppercase tracking-[0.3em] border border-oro/30"
           style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
         >
-          RETROCEDER AL DASHBOARD
+          RETROCEDER A INICIO
         </Link>
       </div>
     </div>

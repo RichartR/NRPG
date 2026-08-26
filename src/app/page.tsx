@@ -209,6 +209,15 @@ export default async function Home() {
             )}
 
             <nav className="flex flex-wrap items-center justify-center lg:justify-end gap-3 sm:gap-4 mt-auto">
+              {profile?.roles && profile.roles.some((role: string) => ['admin', 'moderador', 'narrador'].includes(role)) && (
+                <Link
+                  href="/combate"
+                  className="flex items-center gap-3 px-6 py-3 bg-white text-naranja-naruto border border-white hover:bg-white/90 hover:brightness-110 transition-all font-black text-xs uppercase tracking-[0.2em] cursor-pointer shadow-md"
+                  style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                >
+                  SALAS DE COMBATE
+                </Link>
+              )}
               {profile?.roles && profile.roles.some((role: string) => ['admin', 'moderador'].includes(role)) && (
                 <>
                   <Link
@@ -218,9 +227,7 @@ export default async function Home() {
                   >
                     PANEL ADMIN
                   </Link>
-                  {profile.roles.some((role: string) => ['admin', 'moderador'].includes(role)) && (
-                    <AdminNotificationBadge />
-                  )}
+                  <AdminNotificationBadge />
                 </>
               )}
               {user ? (
