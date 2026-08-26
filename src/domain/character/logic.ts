@@ -306,6 +306,23 @@ export const RewardLogic = {
       };
     }
 
+    if (registro.subtipo === 'recuperacion_evento') {
+      const globalXp = Number(data?.global_xp) || 0;
+      const globalRyous = Number(data?.global_ryous) || 0;
+      const globalPa = Number(data?.global_pa) || 0;
+      const partPremio = data?.participantes_premios?.find((p: any) => Number(p.personaje_id) === Number(personajeId));
+
+      const xpBase = globalXp + (Number(partPremio?.xp_extra) || 0);
+      const ryousBase = globalRyous + (Number(partPremio?.ryous_extra) || 0);
+      const paBase = globalPa + (Number(partPremio?.pa_extra) || 0);
+
+      return {
+        xp: xpBase,
+        ryous: ryousBase,
+        pa: paBase
+      };
+    }
+
     if (registro.subtipo === 'sanacion' || data?.subtipo === 'sanacion') {
       const sanadoId = Number(data?.sanado?.id);
       if (Number(personajeId) === sanadoId) {

@@ -12,6 +12,7 @@ import { PaginationPageInput } from '@/components/ui/PaginationPageInput';
 import { PaginationContainer } from '@/components/ui/PaginationContainer';
 import { searchIncludes } from '@/lib/utils/search';
 import { convertDriveUrl } from '@/lib/utils/driveConverter';
+import RecuperarEventoModal from '@/components/eventos/RecuperarEventoModal';
 
 interface NewsItem {
   id?: string;
@@ -106,6 +107,35 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
   const [loadingRegistries, setLoadingRegistries] = useState(false);
   const [isRewardFormOpen, setIsRewardFormOpen] = useState(false);
   const [editingRegistry, setEditingRegistry] = useState<any>(null);
+  const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState(false);
+  const [activeCharacter, setActiveCharacter] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchActiveCharacter = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('active_char_id')
+            .eq('id', user.id)
+            .single();
+          if (profile?.active_char_id) {
+            const { data: char } = await supabase
+              .from('reg_characters')
+              .select('id, nombre_ninja, url_img, rango')
+              .eq('id', profile.active_char_id)
+              .single();
+            setActiveCharacter(char);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching active char in NewsGrid:', err);
+      }
+    };
+    fetchActiveCharacter();
+  }, []);
 
   const fetchEventRegistries = async () => {
     if (!activeNews || activeNews.categoria?.toLowerCase() !== 'evento') return;
@@ -142,6 +172,34 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
   useEffect(() => {
     fetchEventRegistries();
   }, [activeNews]);
+
+  // Obtener el reparto de premios más reciente del evento
+  const ultimoRegistroPremios = useMemo(() => {
+    if (!eventRegistries || eventRegistries.length === 0) return null;
+    return eventRegistries[0];
+  }, [eventRegistries]);
+
+  // Comprobar si está dentro de los 5 días (120 horas) posteriores al reparto de premios
+  const isWithin5Days = useMemo(() => {
+    if (!ultimoRegistroPremios) return false;
+    const dateStr = ultimoRegistroPremios.fecha || ultimoRegistroPremios.created_at;
+    if (!dateStr) return false;
+    const timeSec = new Date(dateStr).getTime();
+    if (isNaN(timeSec)) return false;
+    const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000;
+    return (Date.now() - timeSec) <= FIVE_DAYS_MS;
+  }, [ultimoRegistroPremios]);
+
+  // Comprobar si el personaje activo ya ha reclamado o recuperado los premios del reparto más reciente
+  const isAlreadyRecovered = useMemo(() => {
+    if (!activeCharacter || !ultimoRegistroPremios) return false;
+    const pList = Array.isArray(ultimoRegistroPremios.data?.participantes_premios)
+      ? ultimoRegistroPremios.data.participantes_premios
+      : [];
+
+    const found = pList.find((p: any) => Number(p.personaje_id) === Number(activeCharacter.id));
+    return !!found;
+  }, [activeCharacter, ultimoRegistroPremios]);
 
   // Auto-open target news/patch/event modal if ?id= parameter is present in URL
   useEffect(() => {
@@ -481,18 +539,29 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
                               </h3>
                               <p className="text-[11px] font-bold text-oro/40 uppercase tracking-widest mt-1">Historial de repartos de este evento</p>
                             </div>
-                            {isAdmin && (
-                              <button
-                                onClick={() => {
-                                  setEditingRegistry(null);
-                                  setIsRewardFormOpen(true);
-                                }}
-                                className="px-6 py-2.5 bg-naranja-naruto hover:brightness-125 text-oro font-black text-caption xl:text-xs uppercase tracking-widest transition-all shadow-md select-none self-start sm:self-auto"
-                                style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
-                              >
-                                Repartir Premios
-                              </button>
-                            )}
+                            <div className="flex items-center gap-3 flex-wrap">
+                              {isWithin5Days && !isAlreadyRecovered && (
+                                <button
+                                  onClick={() => setIsRecoveryModalOpen(true)}
+                                  className="px-6 py-2.5 bg-white text-naranja-naruto hover:bg-white/90 hover:brightness-110 font-black text-caption xl:text-xs uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,255,255,0.3)] select-none flex items-center gap-2 cursor-pointer"
+                                  style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                                >
+                                  Recuperar Evento
+                                </button>
+                              )}
+                              {isAdmin && (
+                                <button
+                                  onClick={() => {
+                                    setEditingRegistry(null);
+                                    setIsRewardFormOpen(true);
+                                  }}
+                                  className="px-6 py-2.5 bg-naranja-naruto hover:brightness-125 text-oro font-black text-caption xl:text-xs uppercase tracking-widest transition-all shadow-md select-none self-start sm:self-auto cursor-pointer"
+                                  style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                                >
+                                  Repartir Premios
+                                </button>
+                              )}
+                            </div>
                           </div>
 
                           {loadingRegistries ? (
@@ -548,6 +617,19 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
           onClose={() => {
             setIsRewardFormOpen(false);
             setEditingRegistry(null);
+            fetchEventRegistries();
+          }}
+        />
+      )}
+
+      {isRecoveryModalOpen && activeNews && (
+        <RecuperarEventoModal
+          isOpen={isRecoveryModalOpen}
+          onClose={() => setIsRecoveryModalOpen(false)}
+          evento={activeNews}
+          ultimoRegistroPremios={ultimoRegistroPremios}
+          activeCharacter={activeCharacter}
+          onSuccess={() => {
             fetchEventRegistries();
           }}
         />

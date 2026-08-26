@@ -171,7 +171,8 @@ export async function POST(request: Request) {
     // Check user role using adminClient to bypass RLS restrictions
     const profile = await ProfileService.getProfile(user.id, adminClient);
 
-    const isAdmin = profile?.roles?.includes('admin') || profile?.roles?.includes('moderador') || user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin';
+    const isStaff = profile?.roles?.some((r: string) => ['admin', 'moderador', 'narrador'].includes(r)) || false;
+    const isAdmin = isStaff || user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin';
 
     // Obtener personaje activo del usuario para validaciones de propietario using adminClient
     const { data: activeChar } = await adminClient
@@ -200,8 +201,135 @@ export async function POST(request: Request) {
       }
     }
 
-    if (!isAuthorized) {
+    if (!isAuthorized && action !== 'update_participant_status') {
       return NextResponse.json({ error: 'No tienes permisos de administrador o propietario para esta acción' }, { status: 403 });
+    }
+
+    if (action === 'update_participant_status') {
+      if (!isStaff) {
+        return NextResponse.json({ error: 'No tienes permisos de moderación o narrador' }, { status: 403 });
+      }
+
+      const registroId = Number(id);
+      const personajeId = Number(payload?.personaje_id);
+      const nuevoEstado = payload?.estado; // 'aceptado' | 'rechazado'
+
+      if (!registroId || !personajeId || !['aceptado', 'rechazado'].includes(nuevoEstado)) {
+        return NextResponse.json({ error: 'Parámetros inválidos' }, { status: 400 });
+      }
+
+      // Obtener el registro y el participante actual
+      const { data: registro } = await adminClient.from('reg_registros').select('*').eq('id', registroId).single();
+      const { data: part } = await adminClient.from('reg_registros_participantes')
+        .select('*')
+        .eq('registro_id', registroId)
+        .eq('personaje_id', personajeId)
+        .single();
+
+      if (!registro || !part) {
+        return NextResponse.json({ error: 'Participante o registro no encontrado' }, { status: 404 });
+      }
+
+      const estadoAnterior = part.estado;
+
+      if (estadoAnterior !== 'pendiente') {
+        return NextResponse.json({ error: 'Este participante ya ha sido evaluado previamente' }, { status: 400 });
+      }
+      if (nuevoEstado === 'aceptado' && estadoAnterior !== 'aceptado') {
+        const { xp, ryous, pa } = RewardLogic.calculateReward(registro, personajeId);
+        const { data: char } = await adminClient.from('reg_characters').select('nombre_ninja, xp, ryous, puntos_aprendizaje').eq('id', personajeId).single();
+
+        if (char) {
+          await adminClient.from('reg_characters').update({
+            xp: (char.xp || 0) + xp,
+            ryous: (char.ryous || 0) + ryous,
+            puntos_aprendizaje: (char.puntos_aprendizaje || 0) + pa
+          }).eq('id', personajeId);
+
+          // Si es una recuperación de evento, sincronizar el participante en el registro de evento_premios original
+          if (registro.subtipo === 'recuperacion_evento' && registro.data?.evento_premios_id) {
+            const eventoPremiosId = Number(registro.data.evento_premios_id);
+            const { data: regPremios } = await adminClient
+              .from('reg_registros')
+              .select('*')
+              .eq('id', eventoPremiosId)
+              .single();
+
+            if (regPremios) {
+              const currentPremios = Array.isArray(regPremios.data?.participantes_premios)
+                ? [...regPremios.data.participantes_premios]
+                : [];
+
+              const existingIdx = currentPremios.findIndex((pr: any) => Number(pr.personaje_id) === Number(personajeId));
+              const nuevoPremioObj = {
+                personaje_id: personajeId,
+                nombre_ninja: char.nombre_ninja,
+                xp_extra: xp,
+                ryous_extra: ryous,
+                pa_extra: pa,
+                recuperado: true
+              };
+
+              if (existingIdx >= 0) {
+                currentPremios[existingIdx] = { ...currentPremios[existingIdx], ...nuevoPremioObj };
+              } else {
+                currentPremios.push(nuevoPremioObj);
+              }
+
+              const updatedPremiosData = {
+                ...regPremios.data,
+                participantes_premios: currentPremios
+              };
+
+              await adminClient
+                .from('reg_registros')
+                .update({ data: updatedPremiosData })
+                .eq('id', eventoPremiosId);
+
+              // Asegurar que se guarde en reg_registros_participantes de evento_premios
+              await adminClient
+                .from('reg_registros_participantes')
+                .upsert({
+                  registro_id: eventoPremiosId,
+                  personaje_id: personajeId,
+                  estado: 'aceptado'
+                }, { onConflict: 'registro_id,personaje_id' });
+            }
+          }
+        }
+      } else if (nuevoEstado === 'rechazado' && estadoAnterior === 'aceptado') {
+        // Si pasa de aceptado a rechazado -> revertir recompensas
+        const { xp, ryous, pa } = RewardLogic.calculateReward(registro, personajeId);
+        const { data: char } = await adminClient.from('reg_characters').select('xp, ryous, puntos_aprendizaje').eq('id', personajeId).single();
+
+        if (char) {
+          await adminClient.from('reg_characters').update({
+            xp: Math.max(0, (char.xp || 0) - xp),
+            ryous: Math.max(0, (char.ryous || 0) - ryous),
+            puntos_aprendizaje: Math.max(0, (char.puntos_aprendizaje || 0) - pa)
+          }).eq('id', personajeId);
+        }
+      }
+
+      // Actualizar estado del participante
+      await adminClient.from('reg_registros_participantes')
+        .update({ estado: nuevoEstado })
+        .eq('id', part.id);
+
+      // Comprobar si quedan participantes pendientes en la solicitud
+      const { data: remainingParts } = await adminClient.from('reg_registros_participantes')
+        .select('estado')
+        .eq('registro_id', registroId);
+
+      const hasPendings = remainingParts?.some(p => p.estado === 'pendiente');
+      if (!hasPendings) {
+        // Marcar la notificación de admin como resuelta
+        await adminClient.from('sys_notificaciones_admin')
+          .update({ estado: 'resuelto', resolucion: 'aceptada' })
+          .eq('registro_id', registroId);
+      }
+
+      return NextResponse.json({ success: true });
     }
 
     if (action === 'create') {
@@ -219,8 +347,8 @@ export async function POST(request: Request) {
 
       if (regError) throw regError;
 
-      // 2. Crear participantes (En evento_premios y narración, TODOS empiezan como 'pendiente' para requerir aceptación explícita)
-      const isEventoOrNarracion = payload.subtipo === 'evento_premios' || payload.subtipo === 'narracion';
+      // 2. Crear participantes (En evento_premios, narración y recuperacion_evento, TODOS empiezan como 'pendiente')
+      const isEventoOrNarracion = payload.subtipo === 'evento_premios' || payload.subtipo === 'narracion' || payload.subtipo === 'recuperacion_evento';
 
       if (payload.participantes_ids && payload.participantes_ids.length > 0) {
         const participantsData = payload.participantes_ids.map((pid: number) => ({
@@ -234,6 +362,15 @@ export async function POST(request: Request) {
           .insert(participantsData);
 
         if (partError) throw partError;
+      }
+
+      if (payload.subtipo === 'recuperacion_evento') {
+        await adminClient.from('sys_notificaciones_admin').insert({
+          registro_id: registro.id,
+          personaje_id: payload.autor_id || (payload.participantes_ids && payload.participantes_ids[0]) || null,
+          mensaje: `Recuperación de Evento: "${payload.data?.titulo || 'Evento'}" (${payload.data?.urls_imagenes?.length || 1} escena/s de roleo adjunta/s)`,
+          estado: 'pendiente'
+        });
       }
 
       // 3. Aplicar recompensas instantáneas al autor (solo para otros tipos de registro, NO en evento_premios ni narracion)
@@ -320,7 +457,6 @@ export async function POST(request: Request) {
 
             // Guardar IDs de Discord y eliminar el texto de la BD para ahorrar espacio en Supabase
             const cleanData = { ...registro.data, discord_message_id: discordMsg?.id || null, discord_channel_id: announcementChannelId };
-            delete cleanData.texto_entrega;
 
             await adminClient.from('reg_registros').update({ data: cleanData }).eq('id', registro.id);
             registro.data = cleanData;
@@ -404,7 +540,6 @@ export async function POST(request: Request) {
           console.error('Error updating event rewards notification in Discord:', discordErr);
         }
 
-        delete updatedData.texto_entrega;
         await adminClient.from('reg_registros').update({ data: updatedData }).eq('id', id);
       }
 

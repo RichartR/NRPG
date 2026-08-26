@@ -388,7 +388,13 @@ export const AdminService = {
       .select(`
         *,
         personaje:reg_characters(nombre_ninja, url_img),
-        registro:reg_registros(*)
+        registro:reg_registros(
+          *,
+          participantes:reg_registros_participantes(
+            *,
+            personaje:reg_characters(id, nombre_ninja, url_img, rango)
+          )
+        )
       `)
       .eq('estado', 'pendiente')
       .order('created_at', { ascending: false });
@@ -490,28 +496,90 @@ export const AdminService = {
         }
       }
     } else {
-      // Disputa de registro tradicional
+      // Disputa de registro tradicional o Recuperación de Evento
+      const isRecuperacion = notif.registro?.subtipo === 'recuperacion_evento';
+
       if (resolucion === 'aceptada') {
-        const { xp, ryous, pa } = RewardLogic.calculateReward(notif.registro, notif.personaje_id);
-        const { data: char, error: charError } = await supabase
-          .from('reg_characters')
-          .select('xp, ryous, puntos_aprendizaje')
-          .eq('id', notif.personaje_id)
-          .single();
-        
-        if (charError) throw charError;
+        // Obtener todos los participantes del registro
+        const { data: parts } = await supabase
+          .from('reg_registros_participantes')
+          .select('personaje_id, estado')
+          .eq('registro_id', notif.registro_id);
 
-        await supabase.from('reg_characters').update({
-          xp: (char.xp || 0) + xp,
-          ryous: (char.ryous || 0) + ryous,
-          puntos_aprendizaje: (char.puntos_aprendizaje || 0) + pa
-        }).eq('id', notif.personaje_id);
+        const targetPids = (parts && parts.length > 0)
+          ? parts.map((p: any) => p.personaje_id)
+          : (notif.personaje_id ? [notif.personaje_id] : []);
 
-        await supabase.from('reg_registros_participantes').update({ estado: 'finalizado_admin' })
-          .match({ registro_id: notif.registro_id, personaje_id: notif.personaje_id });
+        for (const pid of targetPids) {
+          const { xp, ryous, pa } = RewardLogic.calculateReward(notif.registro, pid);
+          const { data: char } = await supabase
+            .from('reg_characters')
+            .select('nombre_ninja, xp, ryous, puntos_aprendizaje')
+            .eq('id', pid)
+            .single();
+
+          if (char) {
+            await supabase.from('reg_characters').update({
+              xp: (char.xp || 0) + xp,
+              ryous: (char.ryous || 0) + ryous,
+              puntos_aprendizaje: (char.puntos_aprendizaje || 0) + pa
+            }).eq('id', pid);
+
+            // Si es recuperación de evento, sincronizar en evento_premios original
+            if (isRecuperacion && notif.registro?.data?.evento_premios_id) {
+              const eventoPremiosId = Number(notif.registro.data.evento_premios_id);
+              const { data: regPremios } = await supabase
+                .from('reg_registros')
+                .select('*')
+                .eq('id', eventoPremiosId)
+                .single();
+
+              if (regPremios) {
+                const currentPremios = Array.isArray(regPremios.data?.participantes_premios)
+                  ? [...regPremios.data.participantes_premios]
+                  : [];
+
+                const existingIdx = currentPremios.findIndex((pr: any) => Number(pr.personaje_id) === Number(pid));
+                const nuevoPremioObj = {
+                  personaje_id: pid,
+                  nombre_ninja: char.nombre_ninja,
+                  xp_extra: xp,
+                  ryous_extra: ryous,
+                  pa_extra: pa,
+                  recuperado: true
+                };
+
+                if (existingIdx >= 0) {
+                  currentPremios[existingIdx] = { ...currentPremios[existingIdx], ...nuevoPremioObj };
+                } else {
+                  currentPremios.push(nuevoPremioObj);
+                }
+
+                await supabase
+                  .from('reg_registros')
+                  .update({ data: { ...regPremios.data, participantes_premios: currentPremios } })
+                  .eq('id', eventoPremiosId);
+
+                await supabase
+                  .from('reg_registros_participantes')
+                  .upsert({
+                    registro_id: eventoPremiosId,
+                    personaje_id: pid,
+                    estado: 'aceptado'
+                  }, { onConflict: 'registro_id,personaje_id' });
+              }
+            }
+          }
+        }
+
+        await supabase.from('reg_registros_participantes').update({ estado: 'aceptado' })
+          .eq('registro_id', notif.registro_id);
 
       } else {
-        // El admin RECHAZA la disputa (el registro era inválido) -> Borrar registro completo
+        // El admin RECHAZA la disputa -> Marcar participantes como rechazados y borrar registro
+        await supabase.from('reg_registros_participantes').update({ estado: 'rechazado' })
+          .eq('registro_id', notif.registro_id);
+
         await RegistrosService.deleteRegistro(notif.registro_id);
       }
     }

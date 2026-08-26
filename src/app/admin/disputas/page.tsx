@@ -5,7 +5,7 @@ import { AdminService } from '@/services/supabase/admin.service';
 import { NotificacionAdmin } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
-import { Check, X, ShieldAlert, MessageSquare, Eye } from 'lucide-react';
+import { Check, X, ShieldAlert, MessageSquare, Eye, Image as ImageIcon, Sparkles, UserCheck, UserX } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
@@ -31,14 +31,24 @@ export default function AdminDisputePage() {
       }
       const profile = await ProfileService.getProfile(user.id);
       const userRoles = profile?.roles || [];
-      const hasAccess = userRoles.includes('admin') || userRoles.includes('moderador');
+      const hasAccess = userRoles.includes('admin') || userRoles.includes('moderador') || userRoles.includes('narrador');
       if (!hasAccess) {
         window.location.href = '/admin';
         return;
       }
 
+      const isNarradorOnly = userRoles.includes('narrador') && !userRoles.includes('admin') && !userRoles.includes('moderador');
+
       const data = await AdminService.getDisputes();
-      setDisputes(data as any);
+      let filteredData = data as any[];
+
+      if (isNarradorOnly) {
+        filteredData = filteredData.filter(d =>
+          d.registro?.subtipo === 'recuperacion_evento' || d.registro?.tipo === 'narracion'
+        );
+      }
+
+      setDisputes(filteredData);
     } catch (err) {
       console.error(err);
       addToast('Error al cargar disputas', 'error');
@@ -122,6 +132,61 @@ export default function AdminDisputePage() {
     }
   };
 
+  const handleParticipantStatus = async (registroId: number, personajeId: number, estado: 'aceptada' | 'rechazada') => {
+    const nuevoEstado = estado === 'aceptada' ? 'aceptado' : 'rechazado';
+
+    // Actualización optimista de estado local
+    setDisputes(prevDisputes => {
+      return prevDisputes.map(d => {
+        if (Number(d.registro_id) === Number(registroId)) {
+          const updatedParticipantes = (d.registro?.participantes || []).map((p: any) => {
+            if (Number(p.personaje_id) === Number(personajeId)) {
+              return { ...p, estado: nuevoEstado };
+            }
+            return p;
+          });
+
+          const hasPendings = updatedParticipantes.some((p: any) => p.estado === 'pendiente');
+          if (!hasPendings) {
+            return null; // Si ya no quedan participantes pendientes, eliminar la disputa de la lista local
+          }
+
+          return {
+            ...d,
+            registro: {
+              ...d.registro,
+              participantes: updatedParticipantes
+            }
+          };
+        }
+        return d;
+      }).filter(Boolean) as NotificacionAdmin[];
+    });
+
+    try {
+      const res = await fetch('/api/registros', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_participant_status',
+          id: registroId,
+          payload: { personaje_id: personajeId, estado: nuevoEstado }
+        })
+      });
+
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(json.error || 'Error al actualizar estado');
+      }
+
+      addToast(`Personaje ${nuevoEstado === 'aceptado' ? 'aceptado' : 'rechazado'} correctamente`, 'success');
+      await fetchDisputes();
+    } catch (err: any) {
+      addToast(err.message, 'error');
+      fetchDisputes(); // Revertir en caso de error
+    }
+  };
+
   return (
     <>
       <div className="max-w-[1750px]">
@@ -136,8 +201,8 @@ export default function AdminDisputePage() {
               <ShieldAlert className="w-6 h-6 text-oro animate-pulse" />
             </div>
             <div>
-              <h1 className="ninja-title text-4xl xl:text-5xl italic">CENTRO DE DISPUTAS</h1>
-              <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.4em] mt-2">REVISIÓN DE RECHAZOS Y RESOLUCIÓN DE CONFLICTOS</p>
+              <h1 className="ninja-title text-4xl xl:text-5xl italic">CENTRO DE DISPUTAS Y REVISIÓN</h1>
+              <p className="text-oro/40 text-caption xl:text-xs font-black uppercase tracking-[0.4em] mt-2">RESOLUCIÓN DE CONFLICTOS Y REVISIÓN DE RECUPERACIONES DE EVENTOS</p>
             </div>
           </div>
         </header>
@@ -150,86 +215,151 @@ export default function AdminDisputePage() {
         ) : disputes.length === 0 ? (
           <div className="py-24 text-center ninja-card-oro">
             <Check className="w-16 h-16 text-oro/20 mx-auto mb-4 opacity-20" />
-            <p className="text-oro/40 font-black uppercase italic tracking-[0.3em] text-sm">SIN DISPUTAS PENDIENTES</p>
+            <p className="text-oro/40 font-black uppercase italic tracking-[0.3em] text-sm">SIN DISPUTAS O REVISIONES PENDIENTES</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-10">
-            {disputes.map((d) => (
-              <div key={d.id} className="ninja-card-rojo p-10 xl:p-12 hover:scale-[1.005] hover:shadow-[0_0_40px_rgba(103,9,9,0.3)] transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-naranja-naruto/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
-                <div className="flex flex-col lg:flex-row justify-between gap-10">
-                  <div className="flex-1 space-y-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-none border border-oro/20 bg-black/40 overflow-hidden flex items-center justify-center shrink-0 shadow-[0_0_10px_rgba(255,230,159,0.1)] transition-all group-hover:border-oro/45" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
-                        {d.personaje?.url_img ? (
-                          <img src={d.personaje.url_img} alt="Avatar" className="w-full h-full object-cover object-top" />
-                        ) : (
-                          <span className="text-oro font-black text-lg pt-0.5">{d.personaje?.nombre_ninja?.charAt(0).toUpperCase()}</span>
+            {disputes.map((d) => {
+              const isRecuperacion = d.registro?.subtipo === 'recuperacion_evento';
+              const imageUrls: string[] = d.registro?.data?.urls_imagenes || [];
+              const participantes: any[] = d.registro?.participantes || [];
+
+              return (
+                <div key={d.id} className="ninja-card-oro p-8 xl:p-10 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 relative overflow-hidden">
+                  <div className="flex flex-col lg:flex-row justify-between gap-8">
+                    <div className="flex-1 space-y-6">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-none border border-oro/30 bg-black/60 overflow-hidden flex items-center justify-center shrink-0 shadow-md ninja-clip-xs">
+                          {d.personaje?.url_img ? (
+                            <img src={d.personaje.url_img} alt="Avatar" className="w-full h-full object-cover object-top" />
+                          ) : (
+                            <span className="text-oro font-black text-lg">{d.personaje?.nombre_ninja?.charAt(0).toUpperCase() || 'P'}</span>
+                          )}
+                        </div>
+                        <div>
+                          <h3 className="text-oro font-black text-xl uppercase tracking-wider italic flex items-center gap-2">
+                            {d.personaje?.nombre_ninja || 'Solicitante'}
+                          </h3>
+                          {d.registro_id === null ? (
+                            <span className="text-caption text-oro/40 font-bold uppercase tracking-[0.2em] mt-0.5 block">
+                              Apelación de Shinobi
+                            </span>
+                          ) : isRecuperacion ? (
+                            <span className="text-caption text-oro/40 font-bold uppercase tracking-[0.2em] mt-0.5 block">
+                              Solicitud de Recuperación de Evento
+                            </span>
+                          ) : (
+                            <span className="text-caption text-oro/40 font-bold uppercase tracking-[0.2em] mt-0.5 block">
+                              Rechazó: <span className="text-oro/70">"{d.registro?.data?.titulo || 'Registro sin título'}"</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="p-6 bg-black/40 border border-oro/15 ninja-clip-md space-y-4">
+                        <MessageSquare className="absolute -top-3.5 -left-3.5 w-8 h-8 text-oro/10 rotate-6 pointer-events-none" />
+                        <p className="text-oro/90 text-xs sm:text-sm leading-relaxed italic font-medium">"{d.mensaje}"</p>
+
+                        {/* Imágenes de roleo adjuntas */}
+                        {imageUrls.length > 0 && (
+                          <div className="pt-3 border-t border-oro/10">
+                            <span className="text-caption font-black text-oro/40 uppercase tracking-[0.2em] block mb-2 flex items-center gap-1.5">
+                              <ImageIcon className="w-3.5 h-3.5 text-oro/60" />
+                              Escenas de Roleo Adjuntas ({imageUrls.length}):
+                            </span>
+                            <div className="flex flex-wrap gap-3">
+                              {imageUrls.map((url, idx) => (
+                                <a
+                                  key={idx}
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-3.5 py-1.5 bg-black/60 border border-oro/20 hover:border-oro hover:bg-oro/10 text-oro/80 hover:text-oro text-caption font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all ninja-clip-xs"
+                                >
+                                  <Eye className="w-3.5 h-3.5 text-oro" />
+                                  <span>Ver Imagen #{idx + 1}</span>
+                                </a>
+                              ))}
+                            </div>
+                          </div>
                         )}
                       </div>
-                      <div>
-                        <h3 className="text-oro font-black text-xl uppercase tracking-wider italic flex items-center gap-2">{d.personaje?.nombre_ninja}</h3>
-                        {d.registro_id === null ? (
-                          <span className="text-caption text-oro/40 font-bold uppercase tracking-[0.2em] mt-0.5 block">
-                            Apelación de Shinobi
+
+                      {/* Lista limpia de personajes participantes en la solicitud */}
+                      {participantes.length > 0 && (
+                        <div className="p-4 bg-black/40 border border-oro/15 ninja-clip-sm space-y-2">
+                          <span className="text-caption font-black text-oro/40 uppercase tracking-[0.2em] block">
+                            Personajes en la Solicitud ({participantes.length}):
                           </span>
-                        ) : (
-                          <span className="text-caption text-oro/40 font-bold uppercase tracking-[0.2em] mt-0.5 block">
-                            Rechazó: <span className="text-oro/70">"{d.registro?.data?.titulo || 'Registro sin título'}"</span>
+                          <div className="flex flex-wrap gap-2">
+                            {participantes.map((part, idx) => (
+                              <span
+                                key={part.id || part.personaje_id || idx}
+                                className="text-xs font-black text-oro bg-oro/5 border border-oro/15 px-3.5 py-1.5 ninja-clip-xs flex items-center gap-2 uppercase tracking-wider"
+                              >
+                                {part.personaje?.nombre_ninja || `Personaje #${part.personaje_id}`}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex flex-wrap items-center gap-8 pt-2">
+                        <div className="flex flex-col">
+                          <span className="text-caption font-black text-oro/30 uppercase tracking-[0.2em]">
+                            {d.registro_id === null ? 'Tipo de Caso' : 'Tipo de Registro'}
                           </span>
-                        )}
+                          <span className="text-xs font-black text-oro uppercase mt-0.5 tracking-wider bg-oro/10 border border-oro/20 px-2.5 py-0.5 ninja-clip-xs">
+                            {d.registro_id === null ? 'Apelación de Recuperación' : isRecuperacion ? 'RECUPERACIÓN EVENTO' : d.registro?.tipo}
+                          </span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-caption font-black text-oro/30 uppercase tracking-[0.2em]">Fecha de Envío</span>
+                          <span className="text-xs font-black text-oro/70 uppercase mt-0.5 tracking-wider">{new Date(d.created_at).toLocaleDateString()} {new Date(d.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="p-6 bg-black/60 border border-naranja-naruto/20 relative shadow-inner ninja-clip-md">
-                      <MessageSquare className="absolute -top-3.5 -left-3.5 w-8 h-8 text-naranja-naruto/10 rotate-6 pointer-events-none" />
-                      <p className="text-oro/85 text-sm leading-relaxed italic font-medium">"{d.mensaje}"</p>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-8 pt-2">
-                      <div className="flex flex-col">
-                        <span className="text-caption font-black text-oro/30 uppercase tracking-[0.2em]">
-                          {d.registro_id === null ? 'Tipo de Caso' : 'Tipo de Registro'}
-                        </span>
-                        <span className="text-xs font-black text-oro uppercase mt-0.5 tracking-wider bg-naranja-naruto/20 border border-naranja-naruto/30 px-2.5 py-0.5 ninja-clip-xs">
-                          {d.registro_id === null ? 'Apelación de Recuperación' : d.registro?.tipo}
-                        </span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-caption font-black text-oro/30 uppercase tracking-[0.2em]">Fecha de Envío</span>
-                        <span className="text-xs font-black text-oro/70 uppercase mt-0.5 tracking-wider">{new Date(d.created_at).toLocaleDateString()} {new Date(d.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-4 justify-center min-w-[260px] shrink-0 self-stretch lg:self-center">
-                    <button
-                      onClick={() => handleResolve(d.id, 'aceptada')}
-                      className="w-full py-3.5 bg-emerald-950/20 border border-success-text/25 text-emerald-400 text-caption font-black uppercase tracking-[0.25em] hover:bg-emerald-500 hover:text-black transition-all shadow-[0_0_15px_rgba(16,185,129,0.15)] flex items-center justify-center gap-2 cursor-pointer"
-                      style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
-                    >
-                      <Check className="w-4 h-4 stroke-[2.5]" /> {d.registro_id === null && d.personaje_id === null ? 'Añadir a Whitelist' : (d.registro_id === null ? 'ACEPTAR APELACIÓN' : 'ACEPTAR DISPUTA')}
-                    </button>
-                    <button
-                      onClick={() => handleResolve(d.id, 'rechazada')}
-                      className="w-full py-3.5 bg-naranja-naruto/15 border border-naranja-naruto/30 text-red-400 text-caption font-black uppercase tracking-[0.25em] hover:bg-naranja-naruto hover:text-oro transition-all shadow-[0_0_15px_rgba(184,32,32,0.15)] flex items-center justify-center gap-2 cursor-pointer"
-                      style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
-                    >
-                      <X className="w-4 h-4 stroke-[2.5]" /> {d.registro_id === null && d.personaje_id === null ? 'Archivar' : (d.registro_id === null ? 'RECHAZAR APELACIÓN' : 'INVALIDAR REGISTRO')}
-                    </button>
-                    {d.registro_id !== null && (
+                    <div className="flex flex-col gap-3 justify-center min-w-[240px] shrink-0 self-stretch lg:self-center">
                       <button
-                        onClick={() => setSelectedRegistro(d.registro)}
-                        className="w-full py-3.5 bg-oro text-naranja-naruto text-caption font-black uppercase tracking-[0.25em] hover:brightness-110 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_20px_rgba(255,230,159,0.15)]"
-                        style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                        onClick={() => handleResolve(d.id, 'aceptada')}
+                        className="w-full py-3 px-6 bg-white text-naranja-naruto hover:bg-white/90 font-black text-caption xl:text-xs uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer ninja-clip-xs"
                       >
-                        <Eye className="w-4 h-4 stroke-[2.5]" /> INSPECCIONAR REGISTRO
+                        <Check className="w-4 h-4 stroke-[2.5]" />
+                        {d.registro_id === null && d.personaje_id === null
+                          ? 'Añadir a Whitelist'
+                          : d.registro_id === null
+                          ? 'ACEPTAR APELACIÓN'
+                          : isRecuperacion
+                          ? 'ACEPTAR RECUPERACIÓN'
+                          : 'ACEPTAR DISPUTA'}
                       </button>
-                    )}
+                      <button
+                        onClick={() => handleResolve(d.id, 'rechazada')}
+                        className="w-full py-3 px-6 bg-naranja-naruto hover:brightness-125 text-oro font-black text-caption xl:text-xs uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer ninja-clip-xs"
+                      >
+                        <X className="w-4 h-4 stroke-[2.5]" />
+                        {d.registro_id === null && d.personaje_id === null
+                          ? 'Archivar'
+                          : d.registro_id === null
+                          ? 'RECHAZAR APELACIÓN'
+                          : isRecuperacion
+                          ? 'RECHAZAR RECUPERACIÓN'
+                          : 'INVALIDAR REGISTRO'}
+                      </button>
+                      {d.registro_id !== null && (d.registro as any)?.tipo !== 'narracion' && (d.registro as any)?.subtipo !== 'recuperacion_evento' && (
+                        <button
+                          onClick={() => setSelectedRegistro(d.registro)}
+                          className="w-full py-3 px-6 bg-black/80 text-oro border border-oro/30 hover:border-oro hover:bg-oro/10 font-black text-caption xl:text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 cursor-pointer ninja-clip-xs"
+                        >
+                          <Eye className="w-4 h-4 stroke-[2.5]" /> INSPECCIONAR REGISTRO
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

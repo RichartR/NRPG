@@ -86,6 +86,8 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
   // Click outside listener
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
+      const target = event.target as HTMLElement | null;
+      if (selectedRegistro || target?.closest('.inspection-modal-container')) return;
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node) &&
@@ -276,7 +278,11 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
                         </span>
                       ) : (
                         <span className="text-caption font-black uppercase px-2.5 py-1 bg-naranja-naruto text-white inline-block tracking-wider mb-2">
-                          Rechazo: {d.registro?.tipo}
+                          {d.registro?.subtipo === 'recuperacion_evento'
+                            ? 'Recuperación de Evento'
+                            : d.registro?.subtipo === 'narracion'
+                            ? 'Revisión de Narración'
+                            : `Rechazo: ${d.registro?.tipo}`}
                         </span>
                       )}
 
@@ -369,7 +375,7 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
 
       {/* Modal de Inspección (Portal) */}
       {selectedRegistro && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-300">
+        <div className="inspection-modal-container fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-300">
           <div className="relative w-full max-w-5xl max-h-[90vh] flex flex-col bg-black border-2 border-white/70 shadow-[0_0_80px_rgba(0,0,0,0.9)] animate-in zoom-in-95 duration-300 overflow-hidden" style={{ clipPath: 'polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)' }}>
             <div className="flex-none p-6 border-b border-white/30 flex justify-between items-center bg-neutral-900/80 relative">
               <div className="flex items-center gap-4">

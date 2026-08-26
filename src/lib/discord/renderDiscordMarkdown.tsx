@@ -103,12 +103,14 @@ function renderInline(str: string, keyPrefix: string): React.ReactNode[] {
    Block-level parser
 ────────────────────────────────────────────── */
 export function renderDiscordMarkdown(content: string): React.ReactNode {
-  // Omitir pings / menciones de rol y usuarios de Discord para una lectura limpia en la web
+  // Omitir pings / menciones de rol y enlaces de redirección a la web (específicos para Discord)
   const cleanContent = (content || '')
     .replace(/<@&\d+>/g, '')
     .replace(/<@!?\d+>/g, '')
     .replace(/@everyone/g, '')
-    .replace(/@here/g, '');
+    .replace(/@here/g, '')
+    .replace(/\n*🔗?\s*\**\[Ver (?:Desglose de Premios|Evento|Registro|enlace)?[^\]]*\]\([^)]+\)\**/gi, '')
+    .trim();
 
   const lines = cleanContent.split('\n');
   const nodes: React.ReactNode[] = [];

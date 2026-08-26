@@ -9,6 +9,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const messageId = searchParams.get('messageId');
   const categoria = searchParams.get('categoria')?.toLowerCase();
+  const explicitChannelId = searchParams.get('channelId');
 
   if (!messageId) {
     return NextResponse.json({ error: 'Falta messageId' }, { status: 400 });
@@ -16,23 +17,27 @@ export async function GET(request: Request) {
 
   const token = process.env.DISCORD_BOT_TOKEN;
 
-
   try {
     const supabase = await createClient();
 
-    let configKey = 'discord_history_appearance_channel_id';
-    if (categoria === 'noticia') {
-      configKey = 'discord_news_channel_id';
-    } else if (categoria === 'parche') {
-      configKey = 'discord_patch_channel_id';
-    } else if (categoria === 'evento') {
-      configKey = 'discord_event_channel_id';
+    let channelId = explicitChannelId?.trim() || null;
+
+    if (!channelId) {
+      let configKey = 'discord_history_appearance_channel_id';
+      if (categoria === 'noticia') {
+        configKey = 'discord_news_channel_id';
+      } else if (categoria === 'parche') {
+        configKey = 'discord_patch_channel_id';
+      } else if (categoria === 'evento') {
+        const announcementChan = await MasterServerService.getConfiguracion(supabase, 'discord_event_announcement_channel_id');
+        configKey = announcementChan ? 'discord_event_announcement_channel_id' : 'discord_event_channel_id';
+      }
+
+      channelId = await MasterServerService.getConfiguracion(supabase, configKey);
     }
 
-    const channelId = await MasterServerService.getConfiguracion(supabase, configKey);
-
     if (!channelId || !token) {
-      console.warn(`[Discord API] Bot token o canal (${configKey}) no configurados. Cargando mock fallback.`);
+      console.warn(`[Discord API] Bot token o canal (${channelId || 'desconocido'}) no configurados. Cargando mock fallback.`);
       return NextResponse.json({
         content: "Contenido no disponible (Canal de Discord o token no configurados en el sistema).",
         timestamp: new Date().toISOString()

@@ -97,7 +97,7 @@ export const MasterService = {
       .from('sys_configuracion_sistema')
       .select('valor')
       .eq('clave', key)
-      .single();
+      .maybeSingle();
     
     if (error) {
        console.error(`Config fetch error for ${key}:`, error);
