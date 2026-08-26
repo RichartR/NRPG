@@ -3611,7 +3611,7 @@ export function CharacterSheetView({
                                         {pi.info_glosario?.nombre_es}
                                         {pi.info_glosario?.ocupa_espacio === false && (
                                           <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 tracking-widest rounded-sm">
-                                            Sin Hueco
+                                            NO OCUPA HUECO
                                           </span>
                                         )}
                                         {(Number(pi.item_id) === 82 || Number(pi.item_id) === 393) && (

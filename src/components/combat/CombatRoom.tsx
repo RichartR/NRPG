@@ -7,7 +7,7 @@ import { ProfileService } from '@/services/supabase/profile.service';
 import {
   Dices, Users, Play,
   RotateCcw, ChevronUp, ChevronDown,
-  Trash2, Copy, Sparkles, Eye, EyeOff, RefreshCw, Image as ImageIcon
+  Trash2, Copy, Sparkles, Eye, EyeOff, RefreshCw, Image as ImageIcon, Pencil
 } from 'lucide-react';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
@@ -27,7 +27,8 @@ interface CombatState {
   vel: number;
   kawarimi: number;
   maxKawarimi: number;
-  usedTraits?: Record<number, boolean>;
+  usedTraits?: Record<number | string, boolean>;
+  usedItems?: Record<number | string, boolean>;
   chConstanteActive?: boolean;
   chConstanteCost?: number;
 }
@@ -41,8 +42,9 @@ interface Participant {
   isInCombat: boolean;
   cooldowns?: Array<{ id: number; nombre: string; reusableAtRound: number }>;
   tecnicasActivas?: Array<{ id: number; nombre: string; cdRounds: number }>;
-  rasgos?: Array<{ id: number; nombre: string; usado: boolean }>;
-  equipo?: Array<{ id: number; nombre: string }>;
+  rasgos?: Array<{ id: number | string; nombre: string; usado: boolean }>;
+  equipo?: Array<{ id: number | string; nombre: string }>;
+  equipoSinHueco?: Array<{ id: number | string; nombre: string; usado: boolean }>;
   stats_base?: Record<string, number>; // Added for temp characters
   ocultar_vit?: boolean;
 }
@@ -151,6 +153,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   const [masterItems, setMasterItems] = useState<any[]>([]);
   const [showCreateTempModal, setShowCreateTempModal] = useState(false);
   const [rollTargetId, setRollTargetId] = useState<string>('self');
+  const [activeConsoleMode, setActiveConsoleMode] = useState<'jugador' | 'narrador'>('jugador');
 
   // PvE Log Image State
   const [logImageUrl, setLogImageUrl] = useState('');
@@ -399,10 +402,27 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   });
   const [npcRasgos, setNpcRasgos] = useState<Array<{ id: number | string; nombre: string; usado: boolean }>>([]);
   const [npcEquipo, setNpcEquipo] = useState<Array<{ id: number | string; nombre: string }>>([]);
+  const [npcEquipoSinHueco, setNpcEquipoSinHueco] = useState<Array<{ id: number | string; nombre: string; usado: boolean }>>([]);
+  const [editingNpcId, setEditingNpcId] = useState<string | null>(null);
   const [traitSearch, setTraitSearch] = useState('');
   const [itemSearch, setItemSearch] = useState('');
   const [customTrait, setCustomTrait] = useState('');
   const [customItem, setCustomItem] = useState('');
+
+  const openEditTempModal = (npcId: string) => {
+    const p = tempCharacters[npcId];
+    if (!p) return;
+    setEditingNpcId(npcId);
+    setNpcName(p.nombre || '');
+    setNpcUrlImg(p.url_img || '');
+    setNpcBando(p.bando || 'A');
+    setNpcVit(p.estado?.maxVit || 30);
+    setNpcStats(p.stats_base || { NIN: 3, TAI: 3, GEN: 3, INT: 3, FUE: 3, AGI: 3, EST: 3, SM: 3 });
+    setNpcRasgos(p.rasgos || []);
+    setNpcEquipo(p.equipo || []);
+    setNpcEquipoSinHueco(p.equipoSinHueco || []);
+    setShowCreateTempModal(true);
+  };
 
   // Music Streaming States
   const [activeMusicVideoId, setActiveMusicVideoId] = useState<string | null>(null);
@@ -548,7 +568,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
           if (data) setMasterTraits(data);
         });
 
-      supabase.from('info_glosario').select('*').eq('categoria_id', 2).eq('activo', true).order('nombre_es')
+      supabase.from('info_glosario').select('*, info_glosario_subcategorias(*)').eq('categoria_id', 2).eq('activo', true).order('nombre_es')
         .then(({ data }) => {
           if (data) setMasterItems(data);
         });
@@ -999,6 +1019,11 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
             equipo: activeCharacterRef.current?.personajes_inventario?.filter(pi => pi.equipado).map(pi => ({
               id: pi.info_glosario?.id || pi.item_id,
               nombre: pi.info_glosario?.nombre_es || 'Objeto'
+            })) || [],
+            equipoSinHueco: activeCharacterRef.current?.personajes_inventario?.filter(pi => pi.info_glosario?.ocupa_espacio === false).map(pi => ({
+              id: pi.info_glosario?.id || pi.item_id,
+              nombre: pi.info_glosario?.nombre_es || 'Objeto',
+              usado: localStateRef.current?.usedItems?.[pi.info_glosario?.id || pi.item_id] || false
             })) || []
           };
           channelRef.current.track(payloadTrack);
@@ -1077,6 +1102,11 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         equipo: activeCharacter?.personajes_inventario?.filter(pi => pi.equipado).map(pi => ({
           id: pi.info_glosario?.id || pi.item_id,
           nombre: pi.info_glosario?.nombre_es || 'Objeto'
+        })) || [],
+        equipoSinHueco: activeCharacter?.personajes_inventario?.filter(pi => pi.info_glosario?.ocupa_espacio === false).map(pi => ({
+          id: pi.info_glosario?.id || pi.item_id,
+          nombre: pi.info_glosario?.nombre_es || 'Objeto',
+          usado: localState?.usedItems?.[pi.info_glosario?.id || pi.item_id] || false
         })) || []
       };
       channelRef.current.track(payload);
@@ -1452,6 +1482,11 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         equipo: activeCharacter?.personajes_inventario?.filter(pi => pi.equipado).map(pi => ({
           id: pi.info_glosario?.id || pi.item_id,
           nombre: pi.info_glosario?.nombre_es || 'Objeto'
+        })) || [],
+        equipoSinHueco: activeCharacter?.personajes_inventario?.filter(pi => pi.info_glosario?.ocupa_espacio === false).map(pi => ({
+          id: pi.info_glosario?.id || pi.item_id,
+          nombre: pi.info_glosario?.nombre_es || 'Objeto',
+          usado: localState?.usedItems?.[pi.info_glosario?.id || pi.item_id] || false
         })) || []
       };
       channelRef.current.track(payload);
@@ -1503,24 +1538,60 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
 
   // Local actions for VIT & CH
   const handleApplyDamage = () => {
-    if (!localState || vitInput === '' || vitInput <= 0) return;
+    if (vitInput === '' || vitInput <= 0) return;
+    const amount = Number(vitInput);
+
+    if (isEventMode && activeConsoleMode === 'narrador' && isAdminOrNarrator) {
+      const npc = rollTargetId !== 'self' ? (tempCharacters[rollTargetId] || Object.values(tempCharacters).find(tc => String(tc.user_id) === String(rollTargetId))) : undefined;
+      if (npc) {
+        const maxVit = npc.estado?.maxVit ?? 30;
+        const currentVit = npc.estado?.vit ?? maxVit;
+        const newVit = Math.max(0, currentVit - amount);
+        updateTempCharacter(npc.user_id, {
+          estado: { ...npc.estado, vit: newVit, maxVit }
+        });
+        addLog(`**[NPC] ${npc.nombre}** recibe **${amount}** de daño. VIT: **${newVit}**/**${maxVit}**.`);
+        setVitInput('');
+        return;
+      }
+    }
+
+    if (!localState) return;
     const currentRes = activeCharacter?.atributos_derivados.RES || 0;
-    const reduced = Math.max(1, Math.floor(vitInput * (1 - currentRes / 100)));
+    const reduced = Math.max(1, Math.floor(amount * (1 - currentRes / 100)));
     const newVit = Math.max(0, localState.vit - reduced);
 
     const updated = { ...localState, vit: newVit };
     setLocalState(updated);
-    addLog(`**${activeCharacter?.nombre_ninja}** recibe **${vitInput}** de daño (**${reduced}** tras resistencia). VIT: **${newVit}**/**${localState.maxVit}**.`);
+    addLog(`**${activeCharacter?.nombre_ninja || 'Ninja'}** recibe **${amount}** de daño (**${reduced}** tras resistencia). VIT: **${newVit}**/**${localState.maxVit}**.`);
     setVitInput('');
   };
 
   const handleApplyHeal = () => {
-    if (!localState || vitInput === '' || vitInput <= 0) return;
-    const newVit = Math.min(localState.maxVit, localState.vit + vitInput);
+    if (vitInput === '' || vitInput <= 0) return;
+    const amount = Number(vitInput);
+
+    if (isEventMode && activeConsoleMode === 'narrador' && isAdminOrNarrator) {
+      const npc = rollTargetId !== 'self' ? (tempCharacters[rollTargetId] || Object.values(tempCharacters).find(tc => String(tc.user_id) === String(rollTargetId))) : undefined;
+      if (npc) {
+        const maxVit = npc.estado?.maxVit ?? 30;
+        const currentVit = npc.estado?.vit ?? maxVit;
+        const newVit = Math.min(maxVit, currentVit + amount);
+        updateTempCharacter(npc.user_id, {
+          estado: { ...npc.estado, vit: newVit, maxVit }
+        });
+        addLog(`**[NPC] ${npc.nombre}** se cura +**${amount}** VIT. VIT: **${newVit}**/**${maxVit}**.`);
+        setVitInput('');
+        return;
+      }
+    }
+
+    if (!localState) return;
+    const newVit = Math.min(localState.maxVit, localState.vit + amount);
 
     const updated = { ...localState, vit: newVit };
     setLocalState(updated);
-    addLog(`**${activeCharacter?.nombre_ninja}** se cura +**${vitInput}** VIT. VIT: **${newVit}**/**${localState.maxVit}**.`);
+    addLog(`**${activeCharacter?.nombre_ninja || 'Ninja'}** se cura +**${amount}** VIT. VIT: **${newVit}**/**${localState.maxVit}**.`);
     setVitInput('');
   };
 
@@ -1549,13 +1620,43 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     setChInput('');
   };
 
+  const getActiveSenderInfo = () => {
+    if (rollTargetId === 'narrator') {
+      return {
+        id: 'narrator',
+        name: `Narrador (${userProfile?.username || 'Sistema'})`,
+        isNpc: false,
+        isNarrator: true,
+        stats: undefined
+      };
+    }
+    const npc = rollTargetId !== 'self' ? (tempCharacters[rollTargetId] || Object.values(tempCharacters).find(tc => String(tc.user_id) === String(rollTargetId))) : undefined;
+    if (npc) {
+      return {
+        id: npc.user_id,
+        name: `[NPC] ${npc.nombre}`,
+        isNpc: true,
+        isNarrator: false,
+        stats: npc.stats_base || { NIN: 3, TAI: 3, GEN: 3, INT: 3, FUE: 3, AGI: 3, EST: 3, SM: 3 }
+      };
+    }
+    return {
+      id: activeCharacter ? String(activeCharacter.id) : (userProfile?.id || 'self'),
+      name: activeCharacter?.nombre_ninja || (userProfile?.username ? `Narrador (${userProfile.username})` : 'Narrador'),
+      isNpc: false,
+      isNarrator: !activeCharacter,
+      stats: activeCharacter?.stats_base
+    };
+  };
+
   const rollDice = () => {
+    const sender = getActiveSenderInfo();
     if (isEventMode) {
       const roll1 = Math.floor(Math.random() * dadoInput) + 1;
       const roll2 = Math.floor(Math.random() * dadoInput) + 1;
 
       let finalResult = roll1;
-      let formulaText = `**${activeCharacter?.nombre_ninja}** realiza una Tirada (D${dadoInput})`;
+      let formulaText = `**${sender.name}** realiza una Tirada (D${dadoInput})`;
 
       if (rollMode === 'advantage') {
         finalResult = Math.max(roll1, roll2);
@@ -1570,21 +1671,16 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
       addLog(formulaText);
     } else {
       const result = Math.floor(Math.random() * dadoInput) + 1;
-      addLog(`**${activeCharacter?.nombre_ninja}** realiza una Tirada de Cansancio (D${dadoInput}) y saca: **${result}**`);
+      addLog(`**${sender.name}** realiza una Tirada de Cansancio (D${dadoInput}) y saca: **${result}**`);
     }
   };
 
   const rollStat = (statName: string) => {
-    let targetName = activeCharacter?.nombre_ninja || 'Ninja';
-    let statsSource = activeCharacter?.stats_base;
+    const sender = getActiveSenderInfo();
+    const targetName = sender.name;
+    const statsSource = sender.stats || activeCharacter?.stats_base;
 
-    if (rollTargetId !== 'self' && tempCharacters[rollTargetId]) {
-      targetName = `[NPC] ${tempCharacters[rollTargetId].nombre}`;
-      statsSource = tempCharacters[rollTargetId].stats_base as any;
-    }
-
-    if (!statsSource) return;
-    const statVal = Number(statsSource[statName as keyof CharacterStats]) || 1;
+    const statVal = statsSource ? (Number((statsSource as any)[statName]) ?? 3) : 3;
     const baseMod = getStatModifier(statVal);
     const mod = baseMod + tempModifier;
 
@@ -1597,7 +1693,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     const roll2 = Math.floor(Math.random() * 20) + 1;
 
     let finalDice = roll1;
-    let formulaText = `**${targetName}** tira **${statName}** (d20${modSign})${modExplanationText}`;
+    let formulaText = `**${targetName}** tira **${statName}** (Valor: **${statVal}**, Mod: **${modSign}**)${modExplanationText}`;
 
     if (rollMode === 'advantage') {
       finalDice = Math.max(roll1, roll2);
@@ -1840,6 +1936,11 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     equipo: activeCharacter?.personajes_inventario?.filter(pi => pi.equipado).map(pi => ({
       id: pi.info_glosario?.id || pi.item_id,
       nombre: pi.info_glosario?.nombre_es || 'Objeto'
+    })) || [],
+    equipoSinHueco: activeCharacter?.personajes_inventario?.filter(pi => pi.info_glosario?.ocupa_espacio === false).map(pi => ({
+      id: pi.info_glosario?.id || pi.item_id,
+      nombre: pi.info_glosario?.nombre_es || 'Objeto',
+      usado: localState?.usedItems?.[pi.info_glosario?.id || pi.item_id] || false
     })) || []
   } : null;
 
@@ -1934,6 +2035,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   }
 
   const isMyTurn = combatStarted && turnQueue.length > 0 && turnQueue[currentTurnIndex] === (activeCharacter ? String(activeCharacter.id) : userProfile?.id);
+  const selectedNpc = rollTargetId !== 'self' ? (tempCharacters[rollTargetId] || Object.values(tempCharacters).find(tc => String(tc.user_id) === String(rollTargetId))) : undefined;
 
   return (
     <div className="min-h-screen flex flex-col relative text-oro selection:bg-oro/20 overflow-hidden">
@@ -2169,11 +2271,11 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         )}
 
         {/* THREE COLUMNS BATTLEGROUND */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0 lg:h-[720px]">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0">
 
           {/* COLUMN 1: BANDO A */}
-          <div className="lg:col-span-1 flex flex-col gap-4 ninja-card-oro p-6 relative overflow-hidden">
-            <div className="flex items-center justify-between border-b border-oro/10 pb-4 mb-2 gap-2">
+          <div className="lg:col-span-1 flex flex-col gap-4 ninja-card-oro p-6 relative overflow-hidden h-full min-h-0">
+            <div className="flex items-center justify-between border-b border-oro/10 pb-4 mb-2 gap-2 shrink-0">
               <h2 className="font-black text-sm uppercase tracking-[0.2em] flex items-center gap-2 shrink-0">
                 BANDO A
               </h2>
@@ -2191,12 +2293,12 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
               </span>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-4 pr-1 mt-4 scrollbar-hide">
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1.5 mt-2 min-h-0 border-t border-oro/5 pt-2">
               {bandoAParticipants.map(p => {
                 const isTemp = !!tempCharacters[p.user_id];
                 const canControlTemp = isTemp && isAdminOrNarrator;
                 return (
-                  <div key={p.user_id} className={`border p-4 rounded-sm hover:border-oro/20 transition-all ${isTemp ? 'bg-purple-950/20 border-purple-500/20' : 'bg-black/40 border-oro/5'}`}>
+                  <div key={p.user_id} className={`border p-4 rounded-sm hover:border-oro/80 transition-all ${isTemp ? 'bg-purple-950/20 border-purple-500/40' : 'bg-black/40 border-oro/60'}`}>
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-black border border-oro/20 overflow-hidden flex items-center justify-center shrink-0">
@@ -2209,8 +2311,8 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                         <div>
                           <div className="font-black text-sm text-oro uppercase tracking-wider truncate max-w-[120px]">{p.nombre}</div>
                           <div className="flex gap-1 flex-wrap">
-                            {p.isInCombat && (
-                              <span className="text-[9px] font-black uppercase text-emerald-400 bg-emerald-950/40 border border-emerald-500/20 px-1 rounded-sm">Combatiente</span>
+                            {p.isInCombat && !isTemp && (
+                              <span className="text-[9px] font-black uppercase text-naranja-naruto bg-naranja-naruto/20 border border-naranja-naruto/40 px-1 rounded-sm">JUGADOR</span>
                             )}
                             {isTemp && (
                               <span className="text-[9px] font-black uppercase text-purple-400 bg-purple-950/40 border border-purple-500/20 px-1 rounded-sm">NPC</span>
@@ -2238,6 +2340,13 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                             title={turnQueue.includes(p.user_id) ? "Retirar del orden de turnos" : "Añadir al orden de turnos"}
                           >
                             <Play className={`w-3.5 h-3.5 ${turnQueue.includes(p.user_id) ? 'fill-emerald-400' : ''}`} />
+                          </button>
+                          <button
+                            onClick={() => openEditTempModal(p.user_id)}
+                            className="p-1 text-oro/40 hover:text-oro hover:bg-oro/10 rounded-sm transition-all"
+                            title="Editar NPC"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => removeTempCharacter(p.user_id)}
@@ -2427,9 +2536,9 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                         <div className="space-y-2.5 pt-2 border-t border-oro/10 mt-1 animate-in fade-in duration-300">
                           {/* Traits (Rasgos) */}
                           <div className="space-y-1">
-                            <span className="text-[9px] text-oro/40 uppercase font-black block tracking-wider">Rasgos:</span>
+                            <span className="text-[10px] text-oro/60 uppercase font-black block tracking-wider">Rasgos:</span>
                             {p.rasgos && p.rasgos.length > 0 ? (
-                              <div className="flex flex-wrap gap-1">
+                              <div className="grid grid-cols-3 gap-1.5">
                                 {p.rasgos.map((r: any) => {
                                   const isSelf = String(activeCharacter?.id) === p.user_id;
                                   const canToggle = isSelf || canControlTemp;
@@ -2451,40 +2560,90 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                                           addLog(`**${activeCharacter?.nombre_ninja || p.nombre}** marca el rasgo **${r.nombre}** como ${updatedUsed[r.id] ? 'usado' : 'disponible'}.`);
                                         }
                                       }}
-                                      className={`px-1.5 py-0.5 border text-[9px] font-black transition-all flex items-center gap-1 rounded-sm ${r.usado
+                                      className={`px-2 py-1 border text-xs font-black transition-all flex items-center justify-between gap-1 rounded-sm ${r.usado
                                         ? 'bg-red-500/10 border-red-500/30 text-red-400 line-through'
                                         : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
                                         } ${canToggle ? 'cursor-pointer' : 'cursor-default'}`}
                                       title={canToggle ? `Haga clic para cambiar estado de ${r.nombre}` : r.nombre}
                                     >
-                                      <span>{r.nombre}</span>
-                                      <span>{r.usado ? '✕' : '✓'}</span>
+                                      <span className="truncate">{r.nombre}</span>
+                                      <span className="shrink-0">{r.usado ? '✕' : '✓'}</span>
                                     </button>
                                   );
                                 })}
                               </div>
                             ) : (
-                              <span className="text-[9px] text-oro/20 italic block">Sin rasgos</span>
+                              <span className="text-[10px] text-oro/20 italic block">Sin rasgos</span>
                             )}
                           </div>
 
                           {/* Equipment (Equipo) */}
                           <div className="space-y-1">
-                            <span className="text-[9px] text-oro/40 uppercase font-black block tracking-wider">Equipo Equipado:</span>
+                            <span className="text-[10px] text-oro/60 uppercase font-black block tracking-wider">Equipo Equipado:</span>
                             {p.equipo && p.equipo.length > 0 ? (
                               <div className="flex flex-wrap gap-1">
                                 {p.equipo.map((eq: any) => (
                                   <span
                                     key={eq.id}
-                                    className="px-1.5 py-0.5 bg-black/40 border border-oro/10 text-[9px] font-black text-oro/70 rounded-sm"
+                                    className="px-2 py-1 bg-black/40 border border-oro/10 text-xs font-black text-oro/80 rounded-sm"
                                   >
                                     {eq.nombre}
                                   </span>
                                 ))}
                               </div>
                             ) : (
-                              <span className="text-[9px] text-oro/20 italic block">Sin equipo equipado</span>
+                              <span className="text-[10px] text-oro/20 italic block">Sin equipo equipado</span>
                             )}
+                          </div>
+
+                          {/* Equipo Sin Hueco (Desplegable - Abierto por defecto) */}
+                          <div className="space-y-1 pt-1">
+                            <details open className="group border border-oro/10 rounded-sm bg-black/30 p-2">
+                              <summary className="text-[10px] text-oro/70 hover:text-oro uppercase font-black tracking-wider cursor-pointer flex items-center justify-between select-none">
+                                <span>Equipo Sin Hueco ({p.equipoSinHueco?.length || 0})</span>
+                                <span className="text-[9px] text-oro/40 group-open:rotate-180 transition-transform">▼</span>
+                              </summary>
+                              <div className="pt-2">
+                                {p.equipoSinHueco && p.equipoSinHueco.length > 0 ? (
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                    {p.equipoSinHueco.map((eq: any) => {
+                                      const isSelf = String(activeCharacter?.id) === p.user_id;
+                                      const canToggle = isSelf || canControlTemp;
+                                      return (
+                                        <button
+                                          key={eq.id}
+                                          disabled={!canToggle}
+                                          onClick={() => {
+                                            if (!canToggle) return;
+                                            if (isTemp) {
+                                              const newSinHueco = (p.equipoSinHueco || []).map((item: any) => item.id === eq.id ? { ...item, usado: !item.usado } : item);
+                                              updateTempCharacter(p.user_id, { equipoSinHueco: newSinHueco });
+                                              addLog(`**[NPC] ${p.nombre}** marca el objeto **${eq.nombre}** como ${!eq.usado ? 'usado' : 'disponible'}.`);
+                                            } else if (localState) {
+                                              const currentUsedItems = localState.usedItems || {};
+                                              const updatedUsedItems = { ...currentUsedItems, [eq.id]: !currentUsedItems[eq.id] };
+                                              const updated = { ...localState, usedItems: updatedUsedItems };
+                                              setLocalState(updated);
+                                              addLog(`**${activeCharacter?.nombre_ninja || p.nombre}** marca el objeto **${eq.nombre}** como ${updatedUsedItems[eq.id] ? 'usado' : 'disponible'}.`);
+                                            }
+                                          }}
+                                          className={`px-2 py-1 border text-xs font-black transition-all flex items-center justify-between gap-1 rounded-sm ${eq.usado
+                                            ? 'bg-red-500/10 border-red-500/30 text-red-400 line-through'
+                                            : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
+                                            } ${canToggle ? 'cursor-pointer' : 'cursor-default'}`}
+                                          title={canToggle ? `Clic para cambiar estado de ${eq.nombre}` : eq.nombre}
+                                        >
+                                          <span className="truncate">{eq.nombre}</span>
+                                          <span className="shrink-0">{eq.usado ? '✕' : '✓'}</span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <span className="text-[10px] text-oro/20 italic block">Sin equipo sin hueco</span>
+                                )}
+                              </div>
+                            </details>
                           </div>
                         </div>
                       )}
@@ -3169,8 +3328,8 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
           </div>
 
           {/* COLUMN 4: BANDO B */}
-          <div className="lg:col-span-1 flex flex-col gap-4 ninja-card-oro p-6 relative overflow-hidden">
-            <div className="flex items-center justify-between border-b border-oro/10 pb-4 mb-2 gap-2">
+          <div className="lg:col-span-1 flex flex-col gap-4 ninja-card-oro p-6 relative overflow-hidden h-full min-h-0">
+            <div className="flex items-center justify-between border-b border-oro/10 pb-4 mb-2 gap-2 shrink-0">
               <h2 className="font-black text-sm uppercase tracking-[0.2em] flex items-center gap-2 shrink-0">
                 BANDO B
               </h2>
@@ -3188,12 +3347,12 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
               </span>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-4 pr-1 mt-4 scrollbar-hide">
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1.5 mt-2 min-h-0 border-t border-oro/5 pt-2">
               {bandoBParticipants.map(p => {
                 const isTemp = !!tempCharacters[p.user_id];
                 const canControlTemp = isTemp && isAdminOrNarrator;
                 return (
-                  <div key={p.user_id} className={`border p-4 rounded-sm hover:border-oro/20 transition-all ${isTemp ? 'bg-purple-950/20 border-purple-500/20' : 'bg-black/40 border-oro/5'}`}>
+                  <div key={p.user_id} className={`border p-4 rounded-sm hover:border-oro/80 transition-all ${isTemp ? 'bg-purple-950/20 border-purple-500/40' : 'bg-black/40 border-oro/60'}`}>
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-black border border-oro/20 overflow-hidden flex items-center justify-center shrink-0">
@@ -3206,8 +3365,8 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                         <div>
                           <div className="font-black text-sm text-oro uppercase tracking-wider truncate max-w-[120px]">{p.nombre}</div>
                           <div className="flex gap-1 flex-wrap">
-                            {p.isInCombat && (
-                              <span className="text-[9px] font-black uppercase text-red-400 bg-red-950/40 border border-red-500/20 px-1 rounded-sm">Combatiente</span>
+                            {p.isInCombat && !isTemp && (
+                              <span className="text-[9px] font-black uppercase text-naranja-naruto bg-naranja-naruto/20 border border-naranja-naruto/40 px-1 rounded-sm">JUGADOR</span>
                             )}
                             {isTemp && (
                               <span className="text-[9px] font-black uppercase text-purple-400 bg-purple-950/40 border border-purple-500/20 px-1 rounded-sm">NPC</span>
@@ -3235,6 +3394,13 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                             title={turnQueue.includes(p.user_id) ? "Retirar del orden de turnos" : "Añadir al orden de turnos"}
                           >
                             <Play className={`w-3.5 h-3.5 ${turnQueue.includes(p.user_id) ? 'fill-emerald-400' : ''}`} />
+                          </button>
+                          <button
+                            onClick={() => openEditTempModal(p.user_id)}
+                            className="p-1 text-oro/40 hover:text-oro hover:bg-oro/10 rounded-sm transition-all"
+                            title="Editar NPC"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => removeTempCharacter(p.user_id)}
@@ -3421,10 +3587,11 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
 
                       {isEventMode && (
                         <div className="space-y-2.5 pt-2 border-t border-oro/10 mt-1 animate-in fade-in duration-300">
+                          {/* Traits (Rasgos) */}
                           <div className="space-y-1">
-                            <span className="text-[9px] text-oro/40 uppercase font-black block tracking-wider">Rasgos:</span>
+                            <span className="text-[10px] text-oro/60 uppercase font-black block tracking-wider">Rasgos:</span>
                             {p.rasgos && p.rasgos.length > 0 ? (
-                              <div className="flex flex-wrap gap-1">
+                              <div className="grid grid-cols-3 gap-1.5">
                                 {p.rasgos.map((r: any) => {
                                   const isSelf = String(activeCharacter?.id) === p.user_id;
                                   const canToggle = isSelf || canControlTemp;
@@ -3445,30 +3612,80 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                                           addLog(`**${activeCharacter?.nombre_ninja || p.nombre}** marca el rasgo **${r.nombre}** como ${updatedUsed[r.id] ? 'usado' : 'disponible'}.`);
                                         }
                                       }}
-                                      className={`px-1.5 py-0.5 border text-[9px] font-black transition-all flex items-center gap-1 rounded-sm ${r.usado ? 'bg-red-500/10 border-red-500/30 text-red-400 line-through' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'} ${canToggle ? 'cursor-pointer' : 'cursor-default'}`}
+                                      className={`px-2 py-1 border text-xs font-black transition-all flex items-center justify-between gap-1 rounded-sm ${r.usado ? 'bg-red-500/10 border-red-500/30 text-red-400 line-through' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'} ${canToggle ? 'cursor-pointer' : 'cursor-default'}`}
                                       title={canToggle ? `Haga clic para cambiar estado de ${r.nombre}` : r.nombre}
                                     >
-                                      <span>{r.nombre}</span>
-                                      <span>{r.usado ? '✕' : '✓'}</span>
+                                      <span className="truncate">{r.nombre}</span>
+                                      <span className="shrink-0">{r.usado ? '✕' : '✓'}</span>
                                     </button>
                                   );
                                 })}
                               </div>
                             ) : (
-                              <span className="text-[9px] text-oro/20 italic block">Sin rasgos</span>
+                              <span className="text-[10px] text-oro/20 italic block">Sin rasgos</span>
                             )}
                           </div>
                           <div className="space-y-1">
-                            <span className="text-[9px] text-oro/40 uppercase font-black block tracking-wider">Equipo Equipado:</span>
+                            <span className="text-[10px] text-oro/60 uppercase font-black block tracking-wider">Equipo Equipado:</span>
                             {p.equipo && p.equipo.length > 0 ? (
                               <div className="flex flex-wrap gap-1">
                                 {p.equipo.map((eq: any) => (
-                                  <span key={eq.id} className="px-1.5 py-0.5 bg-black/40 border border-oro/10 text-[9px] font-black text-oro/70 rounded-sm">{eq.nombre}</span>
+                                  <span key={eq.id} className="px-2 py-1 bg-black/40 border border-oro/10 text-xs font-black text-oro/80 rounded-sm">{eq.nombre}</span>
                                 ))}
                               </div>
                             ) : (
-                              <span className="text-[9px] text-oro/20 italic block">Sin equipo equipado</span>
+                              <span className="text-[10px] text-oro/20 italic block">Sin equipo equipado</span>
                             )}
+                          </div>
+
+                          {/* Equipo Sin Hueco (Desplegable - Abierto por defecto) */}
+                          <div className="space-y-1 pt-1">
+                            <details open className="group border border-oro/10 rounded-sm bg-black/30 p-2">
+                              <summary className="text-[10px] text-oro/70 hover:text-oro uppercase font-black tracking-wider cursor-pointer flex items-center justify-between select-none">
+                                <span>Equipo Sin Hueco ({p.equipoSinHueco?.length || 0})</span>
+                                <span className="text-[9px] text-oro/40 group-open:rotate-180 transition-transform">▼</span>
+                              </summary>
+                              <div className="pt-2">
+                                {p.equipoSinHueco && p.equipoSinHueco.length > 0 ? (
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                    {p.equipoSinHueco.map((eq: any) => {
+                                      const isSelf = String(activeCharacter?.id) === p.user_id;
+                                      const canToggle = isSelf || canControlTemp;
+                                      return (
+                                        <button
+                                          key={eq.id}
+                                          disabled={!canToggle}
+                                          onClick={() => {
+                                            if (!canToggle) return;
+                                            if (isTemp) {
+                                              const newSinHueco = (p.equipoSinHueco || []).map((item: any) => item.id === eq.id ? { ...item, usado: !item.usado } : item);
+                                              updateTempCharacter(p.user_id, { equipoSinHueco: newSinHueco });
+                                              addLog(`**[NPC] ${p.nombre}** marca el objeto **${eq.nombre}** como ${!eq.usado ? 'usado' : 'disponible'}.`);
+                                            } else if (localState) {
+                                              const currentUsedItems = localState.usedItems || {};
+                                              const updatedUsedItems = { ...currentUsedItems, [eq.id]: !currentUsedItems[eq.id] };
+                                              const updated = { ...localState, usedItems: updatedUsedItems };
+                                              setLocalState(updated);
+                                              addLog(`**${activeCharacter?.nombre_ninja || p.nombre}** marca el objeto **${eq.nombre}** como ${updatedUsedItems[eq.id] ? 'usado' : 'disponible'}.`);
+                                            }
+                                          }}
+                                          className={`px-2 py-1 border text-xs font-black transition-all flex items-center justify-between gap-1 rounded-sm ${eq.usado
+                                            ? 'bg-red-500/10 border-red-500/30 text-red-400 line-through'
+                                            : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
+                                            } ${canToggle ? 'cursor-pointer' : 'cursor-default'}`}
+                                          title={canToggle ? `Clic para cambiar estado de ${eq.nombre}` : eq.nombre}
+                                        >
+                                          <span className="truncate">{eq.nombre}</span>
+                                          <span className="shrink-0">{eq.usado ? '✕' : '✓'}</span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <span className="text-[10px] text-oro/20 italic block">Sin equipo sin hueco</span>
+                                )}
+                              </div>
+                            </details>
                           </div>
                         </div>
                       )}
@@ -3542,90 +3759,353 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
           </div>
         )}
 
-        {/* BOTTOM PANEL: PLAYER CONSOLE CONTROLS */}
-        {!activeCharacter ? (
+        {/* BOTTOM PANEL: CONSOLE CONTROLS */}
+        {!activeCharacter && !(isAdminOrNarrator && isEventMode) ? (
           <div className="ninja-card-oro p-6 text-center text-oro/40 text-xs font-black uppercase tracking-widest">
             Modo Espectador / Staff — Sin personaje activo seleccionado
           </div>
         ) : (
-          <section className="ninja-card-oro p-6 md:p-8 relative" style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}>
+          <section className="ninja-card-oro p-6 md:p-8 relative animate-in fade-in duration-300" style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}>
+            
+            {/* CONSOLE MODE SELECTOR (Only in Event Mode for Staff) */}
+            {isAdminOrNarrator && isEventMode && (
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-oro/15 pb-4 mb-6">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-oro/60 uppercase tracking-widest">Modo Consola:</span>
+                  {activeCharacter && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveConsoleMode('jugador')}
+                      className={`px-4 py-1.5 text-xs font-black uppercase tracking-wider rounded-sm transition-all border ${activeConsoleMode === 'jugador'
+                        ? 'bg-naranja-naruto text-black border-naranja-naruto shadow-md'
+                        : 'bg-black/40 text-oro/60 border-oro/20 hover:text-oro'}`}
+                    >
+                      Jugador
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveConsoleMode('narrador');
+                      const firstNpc = Object.values(tempCharacters)[0];
+                      if (firstNpc && (rollTargetId === 'self' || rollTargetId === 'narrator')) {
+                        setRollTargetId(firstNpc.user_id);
+                      }
+                    }}
+                    className={`px-4 py-1.5 text-xs font-black uppercase tracking-wider rounded-sm transition-all border ${activeConsoleMode === 'narrador'
+                      ? 'bg-purple-600 text-white border-purple-500 shadow-md'
+                      : 'bg-black/40 text-oro/60 border-oro/20 hover:text-oro'}`}
+                  >
+                    Narrador
+                  </button>
+                </div>
+
+                {activeConsoleMode === 'narrador' && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black text-purple-300 uppercase tracking-wider">Tirar / Controlar como:</span>
+                    <NinjaSelect
+                      value={rollTargetId}
+                      onChange={(val) => setRollTargetId(val)}
+                      placeholder="SELECCIONAR NPC..."
+                      options={Object.values(tempCharacters).map(tc => ({
+                        label: `[NPC] ${tc.nombre}`,
+                        value: tc.user_id
+                      }))}
+                      variant="inline"
+                      className="max-w-[220px]"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
 
-              {/* 1. MY STATS */}
-              <div className="space-y-5 xl:col-span-3">
+              {/* 1. STATUS & TRAITS/ITEMS PANEL */}
+              <div className={`space-y-5 ${isEventMode && activeConsoleMode === 'narrador' ? 'xl:col-span-5' : 'xl:col-span-3'}`}>
                 <h3 className="font-black text-sm uppercase tracking-[0.2em] border-b border-oro/10 pb-3 flex items-center gap-2.5">
-                  TU ESTADO EN COMBATE
+                  {isEventMode && activeConsoleMode === 'narrador' ? 'ESTADO DEL NPC / EMISOR' : 'TU ESTADO EN COMBATE'}
                 </h3>
 
-                {localState && (
-                  <div className="space-y-5">
-                    <div>
-                      <div className="flex justify-between text-xs font-black mb-1.5">
-                        <span className="text-red-400">VITALIDAD (VIT)</span>
-                        <span>{localState.vit} / {localState.maxVit}</span>
+                {isEventMode && activeConsoleMode === 'narrador' ? (
+                  selectedNpc ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-black border border-purple-500/40 overflow-hidden flex items-center justify-center shrink-0">
+                          {selectedNpc.url_img ? (
+                            <img src={selectedNpc.url_img} alt="Avatar" className="w-full h-full object-cover object-top" />
+                          ) : (
+                            <span className="text-purple-400 font-black text-sm">{selectedNpc.nombre.charAt(0)}</span>
+                          )}
+                        </div>
+                        <div>
+                          <div className="font-black text-sm text-purple-300 uppercase tracking-wider">{selectedNpc.nombre}</div>
+                          <span className="text-[9px] font-black uppercase text-purple-400 bg-purple-950/40 border border-purple-500/20 px-1 rounded-sm">NPC</span>
+                        </div>
                       </div>
-                      <div className="h-4 bg-black/60 border border-oro/15 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-red-600 to-red-500 transition-all duration-300" style={{ width: `${(localState.vit / localState.maxVit) * 100}%` }} />
-                      </div>
-                    </div>
 
-                    {!isEventMode && (
                       <div>
                         <div className="flex justify-between text-xs font-black mb-1.5">
-                          <span className="text-blue-400">CHAKRA (CH)</span>
-                          <span>
-                            {localState.ch} / {localState.maxCh}{' '}
-                            <span className="text-blue-300/80 font-mono font-bold text-xs">
-                              ({localState.maxCh > 0 ? Math.round((localState.ch / localState.maxCh) * 100) : 0}%)
-                            </span>
-                          </span>
+                          <span className="text-red-400">VITALIDAD (VIT)</span>
+                          <span>{selectedNpc.estado?.vit ?? (selectedNpc.estado?.maxVit ?? 30)} / {selectedNpc.estado?.maxVit ?? 30}</span>
                         </div>
                         <div className="h-4 bg-black/60 border border-oro/15 rounded-full overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-blue-600 to-blue-500 transition-all duration-300" style={{ width: `${(localState.ch / localState.maxCh) * 100}%` }} />
+                          <div className="h-full bg-gradient-to-r from-red-600 to-red-500 transition-all duration-300" style={{ width: `${((selectedNpc.estado?.vit ?? (selectedNpc.estado?.maxVit ?? 30)) / (selectedNpc.estado?.maxVit ?? 30)) * 100}%` }} />
                         </div>
                       </div>
-                    )}
 
-                    {/* VEL and KAWARIMI FOR SELF */}
-                    <div className="flex justify-between items-center text-xs font-black pt-3 border-t border-oro/10">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-amber-500 uppercase tracking-wider">VELOCIDAD:</span>
-                        <span className="text-white text-sm">{localState.vel}</span>
+                      {/* NPC RASGOS */}
+                      <div className="space-y-1.5 pt-3 border-t border-oro/10">
+                        <span className="text-[10px] text-oro/60 uppercase font-black block tracking-wider">Rasgos:</span>
+                        {selectedNpc.rasgos && selectedNpc.rasgos.length > 0 ? (
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {selectedNpc.rasgos.map((r: any) => (
+                              <button
+                                key={r.id}
+                                type="button"
+                                onClick={() => {
+                                  const newRasgos = (selectedNpc.rasgos || []).map((rr: any) => rr.id === r.id ? { ...rr, usado: !rr.usado } : rr);
+                                  updateTempCharacter(selectedNpc.user_id, { rasgos: newRasgos });
+                                  addLog(`**[NPC] ${selectedNpc.nombre}** marca el rasgo **${r.nombre}** como ${!r.usado ? 'usado' : 'disponible'}.`);
+                                }}
+                                className={`px-2 py-1 border text-xs font-black transition-all flex items-center justify-between gap-1 rounded-sm cursor-pointer ${r.usado
+                                  ? 'bg-red-500/10 border-red-500/30 text-red-400 line-through'
+                                  : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'}`}
+                              >
+                                <span className="truncate">{r.nombre}</span>
+                                <span className="shrink-0">{r.usado ? '✕' : '✓'}</span>
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-oro/20 italic block">Sin rasgos</span>
+                        )}
                       </div>
+
+                      {/* NPC EQUIPO EQUIPADO */}
+                      <div className="space-y-1.5 pt-2">
+                        <span className="text-[10px] text-oro/60 uppercase font-black block tracking-wider">Equipo Equipado:</span>
+                        {selectedNpc.equipo && selectedNpc.equipo.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {selectedNpc.equipo.map((eq: any) => (
+                              <span key={eq.id} className="px-2 py-1 bg-black/40 border border-oro/10 text-xs font-black text-oro/80 rounded-sm">
+                                {eq.nombre}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-oro/20 italic block">Sin equipo equipado</span>
+                        )}
+                      </div>
+
+                      {/* NPC EQUIPO SIN HUECO */}
+                      <div className="space-y-1 pt-1">
+                        <details open className="group border border-oro/10 rounded-sm bg-black/30 p-2">
+                          <summary className="text-[10px] text-oro/70 hover:text-oro uppercase font-black tracking-wider cursor-pointer flex items-center justify-between select-none">
+                            <span>Equipo Sin Hueco ({selectedNpc.equipoSinHueco?.length || 0})</span>
+                            <span className="text-[9px] text-oro/40 group-open:rotate-180 transition-transform">▼</span>
+                          </summary>
+                          <div className="pt-2">
+                            {selectedNpc.equipoSinHueco && selectedNpc.equipoSinHueco.length > 0 ? (
+                              <div className="space-y-1">
+                                {selectedNpc.equipoSinHueco.map((sh: any) => (
+                                  <div key={sh.id} className="flex items-center justify-between gap-1 text-xs font-black p-1 bg-black/40 border border-oro/5 rounded-sm">
+                                    <span className={sh.usado ? 'text-red-400 line-through' : 'text-emerald-400'}>{sh.nombre}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const newSinHueco = (selectedNpc.equipoSinHueco || []).map((item: any) => item.id === sh.id ? { ...item, usado: !item.usado } : item);
+                                        updateTempCharacter(selectedNpc.user_id, { equipoSinHueco: newSinHueco });
+                                        addLog(`**[NPC] ${selectedNpc.nombre}** marca **${sh.nombre}** como ${!sh.usado ? 'usado' : 'disponible'}.`);
+                                      }}
+                                      className={`w-4 h-4 border rounded-sm flex items-center justify-center text-[9px] font-black ${sh.usado ? 'bg-red-500/20 border-red-500 text-red-500' : 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30'}`}
+                                    >
+                                      {sh.usado ? '✕' : '✓'}
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-[10px] text-oro/20 italic block">Sin equipo sin hueco</span>
+                            )}
+                          </div>
+                        </details>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-black/40 border border-oro/10 text-center text-xs font-black text-oro/50 uppercase tracking-widest rounded-sm">
+                      Modo Narrador Activo — Tiradas sin ficha ligada
+                    </div>
+                  )
+                ) : (
+                  localState && (
+                    <div className="space-y-5">
+                      <div>
+                        <div className="flex justify-between text-xs font-black mb-1.5">
+                          <span className="text-red-400">VITALIDAD (VIT)</span>
+                          <span>{localState.vit} / {localState.maxVit}</span>
+                        </div>
+                        <div className="h-4 bg-black/60 border border-oro/15 rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-red-600 to-red-500 transition-all duration-300" style={{ width: `${(localState.vit / localState.maxVit) * 100}%` }} />
+                        </div>
+                      </div>
+
                       {!isEventMode && (
+                        <div>
+                          <div className="flex justify-between text-xs font-black mb-1.5">
+                            <span className="text-blue-400">CHAKRA (CH)</span>
+                            <span>
+                              {localState.ch} / {localState.maxCh}{' '}
+                              <span className="text-blue-300/80 font-mono font-bold text-xs">
+                                ({localState.maxCh > 0 ? Math.round((localState.ch / localState.maxCh) * 100) : 0}%)
+                              </span>
+                            </span>
+                          </div>
+                          <div className="h-4 bg-black/60 border border-oro/15 rounded-full overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-blue-600 to-blue-500 transition-all duration-300" style={{ width: `${(localState.ch / localState.maxCh) * 100}%` }} />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* VEL and KAWARIMI FOR SELF */}
+                      <div className="flex justify-between items-center text-xs font-black pt-3 border-t border-oro/10">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-emerald-400 uppercase tracking-wider">KAWARIMI:</span>
-                          <div className="flex gap-1.5">
-                            {Array.from({ length: localState.maxKawarimi || 1 }, (_, i) => i + 1).map((num) => {
-                              const isUsed = localState.kawarimi >= num;
+                          <span className="text-amber-500 uppercase tracking-wider">VELOCIDAD:</span>
+                          <span className="text-white text-sm">{localState.vel}</span>
+                        </div>
+                        {!isEventMode && (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-emerald-400 uppercase tracking-wider">KAWARIMI:</span>
+                            <div className="flex gap-1.5">
+                              {Array.from({ length: localState.maxKawarimi || 1 }, (_, i) => i + 1).map((num) => {
+                                const isUsed = localState.kawarimi >= num;
+                                return (
+                                  <button
+                                    key={num}
+                                    onClick={() => {
+                                      const newKawarimi = localState.kawarimi === num ? num - 1 : num;
+                                      const updated = { ...localState, kawarimi: newKawarimi };
+                                      setLocalState(updated);
+                                      addLog(`**${activeCharacter?.nombre_ninja}** marca Kawarimi ${newKawarimi >= num ? 'usado' : 'recuperado'} (${newKawarimi}/${localState.maxKawarimi}).`);
+                                    }}
+                                    className={`w-6 h-6 border rounded-sm flex items-center justify-center text-xs transition-all font-black ${isUsed
+                                      ? 'bg-red-500/20 border-red-500 text-red-500'
+                                      : 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30'
+                                      } cursor-pointer`}
+                                    title={`Marcar Kawarimi ${num} como ${isUsed ? 'disponible' : 'usado'}`}
+                                  >
+                                    {isUsed ? '✕' : '✓'}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* PLAYER RASGOS */}
+                      <div className="space-y-1.5 pt-3 border-t border-oro/10">
+                        <span className="text-[10px] text-oro/60 uppercase font-black block tracking-wider">Rasgos:</span>
+                        {activeCharacter?.personajes_rasgos && activeCharacter.personajes_rasgos.length > 0 ? (
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {(activeCharacter.personajes_rasgos || []).map((r: any) => {
+                              const traitId = r.info_rasgos?.id || r.rasgo_id;
+                              const traitName = r.info_rasgos?.nombre || 'Rasgo';
+                              const isUsed = localState.usedTraits?.[traitId] ?? false;
                               return (
                                 <button
-                                  key={num}
+                                  key={traitId}
+                                  type="button"
                                   onClick={() => {
-                                    const newKawarimi = localState.kawarimi === num ? num - 1 : num;
-                                    const updated = { ...localState, kawarimi: newKawarimi };
+                                    const currentUsed = localState.usedTraits || {};
+                                    const updatedUsed = { ...currentUsed, [traitId]: !currentUsed[traitId] };
+                                    const updated = { ...localState, usedTraits: updatedUsed };
                                     setLocalState(updated);
-                                    addLog(`**${activeCharacter.nombre_ninja}** marca Kawarimi ${newKawarimi >= num ? 'usado' : 'recuperado'} (${newKawarimi}/${localState.maxKawarimi}).`);
+                                    addLog(`**${activeCharacter?.nombre_ninja}** marca el rasgo **${traitName}** como ${updatedUsed[traitId] ? 'usado' : 'disponible'}.`);
                                   }}
-                                  className={`w-6 h-6 border rounded-sm flex items-center justify-center text-xs transition-all font-black ${isUsed
-                                    ? 'bg-red-500/20 border-red-500 text-red-500'
-                                    : 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30'
-                                    } cursor-pointer`}
-                                  title={`Marcar Kawarimi ${num} como ${isUsed ? 'disponible' : 'usado'}`}
+                                  className={`px-2 py-1 border text-xs font-black transition-all flex items-center justify-between gap-1 rounded-sm cursor-pointer ${isUsed
+                                    ? 'bg-red-500/10 border-red-500/30 text-red-400 line-through'
+                                    : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'}`}
                                 >
-                                  {isUsed ? '✕' : '✓'}
+                                  <span className="truncate">{traitName}</span>
+                                  <span className="shrink-0">{isUsed ? '✕' : '✓'}</span>
                                 </button>
                               );
                             })}
                           </div>
-                        </div>
-                      )}
+                        ) : (
+                          <span className="text-[10px] text-oro/20 italic block">Sin rasgos</span>
+                        )}
+                      </div>
+
+                      {/* PLAYER EQUIPO EQUIPADO */}
+                      <div className="space-y-1.5 pt-2">
+                        <span className="text-[10px] text-oro/60 uppercase font-black block tracking-wider">Equipo Equipado:</span>
+                        {activeCharacter?.personajes_inventario && activeCharacter.personajes_inventario.filter(i => i.equipado).length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {(activeCharacter.personajes_inventario || []).filter(i => i.equipado).map((eq: any) => (
+                              <span key={eq.id || eq.item_id} className="px-2 py-1 bg-black/40 border border-oro/10 text-xs font-black text-oro/80 rounded-sm">
+                                {eq.info_glosario?.nombre_es || eq.info_glosario?.nombre_jp || 'Objeto'}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-oro/20 italic block">Sin equipo equipado</span>
+                        )}
+                      </div>
+
+                      {/* PLAYER EQUIPO SIN HUECO */}
+                      <div className="space-y-1 pt-1">
+                        {(() => {
+                          const sinHueco = activeCharacter?.personajes_inventario?.filter(pi => pi.info_glosario?.ocupa_espacio === false) || [];
+                          return (
+                            <details open className="group border border-oro/10 rounded-sm bg-black/30 p-2">
+                              <summary className="text-[10px] text-oro/70 hover:text-oro uppercase font-black tracking-wider cursor-pointer flex items-center justify-between select-none">
+                                <span>Equipo Sin Hueco ({sinHueco.length})</span>
+                                <span className="text-[9px] text-oro/40 group-open:rotate-180 transition-transform">▼</span>
+                              </summary>
+                              <div className="pt-2">
+                                {sinHueco.length > 0 ? (
+                                  <div className="space-y-1">
+                                    {sinHueco.map((sh: any) => {
+                                      const itemId = sh.info_glosario?.id || sh.item_id || sh.id;
+                                      const itemName = sh.info_glosario?.nombre_es || sh.info_glosario?.nombre_jp || 'Objeto';
+                                      const isUsed = localState.usedItems?.[itemId] ?? false;
+                                      return (
+                                        <div key={sh.id || itemId} className="flex items-center justify-between gap-1 text-xs font-black p-1 bg-black/40 border border-oro/5 rounded-sm">
+                                          <span className={isUsed ? 'text-red-400 line-through' : 'text-emerald-400'}>{itemName}</span>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              const currentUsed = localState.usedItems || {};
+                                              const updatedUsed = { ...currentUsed, [itemId]: !currentUsed[itemId] };
+                                              const updated = { ...localState, usedItems: updatedUsed };
+                                              setLocalState(updated);
+                                              addLog(`**${activeCharacter?.nombre_ninja}** marca **${itemName}** como ${updatedUsed[itemId] ? 'usado' : 'disponible'}.`);
+                                            }}
+                                            className={`w-4 h-4 border rounded-sm flex items-center justify-center text-[9px] font-black ${isUsed ? 'bg-red-500/20 border-red-500 text-red-500' : 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30'}`}
+                                          >
+                                            {isUsed ? '✕' : '✓'}
+                                          </button>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <span className="text-[10px] text-oro/20 italic block">Sin equipo sin hueco</span>
+                                )}
+                              </div>
+                            </details>
+                          );
+                        })()}
+                      </div>
                     </div>
-                  </div>
+                  )
                 )}
               </div>
+
               {/* 2. STAT ADJUSTMENTS & DICE ROLLS */}
-              <div className="space-y-5 border-l border-r border-oro/10 px-0 xl:px-8 xl:col-span-3">
+              <div className={`space-y-5 border-l border-oro/10 px-0 xl:px-8 ${isEventMode && activeConsoleMode === 'narrador' ? 'xl:col-span-7 border-r-0' : 'xl:border-r xl:col-span-3'}`}>
                 <h3 className="font-black text-sm uppercase tracking-[0.2em] border-b border-oro/10 pb-3 flex items-center gap-2.5">
                   AJUSTES Y TIRADAS
                 </h3>
@@ -3761,30 +4241,12 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                         </div>
                       </div>
 
-                      {isAdminOrNarrator && Object.keys(tempCharacters).length > 0 && (
-                        <div className="pt-3 border-t border-oro/10 flex items-center justify-between gap-3 animate-in fade-in duration-300">
-                          <span className="text-[10px] font-black text-oro/40 uppercase tracking-wider whitespace-nowrap">Tirar Como:</span>
-                          <select
-                            value={rollTargetId}
-                            onChange={(e) => setRollTargetId(e.target.value)}
-                            className="bg-black/50 border border-oro/20 text-oro text-xs font-black px-2 py-1 outline-none focus:border-oro transition-all rounded-sm max-w-[150px]"
-                          >
-                            <option value="self">Mi Ninja ({activeCharacter.nombre_ninja})</option>
-                            {Object.values(tempCharacters).map(tc => (
-                              <option key={tc.user_id} value={tc.user_id}>{tc.nombre}</option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-
                       <div className="pt-3 border-t border-oro/10 space-y-2 animate-in fade-in duration-300">
                         <span className="text-[10px] font-black text-oro/40 block uppercase ml-1">Tiradas de Atributos (d20)</span>
                         <div className="grid grid-cols-4 gap-1.5">
                           {['NIN', 'TAI', 'GEN', 'INT', 'FUE', 'AGI', 'EST', 'SM'].map((s) => {
-                            let val = activeCharacter.stats_base[s as keyof CharacterStats] || 1;
-                            if (rollTargetId !== 'self' && tempCharacters[rollTargetId]) {
-                              val = tempCharacters[rollTargetId].stats_base?.[s] || 1;
-                            }
+                            const sender = getActiveSenderInfo();
+                            const val = sender.stats ? (Number((sender.stats as any)[s]) ?? 3) : (activeCharacter?.stats_base?.[s as keyof CharacterStats] ?? 3);
                             const mod = getStatModifier(val);
                             const modSign = mod >= 0 ? `+${mod}` : `${mod}`;
                             return (
@@ -3792,10 +4254,13 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                                 key={s}
                                 onClick={() => rollStat(s)}
                                 className="bg-black/40 border border-oro/15 hover:border-oro py-1 text-[10px] font-black text-oro hover:bg-oro/10 transition-all flex flex-col items-center justify-center rounded-sm"
-                                title={`Tirar D20 + Modificador de ${s} (${modSign})`}
+                                title={`Tirar D20 + Modificador de ${s} (Valor: ${val}, Mod: ${modSign})`}
                               >
-                                <span className="text-white/80">{s}</span>
-                                <span className="text-[9px] text-oro/60 font-bold">{modSign}</span>
+                                <div className="flex items-center gap-1 text-white/80">
+                                  <span>{s}</span>
+                                  <span className="text-[8px] text-oro/40 font-normal">({val})</span>
+                                </div>
+                                <span className="text-[9px] text-oro/70 font-bold">{modSign}</span>
                               </button>
                             );
                           })}
@@ -3807,7 +4272,8 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
               </div>
 
               {/* 3. TECHNIQUE CASTING CONSOLE */}
-              <div className="space-y-5 xl:col-span-6">
+              {(!isEventMode || activeConsoleMode === 'jugador') && (
+                <div className="space-y-5 xl:col-span-6">
                 <h3 className="font-black text-sm uppercase tracking-[0.2em] border-b border-oro/10 pb-3 flex items-center gap-2.5">
                   USO DE TÉCNICAS
                 </h3>
@@ -3830,7 +4296,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                     >
                       <span className="truncate pr-4">
                         {selectedTecnicaId && !(myCooldowns[selectedTecnicaId] && getRemainingCD(myCooldowns[selectedTecnicaId], customCdRounds) > 0)
-                          ? (activeCharacter.personajes_tecnicas?.find(t => t.tecnica_id === selectedTecnicaId)?.info_glosario?.nombre_jp || activeCharacter.personajes_tecnicas?.find(t => t.tecnica_id === selectedTecnicaId)?.info_glosario?.nombre_es)
+                          ? (activeCharacter?.personajes_tecnicas?.find(t => t.tecnica_id === selectedTecnicaId)?.info_glosario?.nombre_jp || activeCharacter?.personajes_tecnicas?.find(t => t.tecnica_id === selectedTecnicaId)?.info_glosario?.nombre_es)
                           : 'BUSCAR TÉCNICA'}
                       </span>
                       <span className="text-[10px] text-oro/60 shrink-0">▼</span>
@@ -3856,7 +4322,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                             </div>
                           ) : (
                             <>
-                              {(activeCharacter.personajes_tecnicas || [])
+                              {(activeCharacter?.personajes_tecnicas || [])
                                 .filter(pt => {
                                   const nameEs = pt.info_glosario?.nombre_es || '';
                                   const nameJp = pt.info_glosario?.nombre_jp || '';
@@ -3899,7 +4365,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                                 })}
 
                               {/* No results */}
-                              {(activeCharacter.personajes_tecnicas || []).filter(pt => {
+                              {(activeCharacter?.personajes_tecnicas || []).filter(pt => {
                                 const nameEs = pt.info_glosario?.nombre_es || '';
                                 const nameJp = pt.info_glosario?.nombre_jp || '';
                                 const isMatch = searchIncludes(nameEs, tecnicaSearch) || searchIncludes(nameJp, tecnicaSearch);
@@ -3933,7 +4399,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                       className="w-full bg-black/60 border border-red-500/20 text-red-400 px-4 py-2.5 text-xs font-black flex justify-between items-center cursor-pointer hover:border-red-500 transition-all relative z-40"
                     >
                       <span className="truncate pr-4">
-                        {`TÉCNICAS EN CD (${(activeCharacter.personajes_tecnicas || []).filter(pt => {
+                        {`TÉCNICAS EN CD (${(activeCharacter?.personajes_tecnicas || []).filter(pt => {
                           const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) : 0;
                           return cd > 0;
                         }).length})`}
@@ -3943,7 +4409,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
 
                     {isCdDropdownOpen && (
                       <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-black/95 border border-red-500/30 shadow-2xl max-h-[300px] overflow-y-auto flex flex-col backdrop-blur-md">
-                        {(activeCharacter.personajes_tecnicas || [])
+                        {(activeCharacter?.personajes_tecnicas || [])
                           .filter(pt => {
                             const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) : 0;
                             return cd > 0;
@@ -3971,7 +4437,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                           })}
 
                         {/* No results */}
-                        {(activeCharacter.personajes_tecnicas || []).filter(pt => {
+                        {(activeCharacter?.personajes_tecnicas || []).filter(pt => {
                           const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) : 0;
                           return cd > 0;
                         }).length === 0 && (
@@ -4007,7 +4473,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                     {isActiveDropdownOpen && (
                       <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-black/95 border border-emerald-500/30 shadow-2xl max-h-[300px] overflow-y-auto flex flex-col backdrop-blur-md">
                         {Object.keys(myActiveTecnicas).map(Number).map(techId => {
-                          const pt = activeCharacter.personajes_tecnicas?.find(t => t.tecnica_id === techId);
+                          const pt = activeCharacter?.personajes_tecnicas?.find(t => t.tecnica_id === techId);
                           if (!pt) return null;
                           const cd = myCooldowns[techId] ? getRemainingCD(myCooldowns[techId], myActiveTecnicas[techId].cdRounds) : 0;
 
@@ -4212,7 +4678,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                                 value={item.multInput}
                                 onChange={(e) => {
                                   const val = e.target.value;
-                                  if (val === '' || /^[0-9]*[.,]?[0-9]*$/.test(val)) {
+                                  if (val === '' || new RegExp('^[0-9]*[.,]?[0-9]*$').test(val)) {
                                     updateCalcStatMult(item.id, val);
                                   }
                                 }}
@@ -4306,9 +4772,9 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                       {/* Final Result Card */}
                       <div className="pt-4 border-t border-oro/10 flex items-center justify-between flex-wrap gap-4">
                         <div className="text-xs font-mono text-oro/60 truncate max-w-[70%]">
-                          Fórmula: {calcStats.map(s => `(${s.stat}: ${s.val} × ${s.multInput || '0'})`).join(' + ')}
-                          {calcWeapons.length > 0 && ` ${calcWeapons.map(w => `+ ${w.damage} Arma`).join(' ')}`}
-                          {calcPercents.length > 0 && ` (${calcPercents.map(p => `${p.percent >= 0 ? '+' : ''}${p.percent}%`).join(' ')})`}
+                          Fórmula: {calcStats.map(s => '(' + s.stat + ': ' + s.val + ' × ' + (s.multInput || '0') + ')').join(' + ')}
+                          {calcWeapons.length > 0 && ' + ' + calcWeapons.map(w => w.damage + ' Arma').join(' + ')}
+                          {calcPercents.length > 0 && ' (' + calcPercents.map(p => (p.percent >= 0 ? '+' : '') + p.percent + '%').join(' ') + ')'}
                         </div>
                         <div className="flex items-center gap-3 bg-black/60 border border-oro/20 px-5 py-2">
                           <span className="text-xs font-black text-oro/60 uppercase">DAÑO TOTAL:</span>
@@ -4320,10 +4786,10 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                   </div>
                 )}
               </div>
-
-            </div>
-          </section>
-        )}
+            )}
+          </div>
+        </section>
+      )}
 
         {/* CREATE NPC MODAL */}
         {showCreateTempModal && (
@@ -4333,7 +4799,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
               style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}
             >
               <h2 className="ninja-title text-xl font-black text-oro uppercase tracking-[0.2em] mb-6 pb-3 border-b border-oro/20 flex items-center gap-2">
-                CREAR NPC TEMPORAL
+                {editingNpcId ? 'EDITAR NPC TEMPORAL' : 'CREAR NPC TEMPORAL'}
               </h2>
 
               <div className="space-y-6">
@@ -4518,7 +4984,13 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                       {itemSearch.trim() !== '' && (
                         <div className="absolute z-10 left-0 right-0 mt-1 bg-black/95 border border-oro/20 max-h-40 overflow-y-auto rounded-sm shadow-xl custom-scrollbar">
                           {masterItems
-                            .filter(i => searchIncludes(i.nombre_es, itemSearch) && !npcEquipo.some(ne => ne.id === i.id))
+                            .filter(i => {
+                              const subData = i.info_glosario_subcategorias;
+                              const subSlug = (Array.isArray(subData) ? subData[0]?.slug : subData?.slug) || '';
+                              const subName = (Array.isArray(subData) ? subData[0]?.nombre : subData?.nombre) || '';
+                              const isEquipment = !!i.zona_equipable || subSlug === 'equipo' || subName.toLowerCase().includes('equipo');
+                              return isEquipment && searchIncludes(i.nombre_es, itemSearch) && !npcEquipo.some(ne => ne.id === i.id);
+                            })
                             .slice(0, 10)
                             .map(i => (
                               <div
@@ -4527,9 +4999,10 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                                   setNpcEquipo(prev => [...prev, { id: i.id, nombre: i.nombre_es }]);
                                   setItemSearch('');
                                 }}
-                                className="px-3 py-2 text-xs font-black text-white/80 hover:bg-oro/10 hover:text-oro cursor-pointer border-b border-oro/5 last:border-0"
+                                className="px-3 py-2 text-xs font-black text-white/80 hover:bg-oro/10 hover:text-oro cursor-pointer border-b border-oro/5 last:border-0 flex justify-between items-center"
                               >
-                                {i.nombre_es}
+                                <span>{i.nombre_es}</span>
+                                {i.zona_equipable && <span className="text-[9px] text-oro/40 uppercase font-mono">{i.zona_equipable}</span>}
                               </div>
                             ))}
                         </div>
@@ -4566,7 +5039,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                     type="button"
                     onClick={() => {
                       setShowCreateTempModal(false);
-                      // Reset form values
+                      setEditingNpcId(null);
                       setNpcName('');
                       setNpcUrlImg('');
                       setNpcBando('A');
@@ -4574,6 +5047,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                       setNpcStats({ NIN: 3, TAI: 3, GEN: 3, INT: 3, FUE: 3, AGI: 3, EST: 3, SM: 3 });
                       setNpcRasgos([]);
                       setNpcEquipo([]);
+                      setNpcEquipoSinHueco([]);
                       setTraitSearch('');
                       setItemSearch('');
                       setCustomTrait('');
@@ -4590,29 +5064,56 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                         addToast("Debe ingresar un nombre para el NPC.", "error");
                         return;
                       }
-                      const id = `temp_${Date.now()}`;
-                      const tempChar: Participant = {
-                        user_id: id,
-                        nombre: npcName.trim(),
-                        url_img: npcUrlImg.trim() || undefined,
-                        estado: {
-                          vit: npcVit,
-                          maxVit: npcVit,
-                          ch: 0,
-                          maxCh: 0,
-                          vel: 0,
-                          kawarimi: 0,
-                          maxKawarimi: 0
-                        },
-                        bando: npcBando,
-                        isInCombat: true,
-                        rasgos: npcRasgos as any,
-                        equipo: npcEquipo as any,
-                        stats_base: npcStats,
-                        ocultar_vit: true
-                      };
-                      createTempCharacter(tempChar);
+
+                      if (editingNpcId) {
+                        const currentTemp = tempCharacters[editingNpcId];
+                        if (currentTemp) {
+                          const updatedNpc: Partial<Participant> = {
+                            nombre: npcName.trim(),
+                            url_img: npcUrlImg.trim() || undefined,
+                            bando: npcBando,
+                            estado: {
+                              ...currentTemp.estado,
+                              maxVit: npcVit,
+                              vit: Math.min(currentTemp.estado?.vit ?? npcVit, npcVit)
+                            },
+                            rasgos: npcRasgos as any,
+                            equipo: npcEquipo as any,
+                            equipoSinHueco: npcEquipoSinHueco as any,
+                            stats_base: npcStats
+                          };
+                          updateTempCharacter(editingNpcId, updatedNpc);
+                          addLog(`**[NPC] ${npcName.trim()}** ha sido actualizado.`);
+                        }
+                      } else {
+                        const id = `temp_${Date.now()}`;
+                        const tempChar: Participant = {
+                          user_id: id,
+                          nombre: npcName.trim(),
+                          url_img: npcUrlImg.trim() || undefined,
+                          estado: {
+                            vit: npcVit,
+                            maxVit: npcVit,
+                            ch: 0,
+                            maxCh: 0,
+                            vel: 0,
+                            kawarimi: 0,
+                            maxKawarimi: 0
+                          },
+                          bando: npcBando,
+                          isInCombat: true,
+                          rasgos: npcRasgos as any,
+                          equipo: npcEquipo as any,
+                          equipoSinHueco: npcEquipoSinHueco as any,
+                          stats_base: npcStats,
+                          ocultar_vit: true
+                        };
+                        createTempCharacter(tempChar);
+                        setRollTargetId(id);
+                      }
+
                       setShowCreateTempModal(false);
+                      setEditingNpcId(null);
 
                       // Reset values
                       setNpcName('');
@@ -4622,6 +5123,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                       setNpcStats({ NIN: 3, TAI: 3, GEN: 3, INT: 3, FUE: 3, AGI: 3, EST: 3, SM: 3 });
                       setNpcRasgos([]);
                       setNpcEquipo([]);
+                      setNpcEquipoSinHueco([]);
                       setTraitSearch('');
                       setItemSearch('');
                       setCustomTrait('');
@@ -4629,7 +5131,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                     }}
                     className="ninja-btn-oro px-6 py-2 text-xs flex items-center gap-1.5"
                   >
-                    Crear NPC
+                    {editingNpcId ? 'Guardar Cambios' : 'Crear NPC'}
                   </button>
                 </div>
 

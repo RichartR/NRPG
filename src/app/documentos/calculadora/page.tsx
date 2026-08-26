@@ -352,7 +352,6 @@ export default function BuildSimulatorPage() {
                         onBlur={handlePuntosTotalesBlur}
                         className="bg-black/70 border border-oro/30 rounded-none px-3 py-1 text-xl font-black text-oro w-16 text-center outline-none focus:border-oro"
                       />
-                      <span className="text-caption text-oro/40 uppercase font-black tracking-widest">PA</span>
                     </div>
                   </div>
                   <div className="flex flex-col items-end border-l border-oro/10 pl-4 sm:pl-6">
@@ -367,7 +366,7 @@ export default function BuildSimulatorPage() {
                 <div className="flex flex-col items-end border-l border-oro/10 pl-4 sm:pl-6">
                   <span className="text-caption font-black text-naranja-naruto uppercase tracking-[0.3em] mb-1">Puntos Invertidos</span>
                   <span className="text-2xl xl:text-3xl font-black text-naranja-naruto italic">
-                    {puntosGastados} <span className="text-xs font-bold text-naranja-naruto/50 uppercase not-italic">PA Totales</span>
+                    {puntosGastados}
                   </span>
                 </div>
               )}
