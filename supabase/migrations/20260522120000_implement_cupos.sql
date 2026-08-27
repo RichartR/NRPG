@@ -57,13 +57,14 @@ DROP FUNCTION IF EXISTS public.fn_balance_village_cupos_on_character_change();
 CREATE OR REPLACE FUNCTION public.fn_balance_village_cupos()
 RETURNS void AS $$
 DECLARE
-    v_active_villages_count INT;
-    v_total_characters INT;
     v_current_cupo INT;
     v_new_cupo INT;
     v_config_val JSONB;
+    v_min_required INT;
+    v_min_ninjas_in_any_village INT;
+    v_active_villages_count INT;
 BEGIN
-    -- 1. Obtener el cupo de aldea actual de sys_configuracion_sistema
+    -- 1. Obtener el cupo de aldea actual de sys_configuracion_sistema (por defecto 10, mínimo 10)
     SELECT valor INTO v_config_val 
     FROM public.sys_configuracion_sistema 
     WHERE clave = 'cupos_maximos_aldea';
@@ -71,49 +72,63 @@ BEGIN
     IF v_config_val IS NULL THEN
         v_current_cupo := 10;
     ELSE
-        -- Convert JSONB value to integer safely
         v_current_cupo := (v_config_val::text)::int;
     END IF;
 
-    -- Si v_current_cupo es menor a 10 por algún motivo, forzar a 10
     IF v_current_cupo < 10 THEN
         v_current_cupo := 10;
     END IF;
 
-    -- 2. Contar cantidad de aldeas activas marcadas como categoria 1 (Aldea)
+    -- 2. Verificar cuántas aldeas activas de categoría 1 (Aldea) existen
     SELECT COUNT(*) INTO v_active_villages_count
     FROM public.info_aldeas
     WHERE activo = true AND (categoria_id = 1 OR categoria_id IS NULL);
 
-    -- Si no hay aldeas activas, salir para evitar división por cero o errores
     IF v_active_villages_count = 0 THEN
         RETURN;
     END IF;
 
-    -- 3. Contar total de personajes activos en aldeas activas marcadas como categoria 1 (Aldea)
-    -- Se incluyen personajes activos OR inactivos por inactividad de menos de 6 meses
-    SELECT COUNT(*) INTO v_total_characters
-    FROM public.reg_characters rc
-    JOIN public.info_aldeas ia ON rc.aldea_id = ia.id
-    WHERE rc.eliminado_voluntario = false
-      AND (rc.activo = true OR (rc.activo = false AND rc.archived_at > NOW() - INTERVAL '6 months'))
-      AND ia.activo = true 
-      AND (ia.categoria_id = 1 OR ia.categoria_id IS NULL);
+    -- 3. Calcular la aldea activa que MENOS personajes activos tiene
+    SELECT COALESCE(MIN(cnt), 0) INTO v_min_ninjas_in_any_village
+    FROM (
+        SELECT ia.id, COUNT(rc.id) AS cnt
+        FROM public.info_aldeas ia
+        LEFT JOIN public.reg_characters rc 
+            ON rc.aldea_id = ia.id 
+           AND rc.eliminado_voluntario = false
+           AND (rc.activo = true OR (rc.activo = false AND rc.archived_at > NOW() - INTERVAL '6 months'))
+        WHERE ia.activo = true AND (ia.categoria_id = 1 OR ia.categoria_id IS NULL)
+        GROUP BY ia.id
+    ) village_counts;
 
     v_new_cupo := v_current_cupo;
-    
-    -- 4. Aplicar lógica de aumento (cuando total >= (N * cupo) - 5)
-    WHILE v_total_characters >= (v_active_villages_count * v_new_cupo) - 5 LOOP
-        v_new_cupo := v_new_cupo + 5;
+
+    -- 4. Bucle para SUBIR cupos en bloques de 5
+    -- Condición: La aldea con MENOS ninjas debe tener al menos el 75% (redondeado a la baja) del cupo actual
+    LOOP
+        v_min_required := FLOOR(v_new_cupo * 0.75);
+        IF v_min_ninjas_in_any_village >= v_min_required THEN
+            v_new_cupo := v_new_cupo + 5;
+        ELSE
+            EXIT;
+        END IF;
     END LOOP;
 
-    -- 5. Aplicar lógica de reducción (cuando total <= ((cupo - 5) * N) - 10)
-    -- Y con un mínimo de 10.
-    WHILE v_new_cupo > 10 AND v_total_characters <= ((v_new_cupo - 5) * v_active_villages_count) - 10 LOOP
-        v_new_cupo := v_new_cupo - 5;
+    -- 5. Bucle para BAJAR cupos en bloques de 5 si bajó la población (mínimo 10)
+    -- Si la aldea con menos ninjas cae por debajo del 75% (redondeado a la baja) del escalón anterior
+    LOOP
+        IF v_new_cupo <= 10 THEN
+            EXIT;
+        END IF;
+        v_min_required := FLOOR((v_new_cupo - 5) * 0.75);
+        IF v_min_ninjas_in_any_village < v_min_required THEN
+            v_new_cupo := v_new_cupo - 5;
+        ELSE
+            EXIT;
+        END IF;
     END LOOP;
 
-    -- 6. Si el cupo cambió, actualizar sys_configuracion_sistema
+    -- 6. Actualizar sys_configuracion_sistema si hubo cambios
     IF v_new_cupo != v_current_cupo THEN
         UPDATE public.sys_configuracion_sistema
         SET valor = to_jsonb(v_new_cupo), updated_at = now()
