@@ -318,6 +318,10 @@ function CrearFichaContent() {
     if (!form.hobba_name.trim()) return addToast('Usuario Hobba obligatorio', 'error');
     if (!form.aldea_id) return addToast('Selecciona una aldea', 'error');
 
+    const rama1 = form.personajes_ramas?.find((r: any) => Number(r.slot) === 1)?.rama_id;
+    const rama2 = form.personajes_ramas?.find((r: any) => Number(r.slot) === 2)?.rama_id;
+    if (!rama1 || !rama2) return addToast('Debes seleccionar las dos ramas obligatoriamente', 'error');
+
     setLoading(true);
     try {
       // 1. Obtener las IDs de las ramas equipadas por el personaje en el formulario
