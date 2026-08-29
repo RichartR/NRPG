@@ -52,8 +52,11 @@ export async function POST(request: Request) {
       }
     }
 
-    // Validar cupos máximos de los clanes seleccionados
+    // Validar cupos máximos de los clanes seleccionados y que se hayan seleccionado las 2 ramas
     const branchIds = data.personajes_ramas?.map((r: any) => r.rama_id).filter(Boolean) || [];
+    if (branchIds.length < 2) {
+      return NextResponse.json({ error: 'Es obligatorio seleccionar las dos ramas del personaje.' }, { status: 400 });
+    }
     if (branchIds.length > 0) {
       const { data: selectRamas, error: selectRamasError } = await supabase
         .from('info_ramas_clanes')
