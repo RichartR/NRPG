@@ -523,7 +523,11 @@ export default async function Home() {
                   }
 
                   return (
-                    <div key={event.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-4 hover:bg-oro/5 transition-all duration-300 group px-2">
+                    <Link
+                      key={event.id}
+                      href={event.link}
+                      className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-4 hover:bg-oro/5 transition-all duration-300 group px-2 cursor-pointer"
+                    >
                       <div className="flex items-center gap-4 min-w-0 flex-1">
                         {/* Avatar con mini-badge */}
                         <div className="relative shrink-0">
@@ -557,7 +561,7 @@ export default async function Home() {
                             <span className={`text-caption font-black uppercase tracking-wider px-2 py-0.5 border ${typeColor}`}>
                               {typeLabel}
                             </span>
-                            <span className="text-xs font-bold text-oro/80 truncate font-ninja uppercase tracking-widest block">
+                            <span className="text-xs font-bold text-oro/80 truncate font-ninja uppercase tracking-widest block group-hover:text-oro transition-colors">
                               {titleText}
                             </span>
                           </div>
@@ -579,14 +583,11 @@ export default async function Home() {
 
                       <div className="flex items-center gap-4 shrink-0 self-end sm:self-auto">
                         {rewardElement}
-                        <Link
-                          href={event.link}
-                          className="p-1.5 bg-black/40 border border-oro/10 hover:border-oro hover:bg-oro/20 text-oro/60 hover:text-oro transition-all ninja-clip-xs"
-                        >
+                        <div className="p-1.5 bg-black/40 border border-oro/10 group-hover:border-oro group-hover:bg-oro/20 text-oro/60 group-hover:text-oro transition-all ninja-clip-xs">
                           <ArrowRight className="w-4 h-4" />
-                        </Link>
+                        </div>
                       </div>
-                    </div>
+                    </Link>
                   );
                 })
               ) : (
