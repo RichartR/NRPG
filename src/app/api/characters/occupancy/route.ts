@@ -52,7 +52,7 @@ export async function GET() {
       cuposMaximosOrganizacion
     }, {
       headers: {
-        'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=1800',
+        'Cache-Control': 'public, max-age=60, s-maxage=1200, stale-while-revalidate=1800',
       }
     });
   } catch (error: any) {

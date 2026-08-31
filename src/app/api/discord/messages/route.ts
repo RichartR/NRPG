@@ -74,7 +74,7 @@ export async function GET(request: Request) {
       }, {
         status: 200,
         headers: {
-          'Cache-Control': 'public, max-age=60, s-maxage=300',
+          'Cache-Control': 'public, max-age=60, s-maxage=1200',
         }
       });
     }

@@ -80,7 +80,7 @@ export async function proxy(request: NextRequest) {
           'apikey': supabaseAnonKey,
           'Authorization': `Bearer ${supabaseAnonKey}`
         },
-        next: { revalidate: 120 } // Cachear respuesta de la IP por 120 segundos
+        next: { revalidate: 3600 } // Cachear respuesta de la IP por 3600 segundos (1 hora)
       });
 
       if (res.ok) {
