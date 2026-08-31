@@ -2,6 +2,8 @@ import { createClient } from '@/utils/supabase/server';
 import { ProfileService } from '@/services/supabase/profile.service';
 import MapaClientView from './MapaClientView';
 
+export const revalidate = 3600;
+
 export default async function MapaPage() {
   const supabase = await createClient();
 

@@ -60,15 +60,23 @@ export async function GET(request: Request) {
       return NextResponse.json({
         content: extractedContent,
         timestamp: discordMsg.timestamp || new Date().toISOString()
+      }, {
+        headers: {
+          'Cache-Control': 'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400',
+        }
       });
     } catch (discordError: any) {
       console.error(`[Discord API] Error recuperando mensaje ${messageId} en canal ${channelId}:`, discordError.message);
 
-      // En lugar de arrojar un error 500, devolvemos un 200 con un texto de fallback amigable para el jugador
       return NextResponse.json({
         content: "Contenido no disponible (canal de Discord incorrecto, privado o mensaje inexistente).",
         timestamp: new Date().toISOString()
-      }, { status: 200 });
+      }, {
+        status: 200,
+        headers: {
+          'Cache-Control': 'public, max-age=60, s-maxage=300',
+        }
+      });
     }
   } catch (error: any) {
     console.error('API Error (GET) general:', error);

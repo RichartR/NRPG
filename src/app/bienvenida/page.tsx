@@ -3,6 +3,8 @@ import { MasterServerService } from '@/services/supabase/master.server.service';
 import { ProfileService } from '@/services/supabase/profile.service';
 import BienvenidaClientView from './BienvenidaClientView';
 
+export const revalidate = 300;
+
 export default async function BienvenidaPage() {
   const supabase = await createClient();
 

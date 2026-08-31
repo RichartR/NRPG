@@ -5,11 +5,27 @@ import { createServerClient } from '@supabase/ssr';
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
+  // Excluir de forma rápida recursos estáticos, imágenes, fuentes, assets y API proxy de PDF
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/assets') ||
+    pathname.startsWith('/favicon.ico') ||
+    pathname.endsWith('.png') ||
+    pathname.endsWith('.jpg') ||
+    pathname.endsWith('.jpeg') ||
+    pathname.endsWith('.webp') ||
+    pathname.endsWith('.svg') ||
+    pathname.endsWith('.ico')
+  ) {
+    return NextResponse.next();
+  }
+
   // Inyectar cabecera x-pathname para que los Server Layouts conozcan la ruta actual
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-pathname', pathname);
 
-  // 1. Inicializar Supabase client y refrescar la sesión (si es necesario)
+  // Inicializar Supabase client y refrescar la sesión si hay cookies presentes
   let supabaseResponse = NextResponse.next({
     request: {
       headers: requestHeaders,
@@ -19,7 +35,7 @@ export async function proxy(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (supabaseUrl && supabaseAnonKey) {
+  if (supabaseUrl && supabaseAnonKey && request.cookies.getAll().length > 0) {
     const supabase = createServerClient(
       supabaseUrl,
       supabaseAnonKey,
@@ -47,23 +63,13 @@ export async function proxy(request: NextRequest) {
     await supabase.auth.getUser()
   }
 
-  // Excluir recursos estáticos y APIs del flujo
-  if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
-    pathname.startsWith('/assets') ||
-    pathname.startsWith('/favicon.ico')
-  ) {
-    return supabaseResponse;
-  }
-
   // Si ya está en las páginas de restricción, permitir el paso sin volver a evaluar la IP
   if (pathname === '/blocked' || pathname === '/banned') {
     return supabaseResponse;
   }
 
   // Obtener IP pública en Vercel o local
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || request.headers.get('x-real-ip') || '127.0.0.1';
+  const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for')?.split(',')[0].trim() || request.headers.get('x-real-ip') || '127.0.0.1';
 
   try {
     if (supabaseUrl && supabaseAnonKey) {
@@ -74,7 +80,7 @@ export async function proxy(request: NextRequest) {
           'apikey': supabaseAnonKey,
           'Authorization': `Bearer ${supabaseAnonKey}`
         },
-        next: { revalidate: 30 } // Cachear respuesta de la IP por 30 segundos
+        next: { revalidate: 120 } // Cachear respuesta de la IP por 120 segundos
       });
 
       if (res.ok) {
@@ -83,17 +89,13 @@ export async function proxy(request: NextRequest) {
           const blockRecord = data[0];
           
           let redirectUrl: URL;
-          // Si el motivo contiene baneo de cuenta, redirigir a /banned
           if (blockRecord.reason?.includes('Baneo de cuenta del usuario')) {
             redirectUrl = new URL('/banned', request.url);
           } else {
             redirectUrl = new URL('/blocked', request.url);
           }
           
-          // Crear la respuesta de redirección
           const redirectResponse = NextResponse.redirect(redirectUrl);
-          
-          // Asegurar que copiamos las cookies de la sesión actualizada por Supabase a la respuesta de redirección
           supabaseResponse.cookies.getAll().forEach(cookie => {
             redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
           });
@@ -111,6 +113,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
