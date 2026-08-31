@@ -4,6 +4,8 @@ import DocViewer from '@/components/ui/DocViewer';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import { CrumbItem } from '@/components/ui/Breadcrumbs';
 
+export const revalidate = 3600;
+
 export default async function DocumentPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const supabase = await createClient();

@@ -50,6 +50,10 @@ export async function GET() {
       countByClan,
       cuposMaximosAldea,
       cuposMaximosOrganizacion
+    }, {
+      headers: {
+        'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=1800',
+      }
     });
   } catch (error: any) {
     console.error('Occupancy fetch error:', error);

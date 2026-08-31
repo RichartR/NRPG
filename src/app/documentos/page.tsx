@@ -1,6 +1,8 @@
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import NinjaCard from '@/components/ui/NinjaCard';
 
+export const revalidate = 3600;
+
 export default function DocumentosPage() {
   return (
     <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col">

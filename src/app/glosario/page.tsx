@@ -3,6 +3,8 @@ import { MasterServerService } from '@/services/supabase/master.server.service';
 import GlosarioView from '@/components/glosario/GlosarioView';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 
+export const revalidate = 300;
+
 export default async function GlosarioPage() {
   const supabase = await createClient();
 

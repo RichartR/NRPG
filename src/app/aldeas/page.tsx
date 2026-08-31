@@ -3,6 +3,8 @@ import { MasterServerService } from '@/services/supabase/master.server.service';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import NinjaCard from '@/components/ui/NinjaCard';
 
+export const revalidate = 3600;
+
 function getTitleFontSize(name: string) {
   const len = name.length;
   if (len <= 4) {
