@@ -29,7 +29,7 @@ export default async function AdminLayout({
       {/* Fondo Global */}
       <div
         className="fixed inset-0 bg-cover bg-center bg-fixed z-[-10]"
-        style={{ backgroundImage: 'url("/assets/ui/bg-list.png")' }}
+        style={{ backgroundImage: 'url("/assets/ui/bg-list.webp")' }}
       />
 
       {/* Top Navigation Admin */}

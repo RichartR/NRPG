@@ -17,18 +17,29 @@ export async function GET(request: NextRequest) {
       return new NextResponse('Error fetching from Google', { status: response.status });
     }
 
-    // Esperamos a tener el archivo completo para enviarlo de una sola vez.
-    // Esto evita que el navegador intente renderizar progresivamente un archivo incompleto
-    // (el cual causaba tirones y lentitud al hacer scroll).
-    const arrayBuffer = await response.arrayBuffer();
-    const pdfBuffer = Buffer.from(arrayBuffer);
+    if (!response.body) {
+      return new NextResponse('Empty PDF response', { status: 502 });
+    }
 
-    return new NextResponse(pdfBuffer, {
+    // Stream the upstream response instead of buffering the whole PDF in Function
+    // memory. Vercel caches the result, so repeated reads no longer reach origin.
+    const headers = new Headers({
+      'Content-Type': response.headers.get('content-type') || 'application/pdf',
+      'Content-Disposition': 'inline; filename="document.pdf"',
+      'Cache-Control': 'public, max-age=3600',
+      'Vercel-CDN-Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
+    });
+
+    const contentLength = response.headers.get('content-length');
+    const etag = response.headers.get('etag');
+    const lastModified = response.headers.get('last-modified');
+    if (contentLength) headers.set('Content-Length', contentLength);
+    if (etag) headers.set('ETag', etag);
+    if (lastModified) headers.set('Last-Modified', lastModified);
+
+    return new NextResponse(response.body, {
       headers: {
-        'Content-Type': 'application/pdf',
-        'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
-        'Content-Disposition': 'inline; filename="document.pdf"',
-        'Content-Length': pdfBuffer.length.toString(),
+        ...Object.fromEntries(headers.entries()),
       },
     });
   } catch (error) {

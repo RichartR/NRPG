@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
+import { ProfileService } from '@/services/supabase/profile.service'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
@@ -10,6 +11,38 @@ export async function GET(request: Request) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
+      const ip = request.headers.get('cf-connecting-ip')
+        || request.headers.get('x-forwarded-for')?.split(',')[0].trim()
+        || request.headers.get('x-real-ip')
+        || null
+
+      if (ip) {
+        const now = new Date().toISOString()
+        const { data: blockedIp } = await supabase
+          .from('sys_blocked_ips')
+          .select('ip')
+          .eq('ip', ip)
+          .or(`blocked_until.is.null,blocked_until.gt.${now}`)
+          .maybeSingle()
+
+        if (blockedIp) {
+          await supabase.auth.signOut()
+          return NextResponse.redirect(`${origin}/blocked`)
+        }
+      }
+
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const profile = await ProfileService.getProfile(user.id, supabase)
+        if (profile?.banned_until && new Date(profile.banned_until) > new Date()) {
+          return NextResponse.redirect(`${origin}/banned`)
+        }
+
+        if (ip) {
+          await ProfileService.updateUserIP(user.id, ip, supabase)
+        }
+      }
+
       console.log('Auth success, redirecting to:', next);
       return NextResponse.redirect(`${origin}${next}`)
     }

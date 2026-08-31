@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Users } from 'lucide-react';
 import NinjaCard from '@/components/ui/NinjaCard';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
@@ -8,13 +8,15 @@ import AdminViewSelector from '@/components/admin/AdminViewSelector';
 import AldeaList from '@/components/admin/AldeaList';
 import { AdminService } from '@/services/supabase/admin.service';
 import { useToastStore } from '@/components/ui/Toast';
+import { useUserRoles } from '@/hooks/useUserRoles';
+import { MasterService } from '@/services/supabase/master.service';
 
 interface MundoNinjaClientViewProps {
   aldeas: any[];
   countsMap: Record<string, number>;
   maxCupos: number;
-  isAdmin: boolean;
-  adminAldeas: any[];
+  isAdmin?: boolean;
+  adminAldeas?: any[];
   initialConfigReseteo?: any;
 }
 
@@ -26,14 +28,28 @@ export default function MundoNinjaClientView({
   aldeas,
   countsMap,
   maxCupos,
-  isAdmin,
-  adminAldeas,
+  isAdmin: initialIsAdmin = false,
+  adminAldeas: initialAdminAldeas = [],
   initialConfigReseteo,
 }: MundoNinjaClientViewProps) {
+  const { roles } = useUserRoles();
+  const isAdmin = initialIsAdmin || roles.includes('admin');
+  const [adminAldeas, setAdminAldeas] = useState(initialAdminAldeas);
   const [viewMode, setViewMode] = useState<'player' | 'admin'>('player');
   const [configReseteo, setConfigReseteo] = useState<any>(initialConfigReseteo);
   const [updatingReseteo, setUpdatingReseteo] = useState(false);
   const addToast = useToastStore((state) => state.addToast);
+
+  useEffect(() => {
+    if (!isAdmin || adminAldeas.length > 0) return;
+    Promise.all([
+      MasterService.getAldeas(),
+      AdminService.getConfigByClave('periodo_reseteos_gratuitos'),
+    ]).then(([aldeasData, reseteoData]) => {
+      setAdminAldeas(aldeasData);
+      setConfigReseteo(reseteoData);
+    }).catch((error) => console.error('Error cargando la administración de aldeas:', error));
+  }, [isAdmin, adminAldeas.length]);
 
   const configReseteoValue = configReseteo?.valor === true || String(configReseteo?.valor) === 'true';
 

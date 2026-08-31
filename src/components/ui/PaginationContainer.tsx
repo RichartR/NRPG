@@ -15,8 +15,8 @@ export function PaginationContainer({
 }: PaginationContainerProps) {
   const borderColorClass = isRenegado ? 'bg-naranja-naruto/20' : 'bg-oro/20';
   const backgroundImageStyle = isRenegado
-    ? 'radial-gradient(circle at center, rgba(185, 28, 28, 0.05) 0%, transparent 70%), linear-gradient(rgba(5, 3, 9, 0.55), rgba(5, 3, 9, 0.55)), url("/assets/ui/bg-list.png")'
-    : 'radial-gradient(circle at center, rgba(255, 230, 159, 0.05) 0%, transparent 70%), linear-gradient(rgba(5, 3, 9, 0.55), rgba(5, 3, 9, 0.55)), url("/assets/ui/bg-list.png")';
+    ? 'radial-gradient(circle at center, rgba(185, 28, 28, 0.05) 0%, transparent 70%), linear-gradient(rgba(5, 3, 9, 0.55), rgba(5, 3, 9, 0.55)), url("/assets/ui/bg-list.webp")'
+    : 'radial-gradient(circle at center, rgba(255, 230, 159, 0.05) 0%, transparent 70%), linear-gradient(rgba(5, 3, 9, 0.55), rgba(5, 3, 9, 0.55)), url("/assets/ui/bg-list.webp")';
 
   return (
     <div

@@ -6,18 +6,19 @@ import NewsGrid from './NewsGrid';
 import NewsList from '@/components/admin/NewsList';
 import AdminViewSelector from '@/components/admin/AdminViewSelector';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
+import { useUserRoles } from '@/hooks/useUserRoles';
 
 interface NoticiasClientViewProps {
   newsList: any[];
-  isAdmin: boolean;
   adminNews: any[];
 }
 
 export default function NoticiasClientView({
   newsList,
-  isAdmin,
   adminNews,
 }: NoticiasClientViewProps) {
+  const { roles } = useUserRoles();
+  const isAdmin = roles.some((role) => ['admin', 'moderador', 'narrador'].includes(role));
   const [viewMode, setViewMode] = useState<'player' | 'admin'>('player');
 
   return (

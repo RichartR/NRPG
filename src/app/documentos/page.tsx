@@ -53,7 +53,7 @@ export default function DocumentosPage() {
             title="RAMAS"
             titleClassName="text-3xl sm:text-3xl md:text-4xl"
             category="ESPECIALIDAD"
-            imageUrl="/assets/images/ramas.png"
+            imageUrl="/assets/images/ramas.webp"
             description="Consulta todas las ramas ninja disponibles para tu personaje."
             actionText="Ver Ramas"
           />
@@ -75,7 +75,7 @@ export default function DocumentosPage() {
             title="MAPA INTERACTIVO"
             titleClassName="text-3xl sm:text-3xl md:text-4xl"
             category="CARTOGRAFÍA"
-            imageUrl="/assets/images/mapa-scroll.png"
+            imageUrl="/assets/images/mapa-scroll.webp"
             description="Explora la geografía del mundo ninja y sus caminos shinobi a través de la cartografía interactiva."
             actionText="Ver Mapa"
           />

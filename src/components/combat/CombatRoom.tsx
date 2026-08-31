@@ -1869,7 +1869,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         <div
           className="absolute inset-0 bg-cover bg-center opacity-20 pointer-events-none"
           style={{
-            backgroundImage: `url('/assets/ui/bg-combat/bg-combat-${bgNumber}.png')`,
+            backgroundImage: `url('/assets/ui/bg-combat/bg-combat-${bgNumber}.webp')`,
             filter: 'blur(4px)'
           }}
         />
@@ -1980,7 +1980,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
           <div
             className="absolute inset-0 bg-cover bg-center pointer-events-none z-0"
             style={{
-              backgroundImage: `url('/assets/ui/bg-combat/bg-combat-${bgNumber}.png')`,
+              backgroundImage: `url('/assets/ui/bg-combat/bg-combat-${bgNumber}.webp')`,
               filter: 'blur(4px)',
               transform: 'scale(1.03)'
             }}
@@ -2018,7 +2018,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         <div
           className="absolute inset-0 bg-cover bg-center pointer-events-none z-0"
           style={{
-            backgroundImage: `url('/assets/ui/bg-combat/bg-combat-${bgNumber}.png')`,
+            backgroundImage: `url('/assets/ui/bg-combat/bg-combat-${bgNumber}.webp')`,
             filter: 'blur(4px)',
             transform: 'scale(1.03)'
           }}
@@ -2043,7 +2043,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
       <div
         className="absolute inset-0 bg-cover bg-center pointer-events-none z-0"
         style={{
-          backgroundImage: `url('/assets/ui/bg-combat/bg-combat-${bgNumber}.png')`,
+          backgroundImage: `url('/assets/ui/bg-combat/bg-combat-${bgNumber}.webp')`,
           filter: 'blur(3px)',
           transform: 'scale(1.03)'
         }}

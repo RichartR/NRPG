@@ -1,5 +1,3 @@
-import { createClient } from '@/utils/supabase/server';
-import { ProfileService } from '@/services/supabase/profile.service';
 import NoticiasClientView from './NoticiasClientView';
 import { unstable_cache } from 'next/cache';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
@@ -17,20 +15,11 @@ const getCachedAllNews = unstable_cache(
     return data || [];
   },
   ['all-noticias-page'],
-  { revalidate: 30, tags: ['all-noticias-page'] }
+  { revalidate: 300, tags: ['all-noticias-page'] }
 );
 
 export default async function NoticiasPage() {
-  let allNews: any[] = [];
-
-  // 2. Verificar rol de administrador de forma segura
-  const supabase = await createClient();
-  const [userRes, cachedNews] = await Promise.all([
-    supabase.auth.getUser(),
-    getCachedAllNews()
-  ]);
-
-  allNews = cachedNews || [];
+  const allNews = await getCachedAllNews();
   const rawNewsList = allNews;
 
   // Filter active news for players: any news that doesn't have `activo` explicitly set to false is active.
@@ -38,15 +27,9 @@ export default async function NoticiasPage() {
   const playerNewsList = rawNewsList.filter((n: any) => n.activo !== false);
   const adminNewsList = rawNewsList;
 
-  const user = userRes.data?.user;
-  const profile = user ? await ProfileService.getProfile(user.id, supabase) : null;
-  const userRoles = profile?.roles || [];
-  const isAdmin = userRoles.includes('admin') || userRoles.includes('moderador') || userRoles.includes('narrador');
-
   return (
     <NoticiasClientView
       newsList={playerNewsList}
-      isAdmin={isAdmin}
       adminNews={adminNewsList}
     />
   );

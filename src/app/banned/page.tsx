@@ -42,7 +42,7 @@ export default async function BannedPage() {
     <div
       className="min-h-screen flex flex-col justify-center items-center p-4 text-white relative overflow-hidden"
       style={{
-        backgroundImage: "url('/assets/ui/bg-list.png')",
+        backgroundImage: "url('/assets/ui/bg-list.webp')",
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }}
@@ -56,7 +56,7 @@ export default async function BannedPage() {
 
         <div className="flex justify-center mb-8">
           <div className="w-28 h-28 rounded-full border-2 border-naranja-naruto bg-white overflow-hidden flex items-center justify-center transition-transform duration-300">
-            <img src="/assets/images/jiraiya_angry.png" alt="Jiraiya Enojado" className="w-full h-full object-cover" />
+            <img src="/assets/images/jiraiya_angry.webp" alt="Jiraiya Enojado" className="w-full h-full object-cover" />
           </div>
         </div>
 

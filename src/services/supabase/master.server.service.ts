@@ -159,6 +159,218 @@ export const MasterServerService = {
     ['master-ramas-todas-activas'],
     { revalidate: 300 }
   ),
+
+  getCachedDocumentosByCategoria: unstable_cache(
+    async (categoria: string) => {
+      const { data, error } = await publicClient
+        .from('info_documentos_sistemas')
+        .select('*')
+        .eq('categoria', categoria)
+        .eq('activo', true)
+        .order('titulo', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    ['master-documentos-por-categoria'],
+    { revalidate: 1200 }
+  ),
+
+  getCachedDocumentosCombateGenerales: unstable_cache(
+    async () => {
+      const { data, error } = await publicClient
+        .from('info_documentos_combate')
+        .select('*')
+        .is('rama_id', null)
+        .is('sub_especialidad_id', null)
+        .eq('activo', true)
+        .order('titulo', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    ['master-documentos-combate-generales'],
+    { revalidate: 1200 }
+  ),
+
+  getCachedConfiguracion: unstable_cache(
+    async (clave: string): Promise<string | null> => {
+      const { data } = await publicClient
+        .from('sys_configuracion_sistema')
+        .select('valor')
+        .eq('clave', clave)
+        .single();
+      const valor = data?.valor;
+      if (valor === null || valor === undefined) return null;
+      if (typeof valor === 'string') return valor;
+      if (typeof valor === 'number' || typeof valor === 'boolean') return String(valor);
+      return JSON.stringify(valor);
+    },
+    ['master-configuracion-publica'],
+    { revalidate: 300 }
+  ),
+
+  getCachedCharacterOccupancy: unstable_cache(
+    async () => {
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      const { data, error } = await publicClient
+        .from('reg_characters')
+        .select('id, aldea_id, reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(rama_id)')
+        .eq('eliminado_voluntario', false)
+        .or(`activo.eq.true,and(activo.eq.false,archived_at.gt.${sixMonthsAgo.toISOString()})`);
+      if (error) throw error;
+      return data || [];
+    },
+    ['master-character-occupancy'],
+    { revalidate: 1200 }
+  ),
+
+  getCachedAldeaById: unstable_cache(
+    async (id: number): Promise<Aldea | null> => {
+      const { data } = await publicClient.from('info_aldeas').select('*').eq('id', id).single();
+      return data ?? null;
+    },
+    ['master-aldea-id'],
+    { revalidate: 1200 }
+  ),
+
+  getCachedAldeaBySlug: unstable_cache(
+    async (slug: string): Promise<Aldea | null> => {
+      const { data } = await publicClient.from('info_aldeas').select('*').eq('slug', slug).single();
+      return data ?? null;
+    },
+    ['master-aldea-slug'],
+    { revalidate: 1200 }
+  ),
+
+  getCachedClanesByAldeaId: unstable_cache(
+    async (aldeaId: number): Promise<RamaClan[]> => {
+      const { data, error } = await publicClient
+        .from('info_ramas_clanes')
+        .select('*')
+        .eq('aldea_id', aldeaId)
+        .eq('tipo', 'clan')
+        .eq('activo', true);
+      if (error) throw error;
+      return data || [];
+    },
+    ['master-clanes-aldea'],
+    { revalidate: 1200 }
+  ),
+
+  getCachedRamaBySlug: unstable_cache(
+    async (slug: string): Promise<RamaConAldea | null> => {
+      const { data } = await publicClient
+        .from('info_ramas_clanes')
+        .select('*, info_aldeas(slug, abreviatura)')
+        .eq('slug', slug)
+        .single();
+      return (data as RamaConAldea) ?? null;
+    },
+    ['master-rama-slug'],
+    { revalidate: 1200 }
+  ),
+
+  getCachedSubEspecialidadesByRama: unstable_cache(
+    async (ramaId: number): Promise<SubEspecialidad[]> => {
+      const { data, error } = await publicClient
+        .from('info_sub_especialidades')
+        .select('*')
+        .eq('rama_id', ramaId)
+        .eq('activo', true)
+        .order('nombre', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    ['master-subs-rama'],
+    { revalidate: 1200 }
+  ),
+
+  getCachedSubEspecialidadBySlug: unstable_cache(
+    async (ramaId: number, slug: string): Promise<SubEspecialidad | null> => {
+      const { data } = await publicClient
+        .from('info_sub_especialidades')
+        .select('*')
+        .eq('rama_id', ramaId)
+        .eq('slug', slug)
+        .single();
+      return data ?? null;
+    },
+    ['master-sub-rama-slug'],
+    { revalidate: 1200 }
+  ),
+
+  getCachedDocumentosCombateByRama: unstable_cache(
+    async (ramaId: number): Promise<DocumentoCombate[]> => {
+      const { data, error } = await publicClient
+        .from('info_documentos_combate')
+        .select('*')
+        .eq('rama_id', ramaId)
+        .is('sub_especialidad_id', null)
+        .eq('activo', true);
+      if (error) throw error;
+      return data || [];
+    },
+    ['master-documentos-rama'],
+    { revalidate: 1200 }
+  ),
+
+  getCachedDocumentosCombateBySubEspecialidad: unstable_cache(
+    async (subEspecialidadId: number): Promise<DocumentoCombate[]> => {
+      const { data, error } = await publicClient
+        .from('info_documentos_combate')
+        .select('*')
+        .eq('sub_especialidad_id', subEspecialidadId)
+        .eq('activo', true)
+        .order('titulo', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    ['master-documentos-sub'],
+    { revalidate: 1200 }
+  ),
+
+  getCachedDocumentoSistemaByClave: unstable_cache(
+    async (clave: string): Promise<DocumentoSistema | null> => {
+      const { data } = await publicClient
+        .from('info_documentos_sistemas')
+        .select('*')
+        .eq('clave', clave)
+        .eq('activo', true)
+        .single();
+      return data ?? null;
+    },
+    ['master-documento-sistema-clave'],
+    { revalidate: 1200 }
+  ),
+
+  getCachedDocumentoCombateByClave: unstable_cache(
+    async (clave: string): Promise<DocumentoCombate | null> => {
+      const { data } = await publicClient
+        .from('info_documentos_combate')
+        .select('*, info_ramas_clanes(nombre, tipo, slug, info_aldeas(slug, abreviatura, nombre_completo)), info_sub_especialidades(nombre, slug, info_ramas_clanes(nombre, tipo, slug, info_aldeas(slug, abreviatura, nombre_completo)))')
+        .eq('clave', clave)
+        .eq('activo', true)
+        .single();
+      return data ?? null;
+    },
+    ['master-documento-combate-clave'],
+    { revalidate: 1200 }
+  ),
+
+  getCachedCharacterCountsByAldea: unstable_cache(
+    async (): Promise<Record<string, number>> => {
+      const { data, error } = await publicClient.from('reg_characters').select('aldea_id').eq('activo', true);
+      if (error) throw error;
+      const counts: Record<string, number> = { renegados: 0 };
+      for (const character of data || []) {
+        const key = character.aldea_id == null ? 'renegados' : String(character.aldea_id);
+        counts[key] = (counts[key] || 0) + 1;
+      }
+      return counts;
+    },
+    ['master-character-counts-aldea'],
+    { revalidate: 300 }
+  ),
   async getAldeas(supabase: SupabaseClient): Promise<Aldea[]> {
     const { data, error } = await supabase
       .from('info_aldeas')

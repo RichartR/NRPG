@@ -445,7 +445,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                       {/* Cabecera del Bot */}
                       <div className="flex items-center gap-2 pb-2 border-b border-white/5">
                         <img
-                          src="/assets/ui/logo.png"
+                          src="/assets/ui/logo.webp"
                           alt="NRPG"
                           className="w-6 h-6 rounded-full object-cover border border-oro/30 shrink-0"
                         />

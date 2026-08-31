@@ -1,4 +1,3 @@
-import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import { ScrollText } from 'lucide-react';
 import { MasterServerService } from '@/services/supabase/master.server.service';
@@ -6,17 +5,20 @@ import Breadcrumbs, { CrumbItem } from '@/components/ui/Breadcrumbs';
 import NinjaCard from '@/components/ui/NinjaCard';
 import DocumentosCombateSearch from '@/components/ui/DocumentosCombateSearch';
 
+export const revalidate = 1200;
+export function generateStaticParams() {
+  return [];
+}
+
 export default async function GroupingDetailPage({ params }: { params: Promise<{ slug: string, grouping: string }> }) {
   const { slug, grouping } = await params;
-  const supabase = await createClient();
-
-  const rama = await MasterServerService.getRamaBySlug(supabase, slug);
+  const rama = await MasterServerService.getCachedRamaBySlug(slug);
   if (!rama) return notFound();
 
-  const sub = await MasterServerService.getSubEspecialidadBySlug(supabase, rama.id, grouping);
+  const sub = await MasterServerService.getCachedSubEspecialidadBySlug(rama.id, grouping);
   if (!sub) return notFound();
 
-  const documentos = await MasterServerService.getDocumentosCombateBySubEspecialidad(supabase, sub.id);
+  const documentos = await MasterServerService.getCachedDocumentosCombateBySubEspecialidad(sub.id);
 
   const breadcrumbsItems: CrumbItem[] = [
     { label: 'Inicio', href: '/' },

@@ -116,7 +116,7 @@ html {
 
 body {
   background-color: var(--color-neutral-900);
-  background-image: url('/assets/ui/bg-list.png');
+  background-image: url('/assets/ui/bg-list.webp');
   background-attachment: fixed;
   background-size: cover;
   background-position: center;
@@ -193,7 +193,7 @@ input[type=number] {
 
   /* Combined Card Patterns */
   .ninja-card {
-    background-image: linear-gradient(rgba(5, 3, 9, 0.6), rgba(5, 3, 9, 0.6)), url('/assets/ui/bg-list.png');
+    background-image: linear-gradient(rgba(5, 3, 9, 0.6), rgba(5, 3, 9, 0.6)), url('/assets/ui/bg-list.webp');
     background-size: cover;
     background-position: center;
     @apply backdrop-blur-md relative;
@@ -201,7 +201,7 @@ input[type=number] {
 
   .ninja-bg-pattern {
     background-color: #050309;
-    background-image: url('/assets/ui/bg-list.png');
+    background-image: url('/assets/ui/bg-list.webp');
     background-size: cover;
     background-position: center;
   }
@@ -291,7 +291,7 @@ input[type=number] {
     background-color: #000000;
     background-image: radial-gradient(circle at center, rgba(103, 9, 9, 0.1) 0%, transparent 70%),
       linear-gradient(rgba(5, 7, 6, 0.55), rgba(5, 7, 6, 0.55)),
-      url('/assets/ui/bg-list.png');
+      url('/assets/ui/bg-list.webp');
     background-size: cover;
     background-position: center;
     box-shadow: 0 0 30px rgba(103, 9, 9, 0.2);

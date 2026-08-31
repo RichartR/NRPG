@@ -435,7 +435,7 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
             {/* Contenido en Scroll / Iframe */}
             <div
               className={`overflow-y-auto flex-1 custom-scrollbar ${activeNews.discord_msg_id?.startsWith('http') && activeNews.categoria?.toLowerCase() !== 'evento' ? 'bg-[#050309] bg-cover bg-center p-0 overflow-hidden flex flex-col' : 'p-8 sm:p-12 bg-neutral-900'}`}
-              style={activeNews.discord_msg_id?.startsWith('http') && activeNews.categoria?.toLowerCase() !== 'evento' ? { backgroundImage: "url('/assets/ui/bg-list.png')" } : undefined}
+              style={activeNews.discord_msg_id?.startsWith('http') && activeNews.categoria?.toLowerCase() !== 'evento' ? { backgroundImage: "url('/assets/ui/bg-list.webp')" } : undefined}
             >
               {loadingMsg ? (
                 /* Spinner de Carga Premium */
@@ -487,7 +487,7 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
                         ref={modalBodyRef}
                         onWheel={handleModalWheel}
                         className="flex-1 w-full h-full overflow-y-auto custom-scrollbar bg-[#050309] bg-cover bg-center p-8 flex flex-col items-center justify-center relative"
-                        style={{ backgroundImage: "url('/assets/ui/bg-list.png')" }}
+                        style={{ backgroundImage: "url('/assets/ui/bg-list.webp')" }}
                       >
                         <div
                           className="bg-[#ffe6ba] shadow-[0_0_80px_rgba(0,0,0,0.8)] overflow-hidden relative my-auto shrink-0 transition-all duration-300 w-[794px] h-[1120px]"

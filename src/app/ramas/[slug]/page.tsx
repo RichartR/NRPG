@@ -1,20 +1,22 @@
-import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import Breadcrumbs, { CrumbItem } from '@/components/ui/Breadcrumbs';
 import NinjaCard from '@/components/ui/NinjaCard';
 import DocumentosCombateSearch from '@/components/ui/DocumentosCombateSearch';
 
+export const revalidate = 1200;
+export function generateStaticParams() {
+  return [];
+}
+
 export default async function RamaDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const supabase = await createClient();
-
-  const rama = await MasterServerService.getRamaBySlug(supabase, slug);
+  const rama = await MasterServerService.getCachedRamaBySlug(slug);
   if (!rama) return notFound();
 
   const [subEspecialidades, documentos] = await Promise.all([
-    MasterServerService.getSubEspecialidadesByRama(supabase, rama.id),
-    MasterServerService.getDocumentosCombateByRama(supabase, rama.id),
+    MasterServerService.getCachedSubEspecialidadesByRama(rama.id),
+    MasterServerService.getCachedDocumentosCombateByRama(rama.id),
   ]);
 
   const breadcrumbsItems: CrumbItem[] = [

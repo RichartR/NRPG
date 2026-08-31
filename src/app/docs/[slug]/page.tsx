@@ -1,14 +1,15 @@
-import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import DocViewer from '@/components/ui/DocViewer';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import { CrumbItem } from '@/components/ui/Breadcrumbs';
 
 export const revalidate = 3600;
+export function generateStaticParams() {
+  return [];
+}
 
 export default async function DocumentPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const supabase = await createClient();
 
   const breadcrumbsItems: CrumbItem[] = [
     { label: 'Inicio', href: '/' }
@@ -33,7 +34,7 @@ export default async function DocumentPage({ params }: { params: Promise<{ slug:
   let doc: any = null;
 
   // 1. Intentar buscar en documentos_combate
-  const combatDoc = await MasterServerService.getDocumentoCombateByClave(supabase, slug);
+  const combatDoc = await MasterServerService.getCachedDocumentoCombateByClave(slug);
   if (combatDoc) {
     doc = combatDoc;
     const cDoc = combatDoc as any;
@@ -78,7 +79,7 @@ export default async function DocumentPage({ params }: { params: Promise<{ slug:
     }
   } else {
     // 2. Si no es de combate, buscar en documentos de sistemas
-    const systemDoc = await MasterServerService.getDocumentoSistemaByClave(supabase, slug);
+    const systemDoc = await MasterServerService.getCachedDocumentoSistemaByClave(slug);
     if (systemDoc) {
       doc = systemDoc;
       if (doc.categoria === 'sistemas') {

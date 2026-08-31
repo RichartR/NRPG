@@ -1,4 +1,3 @@
-import { createClient } from '@/utils/supabase/server';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import NinjaCard from '@/components/ui/NinjaCard';

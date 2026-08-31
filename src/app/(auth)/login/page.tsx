@@ -36,7 +36,7 @@ export default function LoginPage() {
 
         {/* Logo superior */}
         <div className="flex justify-center mb-10">
-          <img src="/assets/ui/logo.png" className="h-20 xl:h-28 w-auto object-contain" alt="Logo" />
+          <img src="/assets/ui/logo.webp" className="h-20 xl:h-28 w-auto object-contain" alt="Logo" />
         </div>
 
         <div className="text-center mb-12">

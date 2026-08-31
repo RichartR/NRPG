@@ -1,17 +1,19 @@
-import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import NinjaCard from '@/components/ui/NinjaCard';
 
+export const revalidate = 1200;
+export function generateStaticParams() {
+  return [];
+}
+
 export default async function AldeaDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const supabase = await createClient();
-
-  const aldea = await MasterServerService.getAldeaBySlug(supabase, slug);
+  const aldea = await MasterServerService.getCachedAldeaBySlug(slug);
   if (!aldea) return notFound();
 
-  const clanes = await MasterServerService.getClanesByAldeaId(supabase, aldea.id);
+  const clanes = await MasterServerService.getCachedClanesByAldeaId(aldea.id);
 
   return (
     <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col">

@@ -1,4 +1,3 @@
-import { createClient } from '@/utils/supabase/server';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import GlosarioView from '@/components/glosario/GlosarioView';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
@@ -6,11 +5,6 @@ import Breadcrumbs from '@/components/ui/Breadcrumbs';
 export const revalidate = 1200;
 
 export default async function GlosarioPage() {
-  const supabase = await createClient();
-
-  const sixMonthsAgo = new Date();
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
   // Fetch all data in parallel
   const [
     categorias,
@@ -33,16 +27,12 @@ export default async function GlosarioPage() {
     MasterServerService.getCachedAldeasActivas(),
     MasterServerService.getCachedSubEspecialidades(),
     MasterServerService.getCachedAdminEntrenamientos(),
-    supabase
-      .from('reg_characters')
-      .select('id, aldea_id, reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(rama_id)')
-      .eq('eliminado_voluntario', false)
-      .or(`activo.eq.true,and(activo.eq.false,archived_at.gt.${sixMonthsAgo.toISOString()})`),
-    MasterServerService.getConfiguracion(supabase, 'cupos_maximos_aldea'),
-    MasterServerService.getConfiguracion(supabase, 'cupos_maximos_organizacion')
+    MasterServerService.getCachedCharacterOccupancy(),
+    MasterServerService.getCachedConfiguracion('cupos_maximos_aldea'),
+    MasterServerService.getCachedConfiguracion('cupos_maximos_organizacion')
   ]);
 
-  const charactersInCupos = charactersRes?.data || [];
+  const charactersInCupos = charactersRes || [];
 
   // Mapear entrenamientos a la estructura de Glosario
   const mappedEntrenamientos = (entrenamientos || [])

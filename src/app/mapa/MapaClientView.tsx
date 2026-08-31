@@ -7,6 +7,7 @@ import { useToastStore } from '@/components/ui/Toast';
 import { MapaService, MapaMarcador, MapaConexion } from '@/services/supabase/mapa.service';
 import MapaAdminControls from '@/components/mapa/MapaAdminControls';
 import { Compass, Info, Loader2, X, Search, ZoomIn } from 'lucide-react';
+import { useUserRoles } from '@/hooks/useUserRoles';
 
 // Load Leaflet map dynamically without Server-Side Rendering (SSR)
 const MapaInteractivo = dynamic(() => import('@/components/mapa/MapaInteractivo'), {
@@ -19,11 +20,9 @@ const MapaInteractivo = dynamic(() => import('@/components/mapa/MapaInteractivo'
   ),
 });
 
-interface MapaClientViewProps {
-  isAdmin: boolean;
-}
-
-export default function MapaClientView({ isAdmin }: MapaClientViewProps) {
+export default function MapaClientView() {
+  const { roles } = useUserRoles();
+  const isAdmin = roles.includes('admin');
   const [markers, setMarkers] = useState<MapaMarcador[]>([]);
   const [connections, setConnections] = useState<MapaConexion[]>([]);
   const [loading, setLoading] = useState(true);

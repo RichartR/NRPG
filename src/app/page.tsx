@@ -1,12 +1,7 @@
 import CharacterSheet from "@/components/character/CharacterSheet";
-import LogoutButton from "@/components/auth/LogoutButton";
 import Link from "next/link";
-import QuickAccessHUD from "@/components/layout/QuickAccessHUD";
-import { createClient } from "@/utils/supabase/server";
-import { ProfileService } from '@/services/supabase/profile.service';
-import NotificationBell from '@/components/layout/NotificationBell';
-import AdminNotificationBadge from '@/components/admin/AdminNotificationBadge';
-import ProfileSettings from '@/components/layout/ProfileSettings';
+import HomeUserControls from '@/components/layout/HomeUserControls';
+import QuickAccessHUD from '@/components/layout/QuickAccessHUD';
 import { unstable_cache } from 'next/cache';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import {
@@ -27,9 +22,6 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const publicClient = createSupabaseClient(supabaseUrl, supabaseAnonKey);
 
-// Cambiar a true cuando se quiera volver a mostrar el botón de Iniciar Sesión en la navegación
-const SHOW_LOGIN_BUTTON = false;
-
 const getCachedRegistros = unstable_cache(
   async () => {
     const { data } = await publicClient
@@ -49,7 +41,7 @@ const getCachedRegistros = unstable_cache(
     return data || [];
   },
   ['latest-registros'],
-  { revalidate: 30 }
+  { revalidate: 300 }
 );
 
 const getCachedCharacters = unstable_cache(
@@ -70,7 +62,7 @@ const getCachedCharacters = unstable_cache(
     return data || [];
   },
   ['latest-characters'],
-  { revalidate: 30 }
+  { revalidate: 300 }
 );
 
 const getCachedNoticias = unstable_cache(
@@ -84,7 +76,7 @@ const getCachedNoticias = unstable_cache(
     return data || [];
   },
   ['latest-noticias'],
-  { revalidate: 30 }
+  { revalidate: 300 }
 );
 
 function formatRelativeTime(dateString: string) {
@@ -103,17 +95,11 @@ function formatRelativeTime(dateString: string) {
 }
 
 export default async function Home() {
-  const supabase = await createClient();
-
-  const [userRes, registros, characters, noticias] = await Promise.all([
-    supabase.auth.getUser(),
+  const [registros, characters, noticias] = await Promise.all([
     getCachedRegistros(),
     getCachedCharacters(),
     getCachedNoticias()
   ]);
-
-  const user = userRes.data?.user;
-  const profile = user ? await ProfileService.getProfile(user.id, supabase) : null;
 
   // Merge and sort chronologically
   const events: any[] = [];
@@ -178,7 +164,7 @@ export default async function Home() {
         categoria: news.categoria || 'NOTICIA'
       },
       autorName: 'Muro de Anuncios',
-      avatarUrl: news.url_imagen || '/assets/ui/logo.png',
+      avatarUrl: news.url_imagen || '/assets/ui/logo.webp',
       link: `/noticias`
     });
   });
@@ -193,55 +179,14 @@ export default async function Home() {
           {/* Logo and Branding */}
           <div className="flex items-center gap-4 md:gap-10 justify-center lg:justify-start w-full lg:w-auto">
             <img
-              src="/assets/ui/logo.png"
+              src="/assets/ui/logo.webp"
               alt="Naruto Logo"
               className="h-14 sm:h-20 md:h-28 xl:h-32 w-auto object-contain drop-shadow-[0_0_30px_rgba(255,255,255,0.4)]"
             />
           </div>
 
           {/* Controls and Navigation */}
-          <div className="flex flex-col justify-between items-center lg:items-end gap-4 w-full lg:w-auto self-stretch pt-2 pb-0">
-            {user && (
-              <div className="flex items-center gap-4 sm:gap-6 justify-center lg:justify-end">
-                <ProfileSettings profile={profile} userId={user.id} />
-                <NotificationBell />
-              </div>
-            )}
-
-            <nav className="flex flex-wrap items-center justify-center lg:justify-end gap-3 sm:gap-4 mt-auto">
-              {profile?.roles && profile.roles.some((role: string) => ['admin', 'moderador', 'narrador'].includes(role)) && (
-                <Link
-                  href="/combate"
-                  className="flex items-center gap-3 px-6 py-3 bg-white text-naranja-naruto border border-white hover:bg-white/90 hover:brightness-110 transition-all font-black text-xs uppercase tracking-[0.2em] cursor-pointer shadow-md"
-                  style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
-                >
-                  SALAS DE COMBATE
-                </Link>
-              )}
-              {profile?.roles && profile.roles.some((role: string) => ['admin', 'moderador'].includes(role)) && (
-                <>
-                  <Link
-                    href="/admin"
-                    className="flex items-center gap-3 px-6 py-3 bg-white text-naranja-naruto border border-white hover:bg-white/90 hover:brightness-110 transition-all group font-black text-xs uppercase tracking-[0.2em] cursor-pointer shadow-md"
-                    style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
-                  >
-                    PANEL ADMIN
-                  </Link>
-                  <AdminNotificationBadge />
-                </>
-              )}
-              {user ? (
-                <LogoutButton />
-              ) : SHOW_LOGIN_BUTTON ? (
-                <Link
-                  href="/login"
-                  className="px-6 py-3.5 ninja-btn-oro text-xs sm:text-sm font-black uppercase tracking-widest text-center"
-                >
-                  INICIAR SESIÓN
-                </Link>
-              ) : null}
-            </nav>
-          </div>
+          <HomeUserControls />
         </div>
       </header>
 

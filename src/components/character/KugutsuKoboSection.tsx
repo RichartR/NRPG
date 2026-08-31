@@ -173,7 +173,7 @@ export default function KugutsuKoboSection({
               );
 
               const isAssembled = !!companion;
-              const displayImage = companion?.url_image_personalizada || '/assets/images/kugutsu_placeholder.png';
+              const displayImage = companion?.url_image_personalizada || '/assets/images/kugutsu_placeholder.webp';
               const displayName = companion?.nombre_personalizado || 'Kugutsu sin Nombre';
 
               // Validación de Rango para Accesorio

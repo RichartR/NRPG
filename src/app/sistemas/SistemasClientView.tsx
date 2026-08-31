@@ -1,25 +1,41 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import NinjaCard from '@/components/ui/NinjaCard';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import DocList from '@/components/admin/DocList';
 import AdminViewSelector from '@/components/admin/AdminViewSelector';
+import { useUserRoles } from '@/hooks/useUserRoles';
+import { createClient } from '@/utils/supabase/client';
 
 interface SistemasClientViewProps {
   initialDocs: any[];
-  isAdmin: boolean;
-  adminDocs: any[];
-  adminCategories: any[];
+  adminDocs?: any[];
+  adminCategories?: any[];
 }
 
 export default function SistemasClientView({
   initialDocs,
-  isAdmin,
-  adminDocs,
-  adminCategories,
+  adminDocs: initialAdminDocs = [],
+  adminCategories: initialAdminCategories = [],
 }: SistemasClientViewProps) {
+  const { roles } = useUserRoles();
+  const isAdmin = roles.includes('admin') || roles.includes('moderador');
+  const [adminDocs, setAdminDocs] = useState(initialAdminDocs);
+  const [adminCategories, setAdminCategories] = useState(initialAdminCategories);
   const [viewMode, setViewMode] = useState<'player' | 'admin'>('player');
+
+  useEffect(() => {
+    if (!isAdmin || adminDocs.length > 0) return;
+    const supabase = createClient();
+    Promise.all([
+      supabase.from('info_documentos_sistemas').select('*').eq('categoria', 'sistemas').order('titulo'),
+      supabase.from('info_categorias_documentos').select('*').eq('slug', 'sistemas').order('nombre'),
+    ]).then(([docsResult, categoriesResult]) => {
+      if (!docsResult.error) setAdminDocs(docsResult.data || []);
+      if (!categoriesResult.error) setAdminCategories(categoriesResult.data || []);
+    }).catch((error) => console.error('Error cargando documentos administrativos:', error));
+  }, [isAdmin, adminDocs.length]);
 
   return (
     <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col animate-in fade-in duration-500">

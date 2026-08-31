@@ -45,7 +45,7 @@ export default function RegistrosLandingPage() {
             title="Combates y Sanaciones"
             titleClassName="text-3xl sm:text-4xl md:text-4xl"
             category="REGISTROS"
-            imageUrl="/assets/images/combate.png"
+            imageUrl="/assets/images/combate.webp"
             description="Historial de combates, estados y recompensas obtenidas."
             actionText="Ver Registros"
           />
