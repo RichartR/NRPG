@@ -27,10 +27,6 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
   const rawProxyUrl = convertDriveUrl(url);
   const downloadUrl = getDownloadUrl(url);
 
-  // Extraer el ID para reconstruir la URL del proxy PDF si estamos en móvil
-  const fileIdMatch = url.match(/\/d\/(.*?)(\/|$)/);
-  const fileId = fileIdMatch ? fileIdMatch[1] : null;
-  const proxyPdfUrl = fileId ? `/api/proxy-pdf?fileId=${fileId}` : url;
 
   // Limpiar timeout al desmontar
   useEffect(() => {
@@ -51,12 +47,8 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Lógica Híbrida:
-  // - En móvil: Cargamos el PDF a través del proxy y lo mostramos con pdf-viewer.html (evita que Google renderice roto en móviles).
-  // - En PC: Cargamos la vista previa directa de Google con authuser=0 y cache-buster para máxima confiabilidad.
-  const embedUrl = isMobile
-    ? `/pdf-viewer.html?file=${encodeURIComponent(proxyPdfUrl)}`
-    : `${rawProxyUrl}${rawProxyUrl.includes('?') ? '&' : '?'}authuser=0&cb=${timestamp}`;
+  // Escritorio conserva exactamente su visor actual.
+  const embedUrl = `${rawProxyUrl}${rawProxyUrl.includes('?') ? '&' : '?'}authuser=0&cb=${timestamp}`;
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 2.0));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.6));
@@ -181,14 +173,31 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
               WebkitFontSmoothing: 'antialiased'
             }}
           >
-            {mounted && (
+            {mounted && isMobile && (
+              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-black px-8 text-center">
+                <p className="font-ninja text-lg uppercase tracking-wider text-oro">Documento en Google Drive</p>
+                <p className="max-w-sm text-sm leading-relaxed text-oro/50">
+                  En dispositivos móviles el documento se abre fuera de NRPG para mantener correctamente su formato.
+                </p>
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 bg-naranja-naruto px-7 py-4 text-xs font-black uppercase tracking-[0.2em] text-black transition-all active:scale-95 hover:brightness-110"
+                >
+                  Ver documento
+                </a>
+              </div>
+            )}
+
+            {mounted && !isMobile && (
               <div
                 className="absolute"
                 style={{
-                  width: isMobile ? '100%' : `${desktopIframeWidth}px`,
-                  height: isMobile ? '100%' : `calc(100% + ${desktopTopOffset}px)`,
-                  left: isMobile ? '0' : `-${desktopLeftOffset}px`,
-                  top: isMobile ? '0' : `-${desktopTopOffset}px`
+                  width: `${desktopIframeWidth}px`,
+                  height: `calc(100% + ${desktopTopOffset}px)`,
+                  left: `-${desktopLeftOffset}px`,
+                  top: `-${desktopTopOffset}px`
                 }}
               >
                 <iframe
@@ -200,7 +209,7 @@ export default function DocViewer({ title, url, backUrl = "/bienvenida", breadcr
               </div>
             )}
 
-            {loading && (
+            {loading && !isMobile && (
               <div className="absolute inset-0 bg-black flex items-center justify-center z-10">
                 <div className="relative">
                   <div className="w-20 h-20 border-4 border-oro/20 border-t-oro rounded-full animate-spin" />

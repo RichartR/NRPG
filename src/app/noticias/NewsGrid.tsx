@@ -45,7 +45,7 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
   const [loadedContent, setLoadedContent] = useState<Record<string, { content: string, timestamp: string }>>({});
   const [loadingMsg, setLoadingMsg] = useState(false);
 
-  // Mobile detection for PDF viewer matching DocViewer
+  // Mobile detection for the full-screen document viewer
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -62,14 +62,6 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
 
   const getEmbedUrl = (url: string) => {
     if (!url) return '';
-    // Regex robusto para extraer ID de Google Drive/Docs
-    const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
-    const fileId = match ? match[1] : null;
-
-    if (isMobile && fileId) {
-      const proxyPdfUrl = `/api/proxy-pdf?fileId=${fileId}`;
-      return `/pdf-viewer.html?file=${encodeURIComponent(proxyPdfUrl)}`;
-    }
     return convertDriveUrl(url);
   };
 
@@ -470,15 +462,20 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
                           </button>
                         </div>
 
-                        {/* Visor PDF Móvil a Pantalla Completa */}
-                        <div className="flex-1 w-full h-full bg-white relative">
-                          {mounted && (
-                            <iframe
-                              src={getEmbedUrl(activeNews.discord_msg_id)}
-                              className="w-full h-full border-none bg-white"
-                              allow="autoplay"
-                            />
-                          )}
+                        {/* En móvil abrimos el documento fuera de NRPG. */}
+                        <div className="flex-1 w-full h-full bg-black relative flex flex-col items-center justify-center gap-4 px-8 text-center">
+                          <p className="font-ninja text-lg uppercase tracking-wider text-oro">Documento en Google Drive</p>
+                          <p className="max-w-sm text-sm leading-relaxed text-oro/50">
+                            Se abrirá en Google Drive para mantener correctamente su formato.
+                          </p>
+                          <a
+                            href={activeNews.discord_msg_id}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-3 bg-naranja-naruto px-7 py-4 text-xs font-black uppercase tracking-[0.2em] text-black transition-all active:scale-95 hover:brightness-110"
+                          >
+                            Ver documento
+                          </a>
                         </div>
                       </div>
                     ) : (
