@@ -16,6 +16,7 @@ import {
   Sentido,
   RamaSentido
 } from '@/domain/types';
+let masterInitialization: Promise<void> | null = null;
 
 interface MasterState {
   aldeas: Aldea[];
@@ -63,7 +64,12 @@ export const useMasterStore = create<MasterState>((set, get) => ({
 
   initialize: async () => {
     if (get().initialized) return;
-    await get().refresh();
+    if (!masterInitialization) {
+      masterInitialization = get().refresh().finally(() => {
+        masterInitialization = null;
+      });
+    }
+    await masterInitialization;
   },
 
   refresh: async () => {

@@ -80,6 +80,7 @@ export default function AdminNavbar({ userRoles = [] }: AdminNavbarProps) {
 
         <Link
           href="/"
+          prefetch={false}
           className="flex items-center gap-3 px-6 py-3 bg-naranja-naruto/10 border border-naranja-naruto/20 hover:bg-naranja-naruto hover:text-oro text-naranja-naruto font-black text-caption sm:text-caption uppercase tracking-[0.2em] transition-all active:scale-95 italic"
           style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
         >
@@ -110,6 +111,7 @@ export default function AdminNavbar({ userRoles = [] }: AdminNavbarProps) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={false}
                   onClick={() => setDropdownOpen(false)}
                   className={`flex items-center gap-4 p-4 font-black text-xs uppercase tracking-wider transition-all rounded-sm ${isActive
                     ? 'bg-oro text-naranja-naruto'
@@ -134,6 +136,7 @@ export default function AdminNavbar({ userRoles = [] }: AdminNavbarProps) {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={false}
               className={`flex items-center gap-2.5 px-5 py-3.5 font-black text-caption xl:text-xs uppercase tracking-widest transition-all relative shrink-0 ${isActive
                 ? 'bg-oro text-naranja-naruto shadow-md shadow-oro/5'
                 : 'bg-black/20 border border-oro/5 text-oro/40 hover:border-oro/20 hover:text-oro hover:bg-oro/5'

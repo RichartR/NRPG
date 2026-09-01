@@ -208,6 +208,7 @@ export default async function AdminPage() {
               <Link
                 key={mod.href}
                 href={mod.href}
+                prefetch={false}
                 className="group relative p-10 ninja-card-oro hover:scale-[1.02] transition-all duration-500 flex flex-col justify-between"
               >
                 {/* Sutil Glow de fondo */}

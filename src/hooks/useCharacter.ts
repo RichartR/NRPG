@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { CharacterService } from '@/services/supabase/character.service';
 import { RegistrosService } from '@/services/supabase/registros.service';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
@@ -23,6 +23,7 @@ export function useCharacter(characterId: string) {
   const [activeTab, setActiveTab] = useState('general');
   const [freeResetPeriod, setFreeResetPeriod] = useState<boolean>(false);
   const [glosarioCompleto, setGlosarioCompleto] = useState<any[]>([]);
+  const glosarioLoadKey = useRef<string | null>(null);
 
   // Master data from Store
   const masters = useMasterStore();
@@ -39,11 +40,10 @@ export function useCharacter(characterId: string) {
     try {
       setLoading(true);
       
-      // 1. Carga inicial en paralelo (User, Character, Master Store, Glosario Completo, Config)
-      const [userRes, char, allGlosario, isFree] = await Promise.all([
+      // 1. Carga inicial en paralelo. El glosario completo se carga solo al editar.
+      const [userRes, char, isFree] = await Promise.all([
         AuthService.getUser(),
         CharacterService.getCharacterById(Number(characterId)),
-        MasterService.getGlosarios(),
         MasterService.getSystemConfig('periodo_reseteos_gratuitos'),
         masters.initialized ? Promise.resolve() : masters.initialize()
       ]);
@@ -72,7 +72,6 @@ export function useCharacter(characterId: string) {
       const fullChar = { ...char, apariencia: aparienciaTexto, historia: historiaTexto };
       setCharacter(fullChar);
       setOriginalCharacter(JSON.parse(JSON.stringify(fullChar)));
-      setGlosarioCompleto(allGlosario);
     } catch (err: any) {
       addToast(`Error al cargar: ${err.message}`, 'error');
     } finally {
@@ -85,18 +84,31 @@ export function useCharacter(characterId: string) {
   }, [characterId]);
 
   // CARGA DE GLOSARIO BAJO DEMANDA (Solo al editar)
+
+  // El catálogo completo solo es necesario para editar una ficha.
   useEffect(() => {
-    const loadGlosario = async () => {
-      if (isEditing && glosarioFiltrado.length === 0) {
-        try {
-          const items = await CharacterService.getValidItems(Number(characterId));
-          setGlosarioFiltrado(items);
-        } catch (err) {
-          console.error("Error loading glosario on edit:", err);
-        }
+    if (!isEditing || glosarioLoadKey.current === characterId) return;
+    glosarioLoadKey.current = characterId;
+
+    let cancelled = false;
+    Promise.all([
+      CharacterService.getValidItems(Number(characterId)),
+      MasterService.getGlosarios()
+    ]).then(([items, glosario]) => {
+      if (cancelled) return;
+      setGlosarioFiltrado(items);
+      setGlosarioCompleto(glosario);
+   }).catch(err => {
+     if (!cancelled) console.error("Error loading glosario on edit:", err);
+      if (!cancelled) {
+        glosarioLoadKey.current = null;
+        console.error("Error loading glosario on edit:", err);
       }
+   });
+
+    return () => {
+      cancelled = true;
     };
-    loadGlosario();
   }, [isEditing, characterId]);
 
   // Derived Stats Effect

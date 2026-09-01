@@ -18,8 +18,6 @@ export async function GET(request: Request) {
   const token = process.env.DISCORD_BOT_TOKEN;
 
   try {
-    const supabase = await createClient();
-
     let channelId = explicitChannelId?.trim() || null;
 
     if (!channelId) {
@@ -29,11 +27,11 @@ export async function GET(request: Request) {
       } else if (categoria === 'parche') {
         configKey = 'discord_patch_channel_id';
       } else if (categoria === 'evento') {
-        const announcementChan = await MasterServerService.getConfiguracion(supabase, 'discord_event_announcement_channel_id');
+        const announcementChan = await MasterServerService.getCachedConfiguracion('discord_event_announcement_channel_id');
         configKey = announcementChan ? 'discord_event_announcement_channel_id' : 'discord_event_channel_id';
       }
 
-      channelId = await MasterServerService.getConfiguracion(supabase, configKey);
+      channelId = await MasterServerService.getCachedConfiguracion(configKey);
     }
 
     if (!channelId || !token) {
@@ -41,7 +39,10 @@ export async function GET(request: Request) {
       return NextResponse.json({
         content: "Contenido no disponible (Canal de Discord o token no configurados en el sistema).",
         timestamp: new Date().toISOString()
-      }, { status: 200 });
+      }, {
+        status: 200,
+        headers: { 'Cache-Control': 'public, max-age=60, s-maxage=300' }
+      });
     }
 
     try {
@@ -80,7 +81,10 @@ export async function GET(request: Request) {
     }
   } catch (error: any) {
     console.error('API Error (GET) general:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, {
+      status: 500,
+      headers: { 'Cache-Control': 'public, max-age=30, s-maxage=60' }
+    });
   }
 }
 
