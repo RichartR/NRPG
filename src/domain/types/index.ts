@@ -530,5 +530,19 @@ export interface PersonajeKugutsuComponentes {
   info_accesorio?: KugutsuComponente | null;
 }
 
-
-
+export interface InfoNPC {
+  id: number;
+  aldea_id?: number | null;
+  img_url?: string | null;
+  title?: string | null;
+  name: string;
+  age?: string | null;
+  clan?: string | null;
+  ability?: string | null;
+  history?: string | null;
+  psychic?: string | null;
+  psicologic?: string | null;
+  created_at?: string;
+  // Joins
+  aldeas?: Aldea | null;
+}
