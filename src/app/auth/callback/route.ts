@@ -33,7 +33,29 @@ export async function GET(request: Request) {
 
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        const profile = await ProfileService.getProfile(user.id, supabase)
+        let profile = await ProfileService.getProfile(user.id, supabase)
+
+        // Si el perfil no existe (porque se eliminó manualmente de profiles pero la cuenta auth.users ya existía)
+        if (!profile) {
+          const discordId = user.user_metadata?.sub || user.identities?.[0]?.identity_data?.sub || null
+          const rawName = user.user_metadata?.full_name 
+            || user.user_metadata?.preferred_username 
+            || user.user_metadata?.name 
+            || user.email?.split('@')[0] 
+            || 'Ninja'
+          const username = rawName.replace(/\s+/g, '_')
+
+          await supabase.from('profiles').upsert({
+            id: user.id,
+            username,
+            discord_id: discordId,
+            role: 'user',
+            last_ip: ip || null
+          })
+
+          profile = await ProfileService.getProfile(user.id, supabase)
+        }
+
         if (profile?.banned_until && new Date(profile.banned_until) > new Date()) {
           return NextResponse.redirect(`${origin}/banned`)
         }

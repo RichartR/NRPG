@@ -52,15 +52,44 @@ export const ProfileService = {
   async updateUserIP(userId: string, ip: string, client?: any) {
     const supabase = client || createClient();
 
-    // 1. Actualizar la IP del usuario en su perfil
-    const { error: updateError } = await supabase
+    // 0. Asegurar que el perfil exista en la tabla profiles
+    const { data: existingProfile } = await supabase
       .from('profiles')
-      .update({ last_ip: ip })
-      .eq('id', userId);
+      .select('id, username')
+      .eq('id', userId)
+      .maybeSingle();
 
-    if (updateError) {
-      console.error('Error al actualizar la IP del usuario:', updateError);
-      return;
+    if (!existingProfile) {
+      const { data: authUserData } = await supabase.auth.getUser();
+      const authUser = authUserData?.user;
+      const defaultUsername = authUser?.user_metadata?.full_name 
+        || authUser?.user_metadata?.name 
+        || authUser?.email?.split('@')[0] 
+        || 'Usuario';
+
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          username: defaultUsername,
+          last_ip: ip,
+          role: 'user'
+        });
+
+      if (insertError) {
+        console.error('Error al autocrear el perfil en profiles:', insertError);
+      }
+    } else {
+      // 1. Actualizar la IP del usuario en su perfil
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ last_ip: ip })
+        .eq('id', userId);
+
+      if (updateError) {
+        console.error('Error al actualizar la IP del usuario:', updateError);
+        return;
+      }
     }
 
     // Sincronizar el username de Discord si no se ha sincronizado en los últimos 7 días
