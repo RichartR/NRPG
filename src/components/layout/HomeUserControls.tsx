@@ -10,7 +10,7 @@ import AdminNotificationBadge from '@/components/admin/AdminNotificationBadge';
 import LogoutButton from '@/components/auth/LogoutButton';
 import type { Profile } from '@/domain/types';
 
-const SHOW_LOGIN_BUTTON = false;
+const SHOW_LOGIN_BUTTON = true;
 
 export default function HomeUserControls() {
   const [account, setAccount] = useState<{ userId: string; profile: Profile } | null>(null);
