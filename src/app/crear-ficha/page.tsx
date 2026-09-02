@@ -99,6 +99,7 @@ function CrearFichaContent() {
   const equipedRamaIdsStr = JSON.stringify(
     form.personajes_ramas.map((r: any) => ({
       rama_id: r.rama_id,
+      sub_especialidad_id: r.sub_especialidad_id,
       p: r.elemento_principal_id,
       s: r.elemento_secundario_id,
       t: r.elemento_terciario_id
@@ -121,6 +122,14 @@ function CrearFichaContent() {
         equipedRamaIds.push(Number(form.eleccion_tecnicas_clan.rama_id));
       }
 
+      const equipedSubSpecIds = form.personajes_ramas
+        .map((r: any) => r.sub_especialidad_id ? Number(r.sub_especialidad_id) : null)
+        .filter(Boolean);
+
+      if (form.eleccion_tecnicas_clan?.sub_especialidad_id) {
+        equipedSubSpecIds.push(Number(form.eleccion_tecnicas_clan.sub_especialidad_id));
+      }
+
       const equipedElementIds = form.personajes_ramas
         .reduce((acc: number[], r: any) => {
           if (r.elemento_principal_id) acc.push(Number(r.elemento_principal_id));
@@ -141,6 +150,17 @@ function CrearFichaContent() {
         // Validar Rama
         const requiredRamaId = entry.rama_clan_id || reqs?.rama_id;
         if (requiredRamaId && !equipedRamaIds.includes(Number(requiredRamaId))) return false;
+
+        // Validar Sub-Especialidad
+        const requiredSubSpec = entry.sub_especialidad_id ?? reqs?.sub_especialidad_id;
+        if (requiredSubSpec !== null && requiredSubSpec !== undefined) {
+          if (Array.isArray(requiredSubSpec)) {
+            const hasAnySub = requiredSubSpec.some((subId: any) => equipedSubSpecIds.includes(Number(subId)));
+            if (!hasAnySub) return false;
+          } else {
+            if (!equipedSubSpecIds.includes(Number(requiredSubSpec))) return false;
+          }
+        }
 
         // Validar Elemento
         const requiredElementId = entry.elemento_id || reqs?.elemento_id;
@@ -333,6 +353,14 @@ function CrearFichaContent() {
         equipedRamaIds.push(Number(form.eleccion_tecnicas_clan.rama_id));
       }
 
+      const equipedSubSpecIds = form.personajes_ramas
+        .map((r: any) => r.sub_especialidad_id ? Number(r.sub_especialidad_id) : null)
+        .filter(Boolean);
+
+      if (form.eleccion_tecnicas_clan?.sub_especialidad_id) {
+        equipedSubSpecIds.push(Number(form.eleccion_tecnicas_clan.sub_especialidad_id));
+      }
+
       const equipedElementIds = form.personajes_ramas
         .reduce((acc: number[], r: any) => {
           if (r.elemento_principal_id) acc.push(Number(r.elemento_principal_id));
@@ -341,7 +369,7 @@ function CrearFichaContent() {
           return acc;
         }, []);
 
-      // 2. Filtrar las técnicas iniciales según las ramas y elementos elegidos
+      // 2. Filtrar las técnicas iniciales según las ramas, subespecialidades y elementos elegidos
       const filteredTecnicas = form.personajes_tecnicas.filter((pt: any) => {
         const t = pt.info_glosario;
         if (!t) return true;
@@ -350,6 +378,17 @@ function CrearFichaContent() {
         const requiredRamaId = t.rama_clan_id || t.requisitos?.rama_id;
         if (requiredRamaId && !equipedRamaIds.includes(Number(requiredRamaId))) {
           return false;
+        }
+
+        // Validar Sub-Especialidad
+        const requiredSubSpec = t.sub_especialidad_id ?? t.requisitos?.sub_especialidad_id;
+        if (requiredSubSpec !== null && requiredSubSpec !== undefined) {
+          if (Array.isArray(requiredSubSpec)) {
+            const hasAnySub = requiredSubSpec.some((subId: any) => equipedSubSpecIds.includes(Number(subId)));
+            if (!hasAnySub) return false;
+          } else {
+            if (!equipedSubSpecIds.includes(Number(requiredSubSpec))) return false;
+          }
         }
 
         // Validar Elemento
