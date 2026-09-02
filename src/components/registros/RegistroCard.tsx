@@ -164,7 +164,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
           <div className="w-11 h-11 bg-black/40 border border-oro/20 ninja-clip-xs shrink-0 overflow-hidden flex items-center justify-center">
             {registro.subtipo === 'narracion' ? (
               <img
-                src="/assets/images/narracion.png"
+                src="/assets/images/narracion.webp"
                 alt="Narración"
                 className="w-full h-full object-cover"
               />

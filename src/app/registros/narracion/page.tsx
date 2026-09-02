@@ -178,7 +178,7 @@ export default function NarracionPage() {
                   <div className="relative">
                     <div className="w-14 h-14 sm:w-16 sm:h-16 border-4 border-oro/20 border-t-oro rounded-full animate-spin" />
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="Logo" />
+                      <img src="/assets/icons/shuriken.webp" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="Logo" />
                     </div>
                   </div>
                   <p className="text-center text-oro font-black uppercase tracking-[0.35em] sm:tracking-[0.6em] text-caption sm:text-sm animate-pulse">

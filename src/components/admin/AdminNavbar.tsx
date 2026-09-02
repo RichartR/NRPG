@@ -67,7 +67,7 @@ export default function AdminNavbar({ userRoles = [] }: AdminNavbarProps) {
       {/* Top row: Logo area + Return home */}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-6 pb-6 border-b border-oro/10 mb-6">
         <div className="flex items-center gap-4">
-          <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
+          <img src="/assets/icons/shuriken.webp" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
           <div>
             <h1 className="ninja-title text-xl sm:text-3xl tracking-widest leading-none">
               PANEL ADMINISTRATIVO

@@ -3353,7 +3353,7 @@ export function CharacterSheetView({
                                                             title="Gestionar registros del objeto"
                                                           >
                                                             <img
-                                                              src={Number(pi.item_id) === 393 ? "/assets/images/veneno.png" : "/assets/images/antidoto.png"}
+                                                              src={Number(pi.item_id) === 393 ? "/assets/images/veneno.webp" : "/assets/images/antidoto.webp"}
                                                               alt="Icono objeto"
                                                               className="w-5 h-5 object-contain"
                                                             />
@@ -3621,7 +3621,7 @@ export function CharacterSheetView({
                                             title="Gestionar registros del objeto"
                                           >
                                             <img
-                                              src={Number(pi.item_id) === 393 ? "/assets/images/veneno.png" : "/assets/images/antidoto.png"}
+                                              src={Number(pi.item_id) === 393 ? "/assets/images/veneno.webp" : "/assets/images/antidoto.webp"}
                                               alt="Icono objeto"
                                               className="w-5 h-5 object-contain"
                                             />

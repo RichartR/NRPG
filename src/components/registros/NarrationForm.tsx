@@ -321,7 +321,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
       <div className="ninja-card-oro p-8 sm:p-12 xl:p-16 relative overflow-hidden">
         {/* Background Decorative Element */}
         <div className="absolute top-0 right-0 p-10 opacity-[0.02] pointer-events-none">
-          <img src="/assets/icons/shuriken.png" className="w-64 h-64 rotate-12" alt="bg" />
+          <img src="/assets/icons/shuriken.webp" className="w-64 h-64 rotate-12" alt="bg" />
         </div>
 
         <div className="relative z-10 space-y-10 sm:space-y-14">
@@ -485,7 +485,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                       {/* Campo Enlace */}
                       <div className="pt-2 border-t border-white/5 space-y-1">
                         <span className="text-sm sm:text-base font-extrabold text-[#f2f3f5] flex items-center gap-2.5">
-                          <img src="/assets/icons/naruto_scroll.png" alt="Scroll" className="w-7 h-7 object-contain shrink-0" />
+                          <img src="/assets/icons/naruto_scroll.webp" alt="Scroll" className="w-7 h-7 object-contain shrink-0" />
                           Ver Registro y Recompensas
                         </span>
                         <span className="text-xs font-semibold text-[#00a8fc] underline block truncate">

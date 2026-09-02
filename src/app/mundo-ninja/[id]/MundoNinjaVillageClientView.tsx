@@ -357,7 +357,7 @@ export default function MundoNinjaVillageClientView({
           {/* Imagen de fondo de la aldea */}
           {(isRenegado || aldea?.url_imagen) && (
             <div className="absolute inset-0 z-0 opacity-[0.08] pointer-events-none scale-105">
-              <img src={isRenegado ? "/assets/images/renegados.jpg" : aldea.url_imagen} alt="" className="w-full h-full object-cover grayscale brightness-50" />
+              <img src={isRenegado ? "/assets/images/renegados.webp" : aldea.url_imagen} alt="" className="w-full h-full object-cover grayscale brightness-50" />
             </div>
           )}
 
@@ -375,7 +375,7 @@ export default function MundoNinjaVillageClientView({
             <div className="flex items-center gap-8">
               <div className="w-24 h-24 xl:w-32 xl:h-32 bg-black/40 border border-oro/20 ninja-clip-md overflow-hidden flex items-center justify-center shadow-2xl backdrop-blur-sm">
                 {isRenegado ? (
-                  <img src="/assets/images/renegados.jpg" alt="Renegados" className="w-full h-full object-cover filter brightness-95" />
+                  <img src="/assets/images/renegados.webp" alt="Renegados" className="w-full h-full object-cover filter brightness-95" />
                 ) : aldea?.url_imagen ? (
                   <img src={aldea.url_imagen} alt="" className="w-full h-full object-cover filter brightness-95" />
                 ) : (

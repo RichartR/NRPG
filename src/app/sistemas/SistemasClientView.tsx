@@ -48,7 +48,7 @@ export default function SistemasClientView({
           ]}
         />
         <div className="flex items-center gap-4">
-          <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
+          <img src="/assets/icons/shuriken.webp" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
           <h1 className="text-lg xl:text-2xl font-black text-oro uppercase tracking-[0.3em] pt-1">
             Sistemas <span className="text-naranja-naruto">de NRPG</span>
           </h1>
@@ -99,7 +99,7 @@ export default function SistemasClientView({
             <header className="mb-6 ninja-card-oro p-8 xl:p-10">
               <div className="flex items-center gap-6">
                 <div className="w-12 h-12 bg-oro/[0.03] border border-oro/10 flex items-center justify-center">
-                  <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
+                  <img src="/assets/icons/shuriken.webp" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
                 </div>
                 <div>
                   <h1 className="ninja-title text-4xl xl:text-5xl italic">REGLAS DE SISTEMA</h1>

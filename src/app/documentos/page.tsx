@@ -16,7 +16,7 @@ export default function DocumentosPage() {
         />
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 flex items-center justify-center">
-            <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
+            <img src="/assets/icons/shuriken.webp" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
           </div>
           <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
             Biblioteca <span className="text-naranja-naruto">Mundial</span>
@@ -64,7 +64,7 @@ export default function DocumentosPage() {
             title="GLOSARIO"
             titleClassName="text-3xl sm:text-3xl md:text-4xl"
             category="GLOSARIO"
-            imageUrl="/assets/images/glosario.jpg"
+            imageUrl="/assets/images/glosario.webp"
             description="Consulta el glosario con todo el conocimiento del mundo shinobi."
             actionText="Ver Glosario"
           />
@@ -86,7 +86,7 @@ export default function DocumentosPage() {
             title="CALCULADORA DE STATS"
             titleClassName="text-3xl sm:text-3xl md:text-4xl"
             category="HERRAMIENTA"
-            imageUrl="/assets/images/simulador-builds.jpeg"
+            imageUrl="/assets/images/simulador-builds.webp"
             description="Prueba distintas combinaciones de estadísticas para tu personaje antes de tomar la decisión final sobre como repartir tus STATs."
             actionText="Probar calculadora"
           />

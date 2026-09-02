@@ -29,7 +29,7 @@ export default async function AldeasPage() {
           ]}
         />
         <div className="flex items-center gap-4">
-          <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
+          <img src="/assets/icons/shuriken.webp" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
           <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
             Naciones <span className="text-naranja-naruto">Ocultas</span>
           </h1>
@@ -68,7 +68,7 @@ export default async function AldeasPage() {
             titleClassName={getTitleFontSize('RENEGADOS')}
             category="shinobi sin afiliación"
             categoryClassName="text-caption sm:text-xs md:text-sm lg:text-base xl:text-lg tracking-[0.2em] sm:tracking-[0.4em]"
-            imageUrl="/assets/images/renegados.jpg"
+            imageUrl="/assets/images/renegados.webp"
             description="Guerreros sin aldea oculta, exiliados o ronin que operan fuera del control de las grandes naciones."
             actionText="VER ALDEA"
           />

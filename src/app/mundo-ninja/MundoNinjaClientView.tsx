@@ -87,7 +87,7 @@ export default function MundoNinjaClientView({
           ]}
         />
         <div className="flex items-center gap-4">
-          <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
+          <img src="/assets/icons/shuriken.webp" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
           <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
             INFORMACIÓN <span className="text-naranja-naruto">NINJA</span>
           </h1>
@@ -153,7 +153,7 @@ export default function MundoNinjaClientView({
                 titleClassName={getTitleFontSize('Renegados')}
                 category="shinobi sin afiliación"
                 categoryClassName="text-caption sm:text-xs md:text-xs lg:text-sm xl:text-sm font-black text-oro/40 uppercase tracking-[0.1em] sm:tracking-[0.15em] whitespace-nowrap overflow-hidden text-ellipsis"
-                imageUrl="/assets/images/renegados.jpg"
+                imageUrl="/assets/images/renegados.webp"
                 description="Ninjas sin afiliación o exiliados que actuan fuera del control de las grandes naciones."
                 actionText="VER FICHAS"
                 headerOverlayRight={
@@ -174,7 +174,7 @@ export default function MundoNinjaClientView({
             <header className="mb-6 ninja-card-oro p-8 xl:p-10">
               <div className="flex items-center gap-6">
                 <div className="w-12 h-12 bg-oro/[0.03] border border-oro/10 flex items-center justify-center">
-                  <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
+                  <img src="/assets/icons/shuriken.webp" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
                 </div>
                 <div>
                   <h1 className="ninja-title text-4xl xl:text-5xl italic">Gestión de Aldeas y Organizaciones</h1>

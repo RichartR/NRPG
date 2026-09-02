@@ -176,7 +176,7 @@ export function ObjetoSlotsModal({ isOpen, onClose, item, canEdit, onRefresh }: 
           <div className="flex items-center gap-4">
             <div className="p-2 bg-oro/10 border border-oro/20 ninja-clip-xs flex items-center justify-center shrink-0">
               <img
-                src={item.item_id === 393 ? "/assets/images/veneno.png" : "/assets/images/antidoto.png"}
+                src={item.item_id === 393 ? "/assets/images/veneno.webp" : "/assets/images/antidoto.webp"}
                 alt={nombreEs}
                 className="w-10 h-10 object-contain drop-shadow-md"
               />

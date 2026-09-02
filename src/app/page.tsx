@@ -130,7 +130,7 @@ export default async function Home() {
       data: reg.data,
       autorName: reg.autor?.nombre_ninja || reg.data.autor_admin?.username || reg.data.narrador || 'Admin / Narrador',
       avatarUrl: reg.subtipo === 'narracion'
-        ? '/assets/images/narracion.png'
+        ? '/assets/images/narracion.webp'
         : (reg.autor?.url_img || null),
       link: targetLink
     });
@@ -205,7 +205,7 @@ export default async function Home() {
             <Link href="/bienvenida" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja md:col-span-2 flex flex-col justify-center min-h-[140px]">
               <div className="relative z-10">
                 <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
-                  <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain transition-transform duration-500 ease-in-out group-hover:rotate-[360deg]" alt="icon" />
+                  <img src="/assets/icons/shuriken.webp" className="w-6 sm:w-7 xl:w-8 h-auto object-contain transition-transform duration-500 ease-in-out group-hover:rotate-[360deg]" alt="icon" />
                   Bienvenida
                 </h3>
                 <p className="text-gris-texto leading-relaxed text-sm xl:text-base max-w-2xl">Guía de inicio, normativa de conducta e información general.</p>
@@ -215,7 +215,7 @@ export default async function Home() {
             {/* Noticias */}
             <Link href="/noticias" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja flex flex-col justify-center min-h-[140px]">
               <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
-                <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain transition-transform duration-500 ease-in-out group-hover:rotate-[360deg]" alt="icon" />
+                <img src="/assets/icons/shuriken.webp" className="w-6 sm:w-7 xl:w-8 h-auto object-contain transition-transform duration-500 ease-in-out group-hover:rotate-[360deg]" alt="icon" />
                 Noticias y Eventos
               </h3>
               <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Anuncios oficiales, eventos, noticias y parches.</p>
@@ -224,7 +224,7 @@ export default async function Home() {
             {/* Sistemas */}
             <Link href="/sistemas" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja flex flex-col justify-center min-h-[140px]">
               <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
-                <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain transition-transform duration-500 ease-in-out group-hover:rotate-[360deg]" alt="icon" />
+                <img src="/assets/icons/shuriken.webp" className="w-6 sm:w-7 xl:w-8 h-auto object-contain transition-transform duration-500 ease-in-out group-hover:rotate-[360deg]" alt="icon" />
                 Sistemas
               </h3>
               <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Aprende todos los sistemas del RPG.</p>
@@ -233,7 +233,7 @@ export default async function Home() {
             {/* Registros */}
             <Link href="/registros" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja flex flex-col justify-center min-h-[140px]">
               <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
-                <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain transition-transform duration-500 ease-in-out group-hover:rotate-[360deg]" alt="icon" />
+                <img src="/assets/icons/shuriken.webp" className="w-6 sm:w-7 xl:w-8 h-auto object-contain transition-transform duration-500 ease-in-out group-hover:rotate-[360deg]" alt="icon" />
                 Tiendas y Registros
               </h3>
               <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Registros de misiones, compras y combates. Conoce las mejores tiendas.</p>
@@ -242,7 +242,7 @@ export default async function Home() {
             {/* Mundo Ninja */}
             <Link href="/mundo-ninja" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja flex flex-col justify-center min-h-[140px]">
               <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4">
-                <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain transition-transform duration-500 ease-in-out group-hover:rotate-[360deg]" alt="icon" />
+                <img src="/assets/icons/shuriken.webp" className="w-6 sm:w-7 xl:w-8 h-auto object-contain transition-transform duration-500 ease-in-out group-hover:rotate-[360deg]" alt="icon" />
                 Mundo Ninja
               </h3>
               <p className="text-gris-texto/80 text-xs xl:text-sm leading-relaxed">Fichas ninja y gestión de aldeas.</p>
@@ -252,7 +252,7 @@ export default async function Home() {
             <Link href="/documentos" className="group relative overflow-hidden ninja-card-oro p-6 xl:p-8 hover-ninja md:col-span-2 flex flex-col justify-center min-h-[140px]">
               <div className="relative z-10">
                 <h3 className="text-xl sm:text-2xl xl:text-3xl font-black text-oro mb-1 flex items-center gap-4 tracking-widest">
-                  <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain transition-transform duration-500 ease-in-out group-hover:rotate-[360deg]" alt="icon" />
+                  <img src="/assets/icons/shuriken.webp" className="w-6 sm:w-7 xl:w-8 h-auto object-contain transition-transform duration-500 ease-in-out group-hover:rotate-[360deg]" alt="icon" />
                   Documentos, Glosario y Mapa
                 </h3>
                 <p className="text-gris-texto leading-relaxed text-sm xl:text-base max-w-2xl">Consulta los documentos de las ramas, clanes, el mapa y el glosario.</p>

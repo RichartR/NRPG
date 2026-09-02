@@ -12,7 +12,7 @@ export default function RegistrosLandingPage() {
           ]}
         />
         <div className="flex items-center gap-4">
-          <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
+          <img src="/assets/icons/shuriken.webp" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
           <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
             Registros <span className="text-naranja-naruto">Mundiales</span>
           </h1>
@@ -34,7 +34,7 @@ export default function RegistrosLandingPage() {
             title="Misiones"
             titleClassName="text-3xl sm:text-4xl md:text-4xl"
             category="REGISTROS"
-            imageUrl="/assets/images/misiones.jpg"
+            imageUrl="/assets/images/misiones.webp"
             description="Historial de misiones completadas y recompensas obtenidas."
             actionText="Ver Registros"
           />
@@ -56,7 +56,7 @@ export default function RegistrosLandingPage() {
             title="Narración"
             titleClassName="text-3xl sm:text-4xl md:text-4xl"
             category="REGISTROS"
-            imageUrl="/assets/images/narracion.png"
+            imageUrl="/assets/images/narracion.webp"
             description="Registros de historias y escenas hechas por narradores y recompensas obtenidas."
             actionText="Ver Registros"
           />
@@ -67,7 +67,7 @@ export default function RegistrosLandingPage() {
             title="Tiendas Ninja"
             titleClassName="text-3xl sm:text-4xl md:text-4xl"
             category="TIENDAS"
-            imageUrl="/assets/images/tienda.png"
+            imageUrl="/assets/images/tienda.webp"
             description="Visita el distrito comercial y adquiere armas, técnicas y equipo especial."
             actionText="Visitar Tiendas"
           />

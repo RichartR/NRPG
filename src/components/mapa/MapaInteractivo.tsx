@@ -178,7 +178,7 @@ export default function MapaInteractivo({
     } as any);
 
     // Image overlay for the fantasy map
-    L.imageOverlay('/assets/images/mapa.jpeg', bounds).addTo(map);
+    L.imageOverlay('/assets/images/mapa.webp', bounds).addTo(map);
 
     // Fit map to show the whole image perfectly
     map.fitBounds(bounds);

@@ -43,7 +43,7 @@ export default async function GroupingDetailPage({ params }: { params: Promise<{
       <header className="w-full max-w-[1750px] mx-auto flex flex-col md:flex-row justify-between items-center gap-10 mb-10 ninja-card-oro p-8 xl:p-12 z-50">
         <Breadcrumbs items={breadcrumbsItems} />
         <div className="flex items-center gap-4">
-          <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
+          <img src="/assets/icons/shuriken.webp" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
           <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
             Información <span className="text-naranja-naruto">de rama</span>
           </h1>
@@ -53,7 +53,7 @@ export default async function GroupingDetailPage({ params }: { params: Promise<{
       <main className="w-full max-w-[1750px] mx-auto flex-1">
         <div className="mb-10 ninja-card-oro p-12 xl:p-16 relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-12 opacity-[0.02] pointer-events-none group-hover:opacity-[0.05] transition-opacity">
-            <img src="/assets/icons/shuriken.png" className="w-64 h-64 rotate-12" alt="bg" />
+            <img src="/assets/icons/shuriken.webp" className="w-64 h-64 rotate-12" alt="bg" />
           </div>
           <div className="flex items-center gap-6 relative z-10">
             <h1 className="ninja-title text-6xl xl:text-7xl">{sub.nombre}</h1>

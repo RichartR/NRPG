@@ -247,7 +247,7 @@ export default function TiendasPage() {
             ]}
           />
           <div className="flex items-center gap-4">
-            <img src="/assets/icons/shuriken.png" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
+            <img src="/assets/icons/shuriken.webp" className="w-6 sm:w-7 xl:w-8 h-auto object-contain" alt="icon" />
             <h1 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.3em]">
               Tiendas <span className="text-naranja-naruto">Ninja</span>
             </h1>
@@ -354,7 +354,7 @@ export default function TiendasPage() {
             <div className="relative">
               <div className="w-16 h-16 border-4 border-oro/20 border-t-oro rounded-full animate-spin" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <img src="/assets/icons/shuriken.png" className="w-5 h-5 object-contain" alt="Loader" />
+                <img src="/assets/icons/shuriken.webp" className="w-5 h-5 object-contain" alt="Loader" />
               </div>
             </div>
             <p className="text-oro font-black uppercase tracking-[0.4em] text-xs animate-pulse">Abriendo mercados...</p>

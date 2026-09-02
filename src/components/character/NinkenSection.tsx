@@ -90,7 +90,7 @@ export default function NinkenSection({
               }));
 
               const template = inuzukaTemplates.find(t => Number(t.id) === Number(companion?.acompanante_id));
-              const displayImage = companion?.url_image_personalizada || companion?.info_acompanantes?.url_default || template?.url_default || '/assets/images/ninken_placeholder.png';
+              const displayImage = companion?.url_image_personalizada || companion?.info_acompanantes?.url_default || template?.url_default || '/assets/images/ninken_slot1.webp';
               const displayName = companion?.nombre_personalizado
                 ? `${companion.nombre_personalizado} (${template?.nombre_jap || 'Ninken'})`
                 : (template?.nombre_jap || `Ninken #${idx + 1}`);
