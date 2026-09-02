@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { Eye, Lock, Unlock, Sparkles, Trash2, Link as LinkIcon, Calendar, Check, AlertCircle, ShieldAlert, Swords } from 'lucide-react';
+import { Lock, Unlock, Trash2, Link as LinkIcon, Calendar } from 'lucide-react';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { NinjaSelect, SearchableSelect } from '@/components/ui/Fields';
 import { Character, Glosario, PersonajeUchihaData, UchihaCopiaSlot } from '@/domain/types';
@@ -222,66 +222,70 @@ export default function UchihaSection({
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* SECCIÓN 1: CABECERA Y DŌJUTSU */}
-      <SectionCard title="CLAN UCHIHA — KEKKEI GENKAI: SHARINGAN" icon={Eye} color="naranja-naruto">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-          
-          {/* Selector de Rama de Combate */}
-          <div className="space-y-3">
-            <label className="text-caption font-black uppercase tracking-[0.2em] text-oro/60 ml-1">
-              Rama de Combate Principal
-            </label>
-            <NinjaSelect
-              value={uchihaData.rama_combate || ''}
-              options={RAMA_COMBATE_OPTIONS}
-              disabled={!isEditing && !isNew}
-              placeholder="SELECCIONAR RAMA DE COMBATE..."
-              onChange={(val) => updateUchiha({ rama_combate: val as any })}
-            />
-            <p className="text-[11px] text-oro/40 italic ml-1">
-              Define los efectos adicionales en las técnicas clan (ej. Shishi Rendan, Ryūka, Gōkakyū).
-            </p>
-          </div>
-
-          {/* Indicador Visual de Nivel de Tomoes */}
-          <div className={`p-6 border ninja-clip-sm flex items-center justify-between gap-6 ${tomoesInfo.bg}`}>
-            <div className="space-y-1">
-              <div className="text-[10px] uppercase font-black tracking-widest text-oro/50">
-                Estado del Dōjutsu
-              </div>
-              <div className={`text-lg font-black tracking-widest ${tomoesInfo.color} flex items-center gap-2`}>
-                <Eye className="w-5 h-5 inline-block animate-pulse" />
-                {tomoesInfo.label}
-              </div>
-              <div className="text-xs text-oro/60">
-                {tomoesInfo.desc}
-              </div>
+      {/* TARJETA CONTENEDORA PRINCIPAL */}
+      <SectionCard title="RAMA SECUNDARIA: COPIA (HASEI: KOPĪ)" color="oro">
+        <div className="space-y-10">
+          {/* SECCIÓN CABECERA: KEKKEI GENKAI SHARINGAN & RAMA DE COMBATE */}
+          <div className="border-b border-oro/10 pb-8 space-y-6">
+            <div className="text-xl sm:text-2xl font-black text-oro uppercase tracking-[0.2em]">
+              CLAN UCHIHA — KEKKEI GENKAI: SHARINGAN
             </div>
 
-            {/* Aspas / Tomoes visuales */}
-            <div className="flex items-center gap-2 bg-black/50 px-4 py-3 rounded-full border border-red-500/20">
-              {[1, 2, 3].map((num) => (
-                <div
-                  key={num}
-                  className={`w-4 h-4 rounded-full border transition-all duration-500 ${
-                    tomoesInfo.level >= num
-                      ? 'bg-red-600 border-red-400 shadow-[0_0_10px_#ef4444]'
-                      : 'bg-zinc-900 border-zinc-700 opacity-40'
-                  }`}
-                  title={`Tomoe ${num}`}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+              {/* Selector de Rama de Combate */}
+              <div className="space-y-3">
+                <label className="text-caption font-black uppercase tracking-[0.2em] text-oro/60 ml-1">
+                  Rama de Combate Principal
+                </label>
+                <NinjaSelect
+                  value={uchihaData.rama_combate || ''}
+                  options={RAMA_COMBATE_OPTIONS}
+                  disabled={!isEditing && !isNew}
+                  placeholder="SELECCIONAR RAMA DE COMBATE..."
+                  onChange={(val) => updateUchiha({ rama_combate: val as any })}
                 />
-              ))}
+                <p className="text-[11px] text-oro/40 italic ml-1">
+                  Define los efectos adicionales en las técnicas clan (ej. Shishi Rendan, Ryūka, Gōkakyū).
+                </p>
+              </div>
+
+              {/* Indicador Visual de Nivel de Tomoes */}
+              <div className={`p-6 border ninja-clip-sm flex items-center justify-between gap-6 ${tomoesInfo.bg}`}>
+                <div className="space-y-1">
+                  <div className="text-[10px] uppercase font-black tracking-widest text-oro/50">
+                    Estado del Dōjutsu
+                  </div>
+                  <div className={`text-lg font-black tracking-widest ${tomoesInfo.color}`}>
+                    {tomoesInfo.label}
+                  </div>
+                  <div className="text-xs text-oro/60">
+                    {tomoesInfo.desc}
+                  </div>
+                </div>
+
+                {/* Aspas / Tomoes visuales */}
+                <div className="flex items-center gap-2 bg-black/50 px-4 py-3 rounded-full border border-red-500/20">
+                  {[1, 2, 3].map((num) => (
+                    <div
+                      key={num}
+                      className={`w-4 h-4 rounded-full border transition-all duration-500 ${
+                        tomoesInfo.level >= num
+                          ? 'bg-red-600 border-red-400 shadow-[0_0_10px_#ef4444]'
+                          : 'bg-zinc-900 border-zinc-700 opacity-40'
+                      }`}
+                      title={`Tomoe ${num}`}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </SectionCard>
 
-      {/* SECCIÓN 2: RAMA SECUNDARIA: COPIA (HASEI: KOPĪ) */}
-      <SectionCard title="RAMA SECUNDARIA: COPIA (HASEI: KOPĪ)" icon={Swords} color="oro">
-        <div className="space-y-6">
-          <div className="text-xs text-oro/60 leading-relaxed border-b border-oro/10 pb-4">
-            Los Uchiha poseen la capacidad única de personalizar su rama secundaria mediante la copia de técnicas básicas de Ninjutsu, Taijutsu, Genjutsu, Shurikenjutsu y Bujutsu.
-          </div>
+          {/* SECCIÓN COPIA (HASEI: KOPĪ) DENTRO DEL MISMO CONTENEDOR */}
+          <div className="space-y-6">
+            <div className="text-xs text-oro/60 leading-relaxed border-b border-oro/10 pb-4">
+              Los Uchiha poseen la capacidad única de personalizar su rama secundaria mediante la copia de técnicas básicas de Ninjutsu, Taijutsu, Genjutsu, Shurikenjutsu y Bujutsu.
+            </div>
 
           {/* Grupos de Slots por Rango */}
           {['D', 'C', 'B'].map((rangoGroup) => {
@@ -419,6 +423,7 @@ export default function UchihaSection({
               </div>
             );
           })}
+          </div>
         </div>
       </SectionCard>
     </div>
