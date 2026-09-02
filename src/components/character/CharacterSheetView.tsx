@@ -34,6 +34,7 @@ import CombatForm from '@/components/registros/CombatForm';
 import { CharacterRadarChart } from './CharacterRadarChart';
 import NinkenSection from './NinkenSection';
 import KugutsuKoboSection from './KugutsuKoboSection';
+import UchihaSection from './UchihaSection';
 import { ObjetoSlotsModal } from './ObjetoSlotsModal';
 import { useState, useMemo, useEffect, Fragment } from 'react';
 import { resolveAldeaIcono } from '@/utils/aldea-icon';
@@ -1751,7 +1752,7 @@ export function CharacterSheetView({
 
   const [editingRegistro, setEditingRegistro] = useState<Registro | null>(null);
   const [registroTab, setRegistroTab] = useState<'mision' | 'accion' | 'combate'>('mision');
-  const [tecnicasSubTab, setTecnicasSubTab] = useState<'jutsus' | 'pasivas' | 'kuchiyoses' | 'ninken' | 'kugutsu'>('jutsus');
+  const [tecnicasSubTab, setTecnicasSubTab] = useState<'jutsus' | 'pasivas' | 'kuchiyoses' | 'ninken' | 'kugutsu' | 'uchiha'>('jutsus');
   const [inventarioSubTab, setInventarioSubTab] = useState<'mochila' | 'equipo'>('mochila');
   const [recordPage, setRecordPage] = useState(1);
   const recordsPerPage = 10;
@@ -3689,14 +3690,16 @@ export function CharacterSheetView({
                 {(() => {
                   const isInuzuka = (character.personajes_ramas || []).some((r: any) => Number(r.rama_id) === 30);
                   const isKugutsu = (character.personajes_ramas || []).some((r: any) => Number(r.rama_id) === 28);
+                  const isUchiha = (character.personajes_ramas || []).some((r: any) => Number(r.rama_id) === 35 || r.rama?.slug === 'uchiha-ichizoku');
 
-                  const subtabs: ('jutsus' | 'pasivas' | 'kuchiyoses' | 'ninken' | 'kugutsu')[] = ['jutsus', 'pasivas', 'kuchiyoses'];
+                  const subtabs: ('jutsus' | 'pasivas' | 'kuchiyoses' | 'ninken' | 'kugutsu' | 'uchiha')[] = ['jutsus', 'pasivas', 'kuchiyoses'];
                   if (isInuzuka) subtabs.push('ninken');
                   if (isKugutsu) subtabs.push('kugutsu');
+                  if (isUchiha) subtabs.push('uchiha');
 
                   return subtabs.map(tab => {
                     const isActive = tecnicasSubTab === tab;
-                    const label = tab === 'jutsus' ? 'TÉCNICAS' : tab === 'pasivas' ? 'HABILIDADES PASIVAS' : tab === 'kuchiyoses' ? 'KUCHIYOSES' : tab === 'ninken' ? 'NINKEN' : 'KUGUTSU KOBO';
+                    const label = tab === 'jutsus' ? 'TÉCNICAS' : tab === 'pasivas' ? 'HABILIDADES PASIVAS' : tab === 'kuchiyoses' ? 'KUCHIYOSES' : tab === 'ninken' ? 'NINKEN' : tab === 'kugutsu' ? 'KUGUTSU KOBO' : 'CLAN UCHIHA';
 
                     return (
                       <button
@@ -3717,7 +3720,7 @@ export function CharacterSheetView({
                 })()}
               </div>
 
-              {tecnicasSubTab !== 'kugutsu' && (
+              {(tecnicasSubTab === 'jutsus' || tecnicasSubTab === 'pasivas' || tecnicasSubTab === 'kuchiyoses') && (
                 <div className="relative">
                   <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-oro/40 pointer-events-none" />
                   <input
@@ -4509,6 +4512,19 @@ export function CharacterSheetView({
                   character={character}
                   companionsList={companionsList}
                   isEditing={isEditing}
+                  isNew={isNew}
+                  onUpdateField={onUpdateField}
+                  addToast={addToast}
+                />
+              )}
+
+              {tecnicasSubTab === 'uchiha' && (
+                <UchihaSection
+                  character={character}
+                  masters={masters}
+                  glosarioFiltrado={glosarioFiltrado}
+                  isEditing={isEditing}
+                  canEdit={canEdit}
                   isNew={isNew}
                   onUpdateField={onUpdateField}
                   addToast={addToast}

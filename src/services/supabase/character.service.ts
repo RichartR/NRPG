@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client';
-import { Character, PersonajeRama, PersonajeItem, PersonajeTecnica, Registro, Glosario, Rasgo, PersonajeSentido, PersonajeAcompanante, AcompananteInfo, KugutsuComponente, PersonajeInventarioRegistro } from '@/domain/types';
+import { Character, PersonajeRama, PersonajeItem, PersonajeTecnica, Registro, Glosario, Rasgo, PersonajeSentido, PersonajeAcompanante, AcompananteInfo, KugutsuComponente, PersonajeInventarioRegistro, PersonajeUchihaData } from '@/domain/types';
 import { RewardLogic } from '@/domain/character/logic';
 
 export const CharacterService = {
@@ -488,5 +488,43 @@ export const CharacterService = {
     });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || 'Error al eliminar registro');
+  },
+
+  async getUchihaData(personajeId: number): Promise<PersonajeUchihaData | null> {
+    const supabase = createClient();
+    try {
+      const { data, error } = await supabase
+        .from('reg_personajes_uchiha')
+        .select('*')
+        .eq('personaje_id', personajeId)
+        .maybeSingle();
+      if (error) {
+        console.warn('reg_personajes_uchiha no disponible o error:', error.message);
+        return null;
+      }
+      return data as PersonajeUchihaData | null;
+    } catch (e) {
+      console.warn('Error fetching uchiha data:', e);
+      return null;
+    }
+  },
+
+  async saveUchihaData(personajeId: number, data: Partial<PersonajeUchihaData>): Promise<void> {
+    const supabase = createClient();
+    const payload = {
+      personaje_id: personajeId,
+      rama_combate: data.rama_combate ?? null,
+      slots_desbloqueados: data.slots_desbloqueados || ['D_1', 'D_2'],
+      copias: data.copias || {},
+      updated_at: new Date().toISOString()
+    };
+    const { error } = await supabase
+      .from('reg_personajes_uchiha')
+      .upsert(payload, { onConflict: 'personaje_id' });
+    if (error) {
+      console.error('Error saving uchiha data:', error);
+      throw error;
+    }
   }
 };
+

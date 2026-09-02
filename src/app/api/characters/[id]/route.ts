@@ -479,6 +479,24 @@ export async function PATCH(
           ));
         }
 
+        // Datos específicos Uchiha (Rama de combate y Rama Copia)
+        if (data.personaje_uchiha) {
+          updatePromises.push((async () => {
+            try {
+              const uData = data.personaje_uchiha;
+              await adminClient.from('reg_personajes_uchiha').upsert({
+                personaje_id: Number(characterId),
+                rama_combate: uData.rama_combate ?? null,
+                slots_desbloqueados: uData.slots_desbloqueados || ['D_1', 'D_2'],
+                copias: uData.copias || {},
+                updated_at: new Date().toISOString()
+              }, { onConflict: 'personaje_id' });
+            } catch (uErr) {
+              console.warn('Error guardando reg_personajes_uchiha en API:', uErr);
+            }
+          })());
+        }
+
         await Promise.all(updatePromises);
         break;
 
