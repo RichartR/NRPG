@@ -8,12 +8,12 @@ export const ProfileService = {
       .from('profiles')
       .select('*, roles:reg_roles(rol_id)')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
     if (error) throw error;
     if (data) {
       data.roles = data.roles ? data.roles.map((r: any) => r.rol_id) : [];
     }
-    return data;
+    return data || null;
   },
 
   async getActiveCharacterId(userId: string, client?: any): Promise<number | null> {
@@ -22,9 +22,9 @@ export const ProfileService = {
       .from('profiles')
       .select('active_char_id')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
     if (error) throw error;
-    return data?.active_char_id;
+    return data?.active_char_id ?? null;
   },
 
   async updateProfile(userId: string, updates: Partial<Profile>, client?: any) {
