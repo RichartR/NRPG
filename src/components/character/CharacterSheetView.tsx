@@ -1318,6 +1318,8 @@ export function CharacterSheetView({
     const activeNinElements = new Set<number>();
     if (ninjutsuSlot) {
       if (ninjutsuSlot.elemento_principal_id) activeNinElements.add(Number(ninjutsuSlot.elemento_principal_id));
+      if (ninjutsuSlot.elemento_secundario_id) activeNinElements.add(Number(ninjutsuSlot.elemento_secundario_id));
+      if (ninjutsuSlot.elemento_terciario_id) activeNinElements.add(Number(ninjutsuSlot.elemento_terciario_id));
     }
 
     // Obtener elementos fijos básicos de su clan elemental
