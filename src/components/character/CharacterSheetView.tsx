@@ -212,9 +212,9 @@ export function CharacterSheetView({
     const activeRamaIds = (character.personajes_ramas || []).map((pr: any) => pr.rama_id).filter(Boolean);
     const autoTraits: Rasgo[] = [];
     activeRamaIds.forEach(id => {
-      const rama = masters.ramas.find((r: any) => r.id === id);
+      const rama = masters.ramas.find((r: any) => Number(r.id) === Number(id));
       if (rama && rama.rasgo_id) {
-        const rasgo = rasgosList.find(r => r.id === rama.rasgo_id);
+        const rasgo = rasgosList.find(r => Number(r.id) === Number(rama.rasgo_id));
         if (rasgo) autoTraits.push(rasgo);
       }
     });
@@ -236,8 +236,18 @@ export function CharacterSheetView({
     let updatedRasgos = [...currentRasgos];
     let hasChanges = false;
 
-    // Add missing auto-assigned traits
+    // Add missing auto-assigned traits (and replace any conflicting trait in the same slot)
     validAutoTraits.forEach(at => {
+      // If there's an existing trait in the same slot that is NOT this auto trait, replace it
+      const existingInSlot = updatedRasgos.find(ur => {
+        const rInfo = ur.info_rasgos || rasgosList.find(rl => Number(rl.id) === Number(ur.rasgo_id));
+        return rInfo?.categoria === at.categoria && rInfo?.rango === at.rango && Number(ur.rasgo_id) !== Number(at.id);
+      });
+      if (existingInSlot) {
+        updatedRasgos = updatedRasgos.filter(ur => ur !== existingInSlot);
+        hasChanges = true;
+      }
+
       if (!updatedRasgos.some(ur => Number(ur.rasgo_id) === Number(at.id))) {
         updatedRasgos.push({
           personaje_id: character.id,
@@ -260,27 +270,27 @@ export function CharacterSheetView({
       }
     });
 
-    // Remove auto-assigned traits that are no longer valid (e.g. branch removed or rank too low)
-    const allAutoTraitIds = masters.ramas.map((r: any) => r.rasgo_id).filter(Boolean);
-
+    // Filter invalid traits:
+    // 1. Remove special traits if the character is no longer authorized
+    // 2. Remove traits whose required rank exceeds character rank
     updatedRasgos = updatedRasgos.filter(ur => {
-      const isAutoInSystem = allAutoTraitIds.includes(ur.rasgo_id);
-      if (isAutoInSystem) {
-        const isValid = validAutoTraits.some(at => Number(at.id) === Number(ur.rasgo_id));
-        if (!isValid) {
-          hasChanges = true;
-          return false;
-        }
-      }
+      const rInfo = ur.info_rasgos || rasgosList.find(rl => Number(rl.id) === Number(ur.rasgo_id));
+      if (!rInfo) return true;
 
-      // Automatically remove special traits if the character is no longer authorized
-      const isSpecialInDb = ur.info_rasgos?.especial;
-      if (isSpecialInDb) {
+      // Special trait authorization
+      if (rInfo.especial) {
         const isStillAuthorized = authorizedSpecialTraits.some(st => Number(st.id) === Number(ur.rasgo_id));
         if (!isStillAuthorized) {
           hasChanges = true;
           return false;
         }
+      }
+
+      // Rank requirement
+      const reqRankVal = rankOrder[rInfo.rango] || 1;
+      if (charRankVal < reqRankVal) {
+        hasChanges = true;
+        return false;
       }
 
       return true;
@@ -2990,9 +3000,9 @@ export function CharacterSheetView({
                         const autoTraits: Rasgo[] = [];
                         if (masters.ramas) {
                           activeRamaIds.forEach((id: number) => {
-                            const rama = masters.ramas.find((r: any) => r.id === id);
+                            const rama = masters.ramas.find((r: any) => Number(r.id) === Number(id));
                             if (rama && rama.rasgo_id) {
-                              const rasgo = rasgosList.find(r => r.id === rama.rasgo_id);
+                              const rasgo = rasgosList.find(r => Number(r.id) === Number(rama.rasgo_id));
                               if (rasgo) autoTraits.push(rasgo);
                             }
                           });
@@ -3006,7 +3016,12 @@ export function CharacterSheetView({
                         // Helper to get selected trait for a slot
                         const getSelectedTrait = (category: string, rank: string) => {
                           const pjRasgos = character.personajes_rasgos || [];
-                          return pjRasgos.find((r: any) => r.info_rasgos?.categoria === category && r.info_rasgos?.rango === rank)?.info_rasgos;
+                          const found = pjRasgos.find((r: any) => {
+                            const rInfo = r.info_rasgos || rasgosList.find(rl => Number(rl.id) === Number(r.rasgo_id));
+                            return rInfo?.categoria === category && rInfo?.rango === rank;
+                          });
+                          if (!found) return undefined;
+                          return found.info_rasgos || rasgosList.find(rl => Number(rl.id) === Number(found.rasgo_id));
                         };
 
                         // Single choice slots
@@ -3014,16 +3029,18 @@ export function CharacterSheetView({
                           { label: 'Físico D', category: 'Físico', rank: 'D', available: rasgosList.filter(r => r.categoria === 'Físico' && r.rango === 'D' && (!r.especial || r.personajes?.includes(character.id))) },
                           { label: 'Psicológico D', category: 'Psicológico', rank: 'D', available: rasgosList.filter(r => r.categoria === 'Psicológico' && r.rango === 'D' && (!r.especial || r.personajes?.includes(character.id))) },
                           { label: 'Psicológico C', category: 'Psicológico', rank: 'C', available: rasgosList.filter(r => r.categoria === 'Psicológico' && r.rango === 'C' && (!r.especial || r.personajes?.includes(character.id))), minRank: 'C' },
-                          { label: 'Psicológico B', category: 'Psicológico', rank: 'B', available: rasgosList.filter(r => r.categoria === 'Psicológico' && r.rango === 'B' && (!r.especial || r.personajes?.includes(character.id))), minRank: 'B' },
-                          { label: 'Habilidad A', category: 'Habilidad', rank: 'A', available: rasgosList.filter(r => r.categoria === 'Habilidad' && r.rango === 'A' && (!r.especial || r.personajes?.includes(character.id))), minRank: 'A' }
+                          { label: 'Psicológico B', category: 'Psicológico', rank: 'B', available: rasgosList.filter(r => r.categoria === 'Psicológico' && r.rango === 'B' && (!r.especial || r.personajes?.includes(character.id))), minRank: 'B' }
                         ];
 
                         const selectSingle = (category: string, rank: string, rasgoIdStr: string) => {
                           const current = character.personajes_rasgos || [];
                           const newId = rasgoIdStr ? Number(rasgoIdStr) : null;
-                          let filtered = current.filter((r: any) => !(r.info_rasgos?.categoria === category && r.info_rasgos?.rango === rank));
+                          let filtered = current.filter((r: any) => {
+                            const rInfo = r.info_rasgos || rasgosList.find(rl => Number(rl.id) === Number(r.rasgo_id));
+                            return !(rInfo?.categoria === category && rInfo?.rango === rank);
+                          });
                           if (newId) {
-                            const selected = rasgosList.find(r => r.id === newId);
+                            const selected = rasgosList.find(r => Number(r.id) === newId);
                             if (selected) {
                               filtered.push({ personaje_id: character.id, rasgo_id: selected.id, info_rasgos: selected });
                             }
@@ -3062,9 +3079,9 @@ export function CharacterSheetView({
                                   ) : (isEditing || isNew) ? (
                                     <div className="mt-2">
                                       <NinjaSelect
-                                        value={selected?.id || ''}
+                                        value={selected?.id ? String(selected.id) : ''}
                                         onChange={(val) => selectSingle(slot.category, slot.rank, val)}
-                                        options={slot.available.map(r => ({ label: r.nombre, value: r.id }))}
+                                        options={slot.available.map(r => ({ label: r.nombre, value: String(r.id) }))}
                                         placeholder="-- SIN RASGO --"
                                         variant="inline"
                                       />

@@ -155,10 +155,12 @@ export const CharacterServerService = {
     if (rasgos && rasgos.length > 0) {
       const mapped = rasgos.map(r => ({
         personaje_id: characterId,
-        rasgo_id: r.rasgo_id
-      }));
-      const { error } = await supabase.from('reg_personajes_rasgos').insert(mapped);
-      if (error) throw error;
+        rasgo_id: r.rasgo_id || r.id
+      })).filter(r => Boolean(r.rasgo_id));
+      if (mapped.length > 0) {
+        const { error } = await supabase.from('reg_personajes_rasgos').insert(mapped);
+        if (error) throw error;
+      }
     }
   },
 
