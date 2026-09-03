@@ -11,9 +11,10 @@ import { useScrollLock } from '@/hooks/useScrollLock';
 interface ProfileSettingsProps {
   profile: any;
   userId: string;
+  characterName?: string | null;
 }
 
-export default function ProfileSettings({ profile, userId }: ProfileSettingsProps) {
+export default function ProfileSettings({ profile, userId, characterName }: ProfileSettingsProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   // Prevent background scrolling when profile settings modal is open
@@ -22,6 +23,8 @@ export default function ProfileSettings({ profile, userId }: ProfileSettingsProp
   const [loading, setLoading] = useState(false);
   const addToast = useToastStore(state => state.addToast);
   const router = useRouter();
+
+  const displayName = characterName || profile?.username;
 
   const handleSave = async () => {
     setLoading(true);
@@ -48,7 +51,7 @@ export default function ProfileSettings({ profile, userId }: ProfileSettingsProp
           {profile?.url_img || profile?.url_avatar ? (
             <img
               src={profile.url_img || profile.url_avatar}
-              alt={profile?.username || "Avatar"}
+              alt={displayName || "Avatar"}
               className="w-10 xl:w-12 h-10 xl:h-12 rounded-none object-cover border border-oro/40 group-hover:border-oro transition-colors"
             />
           ) : (
@@ -62,7 +65,7 @@ export default function ProfileSettings({ profile, userId }: ProfileSettingsProp
         </div>
         <div className="text-left">
           <span className="block text-sm xl:text-lg 2xl:text-xl font-black text-oro uppercase tracking-widest group-hover:text-white transition-colors">
-            {profile?.username}
+            {displayName}
           </span>
           <span className="block text-caption font-black text-oro/30 uppercase tracking-[0.3em]">Ajustes de Perfil</span>
         </div>

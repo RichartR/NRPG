@@ -76,10 +76,10 @@ export async function POST(request: Request) {
 
         // 1. Obtener cupos_maximos_aldea de config para calcular el límite dinámico del clan
         const limitAldeaRaw = await MasterServerService.getConfiguracion(supabase, 'cupos_maximos_aldea');
-        const C = limitAldeaRaw != null && limitAldeaRaw !== '' ? Number(limitAldeaRaw) : 10;
+        const C = limitAldeaRaw != null && limitAldeaRaw !== '' ? Number(limitAldeaRaw) : 14;
 
-        // Límite de clan = 4 + FLOOR((C - 10) / 5)
-        const limitClan = 4 + Math.floor((C - 10) / 5);
+        // Límite de clan = max(4, 5 + FLOOR((C - 14) / 2))
+        const limitClan = Math.max(4, 5 + Math.floor((C - 14) / 2));
 
         // 2. Contar personajes activos en este clan
         const { count: clanActiveCount, error: clanCountError } = await supabase

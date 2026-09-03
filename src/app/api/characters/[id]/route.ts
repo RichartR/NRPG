@@ -160,8 +160,8 @@ export async function PATCH(
                 const isNewClanForChar = !oldRamaIds.includes(clan.id);
                 if (isNewClanForChar) {
                   const limitAldeaRaw = await MasterServerService.getConfiguracion(supabase, 'cupos_maximos_aldea');
-                  const C = limitAldeaRaw != null && limitAldeaRaw !== '' ? Number(limitAldeaRaw) : 10;
-                  const limitClan = 4 + Math.floor((C - 10) / 5);
+                  const C = limitAldeaRaw != null && limitAldeaRaw !== '' ? Number(limitAldeaRaw) : 14;
+                  const limitClan = Math.max(4, 5 + Math.floor((C - 14) / 2));
 
                   const { count: clanActiveCount, error: clanCountError } = await supabase
                     .from('reg_personajes_ramas')

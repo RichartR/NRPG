@@ -9,11 +9,13 @@ import NotificationBell from './NotificationBell';
 import AdminNotificationBadge from '@/components/admin/AdminNotificationBadge';
 import LogoutButton from '@/components/auth/LogoutButton';
 import type { Profile } from '@/domain/types';
+import { useCharacterStore } from '@/store/useCharacterStore';
 
 const SHOW_LOGIN_BUTTON = true;
 
 export default function HomeUserControls() {
   const [account, setAccount] = useState<{ userId: string; profile: Profile } | null>(null);
+  const { activeCharacter, fetchActiveCharacter } = useCharacterStore();
 
   useEffect(() => {
     let cancelled = false;
@@ -30,10 +32,11 @@ export default function HomeUserControls() {
     }
 
     loadAccount();
+    fetchActiveCharacter();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [fetchActiveCharacter]);
 
   const roles: string[] = account?.profile?.roles || [];
   const canManageContent = roles.some((role) => ['admin', 'moderador', 'narrador'].includes(role));
@@ -43,7 +46,11 @@ export default function HomeUserControls() {
     <div className="flex flex-col justify-between items-center lg:items-end gap-4 w-full lg:w-auto self-stretch pt-2 pb-0">
       {account && (
         <div className="flex items-center gap-4 sm:gap-6 justify-center lg:justify-end">
-          <ProfileSettings profile={account.profile} userId={account.userId} />
+          <ProfileSettings
+            profile={account.profile}
+            userId={account.userId}
+            characterName={activeCharacter?.nombre_ninja}
+          />
           <NotificationBell />
         </div>
       )}
