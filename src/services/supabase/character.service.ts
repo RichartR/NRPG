@@ -79,13 +79,14 @@ export const CharacterService = {
 
     if (charError) throw charError;
 
-    // 2. Obtener elementos iniciales del glosario
+    // 2. Obtener elementos iniciales genéricos del glosario (sin rama/clan fijo)
     const { data: initialItems } = await supabase
       .from('info_glosario')
       .select('id, categoria_id, obtenible')
       .eq('inicial', true)
       .eq('activo', true)
-      .neq('obtenible', false);
+      .neq('obtenible', false)
+      .is('rama_clan_id', null);
 
     if (initialItems && initialItems.length > 0) {
       const inventoryPack = initialItems

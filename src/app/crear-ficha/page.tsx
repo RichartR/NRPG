@@ -139,7 +139,7 @@ function CrearFichaContent() {
         }, []);
 
       const RANGO_ORDER = ['D', 'C', 'B', 'A', 'S'];
-      const charRango = form.rango || '';
+      const charRango = form.rango || 'D';
       const charPA = form.puntos_aprendizaje || 0;
       const charMisiones = form.misiones || 0;
       const charStats = form.stats_base || {};
@@ -253,7 +253,7 @@ function CrearFichaContent() {
 
       const initialItems = glosarioCompleto
         .filter((i: any) => i.inicial && i.obtenible !== false && i.categoria_id === 2 && meetsAllReqs(i))
-        .map((i: any) => ({ item_id: i.id, cantidad: 1, info_glosario: i }));
+        .map((i: any) => ({ item_id: i.id, cantidad: 1, info_glosario: i, equipado: false }));
       
       // Check if they have an elemental clan
       const clanElementalRama = form.personajes_ramas.find((r: any) => {

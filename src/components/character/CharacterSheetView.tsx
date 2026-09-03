@@ -1039,6 +1039,7 @@ export function CharacterSheetView({
     if (typeof req === 'string') {
       try { req = JSON.parse(req); } catch { req = null; }
     }
+    req = req || {};
 
     // Check de elemento_id
     const targetElementId = item.elemento_id || req?.elemento_id;
@@ -1129,8 +1130,9 @@ export function CharacterSheetView({
     }
 
     // 5. Rama/Clan
-    if (req.rama_id) {
-      const reqRamaId = Number(req.rama_id);
+    const branchReq = item.rama_clan_id || req?.rama_id;
+    if (branchReq) {
+      const reqRamaId = Number(branchReq);
       if (!isNaN(reqRamaId) && reqRamaId > 0) {
         const charRamaIds = (character.personajes_ramas || []).map((r: any) => Number(r.rama_id));
 
@@ -1149,7 +1151,7 @@ export function CharacterSheetView({
           return checkClanElemental(clanInfo);
         });
         if (reqRamaId === 4 && clanElementalRama) {
-          const reqElementId = item.elemento_id || req.elemento_id;
+          const reqElementId = item.elemento_id || req?.elemento_id;
           if (reqElementId) {
             const characterElementIds = derivedElements.map(e => Number(e.id));
             if (characterElementIds.includes(Number(reqElementId))) {
@@ -1162,41 +1164,14 @@ export function CharacterSheetView({
       }
     }
 
-    // Check de Sub-especialidad/Subcategoría
-    const subEspId = item.sub_especialidad_id || (item as any).id_subespecialidad;
-    if (subEspId) {
-      const reqSubId = Number(subEspId);
-      const charSubIds = (character.personajes_ramas || [])
-        .map((r: any) => r.sub_especialidad_id)
-        .filter(Boolean)
-        .map(Number);
+    // Check de Sub-especialidad/Subcategoría (en columna o en requisitos JSON)
+    const rawSubEsp = item.sub_especialidad_id ?? (item as any).id_subespecialidad ?? req?.sub_especialidad_id;
+    if (rawSubEsp !== null && rawSubEsp !== undefined) {
+      const reqSubIds = (Array.isArray(rawSubEsp) ? rawSubEsp : [rawSubEsp])
+        .map(Number)
+        .filter((id: number) => !isNaN(id) && id > 0);
 
-      const clanEleccion = character.eleccion_tecnicas_clan;
-      if (clanEleccion?.sub_especialidad_id) {
-        charSubIds.push(Number(clanEleccion.sub_especialidad_id));
-      }
-
-      // Añadir sub-especialidades mapeadas de los elementos derivados
-      derivedElements.forEach((el: any) => {
-        const sub = (masters.subEspecialidades || []).find((s: any) => {
-          const clean = (str: string) => (str || '').toLowerCase().replace(/uu/g, 'u').trim();
-          return Number(s.rama_id) === 4 &&
-            (clean(s.slug) === clean(el.nombre_jap) ||
-              clean(s.nombre) === clean(el.nombre_esp) ||
-              clean(s.nombre) === clean(el.nombre_jap));
-        });
-        if (sub && !charSubIds.includes(sub.id)) {
-          charSubIds.push(sub.id);
-        }
-      });
-
-      if (!charSubIds.includes(reqSubId)) return false;
-    }
-
-    // Check de Sub-especialidad/Subcategoría Requerida en requisitos (JSON)
-    if (req.sub_especialidad_id) {
-      const reqIds = Array.isArray(req.sub_especialidad_id) ? req.sub_especialidad_id : [req.sub_especialidad_id];
-      if (reqIds.length > 0) {
+      if (reqSubIds.length > 0) {
         const charSubIds = (character.personajes_ramas || [])
           .map((r: any) => r.sub_especialidad_id)
           .filter(Boolean)
@@ -1221,7 +1196,7 @@ export function CharacterSheetView({
           }
         });
 
-        if (!reqIds.some((reqId: any) => charSubIds.includes(Number(reqId)))) {
+        if (!reqSubIds.some((reqId: number) => charSubIds.includes(reqId))) {
           return false;
         }
       }
@@ -1419,6 +1394,78 @@ export function CharacterSheetView({
       }
 
       onUpdateField('personajes_tecnicas', updatedTecs);
+    }
+  }, [
+    isEditing,
+    isNew,
+    character.personajes_ramas,
+    character.eleccion_tecnicas_clan ? JSON.stringify(character.eleccion_tecnicas_clan) : null,
+    derivedElements.map((e: any) => e.id).sort().join(','),
+    glosarioFiltrado,
+    masters.subEspecialidades
+  ]);
+
+  // AUTO-ALIGN INITIAL OBJECTS WHEN BRANCHES/REQUIREMENTS CHANGE DURING EDIT OR CREATION
+  useEffect(() => {
+    if (!(isEditing || isNew)) return;
+    if (!character || !glosarioFiltrado) return;
+
+    // 1. Obtener objetos iniciales que cumplen requisitos con la configuración actual
+    const matchingInitialItems = (glosarioFiltrado || []).filter((item: any) => {
+      if (!item.inicial || item.categoria_id !== 2 || item.obtenible === false || item.activo === false) return false;
+      return meetsRequirements(item);
+    });
+
+    const currentInv = character.personajes_inventario || [];
+
+    // 2. Objetos iniciales a añadir (que cumplan requisitos y no estén ya en el inventario)
+    const itemsToAdd = matchingInitialItems.filter(
+      (mi: any) => !currentInv.some((ci: any) => Number(ci.item_id || ci.id) === Number(mi.id))
+    );
+
+    // 3. Objetos a remover (que ya no cumplan requisitos)
+    const itemsToRemove = currentInv.filter((ci: any) => {
+      const info = ci.info_glosario || (glosarioFiltrado || []).find((g: any) => Number(g.id) === Number(ci.item_id));
+      if (!info || info.categoria_id !== 2) return false;
+      return !meetsRequirements(info);
+    });
+
+    if (itemsToAdd.length > 0 || itemsToRemove.length > 0) {
+      let updatedInv = [...currentInv];
+
+      if (itemsToRemove.length > 0) {
+        const removeIds = itemsToRemove.map((r: any) => Number(r.item_id || r.id));
+        updatedInv = updatedInv.filter((ci: any) => !removeIds.includes(Number(ci.item_id || ci.id)));
+
+        // Devolver recursos de objetos no iniciales eliminados si el periodo de reseteos gratuitos está activo
+        if (freeResetPeriod) {
+          let refundXp = 0, refundRyous = 0, refundPa = 0;
+          for (const removed of itemsToRemove) {
+            const info = removed.info_glosario || (glosarioFiltrado || []).find((g: any) => Number(g.id) === Number(removed.item_id));
+            if (!info || info.inicial) continue;
+            refundXp += Number(info.coste_exp || 0);
+            refundRyous += Number(info.coste_ryous || 0);
+            refundPa += Number(info.coste_puntos_aprendizaje || 0);
+          }
+          if (refundXp > 0) onUpdateField('xp', (character.xp || 0) + refundXp);
+          if (refundRyous > 0) onUpdateField('ryous', (character.ryous || 0) + refundRyous);
+          if (refundPa > 0) onUpdateField('puntos_aprendizaje', (character.puntos_aprendizaje || 0) + refundPa);
+        }
+      }
+
+      if (itemsToAdd.length > 0) {
+        updatedInv = [
+          ...updatedInv,
+          ...itemsToAdd.map((it: any) => ({
+            personaje_id: Number(character.id || 0),
+            item_id: it.id,
+            info_glosario: it,
+            equipado: false
+          }))
+        ];
+      }
+
+      onUpdateField('personajes_inventario', updatedInv);
     }
   }, [
     isEditing,
