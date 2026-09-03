@@ -650,9 +650,11 @@ export const NinjutsuLogic = {
         }
         const rank = (info.rango || req?.rango || 'D').toUpperCase();
 
-        if (ninjutsuRama) {
+        const activeSlotWithElements = ninjutsuRama || (isNinIIorIIIInClan ? clanElementalRama : null);
+
+        if (activeSlotWithElements) {
           // Elemento secundario: Máximo rango B
-          if (ninjutsuRama.elemento_secundario_id && Number(ninjutsuRama.elemento_secundario_id) === elementId) {
+          if (activeSlotWithElements.elemento_secundario_id && Number(activeSlotWithElements.elemento_secundario_id) === elementId) {
             if (rank === 'A' || rank === 'S') {
               return { valid: false, error: `Restricción de Elemento Secundario: La técnica ${info.nombre_es || ('ID ' + info.id)} no puede ser superior a Rango B.` };
             }
@@ -660,11 +662,11 @@ export const NinjutsuLogic = {
 
           // Elemento terciario: Máximo rango C
           // Obtenemos el slug de la subespecialidad activa
-          const activeSubId = isNinIIorIIIInClan ? eleccionClan.sub_especialidad_id : ninjutsuRama.sub_especialidad_id;
+          const activeSubId = isNinIIorIIIInClan ? eleccionClan.sub_especialidad_id : ninjutsuRama?.sub_especialidad_id;
           const activeSub = subEspecialidades.find(s => Number(s.id) === Number(activeSubId));
           const activeSlug = activeSub?.slug || '';
 
-          if (activeSlug === 'ninjutsu-iii' && ninjutsuRama.elemento_terciario_id && Number(ninjutsuRama.elemento_terciario_id) === elementId) {
+          if (activeSlug === 'ninjutsu-iii' && activeSlotWithElements.elemento_terciario_id && Number(activeSlotWithElements.elemento_terciario_id) === elementId) {
             if (rank === 'B' || rank === 'A' || rank === 'S') {
               return { valid: false, error: `Restricción de Elemento Terciario: La técnica ${info.nombre_es || ('ID ' + info.id)} no puede ser superior a Rango C.` };
             }
