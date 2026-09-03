@@ -605,7 +605,7 @@ export default function GlosarioView({
                     </div>
                     {ramaGroup.info.tipo === 'clan' && ramaGroup.info.id !== null && (
                       <div className="px-4 py-2 bg-zinc-800/80 text-oro border border-oro/20 rounded-none text-xs font-black tracking-widest uppercase shrink-0 self-start sm:self-center shadow-lg">
-                        Cupos: <span className="text-white">{countByClan[ramaGroup.info.id] ?? 0}</span> / <span className="text-white">{4 + Math.floor((cuposMaximosAldea - 10) / 5)}</span>
+                        Cupos: <span className="text-white">{countByClan[ramaGroup.info.id] ?? 0}</span> / <span className="text-white">{Math.max(4, 5 + Math.floor((cuposMaximosAldea - 14) / 2))}</span>
                       </div>
                     )}
                   </div>

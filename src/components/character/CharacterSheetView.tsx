@@ -2194,15 +2194,16 @@ export function CharacterSheetView({
                           : character.profiles?.username || (isNew ? 'CARGANDO...' : 'NO VINCULADO')
                       }
                       disabled={true}
+                      uppercase={true}
                     />
-                    <DataField label="NOMBRE EN HOBBA" value={character.hobba_name} disabled={!isEditing && !isNew} onChange={(v) => onUpdateField('hobba_name', v)} />
-                    <DataField label="TIEMPO EN EL RPG" value={character.tiempo_rpg} disabled={!isEditing && !isNew} onChange={(v) => onUpdateField('tiempo_rpg', v)} />
+                    <DataField label="NOMBRE EN HOBBA" value={character.hobba_name} disabled={!isEditing && !isNew} onChange={(v) => onUpdateField('hobba_name', v)} uppercase={true} />
+                    <DataField label="TIEMPO EN EL RPG" value={character.tiempo_rpg} disabled={!isEditing && !isNew} onChange={(v) => onUpdateField('tiempo_rpg', v)} uppercase={true} />
                   </div>
                 </SectionCard>
 
                 <SectionCard title="PERFIL DEL SHINOBI" icon={UserCircle} color="oro">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <DataField label="NOMBRE NINJA" value={character.nombre_ninja} disabled={!isEditing && !isNew} onChange={(v) => onUpdateField('nombre_ninja', v)} />
+                    <DataField label="NOMBRE NINJA" value={character.nombre_ninja} disabled={!isEditing && !isNew} onChange={(v) => onUpdateField('nombre_ninja', v)} uppercase={true} />
                     <SelectField
                       label="ALDEA DE ORIGEN"
                       value={character.aldea_id}

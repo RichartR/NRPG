@@ -492,7 +492,7 @@ export default function MundoNinjaVillageClientView({
                                     {ninja.nombre_ninja}
                                   </p>
                                   <p className="text-caption text-oro/30 font-black uppercase tracking-widest mt-1 italic whitespace-nowrap">
-                                    @{(Array.isArray(ninja.profiles) ? ninja.profiles[0]?.username : ninja.profiles?.username) || ninja.hobba_name}
+                                    {ninja.hobba_name || (Array.isArray(ninja.profiles) ? ninja.profiles[0]?.username : ninja.profiles?.username)}
                                   </p>
                                 </Link>
                               </td>

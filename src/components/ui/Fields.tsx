@@ -16,9 +16,10 @@ interface DataFieldProps {
   disabled?: boolean;
   type?: string;
   placeholder?: string;
+  uppercase?: boolean;
 }
 
-export function DataField({ label, value, onChange, disabled, type = "text", placeholder }: DataFieldProps) {
+export function DataField({ label, value, onChange, disabled, type = "text", placeholder, uppercase }: DataFieldProps) {
   const { isEditing = true } = React.useContext(FormEditContext);
   const showLock = disabled && isEditing;
   return (
@@ -30,8 +31,8 @@ export function DataField({ label, value, onChange, disabled, type = "text", pla
           value={value || ''}
           disabled={disabled}
           placeholder={placeholder}
-          onChange={(e) => onChange?.(e.target.value)}
-          className={`w-full h-[58px] bg-[#171717] border border-oro/10 px-6 py-4 text-oro font-black outline-none focus:border-oro/40 transition-all disabled:cursor-default placeholder:text-oro/20 text-sm xl:text-base ninja-clip-sm ${showLock ? 'pr-12' : ''}`}
+          onChange={(e) => onChange?.(uppercase ? e.target.value.toUpperCase() : e.target.value)}
+          className={`w-full h-[58px] bg-[#171717] border border-oro/10 px-6 py-4 text-oro font-black outline-none focus:border-oro/40 transition-all disabled:cursor-default placeholder:text-oro/20 text-sm xl:text-base ninja-clip-sm ${showLock ? 'pr-12' : ''} ${uppercase ? 'uppercase' : ''}`}
         />
         {showLock && (
           <Lock className="w-3.5 h-3.5 text-oro/40 absolute right-5 top-1/2 -translate-y-1/2" />
