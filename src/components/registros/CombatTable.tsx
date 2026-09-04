@@ -3,9 +3,10 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Registro } from '@/domain/types';
-import { Eye, Edit3, Trash2, Loader2, X, Swords, HeartPulse, Dices, User, Sparkles } from 'lucide-react';
+import { Eye, Edit3, Trash2, Loader2, X, Swords, HeartPulse, Dices, User, Sparkles, Check } from 'lucide-react';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { RegistrosService } from '@/services/supabase/registros.service';
+import { CharacterService } from '@/services/supabase/character.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { RewardLogic } from '@/domain/character/logic';
@@ -24,7 +25,23 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
   const { confirm: confirmAction } = useConfirmStore();
 
   const [loadingId, setLoadingId] = useState<number | null>(null);
+  const [acceptingId, setAcceptingId] = useState<number | null>(null);
   const [selectedCombat, setSelectedCombat] = useState<Registro | null>(null);
+
+  const handleAccept = async (registroId: number) => {
+    if (!activeCharacter?.id) return;
+    setAcceptingId(registroId);
+    try {
+      await CharacterService.respondToRecord(activeCharacter.id, registroId, 'aceptar');
+      addToast('Combate aceptado y recompensas sumadas a tu ficha', 'success');
+      onRefresh?.();
+      useCharacterStore.getState().fetchActiveCharacter().catch(console.error);
+    } catch (err: any) {
+      addToast(err.message || 'Error al aceptar el combate', 'error');
+    } finally {
+      setAcceptingId(null);
+    }
+  };
 
   const handleDelete = async (id: number) => {
     const ok = await confirmAction({
@@ -130,6 +147,11 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
               const participantSelf = (isA ? teamA : teamB).find((p: any) => p.id === sid);
               const selfName = participantSelf?.nombre_ninja || m.autor?.nombre_ninja || 'El ninja';
 
+              const myPart = m.participantes?.find((p: any) => Number(p.personaje_id) === Number(sid));
+              const isPending = myPart?.estado === 'pendiente';
+              const isDispute = myPart?.estado === 'disputa_admin';
+              const canAcceptDirectly = isPending && Number(activeCharacter?.id) === Number(sid);
+
               return (
                 <tr key={m.id} className="hover:bg-oro/5 transition-colors group">
                   {/* Fecha */}
@@ -160,78 +182,82 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                     </div>
                   </td>
 
-                  {/* Combate / Sanación / Resumen */}
-                  <td className="py-6 px-8 whitespace-normal break-words">
+                  {/* Participantes / Detalle */}
+                  <td className="py-6 px-8 text-xs whitespace-normal break-words leading-relaxed">
                     {isSanacion ? (
-                      <div className="flex flex-col gap-1.5 justify-center">
-                        <div className="flex items-center gap-2 text-xs xl:text-sm font-black text-emerald-400">
-                          SANACIÓN: {m.data.sanado?.nombre_ninja || 'Jugador'}
+                      <div className="space-y-1.5">
+                        <div className="font-black text-emerald-400 flex items-center gap-2">
+                          <HeartPulse className="w-4 h-4 text-emerald-400" /> SANACIÓN: {m.data.sanado?.nombre_ninja}
                         </div>
-                        <div className="text-caption font-bold text-oro/60 uppercase tracking-wider">
+                        <div className="text-caption text-oro/60 uppercase">
                           MÉDICOS: {m.data.medicos?.map((med: any) => med.nombre_ninja).join(', ')}
                         </div>
                       </div>
                     ) : (
-                      <div className="flex flex-col gap-1.5 justify-center">
-                        <div className="flex items-center flex-wrap gap-2 text-xs xl:text-sm">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-black text-oro drop-shadow-[0_0_8px_rgba(223,184,87,0.15)]">{selfName}</span>
-                            {allies.length > 0 && allies.map((name: string, i: number) => (
-                              <span key={i} className="text-oro/70 font-semibold before:content-['+'] before:mr-1">{name}</span>
-                            ))}
-                          </div>
-
-                          <div className="flex items-center gap-1 px-2 py-0.5 bg-oro/10 border border-oro/20 rounded-[3px] shadow-[0_0_8px_rgba(239,68,68,0.1)]">
-                            <span className="font-ninja text-caption text-oro italic font-black uppercase tracking-wider">VS</span>
-                          </div>
-
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            {enemies.map((name: string, i: number) => (
-                              <React.Fragment key={i}>
-                                <span className="font-black text-oro/90">{name}</span>
-                                {i < enemies.length - 1 && <span className="text-oro/30 font-light">&</span>}
-                              </React.Fragment>
-                            ))}
-                          </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-black text-oro">{selfName}</span>
+                        {allies.length > 0 && allies.map((name: string, i: number) => (
+                          <span key={i} className="text-oro/70 font-semibold before:content-['+'] before:mr-1">{name}</span>
+                        ))}
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-red-600/10 border border-error-text/30 ninja-clip-xs">
+                          <Swords className="w-3 h-3 text-red-400" />
+                          <span className="font-ninja text-caption text-red-400 italic font-black uppercase tracking-wider">VS</span>
                         </div>
-
-                        {m.data.descripcion_combate && (
-                          <p className="text-caption text-oro/40 italic mt-0.5 line-clamp-1">
-                            "{m.data.descripcion_combate}"
-                          </p>
-                        )}
+                        {enemies.map((name: string, i: number) => (
+                          <React.Fragment key={i}>
+                            <span className="font-black text-oro/90">{name}</span>
+                            {i < enemies.length - 1 && <span className="text-oro/30 font-light">&</span>}
+                          </React.Fragment>
+                        ))}
                       </div>
                     )}
                   </td>
 
-                  {/* Resultado */}
+                  {/* Resultado / Efecto */}
                   <td className="py-6 px-8">
-                    {isSanacion ? (
-                      <span className="font-black text-emerald-400 text-xs tracking-wider uppercase">
-                        -{m.data.horas_restadas || 0}h HG
-                      </span>
-                    ) : isEmpate ? (
-                      <span className="font-black text-oro/70 text-xs tracking-wider uppercase">
-                        Empate
-                      </span>
-                    ) : won ? (
-                      <span className="font-black text-emerald-400 text-xs tracking-wider uppercase">
-                        Victoria
-                      </span>
-                    ) : (
-                      <span className="font-black text-red-400 text-xs tracking-wider uppercase">
-                        Derrota
-                      </span>
-                    )}
+                    <div className="flex flex-col gap-1.5">
+                      {isSanacion ? (
+                        <span className="font-black text-emerald-400 text-xs tracking-wider uppercase">
+                          -{m.data.horas_restadas || 0}h HG
+                        </span>
+                      ) : isEmpate ? (
+                        <span className="font-black text-oro/70 text-xs tracking-wider uppercase">
+                          Empate
+                        </span>
+                      ) : won ? (
+                        <span className="font-black text-emerald-400 text-xs tracking-wider uppercase">
+                          Victoria
+                        </span>
+                      ) : (
+                        <span className="font-black text-red-400 text-xs tracking-wider uppercase">
+                          Derrota
+                        </span>
+                      )}
+                      {isPending && (
+                        <span className="inline-flex items-center gap-1 w-fit px-2 py-0.5 text-[9px] font-black uppercase tracking-wider bg-naranja-naruto text-black ninja-clip-xs">
+                          PENDIENTE DE APROBACIÓN
+                        </span>
+                      )}
+                      {isDispute && (
+                        <span className="inline-flex items-center gap-1 w-fit px-2 py-0.5 text-[9px] font-black uppercase tracking-wider bg-red-600/20 border border-red-500/40 text-red-400 ninja-clip-xs">
+                          EN DISPUTA
+                        </span>
+                      )}
+                    </div>
                   </td>
 
                   {/* Recompensa */}
                   <td className="py-6 px-8">
-                    <div className="flex flex-col gap-1 justify-center text-emerald-400 font-bold text-[11px] tracking-wide">
-                      {xpGained > 0 && <div>+{xpGained} EXP</div>}
-                      {pcGained > 0 && <div>+{pcGained} PA</div>}
+                    <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
+                      {xpGained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>+{xpGained} EXP</div>}
+                      {pcGained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>+{pcGained} PA</div>}
                       {xpGained === 0 && pcGained === 0 && (
                         <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
+                      )}
+                      {(isPending || isDispute) && (
+                        <span className="text-[9px] text-amber-500/70 font-semibold tracking-wider uppercase">
+                          (No sumado)
+                        </span>
                       )}
                     </div>
                   </td>
@@ -239,6 +265,21 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                   {/* Acciones */}
                   <td className="py-6 px-8 text-right">
                     <div className="flex items-center justify-end gap-2.5">
+                      {canAcceptDirectly && (
+                        <button
+                          onClick={() => handleAccept(m.id)}
+                          disabled={acceptingId === m.id}
+                          className="px-2.5 py-1.5 bg-naranja-naruto hover:brightness-110 text-black font-black text-caption uppercase tracking-wider transition-all ninja-clip-xs flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 disabled:opacity-50"
+                          title="Aceptar combate y sumar EXP / recompensas a tu ficha"
+                        >
+                          {acceptingId === m.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-black" />
+                          ) : (
+                            <Check className="w-3.5 h-3.5 text-black stroke-[3]" />
+                          )}
+                          <span>Aceptar</span>
+                        </button>
+                      )}
                       <button
                         onClick={() => setSelectedCombat(m)}
                         className="p-2 bg-oro/5 border border-oro/10 hover:border-oro/30 text-oro/60 hover:text-oro transition-all ninja-clip-xs"
@@ -304,6 +345,11 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
           const participantSelf = (isA ? teamA : teamB).find((p: any) => p.id === sid);
           const selfName = participantSelf?.nombre_ninja || m.autor?.nombre_ninja || 'El ninja';
 
+          const myPart = m.participantes?.find((p: any) => Number(p.personaje_id) === Number(sid));
+          const isPending = myPart?.estado === 'pendiente';
+          const isDispute = myPart?.estado === 'disputa_admin';
+          const canAcceptDirectly = isPending && Number(activeCharacter?.id) === Number(sid);
+
           return (
             <div key={m.id} className="p-5 flex flex-col gap-4 hover:bg-oro/5 transition-all">
               <div className="flex justify-between items-center">
@@ -315,7 +361,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                     {new Date(m.fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
-                <div>
+                <div className="flex flex-col items-end gap-1">
                   {isSanacion ? (
                     <span className="font-black text-emerald-400 text-xs tracking-wider uppercase">
                       -{m.data.horas_restadas || 0}h HG
@@ -331,6 +377,16 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                   ) : (
                     <span className="font-black text-red-400 text-xs tracking-wider uppercase">
                       Derrota
+                    </span>
+                  )}
+                  {isPending && (
+                    <span className="inline-flex items-center gap-1 w-fit px-2 py-0.5 text-[9px] font-black uppercase tracking-wider bg-naranja-naruto text-black ninja-clip-xs">
+                      PENDIENTE DE APROBACIÓN
+                    </span>
+                  )}
+                  {isDispute && (
+                    <span className="inline-flex items-center gap-1 w-fit px-2 py-0.5 text-[9px] font-black uppercase tracking-wider bg-red-600/20 border border-red-500/40 text-red-400 ninja-clip-xs">
+                      EN DISPUTA
                     </span>
                   )}
                 </div>
@@ -368,14 +424,34 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
 
               <div className="flex justify-between items-center gap-4 mt-1">
                 <div className="flex flex-col gap-1 justify-center text-emerald-400 font-bold text-[11px] tracking-wide">
-                  {xpGained > 0 && <div>+{xpGained} EXP</div>}
-                  {pcGained > 0 && <div>+{pcGained} PA</div>}
+                  {xpGained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>+{xpGained} EXP</div>}
+                  {pcGained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>+{pcGained} PA</div>}
                   {xpGained === 0 && pcGained === 0 && (
                     <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
+                  )}
+                  {(isPending || isDispute) && (
+                    <span className="text-[9px] text-amber-500/70 font-semibold tracking-wider uppercase">
+                      (No sumado)
+                    </span>
                   )}
                 </div>
 
                 <div className="flex items-center gap-2">
+                  {canAcceptDirectly && (
+                    <button
+                      onClick={() => handleAccept(m.id)}
+                      disabled={acceptingId === m.id}
+                      className="px-2.5 py-1.5 bg-naranja-naruto hover:brightness-110 text-black font-black text-caption uppercase tracking-wider transition-all ninja-clip-xs flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                      title="Aceptar este registro"
+                    >
+                      {acceptingId === m.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-black" />
+                      ) : (
+                        <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                      )}
+                      <span>Aceptar</span>
+                    </button>
+                  )}
                   <button
                     onClick={() => setSelectedCombat(m)}
                     className="p-2 bg-oro/5 border border-oro/10 hover:border-oro/30 text-oro/60 hover:text-oro transition-all ninja-clip-xs"

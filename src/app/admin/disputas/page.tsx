@@ -146,7 +146,7 @@ export default function AdminDisputePage() {
             return p;
           });
 
-          const hasPendings = updatedParticipantes.some((p: any) => p.estado === 'pendiente');
+          const hasPendings = updatedParticipantes.some((p: any) => p.estado === 'pendiente' || p.estado === 'disputa_admin');
           if (!hasPendings) {
             return null; // Si ya no quedan participantes pendientes, eliminar la disputa de la lista local
           }

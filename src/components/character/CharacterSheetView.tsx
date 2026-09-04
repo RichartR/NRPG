@@ -815,19 +815,26 @@ export function CharacterSheetView({
     const allRegistrosMap = new Map<number, Registro>();
     [
       ...(character.registros_autor || []),
-      ...(character.registros_participante?.map((p: any) => p.registro).filter(Boolean) || [])
+      ...(character.registros_participante
+        ?.filter((p: any) => p.estado !== 'rechazado')
+        ?.map((p: any) => p.registro)
+        .filter(Boolean) || [])
     ].forEach((r: Registro) => allRegistrosMap.set(r.id, r));
 
-    const allRegs = Array.from(allRegistrosMap.values()).sort((a, b) =>
-      new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
-    );
-    const missions = allRegs.filter(r => r.tipo === 'mision');
-
+    const allRegs = Array.from(allRegistrosMap.values())
+      .filter(r => {
+        const p = r.participantes?.find(part => Number(part.personaje_id) === Number(character.id));
+        return !p || p.estado !== 'rechazado';
+      })
+      .sort((a, b) =>
+        new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
+      );
     // Filtrar solo los registros que han sido formalmente aceptados para este personaje
     const acceptedRegs = allRegs.filter(r => {
       const p = r.participantes?.find(part => Number(part.personaje_id) === Number(character.id));
-      return p?.estado === 'aceptado';
+      return p?.estado === 'aceptado' || (!p && Number(r.autor_id) === Number(character.id));
     });
+    const acceptedMissions = acceptedRegs.filter(r => r.tipo === 'mision');
 
     const totalExpSpent = acceptedRegs.reduce((sum, r) => sum + (r.data?.gasto_xp || 0), 0);
     const totalRyousSpent = acceptedRegs.reduce((sum, r) => sum + (r.data?.gasto_ryous || 0), 0);
@@ -859,11 +866,11 @@ export function CharacterSheetView({
       totalRyous: (character.ryous || 0) + totalRyousSpent + unsavedRyousSpent,
       totalPuntosCombate: (character.puntos_aprendizaje || 0) + totalPASpent + unsavedPASpent,
       missionCounts: {
-        D: missions.filter(m => m.subtipo === 'D').length,
-        C: missions.filter(m => m.subtipo === 'C').length,
-        B: missions.filter(m => m.subtipo === 'B').length,
-        A: missions.filter(m => m.subtipo === 'A').length,
-        S: missions.filter(m => m.subtipo === 'S').length,
+        D: acceptedMissions.filter(m => m.subtipo === 'D').length,
+        C: acceptedMissions.filter(m => m.subtipo === 'C').length,
+        B: acceptedMissions.filter(m => m.subtipo === 'B').length,
+        A: acceptedMissions.filter(m => m.subtipo === 'A').length,
+        S: acceptedMissions.filter(m => m.subtipo === 'S').length,
       }
     };
   }, [
