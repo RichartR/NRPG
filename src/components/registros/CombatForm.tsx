@@ -7,7 +7,7 @@ import { MasterService } from '@/services/supabase/master.service';
 import { Registro } from '@/domain/types';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { useToastStore } from '@/components/ui/Toast';
-import { X, Search, UserPlus, User, Info, HeartPulse, Swords, Link as LinkIcon } from 'lucide-react';
+import { X, Search, UserPlus, User, Info, HeartPulse, Swords, Link as LinkIcon, Check } from 'lucide-react';
 import { NinjaSelect } from '@/components/ui/Fields';
 
 interface CharacterResult {
@@ -178,8 +178,8 @@ export default function CombatForm({
   const [estados, setEstados] = useState<{ id: number; nombre: string }[]>([]);
 
   // State for Combate
-  const [teamA, setTeamA] = useState<{ id: number; nombre_ninja: string; rango?: string; estado_nombre?: string; has_estado_alterado?: boolean; descripcion_estado?: string; has_cds?: boolean; descripcion_cds?: string; huye?: boolean }[]>([]);
-  const [teamB, setTeamB] = useState<{ id: number; nombre_ninja: string; rango?: string; estado_nombre?: string; has_estado_alterado?: boolean; descripcion_estado?: string; has_cds?: boolean; descripcion_cds?: string; huye?: boolean }[]>([]);
+  const [teamA, setTeamA] = useState<{ id: number; nombre_ninja: string; rango?: string; estado_nombre?: string; has_estado_alterado?: boolean; descripcion_estado?: string; has_cds?: boolean; descripcion_cds?: string; huye?: boolean; huye_gana_exp?: boolean }[]>([]);
+  const [teamB, setTeamB] = useState<{ id: number; nombre_ninja: string; rango?: string; estado_nombre?: string; has_estado_alterado?: boolean; descripcion_estado?: string; has_cds?: boolean; descripcion_cds?: string; huye?: boolean; huye_gana_exp?: boolean }[]>([]);
 
   // State for Sanación
   const [sanado, setSanado] = useState<{ id: number; nombre_ninja: string } | null>(
@@ -235,7 +235,7 @@ export default function CombatForm({
     else setTeamB([...teamB, { ...p, rango: p.rango || 'D', estado_nombre: '' }]);
   };
 
-  const updateParticipantState = (id: number, team: 'A' | 'B', updates: Partial<{ estado_nombre: string, has_estado_alterado: boolean, descripcion_estado: string, has_cds: boolean, descripcion_cds: string, huye: boolean }>) => {
+  const updateParticipantState = (id: number, team: 'A' | 'B', updates: Partial<{ estado_nombre: string, has_estado_alterado: boolean, descripcion_estado: string, has_cds: boolean, descripcion_cds: string, huye: boolean, huye_gana_exp: boolean }>) => {
     if (team === 'A') {
       setTeamA(teamA.map(p => p.id === id ? { ...p, ...updates } : p));
     } else {
@@ -248,9 +248,9 @@ export default function CombatForm({
     else setTeamB(teamB.filter(p => p.id !== id));
   };
 
-  const calculateXP = (team: 'A' | 'B', huye?: boolean) => {
+  const calculateXP = (team: 'A' | 'B', huye?: boolean, huyeGanaExp?: boolean) => {
     if (!combatConfig) return 0;
-    if (huye) return 0;
+    if (huye && !huyeGanaExp) return 0;
     if (winner === 'Empate') return 0;
 
     const RANK_SCALE: Record<string, number> = { 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5 };
@@ -388,7 +388,7 @@ export default function CombatForm({
     const authorTeam = authorInA ? 'A' : 'B';
     const authorParticipant = authorInA || authorInB;
 
-    const finalXP = calculateXP(authorTeam, authorParticipant?.huye);
+    const finalXP = calculateXP(authorTeam, authorParticipant?.huye, authorParticipant?.huye_gana_exp);
     let finalResult = 'retirarse';
     if (winner === 'A') finalResult = authorInA ? 'ganar' : 'perder';
     else if (winner === 'B') finalResult = authorInB ? 'ganar' : 'perder';
@@ -671,7 +671,7 @@ export default function CombatForm({
                             </div>
                             <div className="flex items-center gap-4">
                               <div className="flex items-center gap-2 px-3 py-1 bg-oro/10 border border-oro/20 ninja-clip-xs">
-                                <span className="text-caption font-black text-oro">+{calculateXP('A', p.huye)} EXP</span>
+                                <span className="text-caption font-black text-oro">+{calculateXP('A', p.huye, p.huye_gana_exp)} EXP</span>
                               </div>
                               {calculatePA('A', p.huye) > 0 && (
                                 <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-success-text/20 ninja-clip-xs">
@@ -706,11 +706,37 @@ export default function CombatForm({
                                 CDs
                               </button>
                               <button
-                                onClick={() => updateParticipantState(p.id, 'A', { huye: !p.huye })}
+                                onClick={() => {
+                                  const nextHuye = !p.huye;
+                                  updateParticipantState(p.id, 'A', { huye: nextHuye, huye_gana_exp: false });
+                                }}
                                 className={`px-4 py-2 border text-caption font-black uppercase tracking-widest transition-all ${p.huye ? 'bg-naranja-naruto/20 border-naranja-naruto/40 text-naranja-naruto' : 'bg-black/20 border-oro/5 text-oro/20'}`}
                               >
                                 HUYE
                               </button>
+
+                              {p.huye && (
+                                <button
+                                  type="button"
+                                  onClick={() => updateParticipantState(p.id, 'A', { huye_gana_exp: !p.huye_gana_exp })}
+                                  className={`flex items-center gap-2.5 px-3.5 py-2 border text-caption font-black uppercase tracking-widest transition-all duration-200 select-none animate-in fade-in zoom-in-95 ${
+                                    p.huye_gana_exp
+                                      ? 'bg-emerald-500/20 border-emerald-400/50 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.15)]'
+                                      : 'bg-black/40 border-oro/10 text-oro/40 hover:border-oro/30 hover:text-oro/70'
+                                  }`}
+                                >
+                                  <div
+                                    className={`w-4 h-4 border flex items-center justify-center transition-all ${
+                                      p.huye_gana_exp
+                                        ? 'bg-emerald-500 border-emerald-400 text-black shadow-sm'
+                                        : 'bg-black/60 border-oro/20'
+                                    }`}
+                                  >
+                                    {p.huye_gana_exp && <Check className="w-3 h-3 stroke-[3]" />}
+                                  </div>
+                                  <span>Gana EXP</span>
+                                </button>
+                              )}
                             </div>
 
                             {p.has_estado_alterado && (
@@ -763,7 +789,7 @@ export default function CombatForm({
                             </div>
                             <div className="flex items-center gap-4">
                               <div className="flex items-center gap-2 px-3 py-1 bg-oro/10 border border-oro/20 ninja-clip-xs">
-                                <span className="text-caption font-black text-oro">+{calculateXP('B', p.huye)} EXP</span>
+                                <span className="text-caption font-black text-oro">+{calculateXP('B', p.huye, p.huye_gana_exp)} EXP</span>
                               </div>
                               {calculatePA('B', p.huye) > 0 && (
                                 <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-success-text/20 ninja-clip-xs">
@@ -798,11 +824,37 @@ export default function CombatForm({
                                 CDs
                               </button>
                               <button
-                                onClick={() => updateParticipantState(p.id, 'B', { huye: !p.huye })}
+                                onClick={() => {
+                                  const nextHuye = !p.huye;
+                                  updateParticipantState(p.id, 'B', { huye: nextHuye, huye_gana_exp: false });
+                                }}
                                 className={`px-4 py-2 border text-caption font-black uppercase tracking-widest transition-all ${p.huye ? 'bg-naranja-naruto/20 border-naranja-naruto/40 text-naranja-naruto' : 'bg-black/20 border-oro/5 text-oro/20'}`}
                               >
                                 HUYE
                               </button>
+
+                              {p.huye && (
+                                <button
+                                  type="button"
+                                  onClick={() => updateParticipantState(p.id, 'B', { huye_gana_exp: !p.huye_gana_exp })}
+                                  className={`flex items-center gap-2.5 px-3.5 py-2 border text-caption font-black uppercase tracking-widest transition-all duration-200 select-none animate-in fade-in zoom-in-95 ${
+                                    p.huye_gana_exp
+                                      ? 'bg-emerald-500/20 border-emerald-400/50 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.15)]'
+                                      : 'bg-black/40 border-oro/10 text-oro/40 hover:border-oro/30 hover:text-oro/70'
+                                  }`}
+                                >
+                                  <div
+                                    className={`w-4 h-4 border flex items-center justify-center transition-all ${
+                                      p.huye_gana_exp
+                                        ? 'bg-emerald-500 border-emerald-400 text-black shadow-sm'
+                                        : 'bg-black/60 border-oro/20'
+                                    }`}
+                                  >
+                                    {p.huye_gana_exp && <Check className="w-3 h-3 stroke-[3]" />}
+                                  </div>
+                                  <span>Gana EXP</span>
+                                </button>
+                              )}
                             </div>
 
                             {p.has_estado_alterado && (

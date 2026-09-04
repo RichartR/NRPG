@@ -64,11 +64,11 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
     }
   };
 
-  const calculateParticipantXP = (m: Registro, team: 'A' | 'B', huye?: boolean) => {
+  const calculateParticipantXP = (m: Registro, team: 'A' | 'B', huye?: boolean, huyeGanaExp?: boolean) => {
     if (m.subtipo === 'sanacion' || m.data?.subtipo === 'sanacion') return 1;
     const config = m.data.config_xp;
     if (!config) return 0;
-    if (huye) return 0;
+    if (huye && !huyeGanaExp) return 0;
     if (m.data.ganador === 'Empate') return 0;
 
     // Fallback if config is old format
@@ -137,7 +137,8 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
               const isEmpate = m.data.ganador === 'Empate';
               const won = (m.data.ganador === 'A' && isA) || (m.data.ganador === 'B' && !isA);
               const rewards = RewardLogic.calculateReward(m, sid);
-              const xpGained = isSanacion ? rewards.xp : calculateParticipantXP(m, isA ? 'A' : 'B', (isA ? teamA : teamB).find((p: any) => p.id === sid)?.huye);
+              const participantObj = (isA ? teamA : teamB).find((p: any) => p.id === sid);
+              const xpGained = isSanacion ? rewards.xp : calculateParticipantXP(m, isA ? 'A' : 'B', participantObj?.huye, participantObj?.huye_gana_exp);
               const pcGained = isSanacion ? 0 : RewardLogic.calculateCombatPA(m, sid);
 
               const isOwner = activeCharacter?.id === m.autor_id;
@@ -335,7 +336,8 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
           const isEmpate = m.data.ganador === 'Empate';
           const won = (m.data.ganador === 'A' && isA) || (m.data.ganador === 'B' && !isA);
           const rewards = RewardLogic.calculateReward(m, sid);
-          const xpGained = isSanacion ? rewards.xp : calculateParticipantXP(m, isA ? 'A' : 'B', (isA ? teamA : teamB).find((p: any) => p.id === sid)?.huye);
+          const participantObjMobile = (isA ? teamA : teamB).find((p: any) => p.id === sid);
+          const xpGained = isSanacion ? rewards.xp : calculateParticipantXP(m, isA ? 'A' : 'B', participantObjMobile?.huye, participantObjMobile?.huye_gana_exp);
           const pcGained = isSanacion ? 0 : RewardLogic.calculateCombatPA(m, sid);
 
           const isOwner = activeCharacter?.id === m.autor_id;
@@ -586,7 +588,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                             <div className="flex items-center gap-3">
                               <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
                               <span className="text-caption font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">
-                                +{calculateParticipantXP(selectedCombat, 'A', p.huye)} EXP
+                                +{calculateParticipantXP(selectedCombat, 'A', p.huye, p.huye_gana_exp)} EXP
                               </span>
                               <span className="text-caption font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-success-text/10">
                                 +{RewardLogic.calculateCombatPA(selectedCombat, p.id)} PA
@@ -605,8 +607,12 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                                 </span>
                               )}
                               {p.huye && (
-                                <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-caption font-black uppercase ninja-clip-xs border border-orange-500/40">
-                                  HUYE
+                                <span className={`px-2 py-0.5 text-caption font-black uppercase ninja-clip-xs border ${
+                                  p.huye_gana_exp 
+                                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' 
+                                    : 'bg-orange-500/20 text-orange-400 border-orange-500/40'
+                                }`}>
+                                  {p.huye_gana_exp ? 'HUYE (GANA EXP)' : 'HUYE'}
                                 </span>
                               )}
                               <span className="text-caption font-black text-oro/70 uppercase">
@@ -659,7 +665,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                             <div className="flex items-center gap-3 lg:flex-row-reverse">
                               <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
                               <span className="text-caption font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">
-                                +{calculateParticipantXP(selectedCombat, 'B', p.huye)} EXP
+                                +{calculateParticipantXP(selectedCombat, 'B', p.huye, p.huye_gana_exp)} EXP
                               </span>
                               <span className="text-caption font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-success-text/10">
                                 +{RewardLogic.calculateCombatPA(selectedCombat, p.id)} PA
@@ -678,8 +684,12 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                                 </span>
                               )}
                               {p.huye && (
-                                <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-caption font-black uppercase ninja-clip-xs border border-orange-500/40">
-                                  HUYE
+                                <span className={`px-2 py-0.5 text-caption font-black uppercase ninja-clip-xs border ${
+                                  p.huye_gana_exp 
+                                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' 
+                                    : 'bg-orange-500/20 text-orange-400 border-orange-500/40'
+                                }`}>
+                                  {p.huye_gana_exp ? 'HUYE (GANA EXP)' : 'HUYE'}
                                 </span>
                               )}
                               <span className="text-caption font-black text-oro/70 uppercase">

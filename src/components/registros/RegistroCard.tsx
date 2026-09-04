@@ -76,10 +76,10 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
     }
   };
 
-  const calculateParticipantXP = (team: 'A' | 'B', huye?: boolean) => {
+  const calculateParticipantXP = (team: 'A' | 'B', huye?: boolean, huyeGanaExp?: boolean) => {
     const config = registro.data.config_xp;
     if (!config) return 0;
-    if (huye) return 0;
+    if (huye && !huyeGanaExp) return 0;
     if (registro.data.ganador === 'Empate') return 0;
 
     // Fallback if config is old format
@@ -658,7 +658,8 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
 
                       const allies = (isA ? teamA : teamB).filter((p: any) => p.id !== sid).map((p: any) => p.nombre_ninja);
                       const enemies = (isA ? teamB : teamA).map((p: any) => p.nombre_ninja);
-                      const xpGained = calculateParticipantXP(isA ? 'A' : 'B', (isA ? teamA : teamB).find((p: any) => p.id === sid)?.huye);
+                      const participantObj = (isA ? teamA : teamB).find((p: any) => p.id === sid);
+                      const xpGained = calculateParticipantXP(isA ? 'A' : 'B', participantObj?.huye, participantObj?.huye_gana_exp);
                       const paGained = RewardLogic.calculateCombatPA(registro, sid);
 
                       return (
@@ -719,13 +720,21 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                           <div className="flex justify-between items-center">
                             <div className="flex items-center gap-3">
                               <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
-                              <span className="text-caption font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">+{calculateParticipantXP('A', p.huye)} EXP</span>
+                              <span className="text-caption font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">+{calculateParticipantXP('A', p.huye, p.huye_gana_exp)} EXP</span>
                               <span className="text-caption font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-success-text/10">+{RewardLogic.calculateCombatPA(registro, p.id)} PA</span>
                             </div>
                             <div className="flex items-center gap-3">
                               {p.has_estado_alterado && <span className="px-2 py-0.5 bg-oro/20 text-oro text-caption font-black uppercase ninja-clip-xs border border-oro/40">ESTADO ALTERADO</span>}
                               {p.has_cds && <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-caption font-black uppercase ninja-clip-xs border border-blue-400/40">CDs</span>}
-                              {p.huye && <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-caption font-black uppercase ninja-clip-xs border border-orange-500/40">HUYE</span>}
+                              {p.huye && (
+                                <span className={`px-2 py-0.5 text-caption font-black uppercase ninja-clip-xs border ${
+                                  p.huye_gana_exp 
+                                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' 
+                                    : 'bg-orange-500/20 text-orange-400 border-orange-500/40'
+                                }`}>
+                                  {p.huye_gana_exp ? 'HUYE (GANA EXP)' : 'HUYE'}
+                                </span>
+                              )}
                               <span className="text-caption font-black text-oro/70 uppercase">{p.estado_nombre || 'SIN ESTADO'}</span>
                             </div>
                           </div>
@@ -761,13 +770,21 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                           <div className="flex justify-between items-center lg:flex-row-reverse">
                             <div className="flex items-center gap-3 lg:flex-row-reverse">
                               <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
-                              <span className="text-caption font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">+{calculateParticipantXP('B', p.huye)} EXP</span>
+                              <span className="text-caption font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">+{calculateParticipantXP('B', p.huye, p.huye_gana_exp)} EXP</span>
                               <span className="text-caption font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-success-text/10">+{RewardLogic.calculateCombatPA(registro, p.id)} PA</span>
                             </div>
                             <div className="flex items-center gap-3 lg:flex-row-reverse">
                               {p.has_estado_alterado && <span className="px-2 py-0.5 bg-oro/20 text-oro text-caption font-black uppercase ninja-clip-xs border border-oro/40">ESTADO ALTERADO</span>}
                               {p.has_cds && <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-caption font-black uppercase ninja-clip-xs border border-blue-400/40">CDs</span>}
-                              {p.huye && <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-caption font-black uppercase ninja-clip-xs border border-orange-500/40">HUYE</span>}
+                              {p.huye && (
+                                <span className={`px-2 py-0.5 text-caption font-black uppercase ninja-clip-xs border ${
+                                  p.huye_gana_exp 
+                                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' 
+                                    : 'bg-orange-500/20 text-orange-400 border-orange-500/40'
+                                }`}>
+                                  {p.huye_gana_exp ? 'HUYE (GANA EXP)' : 'HUYE'}
+                                </span>
+                              )}
                               <span className="text-caption font-black text-oro/70 uppercase">{p.estado_nombre || 'SIN ESTADO'}</span>
                             </div>
                           </div>

@@ -341,7 +341,8 @@ export const RewardLogic = {
       const isTeamB = data.equipo_b?.some((p: any) => Number(p.id) === Number(personajeId));
       const participant = [...(data.equipo_a || []), ...(data.equipo_b || [])].find((p: any) => Number(p.id) === Number(personajeId));
 
-      if (!participant || participant.huye) return { xp: 0, ryous: 0, pa: 0 };
+      if (!participant) return { xp: 0, ryous: 0, pa: 0 };
+      if (participant.huye && !participant.huye_gana_exp) return { xp: 0, ryous: 0, pa: 0 };
       if (data.ganador === 'Empate') return { xp: 0, ryous: 0, pa: 0 };
 
       const config = data.config_xp;
