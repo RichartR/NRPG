@@ -122,6 +122,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
   const [globalMonedasEvento, setGlobalMonedasEvento] = useState<number>(Number(editingRegistry?.data?.global_monedas_evento) || 0);
   const [textoEntrega, setTextoEntrega] = useState<string>(editingRegistry?.data?.texto_entrega || '');
   const [urlImagen, setUrlImagen] = useState<string>(editingRegistry?.data?.url_imagen || '');
+  const [recuperable, setRecuperable] = useState<boolean>(editingRegistry ? editingRegistry.data?.recuperable !== false : true);
 
   // Participants & Rewards
   const [participants, setParticipants] = useState<any[]>([]);
@@ -337,6 +338,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
           url_imagen: urlImagen.trim() || null,
           evento_url_imagen: activeNews.url_imagen || null,
           texto_entrega: textoEntrega.trim(),
+          recuperable: recuperable,
           ping_roles: pingRoles,
           global_xp: globalXp,
           global_ryous: globalRyous,
@@ -516,6 +518,30 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Opción de Recuperación por Inasistencia */}
+            <div className="p-6 bg-black/40 border border-oro/10 ninja-clip-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <label className="text-xs font-black uppercase tracking-[0.25em] text-white flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-oro" /> EVENTO RECUPERABLE POR INASISTENCIA
+                </label>
+                <p className="text-[11px] font-bold text-oro/40 uppercase tracking-wider">
+                  Permite a los ninjas ausentes solicitar recompensas base mediante una escena de roleo (máx. 5 días).
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRecuperable(!recuperable)}
+                className={`px-5 py-2.5 font-black text-xs uppercase tracking-widest transition-all cursor-pointer flex items-center gap-2.5 ninja-clip-xs border ${
+                  recuperable
+                    ? 'bg-oro/15 border-oro text-oro shadow-[0_0_15px_rgba(255,230,159,0.15)]'
+                    : 'bg-black/60 border-oro/20 text-oro/40 hover:border-oro/40'
+                }`}
+              >
+                <span className={`w-2.5 h-2.5 rounded-full ${recuperable ? 'bg-oro shadow-[0_0_8px_#ffd56b]' : 'bg-oro/20'}`} />
+                {recuperable ? 'RECUPERABLE: SÍ' : 'RECUPERABLE: NO'}
+              </button>
             </div>
 
             {/* Premios Globales */}

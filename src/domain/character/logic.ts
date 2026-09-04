@@ -306,7 +306,7 @@ export const RewardLogic = {
       };
     }
 
-    if (registro.subtipo === 'recuperacion_evento') {
+    if (registro.subtipo === 'recuperacion_evento' || registro.subtipo === 'recuperacion_narracion') {
       const globalXp = Number(data?.global_xp) || 0;
       const globalRyous = Number(data?.global_ryous) || 0;
       const globalPa = Number(data?.global_pa) || 0;

@@ -172,7 +172,8 @@ export default function AdminNotificationBadge({ isSidebar = false, userRoles = 
     const isCloneAlert = dispute ? (dispute.registro_id === null && dispute.personaje_id === null) : false;
     const isAppeal = dispute ? (dispute.registro_id === null && dispute.personaje_id !== null) : false;
 
-    const isRecuperacion = dispute?.registro?.subtipo === 'recuperacion_evento';
+    const isRecuperacion = dispute?.registro?.subtipo === 'recuperacion_evento' || dispute?.registro?.subtipo === 'recuperacion_narracion';
+    const isNarracionRecup = dispute?.registro?.subtipo === 'recuperacion_narracion';
 
     let title = '';
     let message = '';
@@ -188,9 +189,11 @@ export default function AdminNotificationBadge({ isSidebar = false, userRoles = 
         ? '¿Estás seguro de que quieres aceptar la apelación? Se restaurará la ficha de este shinobi.'
         : '¿Estás seguro de que quieres rechazar la apelación? La ficha seguirá archivada.';
     } else if (isRecuperacion) {
-      title = action === 'aceptada' ? 'Aceptar Recuperación de Evento' : 'Rechazar Recuperación';
+      title = action === 'aceptada' 
+        ? (isNarracionRecup ? 'Aceptar Recuperación de Narración' : 'Aceptar Recuperación de Evento')
+        : (isNarracionRecup ? 'Rechazar Recuperación de Narración' : 'Rechazar Recuperación');
       message = action === 'aceptada'
-        ? '¿Estás seguro de aceptar esta recuperación? Se otorgarán las recompensas base correspondientes a los shinobis implicados.'
+        ? `¿Estás seguro de aceptar esta recuperación de ${isNarracionRecup ? 'narración' : 'evento'}? Se otorgarán las recompensas base correspondientes a los shinobis implicados.`
         : '¿Estás seguro de rechazar esta solicitud de recuperación? No se otorgarán recompensas.';
     } else {
       title = action === 'aceptada' ? 'Aceptar Disputa' : 'Invalidar Registro';
@@ -215,7 +218,9 @@ export default function AdminNotificationBadge({ isSidebar = false, userRoles = 
       } else if (isAppeal) {
         successMsg = action === 'aceptada' ? 'Apelación aceptada y ficha restaurada' : 'Apelación rechazada';
       } else if (isRecuperacion) {
-        successMsg = action === 'aceptada' ? 'Recuperación de evento aceptada con éxito' : 'Recuperación de evento rechazada';
+        successMsg = action === 'aceptada' 
+          ? `Recuperación de ${isNarracionRecup ? 'narración' : 'evento'} aceptada con éxito` 
+          : `Recuperación de ${isNarracionRecup ? 'narración' : 'evento'} rechazada`;
       } else {
         successMsg = action === 'aceptada' ? 'Disputa resuelta a favor del jugador' : 'Registro invalidado y recompensas revertidas';
       }
@@ -311,6 +316,8 @@ export default function AdminNotificationBadge({ isSidebar = false, userRoles = 
                         <span className="text-caption font-black uppercase px-2.5 py-1 bg-naranja-naruto text-white inline-block tracking-wider mb-2">
                           {d.registro?.subtipo === 'recuperacion_evento'
                             ? 'Recuperación de Evento'
+                            : d.registro?.subtipo === 'recuperacion_narracion'
+                            ? 'Recuperación de Narración'
                             : d.registro?.subtipo === 'narracion'
                             ? 'Revisión de Narración'
                             : `Rechazo: ${d.registro?.tipo}`}
@@ -365,7 +372,7 @@ export default function AdminNotificationBadge({ isSidebar = false, userRoles = 
                           className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-naranja-naruto text-white text-caption font-black uppercase tracking-widest hover:bg-naranja-naruto/90 active:scale-[0.98] transition-all cursor-pointer border border-naranja-naruto/50 shadow-sm"
                           style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
                         >
-                          <X className="w-3.5 h-3.5 stroke-[3]" /> {d.registro_id === null || d.registro?.subtipo === 'recuperacion_evento' ? 'Rechazar' : 'Invalidar'}
+                          <X className="w-3.5 h-3.5 stroke-[3]" /> {d.registro_id === null || d.registro?.subtipo === 'recuperacion_evento' || d.registro?.subtipo === 'recuperacion_narracion' ? 'Rechazar' : 'Invalidar'}
                         </button>
                       </div>
                       {d.registro_id !== null && (

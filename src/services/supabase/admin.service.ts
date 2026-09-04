@@ -496,8 +496,8 @@ export const AdminService = {
         }
       }
     } else {
-      // Disputa de registro tradicional o Recuperación de Evento
-      const isRecuperacion = notif.registro?.subtipo === 'recuperacion_evento';
+      // Disputa de registro tradicional o Recuperación de Evento / Narración
+      const isRecuperacion = notif.registro?.subtipo === 'recuperacion_evento' || notif.registro?.subtipo === 'recuperacion_narracion';
 
       if (resolucion === 'aceptada') {
         // Obtener todos los participantes del registro
@@ -525,7 +525,7 @@ export const AdminService = {
               puntos_aprendizaje: (char.puntos_aprendizaje || 0) + pa
             }).eq('id', pid);
 
-            // Si es recuperación de evento, sincronizar en evento_premios original
+            // Si es recuperación de evento o narración, sincronizar en registro original
             if (isRecuperacion && notif.registro?.data?.evento_premios_id) {
               const eventoPremiosId = Number(notif.registro.data.evento_premios_id);
               const { data: regPremios } = await supabase

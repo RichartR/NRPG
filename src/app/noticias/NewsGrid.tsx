@@ -182,6 +182,12 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
     return (Date.now() - timeSec) <= FIVE_DAYS_MS;
   }, [ultimoRegistroPremios]);
 
+  // Comprobar si el evento está marcado como recuperable (por defecto true si no está especificado)
+  const isRecuperable = useMemo(() => {
+    if (!ultimoRegistroPremios) return false;
+    return ultimoRegistroPremios.data?.recuperable !== false;
+  }, [ultimoRegistroPremios]);
+
   // Comprobar si el personaje activo ya ha reclamado o recuperado los premios del reparto más reciente
   const isAlreadyRecovered = useMemo(() => {
     if (!activeCharacter || !ultimoRegistroPremios) return false;
@@ -488,7 +494,7 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
                                   <p className="text-[11px] font-bold text-oro/40 uppercase tracking-widest mt-1">Historial de repartos de este evento</p>
                                 </div>
                                 <div className="flex items-center gap-3 flex-wrap">
-                                  {isWithin5Days && !isAlreadyRecovered && (
+                                  {isRecuperable && isWithin5Days && !isAlreadyRecovered && (
                                     <button
                                       onClick={() => setIsRecoveryModalOpen(true)}
                                       className="px-6 py-2.5 bg-white text-naranja-naruto hover:bg-white/90 hover:brightness-110 font-black text-caption xl:text-xs uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,255,255,0.3)] select-none flex items-center gap-2 cursor-pointer"
@@ -588,7 +594,7 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
                                 <p className="text-[11px] font-bold text-oro/40 uppercase tracking-widest mt-1">Historial de repartos de este evento</p>
                               </div>
                               <div className="flex items-center gap-3 flex-wrap">
-                                {isWithin5Days && !isAlreadyRecovered && (
+                                {isRecuperable && isWithin5Days && !isAlreadyRecovered && (
                                   <button
                                     onClick={() => setIsRecoveryModalOpen(true)}
                                     className="px-6 py-2.5 bg-white text-naranja-naruto hover:bg-white/90 hover:brightness-110 font-black text-caption xl:text-xs uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,255,255,0.3)] select-none flex items-center gap-2 cursor-pointer"
@@ -664,7 +670,7 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
                               <p className="text-[11px] font-bold text-oro/40 uppercase tracking-widest mt-1">Historial de repartos de este evento</p>
                             </div>
                             <div className="flex items-center gap-3 flex-wrap">
-                              {isWithin5Days && !isAlreadyRecovered && (
+                              {isRecuperable && isWithin5Days && !isAlreadyRecovered && (
                                 <button
                                   onClick={() => setIsRecoveryModalOpen(true)}
                                   className="px-6 py-2.5 bg-white text-naranja-naruto hover:bg-white/90 hover:brightness-110 font-black text-caption xl:text-xs uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,255,255,0.3)] select-none flex items-center gap-2 cursor-pointer"

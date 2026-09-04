@@ -161,7 +161,9 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
                   ? `Evento de Narración por ${m.data.narrador || 'Narrador'}`
                   : m.subtipo === 'recuperacion_evento'
                     ? `Recuperación de Evento: ${m.data?.titulo || 'Evento'}`
-                    : m.data.titulo;
+                    : m.subtipo === 'recuperacion_narracion'
+                      ? `Recuperación de Narración: ${m.data?.titulo || 'Narración'}`
+                      : m.data.titulo;
 
               // Obtener premios del shinobi si es reparto de evento
               const targetCharId = subjectId || activeCharacter?.id;
@@ -244,7 +246,7 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
                   {/* Coste */}
                   <td className="py-3 px-5">
                     <div className="flex flex-col gap-1.5 justify-center">
-                      {(m.subtipo === 'evento_premios' || m.subtipo === 'narracion' || m.subtipo === 'recuperacion_evento') ? (
+                      {(m.subtipo === 'evento_premios' || m.subtipo === 'narracion' || m.subtipo === 'recuperacion_evento' || m.subtipo === 'recuperacion_narracion') ? (
                         <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
                           {xpObtained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>+{xpObtained} EXP</div>}
                           {ryousObtained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>+{ryousObtained} Ryos</div>}

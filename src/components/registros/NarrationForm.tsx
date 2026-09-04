@@ -40,6 +40,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
   const [globalRyous, setGlobalRyous] = useState<number>(Number(initialData?.data?.global_ryous) || 0);
   const [globalPa, setGlobalPa] = useState<number>(Number(initialData?.data?.global_pa) || 0);
   const [globalMonedasEvento, setGlobalMonedasEvento] = useState<number>(Number(initialData?.data?.global_monedas_evento) || 0);
+  const [recuperable, setRecuperable] = useState<boolean>(initialData ? !!initialData.data?.recuperable : false);
 
   // Participants & Rewards
   const [participants, setParticipants] = useState<any[]>([]);
@@ -82,6 +83,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
       setGlobalRyous(Number(initialData.data?.global_ryous) || 0);
       setGlobalPa(Number(initialData.data?.global_pa) || 0);
       setGlobalMonedasEvento(Number(initialData.data?.global_monedas_evento) || 0);
+      setRecuperable(!!initialData.data?.recuperable);
       setImages(initialData.data?.urls_imagenes || ['']);
 
       const initialParts = initialData.participantes?.map((p: any) => {
@@ -276,6 +278,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
           narrador: narrador.trim(),
           destinatario_tipo: destinatarioTipo,
           destinatario_id: destinatarioId,
+          recuperable: recuperable,
           discord_message_text: discordMessageText.trim(),
           discord_image_url: discordImageUrl.trim(),
           global_xp: globalXp,
@@ -508,6 +511,30 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Opción de Recuperación por Inasistencia */}
+              <div className="p-6 bg-black/40 border border-oro/10 ninja-clip-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-black uppercase tracking-[0.25em] text-white flex items-center gap-2">
+                    NARRACIÓN RECUPERABLE
+                  </label>
+                  <p className="text-[11px] font-bold text-oro/40 uppercase tracking-wider">
+                    Permite a los  ausentes solicitar recompensas base mediante una escena de roleo (máx. 5 días).
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setRecuperable(!recuperable)}
+                  className={`px-5 py-2.5 font-black text-xs uppercase tracking-widest transition-all cursor-pointer flex items-center gap-2.5 ninja-clip-xs border ${
+                    recuperable
+                      ? 'bg-oro/15 border-oro text-oro shadow-[0_0_15px_rgba(255,230,159,0.15)]'
+                      : 'bg-black/60 border-oro/20 text-oro/40 hover:border-oro/40'
+                  }`}
+                >
+                  <span className={`w-2.5 h-2.5 rounded-full ${recuperable ? 'bg-oro shadow-[0_0_8px_#ffd56b]' : 'bg-oro/20'}`} />
+                  {recuperable ? 'RECUPERABLE: SÍ' : 'RECUPERABLE: NO'}
+                </button>
               </div>
 
               {/* Premios Globales */}
