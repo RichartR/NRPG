@@ -283,13 +283,14 @@ export async function POST(request: Request) {
 
         if (insertErr) throw insertErr;
 
-        // Post announcement to the news/patch channel if configured (as Embed)
+        // Post announcement to the news/patch/event channel if configured (as Embed)
         if (channelKey) {
           const targetChannelId = await MasterServerService.getConfiguracion(adminClient, channelKey);
           if (targetChannelId) {
             const origin = new URL(request.url).origin;
             const targetUrl = `${origin}/noticias?id=${inserted.id}`;
-            const typeLabel = isNoticia ? 'NUEVA NOTICIA' : isParche ? 'NUEVO PARCHE' : 'NUEVO ANUNCIO';
+            const isEvento = categoria === 'Evento';
+            const typeLabel = isNoticia ? 'NUEVA NOTICIA' : isParche ? 'NUEVO PARCHE' : isEvento ? 'NUEVO EVENTO' : 'NUEVO ANUNCIO';
 
             const mentionText = await buildMentionText(adminClient, ping_roles);
 
@@ -311,6 +312,17 @@ export async function POST(request: Request) {
               }
             } catch (announcementErr) {
               console.error(`Error sending ${categoria} announcement Embed to Discord:`, announcementErr);
+            }
+
+            if (isEvento) {
+              const announcementChannelId = await MasterServerService.getConfiguracion(adminClient, 'discord_event_announcement_channel_id');
+              if (announcementChannelId && announcementChannelId !== targetChannelId) {
+                try {
+                  await sendDiscordEmbed(announcementChannelId, announcementEmbed, mentionText || undefined);
+                } catch (annErr) {
+                  console.error('Error sending event announcement Embed in fallback flow:', annErr);
+                }
+              }
             }
           }
         }
