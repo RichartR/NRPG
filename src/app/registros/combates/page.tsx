@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import { RegistrosService } from '@/services/supabase/registros.service';
 import { Registro } from '@/domain/types';
 import CombatForm from '@/components/registros/CombatForm';
 import RegistroCard from '@/components/registros/RegistroCard';
-import { Swords, ChevronLeft, ChevronRight, Plus, Settings } from 'lucide-react';
+import { Swords, ChevronLeft, ChevronRight, Plus, Settings, ShieldAlert } from 'lucide-react';
 import { AuthService } from '@/services/supabase/auth.service';
 import { createClient } from '@/utils/supabase/client';
 import { useCharacterStore } from '@/store/useCharacterStore';
@@ -17,13 +18,20 @@ import { PaginationContainer } from '@/components/ui/PaginationContainer';
 
 import { ProfileService } from '@/services/supabase/profile.service';
 
-export default function CombatesPage() {
+function CombatesContent() {
+  const searchParams = useSearchParams();
+  const tipoParam = searchParams.get('tipo');
+  const isIntervencionParam = tipoParam === 'intervencion';
+
   const { activeCharacter, fetchActiveCharacter } = useCharacterStore();
   const [data, setData] = useState<{ list: Registro[], count: number, page: number }>({
     list: [], count: 0, page: 1
   });
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(isIntervencionParam);
+  const [initialSubtype, setInitialSubtype] = useState<'combate' | 'sanacion' | 'intervencion'>(
+    isIntervencionParam ? 'intervencion' : 'combate'
+  );
   const [isAdmin, setIsAdmin] = useState(false);
   const [viewMode, setViewMode] = useState<'player' | 'admin'>('player');
   const [editingRegistro, setEditingRegistro] = useState<Registro | null>(null);
@@ -33,6 +41,13 @@ export default function CombatesPage() {
   useEffect(() => {
     fetchActiveCharacter();
   }, []);
+
+  useEffect(() => {
+    if (isIntervencionParam) {
+      setShowForm(true);
+      setInitialSubtype('intervencion');
+    }
+  }, [isIntervencionParam]);
 
   useEffect(() => {
     fetchData(1);
@@ -143,6 +158,7 @@ export default function CombatesPage() {
           <CombatForm
             onCreated={() => { setShowForm(false); setEditingRegistro(null); fetchData(data.page); }}
             initialData={editingRegistro}
+            initialSubtype={initialSubtype}
           />
         ) : (
           <div className="space-y-6">
@@ -245,5 +261,17 @@ export default function CombatesPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function CombatesPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen py-60 flex flex-col items-center justify-center gap-10">
+        <div className="w-16 h-16 border-4 border-naranja-naruto/20 border-t-naranja-naruto rounded-full animate-spin" />
+      </div>
+    }>
+      <CombatesContent />
+    </Suspense>
   );
 }

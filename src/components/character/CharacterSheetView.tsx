@@ -835,10 +835,32 @@ export function CharacterSheetView({
       return p?.estado === 'aceptado' || (!p && Number(r.autor_id) === Number(character.id));
     });
     const acceptedMissions = acceptedRegs.filter(r => r.tipo === 'mision');
+    const acceptedIntervencionesWon = acceptedRegs.filter(r => {
+      const isIntervencion = r.subtipo === 'intervencion' || r.data?.subtipo === 'intervencion' || !!r.data?.es_intervencion;
+      if (!isIntervencion) return false;
+      const teamA = r.data?.equipo_a || [];
+      const isA = teamA.some((p: any) => Number(p.id) === Number(character.id));
+      const won = (r.data?.ganador === 'A' && isA) || (r.data?.ganador === 'B' && !isA);
+      return won;
+    });
 
-    const totalExpSpent = acceptedRegs.reduce((sum, r) => sum + (r.data?.gasto_xp || 0), 0);
-    const totalRyousSpent = acceptedRegs.reduce((sum, r) => sum + (r.data?.gasto_ryous || 0), 0);
-    const totalPASpent = acceptedRegs.reduce((sum, r) => sum + (r.data?.gasto_pc || 0), 0);
+    const totalExpSpent = Math.max(0, acceptedRegs.reduce((sum, r) => {
+      const spent = r.data?.coste_exp ?? r.data?.gasto_xp ?? 0;
+      const refund = r.data?.refund_xp ?? 0;
+      return sum + (Number(spent) || 0) - (Number(refund) || 0);
+    }, 0));
+
+    const totalRyousSpent = Math.max(0, acceptedRegs.reduce((sum, r) => {
+      const spent = r.data?.coste_ryous ?? r.data?.gasto_ryous ?? 0;
+      const refund = r.data?.refund_ryous ?? 0;
+      return sum + (Number(spent) || 0) - (Number(refund) || 0);
+    }, 0));
+
+    const totalPASpent = Math.max(0, acceptedRegs.reduce((sum, r) => {
+      const spent = r.data?.coste_puntos_aprendizaje ?? r.data?.coste_pa ?? r.data?.gasto_pa ?? r.data?.gasto_pc ?? 0;
+      const refund = r.data?.refund_pa ?? 0;
+      return sum + (Number(spent) || 0) - (Number(refund) || 0);
+    }, 0));
 
     // Calcular recursos no guardados (en edición) para mantener estables los totales
     const addedItems = (character.personajes_inventario || [])
@@ -868,9 +890,9 @@ export function CharacterSheetView({
       missionCounts: {
         D: acceptedMissions.filter(m => m.subtipo === 'D').length,
         C: acceptedMissions.filter(m => m.subtipo === 'C').length,
-        B: acceptedMissions.filter(m => m.subtipo === 'B').length,
-        A: acceptedMissions.filter(m => m.subtipo === 'A').length,
-        S: acceptedMissions.filter(m => m.subtipo === 'S').length,
+        B: acceptedMissions.filter(m => m.subtipo === 'B').length + acceptedIntervencionesWon.filter(i => (i.data?.mision_rango || 'B') === 'B').length,
+        A: acceptedMissions.filter(m => m.subtipo === 'A').length + acceptedIntervencionesWon.filter(i => i.data?.mision_rango === 'A').length,
+        S: acceptedMissions.filter(m => m.subtipo === 'S').length + acceptedIntervencionesWon.filter(i => i.data?.mision_rango === 'S').length,
       }
     };
   }, [

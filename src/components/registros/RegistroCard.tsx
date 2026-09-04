@@ -1,7 +1,7 @@
 'use client';
 
 import { Registro } from '@/domain/types';
-import { Zap, ScrollText, Swords, User, Link as LinkIcon, Trash2, Edit3, Loader2, ShoppingBag, Sparkles, Swords as VS, Users, Coins, HeartPulse, Dices } from 'lucide-react';
+import { Zap, ScrollText, Swords, User, Link as LinkIcon, Trash2, Edit3, Loader2, ShoppingBag, Sparkles, Swords as VS, Users, Coins, HeartPulse, Dices, ShieldAlert } from 'lucide-react';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { RegistrosService } from '@/services/supabase/registros.service';
 import { useToastStore } from '@/components/ui/Toast';
@@ -67,6 +67,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
 
   const getIcon = () => {
     if (registro.subtipo === 'sanacion' || registro.data?.subtipo === 'sanacion') return HeartPulse;
+    if (registro.subtipo === 'intervencion' || registro.data?.subtipo === 'intervencion' || !!registro.data?.es_intervencion) return ShieldAlert;
     if (registro.subtipo === 'narracion' || registro.subtipo === 'recuperacion_evento' || registro.subtipo === 'recuperacion_narracion') return Sparkles;
     switch (registro.tipo) {
       case 'mision': return ScrollText;
@@ -113,11 +114,29 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
     const section = isWinner ? config.victoria : config.derrota;
     if (!section) return 0;
 
-    if (diff >= 2) return Number(section.mas_2) || 0;
-    if (diff === 1) return Number(section.mas_1) || 0;
-    if (diff === 0) return Number(section.igual) || 0;
-    if (diff === -1) return Number(section.menos_1) || 0;
-    return Number(section.menos_2) || 0;
+    let baseXp = 0;
+    if (diff >= 2) baseXp = Number(section.mas_2) || 0;
+    else if (diff === 1) baseXp = Number(section.mas_1) || 0;
+    else if (diff === 0) baseXp = Number(section.igual) || 0;
+    else if (diff === -1) baseXp = Number(section.menos_1) || 0;
+    else baseXp = Number(section.menos_2) || 0;
+
+    if (baseXp === 0) return 0;
+
+    if (isWinner) {
+      const ownTeamCount = team === 'A' ? teamA.length : teamB.length;
+      const oppTeamCount = team === 'A' ? teamB.length : teamA.length;
+
+      if (ownTeamCount < oppTeamCount) {
+        const playerDiff = oppTeamCount - ownTeamCount;
+        return Math.ceil(baseXp * (1 + 0.5 * playerDiff));
+      } else if (ownTeamCount > oppTeamCount) {
+        const playerDiff = ownTeamCount - oppTeamCount;
+        return Math.ceil(baseXp / (1 + playerDiff));
+      }
+    }
+
+    return baseXp;
   };
 
   const formatNinjaList = (names: string[]) => {
@@ -135,7 +154,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
       return registro.data.participantes_historicos;
     }
     if (registro.participantes && registro.participantes.length > 0) {
-      return registro.participantes.map(p => ({
+      return registro.participantes.map((p: any) => ({
         id: p.personaje_id,
         nombre_ninja: p.personaje?.nombre_ninja || 'Ninja Desaparecido'
       }));
@@ -235,7 +254,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                 <div className="flex items-center gap-2 text-oro/30 text-caption font-black uppercase tracking-widest mr-2">
                   <Users className="w-4 h-4" /> PARTICIPANTES:
                 </div>
-                {participants.map((p, i) => (
+                {participants.map((p: any, i: number) => (
                   <span key={i} className="text-[11px] font-black text-oro/60 uppercase tracking-widest px-4 py-1.5 bg-oro/5 border border-oro/10 ninja-clip-xs">
                     {p.nombre_ninja}
                   </span>
@@ -627,184 +646,274 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
           </div>
         ) : (
           <div className="space-y-8">
-            {!showFullDetails && !isGlobalView ? (
-              <div className="p-6 sm:p-8 bg-black/40 border border-oro/5 ninja-clip-sm flex flex-col md:flex-row justify-between items-center gap-6">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-4">
-                    <VS className="w-5 h-5 text-oro/40" />
-                    <span className="text-xs font-black text-oro/40 uppercase tracking-[0.3em]">Resumen de Combate</span>
-                    {registro.data.ganador === 'Empate' ? (
-                      <span className="text-caption font-black text-oro border border-oro/20 px-2 py-0.5">EMPATE</span>
-                    ) : (
-                      <span className={`text-caption font-black px-2 py-0.5 border ${(registro.data.ganador === 'A' && registro.data.equipo_a?.some((p: any) => p.id === (subjectId || registro.autor_id))) ||
-                        (registro.data.ganador === 'B' && registro.data.equipo_b?.some((p: any) => p.id === (subjectId || registro.autor_id)))
-                        ? 'text-success-text border-success-text/30 bg-success-bg/80'
-                        : 'text-error-text border-error-text/30 bg-error-bg/80'
-                        }`}>
-                        {(registro.data.ganador === 'A' && registro.data.equipo_a?.some((p: any) => p.id === (subjectId || registro.autor_id))) ||
-                          (registro.data.ganador === 'B' && registro.data.equipo_b?.some((p: any) => p.id === (subjectId || registro.autor_id)))
-                          ? 'VICTORIA' : 'DERROTA'}
-                      </span>
-                    )}
-                  </div>
+            {(() => {
+              const isIntervencion = registro.subtipo === 'intervencion' || registro.data?.subtipo === 'intervencion' || !!registro.data?.es_intervencion;
+              const sid = subjectId || registro.autor_id;
+              const teamA = registro.data.equipo_a || [];
+              const teamB = registro.data.equipo_b || [];
+              const isA = teamA.some((p: any) => p.id === sid);
+              const isEmpate = registro.data.ganador === 'Empate';
+              const won = (registro.data.ganador === 'A' && isA) || (registro.data.ganador === 'B' && !isA);
 
-                  <p className="text-lg xl:text-xl font-medium text-oro/80 leading-relaxed italic">
-                    {(() => {
-                      const sid = subjectId || registro.autor_id;
-                      const sName = authorName;
-                      const teamA = registro.data.equipo_a || [];
-                      const teamB = registro.data.equipo_b || [];
-                      const isA = teamA.some((p: any) => p.id === sid);
-
-                      const allies = (isA ? teamA : teamB).filter((p: any) => p.id !== sid).map((p: any) => p.nombre_ninja);
-                      const enemies = (isA ? teamB : teamA).map((p: any) => p.nombre_ninja);
-                      const participantObj = (isA ? teamA : teamB).find((p: any) => p.id === sid);
-                      const xpGained = calculateParticipantXP(isA ? 'A' : 'B', participantObj?.huye, participantObj?.huye_gana_exp);
-                      const paGained = RewardLogic.calculateCombatPA(registro, sid);
-
-                      return (
-                        <>
-                          <span className="font-black text-oro not-italic">{sName}</span> combati{allies.length > 0 ? 'ó junto a ' : 'ó '}
-                          {allies.length > 0 && <span className="text-oro">{formatNinjaList(allies)}</span>}
-                          {allies.length > 0 ? ' contra ' : ' contra '}
-                          <span className="text-oro">{formatNinjaList(enemies)}</span>.
-                          Obtiene <span className="font-black text-oro not-italic">{xpGained} EXP</span>
-                          {paGained > 0 && <> y <span className="font-black text-emerald-400 not-italic">{paGained} PA</span></>}.
-                        </>
-                      );
-                    })()}
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => setShowFullDetails(true)}
-                  className="ninja-btn-ghost px-6 py-3 text-caption focus:outline-none focus:ring-0"
-                >
-                  Ver registro completo
-                </button>
-              </div>
-            ) : (
-              <div className="animate-in fade-in slide-in-from-top-2 duration-500 outline-none ring-0 border-none">
-                {!isGlobalView && (
-                  <div className={`flex justify-between items-center ${isCompact ? 'mb-4' : 'mb-8'} border-b border-oro/10 ${isCompact ? 'pb-2' : 'pb-4'}`}>
-                    <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Informe Detallado</span>
-                    <button
-                      onClick={() => setShowFullDetails(false)}
-                      className="text-caption font-black text-oro/40 hover:text-oro uppercase tracking-widest border-b border-oro/20 focus:outline-none focus:ring-0"
-                    >
-                      Contraer resumen
-                    </button>
-                  </div>
-                )}
-
-                <div className="space-y-4">
-                  {/* Cabeceras de Bandos */}
-                  <div className={`grid grid-cols-2 lg:grid-cols-[1fr_auto_1fr] items-center border-b border-oro/10 ${isCompact ? 'pb-2' : 'pb-4'}`}>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Bando A</span>
-                      {registro.data.ganador === 'A' && <span className="text-caption font-black text-oro bg-oro/10 px-2 py-0.5 ninja-clip-xs border border-oro/20">GANADOR</span>}
-                    </div>
-                    {/* Espaciador central invisible en desktop para mantener la rejilla perfectamente alineada */}
-                    <div className="hidden lg:block w-[72px]" />
-                    <div className="flex items-center lg:flex-row-reverse gap-3 text-right justify-end">
-                      <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Bando B</span>
-                      {registro.data.ganador === 'B' && <span className="text-caption font-black text-oro bg-oro/10 px-2 py-0.5 ninja-clip-xs border border-oro/20">GANADOR</span>}
-                    </div>
-                  </div>
-
-                  {/* Cuerpo de Participantes y VS */}
-                  <div className={`grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] ${isCompact ? 'gap-4 lg:gap-8' : 'gap-10 lg:gap-16'} items-center`}>
-                    <div className={isCompact ? 'space-y-2' : 'space-y-4'}>
-                      {registro.data.equipo_a?.map((p: any) => (
-                        <div key={p.id} className={`${isCompact ? 'py-2 px-3' : 'p-4'} bg-black/40 border border-oro/5 ninja-clip-xs space-y-2`}>
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-3">
-                              <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
-                              <span className="text-caption font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">+{calculateParticipantXP('A', p.huye, p.huye_gana_exp)} EXP</span>
-                              <span className="text-caption font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-success-text/10">+{RewardLogic.calculateCombatPA(registro, p.id)} PA</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              {p.has_estado_alterado && <span className="px-2 py-0.5 bg-oro/20 text-oro text-caption font-black uppercase ninja-clip-xs border border-oro/40">ESTADO ALTERADO</span>}
-                              {p.has_cds && <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-caption font-black uppercase ninja-clip-xs border border-blue-400/40">CDs</span>}
-                              {p.huye && (
-                                <span className={`px-2 py-0.5 text-caption font-black uppercase ninja-clip-xs border ${
-                                  p.huye_gana_exp 
-                                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' 
-                                    : 'bg-orange-500/20 text-orange-400 border-orange-500/40'
-                                }`}>
-                                  {p.huye_gana_exp ? 'HUYE (GANA EXP)' : 'HUYE'}
-                                </span>
-                              )}
-                              <span className="text-caption font-black text-oro/70 uppercase">{p.estado_nombre || 'SIN ESTADO'}</span>
-                            </div>
-                          </div>
-                          {p.has_estado_alterado && p.descripcion_estado && (
-                            <div className="p-3 bg-oro/5 border-l-2 border-oro/20 italic text-[11px] text-oro/60">
-                              "{p.descripcion_estado}"
-                            </div>
-                          )}
-                          {p.has_cds && p.descripcion_cds && (
-                            <div className="p-3 bg-blue-500/5 border-l-2 border-blue-400/30 italic text-[11px] text-blue-300/70">
-                              "{p.descripcion_cds}"
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flex lg:flex-col items-center justify-center gap-4 self-center py-2 shrink-0">
-                      <div className="h-px lg:w-px lg:h-8 bg-oro/40 w-full opacity-20" />
-                      <div className="flex flex-col items-center gap-2">
-                        {registro.data.ganador === 'Empate' ? (
-                          <span className="font-black text-oro text-xl xl:text-2xl uppercase tracking-[0.25em]">RETIRADO</span>
+              if (!showFullDetails && !isGlobalView) {
+                return (
+                  <div className="p-6 sm:p-8 bg-black/40 border border-oro/5 ninja-clip-sm flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-3 mb-4">
+                        <VS className="w-5 h-5 text-oro/40" />
+                        <span className="text-xs font-black text-oro/40 uppercase tracking-[0.3em]">
+                          {isIntervencion 
+                            ? `Intervención: Misión ${registro.data.codigo_mision || ''} (Rango ${registro.data.mision_rango || 'B'})` 
+                            : 'Resumen de Combate'}
+                        </span>
+                        {isEmpate ? (
+                          <span className="text-caption font-black text-oro border border-oro/20 px-2 py-0.5">EMPATE</span>
                         ) : (
-                          <span className="font-ninja text-3xl xl:text-4xl text-oro italic opacity-20">VS</span>
+                          <span className={`text-caption font-black px-2 py-0.5 border ${
+                            won
+                              ? 'text-success-text border-success-text/30 bg-success-bg/80'
+                              : 'text-error-text border-error-text/30 bg-error-bg/80'
+                          }`}>
+                            {won 
+                              ? (isIntervencion ? 'VICTORIA (MISIÓN COMPLETADA)' : 'VICTORIA') 
+                              : (isIntervencion ? 'DERROTA (MISIÓN FALLIDA)' : 'DERROTA')}
+                          </span>
                         )}
                       </div>
-                      <div className="h-px lg:w-px lg:h-8 bg-oro/40 w-full opacity-20" />
+
+                      <p className="text-lg xl:text-xl font-medium text-oro/80 leading-relaxed italic">
+                        {(() => {
+                          const sName = authorName;
+                          const allies = (isA ? teamA : teamB).filter((p: any) => p.id !== sid).map((p: any) => p.nombre_ninja);
+                          const enemies = (isA ? teamB : teamA).map((p: any) => p.nombre_ninja);
+                          const participantObj = (isA ? teamA : teamB).find((p: any) => p.id === sid);
+                          const rewards = RewardLogic.calculateReward(registro, sid);
+                          const xpGained = isIntervencion ? rewards.xp : calculateParticipantXP(isA ? 'A' : 'B', participantObj?.huye, participantObj?.huye_gana_exp);
+                          const paGained = isIntervencion ? rewards.pa : RewardLogic.calculateCombatPA(registro, sid);
+                          const ryousGained = rewards.ryous || 0;
+
+                          return (
+                            <>
+                              <span className="font-black text-oro not-italic">{sName}</span> combati{allies.length > 0 ? 'ó junto a ' : 'ó '}
+                              {allies.length > 0 && <span className="text-oro">{formatNinjaList(allies)}</span>}
+                              {allies.length > 0 ? ' contra ' : ' contra '}
+                              <span className="text-oro">{formatNinjaList(enemies)}</span>.
+                              Obtiene <span className="font-black text-oro not-italic">+{xpGained} EXP</span>
+                              {paGained > 0 && <> y <span className="font-black text-emerald-400 not-italic">+{paGained} PA</span></>}
+                              {ryousGained > 0 && <> y <span className="font-black text-amber-300 not-italic">+{ryousGained} Ryous</span></>}.
+                            </>
+                          );
+                        })()}
+                      </p>
                     </div>
 
-                    <div className={isCompact ? 'space-y-2' : 'space-y-4'}>
-                      {registro.data.equipo_b?.map((p: any) => (
-                        <div key={p.id} className={`${isCompact ? 'py-2 px-3' : 'p-4'} bg-black/40 border border-oro/5 ninja-clip-xs space-y-2`}>
-                          <div className="flex justify-between items-center lg:flex-row-reverse">
-                            <div className="flex items-center gap-3 lg:flex-row-reverse">
-                              <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
-                              <span className="text-caption font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">+{calculateParticipantXP('B', p.huye, p.huye_gana_exp)} EXP</span>
-                              <span className="text-caption font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-success-text/10">+{RewardLogic.calculateCombatPA(registro, p.id)} PA</span>
+                    <button
+                      onClick={() => setShowFullDetails(true)}
+                      className="ninja-btn-ghost px-6 py-3 text-caption focus:outline-none focus:ring-0"
+                    >
+                      Ver registro completo
+                    </button>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="animate-in fade-in slide-from-top-2 duration-500 outline-none ring-0 border-none space-y-6">
+                  {!isGlobalView && (
+                    <div className={`flex justify-between items-center ${isCompact ? 'mb-4' : 'mb-8'} border-b border-oro/10 ${isCompact ? 'pb-2' : 'pb-4'}`}>
+                      <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">
+                        {isIntervencion ? 'Informe de Intervención' : 'Informe Detallado'}
+                      </span>
+                      <button
+                        onClick={() => setShowFullDetails(false)}
+                        className="text-caption font-black text-oro/40 hover:text-oro uppercase tracking-widest border-b border-oro/20 focus:outline-none focus:ring-0"
+                      >
+                        Contraer resumen
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Banner de Misión Intervenida */}
+                  {isIntervencion && (
+                    <div className="p-4 bg-black/40 border border-oro/15 ninja-clip-xs space-y-2 relative overflow-hidden">
+                      <div className="flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-black text-oro/50 uppercase tracking-[0.25em]">
+                                MISIÓN INTERVENIDA
+                              </span>
+                              <span className="text-[9px] font-black text-oro px-1.5 py-0.5 bg-oro/10 border border-oro/20 ninja-clip-xs">
+                                RANGO {registro.data.mision_rango || 'B'}
+                              </span>
                             </div>
-                            <div className="flex items-center gap-3 lg:flex-row-reverse">
-                              {p.has_estado_alterado && <span className="px-2 py-0.5 bg-oro/20 text-oro text-caption font-black uppercase ninja-clip-xs border border-oro/40">ESTADO ALTERADO</span>}
-                              {p.has_cds && <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-caption font-black uppercase ninja-clip-xs border border-blue-400/40">CDs</span>}
-                              {p.huye && (
-                                <span className={`px-2 py-0.5 text-caption font-black uppercase ninja-clip-xs border ${
-                                  p.huye_gana_exp 
-                                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' 
-                                    : 'bg-orange-500/20 text-orange-400 border-orange-500/40'
-                                }`}>
-                                  {p.huye_gana_exp ? 'HUYE (GANA EXP)' : 'HUYE'}
-                                </span>
-                              )}
-                              <span className="text-caption font-black text-oro/70 uppercase">{p.estado_nombre || 'SIN ESTADO'}</span>
-                            </div>
+                            <span className="text-sm font-black text-oro uppercase tracking-wider block mt-0.5">
+                              <span className="text-oro/60">{registro.data.codigo_mision}:</span> {registro.data.mision_titulo || registro.data.mision_nombre || 'Misión'}
+                            </span>
                           </div>
-                          {p.has_estado_alterado && p.descripcion_estado && (
-                            <div className="p-3 bg-oro/5 border-r-2 border-oro/20 italic text-[11px] text-oro/60 lg:text-right">
-                              "{p.descripcion_estado}"
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 px-3 py-1 bg-black/50 border border-oro/15 ninja-clip-xs text-[10px] font-black uppercase tracking-wider">
+                            <span className="text-oro/40">Bando A:</span>
+                            <span className={registro.data.bando_mision === 'A' ? 'text-oro' : 'text-oro/60'}>
+                              {registro.data.bando_mision === 'A' ? 'Realizador' : 'Interventor'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 px-3 py-1 bg-black/50 border border-oro/15 ninja-clip-xs text-[10px] font-black uppercase tracking-wider">
+                            <span className="text-oro/40">Bando B:</span>
+                            <span className={registro.data.bando_mision === 'B' ? 'text-oro' : 'text-oro/60'}>
+                              {registro.data.bando_mision === 'B' ? 'Realizador' : 'Interventor'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-4">
+                    {/* Cabeceras de Bandos */}
+                    <div className={`grid grid-cols-2 lg:grid-cols-[1fr_auto_1fr] items-center border-b border-oro/10 ${isCompact ? 'pb-2' : 'pb-4'}`}>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Bando A</span>
+                        {isIntervencion && (
+                          <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-oro/10 border border-oro/20 text-oro ninja-clip-xs">
+                            {registro.data.bando_mision === 'A' ? 'REALIZADOR' : 'INTERVENTOR'}
+                          </span>
+                        )}
+                        {registro.data.ganador === 'A' && <span className="text-caption font-black text-oro bg-oro/10 px-2 py-0.5 ninja-clip-xs border border-oro/20">GANADOR</span>}
+                      </div>
+                      {/* Espaciador central invisible en desktop para mantener la rejilla perfectamente alineada */}
+                      <div className="hidden lg:block w-[72px]" />
+                      <div className="flex items-center lg:flex-row-reverse gap-3 text-right justify-end">
+                        <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Bando B</span>
+                        {isIntervencion && (
+                          <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-oro/10 border border-oro/20 text-oro ninja-clip-xs">
+                            {registro.data.bando_mision === 'B' ? 'REALIZADOR' : 'INTERVENTOR'}
+                          </span>
+                        )}
+                        {registro.data.ganador === 'B' && <span className="text-caption font-black text-oro bg-oro/10 px-2 py-0.5 ninja-clip-xs border border-oro/20">GANADOR</span>}
+                      </div>
+                    </div>
+
+                    {/* Cuerpo de Participantes y VS */}
+                    <div className={`grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] ${isCompact ? 'gap-4 lg:gap-8' : 'gap-10 lg:gap-16'} items-center`}>
+                      <div className={isCompact ? 'space-y-2' : 'space-y-4'}>
+                        {registro.data.equipo_a?.map((p: any) => {
+                          const pRewards = RewardLogic.calculateReward(registro, p.id);
+                          const pXp = isIntervencion ? pRewards.xp : calculateParticipantXP('A', p.huye, p.huye_gana_exp);
+                          const pPa = isIntervencion ? pRewards.pa : RewardLogic.calculateCombatPA(registro, p.id);
+                          const pRyous = pRewards.ryous || 0;
+
+                          return (
+                            <div key={p.id} className={`${isCompact ? 'py-2 px-3' : 'p-4'} bg-black/40 border border-oro/5 ninja-clip-xs space-y-2`}>
+                              <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-3">
+                                  <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
+                                  <span className="text-caption font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">+{pXp} EXP</span>
+                                  {pPa > 0 && (
+                                    <span className="text-caption font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-success-text/10">+{pPa} PA</span>
+                                  )}
+                                  {pRyous > 0 && (
+                                    <span className="text-caption font-black text-amber-300/90 bg-amber-500/10 px-2 py-0.5 border border-amber-500/20">+{pRyous} R</span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  {p.has_estado_alterado && <span className="px-2 py-0.5 bg-oro/20 text-oro text-caption font-black uppercase ninja-clip-xs border border-oro/40">ESTADO ALTERADO</span>}
+                                  {p.has_cds && <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-caption font-black uppercase ninja-clip-xs border border-blue-400/40">CDs</span>}
+                                  {p.huye && (
+                                    <span className={`px-2 py-0.5 text-caption font-black uppercase ninja-clip-xs border ${
+                                      p.huye_gana_exp 
+                                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' 
+                                        : 'bg-orange-500/20 text-orange-400 border-orange-500/40'
+                                    }`}>
+                                      {p.huye_gana_exp ? 'HUYE (GANA EXP)' : 'HUYE'}
+                                    </span>
+                                  )}
+                                  <span className="text-caption font-black text-oro/70 uppercase">{p.estado_nombre || 'SIN ESTADO'}</span>
+                                </div>
+                              </div>
+                              {p.has_estado_alterado && p.descripcion_estado && (
+                                <div className="p-3 bg-oro/5 border-l-2 border-oro/20 italic text-[11px] text-oro/60">
+                                  "{p.descripcion_estado}"
+                                </div>
+                              )}
+                              {p.has_cds && p.descripcion_cds && (
+                                <div className="p-3 bg-blue-500/5 border-l-2 border-blue-400/30 italic text-[11px] text-blue-300/70">
+                                  "{p.descripcion_cds}"
+                                </div>
+                              )}
                             </div>
-                          )}
-                          {p.has_cds && p.descripcion_cds && (
-                            <div className="p-3 bg-blue-500/5 border-r-2 border-blue-400/30 italic text-[11px] text-blue-300/70 lg:text-right">
-                              "{p.descripcion_cds}"
-                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex lg:flex-col items-center justify-center gap-4 self-center py-2 shrink-0">
+                        <div className="h-px lg:w-px lg:h-8 bg-oro/40 w-full opacity-20" />
+                        <div className="flex flex-col items-center gap-2">
+                          {registro.data.ganador === 'Empate' ? (
+                            <span className="font-black text-oro text-xl xl:text-2xl uppercase tracking-[0.25em]">RETIRADO</span>
+                          ) : (
+                            <span className="font-ninja text-3xl xl:text-4xl text-oro italic opacity-20">VS</span>
                           )}
                         </div>
-                      ))}
+                        <div className="h-px lg:w-px lg:h-8 bg-oro/40 w-full opacity-20" />
+                      </div>
+
+                      <div className={isCompact ? 'space-y-2' : 'space-y-4'}>
+                        {registro.data.equipo_b?.map((p: any) => {
+                          const pRewards = RewardLogic.calculateReward(registro, p.id);
+                          const pXp = isIntervencion ? pRewards.xp : calculateParticipantXP('B', p.huye, p.huye_gana_exp);
+                          const pPa = isIntervencion ? pRewards.pa : RewardLogic.calculateCombatPA(registro, p.id);
+                          const pRyous = pRewards.ryous || 0;
+
+                          return (
+                            <div key={p.id} className={`${isCompact ? 'py-2 px-3' : 'p-4'} bg-black/40 border border-oro/5 ninja-clip-xs space-y-2`}>
+                              <div className="flex justify-between items-center lg:flex-row-reverse">
+                                <div className="flex items-center gap-3 lg:flex-row-reverse">
+                                  <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
+                                  <span className="text-caption font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">+{pXp} EXP</span>
+                                  {pPa > 0 && (
+                                    <span className="text-caption font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-success-text/10">+{pPa} PA</span>
+                                  )}
+                                  {pRyous > 0 && (
+                                    <span className="text-caption font-black text-amber-300/90 bg-amber-500/10 px-2 py-0.5 border border-amber-500/20">+{pRyous} R</span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-3 lg:flex-row-reverse">
+                                  {p.has_estado_alterado && <span className="px-2 py-0.5 bg-oro/20 text-oro text-caption font-black uppercase ninja-clip-xs border border-oro/40">ESTADO ALTERADO</span>}
+                                  {p.has_cds && <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-caption font-black uppercase ninja-clip-xs border border-blue-400/40">CDs</span>}
+                                  {p.huye && (
+                                    <span className={`px-2 py-0.5 text-caption font-black uppercase ninja-clip-xs border ${
+                                      p.huye_gana_exp 
+                                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' 
+                                        : 'bg-orange-500/20 text-orange-400 border-orange-500/40'
+                                    }`}>
+                                      {p.huye_gana_exp ? 'HUYE (GANA EXP)' : 'HUYE'}
+                                    </span>
+                                  )}
+                                  <span className="text-caption font-black text-oro/70 uppercase">{p.estado_nombre || 'SIN ESTADO'}</span>
+                                </div>
+                              </div>
+                              {p.has_estado_alterado && p.descripcion_estado && (
+                                <div className="p-3 bg-oro/5 border-r-2 border-oro/20 italic text-[11px] text-oro/60 lg:text-right">
+                                  "{p.descripcion_estado}"
+                                </div>
+                              )}
+                              {p.has_cds && p.descripcion_cds && (
+                                <div className="p-3 bg-blue-500/5 border-r-2 border-blue-400/30 italic text-[11px] text-blue-300/70 lg:text-right">
+                                  "{p.descripcion_cds}"
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         )}
 
