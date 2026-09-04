@@ -16,7 +16,7 @@ export default async function AdminLayout({
 
   const profile = await ProfileService.getProfile(user.id, supabase);
 
-  const allowedRoles = ['admin', 'moderador'];
+  const allowedRoles = ['admin', 'moderador', 'narrador'];
   const userRoles = profile?.roles || [];
   const hasAccess = allowedRoles.some(role => userRoles.includes(role));
 

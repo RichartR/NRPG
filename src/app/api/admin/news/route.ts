@@ -35,7 +35,7 @@ export async function POST(request: Request) {
 
     const adminClient = createAdminClient();
     const profile = await ProfileService.getProfile(user.id, adminClient);
-    const isAdmin = profile?.roles?.includes('admin') || profile?.roles?.includes('moderador') || user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin';
+    const isAdmin = profile?.roles?.some((r: string) => ['admin', 'moderador', 'narrador'].includes(r)) || user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin';
 
     if (!isAdmin) {
       return NextResponse.json({ error: 'No tienes permisos de administrador para esta acción' }, { status: 403 });
@@ -334,7 +334,7 @@ export async function DELETE(request: Request) {
 
     const adminClient = createAdminClient();
     const profile = await ProfileService.getProfile(user.id, adminClient);
-    const isAdmin = profile?.roles?.includes('admin') || profile?.roles?.includes('moderador') || user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin';
+    const isAdmin = profile?.roles?.some((r: string) => ['admin', 'moderador', 'narrador'].includes(r)) || user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin';
 
     if (!isAdmin) {
       return NextResponse.json({ error: 'No tienes permisos de administrador para esta acción' }, { status: 403 });
