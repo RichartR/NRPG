@@ -246,8 +246,8 @@ export async function POST(request: Request) {
             puntos_aprendizaje: (char.puntos_aprendizaje || 0) + pa
           }).eq('id', personajeId);
 
-          // Si es una recuperación de evento, sincronizar el participante en el registro de evento_premios original
-          if (registro.subtipo === 'recuperacion_evento' && registro.data?.evento_premios_id) {
+          // Si es una recuperación de evento o narración, sincronizar el participante en el registro original
+          if ((registro.subtipo === 'recuperacion_evento' || registro.subtipo === 'recuperacion_narracion') && registro.data?.evento_premios_id) {
             const eventoPremiosId = Number(registro.data.evento_premios_id);
             const { data: regPremios } = await adminClient
               .from('reg_registros')
@@ -347,8 +347,8 @@ export async function POST(request: Request) {
 
       if (regError) throw regError;
 
-      // 2. Crear participantes (En evento_premios, narración y recuperacion_evento, TODOS empiezan como 'pendiente')
-      const isEventoOrNarracion = payload.subtipo === 'evento_premios' || payload.subtipo === 'narracion' || payload.subtipo === 'recuperacion_evento';
+      // 2. Crear participantes (En evento_premios, narración, recuperacion_evento y recuperacion_narracion, TODOS empiezan como 'pendiente')
+      const isEventoOrNarracion = payload.subtipo === 'evento_premios' || payload.subtipo === 'narracion' || payload.subtipo === 'recuperacion_evento' || payload.subtipo === 'recuperacion_narracion';
 
       if (payload.participantes_ids && payload.participantes_ids.length > 0) {
         const participantsData = payload.participantes_ids.map((pid: number) => ({
@@ -364,11 +364,12 @@ export async function POST(request: Request) {
         if (partError) throw partError;
       }
 
-      if (payload.subtipo === 'recuperacion_evento') {
+      if (payload.subtipo === 'recuperacion_evento' || payload.subtipo === 'recuperacion_narracion') {
+        const isNarracion = payload.subtipo === 'recuperacion_narracion';
         await adminClient.from('sys_notificaciones_admin').insert({
           registro_id: registro.id,
           personaje_id: payload.autor_id || (payload.participantes_ids && payload.participantes_ids[0]) || null,
-          mensaje: `Recuperación de Evento: "${payload.data?.titulo || 'Evento'}" (${payload.data?.urls_imagenes?.length || 1} escena/s de roleo adjunta/s)`,
+          mensaje: `${isNarracion ? 'Recuperación de Narración' : 'Recuperación de Evento'}: "${payload.data?.titulo || (isNarracion ? 'Narración' : 'Evento')}" (${payload.data?.urls_imagenes?.length || 1} escena/s de roleo adjunta/s)`,
           estado: 'pendiente'
         });
       }

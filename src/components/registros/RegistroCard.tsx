@@ -67,7 +67,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
 
   const getIcon = () => {
     if (registro.subtipo === 'sanacion' || registro.data?.subtipo === 'sanacion') return HeartPulse;
-    if (registro.subtipo === 'narracion') return Sparkles;
+    if (registro.subtipo === 'narracion' || registro.subtipo === 'recuperacion_evento' || registro.subtipo === 'recuperacion_narracion') return Sparkles;
     switch (registro.tipo) {
       case 'mision': return ScrollText;
       case 'combate': return Swords;
@@ -451,12 +451,12 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
               </div>
             </div>
           </div>
-        ) : registro.subtipo === 'recuperacion_evento' ? (
+        ) : (registro.subtipo === 'recuperacion_evento' || registro.subtipo === 'recuperacion_narracion') ? (
           <div className="p-6 bg-black/40 border border-oro/10 ninja-clip-sm space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-oro/5 pb-4 gap-4">
               <div>
                 <h4 className="text-lg sm:text-xl font-black text-oro uppercase tracking-wider mb-1">
-                  {registro.data?.titulo || 'Recuperación de Evento'}
+                  {registro.data?.titulo || (registro.subtipo === 'recuperacion_narracion' ? 'Recuperación de Narración' : 'Recuperación de Evento')}
                 </h4>
                 <p className="text-caption font-bold text-oro/40 uppercase tracking-widest">
                   SOLICITUD DE RECUPERACIÓN DE RECOMPENSAS BASE

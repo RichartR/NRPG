@@ -9,9 +9,10 @@ import { createClient } from '@/utils/supabase/client';
 interface RecuperarEventoModalProps {
   isOpen: boolean;
   onClose: () => void;
-  evento: any;
+  evento?: any;
   ultimoRegistroPremios: any;
   activeCharacter: any;
+  tipoOrigen?: 'evento' | 'narracion';
   onSuccess?: () => void;
 }
 
@@ -21,8 +22,12 @@ export default function RecuperarEventoModal({
   evento,
   ultimoRegistroPremios,
   activeCharacter,
+  tipoOrigen = 'evento',
   onSuccess
 }: RecuperarEventoModalProps) {
+  const isNarracion = tipoOrigen === 'narracion' || ultimoRegistroPremios?.subtipo === 'narracion';
+  const itemTitle = evento?.titulo || ultimoRegistroPremios?.data?.titulo || (isNarracion ? 'Narración' : 'Evento');
+
   const [imageUrls, setImageUrls] = useState<string[]>(['']);
   const [availableCharacters, setAvailableCharacters] = useState<any[]>([]);
   const [selectedCharacterIds, setSelectedCharacterIds] = useState<number[]>([]);
@@ -151,12 +156,12 @@ export default function RecuperarEventoModal({
           action: 'create',
           payload: {
             tipo: 'narracion',
-            subtipo: 'recuperacion_evento',
+            subtipo: isNarracion ? 'recuperacion_narracion' : 'recuperacion_evento',
             autor_id: activeCharacter?.id,
             participantes_ids: selectedCharacterIds,
             data: {
-              titulo: `Recuperación: ${evento?.titulo || 'Evento'}`,
-              evento_id: evento?.id,
+              titulo: `Recuperación: ${itemTitle}`,
+              evento_id: evento?.id || null,
               evento_premios_id: ultimoRegistroPremios?.id,
               global_xp: baseGlobalXp,
               global_ryous: baseGlobalRyous,
@@ -199,7 +204,7 @@ export default function RecuperarEventoModal({
           <header className="bg-black/40 p-6 sm:p-8 flex justify-between items-center border-b border-oro/10 relative z-10 flex-shrink-0">
             <div>
               <h2 className="ninja-title text-2xl sm:text-4xl leading-none">
-                RECUPERAR EVENTO
+                {isNarracion ? 'RECUPERAR NARRACIÓN' : 'RECUPERAR EVENTO'}
               </h2>
               <p className="text-caption font-black uppercase tracking-[0.4em] text-oro/40 mt-2 italic">
                 SOLICITUD DE ROLEO POR INASISTENCIA (RECOMPENSAS BASE)
@@ -215,15 +220,15 @@ export default function RecuperarEventoModal({
 
           {/* Formulario */}
           <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 sm:p-10 space-y-8 relative z-10 custom-scrollbar">
-            {/* Tarjeta Informativa del Evento */}
+            {/* Tarjeta Informativa del Evento o Narración */}
             <div className="p-6 bg-black/40 border border-oro/10 ninja-clip-sm space-y-5">
               <div className="flex justify-between items-start border-b border-oro/10 pb-4">
                 <div>
                   <span className="text-caption font-black text-oro/40 uppercase tracking-[0.25em] block">
-                    EVENTO SELECCIONADO
+                    {isNarracion ? 'NARRACIÓN SELECCIONADA' : 'EVENTO SELECCIONADO'}
                   </span>
                   <h3 className="text-xl font-black text-oro uppercase tracking-wider italic mt-1">
-                    {evento?.titulo}
+                    {itemTitle}
                   </h3>
                 </div>
                 <span className="px-3.5 py-1.5 bg-oro/10 border border-oro/30 text-oro text-caption font-black uppercase tracking-widest ninja-clip-xs">
@@ -263,7 +268,9 @@ export default function RecuperarEventoModal({
 
               <p className="text-caption font-bold text-naranja-naruto/90 italic flex items-center gap-2 pt-1">
                 <AlertCircle className="w-4 h-4 shrink-0" />
-                Las Monedas de Evento y Objetos especiales entregados en el evento original quedan excluidos de la recuperación.
+                {isNarracion
+                  ? 'Las Monedas de Evento y Objetos especiales entregados en la narración original quedan excluidos de la recuperación.'
+                  : 'Las Monedas de Evento y Objetos especiales entregados en el evento original quedan excluidos de la recuperación.'}
               </p>
             </div>
 

@@ -9,6 +9,7 @@ import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 import { renderDiscordMarkdown } from '@/lib/discord/renderDiscordMarkdown';
 import { Portal } from '@/components/ui/Portal';
+import RecuperarEventoModal from '@/components/eventos/RecuperarEventoModal';
 
 interface NarrationTableProps {
   narraciones: Registro[];
@@ -24,12 +25,49 @@ export default function NarrationTable({ narraciones, onRefresh, onEdit, isAdmin
   const { confirm: confirmAction } = useConfirmStore();
   const [loadingId, setLoadingId] = useState<number | null>(null);
   const [viewingRegistro, setViewingRegistro] = useState<Registro | null>(initialViewingRegistro);
+  const [recoveryNarration, setRecoveryNarration] = useState<Registro | null>(null);
 
   useEffect(() => {
     if (initialViewingRegistro) {
       setViewingRegistro(initialViewingRegistro);
     }
   }, [initialViewingRegistro]);
+
+  const isWithin5Days = (n: Registro) => {
+    const dateStr = n.fecha || (n as any).created_at;
+    if (!dateStr) return false;
+    const timeSec = new Date(dateStr).getTime();
+    if (isNaN(timeSec)) return false;
+    const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000;
+    return Date.now() - timeSec <= FIVE_DAYS_MS;
+  };
+
+  const isAlreadyParticipatingOrClaimed = (n: Registro) => {
+    if (!activeCharacter) return false;
+    const charId = Number(activeCharacter.id);
+
+    if (Number(n.autor_id) === charId) return true;
+
+    if (n.participantes?.some(p => Number(p.personaje_id) === charId)) return true;
+
+    if (Array.isArray(n.data?.participantes_historicos) && n.data.participantes_historicos.some((p: any) => Number(p.id) === charId)) {
+      return true;
+    }
+
+    if (Array.isArray(n.data?.participantes_premios) && n.data.participantes_premios.some((p: any) => Number(p.personaje_id) === charId)) {
+      return true;
+    }
+
+    return false;
+  };
+
+  const canRecoverNarration = (n: Registro) => {
+    if (n.data?.recuperable !== true) return false;
+    if (!isWithin5Days(n)) return false;
+    if (!activeCharacter) return false;
+    if (isAlreadyParticipatingOrClaimed(n)) return false;
+    return true;
+  };
 
   const getParticipants = (n: Registro) => {
     if (n.data.participantes_historicos && Array.isArray(n.data.participantes_historicos)) {
@@ -112,6 +150,20 @@ export default function NarrationTable({ narraciones, onRefresh, onEdit, isAdmin
                           </span>
                         </div>
                       )}
+
+                      {n.data?.recuperable === true && (
+                        <div className="mt-1 flex items-center">
+                          {isWithin5Days(n) ? (
+                            <span className="inline-flex items-center gap-1 text-[8px] font-black text-emerald-400 uppercase tracking-widest px-1.5 py-0.5 bg-emerald-950/60 border border-emerald-500/30 rounded">
+                              <Sparkles className="w-2.5 h-2.5" /> RECUPERABLE
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[8px] font-bold text-oro/30 uppercase tracking-widest px-1.5 py-0.5 bg-black/40 border border-oro/10 rounded">
+                              EXPIRADO
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </td>
 
@@ -136,14 +188,27 @@ export default function NarrationTable({ narraciones, onRefresh, onEdit, isAdmin
 
                   {/* Información y Recompensas */}
                   <td className="py-3 px-5">
-                    <button
-                      onClick={() => setViewingRegistro(n)}
-                      className="flex items-center gap-1.5 px-3.5 py-2 bg-oro/10 border border-oro/30 hover:border-oro hover:bg-oro/20 text-oro text-caption font-black uppercase tracking-wider transition-all ninja-clip-xs cursor-pointer shadow-sm active:scale-95"
-                      title="Ver detalles de la narración y desglose de premios"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>Ver detalles</span>
-                    </button>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        onClick={() => setViewingRegistro(n)}
+                        className="flex items-center gap-1.5 px-3.5 py-2 bg-oro/10 border border-oro/30 hover:border-oro hover:bg-oro/20 text-oro text-caption font-black uppercase tracking-wider transition-all ninja-clip-xs cursor-pointer shadow-sm active:scale-95"
+                        title="Ver detalles de la narración y desglose de premios"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>Ver detalles</span>
+                      </button>
+
+                      {canRecoverNarration(n) && (
+                        <button
+                          onClick={() => setRecoveryNarration(n)}
+                          className="flex items-center gap-1.5 px-3.5 py-2 bg-white text-naranja-naruto hover:bg-white/90 font-black text-caption uppercase tracking-wider transition-all ninja-clip-xs cursor-pointer shadow-[0_0_10px_rgba(255,255,255,0.2)] active:scale-95"
+                          title="Recuperar recompensas base de esta narración mediante roleplay"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-naranja-naruto" />
+                          <span>Recuperar</span>
+                        </button>
+                      )}
+                    </div>
                   </td>
 
                   {/* Pruebas */}
@@ -219,9 +284,22 @@ export default function NarrationTable({ narraciones, onRefresh, onEdit, isAdmin
               {/* Header */}
               <div className="p-6 sm:p-8 border-b border-oro/15 flex justify-between items-center bg-black/40">
                 <div>
-                  <span className="text-caption font-black text-oro/60 uppercase tracking-[0.3em] block mb-1">
-                    Escena de narración
-                  </span>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-caption font-black text-oro/60 uppercase tracking-[0.3em] block">
+                      Escena de narración
+                    </span>
+                    {viewingRegistro.data?.recuperable === true && (
+                      isWithin5Days(viewingRegistro) ? (
+                        <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest px-2 py-0.5 bg-emerald-950/80 border border-emerald-500/40 rounded flex items-center gap-1">
+                          <Sparkles className="w-2.5 h-2.5" /> RECUPERABLE
+                        </span>
+                      ) : (
+                        <span className="text-[8px] font-bold text-oro/40 uppercase tracking-widest px-2 py-0.5 bg-black/60 border border-oro/15 rounded">
+                          PLAZO EXPIRADO
+                        </span>
+                      )
+                    )}
+                  </div>
                   <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
                     {viewingRegistro.data?.titulo || `Narración de ${viewingRegistro.data?.narrador || 'Staff'}`}
                   </h3>
@@ -301,6 +379,15 @@ export default function NarrationTable({ narraciones, onRefresh, onEdit, isAdmin
                     <h4 className="text-xs font-black uppercase tracking-[0.25em] text-oro">
                       Desglose de Premios y Participantes
                     </h4>
+                    {canRecoverNarration(viewingRegistro) && (
+                      <button
+                        onClick={() => setRecoveryNarration(viewingRegistro)}
+                        className="px-4 py-2 bg-white text-naranja-naruto hover:bg-white/90 font-black text-caption uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,255,255,0.3)] flex items-center gap-2 cursor-pointer ninja-clip-xs active:scale-95 self-start sm:self-auto"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-naranja-naruto" />
+                        <span>Recuperar Narración</span>
+                      </button>
+                    )}
                   </div>
 
                   {/* Recompensas Globales Base */}
@@ -396,6 +483,21 @@ export default function NarrationTable({ narraciones, onRefresh, onEdit, isAdmin
             </div>
           </div>
         </Portal>
+      )}
+
+      {/* Modal de Recuperación de Narración */}
+      {recoveryNarration && (
+        <RecuperarEventoModal
+          isOpen={!!recoveryNarration}
+          onClose={() => setRecoveryNarration(null)}
+          ultimoRegistroPremios={recoveryNarration}
+          activeCharacter={activeCharacter}
+          tipoOrigen="narracion"
+          onSuccess={() => {
+            setRecoveryNarration(null);
+            onRefresh?.();
+          }}
+        />
       )}
     </div>
   );

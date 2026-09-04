@@ -44,7 +44,7 @@ export default function AdminDisputePage() {
 
       if (isNarradorOnly) {
         filteredData = filteredData.filter(d =>
-          d.registro?.subtipo === 'recuperacion_evento' || d.registro?.tipo === 'narracion'
+          d.registro?.subtipo === 'recuperacion_evento' || d.registro?.subtipo === 'recuperacion_narracion' || d.registro?.tipo === 'narracion'
         );
       }
 
@@ -85,7 +85,8 @@ export default function AdminDisputePage() {
     const dispute = disputes.find(d => d.id === id);
     const isCloneAlert = dispute ? (dispute.registro_id === null && dispute.personaje_id === null) : false;
     const isAppeal = dispute ? (dispute.registro_id === null && dispute.personaje_id !== null) : false;
-    const isRecuperacion = dispute?.registro?.subtipo === 'recuperacion_evento';
+    const isRecuperacion = dispute?.registro?.subtipo === 'recuperacion_evento' || dispute?.registro?.subtipo === 'recuperacion_narracion';
+    const isNarracionRecup = dispute?.registro?.subtipo === 'recuperacion_narracion';
 
     let title = '';
     let message = '';
@@ -101,9 +102,11 @@ export default function AdminDisputePage() {
         ? '¿Estás seguro de que quieres aceptar la apelación? Se restaurará la ficha de este shinobi.'
         : '¿Estás seguro de que quieres rechazar la apelación? La ficha seguirá archivada.';
     } else if (isRecuperacion) {
-      title = action === 'aceptada' ? 'Aceptar Recuperación de Evento' : 'Rechazar Recuperación';
+      title = action === 'aceptada' 
+        ? (isNarracionRecup ? 'Aceptar Recuperación de Narración' : 'Aceptar Recuperación de Evento')
+        : (isNarracionRecup ? 'Rechazar Recuperación de Narración' : 'Rechazar Recuperación');
       message = action === 'aceptada'
-        ? '¿Estás seguro de aceptar la recuperación de este evento? Se otorgarán las recompensas base correspondientes a los shinobis implicados.'
+        ? `¿Estás seguro de aceptar la recuperación de este ${isNarracionRecup ? 'registro de narración' : 'evento'}? Se otorgarán las recompensas base correspondientes a los shinobis implicados.`
         : '¿Estás seguro de rechazar esta solicitud de recuperación? No se otorgarán recompensas.';
     } else {
       title = action === 'aceptada' ? 'Aceptar Disputa' : 'Invalidar Registro';
@@ -128,7 +131,9 @@ export default function AdminDisputePage() {
       } else if (isAppeal) {
         successMsg = action === 'aceptada' ? 'Apelación aceptada y ficha restaurada' : 'Apelación de ficha rechazada';
       } else if (isRecuperacion) {
-        successMsg = action === 'aceptada' ? 'Recuperación de evento aceptada con éxito' : 'Recuperación de evento rechazada';
+        successMsg = action === 'aceptada' 
+          ? `Recuperación de ${isNarracionRecup ? 'narración' : 'evento'} aceptada con éxito` 
+          : `Recuperación de ${isNarracionRecup ? 'narración' : 'evento'} rechazada`;
       } else {
         successMsg = action === 'aceptada' ? 'Disputa resuelta a favor del jugador' : 'Registro invalidado y recompensas revertidas';
       }
@@ -228,7 +233,8 @@ export default function AdminDisputePage() {
         ) : (
           <div className="grid grid-cols-1 gap-10">
             {disputes.map((d) => {
-              const isRecuperacion = d.registro?.subtipo === 'recuperacion_evento';
+              const isRecuperacion = d.registro?.subtipo === 'recuperacion_evento' || d.registro?.subtipo === 'recuperacion_narracion';
+              const isNarracionRecup = d.registro?.subtipo === 'recuperacion_narracion';
               const imageUrls: string[] = d.registro?.data?.urls_imagenes || [];
               const participantes: any[] = d.registro?.participantes || [];
 
@@ -254,7 +260,7 @@ export default function AdminDisputePage() {
                             </span>
                           ) : isRecuperacion ? (
                             <span className="text-caption text-oro/40 font-bold uppercase tracking-[0.2em] mt-0.5 block">
-                              Solicitud de Recuperación de Evento
+                              {isNarracionRecup ? 'Solicitud de Recuperación de Narración' : 'Solicitud de Recuperación de Evento'}
                             </span>
                           ) : (
                             <span className="text-caption text-oro/40 font-bold uppercase tracking-[0.2em] mt-0.5 block">
@@ -318,7 +324,7 @@ export default function AdminDisputePage() {
                             {d.registro_id === null ? 'Tipo de Caso' : 'Tipo de Registro'}
                           </span>
                           <span className="text-xs font-black text-oro uppercase mt-0.5 tracking-wider bg-oro/10 border border-oro/20 px-2.5 py-0.5 ninja-clip-xs">
-                            {d.registro_id === null ? 'Apelación de Recuperación' : isRecuperacion ? 'RECUPERACIÓN EVENTO' : d.registro?.tipo}
+                            {d.registro_id === null ? 'Apelación de Recuperación' : isRecuperacion ? (isNarracionRecup ? 'RECUPERACIÓN NARRACIÓN' : 'RECUPERACIÓN EVENTO') : d.registro?.tipo}
                           </span>
                         </div>
                         <div className="flex flex-col">
@@ -355,7 +361,7 @@ export default function AdminDisputePage() {
                           ? 'RECHAZAR RECUPERACIÓN'
                           : 'INVALIDAR REGISTRO'}
                       </button>
-                      {d.registro_id !== null && (d.registro as any)?.tipo !== 'narracion' && (d.registro as any)?.subtipo !== 'recuperacion_evento' && (
+                      {d.registro_id !== null && (d.registro as any)?.tipo !== 'narracion' && (d.registro as any)?.subtipo !== 'recuperacion_evento' && (d.registro as any)?.subtipo !== 'recuperacion_narracion' && (
                         <button
                           onClick={() => setSelectedRegistro(d.registro)}
                           className="w-full py-3 px-6 bg-black/80 text-oro border border-oro/30 hover:border-oro hover:bg-oro/10 font-black text-caption xl:text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 cursor-pointer ninja-clip-xs"
