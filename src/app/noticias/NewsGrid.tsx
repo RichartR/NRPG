@@ -211,6 +211,7 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
   useEffect(() => {
     if (!activeNews) return;
     const msgId = activeNews.discord_msg_id;
+    if (!msgId || msgId.startsWith('http')) return;
 
     if (loadedContent[msgId]) return;
 
@@ -426,8 +427,8 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
 
             {/* Contenido en Scroll / Iframe */}
             <div
-              className={`overflow-y-auto flex-1 custom-scrollbar ${activeNews.discord_msg_id?.startsWith('http') && activeNews.categoria?.toLowerCase() !== 'evento' ? 'bg-[#050309] bg-cover bg-center p-0 overflow-hidden flex flex-col' : 'p-8 sm:p-12 bg-neutral-900'}`}
-              style={activeNews.discord_msg_id?.startsWith('http') && activeNews.categoria?.toLowerCase() !== 'evento' ? { backgroundImage: "url('/assets/ui/bg-list.webp')" } : undefined}
+              className={`overflow-y-auto flex-1 custom-scrollbar ${activeNews.discord_msg_id?.startsWith('http') ? 'bg-[#050309] bg-cover bg-center p-0 flex flex-col' : 'p-8 sm:p-12 bg-neutral-900'}`}
+              style={activeNews.discord_msg_id?.startsWith('http') ? { backgroundImage: "url('/assets/ui/bg-list.webp')" } : undefined}
             >
               {loadingMsg ? (
                 /* Spinner de Carga Premium */
@@ -437,8 +438,8 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
                 </div>
               ) : (
                 <>
-                  {activeNews.discord_msg_id?.startsWith('http') && activeNews.categoria?.toLowerCase() !== 'evento' ? (
-                    /* Documento embebido para Noticias y Parches */
+                  {activeNews.discord_msg_id?.startsWith('http') ? (
+                    /* Documento embebido para Noticias, Parches y Eventos */
                     isMobile ? (
                       /* ── VISTA MÓVIL FULL-SCREEN ESTILO DOCVIEWER ── */
                       <div className="fixed inset-0 z-[9999] bg-black flex flex-col overflow-hidden">
@@ -463,7 +464,7 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
                         </div>
 
                         {/* En móvil abrimos el documento fuera de NRPG. */}
-                        <div className="flex-1 w-full h-full bg-black relative flex flex-col items-center justify-center gap-4 px-8 text-center">
+                        <div className="flex-1 w-full h-full bg-black relative flex flex-col items-center justify-start gap-4 px-6 py-8 overflow-y-auto custom-scrollbar text-center">
                           <p className="font-ninja text-lg uppercase tracking-wider text-oro">Documento en Google Drive</p>
                           <p className="max-w-sm text-sm leading-relaxed text-oro/50">
                             Se abrirá en Google Drive para mantener correctamente su formato.
@@ -476,6 +477,69 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
                           >
                             Ver documento
                           </a>
+
+                          {activeNews.categoria?.toLowerCase() === 'evento' && (
+                            <div className="mt-12 pt-8 border-t border-oro/10 space-y-8 w-full text-left">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div>
+                                  <h3 className="text-xl font-black text-oro uppercase tracking-wider flex items-center gap-2">
+                                    PREMIOS OTORGADOS
+                                  </h3>
+                                  <p className="text-[11px] font-bold text-oro/40 uppercase tracking-widest mt-1">Historial de repartos de este evento</p>
+                                </div>
+                                <div className="flex items-center gap-3 flex-wrap">
+                                  {isWithin5Days && !isAlreadyRecovered && (
+                                    <button
+                                      onClick={() => setIsRecoveryModalOpen(true)}
+                                      className="px-6 py-2.5 bg-white text-naranja-naruto hover:bg-white/90 hover:brightness-110 font-black text-caption xl:text-xs uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,255,255,0.3)] select-none flex items-center gap-2 cursor-pointer"
+                                      style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                                    >
+                                      Recuperar Evento
+                                    </button>
+                                  )}
+                                  {isAdmin && (
+                                    <button
+                                      onClick={() => {
+                                        setEditingRegistry(null);
+                                        setIsRewardFormOpen(true);
+                                      }}
+                                      className="px-6 py-2.5 bg-naranja-naruto hover:brightness-125 text-oro font-black text-caption xl:text-xs uppercase tracking-widest transition-all shadow-md select-none self-start sm:self-auto cursor-pointer"
+                                      style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                                    >
+                                      Repartir Premios
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+
+                              {loadingRegistries ? (
+                                <div className="flex justify-center items-center py-10 gap-2">
+                                  <RefreshCw className="w-5 h-5 text-oro animate-spin" />
+                                  <span className="text-caption font-black uppercase tracking-widest text-oro/40">Cargando registros...</span>
+                                </div>
+                              ) : eventRegistries.length === 0 ? (
+                                <div className="p-8 text-center bg-black/20 border border-oro/5">
+                                  <p className="text-caption font-black uppercase tracking-widest text-oro/30 italic">No se han repartido premios en este evento todavía</p>
+                                </div>
+                              ) : (
+                                <div className="space-y-6">
+                                  {eventRegistries.map((reg) => (
+                                    <RegistroCard
+                                      key={reg.id}
+                                      registro={reg}
+                                      isAdmin={isAdmin}
+                                      onRefresh={fetchEventRegistries}
+                                      onEdit={(r) => {
+                                        setEditingRegistry(r);
+                                        setIsRewardFormOpen(true);
+                                      }}
+                                      isGlobalView={true}
+                                    />
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ) : (
@@ -483,7 +547,7 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
                       <div
                         ref={modalBodyRef}
                         onWheel={handleModalWheel}
-                        className="flex-1 w-full h-full overflow-y-auto custom-scrollbar bg-[#050309] bg-cover bg-center p-8 flex flex-col items-center justify-center relative"
+                        className="flex-1 w-full h-full overflow-y-auto custom-scrollbar bg-[#050309] bg-cover bg-center p-8 flex flex-col items-center justify-start relative"
                         style={{ backgroundImage: "url('/assets/ui/bg-list.webp')" }}
                       >
                         <div
@@ -513,6 +577,69 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
                             </div>
                           )}
                         </div>
+
+                        {activeNews.categoria?.toLowerCase() === 'evento' && (
+                          <div className="mt-12 pt-8 border-t border-oro/10 space-y-8 w-full max-w-4xl pb-12">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                              <div>
+                                <h3 className="text-xl font-black text-oro uppercase tracking-wider flex items-center gap-2">
+                                  PREMIOS OTORGADOS
+                                </h3>
+                                <p className="text-[11px] font-bold text-oro/40 uppercase tracking-widest mt-1">Historial de repartos de este evento</p>
+                              </div>
+                              <div className="flex items-center gap-3 flex-wrap">
+                                {isWithin5Days && !isAlreadyRecovered && (
+                                  <button
+                                    onClick={() => setIsRecoveryModalOpen(true)}
+                                    className="px-6 py-2.5 bg-white text-naranja-naruto hover:bg-white/90 hover:brightness-110 font-black text-caption xl:text-xs uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,255,255,0.3)] select-none flex items-center gap-2 cursor-pointer"
+                                    style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                                  >
+                                    Recuperar Evento
+                                  </button>
+                                )}
+                                {isAdmin && (
+                                  <button
+                                    onClick={() => {
+                                      setEditingRegistry(null);
+                                      setIsRewardFormOpen(true);
+                                    }}
+                                    className="px-6 py-2.5 bg-naranja-naruto hover:brightness-125 text-oro font-black text-caption xl:text-xs uppercase tracking-widest transition-all shadow-md select-none self-start sm:self-auto cursor-pointer"
+                                    style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+                                  >
+                                    Repartir Premios
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            {loadingRegistries ? (
+                              <div className="flex justify-center items-center py-10 gap-2">
+                                <RefreshCw className="w-5 h-5 text-oro animate-spin" />
+                                <span className="text-caption font-black uppercase tracking-widest text-oro/40">Cargando registros...</span>
+                              </div>
+                            ) : eventRegistries.length === 0 ? (
+                              <div className="p-8 text-center bg-black/20 border border-oro/5">
+                                <p className="text-caption font-black uppercase tracking-widest text-oro/30 italic">No se han repartido premios en este evento todavía</p>
+                              </div>
+                            ) : (
+                              <div className="space-y-6">
+                                {eventRegistries.map((reg) => (
+                                  <RegistroCard
+                                    key={reg.id}
+                                    registro={reg}
+                                    isAdmin={isAdmin}
+                                    onRefresh={fetchEventRegistries}
+                                    onEdit={(r) => {
+                                      setEditingRegistry(r);
+                                      setIsRewardFormOpen(true);
+                                    }}
+                                    isGlobalView={true}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )
                   ) : (
