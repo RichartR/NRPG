@@ -13,6 +13,7 @@ export default async function AdminPage() {
   const userRoles = profile?.roles || [];
   const isAdmin = userRoles.includes('admin');
   const isModerator = userRoles.includes('moderador');
+  const isNarrator = userRoles.includes('narrador');
 
   const allModules = [
     {
@@ -182,6 +183,9 @@ export default async function AdminPage() {
   const modules = allModules.filter(mod => {
     if (mod.href === '/admin/usuarios' || mod.href === '/admin/fichas') {
       return isAdmin;
+    }
+    if (mod.href === '/admin/disputas') {
+      return isAdmin || isModerator || isNarrator;
     }
     return isAdmin || isModerator;
   });

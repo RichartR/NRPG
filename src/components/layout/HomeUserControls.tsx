@@ -41,6 +41,7 @@ export default function HomeUserControls() {
   const roles: string[] = account?.profile?.roles || [];
   const canManageContent = roles.some((role) => ['admin', 'moderador', 'narrador'].includes(role));
   const canOpenAdmin = roles.some((role) => ['admin', 'moderador'].includes(role));
+  const canOpenDisputas = canOpenAdmin || roles.includes('narrador');
 
   return (
     <div className="flex flex-col justify-between items-center lg:items-end gap-4 w-full lg:w-auto self-stretch pt-2 pb-0">
@@ -66,16 +67,16 @@ export default function HomeUserControls() {
           </Link>
         )}
         {canOpenAdmin && (
-          <>
-            <Link
-              href="/admin"
-              className="flex items-center gap-3 px-6 py-3 bg-white text-naranja-naruto border border-white hover:bg-white/90 hover:brightness-110 transition-all group font-black text-xs uppercase tracking-[0.2em] cursor-pointer shadow-md"
-              style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
-            >
-              PANEL ADMIN
-            </Link>
-            <AdminNotificationBadge />
-          </>
+          <Link
+            href="/admin"
+            className="flex items-center gap-3 px-6 py-3 bg-white text-naranja-naruto border border-white hover:bg-white/90 hover:brightness-110 transition-all group font-black text-xs uppercase tracking-[0.2em] cursor-pointer shadow-md"
+            style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+          >
+            PANEL ADMIN
+          </Link>
+        )}
+        {canOpenDisputas && (
+          <AdminNotificationBadge userRoles={roles} />
         )}
         {account ? (
           <LogoutButton />

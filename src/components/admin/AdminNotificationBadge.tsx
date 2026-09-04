@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { AdminService } from '@/services/supabase/admin.service';
+import { ProfileService } from '@/services/supabase/profile.service';
 import { NotificacionAdmin } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
@@ -13,9 +14,11 @@ import Link from 'next/link';
 
 interface AdminNotificationBadgeProps {
   isSidebar?: boolean;
+  userRoles?: string[];
 }
 
-export default function AdminNotificationBadge({ isSidebar = false }: AdminNotificationBadgeProps) {
+export default function AdminNotificationBadge({ isSidebar = false, userRoles = [] }: AdminNotificationBadgeProps) {
+  const [effectiveRoles, setEffectiveRoles] = useState<string[]>(userRoles);
   const [count, setCount] = useState(0);
   const [disputes, setDisputes] = useState<NotificacionAdmin[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -29,34 +32,51 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
   const addToast = useToastStore(state => state.addToast);
   const { confirm: confirmAction } = useConfirmStore();
 
+  useEffect(() => {
+    if (userRoles.length > 0) {
+      setEffectiveRoles(userRoles);
+    } else {
+      async function loadRoles() {
+        try {
+          const supabase = createClient();
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const profile = await ProfileService.getProfile(user.id);
+            if (profile?.roles) setEffectiveRoles(profile.roles);
+          }
+        } catch (e) {
+          console.error('Error loading roles for notification badge:', e);
+        }
+      }
+      loadRoles();
+    }
+  }, [userRoles]);
+
+  const isAdminOrMod = effectiveRoles.some(r => ['admin', 'moderador'].includes(r));
+  const isNarratorOnly = effectiveRoles.includes('narrador') && !isAdminOrMod;
+
   const fetchData = async () => {
     try {
-      const supabase = createClient();
+      const disputesData = await AdminService.getDisputes();
+      let filtered = (disputesData || []) as any[];
 
-      // Get the count of pending disputes
-      const { count: pendingCount, error: countError } = await supabase
-        .from('sys_notificaciones_admin')
-        .select('*', { count: 'exact', head: true })
-        .eq('estado', 'pendiente');
-
-      if (!countError) {
-        setCount(pendingCount || 0);
+      if (isNarratorOnly) {
+        filtered = filtered.filter(d =>
+          d.registro?.subtipo === 'recuperacion_evento' || d.registro?.tipo === 'narracion'
+        );
       }
 
-      // If dropdown is open, fetch active dispute details
-      if (isOpen) {
-        const disputesData = await AdminService.getDisputes();
-        setDisputes(disputesData as any);
-      }
+      setDisputes(filtered);
+      setCount(filtered.length);
     } catch (err) {
       console.error('Error fetching admin notifications:', err);
     }
   };
 
-  // Re-fetch when open state changes
+  // Re-fetch when open state or roles change
   useEffect(() => {
     fetchData();
-  }, [isOpen]);
+  }, [isOpen, effectiveRoles]);
 
   // Set up real-time subscription
   useEffect(() => {
@@ -152,6 +172,8 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
     const isCloneAlert = dispute ? (dispute.registro_id === null && dispute.personaje_id === null) : false;
     const isAppeal = dispute ? (dispute.registro_id === null && dispute.personaje_id !== null) : false;
 
+    const isRecuperacion = dispute?.registro?.subtipo === 'recuperacion_evento';
+
     let title = '';
     let message = '';
 
@@ -165,6 +187,11 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
       message = action === 'aceptada'
         ? '¿Estás seguro de que quieres aceptar la apelación? Se restaurará la ficha de este shinobi.'
         : '¿Estás seguro de que quieres rechazar la apelación? La ficha seguirá archivada.';
+    } else if (isRecuperacion) {
+      title = action === 'aceptada' ? 'Aceptar Recuperación de Evento' : 'Rechazar Recuperación';
+      message = action === 'aceptada'
+        ? '¿Estás seguro de aceptar esta recuperación? Se otorgarán las recompensas base correspondientes a los shinobis implicados.'
+        : '¿Estás seguro de rechazar esta solicitud de recuperación? No se otorgarán recompensas.';
     } else {
       title = action === 'aceptada' ? 'Aceptar Disputa' : 'Invalidar Registro';
       message = action === 'aceptada'
@@ -187,6 +214,8 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
         successMsg = action === 'aceptada' ? 'IP añadida a white list con éxito' : 'Alerta de clon resuelta y archivada';
       } else if (isAppeal) {
         successMsg = action === 'aceptada' ? 'Apelación aceptada y ficha restaurada' : 'Apelación rechazada';
+      } else if (isRecuperacion) {
+        successMsg = action === 'aceptada' ? 'Recuperación de evento aceptada con éxito' : 'Recuperación de evento rechazada';
       } else {
         successMsg = action === 'aceptada' ? 'Disputa resuelta a favor del jugador' : 'Registro invalidado y recompensas revertidas';
       }
@@ -225,7 +254,7 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
             className="flex items-center gap-3 px-6 py-3 bg-white text-naranja-naruto border border-white hover:bg-white/90 hover:brightness-110 transition-all group font-black text-xs uppercase tracking-[0.2em] cursor-pointer shadow-md"
             style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
           >
-            DISPUTAS ADMIN
+            {isNarratorOnly ? 'DISPUTAS' : 'DISPUTAS ADMIN'}
           </button>
           {count > 0 && (
             <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-naranja-naruto text-white text-caption font-black flex items-center justify-center border border-white shadow-[0_0_10px_rgba(250,148,39,0.8)] animate-bounce pointer-events-none z-10">
@@ -250,7 +279,7 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
           <div className="p-4 bg-neutral-900/80 border-b border-white/30 flex justify-between items-center relative">
             <h3 className="text-xs font-black uppercase tracking-[0.25em] text-naranja-naruto flex items-center gap-2.5">
               <div className="w-1.5 h-1.5 bg-naranja-naruto rotate-45" />
-              Centro Disputas
+              {isNarratorOnly ? 'Disputas Narrador' : 'Centro Disputas'}
             </h3>
             <span className="text-caption font-black text-naranja-naruto bg-naranja-naruto/10 border border-naranja-naruto/30 px-2 py-0.5 tracking-wider">
               {count} ACTIVAS
@@ -261,7 +290,9 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
             {disputes.length === 0 ? (
               <div className="p-10 text-center">
                 <ShieldAlert className="w-10 h-10 text-naranja-naruto/30 mx-auto mb-3 animate-pulse" />
-                <p className="text-white/60 text-caption font-black uppercase tracking-[0.2em] italic">Sin disputas activas</p>
+                <p className="text-white/60 text-caption font-black uppercase tracking-[0.2em] italic">
+                  {isNarratorOnly ? 'Sin solicitudes pendientes' : 'Sin disputas activas'}
+                </p>
               </div>
             ) : (
               disputes.map((d) => (
@@ -334,7 +365,7 @@ export default function AdminNotificationBadge({ isSidebar = false }: AdminNotif
                           className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-naranja-naruto text-white text-caption font-black uppercase tracking-widest hover:bg-naranja-naruto/90 active:scale-[0.98] transition-all cursor-pointer border border-naranja-naruto/50 shadow-sm"
                           style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
                         >
-                          <X className="w-3.5 h-3.5 stroke-[3]" /> {d.registro_id === null ? 'Rechazar' : 'Invalidar'}
+                          <X className="w-3.5 h-3.5 stroke-[3]" /> {d.registro_id === null || d.registro?.subtipo === 'recuperacion_evento' ? 'Rechazar' : 'Invalidar'}
                         </button>
                       </div>
                       {d.registro_id !== null && (

@@ -85,6 +85,7 @@ export default function AdminDisputePage() {
     const dispute = disputes.find(d => d.id === id);
     const isCloneAlert = dispute ? (dispute.registro_id === null && dispute.personaje_id === null) : false;
     const isAppeal = dispute ? (dispute.registro_id === null && dispute.personaje_id !== null) : false;
+    const isRecuperacion = dispute?.registro?.subtipo === 'recuperacion_evento';
 
     let title = '';
     let message = '';
@@ -99,6 +100,11 @@ export default function AdminDisputePage() {
       message = action === 'aceptada'
         ? '¿Estás seguro de que quieres aceptar la apelación? Se restaurará la ficha de este shinobi.'
         : '¿Estás seguro de que quieres rechazar la apelación? La ficha seguirá archivada.';
+    } else if (isRecuperacion) {
+      title = action === 'aceptada' ? 'Aceptar Recuperación de Evento' : 'Rechazar Recuperación';
+      message = action === 'aceptada'
+        ? '¿Estás seguro de aceptar la recuperación de este evento? Se otorgarán las recompensas base correspondientes a los shinobis implicados.'
+        : '¿Estás seguro de rechazar esta solicitud de recuperación? No se otorgarán recompensas.';
     } else {
       title = action === 'aceptada' ? 'Aceptar Disputa' : 'Invalidar Registro';
       message = action === 'aceptada'
@@ -121,6 +127,8 @@ export default function AdminDisputePage() {
         successMsg = action === 'aceptada' ? 'IP añadida a white list con éxito' : 'Alerta de clon resuelta y archivada';
       } else if (isAppeal) {
         successMsg = action === 'aceptada' ? 'Apelación aceptada y ficha restaurada' : 'Apelación de ficha rechazada';
+      } else if (isRecuperacion) {
+        successMsg = action === 'aceptada' ? 'Recuperación de evento aceptada con éxito' : 'Recuperación de evento rechazada';
       } else {
         successMsg = action === 'aceptada' ? 'Disputa resuelta a favor del jugador' : 'Registro invalidado y recompensas revertidas';
       }
