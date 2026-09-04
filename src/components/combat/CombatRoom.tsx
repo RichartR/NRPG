@@ -2465,7 +2465,69 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                           <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-1">
                               <span className="text-amber-500 uppercase tracking-wider">VEL:</span>
-                              <span className="text-white">{p.estado?.vel ?? 0}</span>
+                              {String(activeCharacter?.id) === p.user_id ? (
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const currentVel = localState?.vel ?? p.estado?.vel ?? 0;
+                                      const newVel = Math.max(0, currentVel - 1);
+                                      if (localState) setLocalState(prev => prev ? { ...prev, vel: newVel } : null);
+                                      addLog(`**${p.nombre}** reduce su velocidad a **${newVel}**.`);
+                                    }}
+                                    className="w-4 h-4 border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/30 text-amber-400 font-black flex items-center justify-center rounded-sm transition-all text-[10px] active:scale-95 cursor-pointer"
+                                    title="Bajar velocidad"
+                                  >
+                                    -
+                                  </button>
+                                  <span className="text-white min-w-[16px] text-center">{localState?.vel ?? p.estado?.vel ?? 0}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const currentVel = localState?.vel ?? p.estado?.vel ?? 0;
+                                      const newVel = currentVel + 1;
+                                      if (localState) setLocalState(prev => prev ? { ...prev, vel: newVel } : null);
+                                      addLog(`**${p.nombre}** aumenta su velocidad a **${newVel}**.`);
+                                    }}
+                                    className="w-4 h-4 border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/30 text-amber-400 font-black flex items-center justify-center rounded-sm transition-all text-[10px] active:scale-95 cursor-pointer"
+                                    title="Subir velocidad"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              ) : isTemp ? (
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const currentVel = p.estado?.vel ?? 0;
+                                      const newVel = Math.max(0, currentVel - 1);
+                                      updateTempCharacter(p.user_id, { estado: { ...p.estado, vel: newVel } });
+                                      addLog(`**${p.nombre}** ajusta su velocidad a **${newVel}**.`);
+                                    }}
+                                    className="w-4 h-4 border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/30 text-amber-400 font-black flex items-center justify-center rounded-sm transition-all text-[10px] active:scale-95 cursor-pointer"
+                                    title="Bajar velocidad"
+                                  >
+                                    -
+                                  </button>
+                                  <span className="text-white min-w-[16px] text-center">{p.estado?.vel ?? 0}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const currentVel = p.estado?.vel ?? 0;
+                                      const newVel = currentVel + 1;
+                                      updateTempCharacter(p.user_id, { estado: { ...p.estado, vel: newVel } });
+                                      addLog(`**${p.nombre}** ajusta su velocidad a **${newVel}**.`);
+                                    }}
+                                    className="w-4 h-4 border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/30 text-amber-400 font-black flex items-center justify-center rounded-sm transition-all text-[10px] active:scale-95 cursor-pointer"
+                                    title="Subir velocidad"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="text-white">{p.estado?.vel ?? 0}</span>
+                              )}
                             </div>
                             <div className="flex items-center gap-1.5">
                               <span className="text-emerald-400 uppercase tracking-wider">KAWARIMI:</span>
@@ -3517,7 +3579,69 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                         <div className="flex flex-col gap-2 text-[10px] font-black pt-2 border-t border-oro/10 mt-1">
                           <div className="flex items-center gap-1">
                             <span className="text-amber-500 uppercase tracking-wider">VEL:</span>
-                            <span className="text-white">{p.estado?.vel ?? 0}</span>
+                            {String(activeCharacter?.id) === p.user_id ? (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const currentVel = localState?.vel ?? p.estado?.vel ?? 0;
+                                    const newVel = Math.max(0, currentVel - 1);
+                                    if (localState) setLocalState(prev => prev ? { ...prev, vel: newVel } : null);
+                                    addLog(`**${p.nombre}** reduce su velocidad a **${newVel}**.`);
+                                  }}
+                                  className="w-4 h-4 border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/30 text-amber-400 font-black flex items-center justify-center rounded-sm transition-all text-[10px] active:scale-95 cursor-pointer"
+                                  title="Bajar velocidad"
+                                >
+                                  -
+                                </button>
+                                <span className="text-white min-w-[16px] text-center">{localState?.vel ?? p.estado?.vel ?? 0}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const currentVel = localState?.vel ?? p.estado?.vel ?? 0;
+                                    const newVel = currentVel + 1;
+                                    if (localState) setLocalState(prev => prev ? { ...prev, vel: newVel } : null);
+                                    addLog(`**${p.nombre}** aumenta su velocidad a **${newVel}**.`);
+                                  }}
+                                  className="w-4 h-4 border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/30 text-amber-400 font-black flex items-center justify-center rounded-sm transition-all text-[10px] active:scale-95 cursor-pointer"
+                                  title="Subir velocidad"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            ) : isTemp ? (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const currentVel = p.estado?.vel ?? 0;
+                                    const newVel = Math.max(0, currentVel - 1);
+                                    updateTempCharacter(p.user_id, { estado: { ...p.estado, vel: newVel } });
+                                    addLog(`**${p.nombre}** ajusta su velocidad a **${newVel}**.`);
+                                  }}
+                                  className="w-4 h-4 border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/30 text-amber-400 font-black flex items-center justify-center rounded-sm transition-all text-[10px] active:scale-95 cursor-pointer"
+                                  title="Bajar velocidad"
+                                >
+                                  -
+                                </button>
+                                <span className="text-white min-w-[16px] text-center">{p.estado?.vel ?? 0}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const currentVel = p.estado?.vel ?? 0;
+                                    const newVel = currentVel + 1;
+                                    updateTempCharacter(p.user_id, { estado: { ...p.estado, vel: newVel } });
+                                    addLog(`**${p.nombre}** ajusta su velocidad a **${newVel}**.`);
+                                  }}
+                                  className="w-4 h-4 border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/30 text-amber-400 font-black flex items-center justify-center rounded-sm transition-all text-[10px] active:scale-95 cursor-pointer"
+                                  title="Subir velocidad"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-white">{p.estado?.vel ?? 0}</span>
+                            )}
                           </div>
                           {!isEventMode && (
                             <div className="flex items-center gap-1.5">
@@ -3971,7 +4095,37 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                       <div className="flex justify-between items-center text-xs font-black pt-3 border-t border-oro/10">
                         <div className="flex items-center gap-1.5">
                           <span className="text-amber-500 uppercase tracking-wider">VELOCIDAD:</span>
-                          <span className="text-white text-sm">{localState.vel}</span>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const currentVel = localState.vel || 0;
+                                const newVel = Math.max(0, currentVel - 1);
+                                const updated = { ...localState, vel: newVel };
+                                setLocalState(updated);
+                                addLog(`**${activeCharacter?.nombre_ninja}** disminuye su velocidad a **${newVel}**.`);
+                              }}
+                              className="w-5 h-5 border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/30 text-amber-400 font-black flex items-center justify-center rounded-sm transition-all text-xs active:scale-95 cursor-pointer"
+                              title="Disminuir velocidad (-1)"
+                            >
+                              -
+                            </button>
+                            <span className="text-white text-sm font-bold min-w-[20px] text-center">{localState.vel}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const currentVel = localState.vel || 0;
+                                const newVel = currentVel + 1;
+                                const updated = { ...localState, vel: newVel };
+                                setLocalState(updated);
+                                addLog(`**${activeCharacter?.nombre_ninja}** aumenta su velocidad a **${newVel}**.`);
+                              }}
+                              className="w-5 h-5 border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/30 text-amber-400 font-black flex items-center justify-center rounded-sm transition-all text-xs active:scale-95 cursor-pointer"
+                              title="Aumentar velocidad (+1)"
+                            >
+                              +
+                            </button>
+                          </div>
                         </div>
                         {!isEventMode && (
                           <div className="flex items-center gap-1.5">
