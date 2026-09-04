@@ -4,10 +4,10 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { RegistrosService } from '@/services/supabase/registros.service';
 import { MasterService } from '@/services/supabase/master.service';
-import { Registro } from '@/domain/types';
+import { Registro, MisionMaster } from '@/domain/types';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { useToastStore } from '@/components/ui/Toast';
-import { X, Search, UserPlus, User, Info, HeartPulse, Swords, Link as LinkIcon, Check } from 'lucide-react';
+import { X, Search, UserPlus, User, Info, HeartPulse, Swords, Link as LinkIcon, Check, ScrollText, ArrowLeftRight, Sparkles, Coins, ShieldAlert } from 'lucide-react';
 import { NinjaSelect } from '@/components/ui/Fields';
 
 interface CharacterResult {
@@ -150,13 +150,17 @@ function AsyncCharacterSearch({
   );
 }
 
+interface CombatFormProps {
+  onCreated: () => void;
+  initialData?: Registro | null;
+  initialSubtype?: 'combate' | 'intervencion' | 'sanacion';
+}
+
 export default function CombatForm({
   onCreated,
-  initialData = null
-}: {
-  onCreated: () => void,
-  initialData?: Registro | null
-}) {
+  initialData = null,
+  initialSubtype
+}: CombatFormProps) {
   const { activeCharacter, fetchActiveCharacter } = useCharacterStore();
   const addToast = useToastStore(state => state.addToast);
 
@@ -166,8 +170,11 @@ export default function CombatForm({
     }
   }, []);
 
-  const [recordSubtype, setRecordSubtype] = useState<'combate' | 'sanacion'>(
-    (initialData?.subtipo === 'sanacion' || initialData?.data?.subtipo === 'sanacion') ? 'sanacion' : 'combate'
+  const [recordSubtype, setRecordSubtype] = useState<'combate' | 'intervencion' | 'sanacion'>(
+    initialSubtype ||
+    ((initialData?.subtipo === 'sanacion' || initialData?.data?.subtipo === 'sanacion') ? 'sanacion'
+      : (initialData?.subtipo === 'intervencion' || initialData?.data?.subtipo === 'intervencion' || initialData?.data?.es_intervencion) ? 'intervencion'
+      : 'combate')
   );
 
   const [loading, setLoading] = useState(false);
@@ -176,6 +183,19 @@ export default function CombatForm({
   const [combatConfig, setCombatConfig] = useState<any | null>(null);
   const [paConfig, setPaConfig] = useState<any | null>(null);
   const [estados, setEstados] = useState<{ id: number; nombre: string }[]>([]);
+
+  // State for Intervención (Misión intervenida - Reglas 6.1 a 6.16)
+  const [misionRango, setMisionRango] = useState<'B' | 'A' | 'S'>(
+    (initialData?.data?.mision_rango as any) || 'B'
+  );
+  const [misiones, setMisiones] = useState<MisionMaster[]>([]);
+  const [loadingMisiones, setLoadingMisiones] = useState(false);
+  const [selectedMision, setSelectedMision] = useState<string>(
+    initialData?.data?.codigo_mision || ''
+  );
+  const [bandoMision, setBandoMision] = useState<'A' | 'B'>(
+    initialData?.data?.bando_mision || 'A'
+  );
 
   // State for Combate
   const [teamA, setTeamA] = useState<{ id: number; nombre_ninja: string; rango?: string; estado_nombre?: string; has_estado_alterado?: boolean; descripcion_estado?: string; has_cds?: boolean; descripcion_cds?: string; huye?: boolean; huye_gana_exp?: boolean }[]>([]);
@@ -199,11 +219,34 @@ export default function CombatForm({
         if (initialData.data?.sanado) setSanado(initialData.data.sanado);
         if (initialData.data?.medicos) setMedicos(initialData.data.medicos);
       }
+      if (initialData.subtipo === 'intervencion' || initialData.data?.subtipo === 'intervencion' || initialData.data?.es_intervencion) {
+        if (initialData.data?.codigo_mision) setSelectedMision(initialData.data.codigo_mision);
+        if (initialData.data?.mision_rango) setMisionRango(initialData.data.mision_rango);
+        if (initialData.data?.bando_mision) setBandoMision(initialData.data.bando_mision);
+      }
     } else if (activeCharacter) {
       setTeamA([{ id: Number(activeCharacter.id), nombre_ninja: activeCharacter.nombre_ninja, rango: activeCharacter.rango || 'D' }]);
       setMedicos([]);
     }
   }, [activeCharacter, initialData]);
+
+  useEffect(() => {
+    if (recordSubtype === 'intervencion') {
+      fetchMisiones();
+    }
+  }, [recordSubtype, misionRango]);
+
+  const fetchMisiones = async () => {
+    setLoadingMisiones(true);
+    try {
+      const data = await RegistrosService.getMisionesByRango(misionRango);
+      setMisiones(data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingMisiones(false);
+    }
+  };
 
   useEffect(() => {
     fetchCombatConfig();
@@ -276,44 +319,85 @@ export default function CombatForm({
       return isWinner ? (Number(combatConfig.ganar) || 0) : (Number(combatConfig.perder) || 0);
     }
 
-    if (diff >= 2) return Number(section.mas_2) || 0;
-    if (diff === 1) return Number(section.mas_1) || 0;
-    if (diff === 0) return Number(section.igual) || 0;
-    if (diff === -1) return Number(section.menos_1) || 0;
-    return Number(section.menos_2) || 0;
+    let baseXp = 0;
+    if (diff >= 2) baseXp = Number(section.mas_2) || 0;
+    else if (diff === 1) baseXp = Number(section.mas_1) || 0;
+    else if (diff === 0) baseXp = Number(section.igual) || 0;
+    else if (diff === -1) baseXp = Number(section.menos_1) || 0;
+    else baseXp = Number(section.menos_2) || 0;
+
+    if (baseXp === 0) return 0;
+
+    if (isWinner) {
+      const ownTeamCount = team === 'A' ? teamA.length : teamB.length;
+      const oppTeamCount = team === 'A' ? teamB.length : teamA.length;
+
+      if (ownTeamCount < oppTeamCount) {
+        const playerDiff = oppTeamCount - ownTeamCount;
+        return Math.ceil(baseXp * (1 + 0.5 * playerDiff));
+      } else if (ownTeamCount > oppTeamCount) {
+        const playerDiff = ownTeamCount - oppTeamCount;
+        return Math.ceil(baseXp / (1 + playerDiff));
+      }
+    }
+
+    return baseXp;
   };
 
-  const calculatePA = (team: 'A' | 'B', huye?: boolean) => {
-    if (!paConfig) return 0;
-    if (huye) return 0;
-    if (winner === 'Empate') return 0;
+  const calculatePA = (_team?: 'A' | 'B', _huye?: boolean) => 0;
 
-    const RANK_SCALE: Record<string, number> = { 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5 };
+  const selectedMisionObj = misiones.find(m => m.codigo_mision === selectedMision) || (
+    initialData?.data?.codigo_mision === selectedMision ? {
+      codigo_mision: initialData.data.codigo_mision,
+      titulo: initialData.data.mision_titulo,
+      exp: initialData.data.mision_exp,
+      ryous: initialData.data.mision_ryous,
+      pa_recompensa: initialData.data.mision_pa,
+      se_puede_fallar: initialData.data.mision_se_puede_fallar,
+      exp_fallida: initialData.data.mision_exp_fallida,
+      ryous_fallida: initialData.data.mision_ryous_fallida,
+      pa_recompensa_fallida: initialData.data.mision_pa_fallida,
+    } as any : null
+  );
 
-    const maxRankA = teamA.reduce((max, p) => {
-      const val = RANK_SCALE[(p.rango || 'D').toUpperCase()] || 1;
-      return val > max ? val : max;
-    }, 1);
-
-    const maxRankB = teamB.reduce((max, p) => {
-      const val = RANK_SCALE[(p.rango || 'D').toUpperCase()] || 1;
-      return val > max ? val : max;
-    }, 1);
-
+  const calculateIntervencionXP = (team: 'A' | 'B', huye?: boolean, huyeGanaExp?: boolean) => {
+    if (huye && !huyeGanaExp) return 0;
+    const combatXp = calculateXP(team, huye, huyeGanaExp);
+    if (winner === 'Empate') {
+      return selectedMisionObj?.se_puede_fallar ? Number(selectedMisionObj.exp_fallida || 0) : 0;
+    }
     const isWinner = winner === team;
-    const ownMaxRankVal = team === 'A' ? maxRankA : maxRankB;
-    const opponentMaxRankVal = team === 'A' ? maxRankB : maxRankA;
+    if (isWinner) {
+      return combatXp + Number(selectedMisionObj?.exp || 0);
+    } else {
+      return combatXp + (selectedMisionObj?.se_puede_fallar ? Number(selectedMisionObj.exp_fallida || 0) : 0);
+    }
+  };
 
-    const diff = opponentMaxRankVal - ownMaxRankVal;
+  const calculateIntervencionPA = (team: 'A' | 'B', huye?: boolean) => {
+    if (huye) return 0;
+    if (winner === 'Empate') {
+      return selectedMisionObj?.se_puede_fallar ? Number(selectedMisionObj.pa_recompensa_fallida || 0) : 0;
+    }
+    const isWinner = winner === team;
+    if (isWinner) {
+      return Number(selectedMisionObj?.pa_recompensa || 0);
+    } else {
+      return selectedMisionObj?.se_puede_fallar ? Number(selectedMisionObj.pa_recompensa_fallida || 0) : 0;
+    }
+  };
 
-    const section = isWinner ? paConfig.victoria : paConfig.derrota;
-    if (!section) return 0;
-
-    if (diff >= 2) return Number(section.mas_2) || 0;
-    if (diff === 1) return Number(section.mas_1) || 0;
-    if (diff === 0) return Number(section.igual) || 0;
-    if (diff === -1) return Number(section.menos_1) || 0;
-    return Number(section.menos_2) || 0;
+  const calculateIntervencionRyous = (team: 'A' | 'B', huye?: boolean) => {
+    if (huye) return 0;
+    if (winner === 'Empate') {
+      return selectedMisionObj?.se_puede_fallar ? Number(selectedMisionObj.ryous_fallida || 0) : 0;
+    }
+    const isWinner = winner === team;
+    if (isWinner) {
+      return Number(selectedMisionObj?.ryous || 0);
+    } else {
+      return selectedMisionObj?.se_puede_fallar ? Number(selectedMisionObj.ryous_fallida || 0) : 0;
+    }
   };
 
   const handleSubmit = async () => {
@@ -383,28 +467,71 @@ export default function CombatForm({
       return;
     }
 
+    if (recordSubtype === 'intervencion') {
+      if (!selectedMisionObj) {
+        addToast('Debes seleccionar una misión para la intervención', 'error');
+        return;
+      }
+      const validImages = images.filter(img => img.trim() !== '');
+      if (validImages.length === 0) {
+        addToast('Añade al menos una prueba (URL de Discord / Captura)', 'error');
+        return;
+      }
+    }
+
     const authorInA = teamA.find(p => Number(p.id) === Number(activeCharacter.id));
     const authorInB = teamB.find(p => Number(p.id) === Number(activeCharacter.id));
     const authorTeam = authorInA ? 'A' : 'B';
     const authorParticipant = authorInA || authorInB;
 
-    const finalXP = calculateXP(authorTeam, authorParticipant?.huye, authorParticipant?.huye_gana_exp);
+    let finalXP = calculateXP(authorTeam, authorParticipant?.huye, authorParticipant?.huye_gana_exp);
+    let finalPA = calculatePA(authorTeam, authorParticipant?.huye);
+    let finalRyous = 0;
+
     let finalResult = 'retirarse';
     if (winner === 'A') finalResult = authorInA ? 'ganar' : 'perder';
     else if (winner === 'B') finalResult = authorInB ? 'ganar' : 'perder';
 
+    if (recordSubtype === 'intervencion') {
+      finalXP = calculateIntervencionXP(authorTeam, authorParticipant?.huye, authorParticipant?.huye_gana_exp);
+      finalPA = calculateIntervencionPA(authorTeam, authorParticipant?.huye);
+      finalRyous = calculateIntervencionRyous(authorTeam, authorParticipant?.huye);
+    }
+
+    const validImages = images.filter(img => img.trim() !== '');
+
     const payload: any = {
       tipo: 'combate',
+      subtipo: recordSubtype === 'intervencion' ? 'intervencion' : 'combate',
       autor_id: activeCharacter.id,
       participantes_ids: [...teamA.map(p => p.id), ...teamB.map(p => p.id)],
       data: {
+        subtipo: recordSubtype === 'intervencion' ? 'intervencion' : 'combate',
+        ...(recordSubtype === 'intervencion' && selectedMisionObj ? {
+          es_intervencion: true,
+          bando_mision: bandoMision,
+          bando_interventor: bandoMision === 'A' ? 'B' : 'A',
+          codigo_mision: selectedMisionObj.codigo_mision,
+          mision_rango: misionRango,
+          mision_titulo: selectedMisionObj.titulo || `Misión ${selectedMisionObj.codigo_mision}`,
+          mision_exp: selectedMisionObj.exp || 0,
+          mision_ryous: selectedMisionObj.ryous || 0,
+          mision_pa: selectedMisionObj.pa_recompensa || 0,
+          mision_se_puede_fallar: !!selectedMisionObj.se_puede_fallar,
+          mision_exp_fallida: selectedMisionObj.exp_fallida || 0,
+          mision_ryous_fallida: selectedMisionObj.ryous_fallida || 0,
+          mision_pa_fallida: selectedMisionObj.pa_recompensa_fallida || 0,
+          urls_imagenes: validImages,
+        } : {}),
         ganador: winner,
         equipo_a: teamA,
         equipo_b: teamB,
         resultado: finalResult,
         recompensa_xp: finalXP,
+        recompensa_pa: finalPA,
+        recompensa_ryous: finalRyous,
         config_xp: combatConfig,
-        config_pa: paConfig,
+        config_pa: null,
         participantes_historicos: [
           { id: activeCharacter.id, nombre_ninja: activeCharacter.nombre_ninja },
           ...teamA.map(p => ({ id: p.id, nombre_ninja: p.nombre_ninja })),
@@ -420,7 +547,7 @@ export default function CombatForm({
         addToast('Registro actualizado correctamente', 'success');
       } else {
         await RegistrosService.createRegistro(payload);
-        addToast('Registro publicado correctamente', 'success');
+        addToast(recordSubtype === 'intervencion' ? 'Intervención registrada y sellada correctamente' : 'Registro publicado correctamente', 'success');
       }
       onCreated();
     } catch (err: any) {
@@ -442,9 +569,11 @@ export default function CombatForm({
           <div className="flex flex-col sm:flex-row justify-between items-start border-b border-oro/10 pb-10 gap-6">
             <div className="space-y-2">
               <h3 className="ninja-title text-2xl sm:text-4xl md:text-5xl xl:text-6xl text-oro">
-                {initialData ? 'EDITAR REGISTRO' : (recordSubtype === 'sanacion' ? 'REGISTRAR SANACIÓN' : 'REGISTRO DE COMBATE')}
+                {initialData ? 'EDITAR REGISTRO' : (recordSubtype === 'sanacion' ? 'REGISTRAR SANACIÓN' : recordSubtype === 'intervencion' ? 'REGISTRO DE INTERVENCIÓN' : 'REGISTRO DE COMBATE')}
               </h3>
-              <p className="text-xs sm:text-sm font-black text-oro/40 uppercase tracking-[0.4em]">Sincronizando con el archivo histórico de combate</p>
+              <p className="text-xs sm:text-sm font-black text-oro/40 uppercase tracking-[0.4em]">
+                {recordSubtype === 'intervencion' ? 'Se añadirá también la misión para ambos bandos' : recordSubtype === 'sanacion' ? 'Tratamiento médico y reducción de horas de herido grave' : 'Sincronizando con el archivo histórico de combate'}
+              </p>
             </div>
             <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
               {/* Type Switcher */}
@@ -455,14 +584,21 @@ export default function CombatForm({
                     onClick={() => setRecordSubtype('combate')}
                     className={`flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${recordSubtype === 'combate' ? 'bg-oro text-naranja-naruto' : 'text-oro/40 hover:text-oro'}`}
                   >
-                    <Swords className="w-4 h-4" /> COMBATE
+                    COMBATE
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRecordSubtype('intervencion')}
+                    className={`flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${recordSubtype === 'intervencion' ? 'bg-red-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.5)]' : 'text-oro/40 hover:text-red-400'}`}
+                  >
+                    INTERVENCIÓN
                   </button>
                   <button
                     type="button"
                     onClick={() => setRecordSubtype('sanacion')}
                     className={`flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${recordSubtype === 'sanacion' ? 'bg-emerald-500 text-black' : 'text-oro/40 hover:text-oro'}`}
                   >
-                    <HeartPulse className="w-4 h-4" /> SANACIÓN
+                    SANACIÓN
                   </button>
                 </div>
               )}
@@ -642,13 +778,159 @@ export default function CombatForm({
               </div>
             </div>
           ) : (
-            /* ================= FORMULARIO DE COMBATE STANDARD ================= */
+            /* ================= FORMULARIO DE COMBATE / INTERVENCIÓN ================= */
             <>
+              {/* Panel de Misión Intervenida */}
+              {recordSubtype === 'intervencion' && (
+                <div className="p-6 sm:p-8 bg-black/60 border border-red-500/30 ninja-clip-md space-y-6 shadow-[0_0_30px_rgba(220,38,38,0.1)]">
+                  <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-red-500/20 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <h4 className="text-base sm:text-lg font-black uppercase tracking-[0.25em] text-red-400">
+                          MISIÓN INTERVENIDA
+                        </h4>
+                      </div>
+                    </div>
+
+                    {/* Rango Selector */}
+                    <div className="flex items-center gap-2 p-1 bg-black/80 border border-red-500/30 ninja-clip-xs self-start sm:self-auto">
+                      {(['B', 'A', 'S'] as const).map(r => (
+                        <button
+                          key={r}
+                          type="button"
+                          onClick={() => {
+                            setMisionRango(r);
+                            setSelectedMision('');
+                          }}
+                          className={`px-4 py-1.5 text-xs font-black uppercase tracking-widest transition-all ${
+                            misionRango === r
+                              ? 'bg-red-600 text-white shadow-sm'
+                              : 'text-oro/40 hover:text-oro'
+                          }`}
+                        >
+                          RANGO {r}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Dropdown de Selección de Misión */}
+                  <div className="space-y-2">
+                    <label className="text-caption font-black uppercase tracking-[0.25em] text-oro/60">
+                      SELECCIONAR MISIÓN DE RANGO {misionRango} {loadingMisiones && '(Cargando...)'}
+                    </label>
+                    <NinjaSelect
+                      value={selectedMision}
+                      onChange={(val) => setSelectedMision(val)}
+                      placeholder="SELECCIONA UNA MISIÓN..."
+                      options={misiones.map(m => ({
+                        label: `${m.codigo_mision} (+${m.exp} EXP${m.pa_recompensa ? ` / +${m.pa_recompensa} PA` : ''})`,
+                        value: m.codigo_mision
+                      }))}
+                    />
+                  </div>
+
+                  {/* Resumen de la Misión Seleccionada */}
+                  {selectedMisionObj ? (
+                    <div className="p-4 bg-black/40 border border-red-500/20 ninja-clip-sm space-y-3 animate-in fade-in duration-200">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-red-500/10 pb-2.5">
+                        <div>
+                          <span className="text-caption font-black text-red-400 uppercase tracking-widest mr-2">
+                            [{selectedMisionObj.codigo_mision}]
+                          </span>
+                          <span className="text-sm font-black text-white uppercase tracking-wider">
+                            Misión {selectedMisionObj.codigo_mision} (Rango {selectedMisionObj.rango})
+                          </span>
+                        </div>
+                        <span className="text-caption font-black px-2.5 py-0.5 bg-red-950/60 border border-red-500/40 text-red-300 ninja-clip-xs">
+                          RANGO {misionRango}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                        {/* Recompensas Éxito */}
+                        <div className="p-3 bg-emerald-950/20 border border-emerald-500/20 ninja-clip-xs space-y-1">
+                          <span className="text-caption font-black text-emerald-400 uppercase tracking-widest block">
+                            RECOMPENSAS POR COMPLETARLA (VICTORIA):
+                          </span>
+                          <div className="flex flex-wrap items-center gap-3 font-bold text-white">
+                            <span>+{selectedMisionObj.exp || 0} EXP</span>
+                            <span>+{selectedMisionObj.ryous || 0} RYOUS</span>
+                            {Number(selectedMisionObj.pa_recompensa) > 0 && (
+                              <span className="text-emerald-300">+{selectedMisionObj.pa_recompensa} PA</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Recompensas Fallo */}
+                        <div className="p-3 bg-black/40 border border-oro/10 ninja-clip-xs space-y-1">
+                          <span className="text-caption font-black text-oro/60 uppercase tracking-widest block">
+                            CONSECUENCIAS DE FALLO (DERROTA):
+                          </span>
+                          {selectedMisionObj.se_puede_fallar ? (
+                            <div className="flex flex-wrap items-center gap-3 font-bold text-white/80">
+                              <span>+{selectedMisionObj.exp_fallida || 0} EXP</span>
+                              <span>+{selectedMisionObj.ryous_fallida || 0} RYOUS</span>
+                              {Number(selectedMisionObj.pa_recompensa_fallida) > 0 && (
+                                <span className="text-emerald-300">+{selectedMisionObj.pa_recompensa_fallida} PA</span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-caption text-oro/40 italic">
+                              Esta misión no otorga recompensas si se falla.
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-black/40 border border-dashed border-red-500/20 ninja-clip-sm text-center">
+                      <p className="text-caption font-bold text-red-300/60 uppercase tracking-widest">
+                        Selecciona la misión intervenida
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Selector de Asignación de Roles de Bando */}
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-3 border-t border-red-500/10">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-black uppercase tracking-wider text-oro/80">
+                        ROLES:
+                      </span>
+                      <span className="text-xs font-black text-white">
+                        Bando A = <span className={bandoMision === 'A' ? 'text-amber-400' : 'text-red-400'}>{bandoMision === 'A' ? 'Realiza Misión' : 'Interventor'}</span>
+                        {' • '}
+                        Bando B = <span className={bandoMision === 'B' ? 'text-amber-400' : 'text-red-400'}>{bandoMision === 'B' ? 'Realiza Misión' : 'Interventor'}</span>
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setBandoMision(bandoMision === 'A' ? 'B' : 'A')}
+                      className="flex items-center gap-2 px-4 py-2 bg-red-950/40 border border-red-500/40 hover:bg-red-900/40 text-red-300 text-caption font-black uppercase tracking-wider ninja-clip-xs transition-all"
+                    >
+                      <ArrowLeftRight className="w-3.5 h-3.5" /> INVERTIR ROLES DE BANDO
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 sm:gap-16">
                 {/* Bando A */}
                 <div className="space-y-8 p-8 bg-black/40 border border-oro/20 ninja-clip-md">
                   <div className="flex items-center justify-between border-b border-oro/10 pb-4">
-                    <h4 className="text-lg font-black uppercase tracking-[0.3em] text-oro">BANDO A</h4>
+                    <div className="flex items-center gap-3">
+                      <h4 className="text-lg font-black uppercase tracking-[0.3em] text-oro">BANDO A</h4>
+                      {recordSubtype === 'intervencion' && (
+                        <span className={`px-2 py-0.5 text-[9px] font-black uppercase tracking-wider ninja-clip-xs border ${
+                          bandoMision === 'A'
+                            ? 'bg-amber-500/10 border-amber-400/40 text-amber-300'
+                            : 'bg-red-500/10 border-red-400/40 text-red-300'
+                        }`}>
+                          {bandoMision === 'A' ? 'REALIZADOR (MISIÓN)' : 'INTERVENTOR'}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-xs font-bold text-oro/40 uppercase">{teamA.length} NINJAS</span>
                   </div>
 
@@ -670,12 +952,25 @@ export default function CombatForm({
                               </span>
                             </div>
                             <div className="flex items-center gap-4">
-                              <div className="flex items-center gap-2 px-3 py-1 bg-oro/10 border border-oro/20 ninja-clip-xs">
-                                <span className="text-caption font-black text-oro">+{calculateXP('A', p.huye, p.huye_gana_exp)} EXP</span>
-                              </div>
-                              {calculatePA('A', p.huye) > 0 && (
-                                <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-success-text/20 ninja-clip-xs">
-                                  <span className="text-caption font-black text-emerald-400">+{calculatePA('A', p.huye)} PA</span>
+                              {recordSubtype === 'intervencion' ? (
+                                <>
+                                  <div className="flex items-center gap-2 px-3 py-1 bg-oro/10 border border-oro/20 ninja-clip-xs">
+                                    <span className="text-caption font-black text-oro">+{calculateIntervencionXP('A', p.huye, p.huye_gana_exp)} EXP</span>
+                                  </div>
+                                  {calculateIntervencionRyous('A', p.huye) > 0 && (
+                                    <div className="flex items-center gap-2 px-3 py-1 bg-amber-500/10 border border-amber-400/20 ninja-clip-xs">
+                                      <span className="text-caption font-black text-amber-300">+{calculateIntervencionRyous('A', p.huye)} R</span>
+                                    </div>
+                                  )}
+                                  {calculateIntervencionPA('A', p.huye) > 0 && (
+                                    <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-success-text/20 ninja-clip-xs">
+                                      <span className="text-caption font-black text-emerald-400">+{calculateIntervencionPA('A', p.huye)} PA</span>
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                <div className="flex items-center gap-2 px-3 py-1 bg-oro/10 border border-oro/20 ninja-clip-xs">
+                                  <span className="text-caption font-black text-oro">+{calculateXP('A', p.huye, p.huye_gana_exp)} EXP</span>
                                 </div>
                               )}
                               <button onClick={() => removeParticipant(p.id, 'A')} className="opacity-0 group-hover/item:opacity-100 p-2 text-oro/20 hover:text-naranja-naruto transition-all">
@@ -766,7 +1061,18 @@ export default function CombatForm({
                 {/* Bando B */}
                 <div className="space-y-8 p-8 bg-black/40 border border-oro/20 ninja-clip-md">
                   <div className="flex items-center justify-between border-b border-oro/10 pb-4">
-                    <h4 className="text-lg font-black uppercase tracking-[0.3em] text-oro">BANDO B</h4>
+                    <div className="flex items-center gap-3">
+                      <h4 className="text-lg font-black uppercase tracking-[0.3em] text-oro">BANDO B</h4>
+                      {recordSubtype === 'intervencion' && (
+                        <span className={`px-2 py-0.5 text-[9px] font-black uppercase tracking-wider ninja-clip-xs border ${
+                          bandoMision === 'B'
+                            ? 'bg-amber-500/10 border-amber-400/40 text-amber-300'
+                            : 'bg-red-500/10 border-red-400/40 text-red-300'
+                        }`}>
+                          {bandoMision === 'B' ? 'REALIZADOR (MISIÓN)' : 'INTERVENTOR'}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-xs font-bold text-oro/40 uppercase">{teamB.length} NINJAS</span>
                   </div>
 
@@ -788,12 +1094,25 @@ export default function CombatForm({
                               </span>
                             </div>
                             <div className="flex items-center gap-4">
-                              <div className="flex items-center gap-2 px-3 py-1 bg-oro/10 border border-oro/20 ninja-clip-xs">
-                                <span className="text-caption font-black text-oro">+{calculateXP('B', p.huye, p.huye_gana_exp)} EXP</span>
-                              </div>
-                              {calculatePA('B', p.huye) > 0 && (
-                                <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-success-text/20 ninja-clip-xs">
-                                  <span className="text-caption font-black text-emerald-400">+{calculatePA('B', p.huye)} PA</span>
+                              {recordSubtype === 'intervencion' ? (
+                                <>
+                                  <div className="flex items-center gap-2 px-3 py-1 bg-oro/10 border border-oro/20 ninja-clip-xs">
+                                    <span className="text-caption font-black text-oro">+{calculateIntervencionXP('B', p.huye, p.huye_gana_exp)} EXP</span>
+                                  </div>
+                                  {calculateIntervencionRyous('B', p.huye) > 0 && (
+                                    <div className="flex items-center gap-2 px-3 py-1 bg-amber-500/10 border border-amber-400/20 ninja-clip-xs">
+                                      <span className="text-caption font-black text-amber-300">+{calculateIntervencionRyous('B', p.huye)} R</span>
+                                    </div>
+                                  )}
+                                  {calculateIntervencionPA('B', p.huye) > 0 && (
+                                    <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-success-text/20 ninja-clip-xs">
+                                      <span className="text-caption font-black text-emerald-400">+{calculateIntervencionPA('B', p.huye)} PA</span>
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                <div className="flex items-center gap-2 px-3 py-1 bg-oro/10 border border-oro/20 ninja-clip-xs">
+                                  <span className="text-caption font-black text-oro">+{calculateXP('B', p.huye, p.huye_gana_exp)} EXP</span>
                                 </div>
                               )}
                               <button onClick={() => removeParticipant(p.id, 'B')} className="opacity-0 group-hover/item:opacity-100 p-2 text-oro/20 hover:text-naranja-naruto transition-all">
@@ -905,6 +1224,22 @@ export default function CombatForm({
                         </button>
                       ))}
                     </div>
+
+                    {/* Explicación de Resolución para Intervención */}
+                    {recordSubtype === 'intervencion' && (
+                      <div className="p-4 bg-black/60 border border-red-500/20 ninja-clip-sm space-y-1 text-xs">
+                        <span className="text-caption font-black uppercase tracking-widest text-red-400 block">
+                          RESOLUCIÓN DE LA INTERVENCIÓN (REGLA 6.15):
+                        </span>
+                        <p className="text-oro/80 font-medium">
+                          {winner === 'A'
+                            ? `Victoria para el BANDO A (${bandoMision === 'A' ? 'Realizador' : 'Interventor'}): Completa la misión ${selectedMisionObj?.codigo_mision || ''} y recibe EXP/PA de victoria + recompensas de misión completada. El Bando B falla la misión.`
+                            : winner === 'B'
+                              ? `Victoria para el BANDO B (${bandoMision === 'B' ? 'Realizador' : 'Interventor'}): Completa la misión ${selectedMisionObj?.codigo_mision || ''} y recibe EXP/PA de victoria + recompensas de misión completada. El Bando A falla la misión.`
+                              : 'Empate: Ningún bando completa la misión ni se otorga experiencia de combate.'}
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-col md:flex-row gap-6 w-full xl:w-auto shrink-0">
@@ -951,61 +1286,69 @@ export default function CombatForm({
                         </div>
                       </div>
                     )}
-
-                    {paConfig && (
-                      <div className="w-full md:w-[320px] p-6 bg-black/40 border border-oro/10 ninja-clip-md text-xs font-black uppercase tracking-widest space-y-4">
-                        <div className="flex items-center gap-4 border-b border-oro/10 pb-3 opacity-60">
-                          <Info className="w-4 h-4 text-oro" />
-                          <span>TABLA DE Puntos de Acción</span>
-                        </div>
-                        {paConfig.victoria ? (
-                          <div className="grid grid-cols-3 gap-y-3 gap-x-2 text-center text-caption">
-                            <div className="text-left text-oro/40">Diferencia</div>
-                            <div className="text-green-500">Victoria</div>
-                            <div className="text-red-500">Derrota</div>
-
-                            <div className="text-left text-oro/30">+2 Sup</div>
-                            <div className="text-oro">+{paConfig.victoria.mas_2}</div>
-                            <div className="text-oro">+{paConfig.derrota.mas_2}</div>
-
-                            <div className="text-left text-oro/30">+1 Sup</div>
-                            <div className="text-oro">+{paConfig.victoria.mas_1}</div>
-                            <div className="text-oro">+{paConfig.derrota.mas_1}</div>
-
-                            <div className="text-left text-oro/30">= Rango</div>
-                            <div className="text-oro">+{paConfig.victoria.igual}</div>
-                            <div className="text-oro">+{paConfig.derrota.igual}</div>
-
-                            <div className="text-left text-oro/30">-1 Inf</div>
-                            <div className="text-oro">+{paConfig.victoria.menos_1}</div>
-                            <div className="text-oro">+{paConfig.derrota.menos_1}</div>
-
-                            <div className="text-left text-oro/30">-2 Inf</div>
-                            <div className="text-oro">+{paConfig.victoria.menos_2}</div>
-                            <div className="text-oro">+{paConfig.derrota.menos_2}</div>
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            <div className="flex justify-between"><span>Victoria</span><span className="text-oro">+{paConfig.ganar} PA</span></div>
-                            <div className="flex justify-between"><span>Derrota</span><span className="text-emerald-400">+{paConfig.perder} PA</span></div>
-                          </div>
-                        )}
-                        <div className="text-caption text-oro/30 border-t border-oro/5 pt-2 text-center normal-case font-bold">
-                          El empate siempre otorga 0 PA.
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
+
+              {/* Pruebas de la Intervención */}
+              {recordSubtype === 'intervencion' && (
+                <div className="space-y-6 pt-8 border-t border-oro/10">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black uppercase tracking-[0.3em] text-oro/40 ml-2">
+                      PRUEBAS DE LA INTERVENCIÓN (URLs DE DISCORD / CAPTURAS)
+                    </label>
+                    <span className="text-caption text-oro/40 font-bold uppercase">Mínimo 1 prueba requerida</span>
+                  </div>
+                  <div className="space-y-4">
+                    {images.map((img, i) => (
+                      <div key={i} className="flex gap-4 group">
+                        <div className="relative flex-1">
+                          <LinkIcon className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-oro/20" />
+                          <input
+                            value={img}
+                            onChange={(e) => {
+                              const newImgs = [...images];
+                              newImgs[i] = e.target.value;
+                              setImages(newImgs);
+                            }}
+                            placeholder="HTTPS://..."
+                            className="w-full ninja-input pl-16 py-5 text-xs font-bold"
+                          />
+                        </div>
+                        {images.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => setImages(images.filter((_, idx) => idx !== i))}
+                            className="p-4 text-oro/20 hover:text-naranja-naruto transition-all"
+                          >
+                            <X className="w-6 h-6" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setImages([...images, ''])}
+                      className="flex items-center gap-4 text-xs font-black uppercase tracking-[0.3em] text-oro/40 hover:text-oro transition-all ml-2 group"
+                    >
+                      <div className="w-6 h-[1px] bg-oro/20 group-hover:bg-oro transition-all" />
+                      AÑADIR OTRO REGISTRO VISUAL
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="pt-10">
                 <button
                   onClick={handleSubmit}
                   disabled={loading}
-                  className={`w-full py-8 sm:py-10 ninja-btn-oro text-xl sm:text-2xl ${loading ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                  className={`w-full py-8 sm:py-10 ${recordSubtype === 'intervencion' ? 'bg-red-600 hover:bg-red-500 text-white shadow-[0_0_30px_rgba(220,38,38,0.4)]' : 'ninja-btn-oro'} text-xl sm:text-2xl transition-all font-black uppercase tracking-widest ${loading ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
                 >
-                  {loading ? 'SELLANDO ARCHIVO DE GUERRA...' : initialData ? 'ACTUALIZAR CRÓNICA' : 'PUBLICAR CRÓNICA'}
+                  {loading
+                    ? (recordSubtype === 'intervencion' ? 'SELLANDO INTERVENCIÓN...' : 'SELLANDO ARCHIVO DE GUERRA...')
+                    : initialData
+                      ? (recordSubtype === 'intervencion' ? 'ACTUALIZAR INTERVENCIÓN' : 'ACTUALIZAR CRÓNICA')
+                      : (recordSubtype === 'intervencion' ? 'PUBLICAR INTERVENCIÓN' : 'PUBLICAR CRÓNICA')}
                 </button>
               </div>
             </>

@@ -343,7 +343,18 @@ export const RewardLogic = {
 
       if (!participant) return { xp: 0, ryous: 0, pa: 0 };
       if (participant.huye && !participant.huye_gana_exp) return { xp: 0, ryous: 0, pa: 0 };
-      if (data.ganador === 'Empate') return { xp: 0, ryous: 0, pa: 0 };
+      const isIntervencion = registro.subtipo === 'intervencion' || data?.subtipo === 'intervencion' || !!data?.es_intervencion;
+
+      if (data.ganador === 'Empate') {
+        if (isIntervencion && data.mision_se_puede_fallar) {
+          return {
+            xp: Number(data.mision_exp_fallida) || 0,
+            ryous: Number(data.mision_ryous_fallida) || 0,
+            pa: Number(data.mision_pa_fallida) || 0
+          };
+        }
+        return { xp: 0, ryous: 0, pa: 0 };
+      }
 
       const config = data.config_xp;
       if (!config) return { xp: 0, ryous: 0, pa: 0 };
@@ -381,9 +392,41 @@ export const RewardLogic = {
         else xp = Number(section.menos_2) || 0;
       }
 
-      const pa = RewardLogic.calculateCombatPA(registro, personajeId);
+      // Ajuste por inferioridad o superioridad numérica (solo aplica al bando ganador)
+      if (xp > 0 && isWinner) {
+        const teamACount = (data.equipo_a || []).length;
+        const teamBCount = (data.equipo_b || []).length;
+        const ownTeamCount = isTeamA ? teamACount : teamBCount;
+        const oppTeamCount = isTeamA ? teamBCount : teamACount;
 
-      return { xp, ryous: 0, pa };
+        if (ownTeamCount < oppTeamCount) {
+          // Inferioridad numérica: +50% por cada jugador de diferencia
+          const playerDiff = oppTeamCount - ownTeamCount;
+          xp = Math.ceil(xp * (1 + 0.5 * playerDiff));
+        } else if (ownTeamCount > oppTeamCount) {
+          // Superioridad numérica: dividido entre (1 + diferencia de jugadores)
+          const playerDiff = ownTeamCount - oppTeamCount;
+          xp = Math.ceil(xp / (1 + playerDiff));
+        }
+      }
+
+      let pa = RewardLogic.calculateCombatPA(registro, personajeId);
+      let ryous = 0;
+
+      // Ganancias o pérdidas conjuntas si es intervención (Regla 6.15)
+      if (isIntervencion) {
+        if (isWinner) {
+          xp += (Number(data.mision_exp) || Number(data.recompensa_xp_mision) || 0);
+          ryous += (Number(data.mision_ryous) || Number(data.recompensa_ryous_mision) || 0);
+          pa += (Number(data.mision_pa) || Number(data.recompensa_pa_mision) || 0);
+        } else if (data.mision_se_puede_fallar) {
+          xp += (Number(data.mision_exp_fallida) || 0);
+          ryous += (Number(data.mision_ryous_fallida) || 0);
+          pa += (Number(data.mision_pa_fallida) || 0);
+        }
+      }
+
+      return { xp, ryous, pa };
     }
 
     // Misiones o Acciones

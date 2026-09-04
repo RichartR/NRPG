@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Registro } from '@/domain/types';
-import { Eye, Edit3, Trash2, Loader2, X, Swords, HeartPulse, Dices, User, Sparkles, Check } from 'lucide-react';
+import { Eye, Edit3, Trash2, Loader2, X, Swords, HeartPulse, Dices, User, Sparkles, Check, ShieldAlert, ScrollText } from 'lucide-react';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { RegistrosService } from '@/services/supabase/registros.service';
 import { CharacterService } from '@/services/supabase/character.service';
@@ -102,11 +102,29 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
     const section = isWinner ? config.victoria : config.derrota;
     if (!section) return 0;
 
-    if (diff >= 2) return Number(section.mas_2) || 0;
-    if (diff === 1) return Number(section.mas_1) || 0;
-    if (diff === 0) return Number(section.igual) || 0;
-    if (diff === -1) return Number(section.menos_1) || 0;
-    return Number(section.menos_2) || 0;
+    let baseXp = 0;
+    if (diff >= 2) baseXp = Number(section.mas_2) || 0;
+    else if (diff === 1) baseXp = Number(section.mas_1) || 0;
+    else if (diff === 0) baseXp = Number(section.igual) || 0;
+    else if (diff === -1) baseXp = Number(section.menos_1) || 0;
+    else baseXp = Number(section.menos_2) || 0;
+
+    if (baseXp === 0) return 0;
+
+    if (isWinner) {
+      const ownTeamCount = team === 'A' ? teamA.length : teamB.length;
+      const oppTeamCount = team === 'A' ? teamB.length : teamA.length;
+
+      if (ownTeamCount < oppTeamCount) {
+        const playerDiff = oppTeamCount - ownTeamCount;
+        return Math.ceil(baseXp * (1 + 0.5 * playerDiff));
+      } else if (ownTeamCount > oppTeamCount) {
+        const playerDiff = ownTeamCount - oppTeamCount;
+        return Math.ceil(baseXp / (1 + playerDiff));
+      }
+    }
+
+    return baseXp;
   };
 
   return (
@@ -126,6 +144,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
           <tbody className="divide-y divide-oro/5 bg-black/40">
             {combates.map((m) => {
               const isSanacion = m.subtipo === 'sanacion' || m.data?.subtipo === 'sanacion';
+              const isIntervencion = m.subtipo === 'intervencion' || m.data?.subtipo === 'intervencion' || !!m.data?.es_intervencion;
               const sid = subjectId || activeCharacter?.id || m.autor_id;
               const teamA = m.data.equipo_a || [];
               const teamB = m.data.equipo_b || [];
@@ -138,8 +157,9 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
               const won = (m.data.ganador === 'A' && isA) || (m.data.ganador === 'B' && !isA);
               const rewards = RewardLogic.calculateReward(m, sid);
               const participantObj = (isA ? teamA : teamB).find((p: any) => p.id === sid);
-              const xpGained = isSanacion ? rewards.xp : calculateParticipantXP(m, isA ? 'A' : 'B', participantObj?.huye, participantObj?.huye_gana_exp);
-              const pcGained = isSanacion ? 0 : RewardLogic.calculateCombatPA(m, sid);
+              const xpGained = (isSanacion || isIntervencion) ? rewards.xp : calculateParticipantXP(m, isA ? 'A' : 'B', participantObj?.huye, participantObj?.huye_gana_exp);
+              const pcGained = isSanacion ? 0 : isIntervencion ? rewards.pa : RewardLogic.calculateCombatPA(m, sid);
+              const ryousGained = rewards.ryous || 0;
 
               const isOwner = activeCharacter?.id === m.autor_id;
               const canEdit = isOwner || isAdmin;
@@ -195,21 +215,41 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                         </div>
                       </div>
                     ) : (
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-black text-oro">{selfName}</span>
-                        {allies.length > 0 && allies.map((name: string, i: number) => (
-                          <span key={i} className="text-oro/70 font-semibold before:content-['+'] before:mr-1">{name}</span>
-                        ))}
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-red-600/10 border border-error-text/30 ninja-clip-xs">
-                          <Swords className="w-3 h-3 text-red-400" />
-                          <span className="font-ninja text-caption text-red-400 italic font-black uppercase tracking-wider">VS</span>
+                      <div className="space-y-2">
+                        {isIntervencion && (
+                          <div className="inline-flex flex-wrap items-center gap-2 px-3 py-1 bg-black/60 border border-oro/20 ninja-clip-xs text-[10px] font-black uppercase tracking-wider">
+                            <span className="text-oro/40 tracking-[0.2em]">INTERVENCIÓN</span>
+                            <span className="w-1 h-1 rounded-full bg-oro/30" />
+                            <span className="text-oro">
+                              {(() => {
+                                const cod = m.data?.codigo_mision || '';
+                                if (!cod) return 'MISIÓN';
+                                return cod.toUpperCase().startsWith('MISIÓN') || cod.toUpperCase().startsWith('MISION') ? cod : `MISIÓN ${cod}`;
+                              })()}
+                            </span>
+                            {m.data?.mision_rango && (
+                              <span className="px-1.5 py-0.2 bg-oro/10 border border-oro/20 text-oro/80 text-[9px] ninja-clip-xs">
+                                RANGO {m.data.mision_rango}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-black text-oro">{selfName}</span>
+                          {allies.length > 0 && allies.map((name: string, i: number) => (
+                            <span key={i} className="text-oro/70 font-semibold before:content-['+'] before:mr-1">{name}</span>
+                          ))}
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-red-600/10 border border-error-text/30 ninja-clip-xs">
+                            <Swords className="w-3.5 h-3.5 text-red-400" />
+                            <span className="font-ninja text-caption text-red-400 italic font-black uppercase tracking-wider">VS</span>
+                          </div>
+                          {enemies.map((name: string, i: number) => (
+                            <React.Fragment key={i}>
+                              <span className="font-black text-oro/90">{name}</span>
+                              {i < enemies.length - 1 && <span className="text-oro/30 font-light">&</span>}
+                            </React.Fragment>
+                          ))}
                         </div>
-                        {enemies.map((name: string, i: number) => (
-                          <React.Fragment key={i}>
-                            <span className="font-black text-oro/90">{name}</span>
-                            {i < enemies.length - 1 && <span className="text-oro/30 font-light">&</span>}
-                          </React.Fragment>
-                        ))}
                       </div>
                     )}
                   </td>
@@ -221,6 +261,32 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                         <span className="font-black text-emerald-400 text-xs tracking-wider uppercase">
                           -{m.data.horas_restadas || 0}h HG
                         </span>
+                      ) : isIntervencion ? (
+                        <div className="flex flex-col gap-0.5">
+                          {isEmpate ? (
+                            <span className="font-black text-oro/70 text-xs tracking-wider uppercase">
+                              Empate
+                            </span>
+                          ) : won ? (
+                            <>
+                              <span className="font-black text-emerald-400 text-xs tracking-wider uppercase">
+                                Victoria
+                              </span>
+                              <span className="text-[9px] font-bold text-emerald-400/80 uppercase">
+                                (Misión Completada)
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="font-black text-red-400 text-xs tracking-wider uppercase">
+                                Derrota
+                              </span>
+                              <span className="text-[9px] font-bold text-red-400/80 uppercase">
+                                (Misión Fallida)
+                              </span>
+                            </>
+                          )}
+                        </div>
                       ) : isEmpate ? (
                         <span className="font-black text-oro/70 text-xs tracking-wider uppercase">
                           Empate
@@ -252,7 +318,8 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                     <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
                       {xpGained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>+{xpGained} EXP</div>}
                       {pcGained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>+{pcGained} PA</div>}
-                      {xpGained === 0 && pcGained === 0 && (
+                      {ryousGained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-amber-300"}>+{ryousGained} RYOUS</div>}
+                      {xpGained === 0 && pcGained === 0 && ryousGained === 0 && (
                         <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
                       )}
                       {(isPending || isDispute) && (
@@ -325,6 +392,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
       <div className="block lg:hidden divide-y divide-oro/10 bg-black/40">
         {combates.map((m) => {
           const isSanacion = m.subtipo === 'sanacion' || m.data?.subtipo === 'sanacion';
+          const isIntervencion = m.subtipo === 'intervencion' || m.data?.subtipo === 'intervencion' || !!m.data?.es_intervencion;
           const sid = subjectId || activeCharacter?.id || m.autor_id;
           const teamA = m.data.equipo_a || [];
           const teamB = m.data.equipo_b || [];
@@ -337,8 +405,9 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
           const won = (m.data.ganador === 'A' && isA) || (m.data.ganador === 'B' && !isA);
           const rewards = RewardLogic.calculateReward(m, sid);
           const participantObjMobile = (isA ? teamA : teamB).find((p: any) => p.id === sid);
-          const xpGained = isSanacion ? rewards.xp : calculateParticipantXP(m, isA ? 'A' : 'B', participantObjMobile?.huye, participantObjMobile?.huye_gana_exp);
-          const pcGained = isSanacion ? 0 : RewardLogic.calculateCombatPA(m, sid);
+          const xpGained = (isSanacion || isIntervencion) ? rewards.xp : calculateParticipantXP(m, isA ? 'A' : 'B', participantObjMobile?.huye, participantObjMobile?.huye_gana_exp);
+          const pcGained = isSanacion ? 0 : isIntervencion ? rewards.pa : RewardLogic.calculateCombatPA(m, sid);
+          const ryousGained = rewards.ryous || 0;
 
           const isOwner = activeCharacter?.id === m.autor_id;
           const canEdit = isOwner || isAdmin;
@@ -368,6 +437,32 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                     <span className="font-black text-emerald-400 text-xs tracking-wider uppercase">
                       -{m.data.horas_restadas || 0}h HG
                     </span>
+                  ) : isIntervencion ? (
+                    <div className="flex flex-col items-end gap-0.5">
+                      {isEmpate ? (
+                        <span className="font-black text-oro/70 text-xs tracking-wider uppercase">
+                          Empate
+                        </span>
+                      ) : won ? (
+                        <>
+                          <span className="font-black text-emerald-400 text-xs tracking-wider uppercase">
+                            Victoria
+                          </span>
+                          <span className="text-[9px] font-bold text-emerald-400/80 uppercase">
+                            (Misión Completada)
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="font-black text-red-400 text-xs tracking-wider uppercase">
+                            Derrota
+                          </span>
+                          <span className="text-[9px] font-bold text-red-400/80 uppercase">
+                            (Misión Fallida)
+                          </span>
+                        </>
+                      )}
+                    </div>
                   ) : isEmpate ? (
                     <span className="font-black text-oro/70 text-xs tracking-wider uppercase">
                       Empate
@@ -405,21 +500,41 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="font-black text-oro">{selfName}</span>
-                    {allies.length > 0 && allies.map((name: string, i: number) => (
-                      <span key={i} className="text-oro/70 font-semibold before:content-['+'] before:mr-1">{name}</span>
-                    ))}
-                    <div className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-red-600/10 border border-error-text/20 rounded-[3px] scale-90">
-                      <Swords className="w-2.5 h-2.5 text-red-400" />
-                      <span className="font-ninja text-caption text-red-400 italic font-black uppercase tracking-wider">VS</span>
+                  <div className="space-y-2">
+                    {isIntervencion && (
+                      <div className="inline-flex flex-wrap items-center gap-2 px-3 py-1 bg-black/60 border border-oro/20 ninja-clip-xs text-[10px] font-black uppercase tracking-wider">
+                        <span className="text-oro/40 tracking-[0.2em]">INTERVENCIÓN</span>
+                        <span className="w-1 h-1 rounded-full bg-oro/30" />
+                        <span className="text-oro">
+                          {(() => {
+                            const cod = m.data?.codigo_mision || '';
+                            if (!cod) return 'MISIÓN';
+                            return cod.toUpperCase().startsWith('MISIÓN') || cod.toUpperCase().startsWith('MISION') ? cod : `MISIÓN ${cod}`;
+                          })()}
+                        </span>
+                        {m.data?.mision_rango && (
+                          <span className="px-1.5 py-0.2 bg-oro/10 border border-oro/20 text-oro/80 text-[9px] ninja-clip-xs">
+                            RANGO {m.data.mision_rango}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="font-black text-oro">{selfName}</span>
+                      {allies.length > 0 && allies.map((name: string, i: number) => (
+                        <span key={i} className="text-oro/70 font-semibold before:content-['+'] before:mr-1">{name}</span>
+                      ))}
+                      <div className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-red-600/10 border border-error-text/20 rounded-[3px] scale-90">
+                        <Swords className="w-2.5 h-2.5 text-red-400" />
+                        <span className="font-ninja text-caption text-red-400 italic font-black uppercase tracking-wider">VS</span>
+                      </div>
+                      {enemies.map((name: string, i: number) => (
+                        <React.Fragment key={i}>
+                          <span className="font-black text-oro/90">{name}</span>
+                          {i < enemies.length - 1 && <span className="text-oro/30 font-light">&</span>}
+                        </React.Fragment>
+                      ))}
                     </div>
-                    {enemies.map((name: string, i: number) => (
-                      <React.Fragment key={i}>
-                        <span className="font-black text-oro/90">{name}</span>
-                        {i < enemies.length - 1 && <span className="text-oro/30 font-light">&</span>}
-                      </React.Fragment>
-                    ))}
                   </div>
                 )}
               </div>
@@ -428,7 +543,8 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                 <div className="flex flex-col gap-1 justify-center text-emerald-400 font-bold text-[11px] tracking-wide">
                   {xpGained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>+{xpGained} EXP</div>}
                   {pcGained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>+{pcGained} PA</div>}
-                  {xpGained === 0 && pcGained === 0 && (
+                  {ryousGained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-amber-300"}>+{ryousGained} RYOUS</div>}
+                  {xpGained === 0 && pcGained === 0 && ryousGained === 0 && (
                     <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
                   )}
                   {(isPending || isDispute) && (
@@ -505,7 +621,11 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
               <div className="flex items-center gap-4">
                 <div>
                   <h3 className="ninja-title text-lg sm:text-xl tracking-[0.1em] sm:tracking-[0.2em]">
-                    {(selectedCombat.subtipo === 'sanacion' || selectedCombat.data?.subtipo === 'sanacion') ? 'INFORME DE SANACIÓN' : 'INFORME DE COMBATE'}
+                    {(selectedCombat.subtipo === 'sanacion' || selectedCombat.data?.subtipo === 'sanacion') 
+                      ? 'INFORME DE SANACIÓN' 
+                      : (selectedCombat.subtipo === 'intervencion' || selectedCombat.data?.subtipo === 'intervencion' || !!selectedCombat.data?.es_intervencion)
+                        ? 'INFORME DE INTERVENCIÓN'
+                        : 'INFORME DE COMBATE'}
                   </h3>
                   <p className="text-caption text-oro/40 uppercase tracking-widest font-black">Archivo ninja oficial</p>
                 </div>
@@ -569,146 +689,243 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                   </div>
                 </div>
               ) : (
-                /* Contenido Modal Combate */
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-10 lg:gap-16 items-start">
-                  {/* Bando A */}
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-3 border-b border-oro/10 pb-4">
-                      <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Bando A</span>
-                      {selectedCombat.data.ganador === 'A' && (
-                        <span className="text-caption font-black text-oro bg-oro/10 px-2 py-0.5 ninja-clip-xs border border-oro/20">
-                          GANADOR
-                        </span>
-                      )}
-                    </div>
-                    <div className="space-y-4">
-                      {selectedCombat.data.equipo_a?.map((p: any) => (
-                        <div key={p.id} className="p-4 bg-neutral-600/70 border border-oro/15 hover:border-oro/30 hover:bg-neutral-600/95 transition-all ninja-clip-xs space-y-3 shadow-md shadow-black/10">
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-3">
-                              <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
-                              <span className="text-caption font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">
-                                +{calculateParticipantXP(selectedCombat, 'A', p.huye, p.huye_gana_exp)} EXP
-                              </span>
-                              <span className="text-caption font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-success-text/10">
-                                +{RewardLogic.calculateCombatPA(selectedCombat, p.id)} PA
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-3">
-                              {p.has_estado_alterado && (
-                                <span className="px-2 py-0.5 bg-oro/20 text-oro text-caption font-black uppercase ninja-clip-xs border border-oro/40">
-                                  ESTADO ALTERADO
-                                </span>
-                              )}
-                              {p.has_cds && (
-                                <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-caption font-black uppercase ninja-clip-xs border border-blue-400/40">
-                                  CDs
-                                </span>
-                              )}
-                              {p.huye && (
-                                <span className={`px-2 py-0.5 text-caption font-black uppercase ninja-clip-xs border ${
-                                  p.huye_gana_exp 
-                                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' 
-                                    : 'bg-orange-500/20 text-orange-400 border-orange-500/40'
-                                }`}>
-                                  {p.huye_gana_exp ? 'HUYE (GANA EXP)' : 'HUYE'}
-                                </span>
-                              )}
-                              <span className="text-caption font-black text-oro/70 uppercase">
-                                {p.estado_nombre || 'SIN ESTADO'}
-                              </span>
-                            </div>
+                /* Contenido Modal Combate / Intervención */
+                <div className="space-y-8">
+                  {(selectedCombat.subtipo === 'intervencion' || selectedCombat.data?.subtipo === 'intervencion' || !!selectedCombat.data?.es_intervencion) && (
+                    <div className="p-5 bg-black/40 border border-oro/15 ninja-clip-sm space-y-4">
+                      <div className="flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-oro/5 border border-oro/20 ninja-clip-xs text-oro shrink-0">
+                            <ShieldAlert className="w-5 h-5 text-oro" />
                           </div>
-                          {p.has_estado_alterado && p.descripcion_estado && (
-                            <div className="p-3 bg-oro/5 border-l-2 border-oro/20 italic text-[11px] text-oro/60">
-                              "{p.descripcion_estado}"
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-black text-oro/50 uppercase tracking-[0.25em]">
+                                MISIÓN INTERVENIDA
+                              </span>
+                              <span className="text-[9px] font-black text-oro px-1.5 py-0.5 bg-oro/10 border border-oro/20 ninja-clip-xs">
+                                RANGO {selectedCombat.data?.mision_rango || 'B'}
+                              </span>
                             </div>
-                          )}
-                          {p.has_cds && p.descripcion_cds && (
-                            <div className="p-3 bg-blue-500/5 border-l-2 border-blue-400/30 italic text-[11px] text-blue-300/70">
-                              "{p.descripcion_cds}"
-                            </div>
+                            <h4 className="text-base sm:text-lg font-black text-oro uppercase tracking-wider block mt-0.5">
+                              <span className="text-oro/60">{selectedCombat.data?.codigo_mision}:</span> {selectedCombat.data?.mision_titulo || selectedCombat.data?.mision_nombre || 'Misión'}
+                            </h4>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 px-3 py-1 bg-black/50 border border-oro/15 ninja-clip-xs text-[10px] font-black uppercase tracking-wider">
+                            <span className="text-oro/40">Bando A:</span>
+                            <span className={selectedCombat.data?.bando_mision === 'A' ? 'text-oro' : 'text-oro/60'}>
+                              {selectedCombat.data?.bando_mision === 'A' ? 'Realizador' : 'Interventor'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 px-3 py-1 bg-black/50 border border-oro/15 ninja-clip-xs text-[10px] font-black uppercase tracking-wider">
+                            <span className="text-oro/40">Bando B:</span>
+                            <span className={selectedCombat.data?.bando_mision === 'B' ? 'text-oro' : 'text-oro/60'}>
+                              {selectedCombat.data?.bando_mision === 'B' ? 'Realizador' : 'Interventor'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-oro/10 text-caption font-bold">
+                        <div className="p-3 bg-black/40 border border-emerald-500/20 ninja-clip-xs">
+                          <span className="text-emerald-400 uppercase font-black block mb-1">RECOMPENSA DE ÉXITO (GANADOR):</span>
+                          <span className="text-oro">+{selectedCombat.data?.mision_exp || 0} EXP</span> •{' '}
+                          <span className="text-amber-300">+{selectedCombat.data?.mision_ryous || 0} RYOUS</span> •{' '}
+                          <span className="text-emerald-400">+{selectedCombat.data?.mision_pa || 0} PA</span>
+                        </div>
+                        <div className="p-3 bg-black/40 border border-red-500/20 ninja-clip-xs">
+                          <span className="text-red-400 uppercase font-black block mb-1">RECOMPENSA DE FALLO (PERDEDOR):</span>
+                          {selectedCombat.data?.mision_se_puede_fallar ? (
+                            <>
+                              <span className="text-oro">+{selectedCombat.data?.mision_exp_fallida || 0} EXP</span> •{' '}
+                              <span className="text-amber-300">+{selectedCombat.data?.mision_ryous_fallida || 0} RYOUS</span> •{' '}
+                              <span className="text-emerald-400">+{selectedCombat.data?.mision_pa_fallida || 0} PA</span>
+                            </>
+                          ) : (
+                            <span className="text-red-400/80 italic">0 (Misión no recompensable al fallar)</span>
                           )}
                         </div>
-                      ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  {/* VS Divider */}
-                  <div className="flex lg:flex-col items-center justify-center gap-6 lg:self-center">
-                    <div className="h-px lg:w-px lg:h-12 bg-oro/40 w-full opacity-20" />
-                    <div className="flex flex-col items-center gap-2">
-                      {selectedCombat.data.ganador === 'Empate' ? (
-                        <span className="font-black text-oro text-2xl xl:text-4xl uppercase tracking-[0.2em]">RETIRADO</span>
-                      ) : (
-                        <span className="font-ninja text-3xl xl:text-5xl text-oro italic opacity-20">VS</span>
-                      )}
-                    </div>
-                    <div className="h-px lg:w-px lg:h-12 bg-oro/40 w-full opacity-20" />
-                  </div>
-
-                  {/* Bando B */}
-                  <div className="space-y-6 lg:text-right">
-                    <div className="flex items-center lg:flex-row-reverse gap-3 border-b border-oro/10 pb-4">
-                      <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Bando B</span>
-                      {selectedCombat.data.ganador === 'B' && (
-                        <span className="text-caption font-black text-oro bg-oro/10 px-2 py-0.5 ninja-clip-xs border border-oro/20">
-                          GANADOR
-                        </span>
-                      )}
-                    </div>
-                    <div className="space-y-4">
-                      {selectedCombat.data.equipo_b?.map((p: any) => (
-                        <div key={p.id} className="p-4 bg-neutral-600/70 border border-oro/15 hover:border-oro/30 hover:bg-neutral-600/95 transition-all ninja-clip-xs space-y-3 shadow-md shadow-black/10">
-                          <div className="flex justify-between items-center lg:flex-row-reverse">
-                            <div className="flex items-center gap-3 lg:flex-row-reverse">
-                              <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
-                              <span className="text-caption font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">
-                                +{calculateParticipantXP(selectedCombat, 'B', p.huye, p.huye_gana_exp)} EXP
-                              </span>
-                              <span className="text-caption font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-success-text/10">
-                                +{RewardLogic.calculateCombatPA(selectedCombat, p.id)} PA
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-3 lg:flex-row-reverse">
-                              {p.has_estado_alterado && (
-                                <span className="px-2 py-0.5 bg-oro/20 text-oro text-caption font-black uppercase ninja-clip-xs border border-oro/40">
-                                  ESTADO ALTERADO
-                                </span>
-                              )}
-                              {p.has_cds && (
-                                <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-caption font-black uppercase ninja-clip-xs border border-blue-400/40">
-                                  CDs
-                                </span>
-                              )}
-                              {p.huye && (
-                                <span className={`px-2 py-0.5 text-caption font-black uppercase ninja-clip-xs border ${
-                                  p.huye_gana_exp 
-                                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' 
-                                    : 'bg-orange-500/20 text-orange-400 border-orange-500/40'
-                                }`}>
-                                  {p.huye_gana_exp ? 'HUYE (GANA EXP)' : 'HUYE'}
-                                </span>
-                              )}
-                              <span className="text-caption font-black text-oro/70 uppercase">
-                                {p.estado_nombre || 'SIN ESTADO'}
-                              </span>
-                            </div>
-                          </div>
-                          {p.has_estado_alterado && p.descripcion_estado && (
-                            <div className="p-3 bg-oro/5 border-r-2 border-oro/20 italic text-[11px] text-oro/60 lg:text-right">
-                              "{p.descripcion_estado}"
-                            </div>
-                          )}
-                          {p.has_cds && p.descripcion_cds && (
-                            <div className="p-3 bg-blue-500/5 border-r-2 border-blue-400/30 italic text-[11px] text-blue-300/70 lg:text-right">
-                              "{p.descripcion_cds}"
-                            </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-10 lg:gap-16 items-start">
+                    {/* Bando A */}
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between border-b border-oro/10 pb-4">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Bando A</span>
+                          {(selectedCombat.subtipo === 'intervencion' || selectedCombat.data?.es_intervencion) && (
+                            <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-oro/10 border border-oro/20 text-oro ninja-clip-xs">
+                              {selectedCombat.data?.bando_mision === 'A' ? 'REALIZADOR' : 'INTERVENTOR'}
+                            </span>
                           )}
                         </div>
-                      ))}
+                        {selectedCombat.data.ganador === 'A' && (
+                          <span className="text-caption font-black text-oro bg-oro/10 px-2 py-0.5 ninja-clip-xs border border-oro/20">
+                            GANADOR
+                          </span>
+                        )}
+                      </div>
+                      <div className="space-y-4">
+                        {selectedCombat.data.equipo_a?.map((p: any) => {
+                          const pRewards = RewardLogic.calculateReward(selectedCombat, p.id);
+                          return (
+                            <div key={p.id} className="p-4 bg-neutral-600/70 border border-oro/15 hover:border-oro/30 hover:bg-neutral-600/95 transition-all ninja-clip-xs space-y-3 shadow-md shadow-black/10">
+                              <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-3">
+                                  <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
+                                  <span className="text-caption font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">
+                                    +{pRewards.xp} EXP
+                                  </span>
+                                  {pRewards.pa > 0 && (
+                                    <span className="text-caption font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-success-text/10">
+                                      +{pRewards.pa} PA
+                                    </span>
+                                  )}
+                                  {pRewards.ryous > 0 && (
+                                    <span className="text-caption font-black text-amber-300/90 bg-amber-500/10 px-2 py-0.5 border border-amber-500/20">
+                                      +{pRewards.ryous} R
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                  {p.has_estado_alterado && (
+                                    <span className="px-2 py-0.5 bg-oro/20 text-oro text-caption font-black uppercase ninja-clip-xs border border-oro/40">
+                                      ESTADO ALTERADO
+                                    </span>
+                                  )}
+                                  {p.has_cds && (
+                                    <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-caption font-black uppercase ninja-clip-xs border border-blue-400/40">
+                                      CDs
+                                    </span>
+                                  )}
+                                  {p.huye && (
+                                    <span className={`px-2 py-0.5 text-caption font-black uppercase ninja-clip-xs border ${
+                                      p.huye_gana_exp 
+                                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' 
+                                        : 'bg-orange-500/20 text-orange-400 border-orange-500/40'
+                                    }`}>
+                                      {p.huye_gana_exp ? 'HUYE (GANA EXP)' : 'HUYE'}
+                                    </span>
+                                  )}
+                                  <span className="text-caption font-black text-oro/70 uppercase">
+                                    {p.estado_nombre || 'SIN ESTADO'}
+                                  </span>
+                                </div>
+                              </div>
+                              {p.has_estado_alterado && p.descripcion_estado && (
+                                <div className="p-3 bg-oro/5 border-l-2 border-oro/20 italic text-[11px] text-oro/60">
+                                  "{p.descripcion_estado}"
+                                </div>
+                              )}
+                              {p.has_cds && p.descripcion_cds && (
+                                <div className="p-3 bg-blue-500/5 border-l-2 border-blue-400/30 italic text-[11px] text-blue-300/70">
+                                  "{p.descripcion_cds}"
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* VS Divider */}
+                    <div className="flex lg:flex-col items-center justify-center gap-6 lg:self-center">
+                      <div className="h-px lg:w-px lg:h-12 bg-oro/40 w-full opacity-20" />
+                      <div className="flex flex-col items-center gap-2">
+                        {selectedCombat.data.ganador === 'Empate' ? (
+                          <span className="font-black text-oro text-2xl xl:text-4xl uppercase tracking-[0.2em]">RETIRADO</span>
+                        ) : (
+                          <span className="font-ninja text-3xl xl:text-5xl text-oro italic opacity-20">VS</span>
+                        )}
+                      </div>
+                      <div className="h-px lg:w-px lg:h-12 bg-oro/40 w-full opacity-20" />
+                    </div>
+
+                    {/* Bando B */}
+                    <div className="space-y-6 lg:text-right">
+                      <div className="flex items-center justify-between lg:flex-row-reverse border-b border-oro/10 pb-4">
+                        <div className="flex items-center gap-3 lg:flex-row-reverse">
+                          <span className="text-xs font-black text-oro/40 uppercase tracking-[0.4em]">Bando B</span>
+                          {(selectedCombat.subtipo === 'intervencion' || selectedCombat.data?.es_intervencion) && (
+                            <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-oro/10 border border-oro/20 text-oro ninja-clip-xs">
+                              {selectedCombat.data?.bando_mision === 'B' ? 'REALIZADOR' : 'INTERVENTOR'}
+                            </span>
+                          )}
+                        </div>
+                        {selectedCombat.data.ganador === 'B' && (
+                          <span className="text-caption font-black text-oro bg-oro/10 px-2 py-0.5 ninja-clip-xs border border-oro/20">
+                            GANADOR
+                          </span>
+                        )}
+                      </div>
+                      <div className="space-y-4">
+                        {selectedCombat.data.equipo_b?.map((p: any) => {
+                          const pRewards = RewardLogic.calculateReward(selectedCombat, p.id);
+                          return (
+                            <div key={p.id} className="p-4 bg-neutral-600/70 border border-oro/15 hover:border-oro/30 hover:bg-neutral-600/95 transition-all ninja-clip-xs space-y-3 shadow-md shadow-black/10">
+                              <div className="flex justify-between items-center lg:flex-row-reverse">
+                                <div className="flex items-center gap-3 lg:flex-row-reverse">
+                                  <span className="text-sm font-black text-oro uppercase tracking-widest">{p.nombre_ninja}</span>
+                                  <span className="text-caption font-black text-oro/60 bg-oro/5 px-2 py-0.5 border border-oro/10">
+                                    +{pRewards.xp} EXP
+                                  </span>
+                                  {pRewards.pa > 0 && (
+                                    <span className="text-caption font-black text-emerald-400/90 bg-emerald-500/5 px-2 py-0.5 border border-success-text/10">
+                                      +{pRewards.pa} PA
+                                    </span>
+                                  )}
+                                  {pRewards.ryous > 0 && (
+                                    <span className="text-caption font-black text-amber-300/90 bg-amber-500/10 px-2 py-0.5 border border-amber-500/20">
+                                      +{pRewards.ryous} R
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center gap-3 lg:flex-row-reverse">
+                                  {p.has_estado_alterado && (
+                                    <span className="px-2 py-0.5 bg-oro/20 text-oro text-caption font-black uppercase ninja-clip-xs border border-oro/40">
+                                      ESTADO ALTERADO
+                                    </span>
+                                  )}
+                                  {p.has_cds && (
+                                    <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-caption font-black uppercase ninja-clip-xs border border-blue-400/40">
+                                      CDs
+                                    </span>
+                                  )}
+                                  {p.huye && (
+                                    <span className={`px-2 py-0.5 text-caption font-black uppercase ninja-clip-xs border ${
+                                      p.huye_gana_exp 
+                                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' 
+                                        : 'bg-orange-500/20 text-orange-400 border-orange-500/40'
+                                    }`}>
+                                      {p.huye_gana_exp ? 'HUYE (GANA EXP)' : 'HUYE'}
+                                    </span>
+                                  )}
+                                  <span className="text-caption font-black text-oro/70 uppercase">
+                                    {p.estado_nombre || 'SIN ESTADO'}
+                                  </span>
+                                </div>
+                              </div>
+                              {p.has_estado_alterado && p.descripcion_estado && (
+                                <div className="p-3 bg-oro/5 border-r-2 border-oro/20 italic text-[11px] text-oro/60 lg:text-right">
+                                  "{p.descripcion_estado}"
+                                </div>
+                              )}
+                              {p.has_cds && p.descripcion_cds && (
+                                <div className="p-3 bg-blue-500/5 border-r-2 border-blue-400/30 italic text-[11px] text-blue-300/70 lg:text-right">
+                                  "{p.descripcion_cds}"
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 </div>
