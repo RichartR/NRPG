@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { Registro } from '@/domain/types';
-import { Link as LinkIcon, Edit3, Trash2, Loader2 } from 'lucide-react';
+import { Link as LinkIcon, Edit3, Trash2, Loader2, Check } from 'lucide-react';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { RegistrosService } from '@/services/supabase/registros.service';
+import { CharacterService } from '@/services/supabase/character.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 
@@ -16,11 +17,27 @@ interface MissionTableProps {
   subjectId?: number;
 }
 
-export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: MissionTableProps) {
+export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin, subjectId }: MissionTableProps) {
   const { activeCharacter } = useCharacterStore();
   const addToast = useToastStore(state => state.addToast);
   const { confirm: confirmAction } = useConfirmStore();
   const [loadingId, setLoadingId] = useState<number | null>(null);
+  const [acceptingId, setAcceptingId] = useState<number | null>(null);
+
+  const handleAccept = async (registroId: number) => {
+    if (!activeCharacter?.id) return;
+    setAcceptingId(registroId);
+    try {
+      await CharacterService.respondToRecord(activeCharacter.id, registroId, 'aceptar');
+      addToast('Misión aceptada y recompensas sumadas a tu ficha', 'success');
+      onRefresh?.();
+      useCharacterStore.getState().fetchActiveCharacter().catch(console.error);
+    } catch (err: any) {
+      addToast(err.message || 'Error al aceptar la misión', 'error');
+    } finally {
+      setAcceptingId(null);
+    }
+  };
 
   const getParticipants = (m: Registro) => {
     if (m.data.participantes_historicos && Array.isArray(m.data.participantes_historicos)) {
@@ -63,12 +80,12 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
           <thead>
             <tr className="border-b border-oro/10 text-oro/70 text-caption xl:text-xs font-black uppercase tracking-[0.3em]">
               <th className="py-3 px-5 w-[16%]">Fecha</th>
-              <th className="py-3 px-5 w-[12%]">Código</th>
-              <th className="py-3 px-5 w-[14%]">Rango</th>
+              <th className="py-3 px-5 w-[14%]">Código</th>
+              <th className="py-3 px-5 w-[12%]">Rango</th>
               <th className="py-3 px-5 w-[20%]">Participantes</th>
               <th className="py-3 px-5 w-[18%]">Recompensa</th>
               <th className="py-3 px-5 w-[20%]">Pruebas</th>
-              <th className="py-3 px-5 text-right w-36 w-[10%]">Acciones</th>
+              <th className="py-3 px-5 text-right w-44">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-oro/5 bg-black/40">
@@ -77,6 +94,11 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
                const isOwner = activeCharacter?.id === m.autor_id;
                const canManage = isOwner || isAdmin;
                const rankVal = m.subtipo || 'D';
+               const sid = subjectId || activeCharacter?.id;
+               const myPart = m.participantes?.find((p: any) => Number(p.personaje_id) === Number(sid));
+               const isPending = myPart?.estado === 'pendiente';
+               const isDispute = myPart?.estado === 'disputa_admin';
+               const canAcceptDirectly = isPending && Number(activeCharacter?.id) === Number(sid);
 
                return (
                 <tr key={m.id} className="hover:bg-oro/5 transition-colors group">
@@ -111,8 +133,22 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
                   </td>
 
                   {/* Código */}
-                  <td className="py-3 px-5 font-black text-oro tracking-widest text-sm xl:text-base">
-                    {m.data.codigo_mision || 'M-???'}
+                  <td className="py-3 px-5">
+                    <div className="flex flex-col gap-1.5 justify-center">
+                      <span className="font-black text-oro tracking-widest text-sm xl:text-base">
+                        {m.data.codigo_mision || 'M-???'}
+                      </span>
+                      {isPending && (
+                        <span className="inline-flex items-center gap-1 w-fit px-2 py-0.5 text-[9px] font-black uppercase tracking-wider bg-naranja-naruto text-black ninja-clip-xs">
+                          PENDIENTE DE APROBACIÓN
+                        </span>
+                      )}
+                      {isDispute && (
+                        <span className="inline-flex items-center gap-1 w-fit px-2 py-0.5 text-[9px] font-black uppercase tracking-wider bg-red-600/20 border border-red-500/40 text-red-400 ninja-clip-xs">
+                          EN DISPUTA
+                        </span>
+                      )}
+                    </div>
                   </td>
 
                   {/* Rango */}
@@ -138,12 +174,29 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
 
                   {/* Recompensa */}
                   <td className="py-3 px-5">
-                    <div className="flex flex-col gap-1 justify-center text-emerald-400 font-bold text-[11px] tracking-wide">
-                      {(m.data.recompensa_xp || 0) > 0 && <div>+{m.data.recompensa_xp} EXP</div>}
-                      {(m.data.recompensa_ryous || 0) > 0 && <div>+{m.data.recompensa_ryous} Ryos</div>}
-                      {(m.data.recompensa_pa || 0) > 0 && <div>+{m.data.recompensa_pa} PA</div>}
+                    <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
+                      {(m.data.recompensa_xp || 0) > 0 && (
+                        <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>
+                          +{m.data.recompensa_xp} EXP
+                        </div>
+                      )}
+                      {(m.data.recompensa_ryous || 0) > 0 && (
+                        <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>
+                          +{m.data.recompensa_ryous} Ryos
+                        </div>
+                      )}
+                      {(m.data.recompensa_pa || 0) > 0 && (
+                        <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>
+                          +{m.data.recompensa_pa} PA
+                        </div>
+                      )}
                       {(m.data.recompensa_xp || 0) === 0 && (m.data.recompensa_ryous || 0) === 0 && (m.data.recompensa_pa || 0) === 0 && (
                         <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
+                      )}
+                      {(isPending || isDispute) && (
+                        <span className="text-[9px] text-amber-500/70 font-semibold tracking-wider uppercase">
+                          (No sumado)
+                        </span>
                       )}
                     </div>
                   </td>
@@ -173,31 +226,49 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin }: M
 
                   {/* Acciones */}
                   <td className="py-3 px-5 text-right">
-                    {canManage ? (
-                      <div className="flex items-center justify-end gap-2.5">
+                    <div className="flex items-center justify-end gap-2.5">
+                      {canAcceptDirectly && (
                         <button
-                          onClick={() => onEdit?.(m)}
-                          className="p-2 bg-oro/10 border border-oro/30 hover:border-oro hover:bg-oro/20 text-oro/80 hover:text-oro transition-all ninja-clip-xs"
-                          title="Editar Registro"
+                          onClick={() => handleAccept(m.id)}
+                          disabled={acceptingId === m.id}
+                          className="px-2.5 py-1.5 bg-naranja-naruto hover:brightness-110 text-black font-black text-caption uppercase tracking-wider transition-all ninja-clip-xs flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 disabled:opacity-50"
+                          title="Aceptar misión y sumar EXP / recursos a tu ficha"
                         >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(m.id)}
-                          disabled={loadingId === m.id}
-                          className="p-2 bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
-                          title="Eliminar Registro"
-                        >
-                          {loadingId === m.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin text-oro" />
+                          {acceptingId === m.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-black" />
                           ) : (
-                            <Trash2 className="w-4 h-4" />
+                            <Check className="w-3.5 h-3.5 text-black stroke-[3]" />
                           )}
+                          <span>Aceptar</span>
                         </button>
-                      </div>
-                    ) : (
-                      <span className="text-caption text-oro/20 uppercase tracking-widest italic"></span>
-                    )}
+                      )}
+                      {canManage && (
+                        <>
+                          <button
+                            onClick={() => onEdit?.(m)}
+                            className="p-2 bg-oro/10 border border-oro/30 hover:border-oro hover:bg-oro/20 text-oro/80 hover:text-oro transition-all ninja-clip-xs"
+                            title="Editar Registro"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(m.id)}
+                            disabled={loadingId === m.id}
+                            className="p-2 bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
+                            title="Eliminar Registro"
+                          >
+                            {loadingId === m.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin text-oro" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </button>
+                        </>
+                      )}
+                      {!canAcceptDirectly && !canManage && (
+                        <span className="text-caption text-oro/20 uppercase tracking-widest italic"></span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               );

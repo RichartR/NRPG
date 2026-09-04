@@ -312,7 +312,7 @@ export const CharacterService = {
       await supabase
         .from('reg_registros_participantes')
         .update({ 
-          estado: 'rechazado',
+          estado: 'disputa_admin',
           comentario_rechazo: comentario 
         })
         .match({ registro_id: registroId, personaje_id: personajeId });

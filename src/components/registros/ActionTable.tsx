@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { Registro } from '@/domain/types';
-import { Edit3, Trash2, Loader2 } from 'lucide-react';
+import { Edit3, Trash2, Loader2, Check } from 'lucide-react';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { RegistrosService } from '@/services/supabase/registros.service';
+import { CharacterService } from '@/services/supabase/character.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 
@@ -21,6 +22,22 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
   const addToast = useToastStore(state => state.addToast);
   const { confirm: confirmAction } = useConfirmStore();
   const [loadingId, setLoadingId] = useState<number | null>(null);
+  const [acceptingId, setAcceptingId] = useState<number | null>(null);
+
+  const handleAccept = async (registroId: number) => {
+    if (!activeCharacter?.id) return;
+    setAcceptingId(registroId);
+    try {
+      await CharacterService.respondToRecord(activeCharacter.id, registroId, 'aceptar');
+      addToast('Registro aceptado y recompensas sumadas a tu ficha', 'success');
+      onRefresh?.();
+      useCharacterStore.getState().fetchActiveCharacter().catch(console.error);
+    } catch (err: any) {
+      addToast(err.message || 'Error al aceptar el registro', 'error');
+    } finally {
+      setAcceptingId(null);
+    }
+  };
 
   const renderActionTitle = (title: string, charName: string) => {
     if (!title) return 'Acción General.';
@@ -148,6 +165,11 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
 
               // Obtener premios del shinobi si es reparto de evento
               const targetCharId = subjectId || activeCharacter?.id;
+              const myPart = m.participantes?.find((p: any) => Number(p.personaje_id) === Number(targetCharId));
+              const isPending = myPart?.estado === 'pendiente';
+              const isDispute = myPart?.estado === 'disputa_admin';
+              const canAcceptDirectly = isPending && Number(activeCharacter?.id) === Number(targetCharId);
+
               const partPremio = (m.subtipo === 'evento_premios' || m.subtipo === 'narracion')
                 ? m.data.participantes_premios?.find((p: any) => Number(p.personaje_id) === Number(targetCharId))
                 : null;
@@ -203,17 +225,31 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
                         {m.data.subtitulo}
                       </div>
                     )}
+                    {isPending && (
+                      <div className="mt-1.5">
+                        <span className="inline-flex items-center gap-1 w-fit px-2 py-0.5 text-[9px] font-black uppercase tracking-wider bg-naranja-naruto text-black ninja-clip-xs">
+                          PENDIENTE DE APROBACIÓN
+                        </span>
+                      </div>
+                    )}
+                    {isDispute && (
+                      <div className="mt-1.5">
+                        <span className="inline-flex items-center gap-1 w-fit px-2 py-0.5 text-[9px] font-black uppercase tracking-wider bg-red-600/20 border border-red-500/40 text-red-400 ninja-clip-xs">
+                          EN DISPUTA
+                        </span>
+                      </div>
+                    )}
                   </td>
 
                   {/* Coste */}
                   <td className="py-3 px-5">
                     <div className="flex flex-col gap-1.5 justify-center">
                       {(m.subtipo === 'evento_premios' || m.subtipo === 'narracion' || m.subtipo === 'recuperacion_evento') ? (
-                        <div className="flex flex-col gap-1 justify-center text-emerald-400 font-bold text-[11px] tracking-wide">
-                          {xpObtained > 0 && <div className="text-emerald-400">+{xpObtained} EXP</div>}
-                          {ryousObtained > 0 && <div className="text-emerald-400">+{ryousObtained} Ryos</div>}
-                          {paObtained > 0 && <div className="text-emerald-400">+{paObtained} PA</div>}
-                          {monedasObtained > 0 && <div className="text-emerald-400">+{monedasObtained} M. Evento</div>}
+                        <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
+                          {xpObtained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>+{xpObtained} EXP</div>}
+                          {ryousObtained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>+{ryousObtained} Ryos</div>}
+                          {paObtained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>+{paObtained} PA</div>}
+                          {monedasObtained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>+{monedasObtained} M. Evento</div>}
                           {glosarioObtained.length > 0 && (
                             <div className="text-caption text-oro/50 mt-0.5 font-bold uppercase tracking-wide">
                               + {glosarioObtained.map((g: any) => g.nombre_es).join(', ')}
@@ -221,6 +257,11 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
                           )}
                           {xpObtained === 0 && ryousObtained === 0 && monedasObtained === 0 && glosarioObtained.length === 0 && (
                             <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
+                          )}
+                          {(isPending || isDispute) && (
+                            <span className="text-[9px] text-amber-500/70 font-semibold tracking-wider uppercase">
+                              (No sumado)
+                            </span>
                           )}
                         </div>
                       ) : (
@@ -250,31 +291,49 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
 
                   {/* Acciones */}
                   <td className="py-3 px-5 text-right">
-                    {canManage ? (
-                      <div className="flex items-center justify-end gap-2.5">
+                    <div className="flex items-center justify-end gap-2.5">
+                      {canAcceptDirectly && (
                         <button
-                          onClick={() => onEdit?.(m)}
-                          className="p-2 bg-oro/10 border border-oro/30 hover:border-oro hover:bg-oro/20 text-oro/80 hover:text-oro transition-all ninja-clip-xs"
-                          title="Editar Registro"
+                          onClick={() => handleAccept(m.id)}
+                          disabled={acceptingId === m.id}
+                          className="px-2.5 py-1.5 bg-naranja-naruto hover:brightness-110 text-black font-black text-caption uppercase tracking-wider transition-all ninja-clip-xs flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 disabled:opacity-50"
+                          title="Aceptar registro y sumar recompensas a tu ficha"
                         >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(m.id)}
-                          disabled={loadingId === m.id}
-                          className="p-2 bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
-                          title="Eliminar Registro"
-                        >
-                          {loadingId === m.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin text-oro" />
+                          {acceptingId === m.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-black" />
                           ) : (
-                            <Trash2 className="w-4 h-4" />
+                            <Check className="w-3.5 h-3.5 text-black stroke-[3]" />
                           )}
+                          <span>Aceptar</span>
                         </button>
-                      </div>
-                    ) : (
-                      <span className="text-caption text-oro/20 uppercase tracking-widest italic"></span>
-                    )}
+                      )}
+                      {canManage && (
+                        <>
+                          <button
+                            onClick={() => onEdit?.(m)}
+                            className="p-2 bg-oro/10 border border-oro/30 hover:border-oro hover:bg-oro/20 text-oro/80 hover:text-oro transition-all ninja-clip-xs"
+                            title="Editar Registro"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(m.id)}
+                            disabled={loadingId === m.id}
+                            className="p-2 bg-red-600/10 border border-red-600/40 hover:border-error-text hover:bg-red-600/20 text-red-500 hover:text-red-400 transition-all ninja-clip-xs"
+                            title="Eliminar Registro"
+                          >
+                            {loadingId === m.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin text-oro" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </button>
+                        </>
+                      )}
+                      {!canAcceptDirectly && !canManage && (
+                        <span className="text-caption text-oro/20 uppercase tracking-widest italic"></span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               );

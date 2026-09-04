@@ -232,7 +232,7 @@ export async function POST(request: Request) {
 
       const estadoAnterior = part.estado;
 
-      if (estadoAnterior !== 'pendiente') {
+      if (estadoAnterior !== 'pendiente' && estadoAnterior !== 'disputa_admin') {
         return NextResponse.json({ error: 'Este participante ya ha sido evaluado previamente' }, { status: 400 });
       }
       if (nuevoEstado === 'aceptado' && estadoAnterior !== 'aceptado') {
@@ -321,7 +321,7 @@ export async function POST(request: Request) {
         .select('estado')
         .eq('registro_id', registroId);
 
-      const hasPendings = remainingParts?.some(p => p.estado === 'pendiente');
+      const hasPendings = remainingParts?.some(p => p.estado === 'pendiente' || p.estado === 'disputa_admin');
       if (!hasPendings) {
         // Marcar la notificación de admin como resuelta
         await adminClient.from('sys_notificaciones_admin')
