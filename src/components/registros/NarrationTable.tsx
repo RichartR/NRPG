@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Registro } from '@/domain/types';
-import { Link as LinkIcon, Edit3, Trash2, Loader2, Sparkles, Coins, Eye, X, User } from 'lucide-react';
+import { Link as LinkIcon, Edit3, Trash2, Loader2, Eye, X, User } from 'lucide-react';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { RegistrosService } from '@/services/supabase/registros.service';
 import { useToastStore } from '@/components/ui/Toast';
@@ -155,7 +155,7 @@ export default function NarrationTable({ narraciones, onRefresh, onEdit, isAdmin
                         <div className="mt-1 flex items-center">
                           {isWithin5Days(n) ? (
                             <span className="inline-flex items-center gap-1 text-[8px] font-black text-emerald-400 uppercase tracking-widest px-1.5 py-0.5 bg-emerald-950/60 border border-emerald-500/30 rounded">
-                              <Sparkles className="w-2.5 h-2.5" /> RECUPERABLE
+                              RECUPERABLE
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 text-[8px] font-bold text-oro/30 uppercase tracking-widest px-1.5 py-0.5 bg-black/40 border border-oro/10 rounded">
@@ -204,7 +204,6 @@ export default function NarrationTable({ narraciones, onRefresh, onEdit, isAdmin
                           className="flex items-center gap-1.5 px-3.5 py-2 bg-white text-naranja-naruto hover:bg-white/90 font-black text-caption uppercase tracking-wider transition-all ninja-clip-xs cursor-pointer shadow-[0_0_10px_rgba(255,255,255,0.2)] active:scale-95"
                           title="Recuperar recompensas base de esta narración mediante roleplay"
                         >
-                          <Sparkles className="w-3.5 h-3.5 text-naranja-naruto" />
                           <span>Recuperar</span>
                         </button>
                       )}
@@ -290,8 +289,7 @@ export default function NarrationTable({ narraciones, onRefresh, onEdit, isAdmin
                     </span>
                     {viewingRegistro.data?.recuperable === true && (
                       isWithin5Days(viewingRegistro) ? (
-                        <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest px-2 py-0.5 bg-emerald-950/80 border border-emerald-500/40 rounded flex items-center gap-1">
-                          <Sparkles className="w-2.5 h-2.5" /> RECUPERABLE
+                        <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest px-2 py-0.5 bg-emerald-950/80 border border-emerald-500/40 rounded flex items-center gap-1">RECUPERABLE
                         </span>
                       ) : (
                         <span className="text-[8px] font-bold text-oro/40 uppercase tracking-widest px-2 py-0.5 bg-black/60 border border-oro/15 rounded">
@@ -384,7 +382,6 @@ export default function NarrationTable({ narraciones, onRefresh, onEdit, isAdmin
                         onClick={() => setRecoveryNarration(viewingRegistro)}
                         className="px-4 py-2 bg-white text-naranja-naruto hover:bg-white/90 font-black text-caption uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,255,255,0.3)] flex items-center gap-2 cursor-pointer ninja-clip-xs active:scale-95 self-start sm:self-auto"
                       >
-                        <Sparkles className="w-3.5 h-3.5 text-naranja-naruto" />
                         <span>Recuperar Narración</span>
                       </button>
                     )}
