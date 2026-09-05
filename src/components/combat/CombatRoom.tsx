@@ -124,6 +124,8 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   // Logs
   const [logs, setLogs] = useState<string[]>([]);
   const [showRegisterForm, setShowRegisterForm] = useState(false);
+  const [prefilledCombatData, setPrefilledCombatData] = useState<any>(null);
+  const [registrationSubtype, setRegistrationSubtype] = useState<'combate' | 'intervencion'>('combate');
   const [isSubscribed, setIsSubscribed] = useState(false);
 
   // Console Inputs
@@ -1960,8 +1962,14 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   const bandoBParticipants = Object.values(allParticipantsMap).filter(p => p.bando === 'B');
   const spectatorParticipants = Object.values(allParticipantsMap).filter(p => p.bando === null);
 
-  if (showRegisterForm) {
-    // Only real human characters assigned to Bando A or B (excluding Spectators & NPCs)
+  const handleOpenRegister = (subtype: 'combate' | 'intervencion' = 'combate') => {
+    if (isEventMode) {
+      setShowRegisterForm(true);
+      return;
+    }
+
+    setRegistrationSubtype(subtype);
+
     const realBandoA = Object.values(realParticipantsMap).filter(
       p => p.bando === 'A' && !tempCharacters[p.user_id] && !String(p.user_id).startsWith('temp-')
     );
@@ -1969,7 +1977,50 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
       p => p.bando === 'B' && !tempCharacters[p.user_id] && !String(p.user_id).startsWith('temp-')
     );
 
+    const cleanData = {
+      data: {
+        equipo_a: realBandoA.map(p => {
+          let charId = Number(p.user_id);
+          if (isNaN(charId) || charId <= 0) {
+            if (activeCharacter && p.nombre === activeCharacter.nombre_ninja) {
+              charId = Number(activeCharacter.id);
+            }
+          }
+          return {
+            id: isNaN(charId) ? 0 : charId,
+            nombre_ninja: p.nombre,
+            rango: (activeCharacter && p.nombre === activeCharacter.nombre_ninja ? activeCharacter.rango : 'D') || 'D'
+          };
+        }).filter(p => p.id > 0),
+        equipo_b: realBandoB.map(p => {
+          let charId = Number(p.user_id);
+          if (isNaN(charId) || charId <= 0) {
+            if (activeCharacter && p.nombre === activeCharacter.nombre_ninja) {
+              charId = Number(activeCharacter.id);
+            }
+          }
+          return {
+            id: isNaN(charId) ? 0 : charId,
+            nombre_ninja: p.nombre,
+            rango: (activeCharacter && p.nombre === activeCharacter.nombre_ninja ? activeCharacter.rango : 'D') || 'D'
+          };
+        }).filter(p => p.id > 0),
+        ganador: 'Empate'
+      }
+    };
+
+    setPrefilledCombatData(cleanData);
+    setShowRegisterForm(true);
+  };
+
+  if (showRegisterForm) {
     if (isEventMode) {
+      const realBandoA = Object.values(realParticipantsMap).filter(
+        p => p.bando === 'A' && !tempCharacters[p.user_id] && !String(p.user_id).startsWith('temp-')
+      );
+      const realBandoB = Object.values(realParticipantsMap).filter(
+        p => p.bando === 'B' && !tempCharacters[p.user_id] && !String(p.user_id).startsWith('temp-')
+      );
       const activeParticipantsList = [...realBandoA, ...realBandoB].map(p => ({
         id: Number(p.user_id),
         nombre_ninja: p.nombre
@@ -1987,6 +2038,14 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
           />
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-none z-10" />
           <div className="w-full max-w-[1400px] mx-auto relative z-20 py-6">
+            <div className="mb-4 flex justify-end">
+              <button
+                onClick={() => setShowRegisterForm(false)}
+                className="ninja-btn-rojo px-5 py-2 text-xs uppercase tracking-widest font-black flex items-center gap-2"
+              >
+                Volver a la Sala de Combate
+              </button>
+            </div>
             <NarrationForm
               onCreated={() => setShowRegisterForm(false)}
               initialParticipants={activeParticipantsList}
@@ -1995,22 +2054,6 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         </div>
       );
     }
-
-    const prefilledData = {
-      data: {
-        equipo_a: realBandoA.map(p => ({
-          id: Number(p.user_id),
-          nombre_ninja: p.nombre,
-          rango: 'D'
-        })),
-        equipo_b: realBandoB.map(p => ({
-          id: Number(p.user_id),
-          nombre_ninja: p.nombre,
-          rango: 'D'
-        })),
-        ganador: 'Empate'
-      }
-    };
 
     return (
       <div className="min-h-screen flex flex-col relative text-oro p-4 lg:p-8 overflow-hidden">
@@ -2025,9 +2068,19 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         />
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-none z-10" />
         <div className="w-full max-w-[1400px] mx-auto relative z-20 py-6">
+          <div className="mb-4 flex justify-end">
+            <button
+              onClick={() => { setShowRegisterForm(false); setPrefilledCombatData(null); }}
+              className="ninja-btn-rojo px-5 py-2 text-xs uppercase tracking-widest font-black flex items-center gap-2"
+            >
+              Volver a la Sala de Combate
+            </button>
+          </div>
           <CombatForm
-            onCreated={() => setShowRegisterForm(false)}
-            initialData={prefilledData as any}
+            onCreated={() => { setShowRegisterForm(false); setPrefilledCombatData(null); }}
+            initialData={prefilledCombatData}
+            initialSubtype={registrationSubtype}
+            availableSubtypes={['combate', 'intervencion']}
           />
         </div>
       </div>
@@ -2101,11 +2154,11 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
               </button>
             )}
             <button
-              onClick={() => setShowRegisterForm(true)}
+              onClick={() => handleOpenRegister('combate')}
               className="ninja-btn-oro px-6 py-2.5 text-xs text-center"
               style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
             >
-              {isEventMode ? 'Registrar Narración' : 'Registrar Combate'}
+              {isEventMode ? 'Registrar Narración' : 'Registrar Combate / Intervención'}
             </button>
             <Link
               href="/combate"

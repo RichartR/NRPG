@@ -154,12 +154,14 @@ interface CombatFormProps {
   onCreated: () => void;
   initialData?: Registro | null;
   initialSubtype?: 'combate' | 'intervencion' | 'sanacion';
+  availableSubtypes?: ('combate' | 'intervencion' | 'sanacion')[];
 }
 
 export default function CombatForm({
   onCreated,
   initialData = null,
-  initialSubtype
+  initialSubtype,
+  availableSubtypes = ['combate', 'intervencion', 'sanacion']
 }: CombatFormProps) {
   const { activeCharacter, fetchActiveCharacter } = useCharacterStore();
   const addToast = useToastStore(state => state.addToast);
@@ -209,7 +211,11 @@ export default function CombatForm({
     initialData?.data?.medicos || []
   );
 
+  const initializedRef = useRef(false);
+
   useEffect(() => {
+    if (initializedRef.current) return;
+
     if (initialData) {
       const bA = initialData.data?.equipo_a || [];
       const bB = initialData.data?.equipo_b || [];
@@ -224,9 +230,11 @@ export default function CombatForm({
         if (initialData.data?.mision_rango) setMisionRango(initialData.data.mision_rango);
         if (initialData.data?.bando_mision) setBandoMision(initialData.data.bando_mision);
       }
+      initializedRef.current = true;
     } else if (activeCharacter) {
       setTeamA([{ id: Number(activeCharacter.id), nombre_ninja: activeCharacter.nombre_ninja, rango: activeCharacter.rango || 'D' }]);
       setMedicos([]);
+      initializedRef.current = true;
     }
   }, [activeCharacter, initialData]);
 
@@ -280,15 +288,15 @@ export default function CombatForm({
 
   const updateParticipantState = (id: number, team: 'A' | 'B', updates: Partial<{ estado_nombre: string, has_estado_alterado: boolean, descripcion_estado: string, has_cds: boolean, descripcion_cds: string, huye: boolean, huye_gana_exp: boolean }>) => {
     if (team === 'A') {
-      setTeamA(teamA.map(p => p.id === id ? { ...p, ...updates } : p));
+      setTeamA(teamA.map(p => String(p.id) === String(id) ? { ...p, ...updates } : p));
     } else {
-      setTeamB(teamB.map(p => p.id === id ? { ...p, ...updates } : p));
+      setTeamB(teamB.map(p => String(p.id) === String(id) ? { ...p, ...updates } : p));
     }
   };
 
   const removeParticipant = (id: number, team: 'A' | 'B') => {
-    if (team === 'A') setTeamA(teamA.filter(p => p.id !== id));
-    else setTeamB(teamB.filter(p => p.id !== id));
+    if (team === 'A') setTeamA(teamA.filter(p => String(p.id) !== String(id)));
+    else setTeamB(teamB.filter(p => String(p.id) !== String(id)));
   };
 
   const calculateXP = (team: 'A' | 'B', huye?: boolean, huyeGanaExp?: boolean) => {
@@ -569,7 +577,7 @@ export default function CombatForm({
           <div className="flex flex-col sm:flex-row justify-between items-start border-b border-oro/10 pb-10 gap-6">
             <div className="space-y-2">
               <h3 className="ninja-title text-2xl sm:text-4xl md:text-5xl xl:text-6xl text-oro">
-                {initialData ? 'EDITAR REGISTRO' : (recordSubtype === 'sanacion' ? 'REGISTRAR SANACIÓN' : recordSubtype === 'intervencion' ? 'REGISTRO DE INTERVENCIÓN' : 'REGISTRO DE COMBATE')}
+                {initialData?.id ? 'EDITAR REGISTRO' : (recordSubtype === 'sanacion' ? 'REGISTRAR SANACIÓN' : recordSubtype === 'intervencion' ? 'REGISTRO DE INTERVENCIÓN' : 'REGISTRO DE COMBATE')}
               </h3>
               <p className="text-xs sm:text-sm font-black text-oro/40 uppercase tracking-[0.4em]">
                 {recordSubtype === 'intervencion' ? 'Se añadirá también la misión para ambos bandos' : recordSubtype === 'sanacion' ? 'Tratamiento médico y reducción de horas de herido grave' : 'Sincronizando con el archivo histórico de combate'}
@@ -577,29 +585,35 @@ export default function CombatForm({
             </div>
             <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
               {/* Type Switcher */}
-              {!initialData && (
+              {!initialData?.id && availableSubtypes.length > 1 && (
                 <div className="flex items-center gap-2 p-1.5 bg-black/60 border border-oro/20 ninja-clip-xs">
-                  <button
-                    type="button"
-                    onClick={() => setRecordSubtype('combate')}
-                    className={`flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${recordSubtype === 'combate' ? 'bg-oro text-naranja-naruto' : 'text-oro/40 hover:text-oro'}`}
-                  >
-                    COMBATE
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRecordSubtype('intervencion')}
-                    className={`flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${recordSubtype === 'intervencion' ? 'bg-red-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.5)]' : 'text-oro/40 hover:text-red-400'}`}
-                  >
-                    INTERVENCIÓN
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRecordSubtype('sanacion')}
-                    className={`flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${recordSubtype === 'sanacion' ? 'bg-emerald-500 text-black' : 'text-oro/40 hover:text-oro'}`}
-                  >
-                    SANACIÓN
-                  </button>
+                  {availableSubtypes.includes('combate') && (
+                    <button
+                      type="button"
+                      onClick={() => setRecordSubtype('combate')}
+                      className={`flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${recordSubtype === 'combate' ? 'bg-oro text-naranja-naruto' : 'text-oro/40 hover:text-oro'}`}
+                    >
+                      COMBATE
+                    </button>
+                  )}
+                  {availableSubtypes.includes('intervencion') && (
+                    <button
+                      type="button"
+                      onClick={() => setRecordSubtype('intervencion')}
+                      className={`flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${recordSubtype === 'intervencion' ? 'bg-red-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.5)]' : 'text-oro/40 hover:text-red-400'}`}
+                    >
+                      INTERVENCIÓN
+                    </button>
+                  )}
+                  {availableSubtypes.includes('sanacion') && (
+                    <button
+                      type="button"
+                      onClick={() => setRecordSubtype('sanacion')}
+                      className={`flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${recordSubtype === 'sanacion' ? 'bg-emerald-500 text-black' : 'text-oro/40 hover:text-oro'}`}
+                    >
+                      SANACIÓN
+                    </button>
+                  )}
                 </div>
               )}
               <button
@@ -1346,7 +1360,7 @@ export default function CombatForm({
                 >
                   {loading
                     ? (recordSubtype === 'intervencion' ? 'SELLANDO INTERVENCIÓN...' : 'SELLANDO ARCHIVO DE GUERRA...')
-                    : initialData
+                    : initialData?.id
                       ? (recordSubtype === 'intervencion' ? 'ACTUALIZAR INTERVENCIÓN' : 'ACTUALIZAR CRÓNICA')
                       : (recordSubtype === 'intervencion' ? 'PUBLICAR INTERVENCIÓN' : 'PUBLICAR CRÓNICA')}
                 </button>
