@@ -169,7 +169,7 @@ export default function NarrationTable({ narraciones, onRefresh, onEdit, isAdmin
                         </span>
                       </div>
 
-                      {n.data.fecha_modificacion && (
+                      {n.data.fecha_modificacion && (new Date(n.data.fecha_modificacion).getTime() - new Date(n.fecha).getTime() > 5000) && (
                         <div className="flex flex-col border-t border-error-text/30 pt-1.5">
                           <span className="text-[7px] font-black text-red-500/60 uppercase tracking-widest">
                             MODIFICADO

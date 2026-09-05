@@ -139,13 +139,17 @@ async function syncNarrationDiscordMessage(
       newMessageId = created?.id;
     }
 
-    const updatedPayloadData = {
+    const updatedPayloadData: Record<string, any> = {
       ...oldData,
       ...data,
-      fecha_modificacion: data.fecha_modificacion || oldData?.fecha_modificacion || new Date().toISOString(),
       discord_message_id: newMessageId || null,
       discord_channel_id: finalChannelId || null
     };
+
+    if (data.fecha_modificacion || oldData?.fecha_modificacion) {
+      updatedPayloadData.fecha_modificacion = data.fecha_modificacion || oldData.fecha_modificacion;
+    }
+
     await adminClient
       .from('reg_registros')
       .update({ data: updatedPayloadData })
