@@ -22,7 +22,7 @@ async function getNarrationChannelId(adminClient: any, destinatarioTipo?: string
 
   // Fallback al canal global de narración
   if (!channelId) {
-    channelId = await MasterServerService.getConfiguracion(adminClient, 'discord_global_narration_channel_id');
+    channelId = await MasterServerService.getCachedConfiguracion('discord_global_narration_channel_id');
   }
 
   return channelId || null;
@@ -33,7 +33,7 @@ async function buildMentionText(adminClient: any, pingRoles: unknown): Promise<s
   if (rolesArray.length === 0 || rolesArray.includes('none')) return '';
 
   const jugadorRoleId = rolesArray.includes('default')
-    ? await MasterServerService.getConfiguracion(adminClient, 'discord_jugador_role_id')
+    ? await MasterServerService.getCachedConfiguracion('discord_jugador_role_id')
     : null;
 
   const mentions = rolesArray
@@ -71,7 +71,7 @@ async function syncNarrationDiscordMessage(
     const rawText = data.discord_message_text || '';
     const formattedText = rawText.length > 4000 ? rawText.substring(0, 3997) + '...' : rawText;
 
-    const customEmojiId = await MasterServerService.getConfiguracion(adminClient, 'discord_scroll_emoji_id');
+    const customEmojiId = await MasterServerService.getCachedConfiguracion('discord_scroll_emoji_id');
     const scrollIcon = customEmojiId && String(customEmojiId).trim() ? `<:naruto_scroll:${String(customEmojiId).trim()}>` : '📜';
 
     const embed: any = {
@@ -97,7 +97,7 @@ async function syncNarrationDiscordMessage(
     // Resolver la mención de rol de Discord según el tipo de destinatario
     let mentionContent: string | undefined = undefined;
     if (data.destinatario_tipo === 'global') {
-      const jugadorRoleId = await MasterServerService.getConfiguracion(adminClient, 'discord_jugador_role_id');
+      const jugadorRoleId = await MasterServerService.getCachedConfiguracion('discord_jugador_role_id');
       if (jugadorRoleId && String(jugadorRoleId).trim()) {
         mentionContent = `<@&${String(jugadorRoleId).trim()}>`;
       }
@@ -427,8 +427,8 @@ export async function POST(request: Request) {
       // 4. Notificar por Discord si es un reparto de premios de evento (como Embed)
       if (payload.subtipo === 'evento_premios') {
         try {
-          const announcementChannelId = (await MasterServerService.getConfiguracion(adminClient, 'discord_event_announcement_channel_id'))
-            || (await MasterServerService.getConfiguracion(adminClient, 'discord_event_channel_id'));
+          const announcementChannelId = (await MasterServerService.getCachedConfiguracion('discord_event_announcement_channel_id'))
+            || (await MasterServerService.getCachedConfiguracion('discord_event_channel_id'));
 
           if (announcementChannelId) {
             const origin = new URL(request.url).origin;
@@ -501,8 +501,8 @@ export async function POST(request: Request) {
       if (payload.subtipo === 'evento_premios') {
         try {
           const announcementChannelId = oldRegistro.data?.discord_channel_id
-            || (await MasterServerService.getConfiguracion(adminClient, 'discord_event_announcement_channel_id'))
-            || (await MasterServerService.getConfiguracion(adminClient, 'discord_event_channel_id'));
+            || (await MasterServerService.getCachedConfiguracion('discord_event_announcement_channel_id'))
+            || (await MasterServerService.getCachedConfiguracion('discord_event_channel_id'));
 
           const messageId = oldRegistro.data?.discord_message_id;
 

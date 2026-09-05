@@ -1,3 +1,5 @@
+export const revalidate = 3600;
+
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import NinjaCard from '@/components/ui/NinjaCard';
 

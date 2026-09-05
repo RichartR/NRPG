@@ -1,3 +1,5 @@
+export const revalidate = 300;
+
 import NoticiasClientView from './NoticiasClientView';
 import { unstable_cache } from 'next/cache';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';

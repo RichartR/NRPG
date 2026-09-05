@@ -1,3 +1,5 @@
+export const revalidate = 300;
+
 import CharacterSheet from "@/components/character/CharacterSheet";
 import Link from "next/link";
 import HomeUserControls from '@/components/layout/HomeUserControls';
