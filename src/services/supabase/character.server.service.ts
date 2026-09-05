@@ -9,7 +9,7 @@ export const CharacterServerService = {
   async getCharacterById(supabase: SupabaseClient, id: string | number): Promise<Character | null> {
     const { data, error } = await supabase
       .from('reg_characters')
-      .select('*, personajes_ramas:reg_personajes_ramas(*, rama:info_ramas_clanes(nombre), sub_especialidad:info_sub_especialidades(nombre)), personajes_entrenamientos:reg_personajes_entrenamientos(*, info_entrenamientos(*)), personajes_rasgos:reg_personajes_rasgos(*, info_rasgos(*)), personajes_sentidos:reg_personajes_sentidos(*, info_sentidos(*)), personajes_acompanantes:reg_personajes_acompanantes(*, info_acompanantes(*)), personajes_kugutsu_componentes:reg_personajes_kugutsu_componentes(*, info_cuerpo:info_kugutsu_componentes!cuerpo_id(*), info_extremidad:info_kugutsu_componentes!extremidad_id(*), info_accesorio:info_kugutsu_componentes!accesorio_id(*))')
+      .select('*, personajes_ramas:reg_personajes_ramas(*, rama:info_ramas_clanes(nombre), sub_especialidad:info_sub_especialidades(nombre)), personajes_entrenamientos:reg_personajes_entrenamientos(*, info_entrenamientos(*)), personajes_rasgos:reg_personajes_rasgos(*, info_rasgos(*)), personajes_sentidos:reg_personajes_sentidos(*, info_sentidos(*)), personajes_acompanantes:reg_personajes_acompanantes(*, info_acompanantes(*)), personajes_kugutsu_componentes:reg_personajes_kugutsu_componentes(*, info_cuerpo:info_kugutsu_componentes!cuerpo_id(*), info_extremidad:info_kugutsu_componentes!extremidad_id(*), info_accesorio:info_kugutsu_componentes!accesorio_id(*)), personaje_uchiha:reg_personajes_uchiha(*)')
       .eq('id', id)
       .single();
     if (error) return null;
@@ -22,8 +22,13 @@ export const CharacterServerService = {
       return match ? { ...c, origen: match.origen } : c;
     });
 
+    const uchiha = Array.isArray(data.personaje_uchiha)
+      ? data.personaje_uchiha[0] || null
+      : data.personaje_uchiha || null;
+
     return {
       ...data,
+      personaje_uchiha: uchiha,
       personajes_kugutsu_componentes: normalizedComps
     } as any;
   },

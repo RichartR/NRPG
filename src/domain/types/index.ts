@@ -245,6 +245,7 @@ export interface Character {
   personajes_sentidos?: PersonajeSentido[];
   personajes_acompanantes?: PersonajeAcompanante[];
   personajes_kugutsu_componentes?: PersonajeKugutsuComponentes[];
+  personaje_uchiha?: PersonajeUchihaData | null;
   registros_autor?: Registro[];
   registros_participante?: RegistroParticipante[];
   
@@ -545,4 +546,21 @@ export interface InfoNPC {
   created_at?: string;
   // Joins
   aldeas?: Aldea | null;
+}
+
+export interface UchihaCopiaSlot {
+  tecnica_id: number;
+  fecha_copia?: string;
+  evidencia_url?: string;
+  info_glosario?: Glosario;
+}
+
+export interface PersonajeUchihaData {
+  id?: number;
+  personaje_id: number;
+  rama_combate: 'Ninjutsu' | 'Taijutsu' | 'Genjutsu' | 'Shurikenjutsu' | 'Bujutsu' | null;
+  slots_desbloqueados: string[]; // ej. ['D_1', 'D_2', 'D_3', 'C_1', ...]
+  copias: Record<string, UchihaCopiaSlot>;
+  created_at?: string;
+  updated_at?: string;
 }

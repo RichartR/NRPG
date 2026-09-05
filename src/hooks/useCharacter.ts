@@ -501,9 +501,140 @@ export function useCharacter(characterId: string) {
           });
         }
 
-        // Check new techniques
-        const currentTecs = character.personajes_tecnicas || [];
-        const oldTecs = originalCharacter?.personajes_tecnicas || [];
+        // Helper to resolve technique names
+        const resolveTecName = (tid: number, fallbackInfo?: any) => {
+          if (fallbackInfo?.nombre_jp || fallbackInfo?.nombre_es) {
+            return fallbackInfo.nombre_jp || fallbackInfo.nombre_es;
+          }
+          const found = (masters.glosario || []).find((g: any) => Number(g.id) === Number(tid))
+            || (glosarioFiltrado || []).find((g: any) => Number(g.id) === Number(tid));
+          return found?.nombre_jp || found?.nombre_es || `Técnica ID ${tid}`;
+        };
+
+        // 1. Check Uchiha Copied Techniques (Hasei: Kopī) directly from copias object
+        const currentCopias: Record<string, any> = (character as any).personaje_uchiha?.copias || {};
+        const oldCopias: Record<string, any> = (originalCharacter as any)?.personaje_uchiha?.copias || {};
+
+        const newlyCopiedSlots: any[] = [];
+        for (const [slotKey, copia] of Object.entries(currentCopias)) {
+          const oldCopia = oldCopias[slotKey];
+          if (copia?.tecnica_id && (!oldCopia?.tecnica_id || Number(oldCopia.tecnica_id) !== Number(copia.tecnica_id))) {
+            newlyCopiedSlots.push({ slotKey, ...copia });
+          }
+        }
+
+        if (newlyCopiedSlots.length > 0) {
+          const uchihaNames = newlyCopiedSlots
+            .map(s => resolveTecName(s.tecnica_id, s.info_glosario))
+            .join(', ');
+
+          await RegistrosService.createRegistro({
+            tipo: 'accion',
+            autor_id: Number(characterId),
+            participantes_ids: [Number(characterId)],
+            data: {
+              titulo: `${character.nombre_ninja} copia: ${uchihaNames}`,
+              subtitulo: 'Hasei: Kopī (Clan Uchiha)',
+              tipo_accion: 'copia_tecnicas',
+              tecnicas: newlyCopiedSlots.map(s => ({
+                id: s.tecnica_id,
+                nombre: resolveTecName(s.tecnica_id, s.info_glosario)
+              })),
+              gasto_xp: 0,
+              gasto_ryous: 0,
+              gasto_pc: 0
+            }
+          });
+        }
+
+        const removedCopiedSlots: any[] = [];
+        for (const [slotKey, oldCopia] of Object.entries(oldCopias)) {
+          const currentCopia = currentCopias[slotKey];
+          if (oldCopia?.tecnica_id && (!currentCopia?.tecnica_id || Number(currentCopia.tecnica_id) !== Number(oldCopia.tecnica_id))) {
+            removedCopiedSlots.push({ slotKey, ...oldCopia });
+          }
+        }
+
+        if (removedCopiedSlots.length > 0) {
+          const uchihaNames = removedCopiedSlots
+            .map(s => resolveTecName(s.tecnica_id, s.info_glosario))
+            .join(', ');
+
+          await RegistrosService.createRegistro({
+            tipo: 'accion',
+            autor_id: Number(characterId),
+            participantes_ids: [Number(characterId)],
+            data: {
+              titulo: `${character.nombre_ninja} retira copia: ${uchihaNames}`,
+              subtitulo: 'Hasei: Kopī (Clan Uchiha)',
+              tipo_accion: 'eliminacion_copia_uchiha',
+              tecnicas: removedCopiedSlots.map(s => ({
+                id: s.tecnica_id,
+                nombre: resolveTecName(s.tecnica_id, s.info_glosario)
+              }))
+            }
+          });
+        }
+
+        // Check Uchiha Rama de Combate Principal choice / change
+        const oldRamaCombate = (originalCharacter as any)?.personaje_uchiha?.rama_combate || null;
+        const newRamaCombate = (character as any).personaje_uchiha?.rama_combate || null;
+
+        if (oldRamaCombate !== newRamaCombate) {
+          if (!oldRamaCombate && newRamaCombate) {
+            await RegistrosService.createRegistro({
+              tipo: 'accion',
+              autor_id: Number(characterId),
+              participantes_ids: [Number(characterId)],
+              data: {
+                titulo: `${character.nombre_ninja} elige ${newRamaCombate} como su Rama de Combate Principal`,
+                subtitulo: 'Clan Uchiha — Kekkei Genkai: Sharingan',
+                tipo_accion: 'eleccion_rama_combate_uchiha',
+                rama_combate: newRamaCombate
+              }
+            });
+          } else if (oldRamaCombate && newRamaCombate && oldRamaCombate !== newRamaCombate) {
+            await RegistrosService.createRegistro({
+              tipo: 'accion',
+              autor_id: Number(characterId),
+              participantes_ids: [Number(characterId)],
+              data: {
+                titulo: `${character.nombre_ninja} cambia su Rama de Combate Principal: ${oldRamaCombate} → ${newRamaCombate}`,
+                subtitulo: 'Clan Uchiha — Kekkei Genkai: Sharingan',
+                tipo_accion: 'cambio_rama_combate_uchiha',
+                rama_combate_anterior: oldRamaCombate,
+                rama_combate_nueva: newRamaCombate
+              }
+            });
+          } else if (oldRamaCombate && !newRamaCombate) {
+            await RegistrosService.createRegistro({
+              tipo: 'accion',
+              autor_id: Number(characterId),
+              participantes_ids: [Number(characterId)],
+              data: {
+                titulo: `${character.nombre_ninja} retira su Rama de Combate Principal (${oldRamaCombate})`,
+                subtitulo: 'Clan Uchiha — Kekkei Genkai: Sharingan',
+                tipo_accion: 'retirada_rama_combate_uchiha',
+                rama_combate_anterior: oldRamaCombate
+              }
+            });
+          }
+        }
+
+        // 2. Check Standard New Techniques (excluding Uchiha copies)
+        const uchihaCurrentCopiedIds = new Set(
+          Object.values(currentCopias).map((c: any) => Number(c?.tecnica_id)).filter(Boolean)
+        );
+        const uchihaOldCopiedIds = new Set(
+          Object.values(oldCopias).map((c: any) => Number(c?.tecnica_id)).filter(Boolean)
+        );
+
+        const currentTecs = (character.personajes_tecnicas || []).filter(
+          ct => !(ct as any).origen?.startsWith('uchiha') && !uchihaCurrentCopiedIds.has(Number(ct.tecnica_id))
+        );
+        const oldTecs = (originalCharacter?.personajes_tecnicas || []).filter(
+          ot => !(ot as any).origen?.startsWith('uchiha') && !uchihaOldCopiedIds.has(Number(ot.tecnica_id))
+        );
         const newTecs = currentTecs.filter(ct => !oldTecs.some(ot => Number(ot.tecnica_id) === Number(ct.tecnica_id)));
 
         if (newTecs.length > 0) {
@@ -550,7 +681,7 @@ export function useCharacter(characterId: string) {
           });
         }
 
-        // Check deleted techniques
+        // 3. Check Standard Deleted Techniques (excluding Uchiha copies)
         const deletedTecs = oldTecs.filter(ot => !currentTecs.some(ct => Number(ct.tecnica_id) === Number(ot.tecnica_id)));
         if (deletedTecs.length > 0) {
           const tecNames = deletedTecs.map(dt => dt.info_glosario?.nombre_jp || dt.info_glosario?.nombre_es || 'Técnica').join(', ');
