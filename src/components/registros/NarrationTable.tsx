@@ -46,8 +46,6 @@ export default function NarrationTable({ narraciones, onRefresh, onEdit, isAdmin
     if (!activeCharacter) return false;
     const charId = Number(activeCharacter.id);
 
-    if (Number(n.autor_id) === charId) return true;
-
     if (n.participantes?.some(p => Number(p.personaje_id) === charId)) return true;
 
     if (Array.isArray(n.data?.participantes_historicos) && n.data.participantes_historicos.some((p: any) => Number(p.id) === charId)) {
@@ -70,16 +68,50 @@ export default function NarrationTable({ narraciones, onRefresh, onEdit, isAdmin
   };
 
   const getParticipants = (n: Registro) => {
-    if (n.data.participantes_historicos && Array.isArray(n.data.participantes_historicos)) {
-      return n.data.participantes_historicos;
+    const list: Array<{ id: number; nombre_ninja: string; recuperado?: boolean }> = [];
+    const seenIds = new Set<number>();
+
+    if (n.data?.participantes_historicos && Array.isArray(n.data.participantes_historicos) && n.data.participantes_historicos.length > 0) {
+      n.data.participantes_historicos.forEach((p: any) => {
+        const id = Number(p.id || p.personaje_id);
+        if (!seenIds.has(id)) {
+          seenIds.add(id);
+          list.push({ id, nombre_ninja: p.nombre_ninja, recuperado: !!p.recuperado });
+        }
+      });
+    } else if (n.participantes && n.participantes.length > 0) {
+      n.participantes.forEach((p: any) => {
+        const id = Number(p.personaje_id);
+        if (!seenIds.has(id)) {
+          seenIds.add(id);
+          list.push({
+            id,
+            nombre_ninja: p.personaje?.nombre_ninja || 'Ninja Desaparecido',
+            recuperado: false
+          });
+        }
+      });
     }
-    if (n.participantes && n.participantes.length > 0) {
-      return n.participantes.map(p => ({
-        id: p.personaje_id,
-        nombre_ninja: p.personaje?.nombre_ninja || 'Ninja Desaparecido'
-      }));
+
+    // Asegurar que también aparezcan los que han recuperado desde participantes_premios
+    if (Array.isArray(n.data?.participantes_premios)) {
+      n.data.participantes_premios.forEach((pr: any) => {
+        const id = Number(pr.personaje_id);
+        const existing = list.find(item => item.id === id);
+        if (existing) {
+          if (pr.recuperado) existing.recuperado = true;
+        } else {
+          seenIds.add(id);
+          list.push({
+            id,
+            nombre_ninja: pr.nombre_ninja || 'Ninja',
+            recuperado: !!pr.recuperado
+          });
+        }
+      });
     }
-    return [{ id: n.autor_id, nombre_ninja: n.autor?.nombre_ninja || 'Autor Desconocido' }];
+
+    return list;
   };
 
   const handleDelete = async (id: number) => {
@@ -175,14 +207,25 @@ export default function NarrationTable({ narraciones, onRefresh, onEdit, isAdmin
                   {/* Participantes */}
                   <td className="py-3 px-5">
                     <div className="flex flex-wrap gap-2 max-w-[300px]">
-                      {participants.map((p, idx) => (
-                        <span
-                          key={idx}
-                          className="text-caption font-black text-oro/70 uppercase tracking-widest px-2.5 py-1 bg-oro/5 border border-oro/10 ninja-clip-xs"
-                        >
-                          {p.nombre_ninja}
+                      {participants.length > 0 ? (
+                        participants.map((p, idx) => (
+                          <span
+                            key={idx}
+                            className="text-caption font-black text-oro/70 uppercase tracking-widest px-2.5 py-1 bg-oro/5 border border-oro/10 ninja-clip-xs flex items-center gap-1.5"
+                          >
+                            <span>{p.nombre_ninja}</span>
+                            {p.recuperado && (
+                              <span className="text-[8px] bg-naranja-naruto/20 border border-naranja-naruto/40 text-naranja-naruto px-1.5 py-0.2 ninja-clip-xs font-black tracking-widest">
+                                Recuperado
+                              </span>
+                            )}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-caption text-oro/30 uppercase tracking-widest italic font-bold">
+                          Sin participantes
                         </span>
-                      ))}
+                      )}
                     </div>
                   </td>
 
@@ -421,9 +464,14 @@ export default function NarrationTable({ narraciones, onRefresh, onEdit, isAdmin
                         return (
                           <div key={idx} className="p-4 bg-black/70 border border-oro/40 shadow-xl shadow-black/60 ninja-clip-xs space-y-3">
                             <div className="flex items-center justify-between border-b border-oro/30 pb-2.5">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <User className="w-4 h-4 text-oro shrink-0" />
                                 <span className="text-xs font-black text-white uppercase tracking-wider">{p.nombre_ninja}</span>
+                                {p.recuperado && (
+                                  <span className="text-[9px] bg-naranja-naruto/20 border border-naranja-naruto/40 text-naranja-naruto px-2 py-0.5 ninja-clip-xs font-black tracking-widest uppercase">
+                                    Recuperado
+                                  </span>
+                                )}
                               </div>
                               <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-950/80 border border-emerald-500/40 px-2.5 py-0.5 rounded shadow">
                                 Total: +{totalXp} EXP

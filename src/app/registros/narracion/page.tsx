@@ -106,9 +106,7 @@ export default function NarracionPage() {
                     setEditingRegistro(null);
                     setShowForm(true);
                   }}
-                  disabled={!activeCharacter}
-                  title={!activeCharacter ? 'Requiere tener un personaje activo en tu ficha shinobi' : undefined}
-                  className="flex w-full lg:w-auto items-center justify-center gap-3 px-5 sm:px-6 py-3 ninja-btn-oro text-caption sm:text-xs disabled:opacity-30 disabled:cursor-not-allowed uppercase tracking-widest font-black shrink-0"
+                  className="flex w-full lg:w-auto items-center justify-center gap-3 px-5 sm:px-6 py-3 ninja-btn-oro text-caption sm:text-xs uppercase tracking-widest font-black shrink-0"
                 >
                   <Plus className="w-4 h-4" /> NUEVA NARRACIÓN
                 </button>
@@ -190,7 +188,7 @@ export default function NarracionPage() {
                   <NarrationTable
                     narraciones={data.list}
                     onRefresh={() => fetchData(data.page)}
-                    isAdmin={isAdmin}
+                    isAdmin={isAdmin || canCreate}
                     initialViewingRegistro={targetRegistro}
                     onEdit={(r) => {
                       setEditingRegistro(r);

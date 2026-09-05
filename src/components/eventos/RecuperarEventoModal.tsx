@@ -155,7 +155,7 @@ export default function RecuperarEventoModal({
         body: JSON.stringify({
           action: 'create',
           payload: {
-            tipo: 'narracion',
+            tipo: 'accion',
             subtipo: isNarracion ? 'recuperacion_narracion' : 'recuperacion_evento',
             autor_id: activeCharacter?.id,
             participantes_ids: selectedCharacterIds,

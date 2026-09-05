@@ -247,16 +247,8 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
   };
 
   const handleSubmit = async () => {
-    if (!activeCharacter) {
-      addToast('No se ha detectado un personaje activo.', 'error');
-      return;
-    }
     if (!narrador.trim()) {
       addToast('Indica el nombre del narrador del evento', 'error');
-      return;
-    }
-    if (participants.length === 0) {
-      addToast('Añade al menos un participante para el registro', 'error');
       return;
     }
 
@@ -271,7 +263,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
       const payload = {
         tipo: 'accion' as const,
         subtipo: 'narracion',
-        autor_id: activeCharacter.id,
+        autor_id: null,
         participantes_ids: participants.map(p => p.id),
         data: {
           titulo: narrador.trim() ? `Narrador: ${narrador.trim()}` : 'Narración',
@@ -309,7 +301,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
       } else {
         await RegistrosService.createRegistro(payload as any);
         addToast('Registro de narración publicado correctamente', 'success');
-        fetchActiveCharacter(); // Sincronizar stats locales
+        if (activeCharacter) fetchActiveCharacter();
       }
       onCreated();
     } catch (err: any) {

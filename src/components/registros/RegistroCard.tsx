@@ -150,7 +150,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
   const Icon = getIcon();
 
   const getParticipants = () => {
-    if (registro.data.participantes_historicos && Array.isArray(registro.data.participantes_historicos)) {
+    if (registro.data.participantes_historicos && Array.isArray(registro.data.participantes_historicos) && registro.data.participantes_historicos.length > 0) {
       return registro.data.participantes_historicos;
     }
     if (registro.participantes && registro.participantes.length > 0) {
@@ -159,6 +159,7 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
         nombre_ninja: p.personaje?.nombre_ninja || 'Ninja Desaparecido'
       }));
     }
+    if (registro.subtipo === 'narracion') return [];
     return [{ id: registro.autor_id, nombre_ninja: registro.autor?.nombre_ninja || 'Autor Desconocido' }];
   };
 
