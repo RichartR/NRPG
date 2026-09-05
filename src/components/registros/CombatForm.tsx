@@ -336,7 +336,10 @@ export default function CombatForm({
 
     if (baseXp === 0) return 0;
 
-    if (isWinner) {
+    const combatDate = initialData?.fecha ? new Date(initialData.fecha).getTime() : Date.now();
+    const isPostNumericalDiffRule = combatDate >= new Date('2026-09-04T20:37:00Z').getTime();
+
+    if (isWinner && isPostNumericalDiffRule) {
       const ownTeamCount = team === 'A' ? teamA.length : teamB.length;
       const oppTeamCount = team === 'A' ? teamB.length : teamA.length;
 

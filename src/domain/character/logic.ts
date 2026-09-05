@@ -392,8 +392,11 @@ export const RewardLogic = {
         else xp = Number(section.menos_2) || 0;
       }
 
-      // Ajuste por inferioridad o superioridad numérica (solo aplica al bando ganador)
-      if (xp > 0 && isWinner) {
+      // Ajuste por inferioridad o superioridad numérica (solo aplica al bando ganador en combates a partir del 04/09/2026 22:37)
+      const combatDate = registro.fecha ? new Date(registro.fecha).getTime() : Date.now();
+      const isPostNumericalDiffRule = combatDate >= new Date('2026-09-04T20:37:00Z').getTime();
+
+      if (xp > 0 && isWinner && isPostNumericalDiffRule) {
         const teamACount = (data.equipo_a || []).length;
         const teamBCount = (data.equipo_b || []).length;
         const ownTeamCount = isTeamA ? teamACount : teamBCount;
