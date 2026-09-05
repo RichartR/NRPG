@@ -40,7 +40,7 @@ interface Participant {
   estado: CombatState;
   bando: 'A' | 'B' | null;
   isInCombat: boolean;
-  cooldowns?: Array<{ id: number; nombre: string; reusableAtRound: number }>;
+  cooldowns?: Array<{ id: number; nombre: string; reusableAtRound: number; cdRounds?: number }>;
   tecnicasActivas?: Array<{ id: number; nombre: string; cdRounds: number }>;
   rasgos?: Array<{ id: number | string; nombre: string; usado: boolean }>;
   equipo?: Array<{ id: number | string; nombre: string }>;
@@ -84,7 +84,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   const [localState, setLocalState] = useState<CombatState | null>(null);
   const [myBando, setMyBando] = useState<'A' | 'B' | null>(null);
   const [myIsInCombat, setMyIsInCombat] = useState(false);
-  const [myCooldowns, setMyCooldowns] = useState<Record<number, number>>({});
+  const [myCooldowns, setMyCooldowns] = useState<Record<number, { reusableAtRound: number; cdRounds?: number } | number>>({});
 
   // Roll Mode state (Normal, Advantage, Disadvantage)
   const [rollMode, setRollMode] = useState<'normal' | 'advantage' | 'disadvantage'>('normal');
@@ -746,8 +746,16 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         setMyCooldowns(prev => {
           const updated = { ...prev };
           activeTechIds.forEach(techId => {
-            if (updated[techId]) {
-              updated[techId] = updated[techId] + roundsAdvanced;
+            const entry = updated[techId];
+            if (entry) {
+              if (typeof entry === 'number') {
+                updated[techId] = entry + roundsAdvanced;
+              } else {
+                updated[techId] = {
+                  ...entry,
+                  reusableAtRound: entry.reusableAtRound + roundsAdvanced
+                };
+              }
             }
           });
           return updated;
@@ -998,11 +1006,15 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
             bando: myBandoRef.current,
             isInCombat: myIsInCombatRef.current,
             cooldowns: Object.keys(myCooldownsRef.current).map(Number).map(techId => {
+              const entry = myCooldownsRef.current[techId];
+              const reusableAtRound = typeof entry === 'number' ? entry : entry?.reusableAtRound;
+              const cdRounds = typeof entry === 'number' ? undefined : entry?.cdRounds;
               const pt = activeCharacterRef.current?.personajes_tecnicas?.find(t => t.tecnica_id === techId);
               return {
                 id: techId,
                 nombre: pt?.info_glosario?.nombre_jp || pt?.info_glosario?.nombre_es || 'Técnica',
-                reusableAtRound: myCooldownsRef.current[techId]
+                reusableAtRound,
+                cdRounds
               };
             }),
             tecnicasActivas: Object.keys(myActiveTecnicasRef.current).map(Number).map(techId => {
@@ -1081,11 +1093,15 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         bando: myBando,
         isInCombat: myIsInCombat,
         cooldowns: Object.keys(myCooldowns).map(Number).map(techId => {
+          const entry = myCooldowns[techId];
+          const reusableAtRound = typeof entry === 'number' ? entry : entry?.reusableAtRound;
+          const cdRounds = typeof entry === 'number' ? undefined : entry?.cdRounds;
           const pt = activeCharacter?.personajes_tecnicas?.find(t => t.tecnica_id === techId);
           return {
             id: techId,
             nombre: pt?.info_glosario?.nombre_jp || pt?.info_glosario?.nombre_es || 'Técnica',
-            reusableAtRound: myCooldowns[techId]
+            reusableAtRound,
+            cdRounds
           };
         }),
         tecnicasActivas: Object.keys(myActiveTecnicas).map(Number).map(techId => {
@@ -1461,11 +1477,15 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         bando: myBando,
         isInCombat: myIsInCombat,
         cooldowns: Object.keys(myCooldowns).map(Number).map(techId => {
+          const entry = myCooldowns[techId];
+          const reusableAtRound = typeof entry === 'number' ? entry : entry?.reusableAtRound;
+          const cdRounds = typeof entry === 'number' ? undefined : entry?.cdRounds;
           const pt = activeCharacter?.personajes_tecnicas?.find(t => t.tecnica_id === techId);
           return {
             id: techId,
             nombre: pt?.info_glosario?.nombre_jp || pt?.info_glosario?.nombre_es || 'Técnica',
-            reusableAtRound: myCooldowns[techId]
+            reusableAtRound,
+            cdRounds
           };
         }),
         tecnicasActivas: Object.keys(myActiveTecnicas).map(Number).map(techId => {
@@ -1723,9 +1743,21 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   };
 
   // Cooldown Helper
-  const getRemainingCD = (reusableAtRound: number, _cdRounds?: number) => {
-    if (rondaActual >= reusableAtRound) return 0;
-    return Math.max(0, reusableAtRound - rondaActual - 1);
+  const getRemainingCD = (
+    cdInfo: number | { reusableAtRound: number; cdRounds?: number } | undefined,
+    fallbackCdRounds?: number
+  ): number => {
+    if (!cdInfo) return 0;
+    const reusableAtRound = typeof cdInfo === 'number' ? cdInfo : cdInfo.reusableAtRound;
+    const cdRounds = typeof cdInfo === 'number' ? fallbackCdRounds : (cdInfo.cdRounds ?? fallbackCdRounds);
+
+    if (!reusableAtRound || rondaActual >= reusableAtRound) return 0;
+
+    const diff = reusableAtRound - rondaActual;
+    if (cdRounds !== undefined && cdRounds > 0) {
+      return Math.min(cdRounds, diff);
+    }
+    return Math.max(0, diff);
   };
 
 
@@ -1754,7 +1786,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     }
 
     // Cooldown check
-    const currentCD = myCooldowns[selectedTecnicaId] ? getRemainingCD(myCooldowns[selectedTecnicaId], customCdRounds) : 0;
+    const currentCD = myCooldowns[selectedTecnicaId] ? getRemainingCD(myCooldowns[selectedTecnicaId]) : 0;
     if (currentCD > 0) {
       addToast(`La técnica está en cooldown por ${currentCD} rondas más.`, "error");
       return;
@@ -1764,7 +1796,10 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     const newCh = isEventMode ? localState.ch : Math.max(0, localState.ch - customChCost);
     const newCooldowns = { ...myCooldowns };
     if (customCdRounds > 0) {
-      newCooldowns[selectedTecnicaId] = rondaActual + customCdRounds + 1;
+      newCooldowns[selectedTecnicaId] = {
+        reusableAtRound: rondaActual + customCdRounds + 1,
+        cdRounds: customCdRounds
+      };
     }
 
     const updatedState = {
@@ -1915,11 +1950,15 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     bando: myBando,
     isInCombat: myIsInCombat,
     cooldowns: Object.keys(myCooldowns).map(Number).map(techId => {
+      const entry = myCooldowns[techId];
+      const reusableAtRound = typeof entry === 'number' ? entry : entry?.reusableAtRound;
+      const cdRounds = typeof entry === 'number' ? undefined : entry?.cdRounds;
       const pt = activeCharacter?.personajes_tecnicas?.find(t => t.tecnica_id === techId);
       return {
         id: techId,
         nombre: pt?.info_glosario?.nombre_jp || pt?.info_glosario?.nombre_es || 'Técnica',
-        reusableAtRound: myCooldowns[techId]
+        reusableAtRound,
+        cdRounds
       };
     }),
     tecnicasActivas: Object.keys(myActiveTecnicas).map(Number).map(techId => {
@@ -2764,7 +2803,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                       )}
 
                       {/* Active & Cooldown Techniques */}
-                      {((p.tecnicasActivas && p.tecnicasActivas.length > 0) || (p.cooldowns && p.cooldowns.length > 0 && p.cooldowns.some((c: any) => (c.reusableAtRound - rondaActual - 1) > 0))) && (
+                      {((p.tecnicasActivas && p.tecnicasActivas.length > 0) || (p.cooldowns && p.cooldowns.length > 0 && p.cooldowns.some((c: any) => getRemainingCD(c.reusableAtRound, c.cdRounds) > 0))) && (
                         <div className="space-y-2 pt-2 border-t border-oro/10 mt-1.5 animate-in fade-in duration-300">
                           {p.tecnicasActivas && p.tecnicasActivas.length > 0 && (
                             <div className="space-y-1">
@@ -2782,12 +2821,12 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                             </div>
                           )}
 
-                          {p.cooldowns && p.cooldowns.length > 0 && p.cooldowns.some((c: any) => (c.reusableAtRound - rondaActual - 1) > 0) && (
+                          {p.cooldowns && p.cooldowns.length > 0 && p.cooldowns.some((c: any) => getRemainingCD(c.reusableAtRound, c.cdRounds) > 0) && (
                             <div className="space-y-1">
                               <span className="text-[9px] text-red-400 uppercase font-black block tracking-wider">Técnicas en CD:</span>
                               <div className="flex flex-wrap gap-1">
                                 {p.cooldowns.map((c: any) => {
-                                  const remaining = c.reusableAtRound - rondaActual - 1;
+                                  const remaining = getRemainingCD(c.reusableAtRound, c.cdRounds);
                                   if (remaining <= 0) return null;
                                   const isActive = p.tecnicasActivas?.some((ta: any) => ta.id === c.id);
                                   return (
@@ -3868,7 +3907,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                       )}
 
                       {/* Active & Cooldown Techniques */}
-                      {((p.tecnicasActivas && p.tecnicasActivas.length > 0) || (p.cooldowns && p.cooldowns.length > 0 && p.cooldowns.some((c: any) => (c.reusableAtRound - rondaActual - 1) > 0))) && (
+                      {((p.tecnicasActivas && p.tecnicasActivas.length > 0) || (p.cooldowns && p.cooldowns.length > 0 && p.cooldowns.some((c: any) => getRemainingCD(c.reusableAtRound, c.cdRounds) > 0))) && (
                         <div className="space-y-2 pt-2 border-t border-oro/10 mt-1.5 animate-in fade-in duration-300">
                           {p.tecnicasActivas && p.tecnicasActivas.length > 0 && (
                             <div className="space-y-1">
@@ -3886,12 +3925,12 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                             </div>
                           )}
 
-                          {p.cooldowns && p.cooldowns.length > 0 && p.cooldowns.some((c: any) => (c.reusableAtRound - rondaActual - 1) > 0) && (
+                          {p.cooldowns && p.cooldowns.length > 0 && p.cooldowns.some((c: any) => getRemainingCD(c.reusableAtRound, c.cdRounds) > 0) && (
                             <div className="space-y-1">
                               <span className="text-[9px] text-red-400 uppercase font-black block tracking-wider">Técnicas en CD:</span>
                               <div className="flex flex-wrap gap-1">
                                 {p.cooldowns.map((c: any) => {
-                                  const remaining = c.reusableAtRound - rondaActual - 1;
+                                  const remaining = getRemainingCD(c.reusableAtRound, c.cdRounds);
                                   if (remaining <= 0) return null;
                                   const isActive = p.tecnicasActivas?.some((ta: any) => ta.id === c.id);
                                   return (
@@ -4502,7 +4541,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                       className="w-full bg-black/60 border border-oro/20 text-oro px-4 py-2.5 text-xs font-black flex justify-between items-center cursor-pointer hover:border-oro transition-all relative z-40"
                     >
                       <span className="truncate pr-4">
-                        {selectedTecnicaId && !(myCooldowns[selectedTecnicaId] && getRemainingCD(myCooldowns[selectedTecnicaId], customCdRounds) > 0)
+                        {selectedTecnicaId && !(myCooldowns[selectedTecnicaId] && getRemainingCD(myCooldowns[selectedTecnicaId]) > 0)
                           ? (activeCharacter?.personajes_tecnicas?.find(t => t.tecnica_id === selectedTecnicaId)?.info_glosario?.nombre_jp || activeCharacter?.personajes_tecnicas?.find(t => t.tecnica_id === selectedTecnicaId)?.info_glosario?.nombre_es)
                           : 'BUSCAR TÉCNICA'}
                       </span>
@@ -4534,7 +4573,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                                   const nameEs = pt.info_glosario?.nombre_es || '';
                                   const nameJp = pt.info_glosario?.nombre_jp || '';
                                   const isMatch = searchIncludes(nameEs, tecnicaSearch) || searchIncludes(nameJp, tecnicaSearch);
-                                  const isCD = myCooldowns[pt.tecnica_id] && getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) > 0;
+                                  const isCD = myCooldowns[pt.tecnica_id] && getRemainingCD(myCooldowns[pt.tecnica_id]) > 0;
                                   return isMatch && !isCD; // Ready techniques only
                                 })
                                 .map(pt => {
@@ -4576,7 +4615,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                                 const nameEs = pt.info_glosario?.nombre_es || '';
                                 const nameJp = pt.info_glosario?.nombre_jp || '';
                                 const isMatch = searchIncludes(nameEs, tecnicaSearch) || searchIncludes(nameJp, tecnicaSearch);
-                                const isCD = myCooldowns[pt.tecnica_id] && getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) > 0;
+                                const isCD = myCooldowns[pt.tecnica_id] && getRemainingCD(myCooldowns[pt.tecnica_id]) > 0;
                                 return isMatch && !isCD;
                               }).length === 0 && (
                                   <div className="px-4 py-4 text-xs text-oro/30 italic text-center">
@@ -4607,7 +4646,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                     >
                       <span className="truncate pr-4">
                         {`TÉCNICAS EN CD (${(activeCharacter?.personajes_tecnicas || []).filter(pt => {
-                          const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) : 0;
+                          const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id]) : 0;
                           return cd > 0;
                         }).length})`}
                       </span>
@@ -4618,11 +4657,11 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                       <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-black/95 border border-red-500/30 shadow-2xl max-h-[300px] overflow-y-auto flex flex-col backdrop-blur-md">
                         {(activeCharacter?.personajes_tecnicas || [])
                           .filter(pt => {
-                            const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) : 0;
+                            const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id]) : 0;
                             return cd > 0;
                           })
                           .map(pt => {
-                            const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) : 0;
+                            const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id]) : 0;
                             return (
                               <div
                                 key={pt.tecnica_id}
@@ -4645,7 +4684,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
 
                         {/* No results */}
                         {(activeCharacter?.personajes_tecnicas || []).filter(pt => {
-                          const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id], customCdRounds) : 0;
+                          const cd = myCooldowns[pt.tecnica_id] ? getRemainingCD(myCooldowns[pt.tecnica_id]) : 0;
                           return cd > 0;
                         }).length === 0 && (
                             <div className="px-4 py-4 text-xs text-red-400/40 italic text-center">
