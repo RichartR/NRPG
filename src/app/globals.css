@@ -379,6 +379,14 @@ input[type=number] {
     padding-right: 3.5rem;
   }
 
+  textarea.ninja-input {
+    text-transform: none;
+  }
+
+  textarea.ninja-input::placeholder {
+    text-transform: none;
+  }
+
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
   }

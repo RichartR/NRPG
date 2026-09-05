@@ -346,7 +346,7 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
                     value={formData.descripcion || ''}
                     onChange={e => setFormData({ ...formData, descripcion: e.target.value })}
                     placeholder="Una frase corta que resume el anuncio..."
-                    className="w-full bg-black/60 border border-oro/20 hover:border-oro/40 focus:border-oro/60 px-5 py-3 text-xs text-oro/90 font-bold outline-none transition-all placeholder:text-oro/20 uppercase tracking-wider resize-none"
+                    className="w-full bg-black/60 border border-oro/20 hover:border-oro/40 focus:border-oro/60 px-5 py-3 text-xs text-oro/90 font-bold outline-none transition-all placeholder:text-oro/20 !normal-case placeholder:!normal-case tracking-wider resize-none"
                     style={{ clipPath: 'polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px)' }}
                   />
                   <span className={`absolute bottom-3 right-4 text-caption font-black tabular-nums tracking-widest transition-colors ${(formData.descripcion?.length || 0) >= 90 ? 'text-naranja-naruto' : 'text-oro/30'}`}>
@@ -389,7 +389,7 @@ export default function NewsEditForm({ newsItem, onCancel }: NewsEditFormProps) 
                         value={discordContent}
                         onChange={e => setDiscordContent(e.target.value)}
                         placeholder="Escribe el cuerpo del anuncio utilizando markdown de Discord... **negrita**, *cursiva*, `código`, listados, etc."
-                        className="w-full flex-1 bg-black/60 border border-oro/20 hover:border-oro/40 focus:border-oro/60 px-5 py-4 text-xs text-oro/90 font-bold outline-none transition-all placeholder:text-oro/20 resize-none min-h-[250px]"
+                        className="w-full flex-1 bg-black/60 border border-oro/20 hover:border-oro/40 focus:border-oro/60 px-5 py-4 text-xs text-oro/90 font-bold outline-none transition-all placeholder:text-oro/20 !normal-case placeholder:!normal-case resize-none min-h-[250px]"
                         style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
                       />
                       <div className={`flex justify-end mt-2 text-caption font-black uppercase tracking-widest tabular-nums transition-colors ${discordContent.length >= 3600 ? 'text-naranja-naruto' : discordContent.length >= 3200 ? 'text-oro/60' : 'text-oro/30'}`}>

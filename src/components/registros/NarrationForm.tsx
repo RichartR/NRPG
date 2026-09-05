@@ -407,7 +407,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
                     value={discordMessageText}
                     onChange={(e) => setDiscordMessageText(e.target.value)}
                     placeholder="Escribe el resumen del evento en Markdown para el Embed de Discord (**negrita**, *cursiva*, __subrayado__, `código`, listados, etc.)..."
-                    className={`w-full ninja-input py-3 text-xs font-mono normal-case placeholder:normal-case ${discordMessageText.length > 4000 ? 'border-red-500 focus:border-red-500' : ''}`}
+                    className={`w-full ninja-input py-3 text-xs font-mono !normal-case placeholder:!normal-case ${discordMessageText.length > 4000 ? 'border-red-500 focus:border-red-500' : ''}`}
                   />
                   {discordMessageText.length > 4000 && (
                     <p className="text-[11px] text-red-400 font-bold ml-1">

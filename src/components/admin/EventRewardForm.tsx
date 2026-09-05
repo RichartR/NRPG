@@ -504,7 +504,7 @@ export default function EventRewardForm({ activeNews, editingRegistry, onClose }
                 value={textoEntrega}
                 onChange={(e) => setTextoEntrega(e.target.value)}
                 placeholder="Escribe un mensaje o aclaración utilizando markdown (**negrita**, *cursiva*, etc.) que se enviará a Discord y se mostrará en la web..."
-                className="w-full ninja-input py-3 px-4 text-xs font-medium resize-none"
+                className="w-full ninja-input py-3 px-4 text-xs font-medium resize-none !normal-case placeholder:!normal-case"
               />
 
               {/* Vista previa en tiempo real de Markdown */}
