@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client';
-import { Character, PersonajeRama, PersonajeItem, PersonajeTecnica, Registro, Glosario, Rasgo, PersonajeSentido, PersonajeAcompanante, AcompananteInfo, KugutsuComponente, PersonajeInventarioRegistro } from '@/domain/types';
+import { Character, PersonajeRama, PersonajeItem, PersonajeTecnica, Registro, Glosario, Rasgo, PersonajeSentido, PersonajeAcompanante, AcompananteInfo, KugutsuComponente, PersonajeInventarioRegistro, PersonajeUchihaData } from '@/domain/types';
 import { RewardLogic } from '@/domain/character/logic';
 
 export const CharacterService = {
@@ -19,6 +19,7 @@ export const CharacterService = {
         reg_personajes_sentidos!reg_personajes_sentidos_personaje_id_fkey(*, info_sentidos(*)),
         reg_personajes_acompanantes!reg_personajes_acompanantes_personaje_id_fkey(*, info_acompanantes(*)),
         reg_personajes_kugutsu_componentes!reg_personajes_kugutsu_componentes_personaje_id_fkey(*, info_cuerpo:info_kugutsu_componentes!cuerpo_id(*), info_extremidad:info_kugutsu_componentes!extremidad_id(*), info_accesorio:info_kugutsu_componentes!accesorio_id(*)),
+        reg_personajes_uchiha(*),
         registros_autor: reg_registros!reg_registros_autor_id_fkey(*, autor: reg_characters!reg_registros_autor_id_fkey(nombre_ninja), participantes: reg_registros_participantes!reg_registros_participantes_registro_id_fkey(*, personaje: reg_characters!reg_registros_participantes_personaje_id_fkey(nombre_ninja))),
         registros_participante: reg_registros_participantes!reg_registros_participantes_personaje_id_fkey(*, registro: reg_registros!reg_registros_participantes_registro_id_fkey(*, autor: reg_characters!reg_registros_autor_id_fkey(nombre_ninja), participantes: reg_registros_participantes!reg_registros_participantes_registro_id_fkey(*, personaje: reg_characters!reg_registros_participantes_personaje_id_fkey(nombre_ninja))))
       `)
@@ -41,8 +42,13 @@ export const CharacterService = {
         registros: i.reg_personajes_inventario_registros || i.registros || []
       }));
 
+    const uchiha = Array.isArray(data.reg_personajes_uchiha)
+      ? data.reg_personajes_uchiha[0] || null
+      : data.reg_personajes_uchiha || null;
+
     return {
       ...data,
+      personaje_uchiha: uchiha,
       aldeas: data.info_aldeas || data.aldeas,
       personajes_ramas: data.reg_personajes_ramas || data.personajes_ramas || data.ramas || [],
       personajes_entrenamientos: data.reg_personajes_entrenamientos || data.personajes_entrenamientos || [],
@@ -489,5 +495,43 @@ export const CharacterService = {
     });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || 'Error al eliminar registro');
+  },
+
+  async getUchihaData(personajeId: number): Promise<PersonajeUchihaData | null> {
+    const supabase = createClient();
+    try {
+      const { data, error } = await supabase
+        .from('reg_personajes_uchiha')
+        .select('*')
+        .eq('personaje_id', personajeId)
+        .maybeSingle();
+      if (error) {
+        console.warn('reg_personajes_uchiha no disponible o error:', error.message);
+        return null;
+      }
+      return data as PersonajeUchihaData | null;
+    } catch (e) {
+      console.warn('Error fetching uchiha data:', e);
+      return null;
+    }
+  },
+
+  async saveUchihaData(personajeId: number, data: Partial<PersonajeUchihaData>): Promise<void> {
+    const supabase = createClient();
+    const payload = {
+      personaje_id: personajeId,
+      rama_combate: data.rama_combate ?? null,
+      slots_desbloqueados: data.slots_desbloqueados || ['D_1', 'D_2'],
+      copias: data.copias || {},
+      updated_at: new Date().toISOString()
+    };
+    const { error } = await supabase
+      .from('reg_personajes_uchiha')
+      .upsert(payload, { onConflict: 'personaje_id' });
+    if (error) {
+      console.error('Error saving uchiha data:', error);
+      throw error;
+    }
   }
 };
+

@@ -34,6 +34,7 @@ import CombatForm from '@/components/registros/CombatForm';
 import { CharacterRadarChart } from './CharacterRadarChart';
 import NinkenSection from './NinkenSection';
 import KugutsuKoboSection from './KugutsuKoboSection';
+import UchihaSection, { UCHIHA_SLOTS_CONFIG } from './UchihaSection';
 import { ObjetoSlotsModal } from './ObjetoSlotsModal';
 import { useState, useMemo, useEffect, Fragment } from 'react';
 import { resolveAldeaIcono } from '@/utils/aldea-icon';
@@ -1824,14 +1825,53 @@ export function CharacterSheetView({
     );
   };
 
+  const isUchiha = useMemo(() => {
+    return (character.personajes_ramas || []).some((r: any) => Number(r.rama_id) === 35 || r.rama?.slug === 'uchiha-ichizoku' || r.slug === 'uchiha-ichizoku');
+  }, [character.personajes_ramas]);
+
+  // IDs de técnicas copiadas por el Clan Uchiha (Hasei: Kopī)
+  const uchihaCopiedTechIds = useMemo(() => {
+    const copias = (character as any).personaje_uchiha?.copias || {};
+    return new Set(Object.values(copias).map((c: any) => Number(c?.tecnica_id)).filter(Boolean));
+  }, [(character as any).personaje_uchiha]);
+
+  // Técnicas copiadas formateadas para la sección "Hasei: Kopī"
+  const uchihaCopiedTecnicas = useMemo(() => {
+    const copias = (character as any).personaje_uchiha?.copias || {};
+    const catalog = (masters?.glosario && masters.glosario.length > 0) ? masters.glosario : glosarioFiltrado;
+    
+    return Object.entries(copias)
+      .filter(([_, c]: [string, any]) => Boolean(c?.tecnica_id))
+      .map(([slotKey, c]: [string, any]) => {
+        const tecId = Number(c.tecnica_id);
+        const slotConf = UCHIHA_SLOTS_CONFIG.find(s => s.key === slotKey);
+        const slotName = slotConf?.nombre || `Hueco ${slotKey}`;
+        const info = c.info_glosario 
+          || (character.personajes_tecnicas || []).find((pt: any) => Number(pt.tecnica_id) === tecId)?.info_glosario 
+          || (catalog || []).find((g: any) => Number(g.id) === tecId);
+
+        return {
+          slotKey,
+          slotName,
+          rango: slotConf?.rango || 'D',
+          tecnica_id: tecId,
+          fecha_copia: c.fecha_copia,
+          evidencia_url: c.evidencia_url,
+          info_glosario: info
+        };
+      })
+      .filter((item: any) => matchesGlosarioSearch(item.info_glosario, techniqueSearch));
+  }, [(character as any).personaje_uchiha, character.personajes_tecnicas, masters.glosario, glosarioFiltrado, techniqueSearch]);
+
   // Memoizar Técnicas agrupadas por subcategoría (categoria_id === 1 o fallbacks)
   const tecnicasGrouped = useMemo(() => {
     const list = (character.personajes_tecnicas || []).filter((pt: PersonajeTecnica) => {
       const catId = pt.info_glosario?.categoria_id;
-      return catId === 1 || (catId !== 2 && catId !== 3 && catId !== 4);
+      const isJutsu = catId === 1 || (catId !== 2 && catId !== 3 && catId !== 4);
+      return isJutsu && !uchihaCopiedTechIds.has(Number(pt.tecnica_id));
     }).filter((pt: PersonajeTecnica) => matchesGlosarioSearch(pt.info_glosario, techniqueSearch));
     return groupItemsByHierarchy(list);
-  }, [character.personajes_tecnicas, masters.aldeas, masters.ramas, techniqueSearch]);
+  }, [character.personajes_tecnicas, masters.aldeas, masters.ramas, techniqueSearch, uchihaCopiedTechIds]);
 
   // Memoizar Pasivas agrupadas por subcategoría (categoria_id === 4)
   const pasivasGrouped = useMemo(() => {
@@ -1852,7 +1892,7 @@ export function CharacterSheetView({
 
   const [editingRegistro, setEditingRegistro] = useState<Registro | null>(null);
   const [registroTab, setRegistroTab] = useState<'mision' | 'accion' | 'combate'>('mision');
-  const [tecnicasSubTab, setTecnicasSubTab] = useState<'jutsus' | 'pasivas' | 'kuchiyoses' | 'ninken' | 'kugutsu'>('jutsus');
+  const [tecnicasSubTab, setTecnicasSubTab] = useState<'jutsus' | 'pasivas' | 'kuchiyoses' | 'ninken' | 'kugutsu' | 'uchiha'>('jutsus');
   const [inventarioSubTab, setInventarioSubTab] = useState<'mochila' | 'equipo'>('mochila');
   const [recordPage, setRecordPage] = useState(1);
   const recordsPerPage = 10;
@@ -3798,14 +3838,16 @@ export function CharacterSheetView({
                 {(() => {
                   const isInuzuka = (character.personajes_ramas || []).some((r: any) => Number(r.rama_id) === 30);
                   const isKugutsu = (character.personajes_ramas || []).some((r: any) => Number(r.rama_id) === 28);
+                  const isUchiha = (character.personajes_ramas || []).some((r: any) => Number(r.rama_id) === 35 || r.rama?.slug === 'uchiha-ichizoku');
 
-                  const subtabs: ('jutsus' | 'pasivas' | 'kuchiyoses' | 'ninken' | 'kugutsu')[] = ['jutsus', 'pasivas', 'kuchiyoses'];
+                  const subtabs: ('jutsus' | 'pasivas' | 'kuchiyoses' | 'ninken' | 'kugutsu' | 'uchiha')[] = ['jutsus', 'pasivas', 'kuchiyoses'];
                   if (isInuzuka) subtabs.push('ninken');
                   if (isKugutsu) subtabs.push('kugutsu');
+                  if (isUchiha) subtabs.push('uchiha');
 
                   return subtabs.map(tab => {
                     const isActive = tecnicasSubTab === tab;
-                    const label = tab === 'jutsus' ? 'TÉCNICAS' : tab === 'pasivas' ? 'HABILIDADES PASIVAS' : tab === 'kuchiyoses' ? 'KUCHIYOSES' : tab === 'ninken' ? 'NINKEN' : 'KUGUTSU KOBO';
+                    const label = tab === 'jutsus' ? 'TÉCNICAS' : tab === 'pasivas' ? 'HABILIDADES PASIVAS' : tab === 'kuchiyoses' ? 'KUCHIYOSES' : tab === 'ninken' ? 'NINKEN' : tab === 'kugutsu' ? 'KUGUTSU KOBO' : 'CLAN UCHIHA';
 
                     return (
                       <button
@@ -3826,7 +3868,7 @@ export function CharacterSheetView({
                 })()}
               </div>
 
-              {tecnicasSubTab !== 'kugutsu' && (
+              {(tecnicasSubTab === 'jutsus' || tecnicasSubTab === 'pasivas' || tecnicasSubTab === 'kuchiyoses') && (
                 <div className="relative">
                   <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-oro/40 pointer-events-none" />
                   <input
@@ -4221,7 +4263,102 @@ export function CharacterSheetView({
                       </div>
                     )}
 
+                    {/* SECCIÓN 2: HASEI: KOPĪ (CLAN UCHIHA) */}
+                    {(isUchiha || uchihaCopiedTecnicas.length > 0) && (
+                      <div className="mt-12 pt-8 border-t border-oro/15 space-y-6">
+                        <div className="flex items-center justify-between gap-4 flex-wrap">
+                          <div className="flex items-center gap-4">
+                            <h3 className="text-xl xl:text-2xl font-black text-oro uppercase tracking-[0.2em] flex items-center gap-3">
+                              <div className="w-2 h-2 bg-naranja-naruto rotate-45" />
+                              HASEI: KOPĪ
+                            </h3>
+                            <span className="px-2.5 py-0.5 text-caption font-black uppercase bg-naranja-naruto text-black border border-black tracking-widest ninja-clip-xs">
+                              Clan Uchiha
+                            </span>
+                          </div>
+                          <span className="text-xs text-oro/40 italic">
+                            Técnicas copiadas mediante el Kekkei Genkai: Sharingan
+                          </span>
+                        </div>
 
+                        {uchihaCopiedTecnicas.length === 0 ? (
+                          <div className="py-8 text-center rounded-[4px] border border-oro/10 bg-black/20 text-xs font-black text-oro/30 uppercase tracking-[0.25em]">
+                            {techniqueSearch.trim()
+                              ? 'No hay técnicas copiadas que coincidan con la búsqueda'
+                              : 'No hay técnicas copiadas actualmente en Hasei: Kopī'}
+                          </div>
+                        ) : (
+                          <div className="ninja-card-oro p-1 overflow-hidden border border-oro/10">
+                            <div className="overflow-x-auto scrollbar-hide">
+                              <table className="w-full text-left border-collapse table-fixed min-w-[750px]">
+                                <thead>
+                                  <tr className="border-b border-oro/10 text-oro/70 text-caption xl:text-xs font-black uppercase tracking-[0.3em] bg-black/10">
+                                    <th className="py-3 px-5 w-[32%]">Técnica</th>
+                                    <th className="py-3 px-5 w-[10%] text-center">Rango</th>
+                                    <th className="py-3 px-5 w-[16%] text-center">Hueco</th>
+                                    <th className="py-3 px-5 w-[27%]">Requisitos</th>
+                                    <th className="py-3 px-5 w-[15%] text-center">Evidencia</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-oro/5 bg-black/40">
+                                  {uchihaCopiedTecnicas.map((item: any, idx: number) => {
+                                    const info = item.info_glosario;
+                                    return (
+                                      <tr key={`${item.slotKey}-${item.tecnica_id}-${idx}`} className="hover:bg-oro/5 transition-colors group">
+                                        <td className="py-3 px-5">
+                                          <div className="flex flex-col">
+                                            <span className="font-black text-oro uppercase tracking-widest text-sm xl:text-base flex items-center gap-2">
+                                              {info?.nombre_jp || info?.nombre_es || `Técnica #${item.tecnica_id}`}
+                                            </span>
+                                            {info?.nombre_jp && info?.nombre_es && (
+                                              <span className="text-caption text-oro/30 uppercase font-black tracking-tighter mt-0.5">
+                                                {info.nombre_es}
+                                              </span>
+                                            )}
+                                            <span className="text-[10px] text-oro/40 font-medium mt-1">
+                                              Fecha copia: {item.fecha_copia ? new Date(item.fecha_copia + 'T00:00:00').toLocaleDateString('es-ES') : 'Sin fecha'}
+                                            </span>
+                                          </div>
+                                        </td>
+                                        <td className="py-3 px-5 text-center">
+                                          <span className="inline-block px-2.5 py-1 bg-oro/5 border border-oro/20 text-oro text-xs font-black rounded-sm">
+                                            {info?.requisitos?.rango || item.rango || 'D'}
+                                          </span>
+                                        </td>
+                                        <td className="py-3 px-5 text-center">
+                                          <span className="inline-block px-2.5 py-1 bg-oro/10 border border-oro/30 text-oro text-[11px] font-black rounded-sm uppercase tracking-wider">
+                                            {item.slotName}
+                                          </span>
+                                        </td>
+                                        <td className="py-3 px-5">
+                                          {renderRequisitos(info?.requisitos)}
+                                        </td>
+                                        <td className="py-3 px-5 text-center">
+                                          {item.evidencia_url ? (
+                                            <a
+                                              href={item.evidencia_url}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="px-3 py-1 bg-oro/10 border border-oro/30 text-oro text-[11px] font-black uppercase tracking-wider hover:bg-oro hover:text-black transition-all ninja-clip-xs inline-block"
+                                            >
+                                              Ver prueba
+                                            </a>
+                                          ) : (
+                                            <span className="text-oro/30 text-[11px] font-bold uppercase tracking-wider">
+                                              Sin enlace
+                                            </span>
+                                          )}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </SectionCard>
                 </div>
               )}
@@ -4632,6 +4769,21 @@ export function CharacterSheetView({
                   character={character}
                   companionsList={companionsList}
                   isEditing={isEditing}
+                  isNew={isNew}
+                  onUpdateField={onUpdateField}
+                  addToast={addToast}
+                />
+              )}
+
+              {tecnicasSubTab === 'uchiha' && (
+                <UchihaSection
+                  character={character}
+                  masters={masters}
+                  glosarioFiltrado={glosarioFiltrado}
+                  derivedElements={derivedElements}
+                  isEditing={isEditing}
+                  canEdit={canEdit}
+                  isAdmin={isAdmin}
                   isNew={isNew}
                   onUpdateField={onUpdateField}
                   addToast={addToast}
