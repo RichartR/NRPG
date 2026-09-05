@@ -92,37 +92,47 @@ export const MasterService = {
   },
 
   async getSystemConfig(key: string): Promise<any> {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('sys_configuracion_sistema')
-      .select('valor')
-      .eq('clave', key)
-      .maybeSingle();
-    
-    if (error) {
-       console.error(`Config fetch error for ${key}:`, error);
-       return null;
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('sys_configuracion_sistema')
+        .select('valor')
+        .eq('clave', key)
+        .maybeSingle();
+      
+      if (error) {
+        console.error(`Config fetch error for ${key}:`, error?.message || error?.details || error);
+        return null;
+      }
+      return data?.valor;
+    } catch (err: any) {
+      console.error(`Unexpected error fetching config ${key}:`, err?.message || err);
+      return null;
     }
-    return data?.valor;
   },
 
   async getSystemConfigs(keys: string[]): Promise<Record<string, any>> {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('sys_configuracion_sistema')
-      .select('clave, valor')
-      .in('clave', keys);
-    
-    if (error) {
-      console.error(`Configs fetch error:`, error);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('sys_configuracion_sistema')
+        .select('clave, valor')
+        .in('clave', keys);
+      
+      if (error) {
+        console.error(`Configs fetch error:`, error?.message || error?.details || error);
+        return {};
+      }
+
+      const configs: Record<string, any> = {};
+      data?.forEach((row: any) => {
+        configs[row.clave] = row.valor;
+      });
+      return configs;
+    } catch (err: any) {
+      console.error('Unexpected error fetching configs:', err?.message || err);
       return {};
     }
-
-    const configs: Record<string, any> = {};
-    data?.forEach(row => {
-      configs[row.clave] = row.valor;
-    });
-    return configs;
   },
 
   async getGlosarioCategorias(): Promise<GlosarioCategoria[]> {
