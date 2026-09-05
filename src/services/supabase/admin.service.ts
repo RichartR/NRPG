@@ -511,6 +511,7 @@ export const AdminService = {
           : (notif.personaje_id ? [notif.personaje_id] : []);
 
         for (const pid of targetPids) {
+          const partState = parts?.find((p: any) => Number(p.personaje_id) === Number(pid))?.estado;
           const { xp, ryous, pa } = RewardLogic.calculateReward(notif.registro, pid);
           const { data: char } = await supabase
             .from('reg_characters')
@@ -519,11 +520,14 @@ export const AdminService = {
             .single();
 
           if (char) {
-            await supabase.from('reg_characters').update({
-              xp: (char.xp || 0) + xp,
-              ryous: (char.ryous || 0) + ryous,
-              puntos_aprendizaje: (char.puntos_aprendizaje || 0) + pa
-            }).eq('id', pid);
+            // Solo sumar si el participante no figuraba ya como aceptado
+            if (partState !== 'aceptado') {
+              await supabase.from('reg_characters').update({
+                xp: (char.xp || 0) + xp,
+                ryous: (char.ryous || 0) + ryous,
+                puntos_aprendizaje: (char.puntos_aprendizaje || 0) + pa
+              }).eq('id', pid);
+            }
 
             // Si es recuperación de evento o narración, sincronizar en registro original
             if (isRecuperacion && notif.registro?.data?.evento_premios_id) {
@@ -543,9 +547,9 @@ export const AdminService = {
                 const nuevoPremioObj = {
                   personaje_id: pid,
                   nombre_ninja: char.nombre_ninja,
-                  xp_extra: xp,
-                  ryous_extra: ryous,
-                  pa_extra: pa,
+                  xp_extra: Math.max(0, xp - (Number(regPremios.data?.global_xp) || 0)),
+                  ryous_extra: Math.max(0, ryous - (Number(regPremios.data?.global_ryous) || 0)),
+                  pa_extra: Math.max(0, pa - (Number(regPremios.data?.global_pa) || 0)),
                   recuperado: true
                 };
 
@@ -559,14 +563,6 @@ export const AdminService = {
                   .from('reg_registros')
                   .update({ data: { ...regPremios.data, participantes_premios: currentPremios } })
                   .eq('id', eventoPremiosId);
-
-                await supabase
-                  .from('reg_registros_participantes')
-                  .upsert({
-                    registro_id: eventoPremiosId,
-                    personaje_id: pid,
-                    estado: 'aceptado'
-                  }, { onConflict: 'registro_id,personaje_id' });
               }
             }
           }

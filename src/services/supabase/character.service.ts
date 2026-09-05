@@ -228,7 +228,11 @@ export const CharacterService = {
       .eq('estado', 'pendiente');
     
     if (error) throw error;
-    return data || [];
+    // Las recuperaciones de eventos o narraciones son solicitudes a moderación y no deben aparecer como notificaciones de aceptación al jugador
+    return (data || []).filter((n: any) => 
+      n.registro?.subtipo !== 'recuperacion_evento' && 
+      n.registro?.subtipo !== 'recuperacion_narracion'
+    );
   },
 
   async respondToRecord(personajeId: number, registroId: number, respuesta: 'aceptar' | 'rechazar', comentario?: string) {
@@ -244,6 +248,10 @@ export const CharacterService = {
       .single();
     
     if (regError) throw regError;
+
+    if (registro.subtipo === 'recuperacion_evento' || registro.subtipo === 'recuperacion_narracion') {
+      throw new Error('Las solicitudes de recuperación deben ser evaluadas por la administración.');
+    }
 
     if (respuesta === 'aceptar') {
       const { xp, ryous, pa } = RewardLogic.calculateReward(registro, personajeId);

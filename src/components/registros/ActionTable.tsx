@@ -172,14 +172,23 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
               const isDispute = myPart?.estado === 'disputa_admin';
               const canAcceptDirectly = isPending && Number(activeCharacter?.id) === Number(targetCharId);
 
-              const partPremio = (m.subtipo === 'evento_premios' || m.subtipo === 'narracion')
+              const isNarracion = m.subtipo === 'narracion';
+              const isEventPremio = m.subtipo === 'evento_premios';
+              const hasExplicitParticipation = !!myPart ||
+                (Array.isArray(m.data?.participantes_premios) && m.data.participantes_premios.some((p: any) => Number(p.personaje_id) === Number(targetCharId))) ||
+                (Array.isArray(m.data?.participantes_historicos) && m.data.participantes_historicos.some((p: any) => Number(p.id) === Number(targetCharId)));
+
+              const partPremio = (isEventPremio || isNarracion)
                 ? m.data.participantes_premios?.find((p: any) => Number(p.personaje_id) === Number(targetCharId))
                 : null;
 
-              const globalXp = Number(m.data.global_xp ?? m.data.recuperado_xp) || 0;
-              const globalRyous = Number(m.data.global_ryous ?? m.data.recuperado_ryous) || 0;
-              const globalPa = Number(m.data.global_pa ?? m.data.recuperado_pa) || 0;
-              const globalMonedas = Number(m.data.global_monedas_evento) || 0;
+              // En narraciones o eventos, si el personaje no participó, no recibe premios globales
+              const eligibleForGlobal = (!isNarracion && !isEventPremio) || hasExplicitParticipation;
+
+              const globalXp = eligibleForGlobal ? (Number(m.data.global_xp ?? m.data.recuperado_xp) || 0) : 0;
+              const globalRyous = eligibleForGlobal ? (Number(m.data.global_ryous ?? m.data.recuperado_ryous) || 0) : 0;
+              const globalPa = eligibleForGlobal ? (Number(m.data.global_pa ?? m.data.recuperado_pa) || 0) : 0;
+              const globalMonedas = eligibleForGlobal ? (Number(m.data.global_monedas_evento) || 0) : 0;
 
               const xpObtained = globalXp + (Number(partPremio?.xp_extra) || Number(partPremio?.xp) || 0);
               const ryousObtained = globalRyous + (Number(partPremio?.ryous_extra) || Number(partPremio?.ryous) || 0);
@@ -221,7 +230,14 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
 
                   {/* Acción / Crónica */}
                   <td className="py-3 px-5 text-oro/80 text-xs xl:text-sm whitespace-normal break-words">
-                    {renderActionTitle(actionTitle, selfName)}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {renderActionTitle(actionTitle, selfName)}
+                      {(m.subtipo === 'recuperacion_evento' || m.subtipo === 'recuperacion_narracion' || partPremio?.recuperado) && (
+                        <span className="text-[9px] bg-naranja-naruto/20 border border-naranja-naruto/40 text-naranja-naruto px-2 py-0.5 ninja-clip-xs font-black tracking-widest uppercase">
+                          Recuperado
+                        </span>
+                      )}
+                    </div>
                     {m.data.subtitulo && (
                       <div className="text-[11px] text-oro/40 mt-1 uppercase tracking-wide">
                         {m.data.subtitulo}

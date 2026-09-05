@@ -815,7 +815,14 @@ export function CharacterSheetView({
   const { allRegistros, totalExp, totalRyous, missionCounts, totalPuntosCombate } = useMemo(() => {
     const allRegistrosMap = new Map<number, Registro>();
     [
-      ...(character.registros_autor || []),
+      ...(character.registros_autor?.filter((r: any) => {
+        if (r.subtipo === 'narracion') {
+          return r.participantes?.some((p: any) => Number(p.personaje_id) === Number(character.id)) ||
+                 (Array.isArray(r.data?.participantes_premios) && r.data.participantes_premios.some((p: any) => Number(p.personaje_id) === Number(character.id))) ||
+                 (Array.isArray(r.data?.participantes_historicos) && r.data.participantes_historicos.some((p: any) => Number(p.id) === Number(character.id)));
+        }
+        return true;
+      }) || []),
       ...(character.registros_participante
         ?.filter((p: any) => p.estado !== 'rechazado')
         ?.map((p: any) => p.registro)
@@ -833,6 +840,9 @@ export function CharacterSheetView({
     // Filtrar solo los registros que han sido formalmente aceptados para este personaje
     const acceptedRegs = allRegs.filter(r => {
       const p = r.participantes?.find(part => Number(part.personaje_id) === Number(character.id));
+      if (r.subtipo === 'narracion' || r.subtipo === 'recuperacion_evento' || r.subtipo === 'recuperacion_narracion') {
+        return p?.estado === 'aceptado';
+      }
       return p?.estado === 'aceptado' || (!p && Number(r.autor_id) === Number(character.id));
     });
     const acceptedMissions = acceptedRegs.filter(r => r.tipo === 'mision');
@@ -4934,7 +4944,7 @@ export function CharacterSheetView({
                   const records = allRegistros.filter(r => {
                     if (registroTab === 'mision') return r.tipo === 'mision';
                     if (registroTab === 'combate') return r.tipo === 'combate';
-                    return r.tipo === 'accion' || r.tipo === 'compra';
+                    return r.tipo === 'accion' || r.tipo === 'compra' || (r.tipo as string) === 'narracion';
                   });
 
                   // Filter by date if applicable

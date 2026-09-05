@@ -264,9 +264,9 @@ export async function POST(request: Request) {
               const nuevoPremioObj = {
                 personaje_id: personajeId,
                 nombre_ninja: char.nombre_ninja,
-                xp_extra: xp,
-                ryous_extra: ryous,
-                pa_extra: pa,
+                xp_extra: Math.max(0, xp - (Number(regPremios.data?.global_xp) || 0)),
+                ryous_extra: Math.max(0, ryous - (Number(regPremios.data?.global_ryous) || 0)),
+                pa_extra: Math.max(0, pa - (Number(regPremios.data?.global_pa) || 0)),
                 recuperado: true
               };
 
@@ -285,15 +285,6 @@ export async function POST(request: Request) {
                 .from('reg_registros')
                 .update({ data: updatedPremiosData })
                 .eq('id', eventoPremiosId);
-
-              // Asegurar que se guarde en reg_registros_participantes de evento_premios
-              await adminClient
-                .from('reg_registros_participantes')
-                .upsert({
-                  registro_id: eventoPremiosId,
-                  personaje_id: personajeId,
-                  estado: 'aceptado'
-                }, { onConflict: 'registro_id,personaje_id' });
             }
           }
         }
@@ -334,12 +325,13 @@ export async function POST(request: Request) {
 
     if (action === 'create') {
       // 1. Crear el registro base
+      const isNarracionSubtipo = payload.subtipo === 'narracion';
       const { data: registro, error: regError } = await adminClient
         .from('reg_registros')
         .insert({
           tipo: payload.tipo,
           subtipo: payload.subtipo,
-          autor_id: payload.autor_id,
+          autor_id: isNarracionSubtipo ? null : (payload.autor_id || null),
           data: payload.data
         })
         .select()
@@ -495,6 +487,7 @@ export async function POST(request: Request) {
         .from('reg_registros')
         .update({
           subtipo: payload.subtipo,
+          ...(payload.subtipo === 'narracion' ? { autor_id: null } : (payload.autor_id !== undefined ? { autor_id: payload.autor_id } : {})),
           data: updatedData
         })
         .eq('id', id);
@@ -591,10 +584,11 @@ export async function POST(request: Request) {
       }
 
       // B. AÑADIDOS: En la nueva lista pero NO en la DB vieja (se añaden como 'pendiente' para esperar su aceptación manual)
+      const isEventoOrNarracionUpdate = payload.subtipo === 'evento_premios' || payload.subtipo === 'narracion' || payload.subtipo === 'recuperacion_evento' || payload.subtipo === 'recuperacion_narracion';
       const addedParticipantIds = newParticipantIds.filter((pid: number) => !oldParticipantIds.includes(pid));
-      const autorId = payload.autor_id || oldRegistro.autor_id;
+      const autorId = payload.subtipo === 'narracion' ? null : (payload.autor_id || oldRegistro.autor_id);
       for (const pid of addedParticipantIds) {
-        const isAutor = autorId ? pid === autorId : false;
+        const isAutor = (!isEventoOrNarracionUpdate && autorId) ? pid === autorId : false;
         const estado = isAutor ? 'aceptado' : 'pendiente';
 
         const { data: newPart } = await adminClient
