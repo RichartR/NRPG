@@ -253,7 +253,28 @@ export const CharacterService = {
       throw new Error('Las solicitudes de recuperación deben ser evaluadas por la administración.');
     }
 
+    const part = (registro.participantes || []).find((p: any) => Number(p.personaje_id) === Number(personajeId));
+    if (!part) {
+      throw new Error('No eres participante de este registro.');
+    }
+    if (part.estado !== 'pendiente') {
+      throw new Error('Esta notificación ya ha sido procesada previamente.');
+    }
+
     if (respuesta === 'aceptar') {
+      // 1. Marcar atómicamente como 'aceptado' sólo si sigue en 'pendiente' para evitar doble cobro por concurrencia
+      const { data: updatedPart, error: partUpdateError } = await supabase
+        .from('reg_registros_participantes')
+        .update({ estado: 'aceptado' })
+        .match({ registro_id: registroId, personaje_id: personajeId, estado: 'pendiente' })
+        .select();
+
+      if (partUpdateError) throw partUpdateError;
+      if (!updatedPart || updatedPart.length === 0) {
+        // Ya fue procesado concurrentemente
+        return;
+      }
+
       const { xp, ryous, pa } = RewardLogic.calculateReward(registro, personajeId);
       
       let extraMonedaEvento = 0;
@@ -316,12 +337,6 @@ export const CharacterService = {
         }));
         await supabase.from('reg_personajes_rasgos').upsert(traitsPack, { onConflict: 'personaje_id,rasgo_id', ignoreDuplicates: true });
       }
-
-      await supabase
-        .from('reg_registros_participantes')
-        .update({ estado: 'aceptado' })
-        .match({ registro_id: registroId, personaje_id: personajeId });
-
     } else {
       await supabase
         .from('reg_registros_participantes')
