@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { ProfileService } from '@/services/supabase/profile.service';
@@ -67,11 +67,12 @@ interface GridConfig {
 }
 
 export default function CombatRoom({ roomId }: { roomId: string }) {
+  const cleanRoomId = (roomId || '').trim().toLowerCase();
   const { activeCharacter, fetchActiveCharacter, loading: characterLoading } = useCharacterStore();
   const addToast = useToastStore(state => state.addToast);
   const confirm = useConfirmStore(state => state.confirm);
   const searchParams = useSearchParams();
-  const isEventMode = roomId.endsWith('-E') || (searchParams ? searchParams.get('mode') === 'event' : false);
+  const isEventMode = cleanRoomId.endsWith('-e') || (searchParams ? searchParams.get('mode') === 'event' : false);
   const canUseCombatMusic = isEventMode;
 
   const [userProfile, setUserProfile] = useState<{ id: string; username: string; url_avatar?: string } | null>(null);
@@ -527,7 +528,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     }
   };
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const channelRef = useRef<any>(null);
 
   useEffect(() => {
@@ -583,7 +584,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
 
   // Initializing global combat state from localStorage (if valid)
   useEffect(() => {
-    const globalStorageKey = `combat_room_global_${roomId}`;
+    const globalStorageKey = `combat_room_global_${cleanRoomId}`;
     const savedGlobalStr = localStorage.getItem(globalStorageKey);
     if (savedGlobalStr) {
       try {
@@ -603,14 +604,14 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         console.error("Error parsing saved global combat state:", e);
       }
     }
-  }, [roomId]);
+  }, [cleanRoomId]);
 
   // Initializing local participant stats & bando from localStorage
   useEffect(() => {
     const actorId = activeCharacter ? String(activeCharacter.id) : userProfile?.id;
     if (!actorId) return;
 
-    const storageKey = `combat_room_${roomId}_${actorId}`;
+    const storageKey = `combat_room_${cleanRoomId}_${actorId}`;
     const savedDataStr = localStorage.getItem(storageKey);
     let restored = false;
 
@@ -663,13 +664,13 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         chConstanteCost: 0,
       });
     }
-  }, [activeCharacter?.id ? String(activeCharacter.id) : '', userProfile?.id || '', isEventMode, roomId]);
+  }, [activeCharacter?.id ? String(activeCharacter.id) : '', userProfile?.id || '', isEventMode, cleanRoomId]);
 
   // Save local participant state to localStorage on changes
   useEffect(() => {
     const actorId = activeCharacter ? String(activeCharacter.id) : userProfile?.id;
     if (actorId) {
-      const storageKey = `combat_room_${roomId}_${actorId}`;
+      const storageKey = `combat_room_${cleanRoomId}_${actorId}`;
       if (myIsInCombat || myBando !== null || localState !== null) {
         const dataToSave = {
           localState,
@@ -684,11 +685,11 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         localStorage.removeItem(storageKey);
       }
     }
-  }, [roomId, activeCharacter?.id ? String(activeCharacter.id) : '', userProfile?.id || '', localState, myBando, myIsInCombat, myCooldowns, myActiveTecnicas]);
+  }, [cleanRoomId, activeCharacter?.id ? String(activeCharacter.id) : '', userProfile?.id || '', localState, myBando, myIsInCombat, myCooldowns, myActiveTecnicas]);
 
   // Save global room state to localStorage on changes
   useEffect(() => {
-    const globalStorageKey = `combat_room_global_${roomId}`;
+    const globalStorageKey = `combat_room_global_${cleanRoomId}`;
     if (logs.length > 0 || turnQueue.length > 0 || combatStarted || Object.keys(tempCharacters).length > 0) {
       const globalData = {
         turnQueue,
@@ -704,7 +705,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     } else {
       localStorage.removeItem(globalStorageKey);
     }
-  }, [roomId, turnQueue, currentTurnIndex, rondaActual, combatStarted, logs, tempCharacters]);
+  }, [cleanRoomId, turnQueue, currentTurnIndex, rondaActual, combatStarted, logs, tempCharacters]);
 
   // Refs to avoid feedback loops and channel recreation on state updates
   const turnQueueRef = useRef(turnQueue);
@@ -838,11 +839,83 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   const currentActorImg = activeCharacter?.url_img || userProfile?.url_avatar || '';
 
   // Supabase Presence and Broadcast Subscriptions
+  const [fallbackActorId] = useState(() => 'anon-' + Math.random().toString(36).substring(2, 9));
+
+  // Throttled presence tracking to avoid Supabase ClientPresenceRateLimitReached
+  const lastTrackedPayloadRef = useRef<string>('');
+  const trackDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const safeTrackPresence = useCallback((customPayload?: any) => {
+    if (!channelRef.current || channelRef.current.state !== 'joined') return;
+    const myActorId = activeCharacterRef.current ? String(activeCharacterRef.current.id) : userProfileRef.current?.id;
+    if (!myActorId) return;
+
+    const payload = customPayload || {
+      user_id: myActorId,
+      nombre: activeCharacterRef.current?.nombre_ninja || userProfileRef.current?.username || 'Staff',
+      url_img: activeCharacterRef.current?.url_img || userProfileRef.current?.url_avatar || '',
+      estado: localStateRef.current || { vit: 0, maxVit: 0, ch: 0, maxCh: 0, vel: 0, kawarimi: 0, maxKawarimi: 0 },
+      bando: myBandoRef.current,
+      isInCombat: myIsInCombatRef.current,
+      cooldowns: Object.keys(myCooldownsRef.current).map(Number).map(techId => {
+        const entry = myCooldownsRef.current[techId];
+        const reusableAtRound = typeof entry === 'number' ? entry : entry?.reusableAtRound;
+        const cdRounds = typeof entry === 'number' ? undefined : entry?.cdRounds;
+        const pt = activeCharacterRef.current?.personajes_tecnicas?.find(t => t.tecnica_id === techId);
+        return {
+          id: techId,
+          nombre: pt?.info_glosario?.nombre_jp || pt?.info_glosario?.nombre_es || 'Técnica',
+          reusableAtRound,
+          cdRounds
+        };
+      }),
+      tecnicasActivas: Object.keys(myActiveTecnicasRef.current).map(Number).map(techId => {
+        const pt = activeCharacterRef.current?.personajes_tecnicas?.find(t => t.tecnica_id === techId);
+        return {
+          id: techId,
+          nombre: pt?.info_glosario?.nombre_jp || pt?.info_glosario?.nombre_es || 'Técnica',
+          cdRounds: myActiveTecnicasRef.current[techId].cdRounds
+        };
+      }),
+      rasgos: activeCharacterRef.current?.personajes_rasgos?.map(r => ({
+        id: r.info_rasgos?.id || r.rasgo_id,
+        nombre: r.info_rasgos?.nombre || 'Rasgo',
+        usado: localStateRef.current?.usedTraits?.[r.info_rasgos?.id || r.rasgo_id] || false
+      })) || [],
+      equipo: activeCharacterRef.current?.personajes_inventario?.filter(pi => pi.equipado).map(pi => ({
+        id: pi.info_glosario?.id || pi.item_id,
+        nombre: pi.info_glosario?.nombre_es || 'Objeto'
+      })) || [],
+      equipoSinHueco: activeCharacterRef.current?.personajes_inventario?.filter(pi => pi.info_glosario?.ocupa_espacio === false).map(pi => ({
+        id: pi.info_glosario?.id || pi.item_id,
+        nombre: pi.info_glosario?.nombre_es || 'Objeto',
+        usado: localStateRef.current?.usedItems?.[pi.info_glosario?.id || pi.item_id] || false
+      })) || []
+    };
+
+    const payloadStr = JSON.stringify(payload);
+    if (payloadStr === lastTrackedPayloadRef.current) return;
+
+    if (trackDebounceTimerRef.current) {
+      clearTimeout(trackDebounceTimerRef.current);
+    }
+
+    trackDebounceTimerRef.current = setTimeout(() => {
+      if (channelRef.current && channelRef.current.state === 'joined') {
+        lastTrackedPayloadRef.current = payloadStr;
+        channelRef.current.track(payload).catch((err: any) => {
+          console.warn("[CombatRoom Realtime] Track error:", err);
+        });
+      }
+    }, 500);
+  }, []);
+
   useEffect(() => {
-    const actorId = activeCharacter ? String(activeCharacter.id) : userProfile?.id;
+    if (characterLoading || !rolesLoaded) return;
+    const actorId = activeCharacter ? String(activeCharacter.id) : (userProfile?.id || fallbackActorId);
     if (!actorId) return;
 
-    const channelName = `room_${roomId}`;
+    const channelName = `room_${cleanRoomId}`;
     const channel = supabase.channel(channelName, {
       config: {
         presence: { key: actorId },
@@ -854,7 +927,6 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     channel
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
-        console.log("Supabase Presence sync triggered, raw state:", state);
         const activeParticipants: Record<string, Participant> = {};
 
         Object.keys(state).forEach((key) => {
@@ -864,7 +936,6 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
             activeParticipants[key] = merged;
           }
         });
-        console.log("Processed activeParticipants:", activeParticipants);
         setParticipants(activeParticipants);
       })
       .on('broadcast', { event: 'combat_log' }, ({ payload }) => {
@@ -994,54 +1065,7 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         }
       })
       .on('broadcast', { event: 'request_presence_update' }, () => {
-        const myActorId = activeCharacterRef.current ? String(activeCharacterRef.current.id) : userProfileRef.current?.id;
-        const myName = activeCharacterRef.current?.nombre_ninja || userProfileRef.current?.username || 'Staff';
-        const myImg = activeCharacterRef.current?.url_img || userProfileRef.current?.url_avatar || '';
-        if (channelRef.current && myActorId) {
-          const payloadTrack = {
-            user_id: myActorId,
-            nombre: myName,
-            url_img: myImg,
-            estado: localStateRef.current || { vit: 0, maxVit: 0, ch: 0, maxCh: 0, vel: 0, kawarimi: 0, maxKawarimi: 0 },
-            bando: myBandoRef.current,
-            isInCombat: myIsInCombatRef.current,
-            cooldowns: Object.keys(myCooldownsRef.current).map(Number).map(techId => {
-              const entry = myCooldownsRef.current[techId];
-              const reusableAtRound = typeof entry === 'number' ? entry : entry?.reusableAtRound;
-              const cdRounds = typeof entry === 'number' ? undefined : entry?.cdRounds;
-              const pt = activeCharacterRef.current?.personajes_tecnicas?.find(t => t.tecnica_id === techId);
-              return {
-                id: techId,
-                nombre: pt?.info_glosario?.nombre_jp || pt?.info_glosario?.nombre_es || 'Técnica',
-                reusableAtRound,
-                cdRounds
-              };
-            }),
-            tecnicasActivas: Object.keys(myActiveTecnicasRef.current).map(Number).map(techId => {
-              const pt = activeCharacterRef.current?.personajes_tecnicas?.find(t => t.tecnica_id === techId);
-              return {
-                id: techId,
-                nombre: pt?.info_glosario?.nombre_jp || pt?.info_glosario?.nombre_es || 'Técnica',
-                cdRounds: myActiveTecnicasRef.current[techId].cdRounds
-              };
-            }),
-            rasgos: activeCharacterRef.current?.personajes_rasgos?.map(r => ({
-              id: r.info_rasgos?.id || r.rasgo_id,
-              nombre: r.info_rasgos?.nombre || 'Rasgo',
-              usado: localStateRef.current?.usedTraits?.[r.info_rasgos?.id || r.rasgo_id] || false
-            })) || [],
-            equipo: activeCharacterRef.current?.personajes_inventario?.filter(pi => pi.equipado).map(pi => ({
-              id: pi.info_glosario?.id || pi.item_id,
-              nombre: pi.info_glosario?.nombre_es || 'Objeto'
-            })) || [],
-            equipoSinHueco: activeCharacterRef.current?.personajes_inventario?.filter(pi => pi.info_glosario?.ocupa_espacio === false).map(pi => ({
-              id: pi.info_glosario?.id || pi.item_id,
-              nombre: pi.info_glosario?.nombre_es || 'Objeto',
-              usado: localStateRef.current?.usedItems?.[pi.info_glosario?.id || pi.item_id] || false
-            })) || []
-          };
-          channelRef.current.track(payloadTrack);
-        }
+        safeTrackPresence();
       })
       .on('broadcast', { event: 'combat_reset' }, () => {
         resetLocalStateToDefault();
@@ -1052,95 +1076,60 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
         setTempCharacters({});
         setActiveMusicVideoId(null);
         setMusicIsPlaying(true);
-        const globalStorageKey = `combat_room_global_${roomId}`;
+        const globalStorageKey = `combat_room_global_${cleanRoomId}`;
         localStorage.removeItem(globalStorageKey);
         if (activeCharacterRef.current) {
-          const storageKey = `combat_room_${roomId}_${activeCharacterRef.current.id}`;
+          const storageKey = `combat_room_${cleanRoomId}_${activeCharacterRef.current.id}`;
           localStorage.removeItem(storageKey);
         }
       })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
+      .subscribe(async (status, err) => {
+        // Guard against callbacks from previous/unmounted channels
+        if (channelRef.current !== channel) return;
+
+        console.log(`[CombatRoom Realtime] Channel status: ${status}`, err || '');
+
+        if (status === 'SUBSCRIBED' || channel.state === 'joined') {
           setIsSubscribed(true);
           channel.send({
             type: 'broadcast',
             event: 'request_combat_state',
             payload: { requesterId: actorId }
           });
-        } else {
+          channel.send({
+            type: 'broadcast',
+            event: 'request_presence_update',
+            payload: { senderId: actorId }
+          });
+          safeTrackPresence();
+        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           setIsSubscribed(false);
         }
       });
 
     return () => {
       supabase.removeChannel(channel);
-      channelRef.current = null;
-      setIsSubscribed(false);
+      if (channelRef.current === channel) {
+        channelRef.current = null;
+        setIsSubscribed(false);
+      }
     };
-  }, [roomId, activeCharacter?.id ? String(activeCharacter.id) : '', userProfile?.id || '']);
+  }, [cleanRoomId, characterLoading, rolesLoaded, activeCharacter?.id ? String(activeCharacter.id) : '', userProfile?.id || '']);
 
-  // Track presence reactively when stats, bando, or combat status changes (only after subscription is active)
+  // Track presence reactively when stats, bando, or combat status changes (debounced & deduplicated)
   useEffect(() => {
-    const myActorId = activeCharacter ? String(activeCharacter.id) : userProfile?.id;
-    const myName = activeCharacter?.nombre_ninja || userProfile?.username || 'Staff';
-    const myImg = activeCharacter?.url_img || userProfile?.url_avatar || '';
-    if (isSubscribed && channelRef.current && myActorId) {
-      const payload = {
-        user_id: myActorId,
-        nombre: myName,
-        url_img: myImg,
-        estado: localState || { vit: 0, maxVit: 0, ch: 0, maxCh: 0, vel: 0, kawarimi: 0, maxKawarimi: 0 },
-        bando: myBando,
-        isInCombat: myIsInCombat,
-        cooldowns: Object.keys(myCooldowns).map(Number).map(techId => {
-          const entry = myCooldowns[techId];
-          const reusableAtRound = typeof entry === 'number' ? entry : entry?.reusableAtRound;
-          const cdRounds = typeof entry === 'number' ? undefined : entry?.cdRounds;
-          const pt = activeCharacter?.personajes_tecnicas?.find(t => t.tecnica_id === techId);
-          return {
-            id: techId,
-            nombre: pt?.info_glosario?.nombre_jp || pt?.info_glosario?.nombre_es || 'Técnica',
-            reusableAtRound,
-            cdRounds
-          };
-        }),
-        tecnicasActivas: Object.keys(myActiveTecnicas).map(Number).map(techId => {
-          const pt = activeCharacter?.personajes_tecnicas?.find(t => t.tecnica_id === techId);
-          return {
-            id: techId,
-            nombre: pt?.info_glosario?.nombre_jp || pt?.info_glosario?.nombre_es || 'Técnica',
-            cdRounds: myActiveTecnicas[techId].cdRounds
-          };
-        }),
-        rasgos: activeCharacter?.personajes_rasgos?.map(r => ({
-          id: r.info_rasgos?.id || r.rasgo_id,
-          nombre: r.info_rasgos?.nombre || 'Rasgo',
-          usado: localState?.usedTraits?.[r.info_rasgos?.id || r.rasgo_id] || false
-        })) || [],
-        equipo: activeCharacter?.personajes_inventario?.filter(pi => pi.equipado).map(pi => ({
-          id: pi.info_glosario?.id || pi.item_id,
-          nombre: pi.info_glosario?.nombre_es || 'Objeto'
-        })) || [],
-        equipoSinHueco: activeCharacter?.personajes_inventario?.filter(pi => pi.info_glosario?.ocupa_espacio === false).map(pi => ({
-          id: pi.info_glosario?.id || pi.item_id,
-          nombre: pi.info_glosario?.nombre_es || 'Objeto',
-          usado: localState?.usedItems?.[pi.info_glosario?.id || pi.item_id] || false
-        })) || []
-      };
-      channelRef.current.track(payload);
-    }
+    safeTrackPresence();
   }, [
     isSubscribed,
     activeCharacter?.id,
     userProfile?.id,
     userProfile?.username,
-    activeCharacter?.personajes_rasgos,
-    activeCharacter?.personajes_inventario,
     localState,
     myBando,
     myIsInCombat,
     myCooldowns,
-    myActiveTecnicas
+    myActiveTecnicas,
+    safeTrackPresence
   ]);
 
   const sendBroadcast = (event: string, payload: any) => {
@@ -1443,15 +1432,26 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     }
 
     // Clear localStorage on reset
-    const globalStorageKey = `combat_room_global_${roomId}`;
+    const globalStorageKey = `combat_room_global_${cleanRoomId}`;
     localStorage.removeItem(globalStorageKey);
     if (activeCharacter) {
-      const storageKey = `combat_room_${roomId}_${activeCharacter.id}`;
+      const storageKey = `combat_room_${cleanRoomId}_${activeCharacter.id}`;
       localStorage.removeItem(storageKey);
     }
   };
 
+  const lastForceSyncRef = useRef<number>(0);
   const forceSync = () => {
+    const now = Date.now();
+    if (now - lastForceSyncRef.current < 2000) {
+      return;
+    }
+    lastForceSyncRef.current = now;
+
+    if (!isSubscribed) {
+      addToast("Conexión en tiempo real desconectada. Si persiste, desactiva bloqueadores de anuncios o VPN.", "error");
+    }
+
     if (channelRef.current && currentActorId) {
       // 1. Request the latest global state
       channelRef.current.send({
@@ -1468,53 +1468,33 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
     }
 
     // 3. Track ourselves immediately to publish/refresh our status for everyone
-    if (isSubscribed && channelRef.current && currentActorId) {
-      const payload = {
-        user_id: currentActorId,
-        nombre: currentActorName,
-        url_img: currentActorImg,
-        estado: localState || { vit: 0, maxVit: 0, ch: 0, maxCh: 0, vel: 0, kawarimi: 0, maxKawarimi: 0 },
-        bando: myBando,
-        isInCombat: myIsInCombat,
-        cooldowns: Object.keys(myCooldowns).map(Number).map(techId => {
-          const entry = myCooldowns[techId];
-          const reusableAtRound = typeof entry === 'number' ? entry : entry?.reusableAtRound;
-          const cdRounds = typeof entry === 'number' ? undefined : entry?.cdRounds;
-          const pt = activeCharacter?.personajes_tecnicas?.find(t => t.tecnica_id === techId);
-          return {
-            id: techId,
-            nombre: pt?.info_glosario?.nombre_jp || pt?.info_glosario?.nombre_es || 'Técnica',
-            reusableAtRound,
-            cdRounds
-          };
-        }),
-        tecnicasActivas: Object.keys(myActiveTecnicas).map(Number).map(techId => {
-          const pt = activeCharacter?.personajes_tecnicas?.find(t => t.tecnica_id === techId);
-          return {
-            id: techId,
-            nombre: pt?.info_glosario?.nombre_jp || pt?.info_glosario?.nombre_es || 'Técnica',
-            cdRounds: myActiveTecnicas[techId].cdRounds
-          };
-        }),
-        rasgos: activeCharacter?.personajes_rasgos?.map(r => ({
-          id: r.info_rasgos?.id || r.rasgo_id,
-          nombre: r.info_rasgos?.nombre || 'Rasgo',
-          usado: localState?.usedTraits?.[r.info_rasgos?.id || r.rasgo_id] || false
-        })) || [],
-        equipo: activeCharacter?.personajes_inventario?.filter(pi => pi.equipado).map(pi => ({
-          id: pi.info_glosario?.id || pi.item_id,
-          nombre: pi.info_glosario?.nombre_es || 'Objeto'
-        })) || [],
-        equipoSinHueco: activeCharacter?.personajes_inventario?.filter(pi => pi.info_glosario?.ocupa_espacio === false).map(pi => ({
-          id: pi.info_glosario?.id || pi.item_id,
-          nombre: pi.info_glosario?.nombre_es || 'Objeto',
-          usado: localState?.usedItems?.[pi.info_glosario?.id || pi.item_id] || false
-        })) || []
-      };
-      channelRef.current.track(payload);
-    }
+    safeTrackPresence();
     addToast("Sincronización forzada enviada a la sala.", "info");
   };
+
+  // Auto-resync when returning to tab from background
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && channelRef.current && isSubscribed) {
+        setTimeout(forceSync, 300);
+      }
+    };
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isSubscribed]);
+
+  // Initial delayed sync in case of network latency
+  useEffect(() => {
+    if (!isSubscribed) return;
+    const timer = setTimeout(() => {
+      if (channelRef.current && isSubscribed) {
+        forceSync();
+      }
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [isSubscribed]);
 
   const passTurn = () => {
     let nextIndex = currentTurnIndex + 1;
@@ -2177,7 +2157,26 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
             </span>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3 xl:gap-6 flex-wrap">
+            {/* Realtime Status Indicator */}
+            <div
+              onClick={forceSync}
+              className={`flex items-center gap-2 text-xs font-black uppercase tracking-wider border px-3 py-2 cursor-pointer transition-all select-none ${
+                isSubscribed 
+                  ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-400 hover:bg-emerald-900/40' 
+                  : 'bg-red-950/40 border-red-500/30 text-red-400 hover:bg-red-900/40 animate-pulse'
+              }`}
+              title={
+                isSubscribed 
+                  ? "Conectado y sincronizado en tiempo real. Haz clic para forzar sincronización manual." 
+                  : "Desconectado del servidor en tiempo real. Haz clic para reintentar o desactiva bloqueadores de anuncios / VPN."
+              }
+            >
+              <span className={`w-2 h-2 rounded-full ${isSubscribed ? 'bg-emerald-400 animate-pulse' : 'bg-red-500'}`} />
+              <span>{isSubscribed ? 'En Línea' : 'Desconectado'}</span>
+              <RefreshCw className="w-3.5 h-3.5 ml-1 opacity-70 hover:opacity-100" />
+            </div>
+
             <div className="flex items-center gap-2 text-oro/60 text-xs font-black uppercase tracking-wider bg-black/40 border border-oro/5 px-4 py-2">
               <Users className="w-4 h-4 text-oro" />
               <span>{Object.keys(participants).length} Conectados</span>
