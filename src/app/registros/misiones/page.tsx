@@ -91,10 +91,10 @@ export default function MisionesPage() {
               <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto shrink-0">
                 <Link
                   href="/registros/combates?tipo=intervencion"
-                  className="flex w-full sm:w-auto items-center justify-center gap-2.5 px-5 sm:px-6 py-3 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-caption sm:text-xs uppercase tracking-widest font-black transition-all ninja-clip-xs"
+                  className="flex w-full sm:w-auto items-center justify-center gap-3 px-5 sm:px-6 py-3 ninja-btn-oro text-caption sm:text-xs disabled:opacity-30 disabled:cursor-not-allowed uppercase tracking-widest font-black shrink-0"
                   title="Postear una misión intervenida desde combate"
                 >
-                  <ShieldAlert className="w-4 h-4 text-amber-400" /> NUEVA INTERVENCIÓN
+                   <Plus className="w-4 h-4" /> NUEVA INTERVENCIÓN
                 </Link>
 
                 <button
