@@ -557,30 +557,14 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
                         style={{ backgroundImage: "url('/assets/ui/bg-list.webp')" }}
                       >
                         <div
-                          className="bg-[#ffe6ba] shadow-[0_0_80px_rgba(0,0,0,0.8)] overflow-hidden relative my-auto shrink-0 transition-all duration-300 w-[794px] h-[1120px]"
-                          style={{
-                            width: '794px',
-                            maxWidth: '98vw',
-                            height: '1120px',
-                            maxHeight: 'calc(85vh - 220px)',
-                          }}
+                          className="bg-[#ffe6ba] shadow-[0_0_80px_rgba(0,0,0,0.8)] border border-oro/20 rounded relative my-auto shrink-0 transition-all duration-300 w-full max-w-4xl h-[75vh]"
                         >
                           {mounted && (
-                            <div
-                              className="absolute inset-0"
-                              style={{
-                                width: '950px',
-                                height: 'calc(100% + 40px)',
-                                left: '-70px',
-                                top: '-20px',
-                              }}
-                            >
-                              <iframe
-                                src={getEmbedUrl(activeNews.discord_msg_id)}
-                                className="w-full h-full border-none bg-[#ffe6ba]"
-                                allow="autoplay"
-                              />
-                            </div>
+                            <iframe
+                              src={getEmbedUrl(activeNews.discord_msg_id)}
+                              className="w-full h-full border-none rounded bg-[#ffe6ba]"
+                              allow="autoplay"
+                            />
                           )}
                         </div>
 
