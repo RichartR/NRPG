@@ -19,6 +19,7 @@ export function useCharacter(characterId: string) {
   const [saving, setSaving] = useState(false);
   const [canEdit, setCanEdit] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isMod, setIsMod] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
   const [freeResetPeriod, setFreeResetPeriod] = useState<boolean>(false);
@@ -62,8 +63,10 @@ export function useCharacter(characterId: string) {
           : Promise.resolve({})
       ]);
 
-      const isAdm = profile?.roles?.includes('admin') || false;
+      const isAdm = profile?.roles?.includes('admin') || user?.user_metadata?.role === 'admin' || user?.app_metadata?.role === 'admin' || false;
+      const isModerator = profile?.roles?.includes('moderador') || false;
       setIsAdmin(isAdm);
+      setIsMod(isModerator);
       setCanEdit(!!(isAdm || (user && char.user_id === user.id)));
 
       const aparienciaTexto = aparienciaMsg?.content ? aparienciaMsg.content.split('\n').slice(1).join('\n') : '';
@@ -1102,6 +1105,7 @@ export function useCharacter(characterId: string) {
     saving,
     canEdit,
     isAdmin,
+    isMod,
     isEditing,
     setIsEditing,
     activeTab,

@@ -243,7 +243,7 @@ export default function MundoNinjaVillageClientView({
 
   const getAvailableNinjas = (searchQuery: string, excludeIds: number[], requireNoGenin: boolean = false) => {
     return ninjas.filter(n => {
-      const username = (Array.isArray(n.profiles) ? n.profiles[0]?.username : n.profiles?.username) || n.hobba_name || '';
+      const username = n.hobba_name || (Array.isArray(n.profiles) ? n.profiles[0]?.username : n.profiles?.username) || '';
       const notExcluded = !excludeIds.includes(n.id);
       const rankingOk = !requireNoGenin || (n.rango_jerarquico && n.rango_jerarquico.toLowerCase() !== 'genin');
       return searchAny(searchQuery, [n.nombre_ninja, username]) && notExcluded && rankingOk;
@@ -774,7 +774,7 @@ export default function MundoNinjaVillageClientView({
                                 {members.length > 0 ? (
                                   <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
                                     {members.map((member) => {
-                                      const username = (Array.isArray(member.profiles) ? member.profiles[0]?.username : member.profiles?.username) || member.hobba_name || '';
+                                      const username = member.hobba_name || (Array.isArray(member.profiles) ? member.profiles[0]?.username : member.profiles?.username) || '';
                                       return (
                                         <Link
                                           key={member.id}
@@ -844,7 +844,7 @@ export default function MundoNinjaVillageClientView({
                                             <p className="ninja-title text-lg xl:text-xl leading-tight text-white">{equipo.lider?.nombre_ninja || 'Sin Líder'}</p>
                                             {equipo.lider && (
                                               <p className="text-[10px] text-oro/40 uppercase font-black tracking-wider mt-0.5">
-                                                @{(Array.isArray(equipo.lider?.profiles) ? equipo.lider?.profiles[0]?.username : equipo.lider?.profiles?.username) || ''}
+                                                {equipo.lider?.hobba_name || (Array.isArray(equipo.lider?.profiles) ? equipo.lider?.profiles[0]?.username : equipo.lider?.profiles?.username) || ''}
                                               </p>
                                             )}
                                           </div>
@@ -856,7 +856,7 @@ export default function MundoNinjaVillageClientView({
                                                 <div>
                                                   <p className="ninja-title text-sm leading-tight text-white">{m.nombre_ninja}</p>
                                                   <p className="text-[9px] text-oro/30 font-black uppercase tracking-wider">
-                                                    @{(Array.isArray(m.profiles) ? m.profiles[0]?.username : m.profiles?.username) || ''}
+                                                    {m.hobba_name || (Array.isArray(m.profiles) ? m.profiles[0]?.username : m.profiles?.username) || ''}
                                                   </p>
                                                 </div>
                                               </div>
@@ -1032,7 +1032,7 @@ export default function MundoNinjaVillageClientView({
                                       <p className="ninja-title text-lg xl:text-xl leading-tight text-white">{equipo.lider?.nombre_ninja || 'Sin Líder'}</p>
                                       {equipo.lider && (
                                         <p className="text-[10px] text-oro/40 uppercase font-black tracking-wider mt-0.5">
-                                          @{(Array.isArray(equipo.lider?.profiles) ? equipo.lider?.profiles[0]?.username : equipo.lider?.profiles?.username) || ''}
+                                          {equipo.lider?.hobba_name || (Array.isArray(equipo.lider?.profiles) ? equipo.lider?.profiles[0]?.username : equipo.lider?.profiles?.username) || ''}
                                         </p>
                                       )}
                                     </div>
@@ -1044,7 +1044,7 @@ export default function MundoNinjaVillageClientView({
                                           <div>
                                             <p className="ninja-title text-sm leading-tight text-white">{m.nombre_ninja}</p>
                                             <p className="text-[9px] text-oro/30 font-black uppercase tracking-wider">
-                                              @{(Array.isArray(m.profiles) ? m.profiles[0]?.username : m.profiles?.username) || ''}
+                                              {m.hobba_name || (Array.isArray(m.profiles) ? m.profiles[0]?.username : m.profiles?.username) || ''}
                                             </p>
                                           </div>
                                         </div>

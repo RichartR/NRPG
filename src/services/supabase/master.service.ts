@@ -223,10 +223,10 @@ export const MasterService = {
       .from('reg_equipos_ninja')
       .select(`
         *,
-        lider:lider_id(id, nombre_ninja, profiles:user_id(username)),
-        integrante_1:integrante_1_id(id, nombre_ninja, profiles:user_id(username)),
-        integrante_2:integrante_2_id(id, nombre_ninja, profiles:user_id(username)),
-        integrante_3:integrante_3_id(id, nombre_ninja, profiles:user_id(username))
+        lider:lider_id(id, nombre_ninja, hobba_name, profiles:user_id(username)),
+        integrante_1:integrante_1_id(id, nombre_ninja, hobba_name, profiles:user_id(username)),
+        integrante_2:integrante_2_id(id, nombre_ninja, hobba_name, profiles:user_id(username)),
+        integrante_3:integrante_3_id(id, nombre_ninja, hobba_name, profiles:user_id(username))
       `)
       .eq('aldea_id', aldeaId)
       .eq('activo', true)

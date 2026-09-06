@@ -52,6 +52,7 @@ interface CharacterSheetViewProps {
   activeTab: string;
   saving: boolean;
   isAdmin?: boolean;
+  isMod?: boolean;
   isNew?: boolean;
   onUpdateField: (field: keyof Character, value: any) => void;
   onUpdateStat: (stat: keyof CharacterStats, value: number) => void;
@@ -78,6 +79,7 @@ export function CharacterSheetView({
   saving,
   isNew = false,
   isAdmin = false,
+  isMod = false,
   onUpdateField,
   onUpdateStat,
   onSave,
@@ -921,6 +923,7 @@ export function CharacterSheetView({
   ]);
 
   // DETERMINAR SI EL PERSONAJE POSEE CLAN O ESPECIALIDAD ELEMENTAL
+  const canViewDiscord = isAdmin || isMod || isNew;
   const isElementalCharacter = useMemo(() => {
     if (!character?.personajes_ramas) return false;
 
@@ -2348,7 +2351,9 @@ export function CharacterSheetView({
                     <div>
                       <p className="text-caption font-black text-oro/30 uppercase tracking-widest mb-1">Jugador</p>
                       <p className="text-sm font-bold text-oro uppercase">
-                        {(Array.isArray(character.profiles) ? character.profiles[0]?.username : character.profiles?.username) || 'NO VINCULADO'}
+                        {canViewDiscord
+                          ? ((Array.isArray(character.profiles) ? character.profiles[0]?.username : character.profiles?.username) || character.hobba_name || 'NO VINCULADO')
+                          : (character.hobba_name || 'JUGADOR')}
                       </p>
                       {isAdmin && (
                         <p className="text-[10px] text-oro/40 font-black uppercase tracking-wider mt-0.5">
@@ -2376,17 +2381,19 @@ export function CharacterSheetView({
 
               <div className="lg:col-span-8 space-y-8">
                 <SectionCard title="INFORMACIÓN DEL JUGADOR" icon={User} color="oro">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <DataField
-                      label="USUARIO DISCORD"
-                      value={
-                        Array.isArray(character.profiles)
-                          ? character.profiles[0]?.username
-                          : character.profiles?.username || (isNew ? 'CARGANDO...' : 'NO VINCULADO')
-                      }
-                      disabled={true}
-                      uppercase={true}
-                    />
+                  <div className={`grid grid-cols-1 ${canViewDiscord ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-8`}>
+                    {canViewDiscord && (
+                      <DataField
+                        label="USUARIO DISCORD"
+                        value={
+                          Array.isArray(character.profiles)
+                            ? character.profiles[0]?.username
+                            : character.profiles?.username || (isNew ? 'CARGANDO...' : 'NO VINCULADO')
+                        }
+                        disabled={true}
+                        uppercase={true}
+                      />
+                    )}
                     <DataField label="NOMBRE EN HOBBA" value={character.hobba_name} disabled={!isEditing && !isNew} onChange={(v) => onUpdateField('hobba_name', v)} uppercase={true} />
                     <DataField label="TIEMPO EN EL RPG" value={character.tiempo_rpg} disabled={!isEditing && !isNew} onChange={(v) => onUpdateField('tiempo_rpg', v)} uppercase={true} />
                   </div>

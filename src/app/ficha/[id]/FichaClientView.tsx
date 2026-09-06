@@ -7,7 +7,7 @@ import { CharacterSheetView } from '@/components/character/CharacterSheetView';
 export default function FichaClientView({ id }: { id: string }) {
   const router = useRouter();
   const {
-    character, originalCharacter, loading, saving, canEdit, isAdmin, isEditing,
+    character, originalCharacter, loading, saving, canEdit, isAdmin, isMod, isEditing,
     setIsEditing, activeTab, setActiveTab, masters, updateField, updateStat,
     save, cancel, remove, restore, refresh, glosarioFiltrado, freeResetPeriod,
     reiniciarPersonaje,
@@ -33,6 +33,7 @@ export default function FichaClientView({ id }: { id: string }) {
       isEditing={isEditing}
       canEdit={canEdit}
       isAdmin={isAdmin}
+      isMod={isMod}
       activeTab={activeTab}
       saving={saving}
       onUpdateField={updateField}
