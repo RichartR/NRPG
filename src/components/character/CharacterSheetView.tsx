@@ -23,6 +23,7 @@ import { DataField, SelectField, SearchableSelect, NinjaSelect, FormEditContext 
 import { Character, CharacterStats, Glosario, PersonajeItem, PersonajeTecnica, Registro, Rasgo } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
+import { getCuposMaximosClan } from '@/utils/cupos';
 import RegistroCard from '@/components/registros/RegistroCard';
 import MissionTable from '@/components/registros/MissionTable';
 import { PaginationPageInput } from '@/components/ui/PaginationPageInput';
@@ -784,7 +785,7 @@ export function CharacterSheetView({
 
         const activeCount = occupancy.countByClan[r.id] || 0;
         const C = occupancy.cuposMaximosAldea;
-        const limit = 4 + Math.floor((C - 10) / 5);
+        const limit = getCuposMaximosClan(C);
 
         const isOriginalClan = !isNew && originalCharacter?.personajes_ramas?.some((pr: any) => pr.rama_id === r.id);
         const isFull = activeCount >= limit;

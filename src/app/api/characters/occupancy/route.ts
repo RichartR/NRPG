@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 import { MasterServerService } from '@/services/supabase/master.server.service';
+import { getCuposMaximosClan } from '@/utils/cupos';
 
 export async function GET() {
   const supabase = await createClient();
@@ -44,12 +45,14 @@ export async function GET() {
     
     const cuposMaximosAldea = limitAldeaRaw != null && limitAldeaRaw !== '' ? Number(limitAldeaRaw) : 10;
     const cuposMaximosOrganizacion = limitOrganizacionRaw != null && limitOrganizacionRaw !== '' ? Number(limitOrganizacionRaw) : 10;
+    const cuposMaximosClan = getCuposMaximosClan(cuposMaximosAldea);
 
     return NextResponse.json({
       countByAldea,
       countByClan,
       cuposMaximosAldea,
-      cuposMaximosOrganizacion
+      cuposMaximosOrganizacion,
+      cuposMaximosClan
     }, {
       headers: {
         'Cache-Control': 'public, max-age=60, s-maxage=1200, stale-while-revalidate=1800',

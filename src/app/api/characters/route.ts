@@ -4,6 +4,7 @@ import { sendDiscordMessage, getDiscordChannel } from '@/lib/discord';
 import { CharacterServerService } from '@/services/supabase/character.server.service';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { getCuposMaximosClan } from '@/utils/cupos';
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -78,8 +79,8 @@ export async function POST(request: Request) {
         const limitAldeaRaw = await MasterServerService.getConfiguracion(supabase, 'cupos_maximos_aldea');
         const C = limitAldeaRaw != null && limitAldeaRaw !== '' ? Number(limitAldeaRaw) : 14;
 
-        // Límite de clan = max(4, 5 + FLOOR((C - 14) / 2))
-        const limitClan = Math.max(4, 5 + Math.floor((C - 14) / 2));
+        // Límite de clan: cada 5 cupos de aldea abre 1 cupo de clan (14->4, 16->5, 18->5, 20->6...)
+        const limitClan = getCuposMaximosClan(C);
 
         // 2. Contar personajes activos en este clan
         const { count: clanActiveCount, error: clanCountError } = await supabase

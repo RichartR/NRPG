@@ -5,6 +5,7 @@ import { CharacterServerService } from '@/services/supabase/character.server.ser
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { ProfileService } from '@/services/supabase/profile.service';
+import { getCuposMaximosClan } from '@/utils/cupos';
 
 export async function PATCH(
   request: Request,
@@ -161,7 +162,7 @@ export async function PATCH(
                 if (isNewClanForChar) {
                   const limitAldeaRaw = await MasterServerService.getConfiguracion(supabase, 'cupos_maximos_aldea');
                   const C = limitAldeaRaw != null && limitAldeaRaw !== '' ? Number(limitAldeaRaw) : 14;
-                  const limitClan = Math.max(4, 5 + Math.floor((C - 14) / 2));
+                  const limitClan = getCuposMaximosClan(C);
 
                   const { count: clanActiveCount, error: clanCountError } = await supabase
                     .from('reg_personajes_ramas')
