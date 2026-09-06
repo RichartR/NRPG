@@ -65,6 +65,41 @@ export const MasterServerService = {
     { revalidate: 300 }
   ),
 
+  getCachedDocumentosNavList: unstable_cache(
+    async (): Promise<{ clave: string; titulo: string; categoria: string; url_drive: string }[]> => {
+      const [{ data: sistemas }, { data: combate }] = await Promise.all([
+        publicClient
+          .from('info_documentos_sistemas')
+          .select('clave, titulo, categoria, url_drive')
+          .eq('activo', true)
+          .order('titulo', { ascending: true }),
+        publicClient
+          .from('info_documentos_combate')
+          .select('clave, titulo, url_drive')
+          .eq('activo', true)
+          .order('titulo', { ascending: true })
+      ]);
+
+      const list: { clave: string; titulo: string; categoria: string; url_drive: string }[] = [
+        ...(sistemas || []).map(d => ({
+          clave: d.clave,
+          titulo: d.titulo,
+          categoria: d.categoria || 'sistemas',
+          url_drive: d.url_drive
+        })),
+        ...(combate || []).map(d => ({
+          clave: d.clave,
+          titulo: d.titulo,
+          categoria: 'combate',
+          url_drive: d.url_drive
+        }))
+      ];
+      return list;
+    },
+    ['master-documentos-nav-list'],
+    { revalidate: 600 }
+  ),
+
   getCachedGlosarioCategorias: unstable_cache(
     async () => {
       const { data, error } = await publicClient

@@ -31,13 +31,36 @@ export default async function DocumentPage({ params }: { params: Promise<{ slug:
       .join(' ');
   };
 
-  let doc: any = null;
+  // Obtener lista precargada en caché de servidor (1 sola consulta cada 10 min para toda la app)
+  const allDocs = await MasterServerService.getCachedDocumentosNavList();
+  const targetMeta = allDocs.find(d => d.clave === slug);
 
-  // 1. Intentar buscar en documentos_combate
-  const combatDoc = await MasterServerService.getCachedDocumentoCombateByClave(slug);
-  if (combatDoc) {
-    doc = combatDoc;
-    const cDoc = combatDoc as any;
+  let doc: any = null;
+  let isCombat = false;
+
+  // Consultar directamente la tabla precisa evitando cascadas y consultas redundantes
+  if (targetMeta) {
+    if (targetMeta.categoria === 'combate') {
+      doc = await MasterServerService.getCachedDocumentoCombateByClave(slug);
+      isCombat = true;
+    } else {
+      doc = await MasterServerService.getCachedDocumentoSistemaByClave(slug);
+      isCombat = false;
+    }
+  } else {
+    // Fallback para documentos recién creados que aún no estén en la caché de lista
+    const combatDoc = await MasterServerService.getCachedDocumentoCombateByClave(slug);
+    if (combatDoc) {
+      doc = combatDoc;
+      isCombat = true;
+    } else {
+      doc = await MasterServerService.getCachedDocumentoSistemaByClave(slug);
+      isCombat = false;
+    }
+  }
+
+  if (doc && isCombat) {
+    const cDoc = doc as any;
     let ramaSlug = getField(cDoc.info_ramas_clanes, 'slug');
     let ramaName = getField(cDoc.info_ramas_clanes, 'nombre');
     let ramaTipo = getField(cDoc.info_ramas_clanes, 'tipo');
@@ -77,31 +100,26 @@ export default async function DocumentPage({ params }: { params: Promise<{ slug:
     if (subSlug && ramaSlug) {
       breadcrumbsItems.push({ label: subName || formatSlug(subSlug), href: `/ramas/${ramaSlug}/${subSlug}` });
     }
-  } else {
-    // 2. Si no es de combate, buscar en documentos de sistemas
-    const systemDoc = await MasterServerService.getCachedDocumentoSistemaByClave(slug);
-    if (systemDoc) {
-      doc = systemDoc;
-      if (doc.categoria === 'sistemas') {
-        breadcrumbsItems.push({ label: 'Sistemas', href: '/sistemas' });
-      } else if (doc.categoria === 'bienvenida') {
-        breadcrumbsItems.push({ label: 'Bienvenida', href: '/bienvenida' });
-      } else if (doc.categoria === 'general') {
-        breadcrumbsItems.push({ label: 'Biblioteca', href: '/documentos' });
-      } else if (doc.categoria === 'aldeas') {
-        breadcrumbsItems.push({ label: 'Biblioteca', href: '/documentos' });
-        breadcrumbsItems.push({ label: 'Aldeas y Organizaciones', href: '/aldeas' });
-      } else if (doc.categoria === 'ramas') {
-        breadcrumbsItems.push({ label: 'Biblioteca', href: '/documentos' });
-        breadcrumbsItems.push({ label: 'Ramas', href: '/ramas' });
-        if (doc.subcategoria) {
-          const parts = doc.subcategoria.split('/');
-          const branchSlug = parts[parts.length - 1];
-          breadcrumbsItems.push({ 
-            label: formatSlug(branchSlug), 
-            href: `/ramas/${doc.subcategoria}` 
-          });
-        }
+  } else if (doc) {
+    if (doc.categoria === 'sistemas') {
+      breadcrumbsItems.push({ label: 'Sistemas', href: '/sistemas' });
+    } else if (doc.categoria === 'bienvenida') {
+      breadcrumbsItems.push({ label: 'Bienvenida', href: '/bienvenida' });
+    } else if (doc.categoria === 'general') {
+      breadcrumbsItems.push({ label: 'Biblioteca', href: '/documentos' });
+    } else if (doc.categoria === 'aldeas') {
+      breadcrumbsItems.push({ label: 'Biblioteca', href: '/documentos' });
+      breadcrumbsItems.push({ label: 'Aldeas y Organizaciones', href: '/aldeas' });
+    } else if (doc.categoria === 'ramas') {
+      breadcrumbsItems.push({ label: 'Biblioteca', href: '/documentos' });
+      breadcrumbsItems.push({ label: 'Ramas', href: '/ramas' });
+      if (doc.subcategoria) {
+        const parts = doc.subcategoria.split('/');
+        const branchSlug = parts[parts.length - 1];
+        breadcrumbsItems.push({ 
+          label: formatSlug(branchSlug), 
+          href: `/ramas/${doc.subcategoria}` 
+        });
       }
     }
   }
@@ -112,8 +130,15 @@ export default async function DocumentPage({ params }: { params: Promise<{ slug:
 
   return (
     <DocViewer 
-      title={doc.titulo} 
-      url={doc.url_drive} 
+      title={doc.titulo}
+      url={doc.url_drive}
+      initialDoc={{
+        clave: doc.clave || slug,
+        titulo: doc.titulo,
+        url_drive: doc.url_drive,
+        categoria: doc.categoria || 'documento'
+      }}
+      allDocs={allDocs}
       breadcrumbs={breadcrumbsItems}
     />
   );
