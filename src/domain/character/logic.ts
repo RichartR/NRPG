@@ -608,10 +608,21 @@ export const NinjutsuLogic = {
     const isFromClan = !isNinIIorIIIInBranch && isNinIIorIIIInClan;
     const clanIds = ramas.map(r => Number(r.rama_id)).filter(id => id !== 4 && id > 0);
 
-    // Filter basic techniques
+    const clanRamaId = clanElementalRama ? Number(clanElementalRama.rama_id) : null;
+
+    // Filter basic techniques (elemental clan techniques + elemental Ninjutsu basic techniques)
     const basicNinjutsu = tecnicas.filter(t => {
       const info = t.info_glosario || t;
       if (!info || info.basica !== true || Number(info.categoria_id || 1) !== 1) return false;
+
+      const rId = Number(info.rama_clan_id);
+      const isNinRama = rId === 4;
+      const isClanRama = clanRamaId !== null && rId === clanRamaId;
+
+      if (!isNinRama && !isClanRama) return false;
+
+      // Si es técnica de Ninjutsu (rama 4), debe tener elemento (excluye Dominio/Shihai)
+      if (isNinRama && !info.elemento_id) return false;
 
       // Excluir técnicas del elemento de Ninjutsu I del conteo para límites del clan elemental
       if (isClanElemental && !isNinIIorIIIInBranch && !isNinIIorIIIInClan && ninjutsuIElementId !== null) {
@@ -620,8 +631,7 @@ export const NinjutsuLogic = {
         }
       }
 
-      const rId = Number(info.rama_clan_id);
-      return rId === 4;
+      return true;
     });
 
     let limitTotal = isFromClan ? 6 : 8;
