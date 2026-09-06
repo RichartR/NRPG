@@ -391,7 +391,7 @@ export function CharacterSheetView({
   }, []);
 
   useEffect(() => {
-    fetch('/api/characters/occupancy')
+    fetch('/api/characters/occupancy', { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         if (data && !data.error) {
@@ -747,7 +747,8 @@ export function CharacterSheetView({
     return (masters.aldeas || []).map((a: any) => {
       const activeCount = occupancy.countByAldea[a.id] || 0;
       const isOrganizacion = a.categoria_id === 2;
-      const limit = isOrganizacion ? occupancy.cuposMaximosOrganizacion : occupancy.cuposMaximosAldea;
+      const effectiveAldeaLimit = occupancy.cuposMaximosAldea || masters.cuposMaximosAldea || 10;
+      const limit = isOrganizacion ? occupancy.cuposMaximosOrganizacion : effectiveAldeaLimit;
 
       const isOriginalAldea = !isNew && originalCharacter?.aldea_id === a.id;
       const isFull = activeCount >= limit;
@@ -760,7 +761,7 @@ export function CharacterSheetView({
         disabled: shouldDisable
       };
     });
-  }, [masters.aldeas, occupancy, originalCharacter, isNew]);
+  }, [masters.aldeas, masters.cuposMaximosAldea, occupancy, originalCharacter, isNew]);
 
   const getClanOptions = (slot: number) => {
     const filteredRamas = (masters.ramas || []).filter((r: any) => !r.aldea_id || Number(r.aldea_id) === Number(character.aldea_id));
@@ -786,7 +787,7 @@ export function CharacterSheetView({
         }
 
         const activeCount = occupancy.countByClan[r.id] || 0;
-        const C = occupancy.cuposMaximosAldea;
+        const C = occupancy.cuposMaximosAldea || masters.cuposMaximosAldea || 10;
         const limit = getCuposMaximosClan(C);
 
         const isOriginalClan = !isNew && originalCharacter?.personajes_ramas?.some((pr: any) => pr.rama_id === r.id);
@@ -933,6 +934,14 @@ export function CharacterSheetView({
     });
     if (hasClanElemental) return true;
 
+    // Cualquier clan que posea afinidades elementales fijas (ej: Kazan, Yuki, Suna, etc.)
+    const hasClanWithElements = character.personajes_ramas.some((pr: any) => {
+      if (!pr.rama_id) return false;
+      const fixed = (masters.ramaElementos || []).filter((re: any) => Number(re.rama_id) === Number(pr.rama_id) && re.tipo === 'fijo');
+      return fixed.length > 0;
+    });
+    if (hasClanWithElements) return true;
+
     const clanEleccion = character.eleccion_tecnicas_clan;
     if (clanEleccion && Number(clanEleccion.rama_id) === 4 && clanEleccion.sub_especialidad_id) return true;
 
@@ -945,7 +954,7 @@ export function CharacterSheetView({
     }
 
     return false;
-  }, [character?.personajes_ramas, character?.eleccion_tecnicas_clan, masters.ramas, masters.subEspecialidades]);
+  }, [character?.personajes_ramas, character?.eleccion_tecnicas_clan, masters.ramas, masters.ramaElementos, masters.subEspecialidades]);
 
   const canSelectFreeElement = !isElementalCharacter;
 
@@ -966,36 +975,14 @@ export function CharacterSheetView({
     const fijosSet = new Set<number>();
 
     charRamas.forEach((pr: any) => {
-      // Por RamaClan
+      // Por RamaClan (Otorga todos sus elementos fijos asociados en info_rama_elementos)
       if (pr.rama_id) {
-        const clanInfo = pr.info_ramas_clanes || (masters.ramas || []).find((r: any) => r.id === Number(pr.rama_id));
-        const isClanElemental = checkClanElemental(clanInfo);
         const fixedForRama = masters.ramaElementos
           .filter((re: any) => Number(re.rama_id) === Number(pr.rama_id) && re.tipo === 'fijo');
 
-        if (isClanElemental) {
-          // Si es clan elemental, otorga todos sus elementos fijos directamente
-          fixedForRama.forEach((re: any) => {
-            if (re.elemento_id) fijosSet.add(Number(re.elemento_id));
-          });
-        } else {
-          // Si no es clan elemental:
-          // 1) Los elementos avanzados se otorgan siempre (ej: Jiton para Suna, Hyoton para Yuki, etc.)
-          // 2) Si el clan solo tiene 1 elemento básico (ej: Hozuki -> Agua), se otorga dicho elemento
-          // 3) Si el clan tiene más de un elemento básico (ej: Suna -> Doton + Futon), NO se otorgan directamente
-          //    porque forman el pool del clan y deben ser desbloqueados mediante Ninjutsu Elemental
-          const basicFixed = fixedForRama.filter((re: any) => {
-            const el = re.info_elementos || (masters.elementos || []).find((e: any) => Number(e.id) === Number(re.elemento_id));
-            return el?.tipo === 'basico';
-          });
-
-          fixedForRama.forEach((re: any) => {
-            const el = re.info_elementos || (masters.elementos || []).find((e: any) => Number(e.id) === Number(re.elemento_id));
-            if (el?.tipo === 'avanzado' || basicFixed.length === 1) {
-              if (re.elemento_id) fijosSet.add(Number(re.elemento_id));
-            }
-          });
-        }
+        fixedForRama.forEach((re: any) => {
+          if (re.elemento_id) fijosSet.add(Number(re.elemento_id));
+        });
       }
       // Por SubEspecialidad
       if (pr.sub_especialidad_id) {
@@ -1004,6 +991,17 @@ export function CharacterSheetView({
           .forEach((re: any) => {
             if (re.elemento_id) fijosSet.add(Number(re.elemento_id));
           });
+
+        const sub = (masters.subEspecialidades || []).find((s: any) => s.id === Number(pr.sub_especialidad_id));
+        if (sub) {
+          const elem = (masters.elementos || []).find((el: any) => {
+            const clean = (str: string) => (str || '').toLowerCase().replace(/uu/g, 'u').trim();
+            return clean(sub.slug) === clean(el.nombre_jap) ||
+              clean(sub.nombre) === clean(el.nombre_esp) ||
+              clean(sub.nombre) === clean(el.nombre_jap);
+          });
+          if (elem) fijosSet.add(Number(elem.id));
+        }
       }
     });
 
@@ -1011,28 +1009,12 @@ export function CharacterSheetView({
     const clanEleccion = character.eleccion_tecnicas_clan;
     if (clanEleccion) {
       if (clanEleccion.rama_id) {
-        const clanInfo = (masters.ramas || []).find((r: any) => r.id === Number(clanEleccion.rama_id));
-        const isClanElemental = checkClanElemental(clanInfo);
         const fixedForClan = masters.ramaElementos
           .filter((re: any) => Number(re.rama_id) === Number(clanEleccion.rama_id) && re.tipo === 'fijo');
 
-        if (isClanElemental) {
-          fixedForClan.forEach((re: any) => {
-            if (re.elemento_id) fijosSet.add(Number(re.elemento_id));
-          });
-        } else {
-          const basicFixed = fixedForClan.filter((re: any) => {
-            const el = re.info_elementos || (masters.elementos || []).find((e: any) => Number(e.id) === Number(re.elemento_id));
-            return el?.tipo === 'basico';
-          });
-
-          fixedForClan.forEach((re: any) => {
-            const el = re.info_elementos || (masters.elementos || []).find((e: any) => Number(e.id) === Number(re.elemento_id));
-            if (el?.tipo === 'avanzado' || basicFixed.length === 1) {
-              if (re.elemento_id) fijosSet.add(Number(re.elemento_id));
-            }
-          });
-        }
+        fixedForClan.forEach((re: any) => {
+          if (re.elemento_id) fijosSet.add(Number(re.elemento_id));
+        });
       }
       if (clanEleccion.sub_especialidad_id) {
         masters.ramaElementos

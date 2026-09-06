@@ -130,13 +130,33 @@ function CrearFichaContent() {
         equipedSubSpecIds.push(Number(form.eleccion_tecnicas_clan.sub_especialidad_id));
       }
 
-      const equipedElementIds = form.personajes_ramas
-        .reduce((acc: number[], r: any) => {
-          if (r.elemento_principal_id) acc.push(Number(r.elemento_principal_id));
-          if (r.elemento_secundario_id) acc.push(Number(r.elemento_secundario_id));
-          if (r.elemento_terciario_id) acc.push(Number(r.elemento_terciario_id));
-          return acc;
-        }, []);
+      const equipedElementIds: number[] = [];
+      form.personajes_ramas.forEach((r: any) => {
+        if (r.elemento_principal_id) equipedElementIds.push(Number(r.elemento_principal_id));
+        if (r.elemento_secundario_id) equipedElementIds.push(Number(r.elemento_secundario_id));
+        if (r.elemento_terciario_id) equipedElementIds.push(Number(r.elemento_terciario_id));
+
+        if (r.rama_id && masters.ramaElementos) {
+          masters.ramaElementos
+            .filter((re: any) => Number(re.rama_id) === Number(r.rama_id) && re.tipo === 'fijo')
+            .forEach((re: any) => {
+              if (re.elemento_id) equipedElementIds.push(Number(re.elemento_id));
+            });
+        }
+      });
+
+      if (form.eleccion_tecnicas_clan?.sub_especialidad_id) {
+        const sub = (masters.subEspecialidades || []).find((s: any) => s.id === Number(form.eleccion_tecnicas_clan.sub_especialidad_id));
+        if (sub) {
+          const elem = (masters.elementos || []).find((el: any) => {
+            const clean = (str: string) => (str || '').toLowerCase().replace(/uu/g, 'u').trim();
+            return clean(sub.slug) === clean(el.nombre_jap) ||
+              clean(sub.nombre) === clean(el.nombre_esp) ||
+              clean(sub.nombre) === clean(el.nombre_jap);
+          });
+          if (elem) equipedElementIds.push(Number(elem.id));
+        }
+      }
 
       const RANGO_ORDER = ['D', 'C', 'B', 'A', 'S'];
       const charRango = form.rango || 'D';
@@ -192,6 +212,34 @@ function CrearFichaContent() {
                 if (ninjutsuSlot.elemento_terciario_id) ninElements.push(Number(ninjutsuSlot.elemento_terciario_id));
               }
             }
+
+            // Ninjutsu obtenido por compatibilidad de clan
+            if (form.eleccion_tecnicas_clan && Number(form.eleccion_tecnicas_clan.rama_id) === 4) {
+              if (form.eleccion_tecnicas_clan.sub_especialidad_id) {
+                const sub = (masters.subEspecialidades || []).find((s: any) => s.id === Number(form.eleccion_tecnicas_clan.sub_especialidad_id));
+                if (sub) {
+                  const elem = (masters.elementos || []).find((el: any) => {
+                    const clean = (str: string) => (str || '').toLowerCase().replace(/uu/g, 'u').trim();
+                    return clean(sub.slug) === clean(el.nombre_jap) ||
+                      clean(sub.nombre) === clean(el.nombre_esp) ||
+                      clean(sub.nombre) === clean(el.nombre_jap);
+                  });
+                  if (elem) ninElements.push(Number(elem.id));
+                }
+              }
+            }
+
+            // Elementos fijados por clan
+            form.personajes_ramas.forEach((r: any) => {
+              if (r.rama_id && masters.ramaElementos) {
+                masters.ramaElementos
+                  .filter((re: any) => Number(re.rama_id) === Number(r.rama_id) && re.tipo === 'fijo')
+                  .forEach((re: any) => {
+                    if (re.elemento_id) ninElements.push(Number(re.elemento_id));
+                  });
+              }
+            });
+
             if (!ninElements.includes(reqElId)) return false;
           } else {
             if (!equipedElementIds.includes(reqElId)) return false;
@@ -361,13 +409,33 @@ function CrearFichaContent() {
         equipedSubSpecIds.push(Number(form.eleccion_tecnicas_clan.sub_especialidad_id));
       }
 
-      const equipedElementIds = form.personajes_ramas
-        .reduce((acc: number[], r: any) => {
-          if (r.elemento_principal_id) acc.push(Number(r.elemento_principal_id));
-          if (r.elemento_secundario_id) acc.push(Number(r.elemento_secundario_id));
-          if (r.elemento_terciario_id) acc.push(Number(r.elemento_terciario_id));
-          return acc;
-        }, []);
+      const equipedElementIds: number[] = [];
+      form.personajes_ramas.forEach((r: any) => {
+        if (r.elemento_principal_id) equipedElementIds.push(Number(r.elemento_principal_id));
+        if (r.elemento_secundario_id) equipedElementIds.push(Number(r.elemento_secundario_id));
+        if (r.elemento_terciario_id) equipedElementIds.push(Number(r.elemento_terciario_id));
+
+        if (r.rama_id && masters.ramaElementos) {
+          masters.ramaElementos
+            .filter((re: any) => Number(re.rama_id) === Number(r.rama_id) && re.tipo === 'fijo')
+            .forEach((re: any) => {
+              if (re.elemento_id) equipedElementIds.push(Number(re.elemento_id));
+            });
+        }
+      });
+
+      if (form.eleccion_tecnicas_clan?.sub_especialidad_id) {
+        const sub = (masters.subEspecialidades || []).find((s: any) => s.id === Number(form.eleccion_tecnicas_clan.sub_especialidad_id));
+        if (sub) {
+          const elem = (masters.elementos || []).find((el: any) => {
+            const clean = (str: string) => (str || '').toLowerCase().replace(/uu/g, 'u').trim();
+            return clean(sub.slug) === clean(el.nombre_jap) ||
+              clean(sub.nombre) === clean(el.nombre_esp) ||
+              clean(sub.nombre) === clean(el.nombre_jap);
+          });
+          if (elem) equipedElementIds.push(Number(elem.id));
+        }
+      }
 
       // 2. Filtrar las técnicas iniciales según las ramas, subespecialidades y elementos elegidos
       const filteredTecnicas = form.personajes_tecnicas.filter((pt: any) => {

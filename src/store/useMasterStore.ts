@@ -34,6 +34,7 @@ interface MasterState {
   recursosPJInicio: { ryous_iniciales: number; xp_inicial: number };
   rangosJerarquicos: string[];
   xpLimitUsage: number | null;
+  cuposMaximosAldea: number;
   loading: boolean;
   initialized: boolean;
   error: string | null;
@@ -57,6 +58,7 @@ export const useMasterStore = create<MasterState>((set, get) => ({
   rankOrder: {},
   recursosPJInicio: { ryous_iniciales: 0, xp_inicial: 0 },
   rangosJerarquicos: [],
+  cuposMaximosAldea: 10,
   xpLimitUsage: null,
   loading: false,
   initialized: false,
@@ -103,7 +105,8 @@ export const useMasterStore = create<MasterState>((set, get) => ({
            'orden-rangos',
            'recursos_pj_inicio',
            'rangos_jerarquicos',
-           'xp_limit_usage'
+           'xp_limit_usage',
+           'cupos_maximos_aldea'
          ])
        ]);
  
@@ -144,6 +147,7 @@ export const useMasterStore = create<MasterState>((set, get) => ({
           ? configs['rangos_jerarquicos'].split(',').map((s: string) => s.trim())
           : (Array.isArray(configs['rangos_jerarquicos']) ? configs['rangos_jerarquicos'] : ["Estudiante", "Genin", "Chunin", "Jonin"]),
         xpLimitUsage: configs['xp_limit_usage'] !== undefined && configs['xp_limit_usage'] !== null ? Number(configs['xp_limit_usage']) : null,
+        cuposMaximosAldea: configs['cupos_maximos_aldea'] !== undefined && configs['cupos_maximos_aldea'] !== null ? Number(configs['cupos_maximos_aldea']) : 10,
         initialized: true,
         loading: false
       });

@@ -3,6 +3,9 @@ import { NextResponse } from 'next/server';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import { getCuposMaximosClan } from '@/utils/cupos';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
   const supabase = await createClient();
 
@@ -55,7 +58,7 @@ export async function GET() {
       cuposMaximosClan
     }, {
       headers: {
-        'Cache-Control': 'public, max-age=60, s-maxage=1200, stale-while-revalidate=1800',
+        'Cache-Control': 'public, max-age=0, s-maxage=10, stale-while-revalidate=30',
       }
     });
   } catch (error: any) {
