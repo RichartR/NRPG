@@ -20,8 +20,17 @@ const formatNumber = (val: any) => {
 
 export default function CharacterSheet() {
   const { activeCharacter, loading, error, fetchActiveCharacter } = useCharacterStore();
-  const { elementos, ramaElementos } = useMasterStore();
+  const { elementos, ramaElementos, ramas } = useMasterStore();
   const [isEditingPortrait, setIsEditingPortrait] = useState(false);
+
+  const checkClanElemental = (info: any) => {
+    if (!info) return false;
+    let config = info.config_iniciales;
+    if (typeof config === 'string') {
+      try { config = JSON.parse(config); } catch { return false; }
+    }
+    return config?.clan_elemental === true;
+  };
 
   const derivedElements = useMemo(() => {
     if (!activeCharacter || !elementos || !ramaElementos) return [];
@@ -31,37 +40,84 @@ export default function CharacterSheet() {
 
     charRamas.forEach((pr: any) => {
       if (pr.rama_id) {
-        ramaElementos
-          .filter((re: any) => re.rama_id === pr.rama_id && re.tipo === 'fijo')
-          .forEach((re: any) => {
-            if (re.elemento_id) fijosSet.add(re.elemento_id);
+        const clanInfo = pr.info_ramas_clanes || (ramas || []).find((r: any) => r.id === Number(pr.rama_id));
+        const isClanElemental = checkClanElemental(clanInfo);
+        const fixedForRama = ramaElementos
+          .filter((re: any) => Number(re.rama_id) === Number(pr.rama_id) && re.tipo === 'fijo');
+
+        if (isClanElemental) {
+          fixedForRama.forEach((re: any) => {
+            if (re.elemento_id) fijosSet.add(Number(re.elemento_id));
           });
+        } else {
+          const basicFixed = fixedForRama.filter((re: any) => {
+            const el = re.info_elementos || (elementos || []).find((e: any) => Number(e.id) === Number(re.elemento_id));
+            return el?.tipo === 'basico';
+          });
+
+          fixedForRama.forEach((re: any) => {
+            const el = re.info_elementos || (elementos || []).find((e: any) => Number(e.id) === Number(re.elemento_id));
+            if (el?.tipo === 'avanzado' || basicFixed.length === 1) {
+              if (re.elemento_id) fijosSet.add(Number(re.elemento_id));
+            }
+          });
+        }
       }
       if (pr.sub_especialidad_id) {
         ramaElementos
-          .filter((re: any) => re.sub_especialidad_id === pr.sub_especialidad_id && re.tipo === 'fijo')
+          .filter((re: any) => Number(re.sub_especialidad_id) === Number(pr.sub_especialidad_id) && re.tipo === 'fijo')
           .forEach((re: any) => {
-            if (re.elemento_id) fijosSet.add(re.elemento_id);
+            if (re.elemento_id) fijosSet.add(Number(re.elemento_id));
           });
       }
     });
 
-    const ninjutsuRama = charRamas.find((pr: any) => Number(pr.rama_id) === 4);
-    if (ninjutsuRama) {
-      if (ninjutsuRama.elemento_principal_id) fijosSet.add(Number(ninjutsuRama.elemento_principal_id));
-      if (ninjutsuRama.elemento_secundario_id) fijosSet.add(Number(ninjutsuRama.elemento_secundario_id));
-      if (ninjutsuRama.elemento_terciario_id) fijosSet.add(Number(ninjutsuRama.elemento_terciario_id));
+    const clanEleccion = activeCharacter.eleccion_tecnicas_clan;
+    if (clanEleccion?.rama_id) {
+      const clanInfo = (ramas || []).find((r: any) => r.id === Number(clanEleccion.rama_id));
+      const isClanElemental = checkClanElemental(clanInfo);
+      const fixedForClan = ramaElementos
+        .filter((re: any) => Number(re.rama_id) === Number(clanEleccion.rama_id) && re.tipo === 'fijo');
+
+      if (isClanElemental) {
+        fixedForClan.forEach((re: any) => {
+          if (re.elemento_id) fijosSet.add(Number(re.elemento_id));
+        });
+      } else {
+        const basicFixed = fixedForClan.filter((re: any) => {
+          const el = re.info_elementos || (elementos || []).find((e: any) => Number(e.id) === Number(re.elemento_id));
+          return el?.tipo === 'basico';
+        });
+
+        fixedForClan.forEach((re: any) => {
+          const el = re.info_elementos || (elementos || []).find((e: any) => Number(e.id) === Number(re.elemento_id));
+          if (el?.tipo === 'avanzado' || basicFixed.length === 1) {
+            if (re.elemento_id) fijosSet.add(Number(re.elemento_id));
+          }
+        });
+      }
     }
 
+    charRamas.forEach((pr: any) => {
+      const clanInfo = pr.info_ramas_clanes || (ramas || []).find((r: any) => r.id === Number(pr.rama_id));
+      const isClanElemental = checkClanElemental(clanInfo);
+      const isNinjutsu = Number(pr.rama_id) === 4;
+
+      if (isNinjutsu || isClanElemental) {
+        if (pr.elemento_principal_id) fijosSet.add(Number(pr.elemento_principal_id));
+        if (pr.elemento_secundario_id) fijosSet.add(Number(pr.elemento_secundario_id));
+        if (pr.elemento_terciario_id) fijosSet.add(Number(pr.elemento_terciario_id));
+      }
+    });
+
     return Array.from(fijosSet)
-      .map((id) => elementos.find((e: any) => e.id === id))
+      .map((id) => (elementos || []).find((e: any) => Number(e.id) === Number(id)))
       .filter(Boolean)
       .sort((a: any, b: any) => {
-        // 'avanzado' antes que 'basico' (alfabéticamente 'avanzado' < 'basico', pero lo forzamos)
         const order = (tipo: string) => tipo === 'avanzado' ? 0 : 1;
         return order(a?.tipo || '') - order(b?.tipo || '');
       });
-  }, [activeCharacter, elementos, ramaElementos]);
+  }, [activeCharacter, elementos, ramaElementos, ramas]);
 
   // Prevent background scrolling when portrait modal is open
   useScrollLock(isEditingPortrait);
