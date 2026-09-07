@@ -62,7 +62,10 @@ export default function AdminNotificationBadge({ isSidebar = false, userRoles = 
 
       if (isNarratorOnly) {
         filtered = filtered.filter(d =>
-          d.registro?.subtipo === 'recuperacion_evento' || d.registro?.tipo === 'narracion'
+          d.registro?.subtipo === 'recuperacion_evento' ||
+          d.registro?.subtipo === 'recuperacion_narracion' ||
+          d.registro?.tipo === 'narracion' ||
+          d.registro?.subtipo === 'narracion'
         );
       }
 
@@ -339,6 +342,54 @@ export default function AdminNotificationBadge({ isSidebar = false, userRoles = 
                         </div>
                       )}
 
+                      {/* Narración o Evento Original si es Recuperación */}
+                      {(d.registro?.subtipo === 'recuperacion_evento' || d.registro?.subtipo === 'recuperacion_narracion') && (() => {
+                        const rawTit = d.registro_origen?.data?.titulo || d.registro?.data?.evento_premios_titulo || d.registro?.data?.titulo;
+                        const isGeneric = !rawTit || rawTit === 'Narración' || rawTit === 'Evento' || rawTit.startsWith('Narrador: ') || rawTit.startsWith('Recuperación: Narrador: ');
+                        const narr = d.registro_origen?.data?.narrador || d.registro?.data?.evento_premios_narrador || (rawTit?.startsWith('Narrador: ') ? rawTit.replace('Narrador: ', '') : null);
+                        const fec = d.registro_origen?.fecha || d.registro?.data?.evento_premios_fecha;
+                        const origId = d.registro_origen?.id || d.registro?.data?.evento_premios_id;
+                        const fecFmt = fec ? new Date(fec).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+                        
+                        let displayTit = rawTit;
+                        if (isGeneric) {
+                          if (narr && fecFmt) {
+                            displayTit = `Narración de ${narr} (${fecFmt})`;
+                          } else if (narr) {
+                            displayTit = `Narración de ${narr}${origId ? ` (#${origId})` : ''}`;
+                          } else if (origId) {
+                            displayTit = `Evento #${origId}${fecFmt ? ` (${fecFmt})` : ''}`;
+                          } else {
+                            displayTit = d.registro?.subtipo === 'recuperacion_narracion' ? 'Narración' : 'Evento';
+                          }
+                        }
+
+                        return (
+                          <div className="p-2.5 bg-neutral-950 border border-naranja-naruto/30 rounded-sm mb-2 space-y-1">
+                            <div className="flex items-center justify-between text-[11px] font-bold">
+                              <span className="text-white truncate">
+                                📜 {displayTit}
+                              </span>
+                              {fec && (
+                                <span className="text-white/50 text-[10px] shrink-0 ml-2 font-mono">
+                                  {new Date(fec).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                </span>
+                              )}
+                            </div>
+                            {narr && (
+                              <span className="text-[10px] text-naranja-naruto font-black uppercase tracking-wider block">
+                                Narrador: {narr} {origId ? `• ID #${origId}` : ''}
+                              </span>
+                            )}
+                            {(d.registro_origen?.data?.discord_message_text || d.registro?.data?.evento_premios_resumen) && (
+                              <p className="text-[10px] text-white/60 line-clamp-2 italic font-sans">
+                                "{d.registro_origen?.data?.discord_message_text || d.registro?.data?.evento_premios_resumen}"
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })()}
+
                       <div className="p-3 bg-black border border-neutral-700 rounded-sm mb-2">
                         <p className="text-white text-caption leading-relaxed italic font-medium">
                           "{d.mensaje}"
@@ -351,7 +402,7 @@ export default function AdminNotificationBadge({ isSidebar = false, userRoles = 
                         </span>
                       ) : (
                         <span className="text-caption text-white/70 font-semibold tracking-wide block mb-1">
-                          Registro: "{d.registro?.data?.titulo || 'Sin título'}"
+                          Registro ID #{d.registro?.id}: "{d.registro?.data?.titulo || 'Sin título'}"
                         </span>
                       )}
                     </div>

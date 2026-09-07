@@ -5,7 +5,7 @@ import { AdminService } from '@/services/supabase/admin.service';
 import { NotificacionAdmin } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
-import { Check, X, ShieldAlert, MessageSquare, Eye, Image as ImageIcon, Sparkles, UserCheck, UserX } from 'lucide-react';
+import { Check, X, ShieldAlert, MessageSquare, Eye, Image as ImageIcon, Sparkles, UserCheck, UserX, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
@@ -238,6 +238,31 @@ export default function AdminDisputePage() {
               const imageUrls: string[] = d.registro?.data?.urls_imagenes || [];
               const participantes: any[] = d.registro?.participantes || [];
 
+              const regOrigen = (d as any).registro_origen;
+              const rawTitulo = regOrigen?.data?.titulo || d.registro?.data?.evento_premios_titulo || d.registro?.data?.titulo;
+              const isGenericTitulo = !rawTitulo || rawTitulo === 'Narración' || rawTitulo === 'Evento' || rawTitulo.startsWith('Narrador: ') || rawTitulo.startsWith('Recuperación: Narrador: ');
+              const origNarrador = regOrigen?.data?.narrador || d.registro?.data?.evento_premios_narrador || (rawTitulo?.startsWith('Narrador: ') ? rawTitulo.replace('Narrador: ', '') : null);
+              const origFecha = regOrigen?.fecha || d.registro?.data?.evento_premios_fecha || null;
+              const origResumen = regOrigen?.data?.discord_message_text || d.registro?.data?.evento_premios_resumen || null;
+              const origXp = d.registro?.data?.recuperado_xp ?? d.registro?.data?.global_xp ?? regOrigen?.data?.global_xp ?? 0;
+              const origRyous = d.registro?.data?.recuperado_ryous ?? d.registro?.data?.global_ryous ?? regOrigen?.data?.global_ryous ?? 0;
+              const origPa = d.registro?.data?.recuperado_pa ?? d.registro?.data?.global_pa ?? regOrigen?.data?.global_pa ?? 0;
+              const eventoPremiosId = d.registro?.data?.evento_premios_id;
+
+              let origTitulo = rawTitulo;
+              if (isGenericTitulo) {
+                const fecFmt = origFecha ? new Date(origFecha).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+                if (origNarrador && fecFmt) {
+                  origTitulo = `Narración de ${origNarrador} (${fecFmt})`;
+                } else if (origNarrador) {
+                  origTitulo = `Narración de ${origNarrador}${eventoPremiosId ? ` (ID #${eventoPremiosId})` : ''}`;
+                } else if (eventoPremiosId) {
+                  origTitulo = `Evento #${eventoPremiosId}${fecFmt ? ` (${fecFmt})` : ''}`;
+                } else {
+                  origTitulo = isNarracionRecup ? 'Narración' : 'Evento';
+                }
+              }
+
               return (
                 <div key={d.id} className="ninja-card-oro p-8 xl:p-10 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 relative overflow-hidden">
                   <div className="flex flex-col lg:flex-row justify-between gap-8">
@@ -269,6 +294,62 @@ export default function AdminDisputePage() {
                           )}
                         </div>
                       </div>
+
+                      {/* Tarjeta destacada de la Narración o Evento Original */}
+                      {isRecuperacion && (
+                        <div className="p-6 bg-oro/5 border border-oro/20 ninja-clip-sm space-y-4">
+                          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-oro/15 pb-3">
+                            <div className="space-y-1">
+                              <span className="text-caption font-black text-oro/50 uppercase tracking-[0.25em] block flex items-center gap-1.5">
+                                <Sparkles className="w-3.5 h-3.5 text-oro" />
+                                {isNarracionRecup ? 'NARRACIÓN ORIGINAL A RECUPERAR' : 'EVENTO ORIGINAL A RECUPERAR'}
+                              </span>
+                              <h4 className="text-lg font-black text-oro uppercase tracking-wider">
+                                {origTitulo}
+                              </h4>
+                            </div>
+                            {eventoPremiosId && (
+                              <a
+                                href={isNarracionRecup ? `/registros/narracion?id=${eventoPremiosId}` : `/registros?id=${eventoPremiosId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-3.5 py-1.5 bg-oro/10 hover:bg-oro/20 text-oro border border-oro/30 text-caption font-black uppercase tracking-wider flex items-center gap-1.5 transition-all ninja-clip-xs"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" /> Ver Crónica Original (#{eventoPremiosId})
+                              </a>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                            {origNarrador && (
+                              <div className="bg-black/50 p-3 border border-oro/10 ninja-clip-xs">
+                                <span className="text-caption font-black text-oro/40 uppercase tracking-wider block">Narrador Original</span>
+                                <span className="text-oro font-black uppercase text-xs mt-0.5 block">{origNarrador}</span>
+                              </div>
+                            )}
+                            {origFecha && (
+                              <div className="bg-black/50 p-3 border border-oro/10 ninja-clip-xs">
+                                <span className="text-caption font-black text-oro/40 uppercase tracking-wider block">Fecha Original</span>
+                                <span className="text-oro/80 font-bold font-mono text-xs mt-0.5 block">
+                                  {new Date(origFecha).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </div>
+                            )}
+                            <div className="bg-black/50 p-3 border border-oro/10 ninja-clip-xs col-span-1 sm:col-span-2">
+                              <span className="text-caption font-black text-oro/40 uppercase tracking-wider block">Recompensas a Otorgar</span>
+                              <span className="text-oro font-black text-xs mt-0.5 block">
+                                +{origXp} EXP • +{origRyous} Ryous • +{origPa} PA
+                              </span>
+                            </div>
+                          </div>
+
+                          {origResumen && (
+                            <div className="p-3 bg-black/40 border border-oro/10 text-xs text-white/70 italic font-sans rounded-sm border-l-2 border-l-oro">
+                              "{origResumen}"
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       <div className="p-6 bg-black/40 border border-oro/15 ninja-clip-md space-y-4">
                         <MessageSquare className="absolute -top-3.5 -left-3.5 w-8 h-8 text-oro/10 rotate-6 pointer-events-none" />
@@ -361,7 +442,7 @@ export default function AdminDisputePage() {
                           ? 'RECHAZAR RECUPERACIÓN'
                           : 'INVALIDAR REGISTRO'}
                       </button>
-                      {d.registro_id !== null && (d.registro as any)?.tipo !== 'narracion' && (d.registro as any)?.subtipo !== 'recuperacion_evento' && (d.registro as any)?.subtipo !== 'recuperacion_narracion' && (
+                      {d.registro_id !== null && (
                         <button
                           onClick={() => setSelectedRegistro(d.registro)}
                           className="w-full py-3 px-6 bg-black/80 text-oro border border-oro/30 hover:border-oro hover:bg-oro/10 font-black text-caption xl:text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 cursor-pointer ninja-clip-xs"

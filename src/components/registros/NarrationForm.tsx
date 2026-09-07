@@ -25,6 +25,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
   const [loading, setLoading] = useState(false);
 
   // General fields
+  const [titulo, setTitulo] = useState(initialData?.data?.titulo || '');
   const [narrador, setNarrador] = useState(initialData?.data?.narrador || '');
   const [images, setImages] = useState<string[]>(initialData?.data?.urls_imagenes || ['']);
 
@@ -74,6 +75,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
   // Load editing registry participants if editing
   useEffect(() => {
     if (initialData) {
+      setTitulo(initialData.data?.titulo || '');
       setNarrador(initialData.data?.narrador || '');
       setDestinatarioTipo(initialData.data?.destinatario_tipo || 'global');
       setDestinatarioId(initialData.data?.destinatario_id || null);
@@ -247,6 +249,11 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
   };
 
   const handleSubmit = async () => {
+    if (!titulo.trim()) {
+      addToast('Indica un título o asunto para la narración', 'error');
+      return;
+    }
+
     if (!narrador.trim()) {
       addToast('Indica el nombre del narrador del evento', 'error');
       return;
@@ -266,7 +273,7 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
         autor_id: null,
         participantes_ids: participants.map(p => p.id),
         data: {
-          titulo: narrador.trim() ? `Narrador: ${narrador.trim()}` : 'Narración',
+          titulo: titulo.trim(),
           narrador: narrador.trim(),
           destinatario_tipo: destinatarioTipo,
           destinatario_id: destinatarioId,
@@ -338,9 +345,27 @@ export default function NarrationForm({ onCreated, initialData = null, initialPa
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-12 sm:gap-16">
             <div className="space-y-8 sm:space-y-10">
+              {/* Titulo Field */}
+              <div className="space-y-4">
+                <label className="text-xs font-black uppercase tracking-[0.3em] ml-2 flex items-center justify-between">
+                  <span>Título / Asunto de la Narración</span>
+                  <span className="text-[10px] text-naranja-naruto font-bold lowercase tracking-normal">obligatorio</span>
+                </label>
+                <input
+                  type="text"
+                  value={titulo}
+                  onChange={(e) => setTitulo(e.target.value)}
+                  placeholder="Ej: Incursión en el Bosque de la Muerte / Examen Chunin..."
+                  className="w-full ninja-input py-4 text-sm font-bold"
+                />
+              </div>
+
               {/* Narrador Field */}
               <div className="space-y-4">
-                <label className="text-xs font-black uppercase tracking-[0.3em] ml-2">Nombre del Narrador (Texto libre)</label>
+                <label className="text-xs font-black uppercase tracking-[0.3em] ml-2 flex items-center justify-between">
+                  <span>Nombre del Narrador (Texto libre)</span>
+                  <span className="text-[10px] text-naranja-naruto font-bold lowercase tracking-normal">obligatorio</span>
+                </label>
                 <input
                   type="text"
                   value={narrador}

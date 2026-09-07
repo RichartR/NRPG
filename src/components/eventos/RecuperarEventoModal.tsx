@@ -27,6 +27,10 @@ export default function RecuperarEventoModal({
 }: RecuperarEventoModalProps) {
   const isNarracion = tipoOrigen === 'narracion' || ultimoRegistroPremios?.subtipo === 'narracion';
   const itemTitle = evento?.titulo || ultimoRegistroPremios?.data?.titulo || (isNarracion ? 'Narración' : 'Evento');
+  const narradorNombre = ultimoRegistroPremios?.data?.narrador || evento?.narrador || '';
+  const fechaOrigen = ultimoRegistroPremios?.fecha || ultimoRegistroPremios?.created_at || evento?.fecha || null;
+  const fechaStr = fechaOrigen ? new Date(fechaOrigen).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+  const discordResumen = ultimoRegistroPremios?.data?.discord_message_text || '';
 
   const [imageUrls, setImageUrls] = useState<string[]>(['']);
   const [availableCharacters, setAvailableCharacters] = useState<any[]>([]);
@@ -163,6 +167,10 @@ export default function RecuperarEventoModal({
               titulo: `Recuperación: ${itemTitle}`,
               evento_id: evento?.id || null,
               evento_premios_id: ultimoRegistroPremios?.id,
+              evento_premios_titulo: itemTitle,
+              evento_premios_narrador: narradorNombre || null,
+              evento_premios_fecha: fechaOrigen,
+              evento_premios_resumen: discordResumen || null,
               global_xp: baseGlobalXp,
               global_ryous: baseGlobalRyous,
               global_pa: baseGlobalPa,
@@ -230,6 +238,25 @@ export default function RecuperarEventoModal({
                   <h3 className="text-xl font-black text-oro uppercase tracking-wider italic mt-1">
                     {itemTitle}
                   </h3>
+                  {(narradorNombre || fechaStr) && (
+                    <div className="flex flex-wrap items-center gap-3 mt-2 text-xs font-bold text-white/70">
+                      {narradorNombre && (
+                        <span className="px-2.5 py-0.5 bg-naranja-naruto/20 border border-naranja-naruto/40 text-naranja-naruto uppercase tracking-wider text-caption">
+                          Narrador: {narradorNombre}
+                        </span>
+                      )}
+                      {fechaStr && (
+                        <span className="text-white/50 text-caption font-medium">
+                          Fecha: {fechaStr}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {discordResumen && (
+                    <p className="text-xs text-white/60 line-clamp-2 mt-2 italic font-sans border-l-2 border-oro/30 pl-3">
+                      "{discordResumen}"
+                    </p>
+                  )}
                 </div>
                 <span className="px-3.5 py-1.5 bg-oro/10 border border-oro/30 text-oro text-caption font-black uppercase tracking-widest ninja-clip-xs">
                   RECOMPENSAS BASE

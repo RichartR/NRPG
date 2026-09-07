@@ -362,10 +362,34 @@ export async function POST(request: Request) {
 
       if (payload.subtipo === 'recuperacion_evento' || payload.subtipo === 'recuperacion_narracion') {
         const isNarracion = payload.subtipo === 'recuperacion_narracion';
+        let detalleEvento = payload.data?.evento_premios_titulo || payload.data?.titulo || (isNarracion ? 'Narración' : 'Evento');
+        let narradorInfo = payload.data?.evento_premios_narrador || '';
+        let fechaInfo = '';
+
+        if (payload.data?.evento_premios_id) {
+          const { data: origReg } = await adminClient
+            .from('reg_registros')
+            .select('data, fecha')
+            .eq('id', payload.data.evento_premios_id)
+            .single();
+
+          if (origReg) {
+            if (origReg.data?.titulo) detalleEvento = origReg.data.titulo;
+            if (origReg.data?.narrador) narradorInfo = origReg.data.narrador;
+            if (origReg.fecha) {
+              const d = new Date(origReg.fecha);
+              fechaInfo = ` del ${d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}`;
+            }
+          }
+        }
+
+        const infoNarradorStr = narradorInfo ? ` (Narrador: ${narradorInfo}${fechaInfo})` : (fechaInfo ? ` (${fechaInfo.trim()})` : '');
+        const mensajeNotif = `${isNarracion ? 'Recuperación de Narración' : 'Recuperación de Evento'}: "${detalleEvento}"${infoNarradorStr} • ${payload.data?.urls_imagenes?.length || 1} escena/s de roleo adjunta/s`;
+
         await adminClient.from('sys_notificaciones_admin').insert({
           registro_id: registro.id,
           personaje_id: payload.autor_id || (payload.participantes_ids && payload.participantes_ids[0]) || null,
-          mensaje: `${isNarracion ? 'Recuperación de Narración' : 'Recuperación de Evento'}: "${payload.data?.titulo || (isNarracion ? 'Narración' : 'Evento')}" (${payload.data?.urls_imagenes?.length || 1} escena/s de roleo adjunta/s)`,
+          mensaje: mensajeNotif,
           estado: 'pendiente'
         });
       }
