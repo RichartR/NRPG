@@ -450,6 +450,38 @@ export default function CharacterSheet() {
                       )}
                     </div>
                   ))}
+
+                {/* Si es Clan Uchiha y no tiene slot 2 regular, mostrar su Rama Copia por defecto */}
+                {(() => {
+                  const isUchiha = activeCharacter.personajes_ramas.some((r: any) => 
+                    Number(r.rama_id) === 35 || 
+                    r.info_ramas_clanes?.slug === 'uchiha-ichizoku' || 
+                    r.info_ramas_clanes?.nombre?.toLowerCase().includes('uchiha')
+                  );
+                  const hasSlot2 = activeCharacter.personajes_ramas.some((r: any) => Number(r.slot) === 2 && r.info_ramas_clanes);
+                  if (isUchiha && !hasSlot2) {
+                    return (
+                      <div key="uchiha-copia-slot" className="bg-[#171717] border border-oro/10 p-2 sm:p-2.5 flex flex-col justify-center px-4 relative overflow-hidden ninja-clip-xs group transition-all">
+                        <div className="absolute top-0 right-0 w-16 h-16 bg-oro/5 rounded-full blur-xl -mr-8 -mt-8 pointer-events-none" />
+
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-oro/40 text-caption font-black uppercase tracking-[0.15em] truncate">
+                            Rama Copia
+                          </span>
+                        </div>
+
+                        <div className="mt-1 text-xs xl:text-sm font-black text-oro truncate">
+                          Hasei: Kopī
+                        </div>
+
+                        <div className="text-caption xl:text-caption text-oro/60 font-bold uppercase tracking-widest mt-0.5 truncate">
+                          {activeCharacter.personaje_uchiha?.rama_combate ? `Combate: ${activeCharacter.personaje_uchiha.rama_combate}` : 'Clan Uchiha'}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
             )}
           </div>

@@ -10,7 +10,9 @@ import {
   Coins,
   Search,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Copy,
+  Link2
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
@@ -37,7 +39,7 @@ import NinkenSection from './NinkenSection';
 import KugutsuKoboSection from './KugutsuKoboSection';
 import UchihaSection, { UCHIHA_SLOTS_CONFIG } from './UchihaSection';
 import { ObjetoSlotsModal } from './ObjetoSlotsModal';
-import { useState, useMemo, useEffect, Fragment } from 'react';
+import { useState, useMemo, useEffect, useCallback, Fragment } from 'react';
 import { resolveAldeaIcono } from '@/utils/aldea-icon';
 import { createClient } from '@/utils/supabase/client';
 import { searchAny } from '@/lib/utils/search';
@@ -763,12 +765,35 @@ export function CharacterSheetView({
     });
   }, [masters.aldeas, masters.cuposMaximosAldea, occupancy, originalCharacter, isNew]);
 
+  const checkIsUchihaRama = useCallback((ramaIdOrObj: any) => {
+    if (!ramaIdOrObj) return false;
+    const id = typeof ramaIdOrObj === 'object' ? ramaIdOrObj.rama_id || ramaIdOrObj.id : Number(ramaIdOrObj);
+    if (Number(id) === 35) return true;
+    const found = (masters.ramas || []).find((m: any) => Number(m.id) === Number(id));
+    if (found?.slug === 'uchiha-ichizoku' || found?.nombre?.toLowerCase().includes('uchiha')) return true;
+    if (typeof ramaIdOrObj === 'object') {
+      if (ramaIdOrObj.slug === 'uchiha-ichizoku' || ramaIdOrObj.rama?.slug === 'uchiha-ichizoku' || ramaIdOrObj.info_ramas_clanes?.slug === 'uchiha-ichizoku') return true;
+      if (ramaIdOrObj.nombre?.toLowerCase().includes('uchiha') || ramaIdOrObj.rama?.nombre?.toLowerCase().includes('uchiha') || ramaIdOrObj.info_ramas_clanes?.nombre?.toLowerCase().includes('uchiha')) return true;
+    }
+    return false;
+  }, [masters.ramas]);
+
+  const isUchiha = useMemo(() => {
+    return (character.personajes_ramas || []).some((r: any) => checkIsUchihaRama(r));
+  }, [character.personajes_ramas, checkIsUchihaRama]);
+
   const getClanOptions = (slot: number) => {
     const filteredRamas = (masters.ramas || []).filter((r: any) => !r.aldea_id || Number(r.aldea_id) === Number(character.aldea_id));
     const otherSlot = slot === 1 ? 2 : 1;
     const otherPr = character.personajes_ramas?.find((r: any) => Number(r.slot) === otherSlot);
     const otherRama = otherPr ? (masters.ramas || []).find((r: any) => r.id === Number(otherPr.rama_id)) : null;
     const otherIsClan = otherRama?.tipo === 'clan';
+    const otherIsUchiha = otherPr ? checkIsUchihaRama(otherPr) : false;
+
+    // Si el otro slot es Uchiha, este slot no puede tener ninguna rama
+    if (otherIsUchiha) {
+      return [];
+    }
 
     return filteredRamas
       .sort((a: any, b: any) => {
@@ -778,6 +803,17 @@ export function CharacterSheetView({
       })
       .map((r: any) => {
         const isClan = r.tipo === 'clan';
+        const isCurrentUchiha = checkIsUchihaRama(r);
+
+        // Si este clan es Uchiha y el otro slot ya tiene cualquier rama elegida, no permitirlo
+        if (isCurrentUchiha && otherPr?.rama_id) {
+          return {
+            label: `${r.nombre} - INCOMPATIBLE CON 2ª RAMA`,
+            value: r.id,
+            disabled: true
+          };
+        }
+
         if (!isClan) {
           return {
             label: r.nombre,
@@ -822,8 +858,8 @@ export function CharacterSheetView({
       ...(character.registros_autor?.filter((r: any) => {
         if (r.subtipo === 'narracion') {
           return r.participantes?.some((p: any) => Number(p.personaje_id) === Number(character.id)) ||
-                 (Array.isArray(r.data?.participantes_premios) && r.data.participantes_premios.some((p: any) => Number(p.personaje_id) === Number(character.id))) ||
-                 (Array.isArray(r.data?.participantes_historicos) && r.data.participantes_historicos.some((p: any) => Number(p.id) === Number(character.id)));
+            (Array.isArray(r.data?.participantes_premios) && r.data.participantes_premios.some((p: any) => Number(p.personaje_id) === Number(character.id))) ||
+            (Array.isArray(r.data?.participantes_historicos) && r.data.participantes_historicos.some((p: any) => Number(p.id) === Number(character.id)));
         }
         return true;
       }) || []),
@@ -1886,10 +1922,6 @@ export function CharacterSheetView({
     );
   };
 
-  const isUchiha = useMemo(() => {
-    return (character.personajes_ramas || []).some((r: any) => Number(r.rama_id) === 35 || r.rama?.slug === 'uchiha-ichizoku' || r.slug === 'uchiha-ichizoku');
-  }, [character.personajes_ramas]);
-
   // IDs de técnicas copiadas por el Clan Uchiha (Hasei: Kopī)
   const uchihaCopiedTechIds = useMemo(() => {
     const copias = (character as any).personaje_uchiha?.copias || {};
@@ -1900,15 +1932,15 @@ export function CharacterSheetView({
   const uchihaCopiedTecnicas = useMemo(() => {
     const copias = (character as any).personaje_uchiha?.copias || {};
     const catalog = (masters?.glosario && masters.glosario.length > 0) ? masters.glosario : glosarioFiltrado;
-    
+
     return Object.entries(copias)
       .filter(([_, c]: [string, any]) => Boolean(c?.tecnica_id))
       .map(([slotKey, c]: [string, any]) => {
         const tecId = Number(c.tecnica_id);
         const slotConf = UCHIHA_SLOTS_CONFIG.find(s => s.key === slotKey);
         const slotName = slotConf?.nombre || `Hueco ${slotKey}`;
-        const info = c.info_glosario 
-          || (character.personajes_tecnicas || []).find((pt: any) => Number(pt.tecnica_id) === tecId)?.info_glosario 
+        const info = c.info_glosario
+          || (character.personajes_tecnicas || []).find((pt: any) => Number(pt.tecnica_id) === tecId)?.info_glosario
           || (catalog || []).find((g: any) => Number(g.id) === tecId);
 
         return {
@@ -2462,6 +2494,61 @@ export function CharacterSheetView({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     {[1, 2].map(slot => {
                       const pr = character.personajes_ramas?.find((r: any) => Number(r.slot) === slot);
+                      const isSlot2 = slot === 2;
+                      const slot1Pr = character.personajes_ramas?.find((r: any) => Number(r.slot) === 1);
+                      const isSlot1Uchiha = checkIsUchihaRama(slot1Pr);
+                      const isCharacterUchiha = isUchiha || isSlot1Uchiha;
+
+                      if (isSlot2 && isCharacterUchiha) {
+                        return (
+                          <div key={slot} className="space-y-6 p-8 bg-black/40 border border-oro/10 relative overflow-hidden ninja-clip-md flex flex-col justify-between">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-oro/5 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none" />
+                            <div>
+                              <div className="flex items-center justify-between mb-4">
+                                <h4 className="text-caption font-black text-oro/40 uppercase tracking-[0.3em]">ESPECIALIDAD SLOT 2</h4>
+                                <span className="px-3 py-1 bg-oro/10 border border-oro/30 text-oro text-[10px] font-black uppercase tracking-wider ninja-clip-xs">
+                                  RAMA POR DEFECTO
+                                </span>
+                              </div>
+
+                              <div className="p-6 bg-[#1a1412]/70 border border-oro/20 space-y-4 ninja-clip-sm">
+                                <div className="flex items-start gap-4">
+                                  <div className="space-y-1.5">
+                                    <h5 className="text-sm font-black text-oro uppercase tracking-wider">
+                                      HASEI: KOPĪ (RAMA COPIA)
+                                    </h5>
+                                  </div>
+                                </div>
+
+                                <div className="pt-2 border-t border-oro/10 flex flex-wrap items-center justify-between gap-3">
+                                  {(character as any).personaje_uchiha?.rama_combate ? (
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-[11px] uppercase tracking-wider text-oro/40 font-black">Rama de Combate:</span>
+                                      <span className="text-xs text-oro font-black uppercase px-2.5 py-0.5 bg-oro/10 border border-oro/20 ninja-clip-xs">
+                                        {(character as any).personaje_uchiha.rama_combate}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-xs text-oro/40 italic">Rama de combate aún no seleccionada</span>
+                                  )}
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      onSetActiveTab('tecnicas');
+                                      setTecnicasSubTab('uchiha');
+                                    }}
+                                    className="px-4 py-2 bg-oro text-naranja-naruto hover:bg-oro/90 font-black text-[11px] uppercase tracking-widest transition-all flex items-center gap-2 ninja-clip-xs cursor-pointer shadow-[0_0_15px_rgba(255,230,159,0.2)]"
+                                  >
+                                    VER RAMA UCHIHA
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+
                       return (
                         <div key={slot} className="space-y-6 p-8 bg-black/40 border border-oro/10 relative overflow-hidden ninja-clip-md">
                           <div className="absolute top-0 right-0 w-32 h-32 bg-oro/5 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none" />
@@ -2473,6 +2560,41 @@ export function CharacterSheetView({
                               options={getClanOptions(slot)}
                               disabled={!isEditing && !isNew}
                               onChange={(v) => {
+                                const selectedUchiha = checkIsUchihaRama(v);
+                                if (selectedUchiha) {
+                                  // Quitar técnicas de la elección anterior de clan si existía
+                                  const currentRama = (masters.ramas || []).find((r: any) => r.id === Number(pr?.rama_id));
+                                  const isChangingClan = currentRama?.tipo === 'clan';
+                                  const choice = character.eleccion_tecnicas_clan;
+                                  let updatedTecs = character.personajes_tecnicas || [];
+                                  if (isChangingClan && choice) {
+                                    const prevTechIds = choice.tecnicas_ids || [];
+                                    updatedTecs = updatedTecs.filter(
+                                      (pt: any) => !prevTechIds.includes(Number(pt.tecnica_id))
+                                    );
+                                    onUpdateField('eleccion_tecnicas_clan', null);
+                                  }
+
+                                  // Si cualquier slot tenía Ninjutsu elemental inicial, filtrarlo
+                                  const otherSlot = slot === 1 ? 2 : 1;
+                                  const otherPr = character.personajes_ramas?.find((r: any) => Number(r.slot) === otherSlot);
+                                  if (Number(pr?.rama_id) === 4 || Number(otherPr?.rama_id) === 4) {
+                                    updatedTecs = updatedTecs.filter((pt: any) => {
+                                      const info = pt.info_glosario;
+                                      if (!info) return true;
+                                      const isNinElementalInitial = Number(info.rama_clan_id) === 4 && info.basica === true && Boolean(info.elemento_id) && info.inicial === true && (info.coste_exp === 0 || !info.coste_exp);
+                                      return !isNinElementalInitial;
+                                    });
+                                  }
+
+                                  // Al elegir Uchiha, solo se conserva el slot 1 para Uchiha, el slot 2 se elimina
+                                  const newRamas = [{ slot: 1, rama_id: Number(v), sub_especialidad_id: null, id_entrenamiento: null, elemento_principal_id: null, elemento_secundario_id: null, elemento_terciario_id: null }];
+                                  onUpdateField('personajes_ramas', newRamas);
+                                  onUpdateField('personajes_tecnicas', updatedTecs);
+                                  addToast('El Clan Uchiha no permite una segunda rama regular (cuenta con la Rama Copia por defecto).', 'info');
+                                  return;
+                                }
+
                                 // Validar repetibilidad: si otra rama existe y no es repetible, no permitir seleccionar la misma
                                 const otherSlot = slot === 1 ? 2 : 1;
                                 const otherPr = character.personajes_ramas?.find((r: any) => Number(r.slot) === otherSlot);

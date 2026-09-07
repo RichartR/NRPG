@@ -141,10 +141,23 @@ export async function PATCH(
             if (newRamaIds.length > 0) {
               const { data: selectRamas, error: selectRamasError } = await supabase
                 .from('info_ramas_clanes')
-                .select('id, nombre, tipo, es_especial, config_iniciales')
+                .select('id, nombre, slug, tipo, es_especial, config_iniciales')
                 .in('id', newRamaIds);
 
               if (selectRamasError) throw selectRamasError;
+
+              const isUchiha = (selectRamas || []).some(
+                r => Number(r.id) === 35 || r.slug === 'uchiha-ichizoku' || r.nombre?.toLowerCase().includes('uchiha')
+              );
+
+              if (isUchiha) {
+                // El Clan Uchiha no permite segunda rama: conservar únicamente el Slot 1 de Uchiha
+                data.personajes_ramas = (data.personajes_ramas || []).filter((r: any) => {
+                  const rId = Number(r.rama_id);
+                  const isThisUchiha = rId === 35 || (selectRamas || []).some(sr => sr.id === rId && (sr.slug === 'uchiha-ichizoku' || sr.nombre?.toLowerCase().includes('uchiha')));
+                  return isThisUchiha && Number(r.slot) === 1;
+                });
+              }
 
               const clans = selectRamas?.filter(r => r.tipo === 'clan') || [];
               for (const clan of clans) {
