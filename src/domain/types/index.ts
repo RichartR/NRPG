@@ -310,6 +310,7 @@ export interface NotificacionAdmin {
   created_at: string;
   // Joins
   registro?: Registro;
+  registro_origen?: Registro | any;
   personaje?: { nombre_ninja: string; url_img?: string | null };
 }
 

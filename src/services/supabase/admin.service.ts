@@ -400,190 +400,57 @@ export const AdminService = {
       .order('created_at', { ascending: false });
     
     if (error) throw error;
-    return data || [];
+    if (!data || data.length === 0) return [];
+
+    // Enriquecer registros de recuperación con los datos del evento o narración original
+    const eventoPremiosIds = Array.from(
+      new Set(
+        data
+          .map((d: any) => d.registro?.data?.evento_premios_id)
+          .filter(Boolean)
+          .map(Number)
+      )
+    );
+
+    if (eventoPremiosIds.length > 0) {
+      const { data: originales } = await supabase
+        .from('reg_registros')
+        .select('id, tipo, subtipo, data, fecha')
+        .in('id', eventoPremiosIds);
+
+      const originalesMap = new Map<number, any>();
+      if (originales) {
+        originales.forEach((orig: any) => originalesMap.set(Number(orig.id), orig));
+      }
+
+      return data.map((d: any) => {
+        const origId = Number(d.registro?.data?.evento_premios_id);
+        if (origId && originalesMap.has(origId)) {
+          return {
+            ...d,
+            registro_origen: originalesMap.get(origId)
+          };
+        }
+        return d;
+      });
+    }
+
+    return data;
   },
 
   async resolveDispute(notificacionId: string, resolucion: 'aceptada' | 'rechazada') {
-    const supabase = createClient();
-    
-    const { data: notif, error: notifError } = await supabase
-      .from('sys_notificaciones_admin')
-      .select('*, registro:reg_registros(*)')
-      .eq('id', notificacionId)
-      .single();
-    
-    if (notifError) throw notifError;
-    if (notif.estado === 'resuelto') {
-      throw new Error('Esta disputa ya ha sido resuelta por otro administrador.');
+    const res = await fetch('/api/admin/disputas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notificacionId, resolucion })
+    });
+
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      throw new Error(json.error || 'Error al resolver la solicitud');
     }
 
-    if (notif.registro_id === null && notif.personaje_id === null) {
-      // Es una alerta de IP duplicada (cuenta clon)
-      if (resolucion === 'aceptada') {
-        // Auto-whitelist de la IP al aceptar la apelación/alerta
-        const ipMatch = notif.mensaje.match(/\(([^)]+)\)\.?$/);
-        if (ipMatch && ipMatch[1]) {
-          const ip = ipMatch[1];
-          await supabase.from('sys_whitelisted_ips').upsert({
-            ip,
-            description: `Auto-whitelist por aprobación de alerta de IP`
-          });
-        }
-      }
-    } else if (notif.registro_id === null) {
-      // Es una apelación de shinobi archivado por inactividad
-      if (resolucion === 'aceptada') {
-        // 1. Obtener datos del personaje para saber el user_id
-        const { data: character, error: getError } = await supabase
-          .from('reg_characters')
-          .select('user_id, activo, nombre_ninja')
-          .eq('id', notif.personaje_id)
-          .single();
-        
-        if (getError) throw getError;
-        if (!character) throw new Error('Personaje no encontrado.');
-        if (character.activo) throw new Error('El personaje ya está activo.');
-
-        // 2. Verificar el límite de personajes activos
-        const { count, error: countError } = await supabase
-          .from('reg_characters')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', character.user_id)
-          .eq('activo', true);
-
-        if (countError) throw countError;
-
-        // Obtener limite de la config
-        const { data: configData, error: configError } = await supabase
-          .from('sys_configuracion')
-          .select('valor')
-          .eq('clave', 'characters_per_player')
-          .single();
-
-        let limit = 1;
-        if (!configError && configData?.valor) {
-          limit = parseInt(configData.valor, 10);
-        }
-
-        if ((count ?? 0) >= limit) {
-          throw new Error(`El usuario ya ha alcanzado el límite de personajes activos (${limit}).`);
-        }
-
-        // 3. Reactivar el personaje y resetear los campos de archivado
-        const { error: updateCharError } = await supabase
-          .from('reg_characters')
-          .update({
-            activo: true,
-            eliminado_voluntario: false,
-            archived_at: null
-          })
-          .eq('id', notif.personaje_id);
-
-        if (updateCharError) throw updateCharError;
-
-        // 4. Si profiles.active_char_id está vacío, asignarle este personaje
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('active_char_id')
-          .eq('id', character.user_id)
-          .single();
-
-        if (!profileError && !profile?.active_char_id) {
-          await supabase
-            .from('profiles')
-            .update({ active_char_id: notif.personaje_id })
-            .eq('id', character.user_id);
-        }
-      }
-    } else {
-      // Disputa de registro tradicional o Recuperación de Evento / Narración
-      const isRecuperacion = notif.registro?.subtipo === 'recuperacion_evento' || notif.registro?.subtipo === 'recuperacion_narracion';
-
-      if (resolucion === 'aceptada') {
-        // Obtener todos los participantes del registro
-        const { data: parts } = await supabase
-          .from('reg_registros_participantes')
-          .select('personaje_id, estado')
-          .eq('registro_id', notif.registro_id);
-
-        const targetPids = (parts && parts.length > 0)
-          ? parts.map((p: any) => p.personaje_id)
-          : (notif.personaje_id ? [notif.personaje_id] : []);
-
-        for (const pid of targetPids) {
-          const partState = parts?.find((p: any) => Number(p.personaje_id) === Number(pid))?.estado;
-          const { xp, ryous, pa } = RewardLogic.calculateReward(notif.registro, pid);
-          const { data: char } = await supabase
-            .from('reg_characters')
-            .select('nombre_ninja, xp, ryous, puntos_aprendizaje')
-            .eq('id', pid)
-            .single();
-
-          if (char) {
-            // Solo sumar si el participante no figuraba ya como aceptado
-            if (partState !== 'aceptado') {
-              await supabase.from('reg_characters').update({
-                xp: (char.xp || 0) + xp,
-                ryous: (char.ryous || 0) + ryous,
-                puntos_aprendizaje: (char.puntos_aprendizaje || 0) + pa
-              }).eq('id', pid);
-            }
-
-            // Si es recuperación de evento o narración, sincronizar en registro original
-            if (isRecuperacion && notif.registro?.data?.evento_premios_id) {
-              const eventoPremiosId = Number(notif.registro.data.evento_premios_id);
-              const { data: regPremios } = await supabase
-                .from('reg_registros')
-                .select('*')
-                .eq('id', eventoPremiosId)
-                .single();
-
-              if (regPremios) {
-                const currentPremios = Array.isArray(regPremios.data?.participantes_premios)
-                  ? [...regPremios.data.participantes_premios]
-                  : [];
-
-                const existingIdx = currentPremios.findIndex((pr: any) => Number(pr.personaje_id) === Number(pid));
-                const nuevoPremioObj = {
-                  personaje_id: pid,
-                  nombre_ninja: char.nombre_ninja,
-                  xp_extra: Math.max(0, xp - (Number(regPremios.data?.global_xp) || 0)),
-                  ryous_extra: Math.max(0, ryous - (Number(regPremios.data?.global_ryous) || 0)),
-                  pa_extra: Math.max(0, pa - (Number(regPremios.data?.global_pa) || 0)),
-                  recuperado: true
-                };
-
-                if (existingIdx >= 0) {
-                  currentPremios[existingIdx] = { ...currentPremios[existingIdx], ...nuevoPremioObj };
-                } else {
-                  currentPremios.push(nuevoPremioObj);
-                }
-
-                await supabase
-                  .from('reg_registros')
-                  .update({ data: { ...regPremios.data, participantes_premios: currentPremios } })
-                  .eq('id', eventoPremiosId);
-              }
-            }
-          }
-        }
-
-        await supabase.from('reg_registros_participantes').update({ estado: 'aceptado' })
-          .eq('registro_id', notif.registro_id);
-
-      } else {
-        // El admin RECHAZA la disputa -> Marcar participantes como rechazados y borrar registro
-        await supabase.from('reg_registros_participantes').update({ estado: 'rechazado' })
-          .eq('registro_id', notif.registro_id);
-
-        await RegistrosService.deleteRegistro(notif.registro_id);
-      }
-    }
-
-    await supabase.from('sys_notificaciones_admin').update({ 
-      estado: 'resuelto',
-      resolucion 
-    }).eq('id', notificacionId);
+    return await res.json();
   },
 
   // Gestión de Tiendas Ninja
