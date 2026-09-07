@@ -388,7 +388,27 @@ function CrearFichaContent() {
 
     const rama1 = form.personajes_ramas?.find((r: any) => Number(r.slot) === 1)?.rama_id;
     const rama2 = form.personajes_ramas?.find((r: any) => Number(r.slot) === 2)?.rama_id;
-    if (!rama1 || !rama2) return addToast('Debes seleccionar las dos ramas obligatoriamente', 'error');
+
+    // Verificar si es Clan Uchiha
+    const checkIsUchiha = (ramaId: any) => {
+      if (!ramaId) return false;
+      if (Number(ramaId) === 35) return true;
+      const found = (masters.ramas || []).find((m: any) => Number(m.id) === Number(ramaId));
+      return found?.slug === 'uchiha-ichizoku' || found?.nombre?.toLowerCase().includes('uchiha');
+    };
+
+    const isUchiha = checkIsUchiha(rama1) || checkIsUchiha(rama2);
+
+    if (isUchiha) {
+      if (!rama1 || !checkIsUchiha(rama1)) {
+        return addToast('El Clan Uchiha debe seleccionarse en el Slot 1', 'error');
+      }
+      if (rama2) {
+        return addToast('El Clan Uchiha no permite seleccionar una segunda rama (cuenta con la Rama Copia por defecto)', 'error');
+      }
+    } else {
+      if (!rama1 || !rama2) return addToast('Debes seleccionar las dos ramas obligatoriamente', 'error');
+    }
 
     setLoading(true);
     try {
@@ -468,9 +488,13 @@ function CrearFichaContent() {
         return true;
       });
 
+      const finalRamas = form.personajes_ramas
+        .filter((r: any) => r.rama_id !== null)
+        .filter((r: any) => isUchiha ? Number(r.slot) === 1 : true);
+
       const payload = {
         ...form,
-        personajes_ramas: form.personajes_ramas.filter((r: any) => r.rama_id !== null),
+        personajes_ramas: finalRamas,
         personajes_tecnicas: filteredTecnicas
       };
       const res = await fetch('/api/characters', {

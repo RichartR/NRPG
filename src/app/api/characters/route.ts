@@ -53,18 +53,32 @@ export async function POST(request: Request) {
       }
     }
 
-    // Validar cupos máximos de los clanes seleccionados y que se hayan seleccionado las 2 ramas
+    // Validar ramas seleccionadas y cupos de clanes
     const branchIds = data.personajes_ramas?.map((r: any) => r.rama_id).filter(Boolean) || [];
-    if (branchIds.length < 2) {
-      return NextResponse.json({ error: 'Es obligatorio seleccionar las dos ramas del personaje.' }, { status: 400 });
+    if (branchIds.length === 0) {
+      return NextResponse.json({ error: 'Es obligatorio seleccionar al menos una rama para el personaje.' }, { status: 400 });
     }
-    if (branchIds.length > 0) {
-      const { data: selectRamas, error: selectRamasError } = await supabase
-        .from('info_ramas_clanes')
-        .select('id, nombre, tipo, es_especial, config_iniciales')
-        .in('id', branchIds);
 
-      if (selectRamasError) throw selectRamasError;
+    const { data: selectRamas, error: selectRamasError } = await supabase
+      .from('info_ramas_clanes')
+      .select('id, nombre, slug, tipo, es_especial, config_iniciales')
+      .in('id', branchIds);
+
+    if (selectRamasError) throw selectRamasError;
+
+    const isUchiha = (selectRamas || []).some(
+      r => Number(r.id) === 35 || r.slug === 'uchiha-ichizoku' || r.nombre?.toLowerCase().includes('uchiha')
+    );
+
+    if (isUchiha) {
+      if (branchIds.length > 1) {
+        return NextResponse.json({ error: 'El Clan Uchiha no puede tener una segunda rama (cuenta con la Rama Copia por defecto).' }, { status: 400 });
+      }
+    } else {
+      if (branchIds.length < 2) {
+        return NextResponse.json({ error: 'Es obligatorio seleccionar las dos ramas del personaje.' }, { status: 400 });
+      }
+    }
 
       const clans = selectRamas?.filter(r => r.tipo === 'clan') || [];
       for (const clan of clans) {
@@ -96,7 +110,6 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: `El clan "${clan.nombre}" ya ha alcanzado el límite máximo de cupos (${clanActiveCount}/${limitClan}) y no permite nuevos miembros.` }, { status: 400 });
         }
       }
-    }
 
     // Validar límites de Ninjutsu Elemental
     const techIds = (data.personajes_tecnicas || []).map((t: any) => Number(t.tecnica_id)).filter(Boolean);
