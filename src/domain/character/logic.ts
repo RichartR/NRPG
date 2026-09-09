@@ -285,6 +285,13 @@ export const StatsLogic = {
   }
 };
 
+export interface MultiplierTier {
+  porcentaje: number;
+  multiplicador: number;
+}
+
+export type MultiplierConfig = MultiplierTier | MultiplierTier[] | null | undefined;
+
 export const RewardLogic = {
   applyExpLimit(
     rawExp: number,
@@ -318,6 +325,49 @@ export const RewardLogic = {
     const effectivePa = Math.min(rawPa, availableCap);
     const discardedPa = rawPa - effectivePa;
     return { effectivePa, discardedPa };
+  },
+
+  calculateBoostedReward(
+    rawAmount: number,
+    currentTotal: number,
+    limit: number | null | undefined,
+    config: MultiplierConfig
+  ): number {
+    if (rawAmount <= 0) {
+      return 0;
+    }
+    if (!limit || limit <= 0 || !config) {
+      return rawAmount;
+    }
+
+    let tiers: MultiplierTier[] = [];
+    if (Array.isArray(config)) {
+      tiers = config;
+    } else if (typeof config === 'object' && config !== null) {
+      tiers = [config as MultiplierTier];
+    }
+
+    if (tiers.length === 0) {
+      return rawAmount;
+    }
+
+    const validTiers = tiers
+      .filter(t => t && !isNaN(Number(t.porcentaje)) && !isNaN(Number(t.multiplicador)))
+      .map(t => ({ porcentaje: Number(t.porcentaje), multiplicador: Number(t.multiplicador) }))
+      .sort((a, b) => a.porcentaje - b.porcentaje);
+
+    if (validTiers.length === 0) {
+      return rawAmount;
+    }
+
+    const currentPercentage = (currentTotal / limit) * 100;
+    const matchedTier = validTiers.find(t => currentPercentage <= t.porcentaje);
+
+    if (matchedTier && matchedTier.multiplicador > 1 && matchedTier.porcentaje > 0) {
+      return Math.ceil(rawAmount * matchedTier.multiplicador);
+    }
+
+    return rawAmount;
   },
 
   calculateReward(registro: any, personajeId: number): { xp: number; ryous: number; pa: number } {

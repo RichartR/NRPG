@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Character } from '@/domain/types';
+import { MultiplierTier } from '@/domain/character/logic';
 
 /**
  * Server-side character service used by API Routes (Next.js Route Handlers).
@@ -661,6 +662,60 @@ export const CharacterServerService = {
     if (data && data.valor !== undefined && data.valor !== null) {
       const num = Number(data.valor);
       return isNaN(num) ? null : num;
+    }
+    return null;
+  },
+
+  async getExpMultiplierConfig(supabase: SupabaseClient): Promise<MultiplierTier[] | null> {
+    const { data } = await supabase
+      .from('sys_configuracion_sistema')
+      .select('valor')
+      .eq('clave', 'multiplicador_exp')
+      .single();
+
+    if (!data || !data.valor) return null;
+    let val = data.valor;
+    if (typeof val === 'string') {
+      try { val = JSON.parse(val); } catch { return null; }
+    }
+    if (Array.isArray(val)) {
+      return val
+        .filter((t: any) => t && !isNaN(Number(t.porcentaje)) && !isNaN(Number(t.multiplicador)))
+        .map((t: any) => ({ porcentaje: Number(t.porcentaje), multiplicador: Number(t.multiplicador) }));
+    }
+    if (typeof val === 'object' && val !== null) {
+      const mult = Number(val.multiplicador);
+      const pct = Number(val.porcentaje);
+      if (!isNaN(mult) && !isNaN(pct)) {
+        return [{ porcentaje: pct, multiplicador: mult }];
+      }
+    }
+    return null;
+  },
+
+  async getPaMultiplierConfig(supabase: SupabaseClient): Promise<MultiplierTier[] | null> {
+    const { data } = await supabase
+      .from('sys_configuracion_sistema')
+      .select('valor')
+      .eq('clave', 'multiplicador_pa')
+      .single();
+
+    if (!data || !data.valor) return null;
+    let val = data.valor;
+    if (typeof val === 'string') {
+      try { val = JSON.parse(val); } catch { return null; }
+    }
+    if (Array.isArray(val)) {
+      return val
+        .filter((t: any) => t && !isNaN(Number(t.porcentaje)) && !isNaN(Number(t.multiplicador)))
+        .map((t: any) => ({ porcentaje: Number(t.porcentaje), multiplicador: Number(t.multiplicador) }));
+    }
+    if (typeof val === 'object' && val !== null) {
+      const mult = Number(val.multiplicador);
+      const pct = Number(val.porcentaje);
+      if (!isNaN(mult) && !isNaN(pct)) {
+        return [{ porcentaje: pct, multiplicador: mult }];
+      }
     }
     return null;
   }

@@ -172,6 +172,141 @@ function ConfigEditor({ path, value, onChange, onRenameKey, onAddProperty, onDel
   );
 }
 
+interface MultiplierTierItem {
+  porcentaje: number | string;
+  multiplicador: number | string;
+}
+
+function MultiplierTiersEditor({
+  clave,
+  value,
+  onChange
+}: {
+  clave: string;
+  value: any;
+  onChange: (tiers: MultiplierTierItem[]) => void;
+}) {
+  const tiers: MultiplierTierItem[] = Array.isArray(value) ? value : [];
+  const isExp = clave === 'multiplicador_exp';
+  const resourceLabel = isExp ? 'EXP' : 'PA';
+
+  const handleUpdate = (index: number, field: 'porcentaje' | 'multiplicador', val: string) => {
+    const updated = [...tiers];
+    updated[index] = { ...updated[index], [field]: val };
+    onChange(updated);
+  };
+
+  const handleAddTier = () => {
+    let nextPct = 50;
+    if (tiers.length > 0) {
+      const lastPct = Number(tiers[tiers.length - 1].porcentaje) || 50;
+      nextPct = Math.min(100, lastPct + 25);
+    }
+    const newTier: MultiplierTierItem = {
+      porcentaje: nextPct,
+      multiplicador: 1.25
+    };
+    onChange([...tiers, newTier]);
+  };
+
+  const handleDeleteTier = (index: number) => {
+    onChange(tiers.filter((_, i) => i !== index));
+  };
+
+  return (
+    <div className="space-y-6 w-full">
+      <div className="p-4 bg-oro/5 border border-oro/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
+        <div>
+          <span className="font-black text-oro uppercase tracking-wider block mb-1">
+            SISTEMA DE CATCH-UP ESCALONADO ({resourceLabel})
+          </span>
+          <p className="text-oro/70 leading-relaxed">
+            Configura los tramos de porcentaje de límite acumulado y su multiplicador correspondiente.
+            El jugador recibe el multiplicador del primer tramo que cubra su % actual. Si supera todos los tramos, recibe la ganancia base (x1.0).
+          </p>
+        </div>
+      </div>
+
+      {tiers.length === 0 ? (
+        <div className="p-6 bg-black/40 border border-dashed border-oro/20 text-center text-oro/40 text-xs font-black uppercase tracking-widest">
+          No hay tramos configurados. Todos los jugadores recibirán la ganancia base (x1.0).
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div className="grid grid-cols-12 gap-4 px-4 text-caption font-black uppercase tracking-widest text-oro/40">
+            <div className="col-span-1 hidden sm:block">#</div>
+            <div className="col-span-5 sm:col-span-5">Hasta % del límite de {resourceLabel}</div>
+            <div className="col-span-4 sm:col-span-5">Multiplicador</div>
+            <div className="col-span-2 sm:col-span-1 text-center">Quitar</div>
+          </div>
+
+          {tiers.map((tier, idx) => (
+            <div
+              key={idx}
+              className="grid grid-cols-12 gap-4 p-4 bg-black/40 border border-oro/10 items-center transition-all hover:border-oro/30 group"
+              style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+            >
+              <div className="col-span-1 hidden sm:flex items-center text-oro/40 font-black text-xs">
+                #{idx + 1}
+              </div>
+
+              <div className="col-span-5 sm:col-span-5 flex items-center gap-2">
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  step="1"
+                  value={tier.porcentaje}
+                  onChange={(e) => handleUpdate(idx, 'porcentaje', e.target.value)}
+                  className="w-full bg-black/60 border border-oro/10 px-4 py-3 text-oro font-black text-xs outline-none focus:border-oro/40 transition-all"
+                  style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                  placeholder="Ej: 50"
+                />
+                <span className="text-oro font-black text-xs">%</span>
+              </div>
+
+              <div className="col-span-4 sm:col-span-5 flex items-center gap-2">
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  step="0.05"
+                  value={tier.multiplicador}
+                  onChange={(e) => handleUpdate(idx, 'multiplicador', e.target.value)}
+                  className="w-full bg-black/60 border border-oro/10 px-4 py-3 text-oro font-black text-xs outline-none focus:border-oro/40 transition-all"
+                  style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+                  placeholder="Ej: 1.5"
+                />
+                <span className="text-oro font-black text-xs">x</span>
+              </div>
+
+              <div className="col-span-2 sm:col-span-1 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => handleDeleteTier(idx)}
+                  className="p-3 text-oro/30 hover:text-naranja-naruto transition-colors"
+                  title="Eliminar tramo"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={handleAddTier}
+        className="w-full py-4 border border-dashed border-oro/30 hover:border-oro text-oro/60 hover:text-oro transition-all flex items-center justify-center gap-2 text-caption font-black uppercase tracking-widest bg-black/20"
+        style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+      >
+        <Plus className="w-4 h-4" /> Añadir Tramo de Multiplicador ({resourceLabel})
+      </button>
+    </div>
+  );
+}
+
 export default function ConfigManager({ initialConfigs }: { initialConfigs: ConfiguracionSistema[] }) {
   const [configs, setConfigs] = useState(initialConfigs);
   const [search, setSearch] = useState('');
@@ -191,7 +326,23 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
   const toggleExpand = (id: number) => {
     const config = configs.find(c => c.id === id);
     if (!expandedKeys[id] && config) {
-      setEditingValues(prev => ({ ...prev, [id]: JSON.parse(JSON.stringify(config.valor)) }));
+      if (config.clave === 'multiplicador_exp' || config.clave === 'multiplicador_pa') {
+        let initialVal = config.valor;
+        if (typeof initialVal === 'string') {
+          try { initialVal = JSON.parse(initialVal); } catch {}
+        }
+        let tiers: any[] = [];
+        if (Array.isArray(initialVal)) {
+          tiers = JSON.parse(JSON.stringify(initialVal));
+        } else if (typeof initialVal === 'object' && initialVal !== null) {
+          tiers = [{ porcentaje: Number(initialVal.porcentaje) || 50, multiplicador: Number(initialVal.multiplicador) || 1.5 }];
+        } else {
+          tiers = [{ porcentaje: 50, multiplicador: 1.5 }];
+        }
+        setEditingValues(prev => ({ ...prev, [id]: tiers }));
+      } else {
+        setEditingValues(prev => ({ ...prev, [id]: JSON.parse(JSON.stringify(config.valor)) }));
+      }
     }
     setExpandedKeys(prev => ({ ...prev, [id]: !prev[id] }));
   };
@@ -299,6 +450,9 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
       };
 
       const parseValue = (val: any): any => {
+        if (Array.isArray(val)) {
+          return val.map(item => parseValue(item));
+        }
         if (typeof val === 'object' && val !== null) {
           const newObj: any = {};
           for (const k in val) newObj[k] = parseValue(val[k]);
@@ -307,9 +461,24 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
         return isNaN(Number(val)) || val === "" || isLargeNumericString(val) ? val : Number(val);
       };
 
-      const finalValue = parseValue(editingValues[id]);
+      const config = configs.find(c => c.id === id);
+      let valueToSave = editingValues[id];
+      if (config && (config.clave === 'multiplicador_exp' || config.clave === 'multiplicador_pa')) {
+        if (Array.isArray(valueToSave)) {
+          valueToSave = valueToSave
+            .filter((t: any) => t && t.porcentaje !== "" && t.multiplicador !== "")
+            .map((t: any) => ({
+              porcentaje: Number(t.porcentaje),
+              multiplicador: Number(t.multiplicador)
+            }))
+            .sort((a: any, b: any) => a.porcentaje - b.porcentaje);
+        }
+      }
+
+      const finalValue = parseValue(valueToSave);
       const data = await AdminService.updateConfig(id, finalValue);
       setConfigs(prev => prev.map(c => c.id === id ? data : c));
+      setEditingValues(prev => ({ ...prev, [id]: data.valor }));
       addToast(`Cambios guardados con éxito`, 'success');
     } catch (err: any) {
       addToast(err.message, 'error');
@@ -548,16 +717,26 @@ export default function ConfigManager({ initialConfigs }: { initialConfigs: Conf
                   <div className="h-px bg-oro/10 mb-6" />
 
                   <div className="flex flex-col gap-6">
-                    <div className="flex flex-wrap gap-6 bg-black/20 p-6 border border-oro/5" style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}>
-                      <ConfigEditor
-                        path={[]}
-                        value={editingValues[config.id]}
-                        onChange={(path, val) => handleValueChange(config.id, path, val)}
-                        onRenameKey={(path, old, key) => handleRenameKey(config.id, path, old, key)}
-                        onAddProperty={(path) => handleAddProperty(config.id, path)}
-                        onDeleteProperty={(path, key) => handleDeleteProperty(config.id, path, key)}
-                      />
-                    </div>
+                    {(config.clave === 'multiplicador_exp' || config.clave === 'multiplicador_pa') ? (
+                      <div className="p-6 bg-black/20 border border-oro/5" style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}>
+                        <MultiplierTiersEditor
+                          clave={config.clave}
+                          value={editingValues[config.id]}
+                          onChange={(newTiers) => setEditingValues(prev => ({ ...prev, [config.id]: newTiers }))}
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-6 bg-black/20 p-6 border border-oro/5" style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}>
+                        <ConfigEditor
+                          path={[]}
+                          value={editingValues[config.id]}
+                          onChange={(path, val) => handleValueChange(config.id, path, val)}
+                          onRenameKey={(path, old, key) => handleRenameKey(config.id, path, old, key)}
+                          onAddProperty={(path) => handleAddProperty(config.id, path)}
+                          onDeleteProperty={(path, key) => handleDeleteProperty(config.id, path, key)}
+                        />
+                      </div>
+                    )}
 
                     {hasChanges && (
                       <button

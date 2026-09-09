@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/client';
 import { Character, PersonajeRama, PersonajeItem, PersonajeTecnica, Registro, Glosario, Rasgo, PersonajeSentido, PersonajeAcompanante, AcompananteInfo, KugutsuComponente, PersonajeInventarioRegistro, PersonajeUchihaData } from '@/domain/types';
-import { RewardLogic } from '@/domain/character/logic';
+import { RewardLogic, MultiplierTier } from '@/domain/character/logic';
 
 export const CharacterService = {
   async getCharacterById(id: number): Promise<Character> {
@@ -296,11 +296,13 @@ export const CharacterService = {
       let effectiveXp = xp;
       let discardedXp = 0;
       if (xp > 0) {
-        const [xpLimit, { totalExp }] = await Promise.all([
+        const [xpLimit, expMultiplierConfig, { totalExp }] = await Promise.all([
           CharacterService.getXpLimitUsage(),
+          CharacterService.getExpMultiplierConfig(),
           CharacterService.getCharacterTotalExp(personajeId)
         ]);
-        const capResult = RewardLogic.applyExpLimit(xp, totalExp, xpLimit);
+        const boostedXp = RewardLogic.calculateBoostedReward(xp, totalExp, xpLimit, expMultiplierConfig);
+        const capResult = RewardLogic.applyExpLimit(boostedXp, totalExp, xpLimit);
         effectiveXp = capResult.effectiveExp;
         discardedXp = capResult.discardedExp;
       }
@@ -308,11 +310,13 @@ export const CharacterService = {
       let effectivePa = pa;
       let discardedPa = 0;
       if (pa > 0) {
-        const [paLimit, { totalPa }] = await Promise.all([
+        const [paLimit, paMultiplierConfig, { totalPa }] = await Promise.all([
           CharacterService.getPaLimitUsage(),
+          CharacterService.getPaMultiplierConfig(),
           CharacterService.getCharacterTotalPA(personajeId)
         ]);
-        const capResult = RewardLogic.applyPaLimit(pa, totalPa, paLimit);
+        const boostedPa = RewardLogic.calculateBoostedReward(pa, totalPa, paLimit, paMultiplierConfig);
+        const capResult = RewardLogic.applyPaLimit(boostedPa, totalPa, paLimit);
         effectivePa = capResult.effectivePa;
         discardedPa = capResult.discardedPa;
       }
@@ -694,6 +698,62 @@ export const CharacterService = {
     if (data && data.valor !== undefined && data.valor !== null) {
       const num = Number(data.valor);
       return isNaN(num) ? null : num;
+    }
+    return null;
+  },
+
+  async getExpMultiplierConfig(): Promise<MultiplierTier[] | null> {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from('sys_configuracion_sistema')
+      .select('valor')
+      .eq('clave', 'multiplicador_exp')
+      .single();
+
+    if (!data || !data.valor) return null;
+    let val = data.valor;
+    if (typeof val === 'string') {
+      try { val = JSON.parse(val); } catch { return null; }
+    }
+    if (Array.isArray(val)) {
+      return val
+        .filter((t: any) => t && !isNaN(Number(t.porcentaje)) && !isNaN(Number(t.multiplicador)))
+        .map((t: any) => ({ porcentaje: Number(t.porcentaje), multiplicador: Number(t.multiplicador) }));
+    }
+    if (typeof val === 'object' && val !== null) {
+      const mult = Number(val.multiplicador);
+      const pct = Number(val.porcentaje);
+      if (!isNaN(mult) && !isNaN(pct)) {
+        return [{ porcentaje: pct, multiplicador: mult }];
+      }
+    }
+    return null;
+  },
+
+  async getPaMultiplierConfig(): Promise<MultiplierTier[] | null> {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from('sys_configuracion_sistema')
+      .select('valor')
+      .eq('clave', 'multiplicador_pa')
+      .single();
+
+    if (!data || !data.valor) return null;
+    let val = data.valor;
+    if (typeof val === 'string') {
+      try { val = JSON.parse(val); } catch { return null; }
+    }
+    if (Array.isArray(val)) {
+      return val
+        .filter((t: any) => t && !isNaN(Number(t.porcentaje)) && !isNaN(Number(t.multiplicador)))
+        .map((t: any) => ({ porcentaje: Number(t.porcentaje), multiplicador: Number(t.multiplicador) }));
+    }
+    if (typeof val === 'object' && val !== null) {
+      const mult = Number(val.multiplicador);
+      const pct = Number(val.porcentaje);
+      if (!isNaN(mult) && !isNaN(pct)) {
+        return [{ porcentaje: pct, multiplicador: mult }];
+      }
     }
     return null;
   }

@@ -1,14 +1,16 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Registro } from '@/domain/types';
 import { Zap, ScrollText, Swords, User, Link as LinkIcon, Trash2, Edit3, Loader2, ShoppingBag, Sparkles, Swords as VS, Users, Coins, HeartPulse, Dices, ShieldAlert } from 'lucide-react';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { RegistrosService } from '@/services/supabase/registros.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
-import { useState, useEffect } from 'react';
 import { RewardLogic } from '@/domain/character/logic';
 import { renderDiscordMarkdown } from '@/lib/discord/renderDiscordMarkdown';
+import { useMasterStore } from '@/store/useMasterStore';
+import { CharacterService } from '@/services/supabase/character.service';
 
 interface RegistroCardProps {
   registro: Registro;
@@ -21,11 +23,38 @@ interface RegistroCardProps {
 
 export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, subjectId, isGlobalView }: RegistroCardProps) {
   const { activeCharacter } = useCharacterStore();
+  const { xpLimitUsage, paLimitUsage, expMultiplierConfig, paMultiplierConfig } = useMasterStore();
+  const [characterTotals, setCharacterTotals] = useState<{ totalExp: number; totalPa: number } | null>(null);
   const addToast = useToastStore(state => state.addToast);
   const { confirm: confirmAction } = useConfirmStore();
   const [loading, setLoading] = useState(false);
   const [showFullDetails, setShowFullDetails] = useState(false);
   const [discordContent, setDiscordContent] = useState<string | null>(registro.data?.texto_entrega || null);
+
+  useEffect(() => {
+    const targetId = subjectId || activeCharacter?.id;
+    if (!targetId) {
+      setCharacterTotals(null);
+      return;
+    }
+
+    let isMounted = true;
+    Promise.all([
+      CharacterService.getCharacterTotalExp(targetId),
+      CharacterService.getCharacterTotalPA(targetId)
+    ]).then(([expData, paData]) => {
+      if (isMounted) {
+        setCharacterTotals({
+          totalExp: expData.totalExp,
+          totalPa: paData.totalPa
+        });
+      }
+    }).catch(console.error);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [subjectId, activeCharacter?.id]);
 
   useEffect(() => {
     if (!discordContent && registro.data?.discord_message_id) {
@@ -268,23 +297,176 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
             <div className="flex items-center gap-8 sm:gap-12 shrink-0">
               <div className="flex flex-col items-center">
                 <span className="text-caption font-black text-oro/30 uppercase tracking-widest mb-2">RECOMPENSA</span>
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-2 text-oro font-black text-base sm:text-xl tracking-widest">
-                    <Sparkles className="w-4 h-4" /> +{registro.data.recompensa_xp || 0}
-                  </div>
-                  <div className="w-px h-6 bg-oro/10" />
-                  <div className="flex items-center gap-2 text-oro font-black text-base sm:text-xl tracking-widest">
-                    <Coins className="w-4 h-4" /> +{registro.data.recompensa_ryous || 0}
-                  </div>
-                  {(registro.data.recompensa_pa || 0) > 0 && (
-                    <>
-                      <div className="w-px h-6 bg-oro/10" />
-                      <div className="flex items-center gap-2 text-emerald-400 font-black text-base sm:text-xl tracking-widest">
-                        <Swords className="w-4 h-4" /> +{registro.data.recompensa_pa} PA
+                {(() => {
+                  const sid = subjectId || activeCharacter?.id;
+                  const effReward = sid ? registro.data?.recompensas_efectivas?.[sid] : undefined;
+                  const isAuthor = sid && Number(registro.autor_id) === Number(sid);
+                  const myPart = registro.participantes?.find((p: any) => Number(p.personaje_id) === Number(sid));
+                  const isPending = myPart?.estado === 'pendiente';
+                  const isDispute = myPart?.estado === 'disputa_admin';
+
+                  // Si se ve globalmente y no se especificó un sujeto concreto
+                  if (isGlobalView && !subjectId) {
+                    return (
+                      <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-2 text-oro font-black text-base sm:text-xl tracking-widest">
+                          <Sparkles className="w-4 h-4" /> +{registro.data.recompensa_xp || 0}
+                        </div>
+                        <div className="w-px h-6 bg-oro/10" />
+                        <div className="flex items-center gap-2 text-oro font-black text-base sm:text-xl tracking-widest">
+                          <Coins className="w-4 h-4" /> +{registro.data.recompensa_ryous || 0}
+                        </div>
+                        {(registro.data.recompensa_pa || 0) > 0 && (
+                          <>
+                            <div className="w-px h-6 bg-oro/10" />
+                            <div className="flex items-center gap-2 text-emerald-400 font-black text-base sm:text-xl tracking-widest">
+                              <Swords className="w-4 h-4" /> +{registro.data.recompensa_pa} PA
+                            </div>
+                          </>
+                        )}
                       </div>
-                    </>
-                  )}
-                </div>
+                    );
+                  }
+
+                  // 1. Ya evaluado / aceptado
+                  if (effReward && (effReward.xp_otorgada !== undefined || effReward.pa_otorgada !== undefined)) {
+                    const effectiveXp = effReward.xp_otorgada ?? (registro.data.recompensa_xp || 0);
+                    const isCapped = effReward.xp_descartada && effReward.xp_descartada > 0;
+                    const effectivePa = effReward.pa_otorgada ?? (registro.data.recompensa_pa || 0);
+                    const isPaCapped = effReward.pa_descartada && effReward.pa_descartada > 0;
+
+                    return (
+                      <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-2 text-oro font-black text-base sm:text-xl tracking-widest">
+                          <Sparkles className="w-4 h-4" /> +{effectiveXp}
+                          {isCapped && (
+                            <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto text-black tracking-widest ninja-clip-xs">LÍMITE</span>
+                          )}
+                        </div>
+                        <div className="w-px h-6 bg-oro/10" />
+                        <div className="flex items-center gap-2 text-oro font-black text-base sm:text-xl tracking-widest">
+                          <Coins className="w-4 h-4" /> +{registro.data.recompensa_ryous || 0}
+                        </div>
+                        {((effectivePa > 0) || isPaCapped) && (
+                          <>
+                            <div className="w-px h-6 bg-oro/10" />
+                            <div className="flex items-center gap-2 text-emerald-400 font-black text-base sm:text-xl tracking-widest">
+                              <Swords className="w-4 h-4" /> +{effectivePa} PA
+                              {isPaCapped && (
+                                <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto text-black tracking-widest ninja-clip-xs">LÍMITE</span>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  // 2. Autor
+                  if (isAuthor && (registro.data?.xp_otorgada !== undefined || registro.data?.pa_otorgada !== undefined)) {
+                    const effectiveXp = registro.data.xp_otorgada ?? (registro.data.recompensa_xp || 0);
+                    const isCapped = registro.data.xp_descartada_limite && registro.data.xp_descartada_limite > 0;
+                    const effectivePa = registro.data.pa_otorgada ?? (registro.data.recompensa_pa || 0);
+                    const isPaCapped = registro.data.pa_descartada_limite && registro.data.pa_descartada_limite > 0;
+
+                    return (
+                      <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-2 text-oro font-black text-base sm:text-xl tracking-widest">
+                          <Sparkles className="w-4 h-4" /> +{effectiveXp}
+                          {isCapped && (
+                            <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto text-black tracking-widest ninja-clip-xs">LÍMITE</span>
+                          )}
+                        </div>
+                        <div className="w-px h-6 bg-oro/10" />
+                        <div className="flex items-center gap-2 text-oro font-black text-base sm:text-xl tracking-widest">
+                          <Coins className="w-4 h-4" /> +{registro.data.recompensa_ryous || 0}
+                        </div>
+                        {((effectivePa > 0) || isPaCapped) && (
+                          <>
+                            <div className="w-px h-6 bg-oro/10" />
+                            <div className="flex items-center gap-2 text-emerald-400 font-black text-base sm:text-xl tracking-widest">
+                              <Swords className="w-4 h-4" /> +{effectivePa} PA
+                              {isPaCapped && (
+                                <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto text-black tracking-widest ninja-clip-xs">LÍMITE</span>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  // 3. Pendiente para este personaje -> ESTIMACIÓN CON MULTIPLICADORES
+                  if (isPending || isDispute) {
+                    const curTotalExp = characterTotals?.totalExp ?? (Number(activeCharacter?.xp) || 0);
+                    const curTotalPa = characterTotals?.totalPa ?? (Number(activeCharacter?.puntos_aprendizaje) || 0);
+
+                    const rawXp = Number(registro.data.recompensa_xp) || 0;
+                    const rawPa = Number(registro.data.recompensa_pa) || 0;
+
+                    const boostedXp = RewardLogic.calculateBoostedReward(rawXp, curTotalExp, xpLimitUsage, expMultiplierConfig);
+                    const capXp = RewardLogic.applyExpLimit(boostedXp, curTotalExp, xpLimitUsage);
+                    const estimatedXp = capXp.effectiveExp;
+                    const isPendingXpCapped = capXp.discardedExp > 0;
+
+                    const boostedPa = RewardLogic.calculateBoostedReward(rawPa, curTotalPa, paLimitUsage, paMultiplierConfig);
+                    const capPa = RewardLogic.applyPaLimit(boostedPa, curTotalPa, paLimitUsage);
+                    const estimatedPa = capPa.effectivePa;
+                    const isPendingPaCapped = capPa.discardedPa > 0;
+
+                    return (
+                      <div className="flex flex-col items-center">
+                        <div className="flex items-center gap-6">
+                          <div className="flex items-center gap-2 text-amber-400 font-black text-base sm:text-xl tracking-widest" title={boostedXp > rawXp ? `Multiplicador estimado: ${boostedXp} EXP (Base: ${rawXp})` : undefined}>
+                            <Sparkles className="w-4 h-4" /> +{estimatedXp}
+                            {isPendingXpCapped && (
+                              <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto text-black tracking-widest ninja-clip-xs">LÍMITE</span>
+                            )}
+                          </div>
+                          <div className="w-px h-6 bg-oro/10" />
+                          <div className="flex items-center gap-2 text-oro font-black text-base sm:text-xl tracking-widest">
+                            <Coins className="w-4 h-4" /> +{registro.data.recompensa_ryous || 0}
+                          </div>
+                          {((estimatedPa > 0) || isPendingPaCapped) && (
+                            <>
+                              <div className="w-px h-6 bg-oro/10" />
+                              <div className="flex items-center gap-2 text-amber-400 font-black text-base sm:text-xl tracking-widest" title={boostedPa > rawPa ? `Multiplicador estimado: ${boostedPa} PA (Base: ${rawPa})` : undefined}>
+                                <Swords className="w-4 h-4" /> +{estimatedPa} PA
+                                {isPendingPaCapped && (
+                                  <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto text-black tracking-widest ninja-clip-xs">LÍMITE</span>
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <span className="text-[9px] text-amber-500/70 font-semibold tracking-wider uppercase mt-1">
+                          (Estimado con multiplicador - No sumado)
+                        </span>
+                      </div>
+                    );
+                  }
+
+                  // 4. Default base
+                  return (
+                    <div className="flex items-center gap-6">
+                      <div className="flex items-center gap-2 text-oro font-black text-base sm:text-xl tracking-widest">
+                        <Sparkles className="w-4 h-4" /> +{registro.data.recompensa_xp || 0}
+                      </div>
+                      <div className="w-px h-6 bg-oro/10" />
+                      <div className="flex items-center gap-2 text-oro font-black text-base sm:text-xl tracking-widest">
+                        <Coins className="w-4 h-4" /> +{registro.data.recompensa_ryous || 0}
+                      </div>
+                      {(registro.data.recompensa_pa || 0) > 0 && (
+                        <>
+                          <div className="w-px h-6 bg-oro/10" />
+                          <div className="flex items-center gap-2 text-emerald-400 font-black text-base sm:text-xl tracking-widest">
+                            <Swords className="w-4 h-4" /> +{registro.data.recompensa_pa} PA
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>

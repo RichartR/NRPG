@@ -16,6 +16,7 @@ import {
   Sentido,
   RamaSentido
 } from '@/domain/types';
+import { MultiplierTier } from '@/domain/character/logic';
 let masterInitialization: Promise<void> | null = null;
 
 interface MasterState {
@@ -35,6 +36,8 @@ interface MasterState {
   rangosJerarquicos: string[];
   xpLimitUsage: number | null;
   paLimitUsage: number | null;
+  expMultiplierConfig: MultiplierTier[] | null;
+  paMultiplierConfig: MultiplierTier[] | null;
   cuposMaximosAldea: number;
   loading: boolean;
   initialized: boolean;
@@ -62,6 +65,8 @@ export const useMasterStore = create<MasterState>((set, get) => ({
   cuposMaximosAldea: 10,
   xpLimitUsage: null,
   paLimitUsage: null,
+  expMultiplierConfig: null,
+  paMultiplierConfig: null,
   loading: false,
   initialized: false,
   error: null,
@@ -109,6 +114,8 @@ export const useMasterStore = create<MasterState>((set, get) => ({
            'rangos_jerarquicos',
            'xp_limit_usage',
            'pa_limit_usage',
+           'multiplicador_exp',
+           'multiplicador_pa',
            'cupos_maximos_aldea'
          ])
        ]);
@@ -121,6 +128,29 @@ export const useMasterStore = create<MasterState>((set, get) => ({
        Object.entries(rawRankOrder).forEach(([k, v]) => {
          numericRankOrder[k] = Number(v);
        });
+
+       const parseMultiplier = (val: any): MultiplierTier[] | null => {
+         if (!val) return null;
+         let obj = val;
+         if (typeof val === 'string') {
+           try { obj = JSON.parse(val); } catch { return null; }
+         }
+         if (Array.isArray(obj)) {
+           const list = obj
+             .filter((t: any) => t && !isNaN(Number(t.porcentaje)) && !isNaN(Number(t.multiplicador)))
+             .map((t: any) => ({ porcentaje: Number(t.porcentaje), multiplicador: Number(t.multiplicador) }))
+             .sort((a, b) => a.porcentaje - b.porcentaje);
+           return list.length > 0 ? list : null;
+         }
+         if (typeof obj === 'object' && obj !== null) {
+           const mult = Number(obj.multiplicador);
+           const pct = Number(obj.porcentaje);
+           if (!isNaN(mult) && !isNaN(pct)) {
+             return [{ multiplicador: mult, porcentaje: pct }];
+           }
+         }
+         return null;
+       };
  
        set({
          aldeas: getVal(aldeasRes, []),
@@ -151,6 +181,8 @@ export const useMasterStore = create<MasterState>((set, get) => ({
           : (Array.isArray(configs['rangos_jerarquicos']) ? configs['rangos_jerarquicos'] : ["Estudiante", "Genin", "Chunin", "Jonin"]),
         xpLimitUsage: configs['xp_limit_usage'] !== undefined && configs['xp_limit_usage'] !== null ? Number(configs['xp_limit_usage']) : null,
         paLimitUsage: configs['pa_limit_usage'] !== undefined && configs['pa_limit_usage'] !== null ? Number(configs['pa_limit_usage']) : null,
+        expMultiplierConfig: parseMultiplier(configs['multiplicador_exp']),
+        paMultiplierConfig: parseMultiplier(configs['multiplicador_pa']),
         cuposMaximosAldea: configs['cupos_maximos_aldea'] !== undefined && configs['cupos_maximos_aldea'] !== null ? Number(configs['cupos_maximos_aldea']) : 10,
         initialized: true,
         loading: false

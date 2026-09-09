@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Registro } from '@/domain/types';
 import { Eye, Edit3, Trash2, Loader2, X, Swords, HeartPulse, Dices, User, Sparkles, Check, ShieldAlert, ScrollText } from 'lucide-react';
 import { useCharacterStore } from '@/store/useCharacterStore';
+import { useMasterStore } from '@/store/useMasterStore';
 import { RegistrosService } from '@/services/supabase/registros.service';
 import { CharacterService } from '@/services/supabase/character.service';
 import { useToastStore } from '@/components/ui/Toast';
@@ -21,12 +22,36 @@ interface CombatTableProps {
 
 export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subjectId }: CombatTableProps) {
   const { activeCharacter } = useCharacterStore();
+  const { xpLimitUsage, paLimitUsage, expMultiplierConfig, paMultiplierConfig } = useMasterStore();
   const addToast = useToastStore(state => state.addToast);
   const { confirm: confirmAction } = useConfirmStore();
 
   const [loadingId, setLoadingId] = useState<number | null>(null);
   const [acceptingId, setAcceptingId] = useState<number | null>(null);
   const [selectedCombat, setSelectedCombat] = useState<Registro | null>(null);
+  const [characterTotals, setCharacterTotals] = useState<{ totalExp: number; totalPa: number } | null>(null);
+
+  useEffect(() => {
+    const targetId = subjectId || activeCharacter?.id;
+    if (!targetId) return;
+
+    let isMounted = true;
+    Promise.all([
+      CharacterService.getCharacterTotalExp(targetId),
+      CharacterService.getCharacterTotalPA(targetId)
+    ]).then(([expData, paData]) => {
+      if (isMounted) {
+        setCharacterTotals({
+          totalExp: expData.totalExp,
+          totalPa: paData.totalPa
+        });
+      }
+    }).catch(console.error);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [subjectId, activeCharacter?.id]);
 
   const handleAccept = async (registroId: number) => {
     if (!activeCharacter?.id) return;
@@ -321,41 +346,142 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                     {(() => {
                       const effReward = sid ? m.data?.recompensas_efectivas?.[sid] : undefined;
                       const isAuthor = sid && Number(m.autor_id) === Number(sid);
-                      const isCapped = (effReward?.xp_descartada && effReward.xp_descartada > 0) || (isAuthor && (m.data?.xp_descartada_limite > 0));
-                      const effectiveCombatXp = effReward?.xp_otorgada !== undefined ? effReward.xp_otorgada : xpGained;
-                      const isPaCapped = (effReward?.pa_descartada && effReward.pa_descartada > 0) || (isAuthor && (m.data?.pa_descartada_limite > 0));
-                      const effectiveCombatPa = effReward?.pa_otorgada !== undefined ? effReward.pa_otorgada : pcGained;
 
-                      return (
-                        <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
-                          {(effectiveCombatXp > 0 || isCapped) && (
-                            <div className={`flex items-center gap-1.5 ${(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}`}>
-                              <span>+{effectiveCombatXp} EXP</span>
-                              {isCapped && (
-                                <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto text-black tracking-widest ninja-clip-xs" title="Límite de experiencia alcanzado">
-                                  LÍMITE
-                                </span>
-                              )}
-                            </div>
-                          )}
-                          {(effectiveCombatPa > 0 || isPaCapped) && (
-                            <div className={`flex items-center gap-1.5 ${(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}`}>
-                              <span>+{effectiveCombatPa} PA</span>
-                              {isPaCapped && (
-                                <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto text-black tracking-widest ninja-clip-xs" title="Límite de PA alcanzado">
-                                  LÍMITE
-                                </span>
-                              )}
-                            </div>
-                          )}
-                          {ryousGained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-amber-300"}>+{ryousGained} RYOUS</div>}
-                          {effectiveCombatXp === 0 && !isCapped && effectiveCombatPa === 0 && !isPaCapped && ryousGained === 0 && (
-                            <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
-                          )}
-                          {(isPending || isDispute) && (
+                      // 1. Si ya fue aceptado/evaluado
+                      if (effReward && (effReward.xp_otorgada !== undefined || effReward.pa_otorgada !== undefined)) {
+                        const effectiveCombatXp = effReward.xp_otorgada ?? xpGained;
+                        const isCapped = effReward.xp_descartada && effReward.xp_descartada > 0;
+                        const effectiveCombatPa = effReward.pa_otorgada ?? pcGained;
+                        const isPaCapped = effReward.pa_descartada && effReward.pa_descartada > 0;
+
+                        return (
+                          <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
+                            {(effectiveCombatXp > 0 || isCapped) && (
+                              <div className="flex items-center gap-1.5 text-emerald-400">
+                                <span>+{effectiveCombatXp} EXP</span>
+                                {isCapped && (
+                                  <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto text-black tracking-widest ninja-clip-xs" title="Límite de experiencia alcanzado">
+                                    LÍMITE
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            {(effectiveCombatPa > 0 || isPaCapped) && (
+                              <div className="flex items-center gap-1.5 text-emerald-400">
+                                <span>+{effectiveCombatPa} PA</span>
+                                {isPaCapped && (
+                                  <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto text-black tracking-widest ninja-clip-xs" title="Límite de PA alcanzado">
+                                    LÍMITE
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            {ryousGained > 0 && <div className="text-amber-300">+{ryousGained} RYOUS</div>}
+                            {effectiveCombatXp === 0 && !isCapped && effectiveCombatPa === 0 && !isPaCapped && ryousGained === 0 && (
+                              <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
+                            )}
+                          </div>
+                        );
+                      }
+
+                      // 2. Si el personaje es el autor (y ya cobró al registrar)
+                      if (isAuthor && (m.data?.xp_otorgada !== undefined || m.data?.pa_otorgada !== undefined)) {
+                        const effectiveCombatXp = m.data.xp_otorgada ?? xpGained;
+                        const isCapped = m.data.xp_descartada_limite && m.data.xp_descartada_limite > 0;
+                        const effectiveCombatPa = m.data.pa_otorgada ?? pcGained;
+                        const isPaCapped = m.data.pa_descartada_limite && m.data.pa_descartada_limite > 0;
+
+                        return (
+                          <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
+                            {(effectiveCombatXp > 0 || isCapped) && (
+                              <div className="flex items-center gap-1.5 text-emerald-400">
+                                <span>+{effectiveCombatXp} EXP</span>
+                                {isCapped && (
+                                  <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto text-black tracking-widest ninja-clip-xs" title="Límite de experiencia alcanzado">
+                                    LÍMITE
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            {(effectiveCombatPa > 0 || isPaCapped) && (
+                              <div className="flex items-center gap-1.5 text-emerald-400">
+                                <span>+{effectiveCombatPa} PA</span>
+                                {isPaCapped && (
+                                  <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto text-black tracking-widest ninja-clip-xs" title="Límite de PA alcanzado">
+                                    LÍMITE
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            {ryousGained > 0 && <div className="text-amber-300">+{ryousGained} RYOUS</div>}
+                            {effectiveCombatXp === 0 && !isCapped && effectiveCombatPa === 0 && !isPaCapped && ryousGained === 0 && (
+                              <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
+                            )}
+                          </div>
+                        );
+                      }
+
+                      // 3. Si está PENDIENTE para este personaje: CALCULAR ESTIMACIÓN CON MULTIPLICADORES
+                      if (isPending || isDispute) {
+                        const curTotalExp = characterTotals?.totalExp ?? (Number(activeCharacter?.xp) || 0);
+                        const curTotalPa = characterTotals?.totalPa ?? (Number(activeCharacter?.puntos_aprendizaje) || 0);
+
+                        const boostedXp = RewardLogic.calculateBoostedReward(xpGained, curTotalExp, xpLimitUsage, expMultiplierConfig);
+                        const capXp = RewardLogic.applyExpLimit(boostedXp, curTotalExp, xpLimitUsage);
+                        const estimatedXp = capXp.effectiveExp;
+                        const isPendingXpCapped = capXp.discardedExp > 0;
+
+                        const boostedPa = RewardLogic.calculateBoostedReward(pcGained, curTotalPa, paLimitUsage, paMultiplierConfig);
+                        const capPa = RewardLogic.applyPaLimit(boostedPa, curTotalPa, paLimitUsage);
+                        const estimatedPa = capPa.effectivePa;
+                        const isPendingPaCapped = capPa.discardedPa > 0;
+
+                        return (
+                          <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
+                            {(estimatedXp > 0 || isPendingXpCapped) && (
+                              <div className="flex items-center gap-1.5 text-amber-400/90" title={boostedXp > xpGained ? `Multiplicador estimado: ${boostedXp} EXP (Base: ${xpGained})` : undefined}>
+                                <span>+{estimatedXp} EXP</span>
+                                {isPendingXpCapped && (
+                                  <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto text-black tracking-widest ninja-clip-xs" title="Límite de experiencia alcanzado">
+                                    LÍMITE
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            {(estimatedPa > 0 || isPendingPaCapped) && (
+                              <div className="flex items-center gap-1.5 text-amber-400/90" title={boostedPa > pcGained ? `Multiplicador estimado: ${boostedPa} PA (Base: ${pcGained})` : undefined}>
+                                <span>+{estimatedPa} PA</span>
+                                {isPendingPaCapped && (
+                                  <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto text-black tracking-widest ninja-clip-xs" title="Límite de PA alcanzado">
+                                    LÍMITE
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            {ryousGained > 0 && <div className="text-amber-400/90">+{ryousGained} RYOUS</div>}
                             <span className="text-[9px] text-amber-500/70 font-semibold tracking-wider uppercase">
                               (No sumado)
                             </span>
+                          </div>
+                        );
+                      }
+
+                      // 4. Vista general para otros usuarios (recompensa base)
+                      return (
+                        <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
+                          {xpGained > 0 && (
+                            <div className="text-emerald-400">
+                              <span>+{xpGained} EXP</span>
+                            </div>
+                          )}
+                          {pcGained > 0 && (
+                            <div className="text-emerald-400">
+                              <span>+{pcGained} PA</span>
+                            </div>
+                          )}
+                          {ryousGained > 0 && <div className="text-amber-300">+{ryousGained} RYOUS</div>}
+                          {xpGained === 0 && pcGained === 0 && ryousGained === 0 && (
+                            <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
                           )}
                         </div>
                       );
