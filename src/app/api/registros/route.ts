@@ -5,6 +5,7 @@ import { RewardLogic } from '@/domain/character/logic';
 import { ProfileService } from '@/services/supabase/profile.service';
 import { sendDiscordMessage, sendDiscordEmbed, editDiscordEmbed, deleteDiscordMessage } from '@/lib/discord';
 import { MasterServerService } from '@/services/supabase/master.server.service';
+import { CharacterServerService } from '@/services/supabase/character.server.service';
 
 async function getNarrationChannelId(adminClient: any, destinatarioTipo?: string, destinatarioId?: number | null): Promise<string | null> {
   let channelId: string | null = null;
@@ -244,11 +245,54 @@ export async function POST(request: Request) {
         const { data: char } = await adminClient.from('reg_characters').select('nombre_ninja, xp, ryous, puntos_aprendizaje').eq('id', personajeId).single();
 
         if (char) {
+          let effectiveXp = xp;
+          let discardedXp = 0;
+          if (xp > 0) {
+            const [xpLimit, { totalExp }] = await Promise.all([
+              CharacterServerService.getXpLimitUsage(adminClient),
+              CharacterServerService.getCharacterTotalExp(adminClient, personajeId)
+            ]);
+            const capResult = RewardLogic.applyExpLimit(xp, totalExp, xpLimit);
+            effectiveXp = capResult.effectiveExp;
+            discardedXp = capResult.discardedExp;
+          }
+
+          let effectivePa = pa;
+          let discardedPa = 0;
+          if (pa > 0) {
+            const [paLimit, { totalPa }] = await Promise.all([
+              CharacterServerService.getPaLimitUsage(adminClient),
+              CharacterServerService.getCharacterTotalPA(adminClient, personajeId)
+            ]);
+            const capResult = RewardLogic.applyPaLimit(pa, totalPa, paLimit);
+            effectivePa = capResult.effectivePa;
+            discardedPa = capResult.discardedPa;
+          }
+
           await adminClient.from('reg_characters').update({
-            xp: (char.xp || 0) + xp,
+            xp: (char.xp || 0) + effectiveXp,
             ryous: (char.ryous || 0) + ryous,
-            puntos_aprendizaje: (char.puntos_aprendizaje || 0) + pa
+            puntos_aprendizaje: (char.puntos_aprendizaje || 0) + effectivePa
           }).eq('id', personajeId);
+
+          // Guardar recompensa efectiva en registro.data
+          const updatedRegData = {
+            ...registro.data,
+            recompensas_efectivas: {
+              ...(registro.data?.recompensas_efectivas || {}),
+              [personajeId]: {
+                xp_otorgada: effectiveXp,
+                xp_descartada: discardedXp,
+                pa_otorgada: effectivePa,
+                pa_descartada: discardedPa
+              }
+            }
+          };
+          await adminClient
+            .from('reg_registros')
+            .update({ data: updatedRegData })
+            .eq('id', registroId);
+          registro.data = updatedRegData;
 
           // Si es una recuperación de evento o narración, sincronizar el participante en el registro original
           if ((registro.subtipo === 'recuperacion_evento' || registro.subtipo === 'recuperacion_narracion') && registro.data?.evento_premios_id) {
@@ -268,7 +312,7 @@ export async function POST(request: Request) {
               const nuevoPremioObj = {
                 personaje_id: personajeId,
                 nombre_ninja: char.nombre_ninja,
-                xp_extra: Math.max(0, xp - (Number(regPremios.data?.global_xp) || 0)),
+                xp_extra: Math.max(0, effectiveXp - (Number(regPremios.data?.global_xp) || 0)),
                 ryous_extra: Math.max(0, ryous - (Number(regPremios.data?.global_ryous) || 0)),
                 pa_extra: Math.max(0, pa - (Number(regPremios.data?.global_pa) || 0)),
                 recuperado: true
@@ -295,11 +339,12 @@ export async function POST(request: Request) {
       } else if (nuevoEstado === 'rechazado' && estadoAnterior === 'aceptado') {
         // Si pasa de aceptado a rechazado -> revertir recompensas
         const { xp, ryous, pa } = RewardLogic.calculateReward(registro, personajeId);
+        const effectiveXp = registro.data?.recompensas_efectivas?.[personajeId]?.xp_otorgada ?? xp;
         const { data: char } = await adminClient.from('reg_characters').select('xp, ryous, puntos_aprendizaje').eq('id', personajeId).single();
 
         if (char) {
           await adminClient.from('reg_characters').update({
-            xp: Math.max(0, (char.xp || 0) - xp),
+            xp: Math.max(0, (char.xp || 0) - effectiveXp),
             ryous: Math.max(0, (char.ryous || 0) - ryous),
             puntos_aprendizaje: Math.max(0, (char.puntos_aprendizaje || 0) - pa)
           }).eq('id', personajeId);
@@ -309,7 +354,7 @@ export async function POST(request: Request) {
       // Actualizar estado del participante
       await adminClient.from('reg_registros_participantes')
         .update({ estado: nuevoEstado })
-        .eq('id', part.id);
+        .match({ registro_id: registroId, personaje_id: personajeId });
 
       // Comprobar si quedan participantes pendientes en la solicitud
       const { data: remainingParts } = await adminClient.from('reg_registros_participantes')
@@ -402,7 +447,31 @@ export async function POST(request: Request) {
         let glosarioItems: any[] = [];
         let rasgosItems: any[] = [];
 
-        if (xp > 0 || ryous > 0 || pa > 0 || extraMonedaEvento > 0) {
+        let effectiveXp = xp;
+        let discardedXp = 0;
+        if (xp > 0) {
+          const [xpLimit, { totalExp }] = await Promise.all([
+            CharacterServerService.getXpLimitUsage(adminClient),
+            CharacterServerService.getCharacterTotalExp(adminClient, payload.autor_id)
+          ]);
+          const capResult = RewardLogic.applyExpLimit(xp, totalExp, xpLimit);
+          effectiveXp = capResult.effectiveExp;
+          discardedXp = capResult.discardedExp;
+        }
+
+        let effectivePa = pa;
+        let discardedPa = 0;
+        if (pa > 0) {
+          const [paLimit, { totalPa }] = await Promise.all([
+            CharacterServerService.getPaLimitUsage(adminClient),
+            CharacterServerService.getCharacterTotalPA(adminClient, payload.autor_id)
+          ]);
+          const capResult = RewardLogic.applyPaLimit(pa, totalPa, paLimit);
+          effectivePa = capResult.effectivePa;
+          discardedPa = capResult.discardedPa;
+        }
+
+        if (effectiveXp > 0 || ryous > 0 || effectivePa > 0 || extraMonedaEvento > 0) {
           const { data: char } = await adminClient
             .from('reg_characters')
             .select('xp, ryous, puntos_aprendizaje, moneda_evento')
@@ -413,14 +482,37 @@ export async function POST(request: Request) {
             await adminClient
               .from('reg_characters')
               .update({
-                xp: (char.xp || 0) + xp,
+                xp: (char.xp || 0) + effectiveXp,
                 ryous: (char.ryous || 0) + ryous,
-                puntos_aprendizaje: (char.puntos_aprendizaje || 0) + pa,
+                puntos_aprendizaje: (char.puntos_aprendizaje || 0) + effectivePa,
                 moneda_evento: (char.moneda_evento || 0) + extraMonedaEvento
               })
               .eq('id', payload.autor_id);
           }
         }
+
+        // Guardar desglose de recompensa efectiva en registro.data
+        const updatedRegData = {
+          ...registro.data,
+          xp_otorgada: effectiveXp,
+          xp_descartada_limite: discardedXp,
+          pa_otorgada: effectivePa,
+          pa_descartada_limite: discardedPa,
+          recompensas_efectivas: {
+            ...(registro.data?.recompensas_efectivas || {}),
+            [payload.autor_id]: {
+              xp_otorgada: effectiveXp,
+              xp_descartada: discardedXp,
+              pa_otorgada: effectivePa,
+              pa_descartada: discardedPa
+            }
+          }
+        };
+        await adminClient
+          .from('reg_registros')
+          .update({ data: updatedRegData })
+          .eq('id', registro.id);
+        registro.data = updatedRegData;
 
         if (glosarioItems.length > 0) {
           const inventoryPack = glosarioItems
@@ -576,6 +668,7 @@ export async function POST(request: Request) {
       for (const p of removedParticipants) {
         if (p.estado === 'aceptado') {
           const { xp, ryous, pa } = RewardLogic.calculateReward(oldRegistro, p.personaje_id);
+          const effectiveXp = oldRegistro.data?.recompensas_efectivas?.[p.personaje_id]?.xp_otorgada ?? xp;
 
           let extraMonedaEvento = 0;
           let glosarioItems: any[] = [];
@@ -589,7 +682,7 @@ export async function POST(request: Request) {
           const { data: char } = await adminClient.from('reg_characters').select('xp, ryous, puntos_aprendizaje, moneda_evento').eq('id', p.personaje_id).single();
           if (char) {
             await adminClient.from('reg_characters').update({
-              xp: Math.max(0, (char.xp || 0) - xp),
+              xp: Math.max(0, (char.xp || 0) - effectiveXp),
               ryous: Math.max(0, (char.ryous || 0) - ryous),
               puntos_aprendizaje: Math.max(0, (char.puntos_aprendizaje || 0) - pa),
               moneda_evento: Math.max(0, (char.moneda_evento || 0) - extraMonedaEvento)
@@ -608,7 +701,7 @@ export async function POST(request: Request) {
             }
           }
         }
-        await adminClient.from('reg_registros_participantes').delete().eq('id', p.id);
+        await adminClient.from('reg_registros_participantes').delete().match({ registro_id: id, personaje_id: p.personaje_id });
       }
 
       // B. AÑADIDOS: En la nueva lista pero NO en la DB vieja (se añaden como 'pendiente' para esperar su aceptación manual)
@@ -646,15 +739,49 @@ export async function POST(request: Request) {
             }
           }
 
+          let effectiveXp = xp;
+          let discardedXp = 0;
+          if (xp > 0) {
+            const [xpLimit, { totalExp }] = await Promise.all([
+              CharacterServerService.getXpLimitUsage(adminClient),
+              CharacterServerService.getCharacterTotalExp(adminClient, pid)
+            ]);
+            const capResult = RewardLogic.applyExpLimit(xp, totalExp, xpLimit);
+            effectiveXp = capResult.effectiveExp;
+            discardedXp = capResult.discardedExp;
+          }
+
+          let effectivePa = pa;
+          let discardedPa = 0;
+          if (pa > 0) {
+            const [paLimit, { totalPa }] = await Promise.all([
+              CharacterServerService.getPaLimitUsage(adminClient),
+              CharacterServerService.getCharacterTotalPA(adminClient, pid)
+            ]);
+            const capResult = RewardLogic.applyPaLimit(pa, totalPa, paLimit);
+            effectivePa = capResult.effectivePa;
+            discardedPa = capResult.discardedPa;
+          }
+
           const { data: char } = await adminClient.from('reg_characters').select('xp, ryous, puntos_aprendizaje, moneda_evento').eq('id', pid).single();
           if (char) {
             await adminClient.from('reg_characters').update({
-              xp: (char.xp || 0) + xp,
+              xp: (char.xp || 0) + effectiveXp,
               ryous: (char.ryous || 0) + ryous,
-              puntos_aprendizaje: (char.puntos_aprendizaje || 0) + pa,
+              puntos_aprendizaje: (char.puntos_aprendizaje || 0) + effectivePa,
               moneda_evento: (char.moneda_evento || 0) + extraMonedaEvento
             }).eq('id', pid);
           }
+
+          updatedData.recompensas_efectivas = {
+            ...(updatedData.recompensas_efectivas || {}),
+            [pid]: {
+              xp_otorgada: effectiveXp,
+              xp_descartada: discardedXp,
+              pa_otorgada: effectivePa,
+              pa_descartada: discardedPa
+            }
+          };
 
           if (glosarioItems.length > 0) {
             const inventoryPack = glosarioItems
@@ -683,9 +810,47 @@ export async function POST(request: Request) {
           const oldRewards = RewardLogic.calculateReward(oldRegistro, p.personaje_id);
           const newRewards = RewardLogic.calculateReward(newRegistroFull, p.personaje_id);
 
-          const diffXp = newRewards.xp - oldRewards.xp;
+          const oldAwardedXp = oldRegistro.data?.recompensas_efectivas?.[p.personaje_id]?.xp_otorgada ?? oldRewards.xp;
+          let newEffectiveXp = newRewards.xp;
+          let newDiscardedXp = 0;
+          if (newRewards.xp > 0) {
+            const [xpLimit, { totalExp }] = await Promise.all([
+              CharacterServerService.getXpLimitUsage(adminClient),
+              CharacterServerService.getCharacterTotalExp(adminClient, p.personaje_id)
+            ]);
+            const baseTotalExp = Math.max(0, totalExp - oldAwardedXp);
+            const capResult = RewardLogic.applyExpLimit(newRewards.xp, baseTotalExp, xpLimit);
+            newEffectiveXp = capResult.effectiveExp;
+            newDiscardedXp = capResult.discardedExp;
+          }
+
+          const oldAwardedPa = oldRegistro.data?.recompensas_efectivas?.[p.personaje_id]?.pa_otorgada ?? oldRewards.pa;
+          let newEffectivePa = newRewards.pa;
+          let newDiscardedPa = 0;
+          if (newRewards.pa > 0) {
+            const [paLimit, { totalPa }] = await Promise.all([
+              CharacterServerService.getPaLimitUsage(adminClient),
+              CharacterServerService.getCharacterTotalPA(adminClient, p.personaje_id)
+            ]);
+            const baseTotalPa = Math.max(0, totalPa - oldAwardedPa);
+            const capResult = RewardLogic.applyPaLimit(newRewards.pa, baseTotalPa, paLimit);
+            newEffectivePa = capResult.effectivePa;
+            newDiscardedPa = capResult.discardedPa;
+          }
+
+          const diffXp = newEffectiveXp - oldAwardedXp;
           const diffRyous = newRewards.ryous - oldRewards.ryous;
-          const diffPa = newRewards.pa - oldRewards.pa;
+          const diffPa = newEffectivePa - oldAwardedPa;
+
+          updatedData.recompensas_efectivas = {
+            ...(updatedData.recompensas_efectivas || {}),
+            [p.personaje_id]: {
+              xp_otorgada: newEffectiveXp,
+              xp_descartada: newDiscardedXp,
+              pa_otorgada: newEffectivePa,
+              pa_descartada: newDiscardedPa
+            }
+          };
 
           let oldExtraME = 0;
           let oldGlosario: any[] = [];
@@ -748,6 +913,8 @@ export async function POST(request: Request) {
         }
       }
 
+      await adminClient.from('reg_registros').update({ data: updatedData }).eq('id', id);
+
       if (payload.subtipo === 'narracion') {
         await syncNarrationDiscordMessage(adminClient, request.url, id, updatedData, oldRegistro.data);
       }
@@ -769,10 +936,12 @@ export async function POST(request: Request) {
           }
         }
 
-        if (participantes) {
+        if (participantes && participantes.length > 0) {
           for (const p of participantes) {
             if (p.estado === 'aceptado') {
               const { xp, ryous, pa } = RewardLogic.calculateReward(registro, p.personaje_id);
+              const effectiveXp = registro.data?.recompensas_efectivas?.[p.personaje_id]?.xp_otorgada ?? (Number(registro.autor_id) === Number(p.personaje_id) ? (registro.data?.xp_otorgada ?? xp) : xp);
+              const effectivePa = registro.data?.recompensas_efectivas?.[p.personaje_id]?.pa_otorgada ?? (Number(registro.autor_id) === Number(p.personaje_id) ? (registro.data?.pa_otorgada ?? pa) : pa);
 
               let extraMonedaEvento = 0;
               let glosarioItems: any[] = [];
@@ -786,9 +955,9 @@ export async function POST(request: Request) {
               const { data: char } = await adminClient.from('reg_characters').select('xp, ryous, puntos_aprendizaje, moneda_evento').eq('id', p.personaje_id).single();
               if (char) {
                 await adminClient.from('reg_characters').update({
-                  xp: Math.max(0, (char.xp || 0) - xp),
+                  xp: Math.max(0, (char.xp || 0) - effectiveXp),
                   ryous: Math.max(0, (char.ryous || 0) - ryous),
-                  puntos_aprendizaje: Math.max(0, (char.puntos_aprendizaje || 0) - pa),
+                  puntos_aprendizaje: Math.max(0, (char.puntos_aprendizaje || 0) - effectivePa),
                   moneda_evento: Math.max(0, (char.moneda_evento || 0) - extraMonedaEvento)
                 }).eq('id', p.personaje_id);
               }
@@ -804,6 +973,20 @@ export async function POST(request: Request) {
                   await adminClient.from('reg_personajes_tecnicas').delete().eq('personaje_id', p.personaje_id).in('tecnica_id', techIds);
                 }
               }
+            }
+          }
+        } else if (registro.autor_id) {
+          // Si no tenía participantes pero sí autor_id con recompensas otorgadas
+          const { xp, pa } = RewardLogic.calculateReward(registro, registro.autor_id);
+          const effectiveXp = registro.data?.recompensas_efectivas?.[registro.autor_id]?.xp_otorgada ?? registro.data?.xp_otorgada ?? xp;
+          const effectivePa = registro.data?.recompensas_efectivas?.[registro.autor_id]?.pa_otorgada ?? registro.data?.pa_otorgada ?? pa;
+          if (effectiveXp > 0 || effectivePa > 0) {
+            const { data: char } = await adminClient.from('reg_characters').select('xp, puntos_aprendizaje').eq('id', registro.autor_id).single();
+            if (char) {
+              await adminClient.from('reg_characters').update({
+                xp: Math.max(0, (char.xp || 0) - effectiveXp),
+                puntos_aprendizaje: Math.max(0, (char.puntos_aprendizaje || 0) - effectivePa)
+              }).eq('id', registro.autor_id);
             }
           }
         }

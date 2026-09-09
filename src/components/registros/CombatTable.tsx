@@ -318,19 +318,48 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
 
                   {/* Recompensa */}
                   <td className="py-6 px-8">
-                    <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
-                      {xpGained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>+{xpGained} EXP</div>}
-                      {pcGained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>+{pcGained} PA</div>}
-                      {ryousGained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-amber-300"}>+{ryousGained} RYOUS</div>}
-                      {xpGained === 0 && pcGained === 0 && ryousGained === 0 && (
-                        <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
-                      )}
-                      {(isPending || isDispute) && (
-                        <span className="text-[9px] text-amber-500/70 font-semibold tracking-wider uppercase">
-                          (No sumado)
-                        </span>
-                      )}
-                    </div>
+                    {(() => {
+                      const effReward = sid ? m.data?.recompensas_efectivas?.[sid] : undefined;
+                      const isAuthor = sid && Number(m.autor_id) === Number(sid);
+                      const isCapped = (effReward?.xp_descartada && effReward.xp_descartada > 0) || (isAuthor && (m.data?.xp_descartada_limite > 0));
+                      const effectiveCombatXp = effReward?.xp_otorgada !== undefined ? effReward.xp_otorgada : xpGained;
+                      const isPaCapped = (effReward?.pa_descartada && effReward.pa_descartada > 0) || (isAuthor && (m.data?.pa_descartada_limite > 0));
+                      const effectiveCombatPa = effReward?.pa_otorgada !== undefined ? effReward.pa_otorgada : pcGained;
+
+                      return (
+                        <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
+                          {(effectiveCombatXp > 0 || isCapped) && (
+                            <div className={`flex items-center gap-1.5 ${(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}`}>
+                              <span>+{effectiveCombatXp} EXP</span>
+                              {isCapped && (
+                                <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto text-black tracking-widest ninja-clip-xs" title="Límite de experiencia alcanzado">
+                                  LÍMITE
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          {(effectiveCombatPa > 0 || isPaCapped) && (
+                            <div className={`flex items-center gap-1.5 ${(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}`}>
+                              <span>+{effectiveCombatPa} PA</span>
+                              {isPaCapped && (
+                                <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto text-black tracking-widest ninja-clip-xs" title="Límite de PA alcanzado">
+                                  LÍMITE
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          {ryousGained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-amber-300"}>+{ryousGained} RYOUS</div>}
+                          {effectiveCombatXp === 0 && !isCapped && effectiveCombatPa === 0 && !isPaCapped && ryousGained === 0 && (
+                            <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
+                          )}
+                          {(isPending || isDispute) && (
+                            <span className="text-[9px] text-amber-500/70 font-semibold tracking-wider uppercase">
+                              (No sumado)
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </td>
 
                   {/* Acciones */}
@@ -624,8 +653,8 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
               <div className="flex items-center gap-4">
                 <div>
                   <h3 className="ninja-title text-lg sm:text-xl tracking-[0.1em] sm:tracking-[0.2em]">
-                    {(selectedCombat.subtipo === 'sanacion' || selectedCombat.data?.subtipo === 'sanacion') 
-                      ? 'INFORME DE SANACIÓN' 
+                    {(selectedCombat.subtipo === 'sanacion' || selectedCombat.data?.subtipo === 'sanacion')
+                      ? 'INFORME DE SANACIÓN'
                       : (selectedCombat.subtipo === 'intervencion' || selectedCombat.data?.subtipo === 'intervencion' || !!selectedCombat.data?.es_intervencion)
                         ? 'INFORME DE INTERVENCIÓN'
                         : 'INFORME DE COMBATE'}
@@ -808,11 +837,10 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                                     </span>
                                   )}
                                   {p.huye && (
-                                    <span className={`px-2 py-0.5 text-caption font-black uppercase ninja-clip-xs border ${
-                                      p.huye_gana_exp 
-                                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' 
-                                        : 'bg-orange-500/20 text-orange-400 border-orange-500/40'
-                                    }`}>
+                                    <span className={`px-2 py-0.5 text-caption font-black uppercase ninja-clip-xs border ${p.huye_gana_exp
+                                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                                      : 'bg-orange-500/20 text-orange-400 border-orange-500/40'
+                                      }`}>
                                       {p.huye_gana_exp ? 'HUYE (GANA EXP)' : 'HUYE'}
                                     </span>
                                   )}
@@ -902,11 +930,10 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                                     </span>
                                   )}
                                   {p.huye && (
-                                    <span className={`px-2 py-0.5 text-caption font-black uppercase ninja-clip-xs border ${
-                                      p.huye_gana_exp 
-                                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' 
-                                        : 'bg-orange-500/20 text-orange-400 border-orange-500/40'
-                                    }`}>
+                                    <span className={`px-2 py-0.5 text-caption font-black uppercase ninja-clip-xs border ${p.huye_gana_exp
+                                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                                      : 'bg-orange-500/20 text-orange-400 border-orange-500/40'
+                                      }`}>
                                       {p.huye_gana_exp ? 'HUYE (GANA EXP)' : 'HUYE'}
                                     </span>
                                   )}

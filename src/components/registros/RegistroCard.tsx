@@ -666,20 +666,19 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                       <div className="flex flex-wrap items-center gap-3 mb-4">
                         <VS className="w-5 h-5 text-oro/40" />
                         <span className="text-xs font-black text-oro/40 uppercase tracking-[0.3em]">
-                          {isIntervencion 
-                            ? `Intervención: Misión ${registro.data.codigo_mision || ''} (Rango ${registro.data.mision_rango || 'B'})` 
+                          {isIntervencion
+                            ? `Intervención: Misión ${registro.data.codigo_mision || ''} (Rango ${registro.data.mision_rango || 'B'})`
                             : 'Resumen de Combate'}
                         </span>
                         {isEmpate ? (
                           <span className="text-caption font-black text-oro border border-oro/20 px-2 py-0.5">EMPATE</span>
                         ) : (
-                          <span className={`text-caption font-black px-2 py-0.5 border ${
-                            won
-                              ? 'text-success-text border-success-text/30 bg-success-bg/80'
-                              : 'text-error-text border-error-text/30 bg-error-bg/80'
-                          }`}>
-                            {won 
-                              ? (isIntervencion ? 'VICTORIA (MISIÓN COMPLETADA)' : 'VICTORIA') 
+                          <span className={`text-caption font-black px-2 py-0.5 border ${won
+                            ? 'text-success-text border-success-text/30 bg-success-bg/80'
+                            : 'text-error-text border-error-text/30 bg-error-bg/80'
+                            }`}>
+                            {won
+                              ? (isIntervencion ? 'VICTORIA (MISIÓN COMPLETADA)' : 'VICTORIA')
                               : (isIntervencion ? 'DERROTA (MISIÓN FALLIDA)' : 'DERROTA')}
                           </span>
                         )}
@@ -826,11 +825,10 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                                   {p.has_estado_alterado && <span className="px-2 py-0.5 bg-oro/20 text-oro text-caption font-black uppercase ninja-clip-xs border border-oro/40">ESTADO ALTERADO</span>}
                                   {p.has_cds && <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-caption font-black uppercase ninja-clip-xs border border-blue-400/40">CDs</span>}
                                   {p.huye && (
-                                    <span className={`px-2 py-0.5 text-caption font-black uppercase ninja-clip-xs border ${
-                                      p.huye_gana_exp 
-                                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' 
-                                        : 'bg-orange-500/20 text-orange-400 border-orange-500/40'
-                                    }`}>
+                                    <span className={`px-2 py-0.5 text-caption font-black uppercase ninja-clip-xs border ${p.huye_gana_exp
+                                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                                      : 'bg-orange-500/20 text-orange-400 border-orange-500/40'
+                                      }`}>
                                       {p.huye_gana_exp ? 'HUYE (GANA EXP)' : 'HUYE'}
                                     </span>
                                   )}
@@ -888,11 +886,10 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                                   {p.has_estado_alterado && <span className="px-2 py-0.5 bg-oro/20 text-oro text-caption font-black uppercase ninja-clip-xs border border-oro/40">ESTADO ALTERADO</span>}
                                   {p.has_cds && <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-caption font-black uppercase ninja-clip-xs border border-blue-400/40">CDs</span>}
                                   {p.huye && (
-                                    <span className={`px-2 py-0.5 text-caption font-black uppercase ninja-clip-xs border ${
-                                      p.huye_gana_exp 
-                                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' 
-                                        : 'bg-orange-500/20 text-orange-400 border-orange-500/40'
-                                    }`}>
+                                    <span className={`px-2 py-0.5 text-caption font-black uppercase ninja-clip-xs border ${p.huye_gana_exp
+                                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                                      : 'bg-orange-500/20 text-orange-400 border-orange-500/40'
+                                      }`}>
                                       {p.huye_gana_exp ? 'HUYE (GANA EXP)' : 'HUYE'}
                                     </span>
                                   )}

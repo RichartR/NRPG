@@ -2007,7 +2007,7 @@ export function CharacterSheetView({
   }, [editingRegistro, editingImageKey]);
 
   // Componentes Helper fuera del render principal para evitar re-montajes
-  const ResourceDisplay = ({ character, totalExp, totalRyous, totalPuntosCombate, xpLimitUsage }: { character: Character, totalExp: number, totalRyous: number, totalPuntosCombate: number, xpLimitUsage?: number | null }) => (  // totalPuntosCombate now represents PA
+  const ResourceDisplay = ({ character, totalExp, totalRyous, totalPuntosCombate, xpLimitUsage, paLimitUsage }: { character: Character, totalExp: number, totalRyous: number, totalPuntosCombate: number, xpLimitUsage?: number | null, paLimitUsage?: number | null }) => (  // totalPuntosCombate now represents PA
     <div className="flex flex-wrap justify-center items-center gap-4 mb-8">
       <div className="flex items-center gap-3 px-5 py-3 ninja-card-oro group hover-ninja">
         <div className="w-9 h-9 bg-naranja-naruto rotate-45 flex items-center justify-center shadow-[0_0_12px_rgba(103,9,9,0.4)] shrink-0">
@@ -2043,7 +2043,7 @@ export function CharacterSheetView({
               )}
             </p>
             {xpLimitUsage && totalExp >= xpLimitUsage && (
-              <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto/20 border border-naranja-naruto/40 text-naranja-naruto tracking-widest ninja-clip-xs animate-pulse">
+              <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto text-black tracking-widest ninja-clip-xspulse">
                 LÍMITE
               </span>
             )}
@@ -2055,12 +2055,27 @@ export function CharacterSheetView({
           <Swords className="w-4 h-4 text-oro -rotate-45" />
         </div>
         <div>
-          <p className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.2em] mb-0.5">P. APRENDIZAJE (DISP. / TOTAL)</p>
-          <p className="text-lg xl:text-xl font-black text-oro leading-none">
-            {character.puntos_aprendizaje || 0}
-            <span className="text-oro/20 mx-2">/</span>
-            <span className="text-oro/60 text-xs xl:text-sm">{totalPuntosCombate}</span>
+          <p className="text-[10px] xl:text-xs font-black text-oro/40 uppercase tracking-[0.2em] mb-0.5">
+            {paLimitUsage ? 'PA (DISP. / TOTAL / LÍMITE)' : 'P. APRENDIZAJE (DISP. / TOTAL)'}
           </p>
+          <div className="flex items-center gap-2">
+            <p className="text-lg xl:text-xl font-black text-oro leading-none">
+              {character.puntos_aprendizaje || 0}
+              <span className="text-oro/20 mx-2">/</span>
+              <span className="text-oro/60 text-xs xl:text-sm">{totalPuntosCombate}</span>
+              {paLimitUsage && (
+                <>
+                  <span className="text-oro/20 mx-2">/</span>
+                  <span className="text-oro/60 text-xs xl:text-sm font-black text-oro/90">{new Intl.NumberFormat('es-ES').format(paLimitUsage)}</span>
+                </>
+              )}
+            </p>
+            {paLimitUsage && totalPuntosCombate >= paLimitUsage && (
+              <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto text-black tracking-widest ninja-clip-xspulse">
+                LÍMITE
+              </span>
+            )}
+          </div>
         </div>
       </div>
       {character.moneda_evento !== undefined && (
@@ -3546,7 +3561,7 @@ export function CharacterSheetView({
           )}
           {activeTab === 'equipamiento' && (
             <div className="space-y-8 animate-fade-in">
-              <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} totalPuntosCombate={totalPuntosCombate} xpLimitUsage={masters?.xpLimitUsage} />
+              <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} totalPuntosCombate={totalPuntosCombate} xpLimitUsage={masters?.xpLimitUsage} paLimitUsage={masters?.paLimitUsage} />
 
               {/* Submenu for Inventario */}
               <div className="flex flex-nowrap gap-4 overflow-x-auto pb-2 lg:pb-0 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
@@ -4054,7 +4069,7 @@ export function CharacterSheetView({
           )}
           {activeTab === 'tecnicas' && (
             <div className="space-y-8 animate-fade-in">
-              <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} totalPuntosCombate={totalPuntosCombate} xpLimitUsage={masters?.xpLimitUsage} />
+              <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} totalPuntosCombate={totalPuntosCombate} xpLimitUsage={masters?.xpLimitUsage} paLimitUsage={masters?.paLimitUsage} />
 
               {/* Submenu for Técnicas */}
               <div className="flex flex-nowrap gap-4 overflow-x-auto pb-2 lg:pb-0 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
@@ -5078,7 +5093,7 @@ export function CharacterSheetView({
 
           {activeTab === 'registros' && (
             <div className="space-y-8 animate-fade-in">
-              <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} totalPuntosCombate={totalPuntosCombate} xpLimitUsage={masters?.xpLimitUsage} />
+              <ResourceDisplay character={character} totalExp={totalExp} totalRyous={totalRyous} totalPuntosCombate={totalPuntosCombate} xpLimitUsage={masters?.xpLimitUsage} paLimitUsage={masters?.paLimitUsage} />
               <MissionCounter counts={missionCounts} />
 
               {/* Header Row: Subtabs Buttons & Filters */}

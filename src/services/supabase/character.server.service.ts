@@ -563,5 +563,106 @@ export const CharacterServerService = {
         }
       }
     }
+  },
+
+  async getCharacterTotalExp(
+    supabase: SupabaseClient,
+    characterId: string | number
+  ): Promise<{ dispXp: number; spentXp: number; totalExp: number }> {
+    const { data: char } = await supabase
+      .from('reg_characters')
+      .select('xp')
+      .eq('id', characterId)
+      .single();
+
+    const dispXp = Number(char?.xp) || 0;
+
+    const { data: regs } = await supabase
+      .from('reg_registros')
+      .select('data')
+      .eq('autor_id', characterId);
+
+    let spentXp = 0;
+    if (regs && Array.isArray(regs)) {
+      spentXp = Math.max(
+        0,
+        regs.reduce((sum: number, r: any) => {
+          const spent = r.data?.coste_exp ?? r.data?.gasto_xp ?? 0;
+          const refund = r.data?.refund_xp ?? 0;
+          return sum + (Number(spent) || 0) - (Number(refund) || 0);
+        }, 0)
+      );
+    }
+
+    return {
+      dispXp,
+      spentXp,
+      totalExp: dispXp + spentXp
+    };
+  },
+
+  async getXpLimitUsage(supabase: SupabaseClient): Promise<number | null> {
+    const { data } = await supabase
+      .from('sys_configuracion_sistema')
+      .select('valor')
+      .eq('clave', 'xp_limit_usage')
+      .single();
+
+    if (data && data.valor !== undefined && data.valor !== null) {
+      const num = Number(data.valor);
+      return isNaN(num) ? null : num;
+    }
+    return null;
+  },
+
+  async getCharacterTotalPA(
+    supabase: SupabaseClient,
+    characterId: string | number
+  ): Promise<{ dispPa: number; spentPa: number; totalPa: number }> {
+    const { data: char } = await supabase
+      .from('reg_characters')
+      .select('puntos_aprendizaje')
+      .eq('id', characterId)
+      .single();
+
+    const dispPa = Number(char?.puntos_aprendizaje) || 0;
+
+    const { data: regs } = await supabase
+      .from('reg_registros')
+      .select('data')
+      .eq('autor_id', characterId);
+
+    let spentPa = 0;
+    if (regs && Array.isArray(regs)) {
+      spentPa = Math.max(
+        0,
+        regs.reduce((sum: number, r: any) => {
+          const spent = r.data?.coste_puntos_aprendizaje ?? r.data?.coste_pa ?? r.data?.gasto_pa ?? r.data?.gasto_pc ?? 0;
+          const refund = r.data?.refund_pa ?? 0;
+          return sum + (Number(spent) || 0) - (Number(refund) || 0);
+        }, 0)
+      );
+    }
+
+    return {
+      dispPa,
+      spentPa,
+      totalPa: dispPa + spentPa
+    };
+  },
+
+  async getPaLimitUsage(supabase: SupabaseClient): Promise<number | null> {
+    const { data } = await supabase
+      .from('sys_configuracion_sistema')
+      .select('valor')
+      .eq('clave', 'pa_limit_usage')
+      .single();
+
+    if (data && data.valor !== undefined && data.valor !== null) {
+      const num = Number(data.valor);
+      return isNaN(num) ? null : num;
+    }
+    return null;
   }
 };
+
