@@ -424,6 +424,8 @@ export interface EstadoCombate {
   id: number;
   nombre: string;
   activo: boolean;
+  exp?: number;
+  en_combate?: boolean;
 }
 
 export interface Tienda {

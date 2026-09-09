@@ -490,10 +490,15 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
           </div>
         ) : (registro.subtipo === 'sanacion' || registro.data?.subtipo === 'sanacion') ? (
           <div className="p-4 sm:p-5 bg-black/40 ninja-clip-sm space-y-3">
-            <div className="border-b border-oro/20 pb-2.5">
+            <div className="border-b border-oro/20 pb-2.5 flex flex-wrap items-center justify-between gap-2">
               <p className="text-caption font-bold text-oro/40 uppercase tracking-widest mt-0.5">
                 NINJA SANADO: <span className="text-emerald-300 font-black">{registro.data.sanado?.nombre_ninja || 'Sin especificar'}</span>
               </p>
+              {registro.data.estado?.nombre && (
+                <span className="text-caption font-black text-oro bg-oro/10 border border-oro/20 px-2.5 py-0.5 ninja-clip-xs uppercase tracking-wider">
+                  ESTADO: {registro.data.estado.nombre}
+                </span>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -502,32 +507,46 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                 <span className="text-caption font-black text-oro/40 uppercase tracking-[0.2em] block">MÉDICOS PARTICIPANTES:</span>
                 <div className="flex flex-wrap gap-1.5">
                   {registro.data.medicos && registro.data.medicos.length > 0 ? (
-                    registro.data.medicos.map((m: any, idx: number) => (
-                      <span key={idx} className="text-caption font-black text-oro bg-oro/10 border border-oro/20 px-2.5 py-0.5 ninja-clip-xs flex items-center gap-1.5">
-                        <User className="w-3 h-3 text-oro/60" /> {m.nombre_ninja} <span className="text-emerald-400">+1 EXP</span>
-                      </span>
-                    ))
+                    registro.data.medicos.map((m: any, idx: number) => {
+                      const expOtorgada = registro.data.estado?.exp !== undefined
+                        ? Number(registro.data.estado.exp)
+                        : (Number(registro.data.exp_cura) || 1);
+                      return (
+                        <span key={idx} className="text-caption font-black text-oro bg-oro/10 border border-oro/20 px-2.5 py-0.5 ninja-clip-xs flex items-center gap-1.5">
+                          <User className="w-3 h-3 text-oro/60" /> {m.nombre_ninja} <span className="text-emerald-400">+{expOtorgada} EXP</span>
+                        </span>
+                      );
+                    })
                   ) : (
                     <span className="text-caption font-bold text-oro/30 italic">Sin médicos adicionales</span>
                   )}
                 </div>
               </div>
 
-              {/* Desglose Tirada */}
+              {/* Desglose Tirada / Efecto */}
               <div className="p-3 bg-black/40 border border-emerald-500/10 ninja-clip-xs space-y-1 text-xs font-bold uppercase tracking-wider">
                 <span className="text-caption font-black text-emerald-400/60 block tracking-[0.2em]">DESGLOSE DEL EFECTO:</span>
-                <div className="flex justify-between text-oro/70 text-caption">
-                  <span>Base técnica + médicos:</span>
-                  <span>{registro.data.horas_base || (2 + ((registro.data.medicos?.length || 0) * 2))}h ({2}h + {registro.data.medicos?.length || 0} med)</span>
-                </div>
-                <div className="flex justify-between text-oro/70 text-caption">
-                  <span>Tirada d10:</span>
-                  <span>+{registro.data.tirada_d10 || 0}h</span>
-                </div>
-                <div className="flex justify-between text-emerald-400 font-black border-t border-emerald-500/10 pt-1 text-caption sm:text-xs">
-                  <span>Total horas restadas:</span>
-                  <span>{registro.data.horas_restadas || 0} horas</span>
-                </div>
+                {Number(registro.data?.estado?.id) === 2 ? (
+                  <>
+                    <div className="flex justify-between text-oro/70 text-caption">
+                      <span>Base técnica + médicos:</span>
+                      <span>{registro.data.horas_base || (2 + ((registro.data.medicos?.length || 0) * 2))}h ({2}h + {registro.data.medicos?.length || 0} med)</span>
+                    </div>
+                    <div className="flex justify-between text-oro/70 text-caption">
+                      <span>Tirada d10:</span>
+                      <span>+{registro.data.tirada_d10 || 0}h</span>
+                    </div>
+                    <div className="flex justify-between text-emerald-400 font-black border-t border-emerald-500/10 pt-1 text-caption sm:text-xs">
+                      <span>Total horas restadas:</span>
+                      <span>{registro.data.horas_restadas || 0} horas</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-oro/70 text-caption">Resultado:</span>
+                    <span className="text-emerald-400 font-black text-sm tracking-wider">SANADO</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -812,23 +831,33 @@ export default function RegistroCard({ registro, onRefresh, onEdit, isAdmin, sub
                 </div>
               )}
             </div>
-            {(registro.data.gasto_xp !== undefined || registro.data.gasto_ryous !== undefined) && (
-              <div className="flex flex-col items-center shrink-0 p-4 border-l border-oro/10 min-w-[120px]">
-                <span className="text-caption font-black text-oro/30 uppercase tracking-widest mb-2">Coste</span>
-                <div className="flex flex-col gap-2 items-end w-full">
-                  {registro.data.gasto_xp !== undefined && (
-                    <div className="flex items-center gap-2 text-oro font-black text-sm tracking-widest">
-                      {registro.data.gasto_xp} EXP
-                    </div>
-                  )}
-                  {registro.data.gasto_ryous !== undefined && (
-                    <div className="flex items-center gap-2 text-oro font-black text-sm tracking-widest">
-                      {registro.data.gasto_ryous} RYOUS
-                    </div>
-                  )}
+            {(() => {
+              const paCost = Number(registro.data.gasto_pc ?? registro.data.gasto_pa ?? registro.data.coste_pa ?? registro.data.coste_puntos_aprendizaje) || 0;
+              const hasCost = registro.data.gasto_xp !== undefined || registro.data.gasto_ryous !== undefined || paCost > 0;
+              if (!hasCost) return null;
+              return (
+                <div className="flex flex-col items-center shrink-0 p-4 border-l border-oro/10 min-w-[120px]">
+                  <span className="text-caption font-black text-oro/30 uppercase tracking-widest mb-2">Coste</span>
+                  <div className="flex flex-col gap-2 items-end w-full">
+                    {registro.data.gasto_xp !== undefined && (
+                      <div className="flex items-center gap-2 text-oro font-black text-sm tracking-widest">
+                        {registro.data.gasto_xp} EXP
+                      </div>
+                    )}
+                    {paCost > 0 && (
+                      <div className="flex items-center gap-2 text-emerald-400 font-black text-sm tracking-widest">
+                        {paCost} PA
+                      </div>
+                    )}
+                    {registro.data.gasto_ryous !== undefined && (
+                      <div className="flex items-center gap-2 text-oro font-black text-sm tracking-widest">
+                        {registro.data.gasto_ryous} RYOUS
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         ) : (
           <div className="space-y-8">

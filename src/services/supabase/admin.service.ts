@@ -357,6 +357,8 @@ export const AdminService = {
   async saveEstadoCombate(estado: any) {
     const supabase = createClient();
     const { id, ...cleanData } = estado;
+    if (cleanData.exp !== undefined) cleanData.exp = Number(cleanData.exp) || 0;
+    if (cleanData.en_combate !== undefined) cleanData.en_combate = Boolean(cleanData.en_combate);
     if (id) {
       const { data, error } = await supabase.from('info_estados_combate').update(cleanData).eq('id', id).select().single();
       if (error) throw error;

@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client';
-import { Aldea, RamaClan, SubEspecialidad, Entrenamiento, Elemento, RamaElemento, Glosario, GlosarioCategoria, GlosarioSubcategoria, Sentido, RamaSentido } from '@/domain/types';
+import { Aldea, RamaClan, SubEspecialidad, Entrenamiento, Elemento, RamaElemento, Glosario, GlosarioCategoria, GlosarioSubcategoria, Sentido, RamaSentido, EstadoCombate } from '@/domain/types';
 
 export const MasterService = {
   async getAldeas(): Promise<Aldea[]> {
@@ -20,6 +20,7 @@ export const MasterService = {
       return a.id - b.id;
     });
   },
+
 
   async getRamas(): Promise<RamaClan[]> {
     const supabase = createClient();
@@ -56,13 +57,18 @@ export const MasterService = {
   },
 
 
-  async getEstadosCombate(): Promise<{ id: number; nombre: string; activo: boolean }[]> {
+  async getEstadosCombate(soloCombate?: boolean): Promise<EstadoCombate[]> {
     const supabase = createClient();
-    const { data, error } = await supabase
+    let query = supabase
       .from('info_estados_combate')
       .select('*')
-      .eq('activo', true)
-      .order('nombre', { ascending: true });
+      .eq('activo', true);
+
+    if (soloCombate) {
+      query = query.eq('en_combate', true);
+    }
+
+    const { data, error } = await query.order('nombre', { ascending: true });
     
     if (error) throw error;
     return data || [];

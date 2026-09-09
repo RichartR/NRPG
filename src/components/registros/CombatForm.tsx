@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { RegistrosService } from '@/services/supabase/registros.service';
 import { MasterService } from '@/services/supabase/master.service';
-import { Registro, MisionMaster } from '@/domain/types';
+import { Registro, MisionMaster, EstadoCombate } from '@/domain/types';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import { useToastStore } from '@/components/ui/Toast';
 import { X, Search, UserPlus, User, Info, HeartPulse, Swords, Link as LinkIcon, Check, ScrollText, ArrowLeftRight, Sparkles, Coins, ShieldAlert } from 'lucide-react';
@@ -184,7 +184,8 @@ export default function CombatForm({
   const [winner, setWinner] = useState<'A' | 'B' | 'Empate'>(initialData?.data?.ganador || 'Empate');
   const [combatConfig, setCombatConfig] = useState<any | null>(null);
   const [paConfig, setPaConfig] = useState<any | null>(null);
-  const [estados, setEstados] = useState<{ id: number; nombre: string }[]>([]);
+  const [estadosCombate, setEstadosCombate] = useState<EstadoCombate[]>([]);
+  const [estadosSanacion, setEstadosSanacion] = useState<EstadoCombate[]>([]);
 
   // State for Intervención (Misión intervenida - Reglas 6.1 a 6.16)
   const [misionRango, setMisionRango] = useState<'B' | 'A' | 'S'>(
@@ -210,6 +211,9 @@ export default function CombatForm({
   const [medicos, setMedicos] = useState<{ id: number; nombre_ninja: string }[]>(
     initialData?.data?.medicos || []
   );
+  const [selectedEstadoSanacion, setSelectedEstadoSanacion] = useState<number | null>(
+    initialData?.data?.estado?.id ? Number(initialData.data.estado.id) : null
+  );
 
   const initializedRef = useRef(false);
 
@@ -224,6 +228,7 @@ export default function CombatForm({
       if (initialData.subtipo === 'sanacion' || initialData.data?.subtipo === 'sanacion') {
         if (initialData.data?.sanado) setSanado(initialData.data.sanado);
         if (initialData.data?.medicos) setMedicos(initialData.data.medicos);
+        if (initialData.data?.estado?.id) setSelectedEstadoSanacion(Number(initialData.data.estado.id));
       }
       if (initialData.subtipo === 'intervencion' || initialData.data?.subtipo === 'intervencion' || initialData.data?.es_intervencion) {
         if (initialData.data?.codigo_mision) setSelectedMision(initialData.data.codigo_mision);
@@ -274,8 +279,12 @@ export default function CombatForm({
 
   const fetchEstados = async () => {
     try {
-      const data = await MasterService.getEstadosCombate();
-      setEstados(data);
+      const [todosActivos, soloCombate] = await Promise.all([
+        MasterService.getEstadosCombate(),
+        MasterService.getEstadosCombate(true)
+      ]);
+      setEstadosSanacion(todosActivos);
+      setEstadosCombate(soloCombate);
     } catch (err) {
       console.error(err);
     }
@@ -422,18 +431,31 @@ export default function CombatForm({
         addToast('Debe seleccionar el jugador sanado', 'error');
         return;
       }
+      if (!selectedEstadoSanacion) {
+        addToast('Debe seleccionar obligatoriamente un estado a tratar', 'error');
+        return;
+      }
+      const estadoObj = estadosSanacion.find(e => e.id === Number(selectedEstadoSanacion));
+      if (!estadoObj) {
+        addToast('El estado seleccionado no es válido', 'error');
+        return;
+      }
       const validImages = images.filter(img => img.trim() !== '');
       if (validImages.length === 0) {
         addToast('Añade al menos una prueba (URL)', 'error');
         return;
       }
 
+      const isHeridoGrave = Number(estadoObj.id) === 2;
       const existingD10 = initialData?.data?.tirada_d10;
-      const d10Val = (existingD10 !== undefined && existingD10 !== null)
-        ? Number(existingD10)
-        : (Math.floor(Math.random() * 10) + 1);
-      const horasBase = 2 + (medicos.length * 2);
-      const horasTotales = horasBase + d10Val;
+      const d10Val = isHeridoGrave
+        ? ((existingD10 !== undefined && existingD10 !== null)
+          ? Number(existingD10)
+          : (Math.floor(Math.random() * 10) + 1))
+        : 0;
+      const horasBase = isHeridoGrave ? (2 + (medicos.length * 2)) : 0;
+      const horasTotales = isHeridoGrave ? (horasBase + d10Val) : 0;
+      const expPorCura = estadoObj.exp !== undefined ? Number(estadoObj.exp) : 1;
 
       const payload: any = {
         tipo: 'combate',
@@ -444,6 +466,12 @@ export default function CombatForm({
           subtipo: 'sanacion',
           sanado: { id: sanado.id, nombre_ninja: sanado.nombre_ninja },
           medicos: medicos.map(m => ({ id: m.id, nombre_ninja: m.nombre_ninja })),
+          estado: {
+            id: estadoObj.id,
+            nombre: estadoObj.nombre,
+            exp: expPorCura
+          },
+          exp_cura: expPorCura,
           tirada_d10: d10Val,
           horas_base: horasBase,
           horas_restadas: horasTotales,
@@ -663,6 +691,39 @@ export default function CombatForm({
                   )}
                 </div>
 
+                {/* Estado a Tratar (Obligatorio) */}
+                <div className="space-y-3 p-5 sm:p-6 bg-black/40 border border-emerald-500/20 ninja-clip-md">
+                  <div className="flex items-center justify-between border-b border-emerald-500/10 pb-3">
+                    <h4 className="text-base font-black uppercase tracking-[0.3em] text-emerald-400">
+                      ESTADO A TRATAR <span className="text-red-500">*</span>
+                    </h4>
+                    {(() => {
+                      const est = estadosSanacion.find(e => e.id === Number(selectedEstadoSanacion));
+                      if (!est) return null;
+                      return (
+                        <span className="px-2.5 py-0.5 bg-oro/10 border border-oro/30 text-caption font-black text-oro uppercase tracking-widest ninja-clip-xs">
+                          +{est.exp ?? 1} EXP POR MÉDICO
+                        </span>
+                      );
+                    })()}
+                  </div>
+
+                  <NinjaSelect
+                    value={selectedEstadoSanacion ? String(selectedEstadoSanacion) : ''}
+                    onChange={(val) => setSelectedEstadoSanacion(val ? Number(val) : null)}
+                    placeholder="SELECCIONA EL ESTADO A CURAR (OBLIGATORIO)..."
+                    options={estadosSanacion.map(est => ({
+                      label: `${est.nombre} (+${est.exp ?? 1} EXP)`,
+                      value: String(est.id)
+                    }))}
+                  />
+                  {!selectedEstadoSanacion && (
+                    <p className="text-caption text-oro/40 italic ml-1">
+                      Debes seleccionar el estado a curar para determinar la experiencia que recibirán los médicos participantes.
+                    </p>
+                  )}
+                </div>
+
                 {/* Médicos Participantes */}
                 <div className="space-y-4 p-5 sm:p-6 bg-black/40 border border-oro/20 ninja-clip-md">
                   <div className="flex items-center justify-between border-b border-oro/10 pb-3">
@@ -678,41 +739,66 @@ export default function CombatForm({
                     onSelectCharacter={(p) => setMedicos([...medicos, { id: p.id, nombre_ninja: p.nombre_ninja }])}
                   />
 
-                  <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
-                    {medicos.map(m => (
-                      <div key={m.id} className="p-3 bg-black/40 border border-oro/10 ninja-clip-xs flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <User className="w-3.5 h-3.5 text-oro/40" />
-                          <span className="text-xs font-black text-oro uppercase tracking-widest">
-                            {m.nombre_ninja} {Number(m.id) === Number(activeCharacter?.id) && <span className="text-oro/40 ml-1">(TÚ)</span>}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="px-2 py-0.5 bg-oro/10 border border-oro/20 text-caption font-black text-oro ninja-clip-xs">+1 EXP</span>
-                          <button
-                            type="button"
-                            onClick={() => setMedicos(medicos.filter(item => item.id !== m.id))}
-                            className="p-1 text-oro/20 hover:text-naranja-naruto transition-all"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
+                  {(() => {
+                    const currentEst = estadosSanacion.find(e => e.id === Number(selectedEstadoSanacion));
+                    const expBadge = currentEst ? `+${currentEst.exp ?? 1} EXP` : '+? EXP';
+                    return (
+                      <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
+                        {medicos.map(m => (
+                          <div key={m.id} className="p-3 bg-black/40 border border-oro/10 ninja-clip-xs flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <User className="w-3.5 h-3.5 text-oro/40" />
+                              <span className="text-xs font-black text-oro uppercase tracking-widest">
+                                {m.nombre_ninja} {Number(m.id) === Number(activeCharacter?.id) && <span className="text-oro/40 ml-1">(TÚ)</span>}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="px-2 py-0.5 bg-oro/10 border border-oro/20 text-caption font-black text-oro ninja-clip-xs">{expBadge}</span>
+                              <button
+                                type="button"
+                                onClick={() => setMedicos(medicos.filter(item => item.id !== m.id))}
+                                className="p-1 text-oro/20 hover:text-naranja-naruto transition-all"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })()}
                 </div>
               </div>
 
               {/* Columna Derecha: Pruebas y Cálculo del Efecto */}
               <div className="space-y-6">
-                {/* Desglose de Herido Grave y Recompensas */}
+                {/* Desglose del Efecto / Herido Grave */}
                 <div className="p-5 sm:p-6 bg-black/40 border border-oro/20 ninja-clip-md space-y-4">
                   <div className="flex items-center gap-3 border-b border-oro/10 pb-3">
-                    <h4 className="text-sm font-black uppercase tracking-[0.3em] text-oro">HORAS DE REDUCCIÓN DE HERIDO GRAVE</h4>
+                    <h4 className="text-sm font-black uppercase tracking-[0.3em] text-oro">
+                      {Number(selectedEstadoSanacion) === 2 ? 'HORAS DE REDUCCIÓN DE HERIDO GRAVE' : 'EFECTO DE LA SANACIÓN'}
+                    </h4>
                   </div>
 
                   <div className="space-y-3 text-xs font-bold uppercase tracking-wider">
                     {(() => {
+                      const isHG = Number(selectedEstadoSanacion) === 2;
+                      if (!isHG) {
+                        return (
+                          <div className="p-6 bg-emerald-950/30 border border-emerald-500/30 ninja-clip-xs text-center space-y-2">
+                            <span className="text-caption font-black text-emerald-400/70 block tracking-[0.3em]">
+                              EFECTO AL REGISTRAR
+                            </span>
+                            <span className="text-2xl font-black text-emerald-300 tracking-widest block">
+                              SANADO
+                            </span>
+                            <span className="text-[11px] text-oro/50 lowercase tracking-normal">
+                              el ninja se recupera del estado sin requerir tirada de reducción de horas
+                            </span>
+                          </div>
+                        );
+                      }
+
                       const cantMedicosExtra = medicos.length;
                       const horasBase = 2 + (cantMedicosExtra * 2);
                       return (
@@ -1001,7 +1087,7 @@ export default function CombatForm({
                               value={p.estado_nombre || ''}
                               onChange={(val) => updateParticipantState(p.id, 'A', { estado_nombre: val })}
                               placeholder="SIN ESTADO"
-                              options={estados.map(est => ({ label: est.nombre, value: est.nombre }))}
+                              options={estadosCombate.map(est => ({ label: est.nombre, value: est.nombre }))}
                             />
 
                             <div className="flex flex-wrap gap-3">
@@ -1143,7 +1229,7 @@ export default function CombatForm({
                               value={p.estado_nombre || ''}
                               onChange={(val) => updateParticipantState(p.id, 'B', { estado_nombre: val })}
                               placeholder="SIN ESTADO"
-                              options={estados.map(est => ({ label: est.nombre, value: est.nombre }))}
+                              options={estadosCombate.map(est => ({ label: est.nombre, value: est.nombre }))}
                             />
 
                             <div className="flex flex-wrap gap-3">

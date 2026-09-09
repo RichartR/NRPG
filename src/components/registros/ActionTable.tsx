@@ -181,6 +181,9 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
 
               const xpSpent = m.tipo === 'compra' ? (m.data.coste_exp || 0) : (m.data.gasto_xp || 0);
               const ryousSpent = m.tipo === 'compra' ? (m.data.coste_ryous || 0) : (m.data.gasto_ryous || 0);
+              const paSpent = m.tipo === 'compra'
+                ? (m.data.coste_puntos_aprendizaje ?? m.data.coste_pa ?? 0)
+                : (m.data.coste_puntos_aprendizaje ?? m.data.coste_pa ?? m.data.gasto_pa ?? m.data.gasto_pc ?? 0);
               const eventCoinsSpent = m.tipo === 'compra' ? (m.data.coste_moneda_evento || 0) : 0;
 
               const selfName = m.autor?.nombre_ninja || activeCharacter?.nombre_ninja || 'El ninja';
@@ -297,9 +300,9 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
                         // 1. Ya evaluado / aceptado
                         if (effReward && (effReward.xp_otorgada !== undefined || effReward.pa_otorgada !== undefined)) {
                           const effectiveXp = effReward.xp_otorgada ?? xpObtained;
-                          const isCapped = effReward.xp_descartada && effReward.xp_descartada > 0;
+                          const isCapped = Number(effReward.xp_descartada) > 0;
                           const effectivePa = effReward.pa_otorgada ?? paObtained;
-                          const isPaCapped = effReward.pa_descartada && effReward.pa_descartada > 0;
+                          const isPaCapped = Number(effReward.pa_descartada) > 0;
 
                           return (
                             <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
@@ -412,6 +415,11 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
                               -{xpSpent.toLocaleString()} EXP
                             </div>
                           )}
+                          {paSpent > 0 && (
+                            <div className="text-xs font-black text-emerald-400 tracking-wider">
+                              -{paSpent.toLocaleString()} PA
+                            </div>
+                          )}
                           {ryousSpent > 0 && (
                             <div className="text-xs font-black text-red-700 tracking-wider">
                               -{ryousSpent.toLocaleString()} Ryos
@@ -422,7 +430,7 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
                               -{eventCoinsSpent.toLocaleString()} Monedas de Evento
                             </div>
                           )}
-                          {xpSpent === 0 && ryousSpent === 0 && eventCoinsSpent === 0 && (
+                          {xpSpent === 0 && paSpent === 0 && ryousSpent === 0 && eventCoinsSpent === 0 && (
                             <span className="text-caption text-oro/20 uppercase tracking-widest italic">Gratis</span>
                           )}
                         </>
