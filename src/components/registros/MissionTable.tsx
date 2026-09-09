@@ -90,17 +90,17 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin, sub
           </thead>
           <tbody className="divide-y divide-oro/5 bg-black/40">
             {misiones.map((m) => {
-               const participants = getParticipants(m);
-               const isOwner = activeCharacter?.id === m.autor_id;
-               const canManage = isOwner || isAdmin;
-               const rankVal = m.subtipo || 'D';
-               const sid = subjectId || activeCharacter?.id;
-               const myPart = m.participantes?.find((p: any) => Number(p.personaje_id) === Number(sid));
-               const isPending = myPart?.estado === 'pendiente';
-               const isDispute = myPart?.estado === 'disputa_admin';
-               const canAcceptDirectly = isPending && Number(activeCharacter?.id) === Number(sid);
+              const participants = getParticipants(m);
+              const isOwner = activeCharacter?.id === m.autor_id;
+              const canManage = isOwner || isAdmin;
+              const rankVal = m.subtipo || 'D';
+              const sid = subjectId || activeCharacter?.id;
+              const myPart = m.participantes?.find((p: any) => Number(p.personaje_id) === Number(sid));
+              const isPending = myPart?.estado === 'pendiente';
+              const isDispute = myPart?.estado === 'disputa_admin';
+              const canAcceptDirectly = isPending && Number(activeCharacter?.id) === Number(sid);
 
-               return (
+              return (
                 <tr key={m.id} className="hover:bg-oro/5 transition-colors group">
                   {/* Fecha */}
                   <td className="py-3 px-5">
@@ -174,31 +174,52 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin, sub
 
                   {/* Recompensa */}
                   <td className="py-3 px-5">
-                    <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
-                      {(m.data.recompensa_xp || 0) > 0 && (
-                        <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>
-                          +{m.data.recompensa_xp} EXP
+                    {(() => {
+                      const effReward = sid ? m.data?.recompensas_efectivas?.[sid] : undefined;
+                      const isAuthor = sid && Number(m.autor_id) === Number(sid);
+                      const isCapped = (effReward?.xp_descartada && effReward.xp_descartada > 0) || (isAuthor && (m.data?.xp_descartada_limite > 0));
+                      const effectiveXp = effReward?.xp_otorgada !== undefined ? effReward.xp_otorgada : (isAuthor && m.data?.xp_otorgada !== undefined ? m.data.xp_otorgada : (m.data.recompensa_xp || 0));
+                      const isPaCapped = (effReward?.pa_descartada && effReward.pa_descartada > 0) || (isAuthor && (m.data?.pa_descartada_limite > 0));
+                      const effectivePa = effReward?.pa_otorgada !== undefined ? effReward.pa_otorgada : (isAuthor && m.data?.pa_otorgada !== undefined ? m.data.pa_otorgada : (m.data.recompensa_pa || 0));
+
+                      return (
+                        <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
+                          {((m.data.recompensa_xp || 0) > 0 || isCapped) && (
+                            <div className={`flex items-center gap-1.5 ${(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}`}>
+                              <span>+{effectiveXp} EXP</span>
+                              {isCapped && (
+                                <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto text-black tracking-widest ninja-clip-xs" title="Límite de experiencia alcanzado">
+                                  LÍMITE
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          {(m.data.recompensa_ryous || 0) > 0 && (
+                            <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>
+                              +{m.data.recompensa_ryous} Ryos
+                            </div>
+                          )}
+                          {((m.data.recompensa_pa || 0) > 0 || isPaCapped) && (
+                            <div className={`flex items-center gap-1.5 ${(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}`}>
+                              <span>+{effectivePa} PA</span>
+                              {isPaCapped && (
+                                <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto text-black tracking-widest ninja-clip-xs" title="Límite de PA alcanzado">
+                                  LÍMITE
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          {(m.data.recompensa_xp || 0) === 0 && !isCapped && (m.data.recompensa_ryous || 0) === 0 && (m.data.recompensa_pa || 0) === 0 && !isPaCapped && (
+                            <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
+                          )}
+                          {(isPending || isDispute) && (
+                            <span className="text-[9px] text-amber-500/70 font-semibold tracking-wider uppercase">
+                              (No sumado)
+                            </span>
+                          )}
                         </div>
-                      )}
-                      {(m.data.recompensa_ryous || 0) > 0 && (
-                        <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>
-                          +{m.data.recompensa_ryous} Ryos
-                        </div>
-                      )}
-                      {(m.data.recompensa_pa || 0) > 0 && (
-                        <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>
-                          +{m.data.recompensa_pa} PA
-                        </div>
-                      )}
-                      {(m.data.recompensa_xp || 0) === 0 && (m.data.recompensa_ryous || 0) === 0 && (m.data.recompensa_pa || 0) === 0 && (
-                        <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
-                      )}
-                      {(isPending || isDispute) && (
-                        <span className="text-[9px] text-amber-500/70 font-semibold tracking-wider uppercase">
-                          (No sumado)
-                        </span>
-                      )}
-                    </div>
+                      );
+                    })()}
                   </td>
 
                   {/* Pruebas */}

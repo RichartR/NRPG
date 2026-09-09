@@ -293,6 +293,30 @@ export const CharacterService = {
         }
       }
 
+      let effectiveXp = xp;
+      let discardedXp = 0;
+      if (xp > 0) {
+        const [xpLimit, { totalExp }] = await Promise.all([
+          CharacterService.getXpLimitUsage(),
+          CharacterService.getCharacterTotalExp(personajeId)
+        ]);
+        const capResult = RewardLogic.applyExpLimit(xp, totalExp, xpLimit);
+        effectiveXp = capResult.effectiveExp;
+        discardedXp = capResult.discardedExp;
+      }
+
+      let effectivePa = pa;
+      let discardedPa = 0;
+      if (pa > 0) {
+        const [paLimit, { totalPa }] = await Promise.all([
+          CharacterService.getPaLimitUsage(),
+          CharacterService.getCharacterTotalPA(personajeId)
+        ]);
+        const capResult = RewardLogic.applyPaLimit(pa, totalPa, paLimit);
+        effectivePa = capResult.effectivePa;
+        discardedPa = capResult.discardedPa;
+      }
+
       const { data: char, error: charError } = await supabase
         .from('reg_characters')
         .select('xp, ryous, puntos_aprendizaje, moneda_evento')
@@ -304,14 +328,29 @@ export const CharacterService = {
       const { error: updError } = await supabase
         .from('reg_characters')
         .update({
-          xp: (char.xp || 0) + xp,
+          xp: (char.xp || 0) + effectiveXp,
           ryous: (char.ryous || 0) + ryous,
-          puntos_aprendizaje: (char.puntos_aprendizaje || 0) + pa,
+          puntos_aprendizaje: (char.puntos_aprendizaje || 0) + effectivePa,
           moneda_evento: (char.moneda_evento || 0) + extraMonedaEvento
         })
         .eq('id', personajeId);
       
       if (updError) throw updError;
+
+      // Registrar recompensa efectiva en registro.data
+      const updatedData = {
+        ...registro.data,
+        recompensas_efectivas: {
+          ...(registro.data?.recompensas_efectivas || {}),
+          [personajeId]: {
+            xp_otorgada: effectiveXp,
+            xp_descartada: discardedXp,
+            pa_otorgada: effectivePa,
+            pa_descartada: discardedPa
+          }
+        }
+      };
+      await supabase.from('reg_registros').update({ data: updatedData }).eq('id', registroId);
 
       if (glosarioItems.length > 0) {
         const inventoryPack = glosarioItems
@@ -555,6 +594,108 @@ export const CharacterService = {
       console.error('Error saving uchiha data:', error);
       throw error;
     }
+  },
+
+  async getCharacterTotalExp(
+    characterId: string | number
+  ): Promise<{ dispXp: number; spentXp: number; totalExp: number }> {
+    const supabase = createClient();
+    const { data: char } = await supabase
+      .from('reg_characters')
+      .select('xp')
+      .eq('id', characterId)
+      .single();
+
+    const dispXp = Number(char?.xp) || 0;
+
+    const { data: regs } = await supabase
+      .from('reg_registros')
+      .select('data')
+      .eq('autor_id', characterId);
+
+    let spentXp = 0;
+    if (regs && Array.isArray(regs)) {
+      spentXp = Math.max(
+        0,
+        regs.reduce((sum: number, r: any) => {
+          const spent = r.data?.coste_exp ?? r.data?.gasto_xp ?? 0;
+          const refund = r.data?.refund_xp ?? 0;
+          return sum + (Number(spent) || 0) - (Number(refund) || 0);
+        }, 0)
+      );
+    }
+
+    return {
+      dispXp,
+      spentXp,
+      totalExp: dispXp + spentXp
+    };
+  },
+
+  async getXpLimitUsage(): Promise<number | null> {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from('sys_configuracion_sistema')
+      .select('valor')
+      .eq('clave', 'xp_limit_usage')
+      .single();
+
+    if (data && data.valor !== undefined && data.valor !== null) {
+      const num = Number(data.valor);
+      return isNaN(num) ? null : num;
+    }
+    return null;
+  },
+
+  async getCharacterTotalPA(
+    characterId: string | number
+  ): Promise<{ dispPa: number; spentPa: number; totalPa: number }> {
+    const supabase = createClient();
+    const { data: char } = await supabase
+      .from('reg_characters')
+      .select('puntos_aprendizaje')
+      .eq('id', characterId)
+      .single();
+
+    const dispPa = Number(char?.puntos_aprendizaje) || 0;
+
+    const { data: regs } = await supabase
+      .from('reg_registros')
+      .select('data')
+      .eq('autor_id', characterId);
+
+    let spentPa = 0;
+    if (regs && Array.isArray(regs)) {
+      spentPa = Math.max(
+        0,
+        regs.reduce((sum: number, r: any) => {
+          const spent = r.data?.coste_puntos_aprendizaje ?? r.data?.coste_pa ?? r.data?.gasto_pa ?? r.data?.gasto_pc ?? 0;
+          const refund = r.data?.refund_pa ?? 0;
+          return sum + (Number(spent) || 0) - (Number(refund) || 0);
+        }, 0)
+      );
+    }
+
+    return {
+      dispPa,
+      spentPa,
+      totalPa: dispPa + spentPa
+    };
+  },
+
+  async getPaLimitUsage(): Promise<number | null> {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from('sys_configuracion_sistema')
+      .select('valor')
+      .eq('clave', 'pa_limit_usage')
+      .single();
+
+    if (data && data.valor !== undefined && data.valor !== null) {
+      const num = Number(data.valor);
+      return isNaN(num) ? null : num;
+    }
+    return null;
   }
 };
 

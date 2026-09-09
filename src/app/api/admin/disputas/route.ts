@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { ProfileService } from '@/services/supabase/profile.service';
 import { RewardLogic } from '@/domain/character/logic';
+import { CharacterServerService } from '@/services/supabase/character.server.service';
 
 export async function POST(request: Request) {
   try {
@@ -117,6 +118,8 @@ export async function POST(request: Request) {
           ? parts.map((p: { personaje_id: number }) => p.personaje_id)
           : (notif.personaje_id ? [notif.personaje_id] : []);
 
+        const updatedRegistroData = { ...notif.registro?.data };
+
         for (const pid of targetPids) {
           const partState = parts?.find((p: { personaje_id: number; estado?: string }) => Number(p.personaje_id) === Number(pid))?.estado;
           const { xp, ryous, pa } = RewardLogic.calculateReward(notif.registro, pid);
@@ -128,13 +131,46 @@ export async function POST(request: Request) {
             .single();
 
           if (char) {
-            // Solo sumar si no figuraba ya como aceptado
+            let effectiveXp = xp;
+            let discardedXp = 0;
             if (partState !== 'aceptado') {
+              if (xp > 0) {
+                const [xpLimit, { totalExp }] = await Promise.all([
+                  CharacterServerService.getXpLimitUsage(adminClient),
+                  CharacterServerService.getCharacterTotalExp(adminClient, pid)
+                ]);
+                const capResult = RewardLogic.applyExpLimit(xp, totalExp, xpLimit);
+                effectiveXp = capResult.effectiveExp;
+                discardedXp = capResult.discardedExp;
+              }
+
+              let effectivePa = pa;
+              let discardedPa = 0;
+              if (pa > 0) {
+                const [paLimit, { totalPa }] = await Promise.all([
+                  CharacterServerService.getPaLimitUsage(adminClient),
+                  CharacterServerService.getCharacterTotalPA(adminClient, pid)
+                ]);
+                const capResult = RewardLogic.applyPaLimit(pa, totalPa, paLimit);
+                effectivePa = capResult.effectivePa;
+                discardedPa = capResult.discardedPa;
+              }
+
               await adminClient.from('reg_characters').update({
-                xp: (char.xp || 0) + xp,
+                xp: (char.xp || 0) + effectiveXp,
                 ryous: (char.ryous || 0) + ryous,
-                puntos_aprendizaje: (char.puntos_aprendizaje || 0) + pa
+                puntos_aprendizaje: (char.puntos_aprendizaje || 0) + effectivePa
               }).eq('id', pid);
+
+              updatedRegistroData.recompensas_efectivas = {
+                ...(updatedRegistroData.recompensas_efectivas || {}),
+                [pid]: {
+                  xp_otorgada: effectiveXp,
+                  xp_descartada: discardedXp,
+                  pa_otorgada: effectivePa,
+                  pa_descartada: discardedPa
+                }
+              };
             }
 
             // Si es recuperación de evento o narración, sincronizar en el registro de premios original
@@ -155,7 +191,7 @@ export async function POST(request: Request) {
                 const nuevoPremioObj = {
                   personaje_id: pid,
                   nombre_ninja: char.nombre_ninja,
-                  xp_extra: Math.max(0, xp - (Number(regPremios.data?.global_xp) || 0)),
+                  xp_extra: Math.max(0, effectiveXp - (Number(regPremios.data?.global_xp) || 0)),
                   ryous_extra: Math.max(0, ryous - (Number(regPremios.data?.global_ryous) || 0)),
                   pa_extra: Math.max(0, pa - (Number(regPremios.data?.global_pa) || 0)),
                   recuperado: true
@@ -174,6 +210,13 @@ export async function POST(request: Request) {
               }
             }
           }
+        }
+
+        if (notif.registro_id) {
+          await adminClient
+            .from('reg_registros')
+            .update({ data: updatedRegistroData })
+            .eq('id', notif.registro_id);
         }
 
         await adminClient

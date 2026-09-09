@@ -286,6 +286,40 @@ export const StatsLogic = {
 };
 
 export const RewardLogic = {
+  applyExpLimit(
+    rawExp: number,
+    currentTotalExp: number,
+    limit: number | null | undefined
+  ): { effectiveExp: number; discardedExp: number } {
+    if (rawExp <= 0) {
+      return { effectiveExp: rawExp, discardedExp: 0 };
+    }
+    if (limit === null || limit === undefined || isNaN(limit) || limit <= 0) {
+      return { effectiveExp: rawExp, discardedExp: 0 };
+    }
+    const availableCap = Math.max(0, limit - currentTotalExp);
+    const effectiveExp = Math.min(rawExp, availableCap);
+    const discardedExp = rawExp - effectiveExp;
+    return { effectiveExp, discardedExp };
+  },
+
+  applyPaLimit(
+    rawPa: number,
+    currentTotalPa: number,
+    limit: number | null | undefined
+  ): { effectivePa: number; discardedPa: number } {
+    if (rawPa <= 0) {
+      return { effectivePa: rawPa, discardedPa: 0 };
+    }
+    if (limit === null || limit === undefined || isNaN(limit) || limit <= 0) {
+      return { effectivePa: rawPa, discardedPa: 0 };
+    }
+    const availableCap = Math.max(0, limit - currentTotalPa);
+    const effectivePa = Math.min(rawPa, availableCap);
+    const discardedPa = rawPa - effectivePa;
+    return { effectivePa, discardedPa };
+  },
+
   calculateReward(registro: any, personajeId: number): { xp: number; ryous: number; pa: number } {
     const { tipo, data } = registro;
 
