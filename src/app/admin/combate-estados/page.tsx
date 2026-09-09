@@ -113,7 +113,7 @@ export default function AdminEstadosCombatePage() {
           </div>
 
           <button
-            onClick={() => setEditingEstado({ nombre: '', activo: true })}
+            onClick={() => setEditingEstado({ nombre: '', activo: true, exp: 1, en_combate: true })}
             className="flex items-center gap-4 px-10 py-5 bg-naranja-naruto hover:brightness-125 text-oro font-black text-caption xl:text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-naranja-naruto/20 active:scale-95 ninja-clip-md"
           >
             <Plus className="w-4 h-4" />
@@ -134,23 +134,51 @@ export default function AdminEstadosCombatePage() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <DataField
               label="Nombre del Estado"
               value={editingEstado.nombre || ''}
               onChange={(v) => setEditingEstado({ ...editingEstado, nombre: v })}
               placeholder="Ej: Herido Grave"
             />
+            <DataField
+              label="EXP por Cura"
+              type="number"
+              value={editingEstado.exp !== undefined ? String(editingEstado.exp) : '1'}
+              onChange={(v) => setEditingEstado({ ...editingEstado, exp: Number(v) || 0 })}
+              placeholder="1"
+            />
+            <div className="flex flex-col gap-2">
+              <label className="text-caption font-black uppercase tracking-widest text-zinc-500 ml-4">Disponible en Combate</label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingEstado({ ...editingEstado, en_combate: true })}
+                  className={`flex-1 py-4 rounded-xl text-caption font-black uppercase tracking-widest border transition-all ${editingEstado.en_combate ?? true ? 'bg-naranja-naruto/20 border-naranja-naruto/50 text-naranja-naruto' : 'bg-zinc-950 border-zinc-800 text-zinc-600'}`}
+                >
+                  Sí (Combate)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingEstado({ ...editingEstado, en_combate: false })}
+                  className={`flex-1 py-4 rounded-xl text-caption font-black uppercase tracking-widest border transition-all ${!(editingEstado.en_combate ?? true) ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-zinc-950 border-zinc-800 text-zinc-600'}`}
+                >
+                  No
+                </button>
+              </div>
+            </div>
             <div className="flex flex-col gap-2">
               <label className="text-caption font-black uppercase tracking-widest text-zinc-500 ml-4">Estado de Visibilidad</label>
               <div className="flex gap-2">
                 <button
+                  type="button"
                   onClick={() => setEditingEstado({ ...editingEstado, activo: true })}
                   className={`flex-1 py-4 rounded-xl text-caption font-black uppercase tracking-widest border transition-all ${editingEstado.activo ? 'bg-emerald-500/10 border-success-text/50 text-emerald-500' : 'bg-zinc-950 border-zinc-800 text-zinc-600'}`}
                 >
                   Activo
                 </button>
                 <button
+                  type="button"
                   onClick={() => setEditingEstado({ ...editingEstado, activo: false })}
                   className={`flex-1 py-4 rounded-xl text-caption font-black uppercase tracking-widest border transition-all ${!editingEstado.activo ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-zinc-950 border-zinc-800 text-zinc-600'}`}
                 >
@@ -212,6 +240,8 @@ export default function AdminEstadosCombatePage() {
               <thead>
                 <tr className="bg-black/20 border-b border-oro/5">
                   <th className="px-10 py-8 text-caption font-black text-oro/40 uppercase tracking-[0.4em]">NOMBRE DEL ESTADO CRÍTICO</th>
+                  <th className="px-8 py-8 text-caption font-black text-oro/40 uppercase tracking-[0.4em]">EXP CURA</th>
+                  <th className="px-8 py-8 text-caption font-black text-oro/40 uppercase tracking-[0.4em]">EN COMBATE</th>
                   <th className="px-10 py-8 text-caption font-black text-oro/40 uppercase tracking-[0.4em]">ESTATUS</th>
                   <th className="px-10 py-8 text-right text-caption font-black text-oro/40 uppercase tracking-[0.4em]">PROTOCOLOS</th>
                 </tr>
@@ -221,6 +251,19 @@ export default function AdminEstadosCombatePage() {
                   <tr key={est.id} className="hover:bg-zinc-800/30 transition-colors group">
                     <td className="px-8 py-6">
                       <span className={`text-sm font-black uppercase italic ${est.activo ? 'text-white' : 'text-zinc-600'}`}>{est.nombre}</span>
+                    </td>
+                    <td className="px-8 py-6">
+                      <span className="px-3 py-1 rounded-lg text-caption font-black uppercase bg-oro/10 border border-oro/20 text-oro">
+                        +{est.exp ?? 1} EXP
+                      </span>
+                    </td>
+                    <td className="px-8 py-6">
+                      <span className={`px-3 py-1 rounded-lg text-caption font-black uppercase border ${est.en_combate ?? true
+                        ? 'bg-naranja-naruto/10 border-naranja-naruto/30 text-naranja-naruto'
+                        : 'bg-zinc-900 border-zinc-800 text-zinc-500'
+                        }`}>
+                        {est.en_combate ?? true ? 'Combate / Intervención' : 'Solo Curas / Otros'}
+                      </span>
                     </td>
                     <td className="px-8 py-6">
                       <span className={`px-3 py-1 rounded-lg text-caption font-black uppercase border inline-flex items-center gap-2 ${est.activo

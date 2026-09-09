@@ -412,10 +412,11 @@ export const RewardLogic = {
       if (Number(personajeId) === sanadoId) {
         return { xp: 0, ryous: 0, pa: 0 };
       }
+      const expOtorgada = data?.estado?.exp !== undefined ? Number(data.estado.exp) : (Number(data?.exp_cura) || 1);
       const medicos = data?.medicos || [];
       const isMedico = medicos.some((m: any) => Number(m.id) === Number(personajeId));
       if (isMedico || (sanadoId && Number(personajeId) !== sanadoId)) {
-        return { xp: 1, ryous: 0, pa: 0 };
+        return { xp: expOtorgada, ryous: 0, pa: 0 };
       }
       return { xp: 0, ryous: 0, pa: 0 };
     }

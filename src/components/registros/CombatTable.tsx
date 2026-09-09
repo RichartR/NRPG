@@ -89,8 +89,14 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
     }
   };
 
-  const calculateParticipantXP = (m: Registro, team: 'A' | 'B', huye?: boolean, huyeGanaExp?: boolean) => {
-    if (m.subtipo === 'sanacion' || m.data?.subtipo === 'sanacion') return 1;
+  const calculateParticipantXP = (m: Registro, team: 'A' | 'B', huye?: boolean, huyeGanaExp?: boolean, forSid?: string | number) => {
+    if (m.subtipo === 'sanacion' || m.data?.subtipo === 'sanacion') {
+      const sanadoId = m.data?.sanado?.id ? Number(m.data.sanado.id) : null;
+      if (forSid && sanadoId && Number(forSid) === sanadoId) {
+        return 0;
+      }
+      return m.data?.estado?.exp !== undefined ? Number(m.data.estado.exp) : (Number(m.data?.exp_cura) || 1);
+    }
     const config = m.data.config_xp;
     if (!config) return 0;
     if (huye && !huyeGanaExp) return 0;
@@ -185,7 +191,8 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
               const won = (m.data.ganador === 'A' && isA) || (m.data.ganador === 'B' && !isA);
               const rewards = RewardLogic.calculateReward(m, sid);
               const participantObj = (isA ? teamA : teamB).find((p: any) => p.id === sid);
-              const xpGained = (isSanacion || isIntervencion) ? rewards.xp : calculateParticipantXP(m, isA ? 'A' : 'B', participantObj?.huye, participantObj?.huye_gana_exp);
+              const isSanado = isSanacion && m.data?.sanado?.id && Number(sid) === Number(m.data.sanado.id);
+              const xpGained = (isSanacion || isIntervencion) ? rewards.xp : calculateParticipantXP(m, isA ? 'A' : 'B', participantObj?.huye, participantObj?.huye_gana_exp, sid);
               const pcGained = isSanacion ? 0 : isIntervencion ? rewards.pa : RewardLogic.calculateCombatPA(m, sid);
               const ryousGained = rewards.ryous || 0;
 
@@ -236,7 +243,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                     {isSanacion ? (
                       <div className="space-y-1.5">
                         <div className="font-black text-emerald-400 flex items-center gap-2">
-                          <HeartPulse className="w-4 h-4 text-emerald-400" /> SANACIÓN: {m.data.sanado?.nombre_ninja}
+                          SANACIÓN: {m.data.sanado?.nombre_ninja}
                         </div>
                         <div className="text-caption text-oro/60 uppercase">
                           MÉDICOS: {m.data.medicos?.map((med: any) => med.nombre_ninja).join(', ')}
@@ -286,9 +293,15 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                   <td className="py-6 px-8">
                     <div className="flex flex-col gap-1.5">
                       {isSanacion ? (
-                        <span className="font-black text-emerald-400 text-xs tracking-wider uppercase">
-                          -{m.data.horas_restadas || 0}h HG
-                        </span>
+                        Number(m.data?.estado?.id) === 2 ? (
+                          <span className="font-black text-emerald-400 text-xs tracking-wider uppercase">
+                            -{m.data.horas_restadas || 0}h HG
+                          </span>
+                        ) : (
+                          <span className="font-black text-emerald-400 text-xs tracking-wider uppercase">
+                            Sanado
+                          </span>
+                        )
                       ) : isIntervencion ? (
                         <div className="flex flex-col gap-0.5">
                           {isEmpate ? (
@@ -347,12 +360,35 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                       const effReward = sid ? m.data?.recompensas_efectivas?.[sid] : undefined;
                       const isAuthor = sid && Number(m.autor_id) === Number(sid);
 
+                      // En caso de sanación, las recompensas son directas: +0 EXP para el sanado y la EXP del estado para los médicos
+                      if (isSanacion) {
+                        if (isSanado) {
+                          return (
+                            <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
+                              <div className="text-emerald-400">
+                                <span>+0 EXP</span>
+                              </div>
+                            </div>
+                          );
+                        }
+                        const docExp = m.data?.estado?.exp !== undefined
+                          ? Number(m.data.estado.exp)
+                          : (Number(m.data?.exp_cura) || 1);
+                        return (
+                          <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
+                            <div className="text-emerald-400">
+                              <span>+{docExp} EXP</span>
+                            </div>
+                          </div>
+                        );
+                      }
+
                       // 1. Si ya fue aceptado/evaluado
                       if (effReward && (effReward.xp_otorgada !== undefined || effReward.pa_otorgada !== undefined)) {
                         const effectiveCombatXp = effReward.xp_otorgada ?? xpGained;
-                        const isCapped = effReward.xp_descartada && effReward.xp_descartada > 0;
+                        const isCapped = Number(effReward.xp_descartada) > 0;
                         const effectiveCombatPa = effReward.pa_otorgada ?? pcGained;
-                        const isPaCapped = effReward.pa_descartada && effReward.pa_descartada > 0;
+                        const isPaCapped = Number(effReward.pa_descartada) > 0;
 
                         return (
                           <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
@@ -387,9 +423,9 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                       // 2. Si el personaje es el autor (y ya cobró al registrar)
                       if (isAuthor && (m.data?.xp_otorgada !== undefined || m.data?.pa_otorgada !== undefined)) {
                         const effectiveCombatXp = m.data.xp_otorgada ?? xpGained;
-                        const isCapped = m.data.xp_descartada_limite && m.data.xp_descartada_limite > 0;
+                        const isCapped = Number(m.data.xp_descartada_limite) > 0;
                         const effectiveCombatPa = m.data.pa_otorgada ?? pcGained;
-                        const isPaCapped = m.data.pa_descartada_limite && m.data.pa_descartada_limite > 0;
+                        const isPaCapped = Number(m.data.pa_descartada_limite) > 0;
 
                         return (
                           <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
@@ -469,19 +505,27 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                       // 4. Vista general para otros usuarios (recompensa base)
                       return (
                         <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
-                          {xpGained > 0 && (
+                          {isSanado ? (
                             <div className="text-emerald-400">
-                              <span>+{xpGained} EXP</span>
+                              <span>+0 EXP</span>
                             </div>
-                          )}
-                          {pcGained > 0 && (
-                            <div className="text-emerald-400">
-                              <span>+{pcGained} PA</span>
-                            </div>
-                          )}
-                          {ryousGained > 0 && <div className="text-amber-300">+{ryousGained} RYOUS</div>}
-                          {xpGained === 0 && pcGained === 0 && ryousGained === 0 && (
-                            <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
+                          ) : (
+                            <>
+                              {xpGained > 0 && (
+                                <div className="text-emerald-400">
+                                  <span>+{xpGained} EXP</span>
+                                </div>
+                              )}
+                              {pcGained > 0 && (
+                                <div className="text-emerald-400">
+                                  <span>+{pcGained} PA</span>
+                                </div>
+                              )}
+                              {ryousGained > 0 && <div className="text-amber-300">+{ryousGained} RYOUS</div>}
+                              {xpGained === 0 && pcGained === 0 && ryousGained === 0 && (
+                                <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
+                              )}
+                            </>
                           )}
                         </div>
                       );
@@ -563,7 +607,8 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
           const won = (m.data.ganador === 'A' && isA) || (m.data.ganador === 'B' && !isA);
           const rewards = RewardLogic.calculateReward(m, sid);
           const participantObjMobile = (isA ? teamA : teamB).find((p: any) => p.id === sid);
-          const xpGained = (isSanacion || isIntervencion) ? rewards.xp : calculateParticipantXP(m, isA ? 'A' : 'B', participantObjMobile?.huye, participantObjMobile?.huye_gana_exp);
+          const isSanadoMobile = isSanacion && m.data?.sanado?.id && Number(sid) === Number(m.data.sanado.id);
+          const xpGained = (isSanacion || isIntervencion) ? rewards.xp : calculateParticipantXP(m, isA ? 'A' : 'B', participantObjMobile?.huye, participantObjMobile?.huye_gana_exp, sid);
           const pcGained = isSanacion ? 0 : isIntervencion ? rewards.pa : RewardLogic.calculateCombatPA(m, sid);
           const ryousGained = rewards.ryous || 0;
 
@@ -592,9 +637,15 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                 </div>
                 <div className="flex flex-col items-end gap-1">
                   {isSanacion ? (
-                    <span className="font-black text-emerald-400 text-xs tracking-wider uppercase">
-                      -{m.data.horas_restadas || 0}h HG
-                    </span>
+                    Number(m.data?.estado?.id) === 2 ? (
+                      <span className="font-black text-emerald-400 text-xs tracking-wider uppercase">
+                        -{m.data.horas_restadas || 0}h HG
+                      </span>
+                    ) : (
+                      <span className="font-black text-emerald-400 text-xs tracking-wider uppercase">
+                        Sanado
+                      </span>
+                    )
                   ) : isIntervencion ? (
                     <div className="flex flex-col items-end gap-0.5">
                       {isEmpate ? (
@@ -651,7 +702,7 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
                 {isSanacion ? (
                   <div className="space-y-1">
                     <div className="font-black text-emerald-400 flex items-center gap-2">
-                      <HeartPulse className="w-4 h-4 text-emerald-400" /> SANACIÓN: {m.data.sanado?.nombre_ninja}
+                      SANACIÓN: {m.data.sanado?.nombre_ninja}
                     </div>
                     <div className="text-caption text-oro/60 uppercase">
                       MÉDICOS: {m.data.medicos?.map((med: any) => med.nombre_ninja).join(', ')}
@@ -699,16 +750,28 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
 
               <div className="flex justify-between items-center gap-4 mt-1">
                 <div className="flex flex-col gap-1 justify-center text-emerald-400 font-bold text-[11px] tracking-wide">
-                  {xpGained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>+{xpGained} EXP</div>}
-                  {pcGained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>+{pcGained} PA</div>}
-                  {ryousGained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-amber-300"}>+{ryousGained} RYOUS</div>}
-                  {xpGained === 0 && pcGained === 0 && ryousGained === 0 && (
-                    <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
-                  )}
-                  {(isPending || isDispute) && (
-                    <span className="text-[9px] text-amber-500/70 font-semibold tracking-wider uppercase">
-                      (No sumado)
-                    </span>
+                  {isSanacion ? (
+                    isSanadoMobile ? (
+                      <div className="text-emerald-400">+0 EXP</div>
+                    ) : (
+                      <div className="text-emerald-400">
+                        +{m.data?.estado?.exp !== undefined ? Number(m.data.estado.exp) : (Number(m.data?.exp_cura) || 1)} EXP
+                      </div>
+                    )
+                  ) : (
+                    <>
+                      {xpGained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>+{xpGained} EXP</div>}
+                      {pcGained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>+{pcGained} PA</div>}
+                      {ryousGained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-amber-300"}>+{ryousGained} RYOUS</div>}
+                      {xpGained === 0 && pcGained === 0 && ryousGained === 0 && (
+                        <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
+                      )}
+                      {(isPending || isDispute) && (
+                        <span className="text-[9px] text-amber-500/70 font-semibold tracking-wider uppercase">
+                          (No sumado)
+                        </span>
+                      )}
+                    </>
                   )}
                 </div>
 
@@ -801,48 +864,86 @@ export default function CombatTable({ combates, onRefresh, onEdit, isAdmin, subj
               {(selectedCombat.subtipo === 'sanacion' || selectedCombat.data?.subtipo === 'sanacion') ? (
                 /* Contenido Modal Sanación */
                 <div className="space-y-8">
-                  <div className="p-6 bg-emerald-950/30 border border-emerald-500/30 ninja-clip-sm space-y-4">
-                    <h4 className="text-lg font-black text-emerald-400 uppercase tracking-wider flex items-center gap-3">
-                      JUGADOR SANADO
-                    </h4>
-                    <p className="text-xl font-black text-emerald-300 uppercase tracking-widest">
-                      {selectedCombat.data?.sanado?.nombre_ninja || 'Jugador'}
-                    </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="p-6 bg-emerald-950/30 border border-emerald-500/30 ninja-clip-sm space-y-4">
+                      <h4 className="text-lg font-black text-emerald-400 uppercase tracking-wider flex items-center gap-3">
+                        JUGADOR SANADO
+                      </h4>
+                      <p className="text-xl font-black text-emerald-300 uppercase tracking-widest">
+                        {selectedCombat.data?.sanado?.nombre_ninja || 'Jugador'}
+                      </p>
+                    </div>
+
+                    <div className="p-6 bg-black/40 border border-emerald-500/30 ninja-clip-sm space-y-4">
+                      <h4 className="text-lg font-black text-oro uppercase tracking-wider flex items-center gap-3">
+                        ESTADO TRATADO
+                      </h4>
+                      <p className="text-xl font-black text-oro uppercase tracking-widest flex items-center justify-between">
+                        <span>{selectedCombat.data?.estado?.nombre || 'Tratamiento Médico'}</span>
+                        <span className="text-xs font-black text-oro bg-oro/10 border border-oro/30 px-3 py-1 ninja-clip-xs">
+                          +{selectedCombat.data?.estado?.exp !== undefined ? selectedCombat.data.estado.exp : (selectedCombat.data?.exp_cura ?? 1)} EXP
+                        </span>
+                      </p>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="p-6 bg-neutral-600/70 border border-oro/15 ninja-clip-sm space-y-4">
                       <span className="text-xs font-black text-oro/60 uppercase tracking-[0.2em] block">MÉDICOS PARTICIPANTES:</span>
                       <div className="space-y-3">
-                        {selectedCombat.data?.medicos?.map((m: any, idx: number) => (
-                          <div key={idx} className="p-3 bg-black/40 border border-oro/10 ninja-clip-xs flex items-center justify-between">
-                            <span className="text-sm font-black text-oro uppercase tracking-wider flex items-center gap-2">
-                              <User className="w-4 h-4 text-oro/40" /> {m.nombre_ninja}
-                            </span>
-                            <span className="text-caption font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 ninja-clip-xs">
-                              +1 EXP
-                            </span>
-                          </div>
-                        ))}
+                        {selectedCombat.data?.medicos?.map((m: any, idx: number) => {
+                          const expOtorgada = selectedCombat.data?.estado?.exp !== undefined
+                            ? selectedCombat.data.estado.exp
+                            : (selectedCombat.data?.exp_cura ?? 1);
+                          return (
+                            <div key={idx} className="p-3 bg-black/40 border border-oro/10 ninja-clip-xs flex items-center justify-between">
+                              <span className="text-sm font-black text-oro uppercase tracking-wider flex items-center gap-2">
+                                <User className="w-4 h-4 text-oro/40" /> {m.nombre_ninja}
+                              </span>
+                              <span className="text-caption font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 ninja-clip-xs">
+                                +{expOtorgada} EXP
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 
                     <div className="p-6 bg-neutral-600/70 border border-emerald-500/20 ninja-clip-sm space-y-4">
-                      <span className="text-xs font-black text-emerald-400 uppercase tracking-[0.2em] block">DESGLOSE DEL EFECTO (HERIDO GRAVE):</span>
-                      <div className="space-y-3 text-xs font-bold uppercase tracking-wider text-oro/80">
-                        <div className="flex justify-between p-3 bg-black/40 border border-oro/10 ninja-clip-xs">
-                          <span>Base técnica + médicos (2h + {selectedCombat.data?.medicos?.length || 0} med):</span>
-                          <span>{selectedCombat.data?.horas_base || (2 + ((selectedCombat.data?.medicos?.length || 0) * 2))}h</span>
-                        </div>
-                        <div className="flex justify-between p-3 bg-black/40 border border-oro/10 ninja-clip-xs">
-                          <span>Tirada d10:</span>
-                          <span>+{selectedCombat.data?.tirada_d10 || 0}h</span>
-                        </div>
-                        <div className="flex justify-between p-4 bg-emerald-950/40 border border-emerald-500/30 ninja-clip-xs text-emerald-300 font-black text-sm">
-                          <span>Total Horas Restadas:</span>
-                          <span>{selectedCombat.data?.horas_restadas || 0} HORAS</span>
-                        </div>
-                      </div>
+                      {Number(selectedCombat.data?.estado?.id) === 2 ? (
+                        <>
+                          <span className="text-xs font-black text-emerald-400 uppercase tracking-[0.2em] block">DESGLOSE DEL EFECTO (HERIDO GRAVE):</span>
+                          <div className="space-y-3 text-xs font-bold uppercase tracking-wider text-oro/80">
+                            <div className="flex justify-between p-3 bg-black/40 border border-oro/10 ninja-clip-xs">
+                              <span>Base técnica + médicos (2h + {selectedCombat.data?.medicos?.length || 0} med):</span>
+                              <span>{selectedCombat.data?.horas_base || (2 + ((selectedCombat.data?.medicos?.length || 0) * 2))}h</span>
+                            </div>
+                            <div className="flex justify-between p-3 bg-black/40 border border-oro/10 ninja-clip-xs">
+                              <span>Tirada d10:</span>
+                              <span>+{selectedCombat.data?.tirada_d10 || 0}h</span>
+                            </div>
+                            <div className="flex justify-between p-4 bg-emerald-950/40 border border-emerald-500/30 ninja-clip-xs text-emerald-300 font-black text-sm">
+                              <span>Total Horas Restadas:</span>
+                              <span>{selectedCombat.data?.horas_restadas || 0} HORAS</span>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-xs font-black text-emerald-400 uppercase tracking-[0.2em] block">DESGLOSE DEL EFECTO:</span>
+                          <div className="p-6 bg-black/40 border border-emerald-500/20 ninja-clip-xs text-center space-y-2">
+                            <span className="text-caption font-black text-emerald-400/70 block tracking-[0.3em]">
+                              ESTADO DE LA SANACIÓN
+                            </span>
+                            <span className="text-2xl font-black text-emerald-300 tracking-widest block">
+                              SANADO
+                            </span>
+                            <span className="text-xs text-oro/50">
+                              El ninja se ha recuperado por completo de este estado.
+                            </span>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

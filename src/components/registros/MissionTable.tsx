@@ -207,9 +207,9 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin, sub
                       // 1. Si ya fue aceptado/evaluado, usar los datos reales guardados
                       if (effReward && (effReward.xp_otorgada !== undefined || effReward.pa_otorgada !== undefined)) {
                         const effectiveXp = effReward.xp_otorgada ?? (m.data.recompensa_xp || 0);
-                        const isCapped = effReward.xp_descartada && effReward.xp_descartada > 0;
+                        const isCapped = Number(effReward.xp_descartada) > 0;
                         const effectivePa = effReward.pa_otorgada ?? (m.data.recompensa_pa || 0);
-                        const isPaCapped = effReward.pa_descartada && effReward.pa_descartada > 0;
+                        const isPaCapped = Number(effReward.pa_descartada) > 0;
 
                         return (
                           <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
@@ -248,9 +248,9 @@ export default function MissionTable({ misiones, onRefresh, onEdit, isAdmin, sub
                       // 2. Si el personaje es el autor (y ya cobró al crear la misión)
                       if (isAuthor && (m.data?.xp_otorgada !== undefined || m.data?.pa_otorgada !== undefined)) {
                         const effectiveXp = m.data.xp_otorgada ?? (m.data.recompensa_xp || 0);
-                        const isCapped = m.data.xp_descartada_limite && m.data.xp_descartada_limite > 0;
+                        const isCapped = Number(m.data.xp_descartada_limite) > 0;
                         const effectivePa = m.data.pa_otorgada ?? (m.data.recompensa_pa || 0);
-                        const isPaCapped = m.data.pa_descartada_limite && m.data.pa_descartada_limite > 0;
+                        const isPaCapped = Number(m.data.pa_descartada_limite) > 0;
 
                         return (
                           <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
