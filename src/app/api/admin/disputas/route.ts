@@ -135,11 +135,13 @@ export async function POST(request: Request) {
             let discardedXp = 0;
             if (partState !== 'aceptado') {
               if (xp > 0) {
-                const [xpLimit, { totalExp }] = await Promise.all([
+                const [xpLimit, expMultiplierConfig, { totalExp }] = await Promise.all([
                   CharacterServerService.getXpLimitUsage(adminClient),
+                  CharacterServerService.getExpMultiplierConfig(adminClient),
                   CharacterServerService.getCharacterTotalExp(adminClient, pid)
                 ]);
-                const capResult = RewardLogic.applyExpLimit(xp, totalExp, xpLimit);
+                const boostedXp = RewardLogic.calculateBoostedReward(xp, totalExp, xpLimit, expMultiplierConfig);
+                const capResult = RewardLogic.applyExpLimit(boostedXp, totalExp, xpLimit);
                 effectiveXp = capResult.effectiveExp;
                 discardedXp = capResult.discardedExp;
               }
@@ -147,11 +149,13 @@ export async function POST(request: Request) {
               let effectivePa = pa;
               let discardedPa = 0;
               if (pa > 0) {
-                const [paLimit, { totalPa }] = await Promise.all([
+                const [paLimit, paMultiplierConfig, { totalPa }] = await Promise.all([
                   CharacterServerService.getPaLimitUsage(adminClient),
+                  CharacterServerService.getPaMultiplierConfig(adminClient),
                   CharacterServerService.getCharacterTotalPA(adminClient, pid)
                 ]);
-                const capResult = RewardLogic.applyPaLimit(pa, totalPa, paLimit);
+                const boostedPa = RewardLogic.calculateBoostedReward(pa, totalPa, paLimit, paMultiplierConfig);
+                const capResult = RewardLogic.applyPaLimit(boostedPa, totalPa, paLimit);
                 effectivePa = capResult.effectivePa;
                 discardedPa = capResult.discardedPa;
               }

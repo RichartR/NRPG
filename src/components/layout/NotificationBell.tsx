@@ -9,6 +9,7 @@ import { createClient } from '@/utils/supabase/client';
 import { RewardLogic } from '@/domain/character/logic';
 import RegistroCard from '../registros/RegistroCard';
 import { Eye } from 'lucide-react';
+import { useMasterStore } from '@/store/useMasterStore';
 
 import { createPortal } from 'react-dom';
 import { useRef } from 'react';
@@ -16,6 +17,8 @@ import { useScrollLock } from '@/hooks/useScrollLock';
 
 export default function NotificationBell() {
   const { activeCharacter } = useCharacterStore();
+  const { xpLimitUsage, paLimitUsage, expMultiplierConfig, paMultiplierConfig } = useMasterStore();
+  const [characterTotals, setCharacterTotals] = useState<{ totalExp: number; totalPa: number } | null>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -97,7 +100,20 @@ export default function NotificationBell() {
   useEffect(() => {
     fetchNotifications();
 
-    if (!activeCharacter?.id) return;
+    if (!activeCharacter?.id) {
+      setCharacterTotals(null);
+      return;
+    }
+
+    let isMounted = true;
+    Promise.all([
+      CharacterService.getCharacterTotalExp(activeCharacter.id),
+      CharacterService.getCharacterTotalPA(activeCharacter.id)
+    ]).then(([expData, paData]) => {
+      if (isMounted) {
+        setCharacterTotals({ totalExp: expData.totalExp, totalPa: paData.totalPa });
+      }
+    }).catch(console.error);
 
     const supabase = createClient();
     const channel = supabase
@@ -117,6 +133,7 @@ export default function NotificationBell() {
       .subscribe();
 
     return () => {
+      isMounted = false;
       supabase.removeChannel(channel);
     };
   }, [activeCharacter?.id]);
@@ -191,7 +208,16 @@ export default function NotificationBell() {
               </div>
             ) : (
               notifications.map((n) => {
-                const rewards = RewardLogic.calculateReward(n.registro, activeCharacter.id);
+                const rawRewards = RewardLogic.calculateReward(n.registro, activeCharacter.id);
+                const curTotalExp = characterTotals?.totalExp ?? (Number(activeCharacter.xp) || 0);
+                const curTotalPa = characterTotals?.totalPa ?? (Number(activeCharacter.puntos_aprendizaje) || 0);
+
+                const boostedXp = RewardLogic.calculateBoostedReward(rawRewards.xp, curTotalExp, xpLimitUsage, expMultiplierConfig);
+                const effectiveXp = RewardLogic.applyExpLimit(boostedXp, curTotalExp, xpLimitUsage).effectiveExp;
+
+                const boostedPa = RewardLogic.calculateBoostedReward(rawRewards.pa, curTotalPa, paLimitUsage, paMultiplierConfig);
+                const effectivePa = RewardLogic.applyPaLimit(boostedPa, curTotalPa, paLimitUsage).effectivePa;
+
                 return (
                   <div
                     key={n.registro_id}
@@ -204,19 +230,19 @@ export default function NotificationBell() {
                           {(n.registro.subtipo === 'sanacion' || n.registro.data?.subtipo === 'sanacion') ? 'sanacion' : n.registro.tipo}
                         </span>
                         <div className="flex items-center gap-1.5 shrink-0">
-                          {rewards.xp > 0 && (
-                            <span className="text-caption font-black text-naranja-naruto bg-naranja-naruto/10 border border-naranja-naruto/30 px-2 py-0.5 tracking-wider">
-                              +{rewards.xp} EXP
+                          {effectiveXp > 0 && (
+                            <span className="text-caption font-black text-naranja-naruto bg-naranja-naruto/10 border border-naranja-naruto/30 px-2 py-0.5 tracking-wider" title={boostedXp > rawRewards.xp ? `Estimado con multiplicador (Base: ${rawRewards.xp})` : undefined}>
+                              +{effectiveXp} EXP
                             </span>
                           )}
-                          {rewards.ryous > 0 && (
+                          {rawRewards.ryous > 0 && (
                             <span className="text-caption font-black text-white bg-white/10 border border-white/20 px-2 py-0.5 tracking-wider">
-                              +{rewards.ryous} R
+                              +{rawRewards.ryous} R
                             </span>
                           )}
-                          {rewards.pa > 0 && (
-                            <span className="text-caption font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 tracking-wider">
-                              +{rewards.pa} PA
+                          {effectivePa > 0 && (
+                            <span className="text-caption font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 tracking-wider" title={boostedPa > rawRewards.pa ? `Estimado con multiplicador (Base: ${rawRewards.pa})` : undefined}>
+                              +{effectivePa} PA
                             </span>
                           )}
                         </div>
@@ -326,7 +352,7 @@ export default function NotificationBell() {
             </div>
             <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
               <div className="animate-in fade-in duration-700 delay-300">
-                <RegistroCard registro={selectedRegistro} />
+                <RegistroCard registro={selectedRegistro} subjectId={activeCharacter?.id} />
               </div>
             </div>
 

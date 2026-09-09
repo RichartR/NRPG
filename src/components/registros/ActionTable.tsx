@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Registro } from '@/domain/types';
 import { Edit3, Trash2, Loader2, Check } from 'lucide-react';
 import { useCharacterStore } from '@/store/useCharacterStore';
+import { useMasterStore } from '@/store/useMasterStore';
 import { RegistrosService } from '@/services/supabase/registros.service';
 import { CharacterService } from '@/services/supabase/character.service';
+import { RewardLogic } from '@/domain/character/logic';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
 
@@ -19,10 +21,37 @@ interface ActionTableProps {
 
 export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subjectId }: ActionTableProps) {
   const { activeCharacter } = useCharacterStore();
+  const { xpLimitUsage, paLimitUsage, expMultiplierConfig, paMultiplierConfig } = useMasterStore();
+  const [characterTotals, setCharacterTotals] = useState<{ totalExp: number; totalPa: number } | null>(null);
   const addToast = useToastStore(state => state.addToast);
   const { confirm: confirmAction } = useConfirmStore();
   const [loadingId, setLoadingId] = useState<number | null>(null);
   const [acceptingId, setAcceptingId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const targetId = subjectId || activeCharacter?.id;
+    if (!targetId) {
+      setCharacterTotals(null);
+      return;
+    }
+
+    let isMounted = true;
+    Promise.all([
+      CharacterService.getCharacterTotalExp(targetId),
+      CharacterService.getCharacterTotalPA(targetId)
+    ]).then(([expData, paData]) => {
+      if (isMounted) {
+        setCharacterTotals({
+          totalExp: expData.totalExp,
+          totalPa: paData.totalPa
+        });
+      }
+    }).catch(console.error);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [subjectId, activeCharacter?.id]);
 
   const handleAccept = async (registroId: number) => {
     if (!activeCharacter?.id) return;
@@ -262,27 +291,121 @@ export default function ActionTable({ acciones, onRefresh, onEdit, isAdmin, subj
                   {/* Coste */}
                   <td className="py-3 px-5">
                     <div className="flex flex-col gap-1.5 justify-center">
-                      {(m.subtipo === 'evento_premios' || m.subtipo === 'narracion' || m.subtipo === 'recuperacion_evento' || m.subtipo === 'recuperacion_narracion') ? (
-                        <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
-                          {xpObtained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>+{xpObtained} EXP</div>}
-                          {ryousObtained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>+{ryousObtained} Ryos</div>}
-                          {paObtained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>+{paObtained} PA</div>}
-                          {monedasObtained > 0 && <div className={(isPending || isDispute) ? "text-amber-400/90" : "text-emerald-400"}>+{monedasObtained} M. Evento</div>}
-                          {glosarioObtained.length > 0 && (
-                            <div className="text-caption text-oro/50 mt-0.5 font-bold uppercase tracking-wide">
-                              + {glosarioObtained.map((g: any) => g.nombre_es).join(', ')}
+                      {(m.subtipo === 'evento_premios' || m.subtipo === 'narracion' || m.subtipo === 'recuperacion_evento' || m.subtipo === 'recuperacion_narracion') ? (() => {
+                        const effReward = targetCharId ? m.data?.recompensas_efectivas?.[targetCharId] : undefined;
+
+                        // 1. Ya evaluado / aceptado
+                        if (effReward && (effReward.xp_otorgada !== undefined || effReward.pa_otorgada !== undefined)) {
+                          const effectiveXp = effReward.xp_otorgada ?? xpObtained;
+                          const isCapped = effReward.xp_descartada && effReward.xp_descartada > 0;
+                          const effectivePa = effReward.pa_otorgada ?? paObtained;
+                          const isPaCapped = effReward.pa_descartada && effReward.pa_descartada > 0;
+
+                          return (
+                            <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
+                              {(effectiveXp > 0 || isCapped) && (
+                                <div className="flex items-center gap-1.5 text-emerald-400">
+                                  <span>+{effectiveXp} EXP</span>
+                                  {isCapped && (
+                                    <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto text-black tracking-widest ninja-clip-xs" title="Límite de experiencia alcanzado">
+                                      LÍMITE
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                              {ryousObtained > 0 && <div className="text-emerald-400">+{ryousObtained} Ryos</div>}
+                              {(effectivePa > 0 || isPaCapped) && (
+                                <div className="flex items-center gap-1.5 text-emerald-400">
+                                  <span>+{effectivePa} PA</span>
+                                  {isPaCapped && (
+                                    <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto text-black tracking-widest ninja-clip-xs" title="Límite de PA alcanzado">
+                                      LÍMITE
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                              {monedasObtained > 0 && <div className="text-emerald-400">+{monedasObtained} M. Evento</div>}
+                              {glosarioObtained.length > 0 && (
+                                <div className="text-caption text-oro/50 mt-0.5 font-bold uppercase tracking-wide">
+                                  + {glosarioObtained.map((g: any) => g.nombre_es).join(', ')}
+                                </div>
+                              )}
+                              {effectiveXp === 0 && !isCapped && ryousObtained === 0 && effectivePa === 0 && !isPaCapped && monedasObtained === 0 && glosarioObtained.length === 0 && (
+                                <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
+                              )}
                             </div>
-                          )}
-                          {xpObtained === 0 && ryousObtained === 0 && monedasObtained === 0 && glosarioObtained.length === 0 && (
-                            <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
-                          )}
-                          {(isPending || isDispute) && (
-                            <span className="text-[9px] text-amber-500/70 font-semibold tracking-wider uppercase">
-                              (No sumado)
-                            </span>
-                          )}
-                        </div>
-                      ) : (
+                          );
+                        }
+
+                        // 2. Si está pendiente -> ESTIMACIÓN CON MULTIPLICADORES
+                        if (isPending || isDispute) {
+                          const curTotalExp = characterTotals?.totalExp ?? (Number(activeCharacter?.xp) || 0);
+                          const curTotalPa = characterTotals?.totalPa ?? (Number(activeCharacter?.puntos_aprendizaje) || 0);
+
+                          const boostedXp = RewardLogic.calculateBoostedReward(xpObtained, curTotalExp, xpLimitUsage, expMultiplierConfig);
+                          const capXp = RewardLogic.applyExpLimit(boostedXp, curTotalExp, xpLimitUsage);
+                          const estimatedXp = capXp.effectiveExp;
+                          const isPendingXpCapped = capXp.discardedExp > 0;
+
+                          const boostedPa = RewardLogic.calculateBoostedReward(paObtained, curTotalPa, paLimitUsage, paMultiplierConfig);
+                          const capPa = RewardLogic.applyPaLimit(boostedPa, curTotalPa, paLimitUsage);
+                          const estimatedPa = capPa.effectivePa;
+                          const isPendingPaCapped = capPa.discardedPa > 0;
+
+                          return (
+                            <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
+                              {(estimatedXp > 0 || isPendingXpCapped) && (
+                                <div className="flex items-center gap-1.5 text-amber-400/90" title={boostedXp > xpObtained ? `Multiplicador estimado: ${boostedXp} EXP (Base: ${xpObtained})` : undefined}>
+                                  <span>+{estimatedXp} EXP</span>
+                                  {isPendingXpCapped && (
+                                    <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto text-black tracking-widest ninja-clip-xs" title="Límite de experiencia alcanzado">
+                                      LÍMITE
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                              {ryousObtained > 0 && <div className="text-amber-400/90">+{ryousObtained} Ryos</div>}
+                              {(estimatedPa > 0 || isPendingPaCapped) && (
+                                <div className="flex items-center gap-1.5 text-amber-400/90" title={boostedPa > paObtained ? `Multiplicador estimado: ${boostedPa} PA (Base: ${paObtained})` : undefined}>
+                                  <span>+{estimatedPa} PA</span>
+                                  {isPendingPaCapped && (
+                                    <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-naranja-naruto text-black tracking-widest ninja-clip-xs" title="Límite de PA alcanzado">
+                                      LÍMITE
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                              {monedasObtained > 0 && <div className="text-amber-400/90">+{monedasObtained} M. Evento</div>}
+                              {glosarioObtained.length > 0 && (
+                                <div className="text-caption text-oro/50 mt-0.5 font-bold uppercase tracking-wide">
+                                  + {glosarioObtained.map((g: any) => g.nombre_es).join(', ')}
+                                </div>
+                              )}
+                              <span className="text-[9px] text-amber-500/70 font-semibold tracking-wider uppercase">
+                                (No sumado)
+                              </span>
+                            </div>
+                          );
+                        }
+
+                        // 3. Vista base por defecto
+                        return (
+                          <div className="flex flex-col gap-1 justify-center font-bold text-[11px] tracking-wide">
+                            {xpObtained > 0 && <div className="text-emerald-400">+{xpObtained} EXP</div>}
+                            {ryousObtained > 0 && <div className="text-emerald-400">+{ryousObtained} Ryos</div>}
+                            {paObtained > 0 && <div className="text-emerald-400">+{paObtained} PA</div>}
+                            {monedasObtained > 0 && <div className="text-emerald-400">+{monedasObtained} M. Evento</div>}
+                            {glosarioObtained.length > 0 && (
+                              <div className="text-caption text-oro/50 mt-0.5 font-bold uppercase tracking-wide">
+                                + {glosarioObtained.map((g: any) => g.nombre_es).join(', ')}
+                              </div>
+                            )}
+                            {xpObtained === 0 && ryousObtained === 0 && monedasObtained === 0 && glosarioObtained.length === 0 && (
+                              <span className="text-caption text-oro/20 uppercase tracking-widest italic">-</span>
+                            )}
+                          </div>
+                        );
+                      })() : (
                         <>
                           {xpSpent > 0 && (
                             <div className="text-xs font-black text-red-700 tracking-wider">
