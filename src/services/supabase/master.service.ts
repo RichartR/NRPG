@@ -59,19 +59,22 @@ export const MasterService = {
 
   async getEstadosCombate(soloCombate?: boolean): Promise<EstadoCombate[]> {
     const supabase = createClient();
-    let query = supabase
+    const { data, error } = await supabase
       .from('info_estados_combate')
       .select('*')
-      .eq('activo', true);
-
-    if (soloCombate) {
-      query = query.eq('en_combate', true);
-    }
-
-    const { data, error } = await query.order('nombre', { ascending: true });
+      .eq('activo', true)
+      .order('nombre', { ascending: true });
     
     if (error) throw error;
-    return data || [];
+
+    const estados = data || [];
+
+    // Los estados anteriores a la incorporacion de este campo tienen null.
+    // El panel de administracion los presenta como disponibles en combate,
+    // por lo que aqui deben seguir el mismo criterio de compatibilidad.
+    return soloCombate
+      ? estados.filter(estado => estado.en_combate !== false)
+      : estados;
   },
 
   async getElementos(): Promise<Elemento[]> {
