@@ -500,9 +500,10 @@ export const MasterServerService = {
   },
 
   async getNinjasByAldea(supabase: SupabaseClient, aldeaId: number | null) {
+    // Solo los campos que necesita el censo — evitar traer stats/inventario/técnicas innecesariamente
     let query = supabase
       .from('reg_characters')
-      .select('*, info_aldeas(nombre_completo), profiles:user_id(username)')
+      .select('id, user_id, nombre_ninja, hobba_name, url_img, rango, rango_jerarquico, aldea_id, info_aldeas(nombre_completo), profiles:user_id(username)')
       .eq('activo', true)
       .order('nombre_ninja');
 

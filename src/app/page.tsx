@@ -71,7 +71,7 @@ const getCachedNoticias = unstable_cache(
   async () => {
     const { data } = await publicClient
       .from('info_noticias_index')
-      .select('*')
+      .select('id, titulo, categoria, url_imagen, created_at')
       .eq('activo', true)
       .order('created_at', { ascending: false })
       .range(0, 9);

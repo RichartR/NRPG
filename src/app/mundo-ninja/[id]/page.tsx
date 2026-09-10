@@ -5,6 +5,8 @@ import { MasterServerService } from '@/services/supabase/master.server.service';
 import MundoNinjaVillageClientView from './MundoNinjaVillageClientView';
 
 export const revalidate = 300; // ISR: revalida el censo cada 5 minutos
+// Las aldeas nuevas también se generan on-demand (comportamiento idéntico al anterior)
+export const dynamicParams = true;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -30,6 +32,21 @@ const getCachedEquiposAldea = unstable_cache(
   ['equipos-por-aldea'],
   { revalidate: 300 }
 );
+
+// Pre-genera en build time las páginas de todas las aldeas activas + renegados.
+// dynamicParams=true garantiza que aldeas nuevas se generen on-demand igual que antes.
+export async function generateStaticParams() {
+  try {
+    const aldeas = await MasterServerService.getAldeasActivas(publicClient);
+    const params = aldeas.map((aldea) => ({ id: String(aldea.id) }));
+    // Incluir la página especial de renegados
+    params.push({ id: 'renegados' });
+    return params;
+  } catch {
+    // Si la BD no responde en build, no bloqueamos el build — se generarán on-demand
+    return [{ id: 'renegados' }];
+  }
+}
 
 export default async function MundoNinjaPublicVillagePage({
   params,
