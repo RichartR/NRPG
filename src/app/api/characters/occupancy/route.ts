@@ -3,8 +3,8 @@ import { NextResponse } from 'next/server';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import { getCuposMaximosClan } from '@/utils/cupos';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// La ocupación puede ser ligeramente diferida: la validación real ocurre al guardar.
+export const revalidate = 120;
 
 export async function GET() {
   const supabase = await createClient();
@@ -58,7 +58,8 @@ export async function GET() {
       cuposMaximosClan
     }, {
       headers: {
-        'Cache-Control': 'public, max-age=0, s-maxage=10, stale-while-revalidate=30',
+        // 120s en Edge (Vercel CDN), hasta 600s stale mientras revalida en background
+        'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=600',
       }
     });
   } catch (error: any) {

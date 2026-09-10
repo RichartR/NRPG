@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { MapPin, User, UserPlus, Plus, X, Search, Trash2, ChevronRight, Users, Edit } from 'lucide-react';
 import Link from 'next/link';
 import { NinjaSearchInput } from '@/components/character/NinjaSearchInput';
@@ -124,14 +125,9 @@ interface MundoNinjaVillageClientViewProps {
   aldea: any;
   ninjas: any[];
   maxCupos: number;
-  puedeCrearFicha: boolean;
+  /** El servidor indica si la aldea ya alcanzó su cupo máximo (dato público cacheado). */
+  haAlcanzadoCupoAldea: boolean;
   aldeaParam: string;
-  searchQuery: string;
-  filteredNinjas: any[];
-  paginatedNinjas: any[];
-  totalPages: number;
-  currentPage: number;
-  searchParamSuffix: string;
   rangosJerarquicos: string[];
   initialEquipos?: any[];
 }
@@ -142,17 +138,30 @@ export default function MundoNinjaVillageClientView({
   aldea,
   ninjas,
   maxCupos,
-  puedeCrearFicha,
+  haAlcanzadoCupoAldea,
   aldeaParam,
-  searchQuery,
-  filteredNinjas,
-  paginatedNinjas,
-  totalPages,
-  currentPage,
-  searchParamSuffix,
   rangosJerarquicos,
   initialEquipos = [],
 }: MundoNinjaVillageClientViewProps) {
+  const searchParamsHook = useSearchParams();
+  const searchQuery = searchParamsHook.get('search') || '';
+  const pageParam = Number(searchParamsHook.get('page')) || 1;
+
+  // Filtrado por buscador
+  const filteredNinjas = useMemo(() => {
+    if (!searchQuery) return ninjas;
+    return ninjas.filter((ninja: any) => {
+      const profileUsername = (Array.isArray(ninja.profiles) ? ninja.profiles[0]?.username : ninja.profiles?.username) || ninja.hobba_name || '';
+      return searchAny(searchQuery, [ninja.nombre_ninja, profileUsername]);
+    });
+  }, [ninjas, searchQuery]);
+
+  // Paginación
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(filteredNinjas.length / itemsPerPage);
+  const currentPage = Math.max(1, Math.min(pageParam, totalPages || 1));
+  const paginatedNinjas = filteredNinjas.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const searchParamSuffix = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : '';
   const [viewMode, setViewMode] = useState<'censo' | 'gestion'>('censo');
   // null = foro index, 'info' = tema información, 'equipos' = tema equipos, 'npc' = tema npc
   const [activeTopic, setActiveTopic] = useState<null | 'info' | 'equipos' | 'npc'>(null);
@@ -160,6 +169,8 @@ export default function MundoNinjaVillageClientView({
   const [equipos, setEquipos] = useState<any[]>(initialEquipos);
   const [userRole, setUserRole] = useState<{ character: any; isAdmin: boolean; canManage: boolean } | null>(null);
   const [canManageNPC, setCanManageNPC] = useState(false);
+  // null = aún sin resolver (hidratando), false/true = resultado final
+  const [puedeCrearFicha, setPuedeCrearFicha] = useState<boolean | null>(null);
 
   // Estados de NPCs
   const [npcs, setNpcs] = useState<InfoNPC[]>([]);
@@ -219,10 +230,17 @@ export default function MundoNinjaVillageClientView({
 
         const canNpc = roles.includes('admin') || roles.includes('moderador') || roles.includes('mod') || roles.includes('narrador');
         setCanManageNPC(canNpc);
+
+        // Determinar si puede crear ficha: logueado + no tiene ya personaje activo + la aldea no está llena
+        const yaTimenePersonaje = !!myChar;
+        setPuedeCrearFicha(!haAlcanzadoCupoAldea && !yaTimenePersonaje);
+      } else {
+        // No hay sesión: no puede crear ficha
+        setPuedeCrearFicha(false);
       }
     }
     fetchUserRole();
-  }, [ninjas]);
+  }, [ninjas, haAlcanzadoCupoAldea]);
 
   const handleDeleteNPC = async (npc: InfoNPC) => {
     if (!confirm(`¿Estás seguro de que deseas eliminar al NPC "${npc.name}"?`)) return;
@@ -487,7 +505,7 @@ export default function MundoNinjaVillageClientView({
                                 </div>
                               </td>
                               <td className="py-5 px-8">
-                                <Link href={`/ficha/${ninja.id}`} className="block after:absolute after:inset-0 after:z-10">
+                                <Link prefetch={false} href={`/ficha/${ninja.id}`} className="block after:absolute after:inset-0 after:z-10">
                                   <p className="ninja-title text-xl xl:text-2xl group-hover:text-white transition-colors leading-tight">
                                     {ninja.nombre_ninja}
                                   </p>
@@ -778,6 +796,7 @@ export default function MundoNinjaVillageClientView({
                                       return (
                                         <Link
                                           key={member.id}
+                                          prefetch={false}
                                           href={`/ficha/${member.id}`}
                                           className="flex items-center justify-between p-3.5 bg-neutral-900/40 hover:bg-oro/5 border border-oro/5 hover:border-oro/20 transition-all cursor-pointer group ninja-clip-xs"
                                         >

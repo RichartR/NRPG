@@ -1,32 +1,52 @@
-import { createClient } from '@/utils/supabase/server';
+import { unstable_cache } from 'next/cache';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { Suspense } from 'react';
 import { MasterServerService } from '@/services/supabase/master.server.service';
-import { CharacterServerService } from '@/services/supabase/character.server.service';
 import MundoNinjaVillageClientView from './MundoNinjaVillageClientView';
-import { searchAny } from '@/lib/utils/search';
+
+export const revalidate = 300; // ISR: revalida el censo cada 5 minutos
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const publicClient = createSupabaseClient(supabaseUrl, supabaseAnonKey);
+
+// Cache de ninjas por aldea (5 min)
+const getCachedNinjasByAldea = unstable_cache(
+  (aldeaId: number | null) => MasterServerService.getNinjasByAldea(publicClient, aldeaId),
+  ['ninjas-por-aldea'],
+  { revalidate: 300 }
+);
+
+// Cache de aldea por id (5 min)
+const getCachedAldeaById = unstable_cache(
+  (aldeaId: number) => MasterServerService.getAldeaById(publicClient, aldeaId),
+  ['aldea-por-id'],
+  { revalidate: 300 }
+);
+
+// Cache de equipos por aldea (5 min)
+const getCachedEquiposAldea = unstable_cache(
+  (aldeaId: number) => MasterServerService.getEquiposAldea(publicClient, aldeaId),
+  ['equipos-por-aldea'],
+  { revalidate: 300 }
+);
 
 export default async function MundoNinjaPublicVillagePage({
   params,
-  searchParams
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ page?: string; search?: string }>;
 }) {
-  const supabase = await createClient();
   const { id } = await params;
-  const resolvedSearchParams = await searchParams;
   const isRenegado = id === 'renegados';
 
-  // Sesión del usuario (no redirige si no está logueado)
-  const { data: { user } } = await supabase.auth.getUser();
-
-  // Datos de la aldea, ninjas, elegibilidad, cupos máximos y equipos — todo en paralelo
-  const [aldea, ninjas, haAlcanzadoLimite, maxCuposRaw, rangosJerarquicosRaw, initialEquipos] = await Promise.all([
-    isRenegado ? Promise.resolve(null) : MasterServerService.getAldeaById(supabase, Number(id)),
-    MasterServerService.getNinjasByAldea(supabase, isRenegado ? null : Number(id)),
-    user ? CharacterServerService.hasReachedCharacterLimit(supabase, user.id) : Promise.resolve(false),
-    isRenegado ? Promise.resolve(null) : MasterServerService.getConfiguracion(supabase, 'cupos_maximos_aldea'),
-    MasterServerService.getConfiguracion(supabase, 'rangos_jerarquicos'),
-    isRenegado ? Promise.resolve([]) : MasterServerService.getEquiposAldea(supabase, Number(id)),
+  // Todos los datos son públicos y se sirven desde la caché de ISR.
+  // Búsqueda, paginación y sesión se resuelven en el cliente.
+  const [aldea, ninjas, maxCuposRaw, rangosJerarquicosRaw, initialEquipos] = await Promise.all([
+    isRenegado ? Promise.resolve(null) : getCachedAldeaById(Number(id)),
+    getCachedNinjasByAldea(isRenegado ? null : Number(id)),
+    isRenegado ? Promise.resolve(null) : MasterServerService.getCachedConfiguracion('cupos_maximos_aldea'),
+    MasterServerService.getCachedConfiguracion('rangos_jerarquicos'),
+    isRenegado ? Promise.resolve([]) : getCachedEquiposAldea(Number(id)),
   ]);
 
   const maxCupos =
@@ -36,51 +56,26 @@ export default async function MundoNinjaPublicVillagePage({
 
   const haAlcanzadoCupoAldea = !isRenegado && ninjas.length >= maxCupos;
 
-  // Puede crear ficha: está logueado Y no ha alcanzado el límite configurado Y la aldea no está llena
-  const puedeCrearFicha = !!user && !haAlcanzadoLimite && !haAlcanzadoCupoAldea;
-
   const aldeaParam = !isRenegado ? `?aldea_id=${id}` : '';
-
-  // Filtrado por buscador (por nombre del ninja o por cuenta de Discord / nombre de usuario)
-  const searchQuery = resolvedSearchParams.search || '';
-  const filteredNinjas = searchQuery
-    ? ninjas.filter((ninja) => {
-      const profileUsername = (Array.isArray(ninja.profiles) ? ninja.profiles[0]?.username : ninja.profiles?.username) || ninja.hobba_name || '';
-      return searchAny(searchQuery, [ninja.nombre_ninja, profileUsername]);
-    })
-    : ninjas;
-
-  // Configuración de Paginación (10 elementos por página sobre el set filtrado)
-  const itemsPerPage = 10;
-  const totalItems = filteredNinjas.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const pageParam = Number(resolvedSearchParams.page) || 1;
-  const currentPage = Math.max(1, Math.min(pageParam, totalPages || 1));
-  const paginatedNinjas = filteredNinjas.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-  const searchParamSuffix = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : '';
 
   const rangosJerarquicos = rangosJerarquicosRaw
     ? rangosJerarquicosRaw.split(',').map((s: string) => s.trim())
     : [];
 
   return (
-    <MundoNinjaVillageClientView
-      id={id}
-      isRenegado={isRenegado}
-      aldea={aldea}
-      ninjas={ninjas}
-      maxCupos={maxCupos}
-      puedeCrearFicha={puedeCrearFicha}
-      aldeaParam={aldeaParam}
-      searchQuery={searchQuery}
-      filteredNinjas={filteredNinjas}
-      paginatedNinjas={paginatedNinjas}
-      totalPages={totalPages}
-      currentPage={currentPage}
-      searchParamSuffix={searchParamSuffix}
-      rangosJerarquicos={rangosJerarquicos}
-      initialEquipos={initialEquipos}
-    />
+    // Suspense requerido porque MundoNinjaVillageClientView usa useSearchParams
+    <Suspense fallback={null}>
+      <MundoNinjaVillageClientView
+        id={id}
+        isRenegado={isRenegado}
+        aldea={aldea}
+        ninjas={ninjas}
+        maxCupos={maxCupos}
+        haAlcanzadoCupoAldea={haAlcanzadoCupoAldea}
+        aldeaParam={aldeaParam}
+        rangosJerarquicos={rangosJerarquicos}
+        initialEquipos={initialEquipos}
+      />
+    </Suspense>
   );
 }

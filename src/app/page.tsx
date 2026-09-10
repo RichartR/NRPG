@@ -472,6 +472,7 @@ export default async function Home() {
                   return (
                     <Link
                       key={event.id}
+                      prefetch={false}
                       href={event.link}
                       className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-4 hover:bg-oro/5 transition-all duration-300 group px-2 cursor-pointer"
                     >

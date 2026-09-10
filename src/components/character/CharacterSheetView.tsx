@@ -393,7 +393,7 @@ export function CharacterSheetView({
   }, []);
 
   useEffect(() => {
-    fetch('/api/characters/occupancy', { cache: 'no-store' })
+    fetch('/api/characters/occupancy')
       .then(res => res.json())
       .then(data => {
         if (data && !data.error) {

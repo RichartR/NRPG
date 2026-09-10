@@ -41,7 +41,7 @@ export async function GET(request: Request) {
         timestamp: new Date().toISOString()
       }, {
         status: 200,
-        headers: { 'Cache-Control': 'public, max-age=60, s-maxage=300' }
+        headers: { 'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=3600' }
       });
     }
 
@@ -63,7 +63,7 @@ export async function GET(request: Request) {
         timestamp: discordMsg.timestamp || new Date().toISOString()
       }, {
         headers: {
-          'Cache-Control': 'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400',
+          'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
         }
       });
     } catch (discordError: any) {
@@ -75,7 +75,7 @@ export async function GET(request: Request) {
       }, {
         status: 200,
         headers: {
-          'Cache-Control': 'public, max-age=60, s-maxage=1200',
+          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
         }
       });
     }
@@ -83,7 +83,7 @@ export async function GET(request: Request) {
     console.error('API Error (GET) general:', error);
     return NextResponse.json({ error: error.message }, {
       status: 500,
-      headers: { 'Cache-Control': 'public, max-age=30, s-maxage=60' }
+      headers: { 'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300' }
     });
   }
 }
