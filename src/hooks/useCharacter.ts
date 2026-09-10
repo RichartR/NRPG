@@ -672,6 +672,19 @@ export function useCharacter(characterId: string) {
         const deletedItems = oldInv.filter(oi => !currentInv.some(ci => Number(ci.item_id) === Number(oi.item_id)));
         if (deletedItems.length > 0) {
           const itemNames = deletedItems.map(di => di.info_glosario?.nombre_jp || di.info_glosario?.nombre_es || 'Objeto').join(', ');
+          let refundXp = 0;
+          let refundRyous = 0;
+          let refundPa = 0;
+          if (freeResetPeriod) {
+            for (const di of deletedItems) {
+              const info = di.info_glosario;
+              if (info) {
+                refundXp += Number(info.coste_exp || 0);
+                refundRyous += Number(info.coste_ryous || 0);
+                refundPa += Number(info.coste_puntos_aprendizaje || 0);
+              }
+            }
+          }
           await RegistrosService.createRegistro({
             tipo: 'accion',
             autor_id: Number(characterId),
@@ -679,7 +692,10 @@ export function useCharacter(characterId: string) {
             data: {
               titulo: `${character.nombre_ninja} pierde/elimina: ${itemNames}`,
               tipo_accion: 'eliminacion_objetos',
-              items: deletedItems.map(di => ({ id: di.item_id, nombre: di.info_glosario?.nombre_jp || di.info_glosario?.nombre_es }))
+              items: deletedItems.map(di => ({ id: di.item_id, nombre: di.info_glosario?.nombre_jp || di.info_glosario?.nombre_es })),
+              refund_xp: refundXp,
+              refund_ryous: refundRyous,
+              refund_pa: refundPa
             }
           });
         }
@@ -688,6 +704,19 @@ export function useCharacter(characterId: string) {
         const deletedTecs = oldTecs.filter(ot => !currentTecs.some(ct => Number(ct.tecnica_id) === Number(ot.tecnica_id)));
         if (deletedTecs.length > 0) {
           const tecNames = deletedTecs.map(dt => dt.info_glosario?.nombre_jp || dt.info_glosario?.nombre_es || 'Técnica').join(', ');
+          let refundXp = 0;
+          let refundRyous = 0;
+          let refundPa = 0;
+          if (freeResetPeriod) {
+            for (const dt of deletedTecs) {
+              const info = dt.info_glosario;
+              if (info && !info.inicial) {
+                refundXp += Number(info.coste_exp || 0);
+                refundRyous += Number(info.coste_ryous || 0);
+                refundPa += Number(info.coste_puntos_aprendizaje || 0);
+              }
+            }
+          }
           await RegistrosService.createRegistro({
             tipo: 'accion',
             autor_id: Number(characterId),
@@ -695,7 +724,10 @@ export function useCharacter(characterId: string) {
             data: {
               titulo: `${character.nombre_ninja} olvida/elimina: ${tecNames}`,
               tipo_accion: 'eliminacion_tecnicas',
-              tecnicas: deletedTecs.map(dt => ({ id: dt.tecnica_id, nombre: dt.info_glosario?.nombre_jp || dt.info_glosario?.nombre_es }))
+              tecnicas: deletedTecs.map(dt => ({ id: dt.tecnica_id, nombre: dt.info_glosario?.nombre_jp || dt.info_glosario?.nombre_es })),
+              refund_xp: refundXp,
+              refund_ryous: refundRyous,
+              refund_pa: refundPa
             }
           });
         }
