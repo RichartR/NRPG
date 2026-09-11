@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { X, Calendar, User, Search, RefreshCw, Gift } from 'lucide-react';
+import { X, Calendar, User, Search, RefreshCw, Gift, ChevronLeft, ChevronRight } from 'lucide-react';
 import NinjaCard from '@/components/ui/NinjaCard';
 import { renderDiscordMarkdown } from '@/lib/discord/renderDiscordMarkdown';
 import { useScrollLock } from '@/hooks/useScrollLock';
@@ -367,36 +367,74 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
         )}
       </div>
 
-      {totalPages > 1 && (
-        <PaginationContainer className="mt-16" maxWidthClass="max-w-md">
-          <button
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-            className="ninja-btn-oro px-8 py-3 disabled:opacity-30 disabled:scale-100 active:scale-95 text-caption sm:text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2"
-            style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
-          >
-            Anterior
-          </button>
-          <div className="flex items-center gap-1.5 min-w-[120px] justify-center">
-            <PaginationPageInput
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onChangePage={setCurrentPage}
-            />
-            <span className="text-oro/40 font-black uppercase tracking-[0.2em] text-caption sm:text-xs">
-              / {totalPages}
-            </span>
+      {totalPages > 1 && (() => {
+        // Calcular páginas visibles: máximo 5 dots
+        const delta = 2;
+        const range: number[] = [];
+        for (let i = Math.max(1, currentPage - delta); i <= Math.min(totalPages, currentPage + delta); i++) {
+          range.push(i);
+        }
+        const showStartEllipsis = range[0] > 2;
+        const showEndEllipsis = range[range.length - 1] < totalPages - 1;
+        const pages: (number | '...')[] = [];
+        if (range[0] > 1) pages.push(1);
+        if (showStartEllipsis) pages.push('...');
+        pages.push(...range);
+        if (showEndEllipsis) pages.push('...');
+        if (range[range.length - 1] < totalPages) pages.push(totalPages);
+
+        return (
+          <div className="flex items-center justify-center gap-3 mt-16 select-none">
+            {/* Botón Anterior */}
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+              className="group relative flex items-center gap-2 px-5 py-3 font-black text-caption uppercase tracking-widest transition-all duration-200 disabled:opacity-25 disabled:cursor-not-allowed active:scale-95 border border-oro/20 hover:border-oro/60 bg-black/40 hover:bg-oro/5 text-oro/50 hover:text-oro disabled:hover:border-oro/20 disabled:hover:bg-transparent disabled:hover:text-oro/25"
+              style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+            >
+              <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5 group-disabled:transform-none" />
+              <span className="hidden sm:inline">Anterior</span>
+            </button>
+
+            {/* Dots de páginas */}
+            <div className="flex items-center gap-1.5">
+              {pages.map((page, idx) =>
+                page === '...' ? (
+                  <span key={`ellipsis-${idx}`} className="w-8 text-center text-oro/30 font-black text-xs">···</span>
+                ) : (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page as number)}
+                    className={`relative w-9 h-9 font-black text-xs transition-all duration-200 active:scale-90 ${
+                      currentPage === page
+                        ? 'bg-oro text-naranja-naruto shadow-[0_0_20px_rgba(255,230,159,0.4)]'
+                        : 'bg-black/40 border border-oro/20 text-oro/50 hover:border-oro/50 hover:text-oro hover:bg-oro/10'
+                    }`}
+                    style={{ clipPath: 'polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px)' }}
+                  >
+                    {page}
+                    {currentPage === page && (
+                      <span className="absolute inset-0 animate-ping bg-oro/10 pointer-events-none" style={{ clipPath: 'polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px)' }} />
+                    )}
+                  </button>
+                )
+              )}
+            </div>
+
+            {/* Botón Siguiente */}
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+              className="group relative flex items-center gap-2 px-5 py-3 font-black text-caption uppercase tracking-widest transition-all duration-200 disabled:opacity-25 disabled:cursor-not-allowed active:scale-95 border border-oro/20 hover:border-oro/60 bg-black/40 hover:bg-oro/5 text-oro/50 hover:text-oro disabled:hover:border-oro/20 disabled:hover:bg-transparent disabled:hover:text-oro/25"
+              style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
+            >
+              <span className="hidden sm:inline">Siguiente</span>
+              <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-disabled:transform-none" />
+            </button>
           </div>
-          <button
-            disabled={currentPage === totalPages || totalPages === 0}
-            onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-            className="ninja-btn-oro px-8 py-3 disabled:opacity-30 disabled:scale-100 active:scale-95 text-caption sm:text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2"
-            style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
-          >
-            Siguiente
-          </button>
-        </PaginationContainer>
-      )}
+        );
+      })()}
+
 
       {/* Modal Inmersivo con Carga Perezosa */}
       {activeNews && (
