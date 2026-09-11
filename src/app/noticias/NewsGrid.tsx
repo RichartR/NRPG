@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { X, Calendar, User, Search, RefreshCw, Gift, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Calendar, User, Search, RefreshCw, Gift } from 'lucide-react';
 import NinjaCard from '@/components/ui/NinjaCard';
 import { renderDiscordMarkdown } from '@/lib/discord/renderDiscordMarkdown';
 import { useScrollLock } from '@/hooks/useScrollLock';
@@ -367,73 +367,56 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
         )}
       </div>
 
-      {totalPages > 1 && (() => {
-        // Calcular páginas visibles: máximo 5 dots
-        const delta = 2;
-        const range: number[] = [];
-        for (let i = Math.max(1, currentPage - delta); i <= Math.min(totalPages, currentPage + delta); i++) {
-          range.push(i);
-        }
-        const showStartEllipsis = range[0] > 2;
-        const showEndEllipsis = range[range.length - 1] < totalPages - 1;
-        const pages: (number | '...')[] = [];
-        if (range[0] > 1) pages.push(1);
-        if (showStartEllipsis) pages.push('...');
-        pages.push(...range);
-        if (showEndEllipsis) pages.push('...');
-        if (range[range.length - 1] < totalPages) pages.push(totalPages);
+      {totalPages > 1 && (
+        <div className="mt-16">
+          <PaginationContainer maxWidthClass="max-w-md">
+            {currentPage > 1 ? (
+              <button
+                onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+                className="px-4 py-2 border border-oro/30 hover:bg-oro/20 text-oro hover:text-white transition-all text-xs font-black uppercase tracking-widest active:scale-95"
+                style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+              >
+                Anterior
+              </button>
+            ) : (
+              <span
+                className="px-4 py-2 border border-oro/5 text-oro/10 cursor-not-allowed text-xs font-black uppercase tracking-widest select-none"
+                style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+              >
+                Anterior
+              </span>
+            )}
 
-        return (
-          <div className="flex items-center justify-center gap-3 mt-16 select-none">
-            {/* Botón Anterior */}
-            <button
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-              className="group relative flex items-center gap-2 px-5 py-3 font-black text-caption uppercase tracking-widest transition-all duration-200 disabled:opacity-25 disabled:cursor-not-allowed active:scale-95 border border-oro/20 hover:border-oro/60 bg-black/40 hover:bg-oro/5 text-oro/50 hover:text-oro disabled:hover:border-oro/20 disabled:hover:bg-transparent disabled:hover:text-oro/25"
-              style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
-            >
-              <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5 group-disabled:transform-none" />
-              <span className="hidden sm:inline">Anterior</span>
-            </button>
-
-            {/* Dots de páginas */}
-            <div className="flex items-center gap-1.5">
-              {pages.map((page, idx) =>
-                page === '...' ? (
-                  <span key={`ellipsis-${idx}`} className="w-8 text-center text-oro/30 font-black text-xs">···</span>
-                ) : (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page as number)}
-                    className={`relative w-9 h-9 font-black text-xs transition-all duration-200 active:scale-90 ${
-                      currentPage === page
-                        ? 'bg-oro text-naranja-naruto shadow-[0_0_20px_rgba(255,230,159,0.4)]'
-                        : 'bg-black/40 border border-oro/20 text-oro/50 hover:border-oro/50 hover:text-oro hover:bg-oro/10'
-                    }`}
-                    style={{ clipPath: 'polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px)' }}
-                  >
-                    {page}
-                    {currentPage === page && (
-                      <span className="absolute inset-0 animate-ping bg-oro/10 pointer-events-none" style={{ clipPath: 'polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px)' }} />
-                    )}
-                  </button>
-                )
-              )}
+            <div className="flex items-center gap-1.5 justify-center">
+              <PaginationPageInput
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onChangePage={setCurrentPage}
+              />
+              <span className="text-oro/40 font-black text-xs">
+                / {totalPages}
+              </span>
             </div>
 
-            {/* Botón Siguiente */}
-            <button
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-              className="group relative flex items-center gap-2 px-5 py-3 font-black text-caption uppercase tracking-widest transition-all duration-200 disabled:opacity-25 disabled:cursor-not-allowed active:scale-95 border border-oro/20 hover:border-oro/60 bg-black/40 hover:bg-oro/5 text-oro/50 hover:text-oro disabled:hover:border-oro/20 disabled:hover:bg-transparent disabled:hover:text-oro/25"
-              style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
-            >
-              <span className="hidden sm:inline">Siguiente</span>
-              <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-disabled:transform-none" />
-            </button>
-          </div>
-        );
-      })()}
+            {currentPage < totalPages ? (
+              <button
+                onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+                className="px-4 py-2 border border-oro/30 hover:bg-oro/20 text-oro hover:text-white transition-all text-xs font-black uppercase tracking-widest active:scale-95"
+                style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+              >
+                Siguiente
+              </button>
+            ) : (
+              <span
+                className="px-4 py-2 border border-oro/5 text-oro/10 cursor-not-allowed text-xs font-black uppercase tracking-widest select-none"
+                style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}
+              >
+                Siguiente
+              </span>
+            )}
+          </PaginationContainer>
+        </div>
+      )}
 
 
       {/* Modal Inmersivo con Carga Perezosa */}

@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { Search, X } from 'lucide-react';
 import { DocumentoCombate } from '@/domain/types';
-import { searchIncludes } from '@/lib/utils/search';
+import { searchIncludes, normalizeSearchText } from '@/lib/utils/search';
 import NinjaCard from '@/components/ui/NinjaCard';
 
 interface DocumentosCombateSearchProps {
@@ -15,7 +15,11 @@ export default function DocumentosCombateSearch({ documentos }: DocumentosCombat
 
   const filteredDocs = useMemo(() => {
     if (!search.trim()) return documentos;
-    return documentos.filter((doc) => searchIncludes(doc.titulo, search));
+    const words = normalizeSearchText(search).trim().split(/\s+/).filter(Boolean);
+    return documentos.filter((doc) => {
+      const docFields = [doc.titulo, doc.descripcion, doc.clave].filter(Boolean);
+      return words.every((word) => docFields.some((field) => searchIncludes(field, word)));
+    });
   }, [documentos, search]);
 
   return (
