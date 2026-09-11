@@ -15,12 +15,13 @@ import { convertDriveUrl } from '@/lib/utils/driveConverter';
 import RecuperarEventoModal from '@/components/eventos/RecuperarEventoModal';
 
 interface NewsItem {
-  id?: string;
+  id?: string | number;
   discord_msg_id: string;
   titulo: string;
   categoria: string;
   url_imagen?: string;
   descripcion?: string;
+  created_at?: string;
 }
 
 interface NewsGridProps {
@@ -259,10 +260,22 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
     return newsList
       .filter(item => {
         const matchesSearch = searchIncludes(item.titulo, searchQuery);
-        const matchesCategory = selectedCategory === 'todos' || item.categoria?.toLowerCase() === selectedCategory;
+        const itemCat = item.categoria?.trim().toLowerCase();
+        const matchesCategory =
+          selectedCategory === 'todos' ||
+          itemCat === selectedCategory ||
+          (selectedCategory === 'evento' && itemCat?.startsWith('evento'));
         return matchesSearch && matchesCategory;
       })
-      .sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
+      .sort((a, b) => {
+        const idA = Number(a.id) || 0;
+        const idB = Number(b.id) || 0;
+        if (idA !== idB) return idB - idA;
+        if (a.created_at && b.created_at) {
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        }
+        return 0;
+      });
   }, [newsList, searchQuery, selectedCategory]);
 
   // Reset page when filter changes
@@ -334,9 +347,9 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
 
       {/* Grid de Tarjetas (Sin descripción y cargadas de forma local) */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10 xl:gap-16">
-        {paginatedNews.map((news) => (
+        {paginatedNews.map((news, index) => (
           <NinjaCard
-            key={news.discord_msg_id}
+            key={news.id ? `news-${news.id}` : (news.discord_msg_id || `news-${index}`)}
             onClick={() => setActiveNews(news)}
             title={news.titulo}
             titleClassName="text-xl sm:text-2xl md:text-3xl line-clamp-2"

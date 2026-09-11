@@ -17,7 +17,7 @@ import { renderDiscordMarkdown } from '@/lib/discord/renderDiscordMarkdown';
 
 interface EventRewardFormProps {
   activeNews: {
-    id?: string;
+    id?: string | number;
     discord_msg_id: string;
     titulo: string;
     categoria: string;

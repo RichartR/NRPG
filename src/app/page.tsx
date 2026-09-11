@@ -78,7 +78,7 @@ const getCachedNoticias = unstable_cache(
     return data || [];
   },
   ['latest-noticias'],
-  { revalidate: 300 }
+  { revalidate: 300, tags: ['latest-noticias'] }
 );
 
 function formatRelativeTime(dateString: string) {

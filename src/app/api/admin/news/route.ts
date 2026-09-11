@@ -4,8 +4,19 @@ import { ProfileService } from '@/services/supabase/profile.service';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import { sendDiscordMessage, editDiscordMessage, sendDiscordEmbed, editDiscordEmbed } from '@/lib/discord';
 import { NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { getURL } from '@/lib/utils/url';
+
+function revalidateNewsCache() {
+  try {
+    revalidatePath('/noticias');
+    revalidatePath('/');
+    revalidateTag('all-noticias-page', { expire: 0 });
+    revalidateTag('latest-noticias', { expire: 0 });
+  } catch (err) {
+    console.error('Error revalidating news cache:', err);
+  }
+}
 
 async function buildMentionText(adminClient: any, pingRoles: unknown): Promise<string> {
   const rolesArray: string[] = Array.isArray(pingRoles) ? pingRoles.filter(Boolean) : ['default'];
@@ -49,7 +60,11 @@ export async function POST(request: Request) {
     if (categoria !== undefined) cleanData.categoria = categoria;
     if (url_imagen !== undefined) cleanData.url_imagen = url_imagen?.trim() || null;
     if (descripcion !== undefined) cleanData.descripcion = descripcion?.trim() || null;
-    if (activo !== undefined) cleanData.activo = activo;
+    if (activo !== undefined) {
+      cleanData.activo = activo;
+    } else if (!id) {
+      cleanData.activo = true;
+    }
     if (discord_msg_id !== undefined) cleanData.discord_msg_id = discord_msg_id?.trim() || null;
     if (discord_announcement_msg_id !== undefined) cleanData.discord_announcement_msg_id = discord_announcement_msg_id?.trim() || null;
 
@@ -141,7 +156,7 @@ export async function POST(request: Request) {
 
         if (updateErr) throw updateErr;
 
-        revalidatePath('/noticias');
+        revalidateNewsCache();
 
         return NextResponse.json(updated);
       } else {
@@ -223,7 +238,7 @@ export async function POST(request: Request) {
           }
         }
 
-        revalidatePath('/noticias');
+        revalidateNewsCache();
 
         return NextResponse.json(inserted);
       }
@@ -271,7 +286,7 @@ export async function POST(request: Request) {
           }
         }
 
-        revalidatePath('/noticias');
+        revalidateNewsCache();
 
         return NextResponse.json(updated);
       } else {
@@ -327,7 +342,7 @@ export async function POST(request: Request) {
           }
         }
 
-        revalidatePath('/noticias');
+        revalidateNewsCache();
 
         return NextResponse.json(inserted);
       }
@@ -361,7 +376,7 @@ export async function DELETE(request: Request) {
     const { error } = await adminClient.from('info_noticias_index').delete().eq('id', parseInt(id, 10));
     if (error) throw error;
 
-    revalidatePath('/noticias');
+    revalidateNewsCache();
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
