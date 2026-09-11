@@ -42,9 +42,15 @@ export const CharacterService = {
         registros: i.reg_personajes_inventario_registros || i.registros || []
       }));
 
-    const uchiha = Array.isArray(data.reg_personajes_uchiha)
+    const uchihaRaw = Array.isArray(data.reg_personajes_uchiha)
       ? data.reg_personajes_uchiha[0] || null
       : data.reg_personajes_uchiha || null;
+
+    const uchiha = uchihaRaw ? {
+      ...uchihaRaw,
+      eleccion_especial: uchihaRaw.eleccion_especial ?? uchihaRaw.copias?._meta?.eleccion_especial ?? null,
+      segundo_elemento_id: uchihaRaw.segundo_elemento_id ? Number(uchihaRaw.segundo_elemento_id) : (uchihaRaw.copias?._meta?.segundo_elemento_id ? Number(uchihaRaw.copias._meta.segundo_elemento_id) : null)
+    } : null;
 
     return {
       ...data,
@@ -575,7 +581,12 @@ export const CharacterService = {
         console.warn('reg_personajes_uchiha no disponible o error:', error.message);
         return null;
       }
-      return data as PersonajeUchihaData | null;
+      if (!data) return null;
+      return {
+        ...data,
+        eleccion_especial: (data as any).eleccion_especial ?? (data as any).copias?._meta?.eleccion_especial ?? null,
+        segundo_elemento_id: (data as any).segundo_elemento_id ? Number((data as any).segundo_elemento_id) : ((data as any).copias?._meta?.segundo_elemento_id ? Number((data as any).copias._meta.segundo_elemento_id) : null)
+      } as PersonajeUchihaData;
     } catch (e) {
       console.warn('Error fetching uchiha data:', e);
       return null;
@@ -584,16 +595,36 @@ export const CharacterService = {
 
   async saveUchihaData(personajeId: number, data: Partial<PersonajeUchihaData>): Promise<void> {
     const supabase = createClient();
-    const payload = {
+    const copiasPayload = {
+      ...(data.copias || {}),
+      _meta: {
+        eleccion_especial: data.eleccion_especial || null,
+        segundo_elemento_id: data.segundo_elemento_id ? Number(data.segundo_elemento_id) : null
+      }
+    };
+    const payload: any = {
       personaje_id: personajeId,
       rama_combate: data.rama_combate ?? null,
       slots_desbloqueados: data.slots_desbloqueados || ['D_1', 'D_2'],
-      copias: data.copias || {},
+      copias: copiasPayload,
       updated_at: new Date().toISOString()
     };
-    const { error } = await supabase
+    if (data.eleccion_especial !== undefined) payload.eleccion_especial = data.eleccion_especial;
+    if (data.segundo_elemento_id !== undefined) payload.segundo_elemento_id = data.segundo_elemento_id;
+
+    let { error } = await supabase
       .from('reg_personajes_uchiha')
       .upsert(payload, { onConflict: 'personaje_id' });
+
+    if (error && error.message?.includes('column')) {
+      delete payload.eleccion_especial;
+      delete payload.segundo_elemento_id;
+      const retry = await supabase
+        .from('reg_personajes_uchiha')
+        .upsert(payload, { onConflict: 'personaje_id' });
+      error = retry.error;
+    }
+
     if (error) {
       console.error('Error saving uchiha data:', error);
       throw error;

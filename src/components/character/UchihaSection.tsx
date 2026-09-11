@@ -7,6 +7,7 @@ import { NinjaSelect, SearchableSelect } from '@/components/ui/Fields';
 import { Character, Glosario, PersonajeUchihaData, UchihaCopiaSlot } from '@/domain/types';
 import { CharacterService } from '@/services/supabase/character.service';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
+import { SHIHAI_GLOSARIO_FALLBACK } from './CharacterSheetView';
 
 interface UchihaSectionProps {
   character: Character;
@@ -89,7 +90,9 @@ export default function UchihaSection({
     personaje_id: character.id,
     rama_combate: (character as any).personaje_uchiha?.rama_combate || null,
     slots_desbloqueados: (character as any).personaje_uchiha?.slots_desbloqueados || ['D_1', 'D_2'],
-    copias: (character as any).personaje_uchiha?.copias || {}
+    copias: (character as any).personaje_uchiha?.copias || {},
+    eleccion_especial: (character as any).personaje_uchiha?.eleccion_especial || null,
+    segundo_elemento_id: (character as any).personaje_uchiha?.segundo_elemento_id || null
   });
   const [loading, setLoading] = useState(false);
 
@@ -211,7 +214,7 @@ export default function UchihaSection({
     if (!currentTecs.some((t: any) => Number(t.tecnica_id) === tecObj.id)) {
       onUpdateField('personajes_tecnicas', [
         ...currentTecs,
-        { tecnica_id: tecObj.id, info_glosario: tecObj, origen: `uchiha_${slotKey}` }
+        { personaje_id: Number(character.id || 0), tecnica_id: tecObj.id, info_glosario: tecObj, origen: `uchiha_${slotKey}` }
       ]);
     }
 
@@ -279,10 +282,17 @@ export default function UchihaSection({
 
   // Obtener IDs de elementos que posee el personaje
   const characterElementIds = useMemo(() => {
-    if (derivedElements && derivedElements.length > 0) {
-      return derivedElements.map((e: any) => Number(e.id));
-    }
     const fijosSet = new Set<number>();
+    fijosSet.add(6); // Katon (Fuego) es innato y base de todo Uchiha
+    if (uchihaData.eleccion_especial === 'elemento' && uchihaData.segundo_elemento_id) {
+      fijosSet.add(Number(uchihaData.segundo_elemento_id));
+    }
+
+    if (derivedElements && derivedElements.length > 0) {
+      derivedElements.forEach((e: any) => fijosSet.add(Number(e.id)));
+      return Array.from(fijosSet);
+    }
+
     const charRamas = character.personajes_ramas || [];
     charRamas.forEach((pr: any) => {
       if (pr.elemento_principal_id) fijosSet.add(Number(pr.elemento_principal_id));
@@ -297,7 +307,123 @@ export default function UchihaSection({
       }
     });
     return Array.from(fijosSet);
-  }, [derivedElements, character.personajes_ramas, masters?.ramaElementos]);
+  }, [derivedElements, character.personajes_ramas, masters?.ramaElementos, uchihaData.eleccion_especial, uchihaData.segundo_elemento_id]);
+
+  // Opciones de segundo elemento (excluye Katon / ID 6 ya que lo tienen de base)
+  const secondElementOptions = useMemo(() => {
+    const basicos = (masters?.elementos || []).filter((e: any) => e.tipo === 'basico' && Number(e.id) !== 6);
+    if (basicos.length > 0) {
+      return basicos.map((e: any) => ({
+        label: e.nombre_jap ? `${e.nombre_jap} (${e.nombre_esp})` : e.nombre_esp,
+        value: String(e.id)
+      }));
+    }
+    return [
+      { label: 'Raiton (Rayo)', value: '4' },
+      { label: 'Suiton (Agua)', value: '2' },
+      { label: 'Fuuton (Viento)', value: '5' },
+      { label: 'Doton (Tierra)', value: '3' },
+    ];
+  }, [masters?.elementos]);
+
+  // Manejar cambio en la Elección Especial (Shihai vs Segundo Elemento)
+  const handleSpecialChoiceChange = (choice: string) => {
+    const val = choice ? (choice as 'shihai' | 'elemento') : null;
+    const catalog = (masters?.glosario && masters.glosario.length > 0) ? masters.glosario : glosarioFiltrado;
+    const foundTec = (catalog || []).find((t: any) => Number(t.id) === 176 || (t.nombre_jp === 'Shihai' && t.categoria_id === 4));
+    const shihaiTec = foundTec || SHIHAI_GLOSARIO_FALLBACK;
+
+    let updatedTecs = character.personajes_tecnicas || [];
+    let updatedRamas = character.personajes_ramas || [];
+
+    if (val === 'shihai') {
+      // 1. Añadir Shihai a personajes_tecnicas si no está ya
+      if (!updatedTecs.some((t: any) => Number(t.tecnica_id) === 176)) {
+        updatedTecs = [
+          ...updatedTecs,
+          {
+            personaje_id: Number(character.id || 0),
+            tecnica_id: 176,
+            info_glosario: shihaiTec,
+            origen: 'uchiha_shihai'
+          }
+        ];
+        onUpdateField('personajes_tecnicas', updatedTecs);
+      }
+      // 2. Limpiar elemento secundario en ramas
+      updatedRamas = updatedRamas.map((r: any) => {
+        if (Number(r.slot) === 1) {
+          return { ...r, elemento_principal_id: 6, elemento_secundario_id: null };
+        }
+        return r;
+      });
+      onUpdateField('personajes_ramas', updatedRamas);
+
+      updateUchiha({
+        eleccion_especial: 'shihai',
+        segundo_elemento_id: null
+      });
+      addToast('Especialización "Shihai (Pasiva)" activada. Añadida a tus Habilidades Pasivas.', 'success');
+    } else if (val === 'elemento') {
+      // 1. Quitar Shihai si fue obtenido por esta vía o si no cumple requisitos de ninjutsu
+      updatedTecs = updatedTecs.filter((t: any) => Number(t.tecnica_id) !== 176);
+      onUpdateField('personajes_tecnicas', updatedTecs);
+
+      // 2. Asegurar Katon base en slot 1
+      updatedRamas = updatedRamas.map((r: any) => {
+        if (Number(r.slot) === 1) {
+          return { ...r, elemento_principal_id: 6 };
+        }
+        return r;
+      });
+      onUpdateField('personajes_ramas', updatedRamas);
+
+      updateUchiha({
+        eleccion_especial: 'elemento',
+        segundo_elemento_id: uchihaData.segundo_elemento_id || null
+      });
+      addToast('Especialización "Segundo Elemento" seleccionada.', 'info');
+    } else {
+      updatedTecs = updatedTecs.filter((t: any) => Number(t.tecnica_id) !== 176);
+      onUpdateField('personajes_tecnicas', updatedTecs);
+
+      updatedRamas = updatedRamas.map((r: any) => {
+        if (Number(r.slot) === 1) {
+          return { ...r, elemento_principal_id: 6, elemento_secundario_id: null };
+        }
+        return r;
+      });
+      onUpdateField('personajes_ramas', updatedRamas);
+
+      updateUchiha({
+        eleccion_especial: null,
+        segundo_elemento_id: null
+      });
+    }
+  };
+
+  // Manejar cambio del segundo elemento
+  const handleSecondElementChange = (elemId: number | null) => {
+    let updatedRamas = character.personajes_ramas || [];
+    updatedRamas = updatedRamas.map((r: any) => {
+      if (Number(r.slot) === 1) {
+        return { ...r, elemento_principal_id: 6, elemento_secundario_id: elemId };
+      }
+      return r;
+    });
+    onUpdateField('personajes_ramas', updatedRamas);
+
+    updateUchiha({
+      eleccion_especial: 'elemento',
+      segundo_elemento_id: elemId
+    });
+
+    const elemObj = (masters?.elementos || []).find((e: any) => Number(e.id) === Number(elemId));
+    const elemName = elemObj ? (elemObj.nombre_jap ? `${elemObj.nombre_jap} (${elemObj.nombre_esp})` : elemObj.nombre_esp) : '';
+    if (elemName) {
+      addToast(`Segundo elemento "${elemName}" asignado.`, 'success');
+    }
+  };
 
   // 7. Filtrar catálogo de técnicas válidas por cada rango de slot
   // Ramas básicas permitidas: Ninjutsu (4), Taijutsu (8), Genjutsu (10), Bukijutsu (12)
@@ -397,6 +523,89 @@ export default function UchihaSection({
                     decoding="async"
                     className="w-16 h-16 sm:w-18 sm:h-18 object-cover border-2 border-white shadow-[0_0_12px_rgba(255,255,255,0.25)]"
                   />
+                </div>
+              </div>
+            </div>
+
+            {/* SELECCIÓN ESPECIAL: SHIHAI (PASIVA) VS SEGUNDO ELEMENTO */}
+            <div className="pt-6 border-t border-oro/10 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <span className="text-sm font-black text-oro uppercase tracking-[0.2em]">
+                  Especialización Uchiha: Pasiva Shihai o Segundo Elemento
+                </span>
+                <span className="text-[11px] font-bold text-naranja-naruto uppercase tracking-widest bg-naranja-naruto/10 px-2.5 py-1 border border-naranja-naruto/20">
+                  Katon (Fuego) Innato de Base
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                {/* Selector Tipo de Especialización */}
+                <div className="space-y-3">
+                  <label className="text-caption font-black uppercase tracking-[0.2em] text-oro/60 ml-1">
+                    Elección de Especialización
+                  </label>
+                  <NinjaSelect
+                    value={uchihaData.eleccion_especial || ''}
+                    options={[
+                      { label: 'Aprender Pasiva: Shihai (Dominio)', value: 'shihai' },
+                      { label: 'Elegir Segundo Elemento Básico', value: 'elemento' },
+                    ]}
+                    disabled={!isEditing && !isNew}
+                    placeholder="SELECCIONAR ESPECIALIZACIÓN..."
+                    onChange={(val) => handleSpecialChoiceChange(val)}
+                  />
+                  <p className="text-[11px] text-oro/40 italic ml-1">
+                    Elige entre aprender la pasiva Shihai u obtener un segundo elemento básico.
+                  </p>
+                </div>
+
+                {/* Sub-bloque dependiente de la elección */}
+                <div className="space-y-3">
+                  {uchihaData.eleccion_especial === 'elemento' ? (
+                    <div className="space-y-3 animate-fade-in">
+                      <label className="text-caption font-black uppercase tracking-[0.2em] text-oro/60 ml-1">
+                        Segundo Elemento Básico
+                      </label>
+                      <NinjaSelect
+                        value={uchihaData.segundo_elemento_id ? String(uchihaData.segundo_elemento_id) : ''}
+                        options={secondElementOptions}
+                        disabled={!isEditing && !isNew}
+                        placeholder="SELECCIONAR SEGUNDO ELEMENTO..."
+                        onChange={(val) => handleSecondElementChange(val ? Number(val) : null)}
+                      />
+                      <p className="text-[11px] text-oro/40 italic ml-1">
+                        Katon ya se obtiene de base y no es repetible.
+                      </p>
+                    </div>
+                  ) : uchihaData.eleccion_especial === 'shihai' ? (
+                    <div className="space-y-3">
+                      <label className="text-caption font-black uppercase tracking-[0.2em] text-oro/60 ml-1">
+                        Habilidad Pasiva Obtenida
+                      </label>
+                      <div className="p-4 bg-oro/5 border border-oro/10 ninja-clip-sm flex items-center justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="text-xs font-black text-oro tracking-wider">
+                            Dominio (Shihai)
+                          </div>
+                          <div className="text-[11px] text-oro/50">
+                            Pasiva de control de Ninjutsu (Rango D). Registrada en tus técnicas.
+                          </div>
+                        </div>
+                        <span className="px-3 py-1 bg-white text-naranja-naruto text-[10px] font-black uppercase tracking-widest shrink-0">
+                          Aprendida
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <label className="text-caption font-black uppercase tracking-[0.2em] text-oro/60 ml-1">
+                        Estado de la Especialización
+                      </label>
+                      <div className="p-4 border border-oro/5 bg-black/20 text-xs text-oro/30 italic ninja-clip-sm">
+                        Selecciona si deseas aprender la pasiva Shihai o desbloquear un segundo elemento básico.
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
