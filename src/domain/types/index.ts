@@ -233,6 +233,7 @@ export interface Character {
     sub_especialidad_id?: number; // Sub-especialidad elegida (idem)
     tecnicas_ids: number[];
   } | null;
+  combat_presets?: CombatPresetItem[];
   
   // Relations
   profiles?: Profile | Profile[];
@@ -567,3 +568,27 @@ export interface PersonajeUchihaData {
   created_at?: string;
   updated_at?: string;
 }
+
+export interface CombatPresetOption {
+  id: string;
+  nombre_preset: string;
+  roleo?: string;
+  dano?: string | number;
+  dano_xa?: string | number;
+  coste_ch?: number;
+  cd_rondas?: number;
+  alcance?: string;
+  tipo_accion?: string;
+  sellos?: string;
+  efectos?: string;
+  texto_copiar: string;
+}
+
+export interface CombatPresetItem {
+  id: number;
+  tipo: 'tecnica' | 'objeto' | 'pasiva';
+  nombre: string;
+  subtipo?: string;
+  presets: CombatPresetOption[];
+}
+

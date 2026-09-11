@@ -346,6 +346,7 @@ export async function PATCH(
           url_img: data.url_img,
           stats_updated_at: new Date().toISOString(),
           eleccion_tecnicas_clan: data.eleccion_tecnicas_clan,
+          ...(data.combat_presets !== undefined ? { combat_presets: data.combat_presets } : {}),
         };
 
         // 3. Ejecutar actualizaciones en paralelo
@@ -595,6 +596,10 @@ export async function PATCH(
 
           await CharacterServerService.replaceTecnicas(adminClient, characterId, data.personajes_tecnicas);
         }
+        break;
+
+      case 'combat_presets':
+        updateData = { combat_presets: data.combat_presets || [] };
         break;
 
       case 'restore':

@@ -39,6 +39,7 @@ import NinkenSection from './NinkenSection';
 import KugutsuKoboSection from './KugutsuKoboSection';
 import UchihaSection, { UCHIHA_SLOTS_CONFIG } from './UchihaSection';
 import { ObjetoSlotsModal } from './ObjetoSlotsModal';
+import { CombatPresetsManager } from './CombatPresetsManager';
 import { useState, useMemo, useEffect, useCallback, Fragment } from 'react';
 import { resolveAldeaIcono } from '@/utils/aldea-icon';
 import { createClient } from '@/utils/supabase/client';
@@ -1985,7 +1986,7 @@ export function CharacterSheetView({
 
   const [editingRegistro, setEditingRegistro] = useState<Registro | null>(null);
   const [registroTab, setRegistroTab] = useState<'mision' | 'accion' | 'combate'>('mision');
-  const [tecnicasSubTab, setTecnicasSubTab] = useState<'jutsus' | 'pasivas' | 'kuchiyoses' | 'ninken' | 'kugutsu' | 'uchiha'>('jutsus');
+  const [tecnicasSubTab, setTecnicasSubTab] = useState<'jutsus' | 'pasivas' | 'kuchiyoses' | 'ninken' | 'kugutsu' | 'uchiha' | 'presets'>('jutsus');
   const [inventarioSubTab, setInventarioSubTab] = useState<'mochila' | 'equipo'>('mochila');
   const [recordPage, setRecordPage] = useState(1);
   const recordsPerPage = 10;
@@ -4078,14 +4079,15 @@ export function CharacterSheetView({
                   const isKugutsu = (character.personajes_ramas || []).some((r: any) => Number(r.rama_id) === 28);
                   const isUchiha = (character.personajes_ramas || []).some((r: any) => Number(r.rama_id) === 35 || r.rama?.slug === 'uchiha-ichizoku');
 
-                  const subtabs: ('jutsus' | 'pasivas' | 'kuchiyoses' | 'ninken' | 'kugutsu' | 'uchiha')[] = ['jutsus', 'pasivas', 'kuchiyoses'];
+                  const subtabs: ('jutsus' | 'pasivas' | 'kuchiyoses' | 'ninken' | 'kugutsu' | 'uchiha' | 'presets')[] = ['jutsus', 'pasivas', 'kuchiyoses'];
                   if (isInuzuka) subtabs.push('ninken');
                   if (isKugutsu) subtabs.push('kugutsu');
                   if (isUchiha) subtabs.push('uchiha');
+                  subtabs.push('presets');
 
                   return subtabs.map(tab => {
                     const isActive = tecnicasSubTab === tab;
-                    const label = tab === 'jutsus' ? 'TÉCNICAS' : tab === 'pasivas' ? 'HABILIDADES PASIVAS' : tab === 'kuchiyoses' ? 'KUCHIYOSES' : tab === 'ninken' ? 'NINKEN' : tab === 'kugutsu' ? 'KUGUTSU KOBO' : 'CLAN UCHIHA';
+                    const label = tab === 'jutsus' ? 'TÉCNICAS' : tab === 'pasivas' ? 'HABILIDADES PASIVAS' : tab === 'kuchiyoses' ? 'KUCHIYOSES' : tab === 'ninken' ? 'NINKEN' : tab === 'kugutsu' ? 'KUGUTSU KOBO' : tab === 'uchiha' ? 'CLAN UCHIHA' : 'PRESETS DE COMBATE';
 
                     return (
                       <button
@@ -5034,6 +5036,16 @@ export function CharacterSheetView({
                   isNew={isNew}
                   onUpdateField={onUpdateField}
                   addToast={addToast}
+                />
+              )}
+
+              {tecnicasSubTab === 'presets' && (
+                <CombatPresetsManager
+                  character={character}
+                  canEdit={canEdit}
+                  isAdmin={isAdmin}
+                  isEditing={isEditing || isNew}
+                  onUpdatePresets={(newPresets) => onUpdateField('combat_presets', newPresets)}
                 />
               )}
             </div>

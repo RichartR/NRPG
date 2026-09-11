@@ -7,7 +7,8 @@ import { ProfileService } from '@/services/supabase/profile.service';
 import {
   Dices, Users, Play,
   RotateCcw, ChevronUp, ChevronDown,
-  Trash2, Copy, Sparkles, Eye, EyeOff, RefreshCw, Image as ImageIcon, Pencil
+  Trash2, Copy, Sparkles, Eye, EyeOff, RefreshCw, Image as ImageIcon, Pencil,
+  Check, Sliders, X
 } from 'lucide-react';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
@@ -147,6 +148,29 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
   const [isActiveDropdownOpen, setIsActiveDropdownOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCdDropdownOpen, setIsCdDropdownOpen] = useState(false);
+
+  // Presets & Macros de Combate
+  const [selectedCombatPresetId, setSelectedCombatPresetId] = useState<string | null>(null);
+  const [copiedCombatPresetId, setCopiedCombatPresetId] = useState<string | null>(null);
+  const [showQuickPresetsModal, setShowQuickPresetsModal] = useState(false);
+  const [quickPresetSearch, setQuickPresetSearch] = useState('');
+  const [quickPresetCategory, setQuickPresetCategory] = useState<'all' | 'objeto' | 'pasiva' | 'tecnica'>('all');
+
+  const selectedTechPresets = useMemo(() => {
+    if (selectedTecnicaId === null || !activeCharacter?.combat_presets) return null;
+    return (activeCharacter.combat_presets as any[]).find(
+      (p: any) => Number(p.id) === Number(selectedTecnicaId) && p.tipo === 'tecnica'
+    );
+  }, [selectedTecnicaId, activeCharacter?.combat_presets]);
+
+  const activeCombatPreset = useMemo(() => {
+    if (!selectedTechPresets || !selectedTechPresets.presets?.length) return null;
+    if (selectedCombatPresetId) {
+      const found = selectedTechPresets.presets.find((p: any) => p.id === selectedCombatPresetId);
+      if (found) return found;
+    }
+    return selectedTechPresets.presets[0];
+  }, [selectedTechPresets, selectedCombatPresetId]);
   const [bgNumber, setBgNumber] = useState<number>(1);
   const [isAdminOrNarrator, setIsAdminOrNarrator] = useState(false);
   const [userRoles, setUserRoles] = useState<string[]>([]);
@@ -4519,8 +4543,20 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
               {/* 3. TECHNIQUE CASTING CONSOLE */}
               {(!isEventMode || activeConsoleMode === 'jugador') && (
                 <div className="space-y-5 xl:col-span-6">
-                <h3 className="font-black text-sm uppercase tracking-[0.2em] border-b border-oro/10 pb-3 flex items-center gap-2.5">
-                  USO DE TÉCNICAS
+                <h3 className="font-black text-sm uppercase tracking-[0.2em] border-b border-oro/10 pb-3 flex items-center justify-between gap-2.5">
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-oro" />
+                    USO DE TÉCNICAS
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowQuickPresetsModal(true)}
+                    className="ninja-btn-ghost px-2.5 py-1 text-[10px] font-black uppercase flex items-center gap-1.5 border border-oro/30 hover:border-oro text-oro"
+                    title="Abrir macros y presets de técnicas, objetos y pasivas"
+                  >
+                    <Sliders className="w-3 h-3 text-oro" />
+                    <span>PRESETS / MACROS</span>
+                  </button>
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -4582,8 +4618,21 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
                                     setSelectedTecnicaId(pt.tecnica_id);
                                     setIsDropdownOpen(false);
                                     setTecnicaSearch('');
-                                    setCustomChCost(0);
-                                    setCustomCdRounds(1);
+
+                                    const presetItem = ((activeCharacter?.combat_presets as any[]) || []).find(
+                                      (p: any) => Number(p.id) === Number(pt.tecnica_id) && p.tipo === 'tecnica'
+                                    );
+                                    const firstPreset = presetItem?.presets?.[0];
+                                    if (firstPreset) {
+                                      setSelectedCombatPresetId(firstPreset.id);
+                                      setCustomChCost(Number(firstPreset.coste_ch ?? 0));
+                                      setCustomCdRounds(Number(firstPreset.cd_rondas ?? 1));
+                                    } else {
+                                      setSelectedCombatPresetId(null);
+                                      setCustomChCost(0);
+                                      setCustomCdRounds(1);
+                                    }
+
                                     setIsConstantCh(false);
                                     setConstantChCost(0);
                                     setIsTechActive(false);
@@ -4757,6 +4806,82 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
 
                 {selectedTecnicaId !== null && (
                   <div className="space-y-4 animate-in fade-in duration-300">
+                    {/* PANEL DE PRESETS DE LA TÉCNICA */}
+                    {selectedTechPresets && selectedTechPresets.presets?.length > 0 && (
+                      <div className="bg-black/70 border border-oro/30 p-3.5 ninja-clip-xs space-y-3">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <span className="text-[10px] font-black text-oro uppercase tracking-wider flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-oro" />
+                            <span>PRESETS / MACRO</span>
+                          </span>
+
+                          <div className="flex flex-wrap gap-1.5">
+                            {selectedTechPresets.presets.map((preset: any) => {
+                              const isSelected = (activeCombatPreset?.id === preset.id);
+                              return (
+                                <button
+                                  key={preset.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedCombatPresetId(preset.id);
+                                    if (preset.coste_ch !== undefined && preset.coste_ch !== null) {
+                                      setCustomChCost(Number(preset.coste_ch));
+                                    }
+                                    if (preset.cd_rondas !== undefined && preset.cd_rondas !== null) {
+                                      setCustomCdRounds(Number(preset.cd_rondas));
+                                    }
+                                  }}
+                                  className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-wider transition-all border ${
+                                    isSelected
+                                      ? 'bg-oro text-black border-oro shadow-[0_0_10px_rgba(255,230,159,0.4)]'
+                                      : 'bg-black/80 text-oro/60 border-oro/20 hover:border-oro/50 hover:text-oro'
+                                  }`}
+                                >
+                                  {preset.nombre_preset || 'Estándar'}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {activeCombatPreset && (
+                          <div className="relative bg-black/90 border border-oro/20 p-2.5 rounded-sm">
+                            <pre className="text-[11px] text-oro/90 font-mono whitespace-pre-wrap break-words pr-24 leading-relaxed select-all">
+                              {activeCombatPreset.texto_copiar || activeCombatPreset.roleo || 'Sin texto configurado'}
+                            </pre>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const textToCopy = activeCombatPreset.texto_copiar || activeCombatPreset.roleo || '';
+                                if (!textToCopy) return;
+                                navigator.clipboard.writeText(textToCopy);
+                                setCopiedCombatPresetId(activeCombatPreset.id);
+                                setTimeout(() => setCopiedCombatPresetId(null), 2000);
+                                addToast('¡Copiado al portapapeles!', 'success');
+                              }}
+                              className={`absolute right-2 top-2 px-2.5 py-1.5 text-[10px] font-black uppercase flex items-center gap-1 transition-all ${
+                                copiedCombatPresetId === activeCombatPreset.id
+                                  ? 'bg-emerald-500 text-black border border-emerald-400'
+                                  : 'bg-oro text-black border border-oro hover:brightness-110'
+                              }`}
+                            >
+                              {copiedCombatPresetId === activeCombatPreset.id ? (
+                                <>
+                                  <Check className="w-3 h-3" />
+                                  <span>¡COPIADO!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3 h-3" />
+                                  <span>COPIAR</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     <div className={isEventMode ? "grid grid-cols-1" : "grid grid-cols-2 gap-4"}>
                       {!isEventMode && (
                         <div>
@@ -5035,6 +5160,248 @@ export default function CombatRoom({ roomId }: { roomId: string }) {
           </div>
         </section>
       )}
+
+        {/* QUICK COMBAT PRESETS & MACROS MODAL */}
+        {showQuickPresetsModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 overflow-y-auto animate-in fade-in duration-200">
+            <div
+              className="w-full max-w-3xl bg-[#0d0e12] border border-oro/40 shadow-2xl p-6 md:p-8 relative max-h-[90vh] overflow-y-auto flex flex-col"
+              style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-oro/20 pb-4 mb-5">
+                <div className="flex items-center gap-3">
+                  <Sliders className="w-5 h-5 text-oro" />
+                  <div>
+                    <h2 className="ninja-title text-lg md:text-xl font-black text-oro uppercase tracking-[0.2em]">
+                      MACROS Y PRESETS DE COMBATE
+                    </h2>
+                    <p className="text-[11px] text-oro/60">
+                      {activeCharacter?.nombre_ninja} — Copia rápidamente tus técnicas, objetos y pasivas configuradas
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowQuickPresetsModal(false)}
+                  className="p-1.5 text-oro/50 hover:text-oro hover:bg-oro/10 transition-colors rounded"
+                  title="Cerrar modal"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Categorías y Filtro */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-5">
+                <div className="flex flex-wrap gap-1.5 w-full sm:w-auto">
+                  {(['all', 'objeto', 'pasiva', 'tecnica'] as const).map(cat => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setQuickPresetCategory(cat)}
+                      className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider border transition-all ${
+                        quickPresetCategory === cat
+                          ? 'bg-oro text-black border-oro shadow-[0_0_10px_rgba(255,230,159,0.3)]'
+                          : 'bg-black/60 text-oro/60 border-oro/15 hover:border-oro/40 hover:text-oro'
+                      }`}
+                    >
+                      {cat === 'all' ? 'TODOS' : cat === 'objeto' ? 'OBJETOS' : cat === 'pasiva' ? 'PASIVAS' : 'TÉCNICAS'}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="relative w-full sm:w-64">
+                  <input
+                    type="text"
+                    value={quickPresetSearch}
+                    onChange={e => setQuickPresetSearch(e.target.value)}
+                    placeholder="Filtrar preset o jutsu..."
+                    className="w-full bg-black/60 border border-oro/20 text-oro px-3 py-1.5 text-xs font-black outline-none focus:border-oro transition-all placeholder:text-oro/30 rounded-sm"
+                  />
+                  {quickPresetSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setQuickPresetSearch('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-oro/40 hover:text-oro text-xs font-bold"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Lista de presets filtrados */}
+              <div className="space-y-3 overflow-y-auto max-h-[55vh] pr-1">
+                {(() => {
+                  const presetsList = ((activeCharacter?.combat_presets as any[]) || []).filter((item: any) => {
+                    const matchCat = quickPresetCategory === 'all' || item.tipo === quickPresetCategory;
+                    const searchQ = quickPresetSearch.toLowerCase().trim();
+                    const matchQ =
+                      searchQ === '' ||
+                      item.nombre?.toLowerCase().includes(searchQ) ||
+                      item.subtipo?.toLowerCase().includes(searchQ) ||
+                      (item.presets || []).some(
+                        (p: any) =>
+                          p.nombre_preset?.toLowerCase().includes(searchQ) ||
+                          p.roleo?.toLowerCase().includes(searchQ) ||
+                          p.texto_copiar?.toLowerCase().includes(searchQ) ||
+                          p.efectos?.toLowerCase().includes(searchQ)
+                      );
+                    return matchCat && matchQ;
+                  });
+
+                  if (presetsList.length === 0) {
+                    return (
+                      <div className="text-center py-12 bg-black/40 border border-oro/10 p-6">
+                        <Sliders className="w-8 h-8 text-oro/20 mx-auto mb-2" />
+                        <p className="text-xs text-oro/40 uppercase font-black tracking-wider">
+                          No se encontraron presets en esta categoría
+                        </p>
+                        <p className="text-[11px] text-oro/30 mt-1">
+                          Puedes configurar tus presets y macros desde la pestaña Técnicas de tu ficha.
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  return presetsList.map((item: any) => {
+                    const itemKey = `${item.tipo}-${item.id}`;
+                    return (
+                      <div
+                        key={itemKey}
+                        className="bg-black/70 border border-oro/20 p-3.5 space-y-2.5 rounded-sm hover:border-oro/40 transition-colors"
+                      >
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`text-[9px] font-black uppercase font-mono px-2 py-0.5 rounded border ${
+                                item.tipo === 'tecnica'
+                                  ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+                                  : item.tipo === 'objeto'
+                                  ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+                                  : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                              }`}
+                            >
+                              {item.tipo}
+                            </span>
+                            <span className="font-black text-oro uppercase text-xs">
+                              {item.nombre}
+                            </span>
+                            {item.subtipo && (
+                              <span className="text-[10px] text-oro/40 italic">
+                                ({item.subtipo})
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Presets del item */}
+                        <div className="space-y-2">
+                          {(item.presets || []).map((p: any) => {
+                            const isCopied = copiedCombatPresetId === p.id;
+                            const textToCopy = p.texto_copiar || p.roleo || p.efectos || '';
+
+                            return (
+                              <div
+                                key={p.id}
+                                className="bg-black/90 border border-oro/10 p-2.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 rounded-sm"
+                              >
+                                <div className="flex flex-col min-w-0 pr-2">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-[11px] font-black text-oro/80 uppercase">
+                                      {p.nombre_preset || 'Estándar'}
+                                    </span>
+                                    {p.coste_ch !== undefined && p.coste_ch !== null && (
+                                      <span className="text-[9px] font-mono text-cyan-400 bg-cyan-950/40 px-1.5 py-0.2 border border-cyan-500/20 rounded">
+                                        {p.coste_ch} CH
+                                      </span>
+                                    )}
+                                    {p.cd_rondas !== undefined && p.cd_rondas !== null && Number(p.cd_rondas) > 0 && (
+                                      <span className="text-[9px] font-mono text-red-400 bg-red-950/40 px-1.5 py-0.2 border border-red-500/20 rounded">
+                                        CD: {p.cd_rondas}R
+                                      </span>
+                                    )}
+                                  </div>
+                                  <pre className="text-[10px] text-white/80 font-mono whitespace-pre-wrap break-words mt-1 leading-relaxed">
+                                    {textToCopy || 'Sin texto configurado'}
+                                  </pre>
+                                </div>
+
+                                <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+                                  {item.tipo === 'tecnica' && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedTecnicaId(Number(item.id));
+                                        setSelectedCombatPresetId(p.id);
+                                        if (p.coste_ch !== undefined && p.coste_ch !== null) {
+                                          setCustomChCost(Number(p.coste_ch));
+                                        }
+                                        if (p.cd_rondas !== undefined && p.cd_rondas !== null) {
+                                          setCustomCdRounds(Number(p.cd_rondas));
+                                        }
+                                        setShowQuickPresetsModal(false);
+                                        addToast(`Técnica ${item.nombre} cargada en consola.`, 'info');
+                                      }}
+                                      className="px-2.5 py-1 text-[10px] font-black uppercase text-oro/80 bg-oro/10 border border-oro/20 hover:bg-oro/20 transition-all"
+                                      title="Cargar esta técnica y preset en la consola de combate"
+                                    >
+                                      USAR
+                                    </button>
+                                  )}
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (!textToCopy) return;
+                                      navigator.clipboard.writeText(textToCopy);
+                                      setCopiedCombatPresetId(p.id);
+                                      setTimeout(() => setCopiedCombatPresetId(null), 2000);
+                                      addToast('¡Copiado al portapapeles!', 'success');
+                                    }}
+                                    className={`px-2.5 py-1 text-[10px] font-black uppercase flex items-center gap-1 transition-all ${
+                                      isCopied
+                                        ? 'bg-emerald-500 text-black border border-emerald-400'
+                                        : 'bg-oro text-black border border-oro hover:brightness-110'
+                                    }`}
+                                  >
+                                    {isCopied ? (
+                                      <>
+                                        <Check className="w-3 h-3" />
+                                        <span>¡COPIADO!</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Copy className="w-3 h-3" />
+                                        <span>COPIAR</span>
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+
+              {/* Footer */}
+              <div className="mt-5 pt-4 border-t border-oro/15 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowQuickPresetsModal(false)}
+                  className="ninja-btn-ghost px-5 py-2 text-xs font-black uppercase tracking-wider text-oro/70 hover:text-oro"
+                >
+                  CERRAR
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* CREATE NPC MODAL */}
         {showCreateTempModal && (

@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client';
-import { Character, PersonajeRama, PersonajeItem, PersonajeTecnica, Registro, Glosario, Rasgo, PersonajeSentido, PersonajeAcompanante, AcompananteInfo, KugutsuComponente, PersonajeInventarioRegistro, PersonajeUchihaData } from '@/domain/types';
+import { Character, PersonajeRama, PersonajeItem, PersonajeTecnica, Registro, Glosario, Rasgo, PersonajeSentido, PersonajeAcompanante, AcompananteInfo, KugutsuComponente, PersonajeInventarioRegistro, PersonajeUchihaData, CombatPresetItem } from '@/domain/types';
 import { RewardLogic, MultiplierTier } from '@/domain/character/logic';
 
 export const CharacterService = {
@@ -59,7 +59,8 @@ export const CharacterService = {
       personajes_acompanantes: acomps,
       personajes_kugutsu_componentes: normalizedComps,
       registros_autor: data.registros_autor || [],
-      registros_participante: data.registros_participante || []
+      registros_participante: data.registros_participante || [],
+      combat_presets: Array.isArray(data.combat_presets) ? data.combat_presets : []
     } as Character;
   },
 
@@ -756,6 +757,21 @@ export const CharacterService = {
       }
     }
     return null;
+  },
+
+  async saveCombatPresets(characterId: number, presets: CombatPresetItem[]): Promise<void> {
+    const res = await fetch(`/api/characters/${characterId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        section: 'combat_presets',
+        data: { combat_presets: presets }
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Error al guardar los presets de combate');
+    }
   }
 };
 
