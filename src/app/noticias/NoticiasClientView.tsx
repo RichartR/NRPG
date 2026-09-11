@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { Zap } from 'lucide-react';
 import NewsGrid from './NewsGrid';
 import NewsList from '@/components/admin/NewsList';
@@ -57,7 +57,9 @@ export default function NoticiasClientView({
               <p className="text-gris-texto text-base sm:text-lg xl:text-2xl leading-relaxed">Mantente al día con las últimas actualizaciones, eventos de rol y parches.</p>
             </div>
 
-            <NewsGrid newsList={newsList} isAdmin={isAdmin} />
+            <Suspense fallback={<div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-oro/40 border-t-oro animate-spin" /></div>}>
+              <NewsGrid newsList={newsList} isAdmin={isAdmin} />
+            </Suspense>
           </>
         ) : (
           <div className="animate-in fade-in duration-500">
