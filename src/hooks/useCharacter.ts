@@ -624,6 +624,42 @@ export function useCharacter(characterId: string) {
           }
         }
 
+        // Check Uchiha Special Choice (Shihai vs Segundo Elemento)
+        const oldEleccion = (originalCharacter as any)?.personaje_uchiha?.eleccion_especial;
+        const newEleccion = (character as any)?.personaje_uchiha?.eleccion_especial;
+        const oldUchihaElemId = (originalCharacter as any)?.personaje_uchiha?.segundo_elemento_id;
+        const newUchihaElemId = (character as any)?.personaje_uchiha?.segundo_elemento_id;
+
+        if (oldEleccion !== newEleccion || (newEleccion === 'elemento' && oldUchihaElemId !== newUchihaElemId)) {
+          if (newEleccion === 'shihai') {
+            await RegistrosService.createRegistro({
+              tipo: 'accion',
+              autor_id: Number(characterId),
+              participantes_ids: [Number(characterId)],
+              data: {
+                titulo: `${character.nombre_ninja} elige la pasiva clan Shihai (Dominio)`,
+                subtitulo: 'Clan Uchiha — Especialización Clan',
+                tipo_accion: 'eleccion_shihai_uchiha'
+              }
+            });
+          } else if (newEleccion === 'elemento' && newUchihaElemId) {
+            const elObj = (masters.elementos || []).find((e: any) => Number(e.id) === Number(newUchihaElemId));
+            const elName = elObj?.nombre_jap ? `${elObj.nombre_jap} (${elObj.nombre_esp})` : (elObj?.nombre_esp || `ID: ${newUchihaElemId}`);
+            await RegistrosService.createRegistro({
+              tipo: 'accion',
+              autor_id: Number(characterId),
+              participantes_ids: [Number(characterId)],
+              data: {
+                titulo: `${character.nombre_ninja} elige ${elName} como su Segundo Elemento`,
+                subtitulo: 'Clan Uchiha — Especialización Clan (Katon Base)',
+                tipo_accion: 'eleccion_segundo_elemento_uchiha',
+                elemento_id: Number(newUchihaElemId),
+                elemento_nombre: elName
+              }
+            });
+          }
+        }
+
         // 2. Check Standard New Techniques (excluding Uchiha copies)
         const uchihaCurrentCopiedIds = new Set(
           Object.values(currentCopias).map((c: any) => Number(c?.tecnica_id)).filter(Boolean)

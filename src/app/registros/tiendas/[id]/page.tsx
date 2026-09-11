@@ -136,7 +136,8 @@ export default function TiendaDetallePage() {
           *,
           personajes_tecnicas:reg_personajes_tecnicas!reg_personajes_tecnicas_personaje_id_fkey(*),
           personajes_inventario:reg_personajes_inventario!reg_personajes_inventario_personaje_id_fkey(*),
-          personajes_ramas:reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(*)
+          personajes_ramas:reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(*),
+          personaje_uchiha:reg_personajes_uchiha(*)
         `)
         .eq('user_id', user.id)
         .eq('activo', true)
@@ -144,7 +145,10 @@ export default function TiendaDetallePage() {
 
       if (error) console.error('Error fetching user characters:', error);
 
-      let list: Character[] = data || [];
+      let list: Character[] = (data || []).map((c: any) => ({
+        ...c,
+        personaje_uchiha: Array.isArray(c.personaje_uchiha) ? c.personaje_uchiha[0] : c.personaje_uchiha
+      }));
 
       if (activeCharId && !list.some(c => c.id === activeCharId)) {
         const { data: activeCharData, error: activeErr } = await supabase
@@ -153,13 +157,17 @@ export default function TiendaDetallePage() {
             *,
             personajes_tecnicas:reg_personajes_tecnicas!reg_personajes_tecnicas_personaje_id_fkey(*),
             personajes_inventario:reg_personajes_inventario!reg_personajes_inventario_personaje_id_fkey(*),
-            personajes_ramas:reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(*)
+            personajes_ramas:reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(*),
+            personaje_uchiha:reg_personajes_uchiha(*)
           `)
           .eq('id', activeCharId)
           .single();
 
         if (!activeErr && activeCharData && activeCharData.activo !== false && !activeCharData.eliminado_voluntario) {
-          list.push(activeCharData);
+          list.push({
+            ...activeCharData,
+            personaje_uchiha: Array.isArray(activeCharData.personaje_uchiha) ? activeCharData.personaje_uchiha[0] : activeCharData.personaje_uchiha
+          });
         }
       }
 
@@ -634,13 +642,49 @@ export default function TiendaDetallePage() {
         }
       }
 
+      // Rama check
+      const branchReq = obj.info_glosario?.rama_clan_id || reqs.rama_id;
+      if (branchReq) {
+        const reqRamaId = Number(branchReq);
+        if (!isNaN(reqRamaId) && reqRamaId > 0) {
+          const charRamaIds = (char.personajes_ramas || []).map((r: any) => Number(r.rama_id));
+          if (char.eleccion_tecnicas_clan?.rama_id) charRamaIds.push(Number(char.eleccion_tecnicas_clan.rama_id));
+
+          const uchiha = Array.isArray((char as any).personaje_uchiha)
+            ? (char as any).personaje_uchiha[0]
+            : (char as any).personaje_uchiha;
+          const uchihaRama = uchiha?.rama_combate;
+          if (uchihaRama === 'Shurikenjutsu' || uchihaRama === 'Bujutsu') {
+            const bukijutsuRama = (masters.ramas || []).find((r: any) => r.slug === 'rama-bukijutsu' || r.nombre?.toLowerCase().includes('bukijutsu'));
+            charRamaIds.push(bukijutsuRama ? Number(bukijutsuRama.id) : 12);
+          }
+
+          if (!charRamaIds.includes(reqRamaId)) {
+            allowed = false;
+            const ramaName = masters.ramas?.find((r: any) => Number(r.id) === reqRamaId)?.nombre || `ID: ${reqRamaId}`;
+            reasons.push(`Falta la rama requerida: ${ramaName}`);
+          }
+        }
+      }
+
       // Subespecialidad / Subcategoría check
       if (reqs.sub_especialidad_id) {
         const reqIds = Array.isArray(reqs.sub_especialidad_id) ? reqs.sub_especialidad_id : [reqs.sub_especialidad_id];
         if (reqIds.length > 0) {
+          const uchiha = Array.isArray((char as any).personaje_uchiha)
+            ? (char as any).personaje_uchiha[0]
+            : (char as any).personaje_uchiha;
+          const uchihaRama = uchiha?.rama_combate;
+          const uchihaSubId = uchihaRama === 'Bujutsu'
+            ? (masters.subEspecialidades?.find(s => s.slug === 'bujutsu' || s.nombre?.toLowerCase() === 'bujutsu')?.id || 17)
+            : (uchihaRama === 'Shurikenjutsu'
+                ? (masters.subEspecialidades?.find(s => s.slug === 'shurikenjutsu' || s.nombre?.toLowerCase() === 'shurikenjutsu')?.id || 18)
+                : null);
+
           const playerSubSpecs = [
             ...(char.personajes_ramas || []).map(pr => pr.sub_especialidad_id ? Number(pr.sub_especialidad_id) : null).filter(Boolean),
-            ...(char.eleccion_tecnicas_clan?.sub_especialidad_id ? [Number(char.eleccion_tecnicas_clan.sub_especialidad_id)] : [])
+            ...(char.eleccion_tecnicas_clan?.sub_especialidad_id ? [Number(char.eleccion_tecnicas_clan.sub_especialidad_id)] : []),
+            ...(uchihaSubId ? [Number(uchihaSubId)] : [])
           ];
           const hasAny = reqIds.some((reqId: any) => playerSubSpecs.includes(Number(reqId)));
           if (!hasAny) {

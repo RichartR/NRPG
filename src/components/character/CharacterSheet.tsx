@@ -90,6 +90,18 @@ export default function CharacterSheet() {
       }
     }
 
+    // Clan Uchiha: Katon (ID 6) de base asegurado + segundo elemento si fue elegido
+    const isUchiha = charRamas.some((pr: any) => {
+      const clanInfo = pr.info_ramas_clanes || (ramas || []).find((m: any) => m.id === Number(pr.rama_id));
+      return Number(pr.rama_id) === 35 || clanInfo?.slug === 'uchiha-ichizoku' || clanInfo?.nombre?.toLowerCase().includes('uchiha');
+    });
+    if (isUchiha) {
+      fijosSet.add(6); // Katon innato de base
+      if (activeCharacter.personaje_uchiha?.eleccion_especial === 'elemento' && activeCharacter.personaje_uchiha?.segundo_elemento_id) {
+        fijosSet.add(Number(activeCharacter.personaje_uchiha.segundo_elemento_id));
+      }
+    }
+
     charRamas.forEach((pr: any) => {
       if (pr.elemento_principal_id) fijosSet.add(Number(pr.elemento_principal_id));
       if (pr.elemento_secundario_id) fijosSet.add(Number(pr.elemento_secundario_id));

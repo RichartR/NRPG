@@ -44,6 +44,22 @@ import { resolveAldeaIcono } from '@/utils/aldea-icon';
 import { createClient } from '@/utils/supabase/client';
 import { searchAny } from '@/lib/utils/search';
 
+export const SHIHAI_GLOSARIO_FALLBACK: Glosario = {
+  id: 176,
+  nombre_es: 'Dominio',
+  nombre_jp: 'Shihai',
+  categoria_id: 4,
+  rango: 'D',
+  rama_clan_id: 4,
+  inicial: true,
+  basica: true,
+  activo: true,
+  coste_exp: 0,
+  coste_ryous: 0,
+  coste_puntos_aprendizaje: 0,
+  requisitos: { rango: 'D', rama_id: 4 }
+} as Glosario;
+
 interface CharacterSheetViewProps {
   character: Character;
   originalCharacter?: Character | null;
@@ -978,6 +994,13 @@ export function CharacterSheetView({
     });
     if (hasClanWithElements) return true;
 
+    // Clan Uchiha: posee afinidad elemental propia (Katon base + Segundo Elemento / Shihai)
+    const hasUchihaClan = (character.personajes_ramas || []).some((pr: any) => {
+      const clanInfo = pr.info_ramas_clanes || (masters.ramas || []).find((m: any) => m.id === Number(pr.rama_id));
+      return Number(pr.rama_id) === 35 || clanInfo?.slug === 'uchiha-ichizoku' || clanInfo?.nombre?.toLowerCase().includes('uchiha');
+    });
+    if (hasUchihaClan) return true;
+
     const clanEleccion = character.eleccion_tecnicas_clan;
     if (clanEleccion && Number(clanEleccion.rama_id) === 4 && clanEleccion.sub_especialidad_id) return true;
 
@@ -1009,6 +1032,18 @@ export function CharacterSheetView({
     // 1. Obtener elementos fijos asociados a las ramas/clanes y sub-especialidades del personaje
     const charRamas = character.personajes_ramas || [];
     const fijosSet = new Set<number>();
+
+    // Clan Uchiha: Katon (ID 6) de base asegurado + segundo elemento si fue elegido
+    const isUchiha = charRamas.some((pr: any) => {
+      const clanInfo = pr.info_ramas_clanes || (masters.ramas || []).find((m: any) => m.id === Number(pr.rama_id));
+      return Number(pr.rama_id) === 35 || clanInfo?.slug === 'uchiha-ichizoku' || clanInfo?.nombre?.toLowerCase().includes('uchiha');
+    });
+    if (isUchiha) {
+      fijosSet.add(6); // Katon innato de base
+      if (character.personaje_uchiha?.eleccion_especial === 'elemento' && character.personaje_uchiha?.segundo_elemento_id) {
+        fijosSet.add(Number(character.personaje_uchiha.segundo_elemento_id));
+      }
+    }
 
     charRamas.forEach((pr: any) => {
       // Por RamaClan (Otorga todos sus elementos fijos asociados en info_rama_elementos)
@@ -1111,38 +1146,47 @@ export function CharacterSheetView({
   const meetsRequirements = (item: Glosario) => {
     if (!character) return true;
 
+    // Clan Uchiha: Shihai (ID 176) si ha elegido la especialización Shihai
+    if ((Number(item.id) === 176 || (item.nombre_jp === 'Shihai' && item.categoria_id === 4)) && character.personaje_uchiha?.eleccion_especial === 'shihai') {
+      return true;
+    }
+
     // Block learning basic techniques of a branch if the branch is only had via clan compatibility,
     // UNLESS the technique is one of the initial techniques granted by that compatibility.
     if (item.basica === true && item.rama_clan_id) {
-      const techRamaId = Number(item.rama_clan_id);
-      const hasDirectly = (character.personajes_ramas || []).some((r: any) => Number(r.rama_id) === techRamaId);
+      if (Number(item.id) === 176 && character.personaje_uchiha?.eleccion_especial === 'shihai') {
+        // Permitido para Clan Uchiha con Shihai
+      } else {
+        const techRamaId = Number(item.rama_clan_id);
+        const hasDirectly = (character.personajes_ramas || []).some((r: any) => Number(r.rama_id) === techRamaId);
 
-      let hasViaClan = false;
-      const clanEleccion = character.eleccion_tecnicas_clan;
-      if (clanEleccion) {
-        if (Number(clanEleccion.rama_id) === techRamaId) {
-          hasViaClan = true;
-        } else {
-          const subEsp = (masters.subEspecialidades || []).find((s: any) => s.id === Number(clanEleccion.sub_especialidad_id));
-          if (subEsp && Number(subEsp.rama_id) === techRamaId) {
+        let hasViaClan = false;
+        const clanEleccion = character.eleccion_tecnicas_clan;
+        if (clanEleccion) {
+          if (Number(clanEleccion.rama_id) === techRamaId) {
             hasViaClan = true;
+          } else {
+            const subEsp = (masters.subEspecialidades || []).find((s: any) => s.id === Number(clanEleccion.sub_especialidad_id));
+            if (subEsp && Number(subEsp.rama_id) === techRamaId) {
+              hasViaClan = true;
+            }
           }
         }
-      }
 
-      if (hasViaClan && !hasDirectly) {
-        const clanElementalRama = (character.personajes_ramas || []).find((r: any) => {
-          const clanInfo = r.info_ramas_clanes || (masters.ramas || []).find((m: any) => m.id === Number(r.rama_id));
-          return checkClanElemental(clanInfo);
-        });
+        if (hasViaClan && !hasDirectly) {
+          const clanElementalRama = (character.personajes_ramas || []).find((r: any) => {
+            const clanInfo = r.info_ramas_clanes || (masters.ramas || []).find((m: any) => m.id === Number(r.rama_id));
+            return checkClanElemental(clanInfo);
+          });
 
-        // Clanes elementales permiten aprender técnicas básicas de Ninjutsu (rama 4) según sus elementos
-        if (techRamaId === 4 && clanElementalRama) {
-          // Permitido, no requiere estar en tecnicas_ids fijas de la opción
-        } else {
-          const isGrantedByClan = clanEleccion?.tecnicas_ids?.includes(Number(item.id));
-          if (!isGrantedByClan) {
-            return false;
+          // Clanes elementales permiten aprender técnicas básicas de Ninjutsu (rama 4) según sus elementos
+          if (techRamaId === 4 && clanElementalRama) {
+            // Permitido, no requiere estar en tecnicas_ids fijas de la opción
+          } else {
+            const isGrantedByClan = clanEleccion?.tecnicas_ids?.includes(Number(item.id));
+            if (!isGrantedByClan) {
+              return false;
+            }
           }
         }
       }
@@ -1273,6 +1317,19 @@ export function CharacterSheetView({
           }
         }
 
+        // Si el personaje Uchiha tiene como rama de combate Shurikenjutsu o Bujutsu,
+        // se le otorga acceso a la rama Bukijutsu (ID 12)
+        const uchihaRamaCombate = character.personaje_uchiha?.rama_combate;
+        if (uchihaRamaCombate === 'Shurikenjutsu' || uchihaRamaCombate === 'Bujutsu') {
+          const bukijutsuRama = (masters.ramas || []).find((r: any) => r.slug === 'rama-bukijutsu' || r.nombre?.toLowerCase().includes('bukijutsu'));
+          charRamaIds.push(bukijutsuRama ? Number(bukijutsuRama.id) : 12);
+        }
+
+        // Si el personaje Uchiha ha elegido la especialización Shihai, se le otorga acceso a la técnica de Ninjutsu (4)
+        if (reqRamaId === 4 && (Number(item.id) === 176 || item.nombre_jp === 'Shihai') && character.personaje_uchiha?.eleccion_especial === 'shihai') {
+          charRamaIds.push(4);
+        }
+
         if (!charRamaIds.includes(reqRamaId)) return false;
       }
     }
@@ -1308,6 +1365,16 @@ export function CharacterSheetView({
             charSubIds.push(sub.id);
           }
         });
+
+        // Si el personaje Uchiha tiene rama de combate Bujutsu o Shurikenjutsu
+        const uchihaRamaCombate = character.personaje_uchiha?.rama_combate;
+        if (uchihaRamaCombate === 'Bujutsu') {
+          const bujutsuSub = (masters.subEspecialidades || []).find((s: any) => s.slug === 'bujutsu' || s.nombre?.toLowerCase() === 'bujutsu');
+          charSubIds.push(bujutsuSub ? Number(bujutsuSub.id) : 17);
+        } else if (uchihaRamaCombate === 'Shurikenjutsu') {
+          const shurikenSub = (masters.subEspecialidades || []).find((s: any) => s.slug === 'shurikenjutsu' || s.nombre?.toLowerCase() === 'shurikenjutsu');
+          charSubIds.push(shurikenSub ? Number(shurikenSub.id) : 18);
+        }
 
         if (!reqSubIds.some((reqId: number) => charSubIds.includes(reqId))) {
           return false;
@@ -1448,8 +1515,13 @@ export function CharacterSheetView({
               return false;
             }
           } else {
-            // Técnica no elemental de Ninjutsu (ej: Dominio/Shihai): requiere poseer la rama de Ninjutsu
-            if (!ninjutsuSlot) return false;
+            // Técnica no elemental de Ninjutsu (ej: Dominio/Shihai): requiere poseer la rama de Ninjutsu o ser Uchiha con elección Shihai
+            if (!ninjutsuSlot) {
+              if (Number(t.id) === 176 && character.personaje_uchiha?.eleccion_especial === 'shihai') {
+                return true;
+              }
+              return false;
+            }
           }
         } else if (isClanElemental && reqElId) {
           // Si el personaje tiene un clan elemental, cualquier otra técnica elemental inicial requiere coincidir con Nin I
@@ -1461,6 +1533,17 @@ export function CharacterSheetView({
         return meetsRequirements(t);
       });
 
+    // Asegurar que Shihai (ID 176) esté en matchingInitialTecs si el personaje Uchiha eligió Shihai
+    if (character.personaje_uchiha?.eleccion_especial === 'shihai') {
+      const hasShihaiInMatching = matchingInitialTecs.some((t: any) => Number(t.id) === 176);
+      if (!hasShihaiInMatching) {
+        const shihaiTec = (masters.glosario || []).find((g: any) => Number(g.id) === 176)
+          || (glosarioFiltrado || []).find((g: any) => Number(g.id) === 176)
+          || SHIHAI_GLOSARIO_FALLBACK;
+        matchingInitialTecs.push(shihaiTec);
+      }
+    }
+
     // 3. Obtener las técnicas actuales
     const currentTecs = character.personajes_tecnicas || [];
 
@@ -1471,8 +1554,18 @@ export function CharacterSheetView({
 
     // 5. Ver si hay alguna técnica que el personaje ya no cumple requisitos o cuyo elemento ya no posee
     const tecsToRemove = currentTecs.filter((ct: any) => {
-      const t = ct.info_glosario;
+      const t = ct.info_glosario || (masters.glosario || []).find((g: any) => Number(g.id) === Number(ct.tecnica_id)) || (glosarioFiltrado || []).find((g: any) => Number(g.id) === Number(ct.tecnica_id));
       if (!t || t.categoria_id === 2) return false;
+
+      // Si es Shihai (ID 176) y el Uchiha tiene activa la especialización shihai, NO remover
+      if (Number(ct.tecnica_id) === 176 && character.personaje_uchiha?.eleccion_especial === 'shihai') {
+        return false;
+      }
+
+      // Si es Shihai y es Uchiha pero ya NO tiene la especialización shihai, remover
+      if (Number(ct.tecnica_id) === 176 && isUchiha && character.personaje_uchiha?.eleccion_especial !== 'shihai') {
+        return true;
+      }
 
       // Si es una técnica con elemento específico, remover si el personaje ya no posee dicho elemento
       if (t.elemento_id) {
@@ -1515,7 +1608,8 @@ export function CharacterSheetView({
           ...tecsToAdd.map((it: any) => ({
             personaje_id: Number(character.id || 0),
             tecnica_id: it.id,
-            info_glosario: it
+            info_glosario: it,
+            origen: Number(it.id) === 176 ? 'uchiha_shihai' : undefined
           }))
         ];
       }
@@ -1525,10 +1619,15 @@ export function CharacterSheetView({
   }, [
     isEditing,
     isNew,
+    isUchiha,
+    character.personaje_uchiha?.eleccion_especial,
+    character.personaje_uchiha?.segundo_elemento_id,
+    character.personaje_uchiha?.rama_combate,
     character.personajes_ramas,
     character.eleccion_tecnicas_clan ? JSON.stringify(character.eleccion_tecnicas_clan) : null,
     derivedElements.map((e: any) => e.id).sort().join(','),
     glosarioFiltrado,
+    masters.glosario,
     masters.subEspecialidades
   ]);
 
@@ -1599,6 +1698,7 @@ export function CharacterSheetView({
     isNew,
     character.personajes_ramas,
     character.eleccion_tecnicas_clan ? JSON.stringify(character.eleccion_tecnicas_clan) : null,
+    character.personaje_uchiha?.rama_combate,
     derivedElements.map((e: any) => e.id).sort().join(','),
     glosarioFiltrado,
     masters.subEspecialidades
@@ -1968,11 +2068,21 @@ export function CharacterSheetView({
 
   // Memoizar Pasivas agrupadas por subcategoría (categoria_id === 4)
   const pasivasGrouped = useMemo(() => {
-    const list = (character.personajes_tecnicas || []).filter((pt: PersonajeTecnica) => {
-      return pt.info_glosario?.categoria_id === 4;
+    const list = (character.personajes_tecnicas || []).map((pt: PersonajeTecnica) => {
+      if (pt.info_glosario) return pt;
+      const found = (masters.glosario || []).find((g: any) => Number(g.id) === Number(pt.tecnica_id))
+        || (glosarioFiltrado || []).find((g: any) => Number(g.id) === Number(pt.tecnica_id));
+      if (found) return { ...pt, info_glosario: found };
+      if (Number(pt.tecnica_id) === 176) {
+        return { ...pt, info_glosario: SHIHAI_GLOSARIO_FALLBACK };
+      }
+      return pt;
+    }).filter((pt: PersonajeTecnica) => {
+      const catId = pt.info_glosario?.categoria_id;
+      return catId === 4 || Number(pt.tecnica_id) === 176;
     }).filter((pt: PersonajeTecnica) => matchesGlosarioSearch(pt.info_glosario, techniqueSearch));
     return groupItemsByHierarchy(list);
-  }, [character.personajes_tecnicas, masters.aldeas, masters.ramas, techniqueSearch]);
+  }, [character.personajes_tecnicas, masters.aldeas, masters.ramas, masters.glosario, glosarioFiltrado, techniqueSearch]);
 
   // Memoizar Kuchiyoses agrupadas por subcategoría (categoria_id === 3)
   const kuchiyosesGrouped = useMemo(() => {
@@ -4810,6 +4920,12 @@ export function CharacterSheetView({
                                                               if (pt.info_glosario?.coste_exp) onUpdateField('xp', (character.xp || 0) + pt.info_glosario.coste_exp);
                                                               if (pt.info_glosario?.coste_ryous) onUpdateField('ryous', (character.ryous || 0) + pt.info_glosario.coste_ryous);
                                                               if (pt.info_glosario?.coste_puntos_aprendizaje) onUpdateField('puntos_aprendizaje', (character.puntos_aprendizaje || 0) + pt.info_glosario.coste_puntos_aprendizaje);
+                                                            }
+                                                            if (Number(pt.tecnica_id) === 176 && character.personaje_uchiha?.eleccion_especial === 'shihai') {
+                                                              onUpdateField('personaje_uchiha', {
+                                                                ...character.personaje_uchiha,
+                                                                eleccion_especial: null
+                                                              });
                                                             }
                                                             onUpdateField('personajes_tecnicas', character.personajes_tecnicas?.filter((t: PersonajeTecnica) => t.tecnica_id !== pt.tecnica_id));
                                                           }}

@@ -338,6 +338,7 @@ export interface PersonajeTecnica {
   personaje_id: number;
   tecnica_id: number;
   info_glosario?: Glosario;
+  origen?: string;
 }
 
 export interface PersonajeEntrenamiento {
@@ -564,6 +565,8 @@ export interface PersonajeUchihaData {
   rama_combate: 'Ninjutsu' | 'Taijutsu' | 'Genjutsu' | 'Shurikenjutsu' | 'Bujutsu' | null;
   slots_desbloqueados: string[]; // ej. ['D_1', 'D_2', 'D_3', 'C_1', ...]
   copias: Record<string, UchihaCopiaSlot>;
+  eleccion_especial?: 'shihai' | 'elemento' | null;
+  segundo_elemento_id?: number | null;
   created_at?: string;
   updated_at?: string;
 }

@@ -497,13 +497,30 @@ export async function PATCH(
         if (data.personaje_uchiha) {
           updatePromises.push((async () => {
             const uData = data.personaje_uchiha;
-            const { error: uErr } = await adminClient.from('reg_personajes_uchiha').upsert({
+            const copiasPayload = {
+              ...(uData.copias || {}),
+              _meta: {
+                eleccion_especial: uData.eleccion_especial || null,
+                segundo_elemento_id: uData.segundo_elemento_id ? Number(uData.segundo_elemento_id) : null
+              }
+            };
+            const upsertPayload: any = {
               personaje_id: Number(characterId),
               rama_combate: uData.rama_combate ?? null,
               slots_desbloqueados: uData.slots_desbloqueados || ['D_1', 'D_2'],
-              copias: uData.copias || {},
+              copias: copiasPayload,
               updated_at: new Date().toISOString()
-            }, { onConflict: 'personaje_id' });
+            };
+            if (uData.eleccion_especial !== undefined) upsertPayload.eleccion_especial = uData.eleccion_especial;
+            if (uData.segundo_elemento_id !== undefined) upsertPayload.segundo_elemento_id = uData.segundo_elemento_id;
+
+            let { error: uErr } = await adminClient.from('reg_personajes_uchiha').upsert(upsertPayload, { onConflict: 'personaje_id' });
+            if (uErr && uErr.message?.includes('column')) {
+              delete upsertPayload.eleccion_especial;
+              delete upsertPayload.segundo_elemento_id;
+              const retry = await adminClient.from('reg_personajes_uchiha').upsert(upsertPayload, { onConflict: 'personaje_id' });
+              uErr = retry.error;
+            }
             if (uErr) {
               console.error('Error guardando reg_personajes_uchiha en API:', uErr);
               throw uErr;
