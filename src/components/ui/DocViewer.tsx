@@ -5,6 +5,7 @@ import { convertDriveUrl, getDownloadUrl } from '@/lib/utils/driveConverter';
 import Link from 'next/link';
 import Breadcrumbs, { CrumbItem } from './Breadcrumbs';
 import { Search, BookOpen, FileText, X, ChevronRight, Check, AlertCircle } from 'lucide-react';
+import { normalizeSearchText } from '@/lib/utils/search';
 
 export interface NavDocItem {
   clave: string;
@@ -406,12 +407,16 @@ export default function DocViewer({
     }
 
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      list = list.filter(d =>
-        d.titulo.toLowerCase().includes(q) ||
-        d.clave.toLowerCase().includes(q) ||
-        (d.categoria && d.categoria.toLowerCase().includes(q))
-      );
+      const queryWords = normalizeSearchText(searchQuery).trim().split(/\s+/).filter(Boolean);
+      list = list.filter(d => {
+        const docFields = [
+          normalizeSearchText(d.titulo),
+          normalizeSearchText(d.clave),
+          d.categoria ? normalizeSearchText(d.categoria) : ''
+        ].filter(Boolean);
+
+        return queryWords.every(word => docFields.some(field => field.includes(word)));
+      });
     }
 
     return list;
