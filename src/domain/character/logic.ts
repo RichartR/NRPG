@@ -1,5 +1,15 @@
 import { CharacterStats, AtributosDerivados, RangoRules, StatsEscaladoConfig } from "../types";
 
+export interface AutoRankResult {
+  rank: string;
+  allowed: boolean;
+  debugInfo?: {
+    rankFailed: string;
+    missingTechs: string[];
+    reason: string;
+  };
+}
+
 export const StatsLogic = {
   calculateDerivedStats(
     stats: CharacterStats,
@@ -26,9 +36,9 @@ export const StatsLogic = {
     eleccionClan: any = null,
     elementos: any[] = [],
     inventarioPersonaje: any[] = []
-  ): string {
+  ): AutoRankResult {
     const rulesEntries = Object.entries(rules);
-    // Sort ranks by min threshold ascending (D, C, B, A, S, etc.)
+    // Ordenar los rangos por umbral mínimo (D, C, B, A, S, etc.)
     const sortedRanks = rulesEntries.sort((a: any, b: any) => (Number(a[1].min) || 0) - (Number(b[1].min) || 0));
 
     let newRango = 'D';
@@ -36,11 +46,11 @@ export const StatsLogic = {
     for (const [r, rule] of sortedRanks) {
       const threshold = Number(rule.min) || 0;
       if (puntos_stats < threshold) {
-        break; // Stats don't meet requirements for this or higher ranks
+        break; // No cumple requisitos de stats para este rango
       }
 
-      // If we are trying to go from the current newRango to the next rank r,
-      // we must verify that all mandatory techniques of newRango are acquired.
+      // Si intentamos pasar de newRango al siguiente rango r,
+      // verificamos que todas las técnicas obligatorias de newRango estén dominadas.
       if (newRango !== r && glosarioTecnicas.length > 0) {
         const currentRankCheck = newRango;
 
@@ -128,13 +138,12 @@ export const StatsLogic = {
         });
         const isClanElemental = !!clanElementalRama;
 
-        // A) If isNinIIorIII or has elemental clan, check if they have enough basic techniques of the current rank
+        // A) Comprobación de cuota de técnicas básicas requeridas
         const rankRule = rules[currentRankCheck] as any;
         const reqBasicas = rankRule?.basicas_requeridas || 0;
         if ((isNinIIorIII || (isClanElemental && !isNinI)) && reqBasicas > 0) {
           const playerTechIds = tecnicasPersonaje.map(pt => Number(pt.tecnica_id));
 
-          // Count learned techniques of currentRankCheck that are basic Ninjutsu or from the elemental clan
           const basicCount = glosarioTecnicas.filter(t => {
             const tRank = t.rango || t.requisitos?.rango;
             const rId = Number(t.rama_clan_id);
@@ -142,96 +151,114 @@ export const StatsLogic = {
             return t.basica === true && isNinjutsuOrClan && tRank === currentRankCheck && playerTechIds.includes(t.id);
           }).length;
 
-
           if (basicCount < reqBasicas) {
-            break; // Blocked: doesn't have the required basic techniques
+            return {
+              rank: newRango,
+              allowed: false,
+              debugInfo: {
+                rankFailed: r,
+                missingTechs: [],
+                reason: `Técnicas básicas de Rango ${currentRankCheck} insuficientes: tienes ${basicCount}/${reqBasicas} requeridas.`
+              }
+            };
           }
         }
 
-        // Filter master techniques of currentRankCheck that are mandatory for advancement
+        // B) Filtrar técnicas obligatorias para ascenso
         const mandatoryTechs = glosarioTecnicas.filter(t => {
           const tRank = t.rango || t.requisitos?.rango;
           const isMandatory = t.obligatoria_ascenso || t.requisitos?.obligatoria_ascenso;
           if (!isMandatory || tRank !== currentRankCheck) return false;
 
-          // If Ninjutsu II/III or elemental clan is active, exclude basic techniques from mandatory check (already validated above)
           const rId = Number(t.rama_clan_id);
           const isNinjutsuOrClan = rId === 4 || (clanElementalRama && rId === Number(clanElementalRama.rama_id));
           if ((isNinIIorIII || (isClanElemental && !isNinI)) && isNinjutsuOrClan && t.basica === true) {
             return false;
           }
 
-          // Check if it belongs to the player's branches/specs/elements.
-          // If the technique has no branch, spec, or element, it is general.
           const hasBranch = t.rama_clan_id !== null && t.rama_clan_id !== undefined;
           const hasSubSpec = t.sub_especialidad_id !== null && t.sub_especialidad_id !== undefined;
           const hasElement = t.elemento_id !== null && t.elemento_id !== undefined;
 
-          if (!hasBranch && !hasSubSpec && !hasElement) return true; // General technique of this rank
+          // Técnica general del rango (sin rama, spec ni elemento)
+          if (!hasBranch && !hasSubSpec && !hasElement) return true;
 
+          // Comprobación de elemento
           if (hasElement) {
-  // Si el personaje NO tiene la rama de Ninjutsu activa, no se le deben exigir técnicas elementales
-  const hasNinjutsuBranch = playerBranches.includes(4);
-  if (!hasNinjutsuBranch) return false;
+            // Si el personaje NO posee formalmente la rama de Ninjutsu, no exigir técnicas elementales
+            const hasNinjutsuBranch = playerBranches.includes(4);
+            if (!hasNinjutsuBranch) return false;
 
-  const elId = Number(t.elemento_id);
-  if (rId === 4) {
-    const ninjutsuElements: number[] = [];
-    if (ninjutsuRama) {
-      if (ninjutsuRama.elemento_principal_id) ninjutsuElements.push(Number(ninjutsuRama.elemento_principal_id));
-      if (ninjutsuRama.elemento_secundario_id) ninjutsuElements.push(Number(ninjutsuRama.elemento_secundario_id));
-      if (ninjutsuRama.elemento_terciario_id) ninjutsuElements.push(Number(ninjutsuRama.elemento_terciario_id));
-    }
-    if (eleccionClan && Number(eleccionClan.rama_id) === 4) {
-      if (clanElementalRama?.elemento_principal_id) {
-        ninjutsuElements.push(Number(clanElementalRama.elemento_principal_id));
-      }
-    }
-    return ninjutsuElements.includes(elId);
-  }
-  return playerElements.includes(elId);
-}
+            const elId = Number(t.elemento_id);
+            if (rId === 4) {
+              const ninjutsuElements: number[] = [];
+              if (ninjutsuRama) {
+                if (ninjutsuRama.elemento_principal_id) ninjutsuElements.push(Number(ninjutsuRama.elemento_principal_id));
+                if (ninjutsuRama.elemento_secundario_id) ninjutsuElements.push(Number(ninjutsuRama.elemento_secundario_id));
+                if (ninjutsuRama.elemento_terciario_id) ninjutsuElements.push(Number(ninjutsuRama.elemento_terciario_id));
+              }
+              if (eleccionClan && Number(eleccionClan.rama_id) === 4) {
+                if (clanElementalRama?.elemento_principal_id) {
+                  ninjutsuElements.push(Number(clanElementalRama.elemento_principal_id));
+                }
+              }
+              return ninjutsuElements.includes(elId);
+            }
+            return playerElements.includes(elId);
+          }
 
-
+          // Comprobación de rama / clan
           if (hasBranch) {
             const ramaId = Number(t.rama_clan_id);
             const hasThisBranch = playerBranches.includes(ramaId);
             if (!hasThisBranch) return false;
 
-            // Find if the character has a subcategory for this branch
+            // Si la técnica pertenece a una rama seleccionada por elección de clan
+            if (eleccionClan && eleccionClan.rama_id && Number(t.rama_clan_id) !== Number(eleccionClan.rama_id)) {
+              const isClanOwnBranch = ramasPersonaje.some(rp => Number(rp.rama_id) === ramaId);
+              if (!isClanOwnBranch) return false;
+            }
+
             const branchEntry = ramasPersonaje.find(rp => Number(rp.rama_id) === ramaId);
             const clanEntry = (eleccionClan && Number(eleccionClan.rama_id) === ramaId) ? eleccionClan : null;
             const chosenSubId = branchEntry?.sub_especialidad_id || clanEntry?.sub_especialidad_id;
 
             if (chosenSubId) {
-              // Player has a subcategory for this branch. Only count techniques of that subcategory.
               return hasSubSpec && Number(t.sub_especialidad_id) === Number(chosenSubId);
             } else {
-              // Player does not have a subcategory for this branch.
-              // So they only check the branch itself (techniques that have no subcategory).
-              return !hasSubSpec;
+              if (hasSubSpec) return false;
+              return true;
             }
           }
 
           return false;
         });
 
-        // Verify player has all of these mandatory techniques or items
+        // Verificar posesión de técnicas obligatorias
         const playerTechIds = tecnicasPersonaje.map(pt => Number(pt.tecnica_id));
         const playerItemIds = inventarioPersonaje.map(pi => Number(pi.item_id || pi.id));
         const playerOwnedIds = [...playerTechIds, ...playerItemIds];
 
-        const hasAllMandatory = mandatoryTechs.every(mt => playerOwnedIds.includes(mt.id));
+        const missing = mandatoryTechs.filter(mt => !playerOwnedIds.includes(mt.id));
 
-        if (!hasAllMandatory) {
-          break; // Blocked: player hasn't purchased all mandatory techniques of currentRankCheck
+        if (missing.length > 0) {
+          const missingNames = missing.map(m => m.nombre_es || `ID: ${m.id}`);
+          return {
+            rank: newRango,
+            allowed: false,
+            debugInfo: {
+              rankFailed: r,
+              missingTechs: missingNames,
+              reason: `Faltan técnicas obligatorias de ${currentRankCheck}: ${missingNames.join(', ')}`
+            }
+          };
         }
       }
 
       newRango = r;
     }
 
-    return newRango;
+    return { rank: newRango, allowed: true };
   },
 
   validateStatChange(
@@ -446,7 +473,6 @@ export const RewardLogic = {
       const config = data.config_xp;
       if (!config) return { xp: 0, ryous: 0, pa: 0 };
 
-      // Calcular el rango máximo de cada bando
       const RANK_SCALE: Record<string, number> = { 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5 };
 
       const maxRankA = (data.equipo_a || []).reduce((max: number, p: any) => {
@@ -465,7 +491,6 @@ export const RewardLogic = {
 
       const diff = opponentMaxRankVal - ownMaxRankVal;
 
-      // Obtener el mapeo de EXP según victoria/derrota y diferencia
       const section = isWinner ? config.victoria : config.derrota;
       let xp = 0;
       if (!section) {
@@ -479,7 +504,6 @@ export const RewardLogic = {
         else xp = Number(section.menos_2) || 0;
       }
 
-      // Ajuste por inferioridad o superioridad numérica (solo aplica al bando ganador en combates a partir del 04/09/2026 22:37)
       const combatDate = registro.fecha ? new Date(registro.fecha).getTime() : Date.now();
       const isPostNumericalDiffRule = combatDate >= new Date('2026-09-04T20:37:00Z').getTime();
 
@@ -490,11 +514,9 @@ export const RewardLogic = {
         const oppTeamCount = isTeamA ? teamBCount : teamACount;
 
         if (ownTeamCount < oppTeamCount) {
-          // Inferioridad numérica: +50% por cada jugador de diferencia
           const playerDiff = oppTeamCount - ownTeamCount;
           xp = Math.ceil(xp * (1 + 0.5 * playerDiff));
         } else if (ownTeamCount > oppTeamCount) {
-          // Superioridad numérica: dividido entre (1 + diferencia de jugadores)
           const playerDiff = ownTeamCount - oppTeamCount;
           xp = Math.ceil(xp / (1 + playerDiff));
         }
@@ -503,7 +525,6 @@ export const RewardLogic = {
       let pa = RewardLogic.calculateCombatPA(registro, personajeId);
       let ryous = 0;
 
-      // Ganancias o pérdidas conjuntas si es intervención (Regla 6.15)
       if (isIntervencion) {
         if (isWinner) {
           xp += (Number(data.mision_exp) || Number(data.recompensa_xp_mision) || 0);
@@ -519,7 +540,6 @@ export const RewardLogic = {
       return { xp, ryous, pa };
     }
 
-    // Misiones o Acciones
     if (tipo === 'mision') {
       if (data.fallida) {
         return {
@@ -550,7 +570,6 @@ export const RewardLogic = {
     const isTeamB = data.equipo_b?.some((p: any) => Number(p.id) === Number(personajeId));
     const participant = [...(data.equipo_a || []), ...(data.equipo_b || [])].find((p: any) => Number(p.id) === Number(personajeId));
 
-    // Solo se suma si no huye
     if (!participant || participant.huye) return 0;
 
     const config = data.config_pa;
@@ -630,7 +649,6 @@ export const NinjutsuLogic = {
       return { valid: true };
     }
 
-    // 1. Si el clan es elemental y la otra rama es Ninjutsu, debe ser únicamente Ninjutsu I
     if (isClanElemental && ninjutsuRama) {
       const sub = subEspecialidades.find(s => Number(s.id) === Number(ninjutsuRama.sub_especialidad_id));
       if (sub && sub.slug !== 'ninjutsu-i') {
@@ -638,7 +656,6 @@ export const NinjutsuLogic = {
       }
     }
 
-    // 2. Extraer los elementos básicos del clan elemental
     let clanBasicElementIds: number[] = [];
     if (isClanElemental && ramaElementos.length > 0 && clanElementalRama) {
       clanBasicElementIds = ramaElementos
@@ -651,7 +668,6 @@ export const NinjutsuLogic = {
         .map((re: any) => Number(re.elemento_id));
     }
 
-    // 3. Validar que el elemento de Ninjutsu I esté entre los básicos del clan elemental
     if (isClanElemental && ninjutsuRama && clanBasicElementIds.length > 0) {
       const ninPrincipalElementId = ninjutsuRama.elemento_principal_id ? Number(ninjutsuRama.elemento_principal_id) : null;
       if (ninPrincipalElementId && !clanBasicElementIds.includes(ninPrincipalElementId)) {
@@ -659,7 +675,6 @@ export const NinjutsuLogic = {
       }
     }
 
-    // 4. Validar técnicas avanzadas de Ninjutsu de elementos básicos del clan
     if (isClanElemental && clanBasicElementIds.length > 0) {
       for (const t of tecnicas) {
         const info = t.info_glosario || t;
@@ -671,7 +686,6 @@ export const NinjutsuLogic = {
         ) {
           const tElementId = Number(info.elemento_id);
           if (clanBasicElementIds.includes(tElementId)) {
-            // Debe estar seleccionado como principal en alguna de las ramas (clan o Ninjutsu)
             const isPrincipal = ramas.some(r => Number(r.elemento_principal_id) === tElementId);
             if (!isPrincipal) {
               return {
@@ -693,11 +707,8 @@ export const NinjutsuLogic = {
     }
 
     const isFromClan = !isNinIIorIIIInBranch && isNinIIorIIIInClan;
-    const clanIds = ramas.map(r => Number(r.rama_id)).filter(id => id !== 4 && id > 0);
-
     const clanRamaId = clanElementalRama ? Number(clanElementalRama.rama_id) : null;
 
-    // Filter basic techniques (elemental clan techniques + elemental Ninjutsu basic techniques)
     const basicNinjutsu = tecnicas.filter(t => {
       const info = t.info_glosario || t;
       if (!info || info.basica !== true || Number(info.categoria_id || 1) !== 1) return false;
@@ -708,10 +719,8 @@ export const NinjutsuLogic = {
 
       if (!isNinRama && !isClanRama) return false;
 
-      // Si es técnica de Ninjutsu (rama 4), debe tener elemento (excluye Dominio/Shihai)
       if (isNinRama && !info.elemento_id) return false;
 
-      // Excluir técnicas del elemento de Ninjutsu I del conteo para límites del clan elemental
       if (isClanElemental && !isNinIIorIIIInBranch && !isNinIIorIIIInClan && ninjutsuIElementId !== null) {
         if (Number(info.elemento_id) === ninjutsuIElementId) {
           return false;
@@ -737,7 +746,6 @@ export const NinjutsuLogic = {
         maxC = 1;
         maxB = 1;
       } else {
-        // Por defecto o Ranton (kekkei-genkai-ranton-reiza)
         maxC = 2;
         maxB = 0;
       }
@@ -783,7 +791,6 @@ export const NinjutsuLogic = {
       return { valid: false, error: `LÍMITE ALCANZADO: El límite máximo de técnicas de Ninjutsu Básico es de ${limitTotal} ${bandoStr}.` };
     }
 
-    // Validar restricciones de rango por slot
     for (const t of tecnicas) {
       const info = t.info_glosario || t;
       if (info && info.elemento_id && Number(info.categoria_id || 1) === 1) {
@@ -797,15 +804,12 @@ export const NinjutsuLogic = {
         const activeSlotWithElements = ninjutsuRama || (isNinIIorIIIInClan ? clanElementalRama : null);
 
         if (activeSlotWithElements) {
-          // Elemento secundario: Máximo rango B
           if (activeSlotWithElements.elemento_secundario_id && Number(activeSlotWithElements.elemento_secundario_id) === elementId) {
             if (rank === 'A' || rank === 'S') {
               return { valid: false, error: `Restricción de Elemento Secundario: La técnica ${info.nombre_es || ('ID ' + info.id)} no puede ser superior a Rango B.` };
             }
           }
 
-          // Elemento terciario: Máximo rango C
-          // Obtenemos el slug de la subespecialidad activa
           const activeSubId = isNinIIorIIIInClan ? eleccionClan.sub_especialidad_id : ninjutsuRama?.sub_especialidad_id;
           const activeSub = subEspecialidades.find(s => Number(s.id) === Number(activeSubId));
           const activeSlug = activeSub?.slug || '';
@@ -821,4 +825,4 @@ export const NinjutsuLogic = {
 
     return { valid: true };
   }
-};
+};
