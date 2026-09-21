@@ -26,7 +26,7 @@ export const StatsLogic = {
     };
   },
 
-  calculateAutoRank(
+  calculateAutoRankWithDebug(
     puntos_stats: number,
     rules: RangoRules,
     tecnicasPersonaje: any[] = [],
@@ -38,7 +38,6 @@ export const StatsLogic = {
     inventarioPersonaje: any[] = []
   ): AutoRankResult {
     const rulesEntries = Object.entries(rules);
-    // Ordenar los rangos por umbral mínimo (D, C, B, A, S, etc.)
     const sortedRanks = rulesEntries.sort((a: any, b: any) => (Number(a[1].min) || 0) - (Number(b[1].min) || 0));
 
     let newRango = 'D';
@@ -46,15 +45,12 @@ export const StatsLogic = {
     for (const [r, rule] of sortedRanks) {
       const threshold = Number(rule.min) || 0;
       if (puntos_stats < threshold) {
-        break; // No cumple requisitos de stats para este rango
+        break;
       }
 
-      // Si intentamos pasar de newRango al siguiente rango r,
-      // verificamos que todas las técnicas obligatorias de newRango estén dominadas.
       if (newRango !== r && glosarioTecnicas.length > 0) {
         const currentRankCheck = newRango;
 
-        // Incluir ramas reales y las de elección del clan
         const playerBranches = [
           ...ramasPersonaje.map(rp => Number(rp.rama_id)),
           ...(eleccionClan?.rama_id ? [Number(eleccionClan.rama_id)] : [])
@@ -78,7 +74,6 @@ export const StatsLogic = {
           return acc;
         }, []);
 
-        // Mapear elementos de la elección de clan
         if (eleccionClan?.sub_especialidad_id && elementos.length > 0) {
           const sub = subEspecialidades.find((s: any) => s.id === Number(eleccionClan.sub_especial_id || eleccionClan.sub_especialidad_id));
           if (sub) {
@@ -138,7 +133,6 @@ export const StatsLogic = {
         });
         const isClanElemental = !!clanElementalRama;
 
-        // A) Comprobación de cuota de técnicas básicas requeridas
         const rankRule = rules[currentRankCheck] as any;
         const reqBasicas = rankRule?.basicas_requeridas || 0;
         if ((isNinIIorIII || (isClanElemental && !isNinI)) && reqBasicas > 0) {
@@ -164,7 +158,6 @@ export const StatsLogic = {
           }
         }
 
-        // B) Filtrar técnicas obligatorias para ascenso
         const mandatoryTechs = glosarioTecnicas.filter(t => {
           const tRank = t.rango || t.requisitos?.rango;
           const isMandatory = t.obligatoria_ascenso || t.requisitos?.obligatoria_ascenso;
@@ -180,12 +173,9 @@ export const StatsLogic = {
           const hasSubSpec = t.sub_especialidad_id !== null && t.sub_especialidad_id !== undefined;
           const hasElement = t.elemento_id !== null && t.elemento_id !== undefined;
 
-          // Técnica general del rango (sin rama, spec ni elemento)
           if (!hasBranch && !hasSubSpec && !hasElement) return true;
 
-          // Comprobación de elemento
           if (hasElement) {
-            // Si el personaje NO posee formalmente la rama de Ninjutsu, no exigir técnicas elementales
             const hasNinjutsuBranch = playerBranches.includes(4);
             if (!hasNinjutsuBranch) return false;
 
@@ -207,13 +197,11 @@ export const StatsLogic = {
             return playerElements.includes(elId);
           }
 
-          // Comprobación de rama / clan
           if (hasBranch) {
             const ramaId = Number(t.rama_clan_id);
             const hasThisBranch = playerBranches.includes(ramaId);
             if (!hasThisBranch) return false;
 
-            // Si la técnica pertenece a una rama seleccionada por elección de clan
             if (eleccionClan && eleccionClan.rama_id && Number(t.rama_clan_id) !== Number(eleccionClan.rama_id)) {
               const isClanOwnBranch = ramasPersonaje.some(rp => Number(rp.rama_id) === ramaId);
               if (!isClanOwnBranch) return false;
@@ -234,7 +222,6 @@ export const StatsLogic = {
           return false;
         });
 
-        // Verificar posesión de técnicas obligatorias
         const playerTechIds = tecnicasPersonaje.map(pt => Number(pt.tecnica_id));
         const playerItemIds = inventarioPersonaje.map(pi => Number(pi.item_id || pi.id));
         const playerOwnedIds = [...playerTechIds, ...playerItemIds];
@@ -259,6 +246,31 @@ export const StatsLogic = {
     }
 
     return { rank: newRango, allowed: true };
+  },
+
+  calculateAutoRank(
+    puntos_stats: number,
+    rules: RangoRules,
+    tecnicasPersonaje: any[] = [],
+    ramasPersonaje: any[] = [],
+    glosarioTecnicas: any[] = [],
+    subEspecialidades: any[] = [],
+    eleccionClan: any = null,
+    elementos: any[] = [],
+    inventarioPersonaje: any[] = []
+  ): string {
+    const result = StatsLogic.calculateAutoRankWithDebug(
+      puntos_stats,
+      rules,
+      tecnicasPersonaje,
+      ramasPersonaje,
+      glosarioTecnicas,
+      subEspecialidades,
+      eleccionClan,
+      elementos,
+      inventarioPersonaje
+    );
+    return result.rank;
   },
 
   validateStatChange(
