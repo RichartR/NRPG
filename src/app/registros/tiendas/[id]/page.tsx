@@ -176,11 +176,12 @@ export default function TiendaDetallePage() {
     }
   };
 
-  const getCandidateRankResult = (statPoints: number) => {
+  const getCandidateRankResult = (statPoints: number): { rank: string; allowed: boolean; debugInfo?: { rankFailed: string; missingTechs: string[]; reason: string } } => {
+    const fallbackRank = selectedChar?.rango || 'D';
     if (!selectedChar || !masters.rangoRules) {
-      return { rank: selectedChar?.rango || 'D', allowed: true };
+      return { rank: fallbackRank, allowed: true };
     }
-    return StatsLogic.calculateAutoRank(
+    return StatsLogic.calculateAutoRankWithDebug(
       statPoints,
       masters.rangoRules,
       selectedChar.personajes_tecnicas || [],
@@ -196,7 +197,8 @@ export default function TiendaDetallePage() {
   const isStatIncreaseAllowed = (newStatPoints: number): { allowed: boolean; reason?: string } => {
     if (!selectedChar || !masters.rangoRules) return { allowed: true };
     const res = getCandidateRankResult(newStatPoints);
-    const rule = masters.rangoRules[res.rank];
+    const rulesMap = masters.rangoRules as Record<string, any>;
+    const rule = rulesMap[res.rank];
     const maxAllowed = Number(rule?.max || rule?.stat_max) || 999;
 
     if (newStatPoints > maxAllowed) {
