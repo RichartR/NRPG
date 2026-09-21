@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ShoppingBag, Plus, Trash2, X, Check, Loader2, ArrowLeft, Search, AlertCircle, ChevronRight, Minus } from 'lucide-react';
+import { ShoppingBag, Plus, Trash2, X, Check, Loader2, Search, AlertCircle, ChevronRight, Minus } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { AuthService } from '@/services/supabase/auth.service';
 import { MasterService } from '@/services/supabase/master.service';
@@ -35,7 +35,7 @@ export default function TiendaDetallePage() {
 
   // Search & Filters
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<number | string | null>(null); // null means All, 'stats' means Stat Points
+  const [selectedCategory, setSelectedCategory] = useState<number | string | null>(null);
 
   // Modals / Admin forms
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -59,13 +59,13 @@ export default function TiendaDetallePage() {
     }
   });
 
-  // Form State for Creating Custom EXP Shop Item (Virtual Bridge Glosario)
+  // Form State for Creating Custom EXP Shop Item
   const [isCustomItem, setIsCustomItem] = useState(false);
   const [formCustomGlosario, setFormCustomGlosario] = useState({
     nombre_es: '',
     nombre_jp: '',
     descripcion: '',
-    categoria_id: 2, // Default: Objetos
+    categoria_id: 2,
     coste_exp: 0,
     coste_ryous: 0,
     requisitos: {
@@ -136,8 +136,7 @@ export default function TiendaDetallePage() {
           *,
           personajes_tecnicas:reg_personajes_tecnicas!reg_personajes_tecnicas_personaje_id_fkey(*),
           personajes_inventario:reg_personajes_inventario!reg_personajes_inventario_personaje_id_fkey(*),
-          personajes_ramas:reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(*),
-          personaje_uchiha:reg_personajes_uchiha(*)
+          personajes_ramas:reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(*)
         `)
         .eq('user_id', user.id)
         .eq('activo', true)
@@ -145,10 +144,7 @@ export default function TiendaDetallePage() {
 
       if (error) console.error('Error fetching user characters:', error);
 
-      let list: Character[] = (data || []).map((c: any) => ({
-        ...c,
-        personaje_uchiha: Array.isArray(c.personaje_uchiha) ? c.personaje_uchiha[0] : c.personaje_uchiha
-      }));
+      let list: Character[] = data || [];
 
       if (activeCharId && !list.some(c => c.id === activeCharId)) {
         const { data: activeCharData, error: activeErr } = await supabase
@@ -157,23 +153,18 @@ export default function TiendaDetallePage() {
             *,
             personajes_tecnicas:reg_personajes_tecnicas!reg_personajes_tecnicas_personaje_id_fkey(*),
             personajes_inventario:reg_personajes_inventario!reg_personajes_inventario_personaje_id_fkey(*),
-            personajes_ramas:reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(*),
-            personaje_uchiha:reg_personajes_uchiha(*)
+            personajes_ramas:reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(*)
           `)
           .eq('id', activeCharId)
           .single();
 
         if (!activeErr && activeCharData && activeCharData.activo !== false && !activeCharData.eliminado_voluntario) {
-          list.push({
-            ...activeCharData,
-            personaje_uchiha: Array.isArray(activeCharData.personaje_uchiha) ? activeCharData.personaje_uchiha[0] : activeCharData.personaje_uchiha
-          });
+          list.push(activeCharData);
         }
       }
 
       setCharacters(list);
 
-      // Auto-select the active character or first one
       if (list.length > 0) {
         const active = list.find(c => c.id === activeCharId) || list.find(c => c.activo) || list[0];
         setSelectedChar(active);
@@ -185,8 +176,10 @@ export default function TiendaDetallePage() {
     }
   };
 
-  const getCandidateRank = (statPoints: number) => {
-    if (!selectedChar || !masters.rangoRules) return selectedChar?.rango || 'D';
+  const getCandidateRankResult = (statPoints: number) => {
+    if (!selectedChar || !masters.rangoRules) {
+      return { rank: selectedChar?.rango || 'D', allowed: true };
+    }
     return StatsLogic.calculateAutoRank(
       statPoints,
       masters.rangoRules,
@@ -200,11 +193,17 @@ export default function TiendaDetallePage() {
     );
   };
 
-  const isStatIncreaseAllowed = (newStatPoints: number) => {
-    if (!selectedChar || !masters.rangoRules) return true;
-    const candidateRank = getCandidateRank(newStatPoints);
-    const rule = masters.rangoRules[candidateRank];
-    return rule ? newStatPoints <= (Number(rule.max || rule.stat_max) || 999) : true;
+  const isStatIncreaseAllowed = (newStatPoints: number): { allowed: boolean; reason?: string } => {
+    if (!selectedChar || !masters.rangoRules) return { allowed: true };
+    const res = getCandidateRankResult(newStatPoints);
+    const rule = masters.rangoRules[res.rank];
+    const maxAllowed = Number(rule?.max || rule?.stat_max) || 999;
+
+    if (newStatPoints > maxAllowed) {
+      const reason = res.debugInfo?.reason || `Has alcanzado el límite máximo (${maxAllowed}) de Rango ${res.rank}.`;
+      return { allowed: false, reason };
+    }
+    return { allowed: true };
   };
 
   const fetchShopData = async () => {
@@ -225,7 +224,6 @@ export default function TiendaDetallePage() {
       const items = await TiendasService.getTiendaObjetos(shopId);
       setObjetos(items);
 
-      // If admin, load all active glosario items to allow linking
       const supabase = createClient();
       const { data: glosario } = await supabase
         .from('info_glosario')
@@ -242,7 +240,6 @@ export default function TiendaDetallePage() {
     }
   };
 
-  // Pre-populate fields when selecting glosario item in normal shop linking
   useEffect(() => {
     if (selectedGlosarioId) {
       const selected = glosarioActivo.find(g => g.id === selectedGlosarioId);
@@ -286,13 +283,11 @@ export default function TiendaDetallePage() {
       const supabase = createClient();
 
       if (isCustomItem && tienda.es_experiencia) {
-        // --- 1. Experience Shop Virtual Bridge Glosario Flow ---
         if (!formCustomGlosario.nombre_es.trim()) {
           addToast('El nombre de la mejora es obligatorio', 'error');
           return;
         }
 
-        // Insert into info_glosario with es_tienda_exp = true and activo = false
         const { data: newGlosario, error: glosarioError } = await supabase
           .from('info_glosario')
           .insert([{
@@ -303,15 +298,14 @@ export default function TiendaDetallePage() {
             coste_exp: formCustomGlosario.coste_exp,
             coste_ryous: formCustomGlosario.coste_ryous,
             requisitos: formCustomGlosario.requisitos,
-            activo: false, // Non-eligible in general list
-            es_tienda_exp: true // Identified as bridge glosario
+            activo: false,
+            es_tienda_exp: true
           }])
           .select()
           .single();
 
         if (glosarioError) throw glosarioError;
 
-        // Insert into reg_tiendas_objetos
         const { error: linkError } = await supabase
           .from('reg_tiendas_objetos')
           .insert([{
@@ -327,13 +321,11 @@ export default function TiendaDetallePage() {
         addToast('Mejora especial creada e incorporada al catálogo', 'success');
 
       } else {
-        // --- 2. Normal / Event Shop Linking Flow ---
         if (!selectedGlosarioId) {
           addToast('Debe seleccionar un objeto del glosario', 'error');
           return;
         }
 
-        // Check if already in shop
         const exists = objetos.some(o => o.glosario_id === selectedGlosarioId);
         if (exists && !formObjeto.id) {
           addToast('Este objeto ya forma parte del catálogo de la tienda', 'error');
@@ -422,7 +414,6 @@ export default function TiendaDetallePage() {
       if (result && result.success) {
         addToast(`¡Compra completada con éxito!`, 'success');
         setIsBuyConfirmOpen(null);
-        // Refresh character data
         fetchUserCharacters();
         fetchShopData();
       }
@@ -434,7 +425,6 @@ export default function TiendaDetallePage() {
     }
   };
 
-  // Calculate experience shop cost
   const calculateTotalExpCost = (current: number, qty: number) => {
     let total = 0;
     const breakDown: { level: number; cost: number }[] = [];
@@ -462,15 +452,14 @@ export default function TiendaDetallePage() {
     const next = statPointsToBuy + 1;
     const targetStatPoints = currentStat + next;
 
-    if (!isStatIncreaseAllowed(targetStatPoints)) {
-      addToast('No puedes comprar más puntos de stat. Has alcanzado el límite máximo para tu rango actual y necesitas dominar las técnicas obligatorias para ascender.', 'error');
+    const check = isStatIncreaseAllowed(targetStatPoints);
+    if (!check.allowed) {
+      addToast(`[BLOQUEO DE ASCENSO] ${check.reason}`, 'error');
       return;
     }
 
     const { total, isLevelBlocked } = calculateTotalExpCost(currentStat, next);
-    if (isLevelBlocked) {
-      return;
-    }
+    if (isLevelBlocked) return;
     if (total <= selectedChar.xp) {
       setStatPointsToBuy(next);
     }
@@ -487,13 +476,11 @@ export default function TiendaDetallePage() {
     let total = 0;
     while (true) {
       const nextLevel = current + qty + 1;
-      if (!isStatIncreaseAllowed(nextLevel)) {
-        break;
-      }
+      const check = isStatIncreaseAllowed(nextLevel);
+      if (!check.allowed) break;
+
       const cost = expCosts[String(nextLevel)];
-      if (cost === undefined || cost === null) {
-        break;
-      }
+      if (cost === undefined || cost === null) break;
       if (total + cost <= selectedChar.xp) {
         qty++;
         total += cost;
@@ -507,11 +494,13 @@ export default function TiendaDetallePage() {
   const handleExecuteStatPurchase = async () => {
     if (!selectedChar) return;
     const currentStat = Number(selectedChar.puntos_stats) || 0;
-    if (!isStatIncreaseAllowed(currentStat + statPointsToBuy)) {
-      addToast('No puedes superar el límite máximo de stats de tu rango sin cumplir los requisitos de técnicas obligatorias para ascender.', 'error');
+    const check = isStatIncreaseAllowed(currentStat + statPointsToBuy);
+    if (!check.allowed) {
+      addToast(`[BLOQUEO DE ASCENSO] ${check.reason}`, 'error');
       setIsStatBuyConfirmOpen(false);
       return;
     }
+
     const { total: totalCost, isLevelBlocked } = calculateTotalExpCost(currentStat, statPointsToBuy);
 
     if (isLevelBlocked) {
@@ -543,14 +532,12 @@ export default function TiendaDetallePage() {
     }
   };
 
-  // Helper validation to show requirements to user
   const validateRequirements = (obj: TiendaObjeto, char: Character | null) => {
     if (!char) return { allowed: false, reasons: ['Debe seleccionar un shinobi para realizar la compra'] };
 
     const reasons: string[] = [];
     let allowed = true;
 
-    // 1. Costs validation
     if (char.ryous < obj.coste_ryous) {
       allowed = false;
       reasons.push(`Ryous insuficientes (Se necesitan ${obj.coste_ryous.toLocaleString()}, tienes ${char.ryous.toLocaleString()})`);
@@ -564,11 +551,9 @@ export default function TiendaDetallePage() {
       reasons.push(`${tienda.nombre_moneda || eventCoinName} insuficientes (Se necesitan ${obj.coste_moneda_evento.toLocaleString()}, tienes ${char.moneda_evento.toLocaleString()})`);
     }
 
-    // 2. Glosario Requirements validation
     const reqs = obj.mantener_requisitos ? obj.info_glosario?.requisitos : obj.requisitos_personalizados;
 
     if (reqs) {
-      // Range check
       if (reqs.rango) {
         const ranges = ['D', 'C', 'B', 'A', 'S'];
         const charRangeIdx = ranges.indexOf(char.rango);
@@ -579,14 +564,12 @@ export default function TiendaDetallePage() {
         }
       }
 
-      // PA check
       const costPA = obj.info_glosario?.coste_puntos_aprendizaje || 0;
       if (costPA > 0 && char.puntos_aprendizaje < costPA) {
         allowed = false;
         reasons.push(`Puntos de Aprendizaje insuficientes (Se necesitan ${costPA}, tienes ${char.puntos_aprendizaje})`);
       }
 
-      // Stats check
       if (reqs.stats_opciones && Array.isArray(reqs.stats_opciones) && reqs.stats_opciones.length > 0) {
         const charStats = char.stats_base || {};
         const satisfiesAny = reqs.stats_opciones.some((group: Record<string, number>) => {
@@ -625,7 +608,6 @@ export default function TiendaDetallePage() {
         }
       }
 
-      // Entrenamiento check
       if (reqs.entrenamiento_id) {
         const reqIds = Array.isArray(reqs.entrenamiento_id) ? reqs.entrenamiento_id : [reqs.entrenamiento_id];
         if (reqIds.length > 0) {
@@ -642,49 +624,12 @@ export default function TiendaDetallePage() {
         }
       }
 
-      // Rama check
-      const branchReq = obj.info_glosario?.rama_clan_id || reqs.rama_id;
-      if (branchReq) {
-        const reqRamaId = Number(branchReq);
-        if (!isNaN(reqRamaId) && reqRamaId > 0) {
-          const charRamaIds = (char.personajes_ramas || []).map((r: any) => Number(r.rama_id));
-          if (char.eleccion_tecnicas_clan?.rama_id) charRamaIds.push(Number(char.eleccion_tecnicas_clan.rama_id));
-
-          const uchiha = Array.isArray((char as any).personaje_uchiha)
-            ? (char as any).personaje_uchiha[0]
-            : (char as any).personaje_uchiha;
-          const uchihaRama = uchiha?.rama_combate;
-          if (uchihaRama === 'Shurikenjutsu' || uchihaRama === 'Bujutsu') {
-            const bukijutsuRama = (masters.ramas || []).find((r: any) => r.slug === 'rama-bukijutsu' || r.nombre?.toLowerCase().includes('bukijutsu'));
-            charRamaIds.push(bukijutsuRama ? Number(bukijutsuRama.id) : 12);
-          }
-
-          if (!charRamaIds.includes(reqRamaId)) {
-            allowed = false;
-            const ramaName = masters.ramas?.find((r: any) => Number(r.id) === reqRamaId)?.nombre || `ID: ${reqRamaId}`;
-            reasons.push(`Falta la rama requerida: ${ramaName}`);
-          }
-        }
-      }
-
-      // Subespecialidad / Subcategoría check
       if (reqs.sub_especialidad_id) {
         const reqIds = Array.isArray(reqs.sub_especialidad_id) ? reqs.sub_especialidad_id : [reqs.sub_especialidad_id];
         if (reqIds.length > 0) {
-          const uchiha = Array.isArray((char as any).personaje_uchiha)
-            ? (char as any).personaje_uchiha[0]
-            : (char as any).personaje_uchiha;
-          const uchihaRama = uchiha?.rama_combate;
-          const uchihaSubId = uchihaRama === 'Bujutsu'
-            ? (masters.subEspecialidades?.find(s => s.slug === 'bujutsu' || s.nombre?.toLowerCase() === 'bujutsu')?.id || 17)
-            : (uchihaRama === 'Shurikenjutsu'
-                ? (masters.subEspecialidades?.find(s => s.slug === 'shurikenjutsu' || s.nombre?.toLowerCase() === 'shurikenjutsu')?.id || 18)
-                : null);
-
           const playerSubSpecs = [
             ...(char.personajes_ramas || []).map(pr => pr.sub_especialidad_id ? Number(pr.sub_especialidad_id) : null).filter(Boolean),
-            ...(char.eleccion_tecnicas_clan?.sub_especialidad_id ? [Number(char.eleccion_tecnicas_clan.sub_especialidad_id)] : []),
-            ...(uchihaSubId ? [Number(uchihaSubId)] : [])
+            ...(char.eleccion_tecnicas_clan?.sub_especialidad_id ? [Number(char.eleccion_tecnicas_clan.sub_especialidad_id)] : [])
           ];
           const hasAny = reqIds.some((reqId: any) => playerSubSpecs.includes(Number(reqId)));
           if (!hasAny) {
@@ -697,7 +642,6 @@ export default function TiendaDetallePage() {
         }
       }
 
-      // Elemento check
       const targetElementId = obj.info_glosario?.elemento_id || reqs.elemento_id;
       if (targetElementId) {
         const reqElId = Number(targetElementId);
@@ -723,7 +667,7 @@ export default function TiendaDetallePage() {
         if (!isElementalChar) {
           const freeElId = (char.personajes_ramas || []).find((pr: any) => Number(pr.slot) === 1)?.elemento_principal_id;
           const hasBranchReq = (obj.info_glosario?.rama_clan_id !== null && obj.info_glosario?.rama_clan_id !== undefined && Number(obj.info_glosario?.rama_clan_id) > 0) ||
-                               (reqs.rama_id !== null && reqs.rama_id !== undefined && Number(reqs.rama_id) > 0);
+            (reqs.rama_id !== null && reqs.rama_id !== undefined && Number(reqs.rama_id) > 0);
           if (Number(freeElId) === reqElId && hasBranchReq) {
             allowed = false;
             reasons.push(`El elemento libre solo permite comprar técnicas elementales generales (sin requisito de rama o clan)`);
@@ -738,9 +682,7 @@ export default function TiendaDetallePage() {
       }
     }
 
-    // 3. Unique technique check (technique categories are 1)
     if (obj.info_glosario?.categoria_id === 1) {
-      // Check if character already has this technique
       const hasTec = char.personajes_tecnicas?.some(t => t.tecnica_id === obj.glosario_id);
       if (hasTec) {
         allowed = false;
@@ -751,17 +693,13 @@ export default function TiendaDetallePage() {
     return { allowed, reasons };
   };
 
-  // Filter and search catalog
   const filteredObjetos = objetos.filter(obj => {
     const glosario = obj.info_glosario;
     if (!glosario) return false;
 
-    // Search
     const searchMatch = searchAny(searchTerm, [glosario.nombre_es, glosario.nombre_jp]);
-
     if (!searchMatch) return false;
 
-    // Category
     if (selectedCategory !== null && selectedCategory !== 'stats' && glosario.categoria_id !== selectedCategory) {
       return false;
     }
@@ -784,16 +722,13 @@ export default function TiendaDetallePage() {
             />
           </header>
 
-          {/* Unified Banner & Buyer Selection Card */}
           <div className="mb-8 ninja-card-oro p-6 sm:p-8 xl:p-10 xl:pb-7">
-            {/* Top Row: Shop Details & Title */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-8 border-b border-oro/10">
               <div>
                 <h1 className="ninja-title text-3xl sm:text-4xl xl:text-6xl mb-4">{tienda.nombre}</h1>
                 <p className="text-gris-texto text-sm sm:text-base max-w-3xl leading-relaxed">{tienda.descripcion}</p>
               </div>
 
-              {/* Admin create product button */}
               {isAdmin && (
                 <button
                   onClick={() => {
@@ -808,7 +743,6 @@ export default function TiendaDetallePage() {
               )}
             </div>
 
-            {/* Bottom Row: Shinobi Buyer Selection & Funds Panel */}
             <div className="pt-8 flex flex-col md:flex-row justify-between items-center gap-6 animate-in slide-in-from-top-1 duration-500">
               <div className="flex flex-col sm:flex-row items-center gap-6 w-full md:w-auto">
                 <div className="space-y-3 text-center sm:text-left flex flex-col">
@@ -836,17 +770,14 @@ export default function TiendaDetallePage() {
 
               {selectedChar && (
                 <div className="flex flex-wrap justify-center sm:justify-end items-center gap-8 w-full md:w-auto">
-                  {/* Ryous */}
                   <div className="text-center bg-zinc-950/40 px-6 py-2 border border-oro/5" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
                     <span className="block text-caption font-black text-oro/40 uppercase tracking-widest">Fondos de Ryous</span>
                     <span className="text-lg font-black text-oro tracking-wider">{selectedChar.ryous.toLocaleString()} Ryous</span>
                   </div>
-                  {/* EXP */}
                   <div className="text-center bg-zinc-950/40 px-6 py-2 border border-oro/5" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
                     <span className="block text-caption font-black text-oro/40 uppercase tracking-widest">Puntos de EXP</span>
                     <span className="text-lg font-black text-oro tracking-wider">{selectedChar.xp.toLocaleString()} EXP</span>
                   </div>
-                  {/* Moneda Evento */}
                   {tienda.es_evento && (
                     <div className="text-center bg-zinc-950/40 px-6 py-2 border border-oro/5" style={{ clipPath: 'polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px)' }}>
                       <span className="block text-caption font-black text-oro/40 uppercase tracking-widest">
@@ -862,15 +793,12 @@ export default function TiendaDetallePage() {
             </div>
           </div>
 
-          {/* Search, Filters, Catalog */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
-            {/* Filters Sidebar */}
             <div className="lg:col-span-1 space-y-6 ninja-card-oro p-6">
               <div className="pb-3 border-b border-oro/10">
                 <h3 className="text-xs font-black text-oro uppercase tracking-widest">Filtrar Catálogo</h3>
               </div>
 
-              {/* Search input */}
               {selectedCategory !== 'stats' && (
                 <div className="relative animate-in fade-in duration-300">
                   <Search className="absolute right-2 top-3.5 w-4 h-4 text-oro/40" />
@@ -884,7 +812,6 @@ export default function TiendaDetallePage() {
                 </div>
               )}
 
-              {/* Categories buttons */}
               <div className="flex flex-col gap-2">
                 {[
                   ...(tienda.es_experiencia ? [{ id: 'stats', label: 'Puntos de Stats' }] : []),
@@ -909,7 +836,6 @@ export default function TiendaDetallePage() {
               </div>
             </div>
 
-            {/* Catalog / Stats Console Grid */}
             <div className="lg:col-span-3">
               {selectedCategory === 'stats' && tienda.es_experiencia ? (
                 <div className="w-full space-y-8 animate-in fade-in duration-500">
@@ -923,9 +849,7 @@ export default function TiendaDetallePage() {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
-                      {/* Console section: Col span 7 */}
                       <div className="xl:col-span-7 space-y-8">
-                        {/* Stat Buying Card */}
                         <div className="ninja-card-oro p-6 sm:p-8 space-y-6">
                           <div className="pb-4 border-b border-oro/10">
                             <div>
@@ -938,7 +862,6 @@ export default function TiendaDetallePage() {
                             </div>
                           </div>
 
-                          {/* Progression Display */}
                           <div className="grid grid-cols-3 gap-4 items-center bg-zinc-950/60 p-6 border border-oro/5 ninja-clip-md">
                             <div className="text-center">
                               <span className="block text-caption font-black text-oro/40 uppercase tracking-widest mb-1">Actual</span>
@@ -959,7 +882,6 @@ export default function TiendaDetallePage() {
                             </div>
                           </div>
 
-                          {/* Quantity Selector */}
                           <div className="space-y-3">
                             <label className="block text-xs font-black text-oro/60 uppercase tracking-widest">
                               Cantidad de Puntos a Comprar
@@ -981,10 +903,10 @@ export default function TiendaDetallePage() {
                                     const val = Math.max(1, Number(e.target.value) || 1);
                                     const currentStat = Number(selectedChar.puntos_stats) || 0;
 
-                                    // Limit the value to what is allowed by the rank and techniques
                                     let allowedVal = val;
                                     for (let v = 1; v <= val; v++) {
-                                      if (!isStatIncreaseAllowed(currentStat + v)) {
+                                      const check = isStatIncreaseAllowed(currentStat + v);
+                                      if (!check.allowed) {
                                         allowedVal = v - 1;
                                         break;
                                       }
@@ -994,12 +916,12 @@ export default function TiendaDetallePage() {
                                     if (total <= selectedChar.xp) {
                                       setStatPointsToBuy(Math.max(1, allowedVal));
                                     } else {
-                                      // Set to maximum they can afford
                                       let qty = 0;
                                       let accum = 0;
                                       while (true) {
                                         const next = currentStat + qty + 1;
-                                        if (!isStatIncreaseAllowed(next)) break;
+                                        const check = isStatIncreaseAllowed(next);
+                                        if (!check.allowed) break;
                                         const cost = expCosts[String(next)];
                                         if (cost === undefined || cost === null) break;
                                         if (accum + cost <= selectedChar.xp) {
@@ -1033,7 +955,6 @@ export default function TiendaDetallePage() {
                             </div>
                           </div>
 
-                          {/* Cost Aggregator Panel */}
                           {(() => {
                             const current = Number(selectedChar.puntos_stats) || 0;
                             const { total, breakDown, isLevelBlocked } = calculateTotalExpCost(current, statPointsToBuy);
@@ -1094,7 +1015,6 @@ export default function TiendaDetallePage() {
                         </div>
                       </div>
 
-                      {/* Cost Reference Panel: Col span 5 */}
                       <div className="xl:col-span-5 space-y-6">
                         <div className="ninja-card-oro p-6">
                           <div className="pb-3 border-b border-oro/10 mb-4">
@@ -1112,12 +1032,8 @@ export default function TiendaDetallePage() {
                               .sort((a, b) => a.lvl - b.lvl)
                               .map(({ lvl, cost }) => {
                                 const charLvl = Number(selectedChar.puntos_stats) || 0;
-                                const isCurrent = charLvl === lvl;
-
-                                // Check if this level is part of the current purchase target range
                                 const isTargeted = lvl > charLvl && lvl <= charLvl + statPointsToBuy;
 
-                                // Check status
                                 let badgeColor = '';
                                 let badgeText = '';
 
@@ -1192,7 +1108,6 @@ export default function TiendaDetallePage() {
                                 key={obj.id}
                                 className={`border-b border-oro/5 hover:bg-oro/5 transition-colors duration-200 align-middle ${allowed ? '' : 'opacity-85'}`}
                               >
-                                {/* Artículo Name */}
                                 <td className="py-4 px-3 min-w-[200px]">
                                   <div className="space-y-1">
                                     <span className="inline-block px-2 py-0.5 text-[9px] font-black border border-oro/20 text-oro/70 uppercase tracking-widest bg-black/40 rounded-sm">
@@ -1209,12 +1124,10 @@ export default function TiendaDetallePage() {
                                   </div>
                                 </td>
 
-                                {/* Descripción */}
                                 <td className="py-4 px-3 text-xs text-gris-texto/80 max-w-[250px] whitespace-normal leading-relaxed">
                                   {glosario.descripcion || 'Sin descripción.'}
                                 </td>
 
-                                {/* Requisitos */}
                                 <td className="py-4 px-3 min-w-[220px]">
                                   {itemReqs && (() => {
                                     const hasRango = !!itemReqs.rango;
@@ -1330,7 +1243,6 @@ export default function TiendaDetallePage() {
                                   })()}
                                 </td>
 
-                                {/* Precio */}
                                 <td className="py-4 px-3 min-w-[150px]">
                                   <div className="flex flex-col gap-0.5 text-xs">
                                     {obj.coste_ryous > 0 && (
@@ -1350,7 +1262,6 @@ export default function TiendaDetallePage() {
                                   </div>
                                 </td>
 
-                                {/* Acciones */}
                                 <td className="py-4 px-3 text-right">
                                   <div className="flex items-center justify-end gap-2">
                                     <button
@@ -1396,7 +1307,6 @@ export default function TiendaDetallePage() {
         </div>
       )}
 
-      {/* CONFIRM BUY MODAL */}
       {isBuyConfirmOpen && selectedChar && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4 animate-in fade-in duration-300">
           <div
@@ -1409,7 +1319,6 @@ export default function TiendaDetallePage() {
               Estás a punto de comprar <strong className="font-bold text-oro">{isBuyConfirmOpen.info_glosario?.nombre_es}</strong> para tu shinobi <strong className="font-bold text-oro">{selectedChar.nombre_ninja}</strong>.
             </p>
 
-            {/* Recurso deduction list */}
             <div
               className="p-4 bg-zinc-950/80 border border-oro/5 space-y-2 text-left mb-6 text-xs text-oro/80"
               style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}
@@ -1456,7 +1365,6 @@ export default function TiendaDetallePage() {
         </div>
       )}
 
-      {/* STAT BUY CONFIRM MODAL */}
       {isStatBuyConfirmOpen && selectedChar && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4 animate-in fade-in duration-300">
           <div
@@ -1469,7 +1377,6 @@ export default function TiendaDetallePage() {
               Estás a punto de comprar <strong className="font-bold text-oro">+{statPointsToBuy} Puntos de Stat</strong> permanentes para tu shinobi <strong className="font-bold text-oro">{selectedChar.nombre_ninja}</strong>.
             </p>
 
-            {/* Recurso deduction list */}
             {(() => {
               const current = Number(selectedChar.puntos_stats) || 0;
               const { total } = calculateTotalExpCost(current, statPointsToBuy);
@@ -1517,7 +1424,6 @@ export default function TiendaDetallePage() {
         </div>
       )}
 
-      {/* ADMIN ADD/CREATE MODAL */}
       {isAddModalOpen && tienda && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-300">
           <div
@@ -1535,7 +1441,6 @@ export default function TiendaDetallePage() {
               {tienda.es_experiencia ? 'Crear Artículo Especial (Tienda Exp)' : 'Añadir Artículo de Catálogo'}
             </h2>
 
-            {/* Toggle custom experience item flow for special shop */}
             {tienda.es_experiencia && (
               <div className="mb-6 flex gap-4 border-b border-oro/5 pb-4">
                 <button
@@ -1564,8 +1469,6 @@ export default function TiendaDetallePage() {
             )}
 
             <form onSubmit={handleSaveCatalogItem} className="space-y-6">
-
-              {/* FLOW 1: CUSTOM BRIDGE GLOSARIO ITEM */}
               {tienda.es_experiencia && isCustomItem ? (
                 <div className="space-y-6 animate-in slide-in-from-top-2 duration-300">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1638,7 +1541,6 @@ export default function TiendaDetallePage() {
                     </div>
                   </div>
 
-                  {/* Requirements Custom for Experience Bridge Item */}
                   <div className="p-4 bg-zinc-950/80 border border-oro/10 space-y-4" style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>
                     <span className="block text-xs font-black text-oro/80 uppercase tracking-widest">Requisitos del Objeto Puente</span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1693,10 +1595,8 @@ export default function TiendaDetallePage() {
                       </div>
                     </div>
                   </div>
-
                 </div>
               ) : (
-                /* FLOW 2: LINK EXISTING GLOSARIO ELEMENT */
                 <div className="space-y-6 animate-in slide-in-from-top-2 duration-300">
                   <div className="space-y-2">
                     <label className="block text-xs font-black text-oro/60 uppercase tracking-widest">Seleccionar Elemento del Glosario Activo</label>
@@ -1743,7 +1643,6 @@ export default function TiendaDetallePage() {
                     )}
                   </div>
 
-                  {/* Requirements configuration */}
                   <div className="space-y-4">
                     <label className="flex items-center gap-3 cursor-pointer pb-2 border-b border-oro/5">
                       <input
@@ -1847,12 +1746,10 @@ export default function TiendaDetallePage() {
                   <span>{tienda.es_experiencia && isCustomItem ? 'Crear Mejora' : 'Vincular a Tienda'}</span>
                 </button>
               </div>
-
             </form>
           </div>
         </div>
       )}
-
     </div>
   );
 }
