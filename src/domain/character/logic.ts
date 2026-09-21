@@ -170,26 +170,28 @@ export const StatsLogic = {
           if (!hasBranch && !hasSubSpec && !hasElement) return true; // General technique of this rank
 
           if (hasElement) {
-            const elId = Number(t.elemento_id);
-            if (rId === 4) {
-              // Si es técnica de la rama de Ninjutsu, solo es obligatoria para ascender
-              // si pertenece a los elementos configurados específicamente en su rama de Ninjutsu (no los del clan elemental).
-              const ninjutsuElements: number[] = [];
-              if (ninjutsuRama) {
-                if (ninjutsuRama.elemento_principal_id) ninjutsuElements.push(Number(ninjutsuRama.elemento_principal_id));
-                if (ninjutsuRama.elemento_secundario_id) ninjutsuElements.push(Number(ninjutsuRama.elemento_secundario_id));
-                if (ninjutsuRama.elemento_terciario_id) ninjutsuElements.push(Number(ninjutsuRama.elemento_terciario_id));
-              }
-              if (eleccionClan && Number(eleccionClan.rama_id) === 4) {
-                // Si la especialidad viene de elección de clan
-                if (clanElementalRama?.elemento_principal_id) {
-                  ninjutsuElements.push(Number(clanElementalRama.elemento_principal_id));
-                }
-              }
-              return ninjutsuElements.includes(elId);
-            }
-            return playerElements.includes(elId);
-          }
+  // Si el personaje NO tiene la rama de Ninjutsu activa, no se le deben exigir técnicas elementales
+  const hasNinjutsuBranch = playerBranches.includes(4);
+  if (!hasNinjutsuBranch) return false;
+
+  const elId = Number(t.elemento_id);
+  if (rId === 4) {
+    const ninjutsuElements: number[] = [];
+    if (ninjutsuRama) {
+      if (ninjutsuRama.elemento_principal_id) ninjutsuElements.push(Number(ninjutsuRama.elemento_principal_id));
+      if (ninjutsuRama.elemento_secundario_id) ninjutsuElements.push(Number(ninjutsuRama.elemento_secundario_id));
+      if (ninjutsuRama.elemento_terciario_id) ninjutsuElements.push(Number(ninjutsuRama.elemento_terciario_id));
+    }
+    if (eleccionClan && Number(eleccionClan.rama_id) === 4) {
+      if (clanElementalRama?.elemento_principal_id) {
+        ninjutsuElements.push(Number(clanElementalRama.elemento_principal_id));
+      }
+    }
+    return ninjutsuElements.includes(elId);
+  }
+  return playerElements.includes(elId);
+}
+
 
           if (hasBranch) {
             const ramaId = Number(t.rama_clan_id);
@@ -819,4 +821,4 @@ export const NinjutsuLogic = {
 
     return { valid: true };
   }
-};
+};
