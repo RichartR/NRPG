@@ -176,12 +176,9 @@ export default function TiendaDetallePage() {
     }
   };
 
-  const getCandidateRankResult = (statPoints: number): { rank: string; allowed: boolean; debugInfo?: { rankFailed: string; missingTechs: string[]; reason: string } } => {
-    const fallbackRank = selectedChar?.rango || 'D';
-    if (!selectedChar || !masters.rangoRules) {
-      return { rank: fallbackRank, allowed: true };
-    }
-    return StatsLogic.calculateAutoRankWithDebug(
+  const getCandidateRank = (statPoints: number): string => {
+    if (!selectedChar || !masters.rangoRules) return selectedChar?.rango || 'D';
+    return StatsLogic.calculateAutoRank(
       statPoints,
       masters.rangoRules,
       selectedChar.personajes_tecnicas || [],
@@ -194,18 +191,12 @@ export default function TiendaDetallePage() {
     );
   };
 
-  const isStatIncreaseAllowed = (newStatPoints: number): { allowed: boolean; reason?: string } => {
-    if (!selectedChar || !masters.rangoRules) return { allowed: true };
-    const res = getCandidateRankResult(newStatPoints);
+  const isStatIncreaseAllowed = (newStatPoints: number): boolean => {
+    if (!selectedChar || !masters.rangoRules) return true;
+    const candidateRank = getCandidateRank(newStatPoints);
     const rulesMap = masters.rangoRules as Record<string, any>;
-    const rule = rulesMap[res.rank];
-    const maxAllowed = Number(rule?.max || rule?.stat_max) || 999;
-
-    if (newStatPoints > maxAllowed) {
-      const reason = res.debugInfo?.reason || `Has alcanzado el límite máximo (${maxAllowed}) de Rango ${res.rank}.`;
-      return { allowed: false, reason };
-    }
-    return { allowed: true };
+    const rule = rulesMap[candidateRank];
+    return rule ? newStatPoints <= (Number(rule.max || rule.stat_max) || 999) : true;
   };
 
   const fetchShopData = async () => {
@@ -454,9 +445,8 @@ export default function TiendaDetallePage() {
     const next = statPointsToBuy + 1;
     const targetStatPoints = currentStat + next;
 
-    const check = isStatIncreaseAllowed(targetStatPoints);
-    if (!check.allowed) {
-      addToast(`[BLOQUEO DE ASCENSO] ${check.reason}`, 'error');
+    if (!isStatIncreaseAllowed(targetStatPoints)) {
+      addToast('No puedes comprar más puntos de stat. Has alcanzado el límite máximo para tu rango actual y necesitas dominar las técnicas obligatorias para ascender.', 'error');
       return;
     }
 
@@ -478,8 +468,7 @@ export default function TiendaDetallePage() {
     let total = 0;
     while (true) {
       const nextLevel = current + qty + 1;
-      const check = isStatIncreaseAllowed(nextLevel);
-      if (!check.allowed) break;
+      if (!isStatIncreaseAllowed(nextLevel)) break;
 
       const cost = expCosts[String(nextLevel)];
       if (cost === undefined || cost === null) break;
@@ -496,9 +485,8 @@ export default function TiendaDetallePage() {
   const handleExecuteStatPurchase = async () => {
     if (!selectedChar) return;
     const currentStat = Number(selectedChar.puntos_stats) || 0;
-    const check = isStatIncreaseAllowed(currentStat + statPointsToBuy);
-    if (!check.allowed) {
-      addToast(`[BLOQUEO DE ASCENSO] ${check.reason}`, 'error');
+    if (!isStatIncreaseAllowed(currentStat + statPointsToBuy)) {
+      addToast('No puedes superar el límite máximo de stats de tu rango sin cumplir los requisitos de técnicas obligatorias para ascender.', 'error');
       setIsStatBuyConfirmOpen(false);
       return;
     }
@@ -907,8 +895,7 @@ export default function TiendaDetallePage() {
 
                                     let allowedVal = val;
                                     for (let v = 1; v <= val; v++) {
-                                      const check = isStatIncreaseAllowed(currentStat + v);
-                                      if (!check.allowed) {
+                                      if (!isStatIncreaseAllowed(currentStat + v)) {
                                         allowedVal = v - 1;
                                         break;
                                       }
@@ -922,8 +909,7 @@ export default function TiendaDetallePage() {
                                       let accum = 0;
                                       while (true) {
                                         const next = currentStat + qty + 1;
-                                        const check = isStatIncreaseAllowed(next);
-                                        if (!check.allowed) break;
+                                        if (!isStatIncreaseAllowed(next)) break;
                                         const cost = expCosts[String(next)];
                                         if (cost === undefined || cost === null) break;
                                         if (accum + cost <= selectedChar.xp) {
