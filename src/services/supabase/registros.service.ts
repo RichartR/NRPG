@@ -116,6 +116,18 @@ export const RegistrosService = {
       .slice(0, 5);
   },
 
+  async getCharacterFreshRank(id: number): Promise<string> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('reg_characters')
+      .select('rango')
+      .eq('id', id)
+      .single();
+
+    if (error || !data?.rango) return 'D';
+    return data.rango;
+  },
+
   async updateRegistro(id: number, payload: Partial<Registro> & { participantes_ids?: number[] }) {
     const res = await fetch('/api/registros', {
       method: 'POST',
