@@ -237,9 +237,16 @@ export default function CombatForm({
       }
       initializedRef.current = true;
     } else if (activeCharacter) {
-      setTeamA([{ id: Number(activeCharacter.id), nombre_ninja: activeCharacter.nombre_ninja, rango: activeCharacter.rango || 'D' }]);
+      setTeamA([{ id: Number(activeCharacter.id), nombre_ninja: activeCharacter.nombre_ninja, rango: activeCharacter.rango || 'D', estado_nombre: '' }]);
       setMedicos([]);
       initializedRef.current = true;
+
+      // Consulta directa del rango real del autor activo
+      RegistrosService.getCharacterFreshRank(Number(activeCharacter.id)).then(freshRank => {
+        setTeamA(prev => prev.map(p => 
+          Number(p.id) === Number(activeCharacter.id) ? { ...p, rango: freshRank } : p
+        ));
+      }).catch(err => console.error('Error fetching fresh rank for activeCharacter:', err));
     }
   }, [activeCharacter, initialData]);
 
@@ -290,9 +297,22 @@ export default function CombatForm({
     }
   };
 
-  const addParticipant = (team: 'A' | 'B', p: CharacterResult) => {
-    if (team === 'A') setTeamA([...teamA, { ...p, rango: p.rango || 'D', estado_nombre: '' }]);
-    else setTeamB([...teamB, { ...p, rango: p.rango || 'D', estado_nombre: '' }]);
+  const addParticipant = async (team: 'A' | 'B', p: CharacterResult) => {
+    const initialItem = { ...p, rango: p.rango || 'D', estado_nombre: '' };
+    if (team === 'A') setTeamA(prev => [...prev, initialItem]);
+    else setTeamB(prev => [...prev, initialItem]);
+
+    // Verificación y actualización asíncrona del rango exacto
+    try {
+      const freshRank = await RegistrosService.getCharacterFreshRank(p.id);
+      if (team === 'A') {
+        setTeamA(prev => prev.map(item => item.id === p.id ? { ...item, rango: freshRank } : item));
+      } else {
+        setTeamB(prev => prev.map(item => item.id === p.id ? { ...item, rango: freshRank } : item));
+      }
+    } catch (err) {
+      console.error('Error al actualizar rango en tiempo real:', err);
+    }
   };
 
   const updateParticipantState = (id: number, team: 'A' | 'B', updates: Partial<{ estado_nombre: string, has_estado_alterado: boolean, descripcion_estado: string, has_cds: boolean, descripcion_cds: string, huye: boolean, huye_gana_exp: boolean }>) => {
@@ -1053,6 +1073,9 @@ export default function CombatForm({
                               <span className="text-xs font-black text-oro uppercase tracking-widest">
                                 {p.nombre_ninja} {Number(p.id) === Number(activeCharacter?.id) && <span className="text-oro/40 ml-1">(TÚ)</span>}
                               </span>
+                              <span className="px-2 py-0.5 bg-oro/10 border border-oro/20 text-[10px] font-black text-oro uppercase tracking-widest ninja-clip-xs">
+                                RANGO {p.rango || 'D'}
+                              </span>
                             </div>
                             <div className="flex items-center gap-4">
                               {recordSubtype === 'intervencion' ? (
@@ -1194,6 +1217,9 @@ export default function CombatForm({
                               <User className="w-4 h-4 text-oro/40" />
                               <span className="text-xs font-black text-oro uppercase tracking-widest">
                                 {p.nombre_ninja} {Number(p.id) === Number(activeCharacter?.id) && <span className="text-oro/40 ml-1">(TÚ)</span>}
+                              </span>
+                              <span className="px-2 py-0.5 bg-oro/10 border border-oro/20 text-[10px] font-black text-oro uppercase tracking-widest ninja-clip-xs">
+                                RANGO {p.rango || 'D'}
                               </span>
                             </div>
                             <div className="flex items-center gap-4">
