@@ -3,7 +3,7 @@ import { MasterServerService } from '@/services/supabase/master.server.service';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import NinjaCard from '@/components/ui/NinjaCard';
 
-export const revalidate = 1200;
+export const revalidate = 21600;
 export function generateStaticParams() {
   return [];
 }
