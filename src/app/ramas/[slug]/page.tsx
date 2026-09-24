@@ -4,7 +4,7 @@ import Breadcrumbs, { CrumbItem } from '@/components/ui/Breadcrumbs';
 import NinjaCard from '@/components/ui/NinjaCard';
 import DocumentosCombateSearch from '@/components/ui/DocumentosCombateSearch';
 
-export const revalidate = 1200;
+export const revalidate = 21600;
 export function generateStaticParams() {
   return [];
 }
