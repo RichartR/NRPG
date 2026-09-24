@@ -6,6 +6,7 @@ import { MasterServerService } from '@/services/supabase/master.server.service';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { ProfileService } from '@/services/supabase/profile.service';
 import { getCuposMaximosClan } from '@/utils/cupos';
+import { invalidateCharacterListing } from '@/lib/cache-invalidation';
 
 export async function PATCH(
   request: Request,
@@ -691,6 +692,21 @@ export async function PATCH(
       })();
     }
 
+    // The full sheet is fetched by the client. Refresh public lists only when
+    // a field shown there changes; stats, inventory and techniques do not.
+    const publicFields = ['nombre_ninja', 'hobba_name', 'url_img', 'rango', 'rango_jerarquico', 'aldea_id'] as const;
+    const listingChanged = section === 'restore' || publicFields.some(
+      (field) => Object.hasOwn(updateData, field) &&
+        String(updateData[field] ?? '') !== String(character[field] ?? '')
+    );
+    if (listingChanged) {
+      const newVillage = Object.hasOwn(updateData, 'aldea_id')
+        ? (updateData.aldea_id as number | null)
+        : character.aldea_id ?? null;
+      invalidateCharacterListing(character.aldea_id ?? null, newVillage, {
+        occupancyChanged: section === 'restore' || newVillage !== (character.aldea_id ?? null),
+      });
+    }
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Ficha Update Error:', error);
@@ -813,6 +829,7 @@ export async function DELETE(
       await CharacterServerService.archiveCharacter(adminClient, characterId, true);
     }
 
+    invalidateCharacterListing(character.aldea_id ?? null, character.aldea_id ?? null, { occupancyChanged: true, recentChanged: true });
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Ficha Delete/Archive Error:', error);
