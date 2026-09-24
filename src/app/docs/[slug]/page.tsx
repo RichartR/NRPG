@@ -3,7 +3,7 @@ import DocViewer from '@/components/ui/DocViewer';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import { CrumbItem } from '@/components/ui/Breadcrumbs';
 
-export const revalidate = 3600;
+export const revalidate = 21600;
 export function generateStaticParams() {
   return [];
 }
