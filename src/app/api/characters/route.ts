@@ -5,6 +5,7 @@ import { CharacterServerService } from '@/services/supabase/character.server.ser
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { getCuposMaximosClan } from '@/utils/cupos';
+import { invalidateCharacterListing, invalidateCache } from '@/lib/cache-invalidation';
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -358,6 +359,8 @@ export async function POST(request: Request) {
       }
     }
 
+    invalidateCharacterListing(data.aldea_id ?? null, data.aldea_id ?? null, { occupancyChanged: true, recentChanged: true });
+    invalidateCache('registros');
     return NextResponse.json({ success: true, id: characterId });
   } catch (error: any) {
     console.error('Create Error:', error);

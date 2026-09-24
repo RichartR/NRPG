@@ -2,6 +2,20 @@ import { createClient } from '@/utils/supabase/client';
 import { Character, PersonajeRama, PersonajeItem, PersonajeTecnica, Registro, Glosario, Rasgo, PersonajeSentido, PersonajeAcompanante, AcompananteInfo, KugutsuComponente, PersonajeInventarioRegistro, PersonajeUchihaData } from '@/domain/types';
 import { RewardLogic, MultiplierTier } from '@/domain/character/logic';
 
+async function notifyCharacterCache(id: number, event: 'portrait' | 'created') {
+  try {
+    const response = await fetch('/api/characters/cache', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, event }),
+    });
+    if (!response.ok) console.error('Character cache invalidation failed:', response.status);
+  } catch (error) {
+    // The write is already committed; the bounded TTL provides a fallback.
+    console.error('Character cache invalidation failed:', error);
+  }
+}
+
 export const CharacterService = {
   async getCharacterById(id: number): Promise<Character> {
     const supabase = createClient();
@@ -118,6 +132,7 @@ export const CharacterService = {
       }
     }
 
+    await notifyCharacterCache(newChar.id, 'created');
     return newChar as Character;
   },
 
@@ -147,6 +162,7 @@ export const CharacterService = {
       .eq('id', id);
 
     if (error) throw error;
+    if (updates.url_img !== undefined) await notifyCharacterCache(id, 'portrait');
   },
 
   async updateCharacterRamas(id: string, ramas: PersonajeRama[]) {
@@ -789,4 +805,3 @@ export const CharacterService = {
     return null;
   }
 };
-

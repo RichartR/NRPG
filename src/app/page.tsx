@@ -1,4 +1,4 @@
-export const revalidate = 300;
+export const revalidate = 3600;
 
 import CharacterSheet from "@/components/character/CharacterSheet";
 import Link from "next/link";
@@ -43,7 +43,7 @@ const getCachedRegistros = unstable_cache(
     return data || [];
   },
   ['latest-registros'],
-  { revalidate: 300 }
+  { revalidate: 3600, tags: ['latest-registros'] }
 );
 
 const getCachedCharacters = unstable_cache(
@@ -64,7 +64,7 @@ const getCachedCharacters = unstable_cache(
     return data || [];
   },
   ['latest-characters'],
-  { revalidate: 300 }
+  { revalidate: 3600, tags: ['latest-characters'] }
 );
 
 const getCachedNoticias = unstable_cache(
@@ -78,7 +78,7 @@ const getCachedNoticias = unstable_cache(
     return data || [];
   },
   ['latest-noticias'],
-  { revalidate: 300, tags: ['latest-noticias'] }
+  { revalidate: 3600, tags: ['latest-noticias'] }
 );
 
 function formatRelativeTime(dateString: string) {
