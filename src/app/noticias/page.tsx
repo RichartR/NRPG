@@ -1,4 +1,4 @@
-export const revalidate = 300;
+export const revalidate = 21600;
 
 import NoticiasClientView from './NoticiasClientView';
 import { unstable_cache } from 'next/cache';
@@ -17,7 +17,7 @@ const getCachedAllNews = unstable_cache(
     return data || [];
   },
   ['all-noticias-page'],
-  { revalidate: 300, tags: ['all-noticias-page'] }
+  { revalidate: 21600, tags: ['all-noticias-page'] }
 );
 
 export default async function NoticiasPage() {
