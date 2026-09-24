@@ -5,6 +5,7 @@ import { RewardLogic } from '@/domain/character/logic';
 import { ProfileService } from '@/services/supabase/profile.service';
 import { sendDiscordMessage, sendDiscordEmbed, editDiscordEmbed, deleteDiscordMessage } from '@/lib/discord';
 import { MasterServerService } from '@/services/supabase/master.server.service';
+import { invalidateCache } from '@/lib/cache-invalidation';
 import { CharacterServerService } from '@/services/supabase/character.server.service';
 
 async function getNarrationChannelId(adminClient: any, destinatarioTipo?: string, destinatarioId?: number | null): Promise<string | null> {
@@ -593,6 +594,7 @@ export async function POST(request: Request) {
         registro.data = updatedData;
       }
 
+      invalidateCache('registros');
       return NextResponse.json(registro);
     }
 
@@ -935,6 +937,7 @@ export async function POST(request: Request) {
         await syncNarrationDiscordMessage(adminClient, request.url, id, updatedData, oldRegistro.data);
       }
 
+      invalidateCache('registros');
       return NextResponse.json({ success: true });
     }
 
@@ -1032,6 +1035,7 @@ export async function POST(request: Request) {
         .eq('id', id);
 
       if (error) throw error;
+      invalidateCache('registros');
       return NextResponse.json({ success: true });
     }
 
