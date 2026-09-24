@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import MundoNinjaVillageClientView from './MundoNinjaVillageClientView';
 
-export const revalidate = 300; // ISR: revalida el censo cada 5 minutos
+export const revalidate = 3600; // ISR: revalida el censo cada 5 minutos
 // Las aldeas nuevas también se generan on-demand (comportamiento idéntico al anterior)
 export const dynamicParams = true;
 
@@ -16,21 +16,21 @@ const publicClient = createSupabaseClient(supabaseUrl, supabaseAnonKey);
 const getCachedNinjasByAldea = unstable_cache(
   (aldeaId: number | null) => MasterServerService.getNinjasByAldea(publicClient, aldeaId),
   ['ninjas-por-aldea'],
-  { revalidate: 300 }
+  { revalidate: 3600, tags: ['ninjas-por-aldea'] }
 );
 
 // Cache de aldea por id (5 min)
 const getCachedAldeaById = unstable_cache(
   (aldeaId: number) => MasterServerService.getAldeaById(publicClient, aldeaId),
   ['aldea-por-id'],
-  { revalidate: 300 }
+  { revalidate: 3600, tags: ['aldea-por-id'] }
 );
 
 // Cache de equipos por aldea (5 min)
 const getCachedEquiposAldea = unstable_cache(
   (aldeaId: number) => MasterServerService.getEquiposAldea(publicClient, aldeaId),
   ['equipos-por-aldea'],
-  { revalidate: 300 }
+  { revalidate: 3600, tags: ['equipos-por-aldea'] }
 );
 
 // Pre-genera en build time las páginas de todas las aldeas activas + renegados.
