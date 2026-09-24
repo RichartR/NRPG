@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import MundoNinjaVillageClientView from './MundoNinjaVillageClientView';
 
-export const revalidate = 3600; // ISR: revalida el censo cada 5 minutos
+export const revalidate = 3600; // ISR: respaldo de una hora; los cambios desde la app invalidan la ruta.
 // Las aldeas nuevas también se generan on-demand (comportamiento idéntico al anterior)
 export const dynamicParams = true;
 
@@ -12,21 +12,21 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const publicClient = createSupabaseClient(supabaseUrl, supabaseAnonKey);
 
-// Cache de ninjas por aldea (5 min)
+// Datos de ninjas por aldea: respaldo de una hora e invalidación al cambiar personajes.
 const getCachedNinjasByAldea = unstable_cache(
   (aldeaId: number | null) => MasterServerService.getNinjasByAldea(publicClient, aldeaId),
   ['ninjas-por-aldea'],
   { revalidate: 3600, tags: ['ninjas-por-aldea'] }
 );
 
-// Cache de aldea por id (5 min)
+// Datos de aldea: respaldo de una hora e invalidación al editar aldeas.
 const getCachedAldeaById = unstable_cache(
   (aldeaId: number) => MasterServerService.getAldeaById(publicClient, aldeaId),
   ['aldea-por-id'],
   { revalidate: 3600, tags: ['aldea-por-id'] }
 );
 
-// Cache de equipos por aldea (5 min)
+// Equipos por aldea: respaldo de una hora e invalidación al disolver equipos.
 const getCachedEquiposAldea = unstable_cache(
   (aldeaId: number) => MasterServerService.getEquiposAldea(publicClient, aldeaId),
   ['equipos-por-aldea'],
