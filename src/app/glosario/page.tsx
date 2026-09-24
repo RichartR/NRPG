@@ -2,7 +2,7 @@ import { MasterServerService } from '@/services/supabase/master.server.service';
 import GlosarioView from '@/components/glosario/GlosarioView';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 
-export const revalidate = 1200;
+export const revalidate = 21600;
 
 export default async function GlosarioPage() {
   // Fetch all data in parallel
