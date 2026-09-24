@@ -289,7 +289,7 @@ export const MasterServerService = {
       return data || [];
     },
     ['master-clanes-aldea'],
-    { revalidate: 21600, tags: ['master-aldeas'] }
+    { revalidate: 21600, tags: ['master-aldeas', 'master-ramas'] }
   ),
 
   getCachedRamaBySlug: unstable_cache(

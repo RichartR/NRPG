@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 
 export async function DELETE(
   request: Request,
@@ -29,6 +30,7 @@ export async function DELETE(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    if (data.aldea_id != null) revalidatePath(`/mundo-ninja/${data.aldea_id}`);
     return NextResponse.json(data);
   } catch (error: any) {
     console.error('API equipos-ninja DELETE error:', error);
