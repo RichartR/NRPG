@@ -31,7 +31,7 @@ export const MasterServerService = {
       });
     },
     ['master-aldeas-activas'],
-    { revalidate: 300 }
+    { revalidate: 21600, tags: ['master-aldeas'] }
   ),
 
   getCachedRamasGlobales: unstable_cache(
@@ -47,7 +47,7 @@ export const MasterServerService = {
       return data || [];
     },
     ['master-ramas-globales'],
-    { revalidate: 300 }
+    { revalidate: 21600, tags: ['master-ramas'] }
   ),
 
   getCachedDocumentosSistemas: unstable_cache(
@@ -62,7 +62,7 @@ export const MasterServerService = {
       return data || [];
     },
     ['master-documentos-sistemas'],
-    { revalidate: 300 }
+    { revalidate: 21600, tags: ['master-documentos'] }
   ),
 
   getCachedDocumentosNavList: unstable_cache(
@@ -97,7 +97,7 @@ export const MasterServerService = {
       return list;
     },
     ['master-documentos-nav-list'],
-    { revalidate: 600 }
+    { revalidate: 21600, tags: ['master-documentos'] }
   ),
 
   getCachedGlosarioCategorias: unstable_cache(
@@ -110,7 +110,7 @@ export const MasterServerService = {
       return data || [];
     },
     ['master-glosario-categorias'],
-    { revalidate: 300 }
+    { revalidate: 21600, tags: ['master-glosario'] }
   ),
 
   getCachedGlosarioSubcategorias: unstable_cache(
@@ -123,7 +123,7 @@ export const MasterServerService = {
       return data || [];
     },
     ['master-glosario-subcategorias'],
-    { revalidate: 300 }
+    { revalidate: 21600, tags: ['master-glosario'] }
   ),
 
   getCachedElementos: unstable_cache(
@@ -137,7 +137,7 @@ export const MasterServerService = {
       return data || [];
     },
     ['master-elementos-activos'],
-    { revalidate: 300 }
+    { revalidate: 21600, tags: ['master-glosario'] }
   ),
 
   getCachedGlosarios: unstable_cache(
@@ -151,7 +151,7 @@ export const MasterServerService = {
       return data || [];
     },
     ['master-glosarios-todos'],
-    { revalidate: 300 }
+    { revalidate: 21600, tags: ['master-glosario'] }
   ),
 
   getCachedAdminEntrenamientos: unstable_cache(
@@ -164,7 +164,7 @@ export const MasterServerService = {
       return data || [];
     },
     ['master-admin-entrenamientos'],
-    { revalidate: 300 }
+    { revalidate: 21600, tags: ['master-glosario'] }
   ),
 
   getCachedSubEspecialidades: unstable_cache(
@@ -178,7 +178,7 @@ export const MasterServerService = {
       return data || [];
     },
     ['master-subespecialidades-activas'],
-    { revalidate: 300 }
+    { revalidate: 21600, tags: ['master-subespecialidades'] }
   ),
 
   getCachedRamas: unstable_cache(
@@ -192,7 +192,7 @@ export const MasterServerService = {
       return data || [];
     },
     ['master-ramas-todas-activas'],
-    { revalidate: 300 }
+    { revalidate: 21600, tags: ['master-ramas'] }
   ),
 
   getCachedDocumentosByCategoria: unstable_cache(
@@ -207,7 +207,7 @@ export const MasterServerService = {
       return data || [];
     },
     ['master-documentos-por-categoria'],
-    { revalidate: 1200 }
+    { revalidate: 21600, tags: ['master-documentos'] }
   ),
 
   getCachedDocumentosCombateGenerales: unstable_cache(
@@ -223,7 +223,7 @@ export const MasterServerService = {
       return data || [];
     },
     ['master-documentos-combate-generales'],
-    { revalidate: 1200 }
+    { revalidate: 21600, tags: ['master-documentos'] }
   ),
 
   getCachedConfiguracion: unstable_cache(
@@ -240,7 +240,7 @@ export const MasterServerService = {
       return JSON.stringify(valor);
     },
     ['master-configuracion-publica'],
-    { revalidate: 300 }
+    { revalidate: 21600, tags: ['master-configuracion'] }
   ),
 
   getCachedCharacterOccupancy: unstable_cache(
@@ -256,7 +256,7 @@ export const MasterServerService = {
       return data || [];
     },
     ['master-character-occupancy'],
-    { revalidate: 1200 }
+    { revalidate: 3600, tags: ['master-character-occupancy'] }
   ),
 
   getCachedAldeaById: unstable_cache(
@@ -265,7 +265,7 @@ export const MasterServerService = {
       return data ?? null;
     },
     ['master-aldea-id'],
-    { revalidate: 1200 }
+    { revalidate: 21600, tags: ['master-aldeas'] }
   ),
 
   getCachedAldeaBySlug: unstable_cache(
@@ -274,7 +274,7 @@ export const MasterServerService = {
       return data ?? null;
     },
     ['master-aldea-slug'],
-    { revalidate: 1200 }
+    { revalidate: 21600, tags: ['master-aldeas'] }
   ),
 
   getCachedClanesByAldeaId: unstable_cache(
@@ -289,7 +289,7 @@ export const MasterServerService = {
       return data || [];
     },
     ['master-clanes-aldea'],
-    { revalidate: 1200 }
+    { revalidate: 21600, tags: ['master-aldeas'] }
   ),
 
   getCachedRamaBySlug: unstable_cache(
@@ -302,7 +302,7 @@ export const MasterServerService = {
       return (data as RamaConAldea) ?? null;
     },
     ['master-rama-slug'],
-    { revalidate: 1200 }
+    { revalidate: 21600, tags: ['master-ramas'] }
   ),
 
   getCachedSubEspecialidadesByRama: unstable_cache(
@@ -317,7 +317,7 @@ export const MasterServerService = {
       return data || [];
     },
     ['master-subs-rama'],
-    { revalidate: 1200 }
+    { revalidate: 21600, tags: ['master-subespecialidades'] }
   ),
 
   getCachedSubEspecialidadBySlug: unstable_cache(
@@ -331,7 +331,7 @@ export const MasterServerService = {
       return data ?? null;
     },
     ['master-sub-rama-slug'],
-    { revalidate: 1200 }
+    { revalidate: 21600, tags: ['master-subespecialidades'] }
   ),
 
   getCachedDocumentosCombateByRama: unstable_cache(
@@ -346,7 +346,7 @@ export const MasterServerService = {
       return data || [];
     },
     ['master-documentos-rama'],
-    { revalidate: 1200 }
+    { revalidate: 21600, tags: ['master-documentos'] }
   ),
 
   getCachedDocumentosCombateBySubEspecialidad: unstable_cache(
@@ -361,7 +361,7 @@ export const MasterServerService = {
       return data || [];
     },
     ['master-documentos-sub'],
-    { revalidate: 1200 }
+    { revalidate: 21600, tags: ['master-documentos'] }
   ),
 
   getCachedDocumentoSistemaByClave: unstable_cache(
@@ -375,7 +375,7 @@ export const MasterServerService = {
       return data ?? null;
     },
     ['master-documento-sistema-clave'],
-    { revalidate: 1200 }
+    { revalidate: 21600, tags: ['master-documentos'] }
   ),
 
   getCachedDocumentoCombateByClave: unstable_cache(
@@ -389,7 +389,7 @@ export const MasterServerService = {
       return data ?? null;
     },
     ['master-documento-combate-clave'],
-    { revalidate: 1200 }
+    { revalidate: 21600, tags: ['master-documentos'] }
   ),
 
   getCachedCharacterCountsByAldea: unstable_cache(
@@ -404,7 +404,7 @@ export const MasterServerService = {
       return counts;
     },
     ['master-character-counts-aldea'],
-    { revalidate: 300 }
+    { revalidate: 3600, tags: ['master-character-counts'] }
   ),
   async getAldeas(supabase: SupabaseClient): Promise<Aldea[]> {
     const { data, error } = await supabase

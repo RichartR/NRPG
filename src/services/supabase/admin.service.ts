@@ -3,6 +3,21 @@ import { Aldea, RamaClan, SubEspecialidad, DocumentoSistema, DocumentoCombate, C
 import { RewardLogic } from '@/domain/character/logic';
 import { RegistrosService } from './registros.service';
 
+// Called only after Supabase confirms a write. A failed notification leaves the
+// bounded TTL as a safety net; it must not turn a committed insert into a retry.
+async function notifyCacheChange(domain: 'aldeas' | 'ramas' | 'documentos' | 'glosario' | 'configuracion') {
+  try {
+    const response = await fetch('/api/admin/cache', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ domain }),
+    });
+    if (!response.ok) console.error('Cache invalidation failed:', domain, response.status);
+  } catch (error) {
+    console.error('Cache invalidation failed:', domain, error);
+  }
+}
+
 export type GlosarioAldeaFilter = number | 'general' | null;
 
 export interface GlosarioPageParams {
@@ -26,10 +41,12 @@ export const AdminService = {
     if (id) {
       const { data, error } = await supabase.from('info_aldeas').update(cleanData).eq('id', id).select().single();
       if (error) throw error;
+      await notifyCacheChange('aldeas');
       return data;
     } else {
       const { data, error } = await supabase.from('info_aldeas').insert([cleanData]).select().single();
       if (error) throw error;
+      await notifyCacheChange('aldeas');
       return data;
     }
   },
@@ -38,6 +55,7 @@ export const AdminService = {
     const supabase = createClient();
     const { error } = await supabase.from('info_aldeas').delete().eq('id', id);
     if (error) throw error;
+    await notifyCacheChange('aldeas');
   },
 
   // Ramas y Clanes
@@ -49,10 +67,12 @@ export const AdminService = {
     if (id) {
       const { data, error } = await supabase.from('info_ramas_clanes').update(cleanData).eq('id', id).select().single();
       if (error) throw error;
+      await notifyCacheChange('ramas');
       return data;
     } else {
       const { data, error } = await supabase.from('info_ramas_clanes').insert([cleanData]).select().single();
       if (error) throw error;
+      await notifyCacheChange('ramas');
       return data;
     }
   },
@@ -63,10 +83,12 @@ export const AdminService = {
     if (sub.id) {
       const { data, error } = await supabase.from('info_sub_especialidades').update(sub).eq('id', sub.id).select().single();
       if (error) throw error;
+      await notifyCacheChange('ramas');
       return data;
     } else {
       const { data, error } = await supabase.from('info_sub_especialidades').insert([sub]).select().single();
       if (error) throw error;
+      await notifyCacheChange('ramas');
       return data;
     }
   },
@@ -79,10 +101,12 @@ export const AdminService = {
     if (id) {
       const { data, error } = await supabase.from('info_documentos_sistemas').update(cleanData).eq('id', id).select().single();
       if (error) throw error;
+      await notifyCacheChange('documentos');
       return data;
     } else {
       const { data, error } = await supabase.from('info_documentos_sistemas').insert([cleanData]).select().single();
       if (error) throw error;
+      await notifyCacheChange('documentos');
       return data;
     }
   },
@@ -91,6 +115,7 @@ export const AdminService = {
     const supabase = createClient();
     const { error } = await supabase.from('info_documentos_sistemas').delete().eq('id', id);
     if (error) throw error;
+    await notifyCacheChange('documentos');
   },
 
   // Noticias y Eventos
@@ -127,10 +152,12 @@ export const AdminService = {
     if (id) {
       const { data, error } = await supabase.from('info_documentos_combate').update(cleanData).eq('id', id).select('*, info_ramas_clanes(id, nombre), info_sub_especialidades(id, nombre)').single();
       if (error) throw error;
+      await notifyCacheChange('documentos');
       return data;
     } else {
       const { data, error } = await supabase.from('info_documentos_combate').insert([cleanData]).select('*, info_ramas_clanes(id, nombre), info_sub_especialidades(id, nombre)').single();
       if (error) throw error;
+      await notifyCacheChange('documentos');
       return data;
     }
   },
@@ -139,6 +166,7 @@ export const AdminService = {
     const supabase = createClient();
     const { error } = await supabase.from('info_documentos_combate').delete().eq('id', id);
     if (error) throw error;
+    await notifyCacheChange('documentos');
   },
 
   // Configuración del Sistema
@@ -172,6 +200,7 @@ export const AdminService = {
       .select();
     
     if (error) throw error;
+    await notifyCacheChange('configuracion');
     if (!data || data.length === 0) throw new Error('No se encontró el registro para actualizar');
     return data[0];
   },
@@ -184,6 +213,7 @@ export const AdminService = {
       .select()
       .single();
     if (error) throw error;
+    await notifyCacheChange('configuracion');
     return data;
   },
   
@@ -191,6 +221,7 @@ export const AdminService = {
     const supabase = createClient();
     const { error } = await supabase.from('sys_configuracion_sistema').delete().eq('id', id);
     if (error) throw error;
+    await notifyCacheChange('configuracion');
   },
 
   // Glosario / Registro Maestro
@@ -199,10 +230,12 @@ export const AdminService = {
     if (cat.id) {
       const { data, error } = await supabase.from('info_glosario_categorias').update(cat).eq('id', cat.id).select().single();
       if (error) throw error;
+      await notifyCacheChange('glosario');
       return data;
     } else {
       const { data, error } = await supabase.from('info_glosario_categorias').insert([cat]).select().single();
       if (error) throw error;
+      await notifyCacheChange('glosario');
       return data;
     }
   },
@@ -211,6 +244,7 @@ export const AdminService = {
     const supabase = createClient();
     const { error } = await supabase.from('info_glosario_categorias').delete().eq('id', id);
     if (error) throw error;
+    await notifyCacheChange('glosario');
   },
 
   async saveGlosarioSubcategoria(sub: Partial<GlosarioSubcategoria>) {
@@ -218,10 +252,12 @@ export const AdminService = {
     if (sub.id) {
       const { data, error } = await supabase.from('info_glosario_subcategorias').update(sub).eq('id', sub.id).select().single();
       if (error) throw error;
+      await notifyCacheChange('glosario');
       return data;
     } else {
       const { data, error } = await supabase.from('info_glosario_subcategorias').insert([sub]).select().single();
       if (error) throw error;
+      await notifyCacheChange('glosario');
       return data;
     }
   },
@@ -230,6 +266,7 @@ export const AdminService = {
     const supabase = createClient();
     const { error } = await supabase.from('info_glosario_subcategorias').delete().eq('id', id);
     if (error) throw error;
+    await notifyCacheChange('glosario');
   },
 
   async getGlosarioPage(params: GlosarioPageParams): Promise<{ data: Glosario[]; count: number }> {
@@ -283,10 +320,12 @@ export const AdminService = {
     if (id) {
       const { data, error } = await supabase.from('info_glosario').update(cleanData).eq('id', id).select().single();
       if (error) throw error;
+      await notifyCacheChange('glosario');
       return data;
     } else {
       const { data, error } = await supabase.from('info_glosario').insert([cleanData]).select().single();
       if (error) throw error;
+      await notifyCacheChange('glosario');
       return data;
     }
   },
@@ -295,6 +334,7 @@ export const AdminService = {
     const supabase = createClient();
     const { error } = await supabase.from('info_glosario').delete().eq('id', id);
     if (error) throw error;
+    await notifyCacheChange('glosario');
   },
 
   // Entrenamientos
@@ -306,10 +346,12 @@ export const AdminService = {
     if (id) {
       const { data, error } = await supabase.from('info_entrenamientos').update(cleanData).eq('id', id).select('*, info_ramas_clanes(id, nombre), info_sub_especialidades(id, nombre)').single();
       if (error) throw error;
+      await notifyCacheChange('glosario');
       return data;
     } else {
       const { data, error } = await supabase.from('info_entrenamientos').insert([cleanData]).select('*, info_ramas_clanes(id, nombre), info_sub_especialidades(id, nombre)').single();
       if (error) throw error;
+      await notifyCacheChange('glosario');
       return data;
     }
   },
@@ -318,6 +360,7 @@ export const AdminService = {
     const supabase = createClient();
     const { error } = await supabase.from('info_entrenamientos').delete().eq('id', id);
     if (error) throw error;
+    await notifyCacheChange('glosario');
   },
 
   // Misiones
@@ -527,6 +570,7 @@ export const AdminService = {
         .select()
         .single();
       if (error) throw error;
+      await notifyCacheChange('glosario');
       return data;
     } else {
       const { data, error } = await supabase
@@ -535,6 +579,7 @@ export const AdminService = {
         .select()
         .single();
       if (error) throw error;
+      await notifyCacheChange('glosario');
       return data;
     }
   },
@@ -543,6 +588,7 @@ export const AdminService = {
     const supabase = createClient();
     const { error } = await supabase.from('info_elementos').delete().eq('id', id);
     if (error) throw error;
+    await notifyCacheChange('glosario');
   },
 
   // --- Rama Elementos (vinculaciones) ---
@@ -558,6 +604,7 @@ export const AdminService = {
         .select('*, info_elementos(id, nombre_esp, nombre_jap, url_icono, tipo, activo)')
         .single();
       if (error) throw error;
+      await notifyCacheChange('ramas');
       return data;
     } else {
       const { data, error } = await supabase
@@ -566,6 +613,7 @@ export const AdminService = {
         .select('*, info_elementos(id, nombre_esp, nombre_jap, url_icono, tipo, activo)')
         .single();
       if (error) throw error;
+      await notifyCacheChange('ramas');
       return data;
     }
   },
@@ -574,6 +622,7 @@ export const AdminService = {
     const supabase = createClient();
     const { error } = await supabase.from('info_rama_elementos').delete().eq('id', id);
     if (error) throw error;
+    await notifyCacheChange('ramas');
   },
 
   // --- Rasgos ---
@@ -610,6 +659,7 @@ export const AdminService = {
         .select()
         .single();
       if (error) throw error;
+      await notifyCacheChange('glosario');
       return data;
     } else {
       const { data, error } = await supabase
@@ -618,6 +668,7 @@ export const AdminService = {
         .select()
         .single();
       if (error) throw error;
+      await notifyCacheChange('glosario');
       return data;
     }
   },
@@ -626,6 +677,7 @@ export const AdminService = {
     const supabase = createClient();
     const { error } = await supabase.from('info_rasgos').delete().eq('id', id);
     if (error) throw error;
+    await notifyCacheChange('glosario');
   },
 
   // --- Sentidos Avanzados ---
@@ -635,10 +687,12 @@ export const AdminService = {
     if (id) {
       const { data, error } = await supabase.from('info_sentidos').update(cleanData).eq('id', id).select().single();
       if (error) throw error;
+      await notifyCacheChange('glosario');
       return data;
     } else {
       const { data, error } = await supabase.from('info_sentidos').insert([cleanData]).select().single();
       if (error) throw error;
+      await notifyCacheChange('glosario');
       return data;
     }
   },
@@ -647,6 +701,7 @@ export const AdminService = {
     const supabase = createClient();
     const { error } = await supabase.from('info_sentidos').delete().eq('id', id);
     if (error) throw error;
+    await notifyCacheChange('glosario');
   },
 
   async saveRamaSentido(rel: Partial<RamaSentido>): Promise<RamaSentido> {
@@ -655,10 +710,12 @@ export const AdminService = {
     if (id) {
       const { data, error } = await supabase.from('info_rama_sentidos').update(cleanData).eq('id', id).select('*, info_sentidos(id, nombre, activo)').single();
       if (error) throw error;
+      await notifyCacheChange('ramas');
       return data;
     } else {
       const { data, error } = await supabase.from('info_rama_sentidos').insert([cleanData]).select('*, info_sentidos(id, nombre, activo)').single();
       if (error) throw error;
+      await notifyCacheChange('ramas');
       return data;
     }
   },
@@ -667,6 +724,7 @@ export const AdminService = {
     const supabase = createClient();
     const { error } = await supabase.from('info_rama_sentidos').delete().eq('id', id);
     if (error) throw error;
+    await notifyCacheChange('ramas');
   },
 
   // --- Acompañantes ---
