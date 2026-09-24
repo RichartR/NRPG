@@ -31,7 +31,7 @@ export default async function DocumentPage({ params }: { params: Promise<{ slug:
       .join(' ');
   };
 
-  // Obtener lista precargada en caché de servidor (1 sola consulta cada 10 min para toda la app)
+  // La lista de documentos se comparte en la caché del servidor y se invalida al editarla.
   const allDocs = await MasterServerService.getCachedDocumentosNavList();
   const targetMeta = allDocs.find(d => d.clave === slug);
 
