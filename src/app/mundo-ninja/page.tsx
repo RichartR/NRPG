@@ -1,4 +1,4 @@
-export const revalidate = 300;
+export const revalidate = 3600;
 
 import { MasterServerService } from '@/services/supabase/master.server.service';
 import MundoNinjaClientView from './MundoNinjaClientView';
