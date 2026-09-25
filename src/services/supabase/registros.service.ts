@@ -128,6 +128,24 @@ export const RegistrosService = {
     return data.rango;
   },
 
+  async getCharacterFreshRanks(ids: number[]): Promise<Map<number, string>> {
+    const uniqueIds = [...new Set(ids)];
+    if (uniqueIds.length === 0) return new Map();
+
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('reg_characters')
+      .select('id, rango')
+      .in('id', uniqueIds);
+
+    if (error) throw error;
+    const ranks = new Map((data || []).map(character => [Number(character.id), character.rango]));
+    if (uniqueIds.some(id => !ranks.get(id))) {
+      throw new Error('No se ha podido obtener el rango de todos los participantes');
+    }
+    return ranks;
+  },
+
   async updateRegistro(id: number, payload: Partial<Registro> & { participantes_ids?: number[] }) {
     const res = await fetch('/api/registros', {
       method: 'POST',
