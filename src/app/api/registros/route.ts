@@ -378,6 +378,42 @@ export async function POST(request: Request) {
     }
 
     if (action === 'create') {
+      // El servidor confirma los rangos en una sola consulta: no confía en la
+      // instantánea del formulario si un rango cambió mientras estaba abierto.
+      if (payload.tipo === 'combate' && payload.subtipo !== 'sanacion') {
+        const teams = [...(payload.data?.equipo_a || []), ...(payload.data?.equipo_b || [])];
+        const ids = [...new Set(teams.map((p: { id: number }) => Number(p.id)))];
+        if (ids.length > 0) {
+          const { data: characters, error: ranksError } = await adminClient
+            .from('reg_characters')
+            .select('id, rango')
+            .in('id', ids);
+          if (ranksError) throw ranksError;
+          const ranks = new Map((characters || []).map(c => [Number(c.id), c.rango]));
+          if (ids.some(id => !ranks.get(id))) {
+            return NextResponse.json({ error: 'No se ha podido verificar el rango de todos los participantes' }, { status: 400 });
+          }
+          payload.data = {
+            ...payload.data,
+            equipo_a: (payload.data.equipo_a || []).map((p: { id: number }) => ({ ...p, rango: ranks.get(Number(p.id)) })),
+            equipo_b: (payload.data.equipo_b || []).map((p: { id: number }) => ({ ...p, rango: ranks.get(Number(p.id)) })),
+          };
+          if (payload.autor_id) {
+            const reward = RewardLogic.calculateReward({
+              tipo: payload.tipo,
+              subtipo: payload.subtipo,
+              data: payload.data,
+              fecha: new Date().toISOString(),
+            }, payload.autor_id);
+            payload.data = {
+              ...payload.data,
+              recompensa_xp: reward.xp,
+              recompensa_pa: reward.pa,
+              recompensa_ryous: reward.ryous,
+            };
+          }
+        }
+      }
       // 1. Crear el registro base
       const isNarracionSubtipo = payload.subtipo === 'narracion';
       const { data: registro, error: regError } = await adminClient
@@ -503,6 +539,9 @@ export async function POST(request: Request) {
         // Guardar desglose de recompensa efectiva en registro.data
         const updatedRegData = {
           ...registro.data,
+          ...(payload.tipo === 'combate' && payload.subtipo !== 'sanacion'
+            ? { recompensa_xp: xp, recompensa_pa: pa, recompensa_ryous: ryous }
+            : {}),
           xp_otorgada: effectiveXp,
           xp_descartada_limite: discardedXp,
           pa_otorgada: effectivePa,
