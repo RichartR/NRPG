@@ -180,6 +180,8 @@ export default function CombatForm({
   );
 
   const [loading, setLoading] = useState(false);
+  const [loadingRanks, setLoadingRanks] = useState(Boolean(initialData && !initialData.id));
+  const [rankError, setRankError] = useState(false);
   const [images, setImages] = useState<string[]>(initialData?.data?.urls_imagenes || ['']);
   const [winner, setWinner] = useState<'A' | 'B' | 'Empate'>(initialData?.data?.ganador || 'Empate');
   const [combatConfig, setCombatConfig] = useState<any | null>(null);
@@ -225,6 +227,18 @@ export default function CombatForm({
       const bB = initialData.data?.equipo_b || [];
       setTeamA(bA);
       setTeamB(bB);
+      // La sala precarga bandos sin sus rangos: obtenerlos juntos antes de calcular EXP.
+      if (!initialData.id) {
+        const ids = [...bA, ...bB].map((p: { id: number }) => Number(p.id));
+        RegistrosService.getCharacterFreshRanks(ids).then(ranks => {
+          setTeamA(prev => prev.map(p => ({ ...p, rango: ranks.get(Number(p.id)) ?? p.rango })));
+          setTeamB(prev => prev.map(p => ({ ...p, rango: ranks.get(Number(p.id)) ?? p.rango })));
+        }).catch(err => {
+          console.error('Error al obtener los rangos del combate:', err);
+          setRankError(true);
+          addToast('No se han podido verificar los rangos. Vuelve a abrir el registro.', 'error');
+        }).finally(() => setLoadingRanks(false));
+      }
       if (initialData.subtipo === 'sanacion' || initialData.data?.subtipo === 'sanacion') {
         if (initialData.data?.sanado) setSanado(initialData.data.sanado);
         if (initialData.data?.medicos) setMedicos(initialData.data.medicos);
@@ -441,6 +455,10 @@ export default function CombatForm({
   };
 
   const handleSubmit = async () => {
+    if (loadingRanks || rankError) {
+      addToast('Espera a que se verifiquen los rangos del combate.', 'error');
+      return;
+    }
     if (!activeCharacter) {
       addToast('No se ha detectado un personaje activo.', 'error');
       return;
@@ -1468,10 +1486,15 @@ export default function CombatForm({
               )}
 
               <div className="pt-10">
+                {(loadingRanks || rankError) && (
+                  <p className="mb-4 text-center text-sm text-oro">
+                    {rankError ? 'No se han podido verificar los rangos. Vuelve a abrir el registro.' : 'Comprobando rangos de los participantes...'}
+                  </p>
+                )}
                 <button
                   onClick={handleSubmit}
-                  disabled={loading}
-                  className={`w-full py-8 sm:py-10 ${recordSubtype === 'intervencion' ? 'bg-red-600 hover:bg-red-500 text-white shadow-[0_0_30px_rgba(220,38,38,0.4)]' : 'ninja-btn-oro'} text-xl sm:text-2xl transition-all font-black uppercase tracking-widest ${loading ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                  disabled={loading || loadingRanks || rankError}
+                  className={`w-full py-8 sm:py-10 ${recordSubtype === 'intervencion' ? 'bg-red-600 hover:bg-red-500 text-white shadow-[0_0_30px_rgba(220,38,38,0.4)]' : 'ninja-btn-oro'} text-xl sm:text-2xl transition-all font-black uppercase tracking-widest ${loading || loadingRanks || rankError ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
                 >
                   {loading
                     ? (recordSubtype === 'intervencion' ? 'SELLANDO INTERVENCIÓN...' : 'SELLANDO ARCHIVO DE GUERRA...')
