@@ -334,6 +334,21 @@ export const MasterServerService = {
     { revalidate: 21600, tags: ['master-subespecialidades'] }
   ),
 
+  getCachedDocumentosCombateByAldeaId: unstable_cache(
+    async (aldeaId: number): Promise<DocumentoCombate[]> => {
+      const { data, error } = await publicClient
+        .from('info_documentos_combate')
+        .select('*')
+        .eq('aldea_id', aldeaId)
+        .eq('activo', true)
+        .order('titulo', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    ['master-documentos-combate-aldea'],
+    { revalidate: 21600, tags: ['master-documentos', 'master-aldeas'] }
+  ),
+
   getCachedDocumentosCombateByRama: unstable_cache(
     async (ramaId: number): Promise<DocumentoCombate[]> => {
       const { data, error } = await publicClient
@@ -573,6 +588,17 @@ export const MasterServerService = {
     return data || [];
   },
 
+  async getDocumentosCombateByAldeaId(supabase: SupabaseClient, aldeaId: number): Promise<DocumentoCombate[]> {
+    const { data, error } = await supabase
+      .from('info_documentos_combate')
+      .select('*')
+      .eq('aldea_id', aldeaId)
+      .eq('activo', true)
+      .order('titulo', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  },
+
   async getDocumentosCombateGenerales(supabase: SupabaseClient): Promise<DocumentoCombate[]> {
     const { data, error } = await supabase
       .from('info_documentos_combate')
@@ -702,7 +728,7 @@ export const MasterServerService = {
   async getAdminDocumentosCombate(supabase: SupabaseClient) {
     const { data, error } = await supabase
       .from('info_documentos_combate')
-      .select('*, info_ramas_clanes(id, nombre, tipo), info_sub_especialidades(id, nombre)')
+      .select('*, info_aldeas(id, nombre_completo, nombre_jap, abreviatura), info_ramas_clanes(id, nombre, tipo), info_sub_especialidades(id, nombre)')
       .order('created_at', { ascending: false });
     if (error) throw error;
     return data || [];

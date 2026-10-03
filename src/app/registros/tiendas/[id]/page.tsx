@@ -554,6 +554,13 @@ export default function TiendaDetallePage() {
         }
       }
 
+      const reqAldeaId = reqs.aldea_id || (obj.info_glosario?.aldea_id ? Number(obj.info_glosario.aldea_id) : null);
+      if (reqAldeaId && Number(char.aldea_id) !== Number(reqAldeaId)) {
+        allowed = false;
+        const aldeaName = masters.aldeas?.find(a => Number(a.id) === Number(reqAldeaId))?.nombre_completo || `ID: ${reqAldeaId}`;
+        reasons.push(`Requiere pertenecer a la aldea ${aldeaName}`);
+      }
+
       const costPA = obj.info_glosario?.coste_puntos_aprendizaje || 0;
       if (costPA > 0 && char.puntos_aprendizaje < costPA) {
         allowed = false;

@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { Portal } from '@/components/ui/Portal';
-import { Plus, Trash2, Save, Search, Filter, Layers, Tag, Box, Check, X, ArrowRight, Archive, Eye, User, Swords, ScrollText, Trophy, Star, ChevronDown, ChevronLeft, ChevronRight, Sparkles, Flame } from 'lucide-react';
+import { Plus, Trash2, Save, Search, Filter, Layers, Tag, Box, Check, X, ArrowRight, Archive, Eye, User, Swords, ScrollText, Trophy, Star, ChevronDown, ChevronLeft, ChevronRight, Sparkles, Flame, MapPin } from 'lucide-react';
 import { AdminService, type GlosarioAldeaFilter } from '@/services/supabase/admin.service';
 import {
   GlosarioCategoria,
@@ -1117,6 +1117,13 @@ function ElementoForm({ initialData, categorias, subcategorias, ramas, aldeas, s
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-oro/10">
+                  <SearchableSelect
+                    label="Aldea Requerida"
+                    icon={<MapPin size={12} />}
+                    options={(aldeas || []).map((a: any) => ({ id: a.id, label: a.nombre_completo || a.nombre_jap }))}
+                    value={formData.requisitos?.aldea_id}
+                    onChange={(id: any) => updateReq('aldea_id', id)}
+                  />
                   <SearchableSelect
                     label="Rama / Clan"
                     icon={<Layers size={12} />}

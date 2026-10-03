@@ -12,11 +12,13 @@ import { searchAny } from '@/lib/utils/search';
 export default function CombateList({
   initialDocs,
   ramas,
-  subEspecialidades
+  subEspecialidades,
+  aldeas = []
 }: {
   initialDocs: any[],
   ramas: any[],
-  subEspecialidades: any[]
+  subEspecialidades: any[],
+  aldeas?: any[]
 }) {
   const [docs, setDocs] = useState(initialDocs);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -50,6 +52,7 @@ export default function CombateList({
       const matchesSearch = searchAny(search, [
         doc.titulo,
         doc.clave,
+        doc.info_aldeas?.nombre_completo,
         doc.ramas_clanes?.nombre,
         doc.sub_especialidades?.nombre
       ]);
@@ -77,6 +80,7 @@ export default function CombateList({
       clave: '',
       descripcion: '',
       url_drive: '',
+      aldea_id: '',
       rama_id: '',
       sub_especialidad_id: '',
       url_imagen: '',
@@ -97,10 +101,11 @@ export default function CombateList({
     setLoading(true);
 
     try {
-      const { ramas_clanes, sub_especialidades, ...cleanForm } = editForm;
+      const { ramas_clanes, sub_especialidades, info_aldeas, ...cleanForm } = editForm;
       const payload = {
         ...cleanForm,
-        rama_id: editForm.rama_id || null,
+        aldea_id: editForm.aldea_id ? Number(editForm.aldea_id) : null,
+        rama_id: editForm.rama_id ? Number(editForm.rama_id) : null,
         sub_especialidad_id: editForm.sub_especialidad_id || null
       };
 
@@ -143,6 +148,9 @@ export default function CombateList({
   };
 
   const subFiltradas = subEspecialidades.filter(s => s.rama_id === parseInt(editForm?.rama_id));
+  const ramasFiltradas = useMemo(() => {
+    return (ramas || []).filter((r: any) => !editForm?.aldea_id || !r.aldea_id || Number(r.aldea_id) === Number(editForm.aldea_id));
+  }, [ramas, editForm?.aldea_id]);
 
   return (
     <div className="space-y-6">
@@ -241,9 +249,19 @@ export default function CombateList({
             <DataField label="Clave Operativa" value={editForm.clave} onChange={v => setEditForm({ ...editForm, clave: v })} />
 
             <SelectField
-              label="Rama de Origen"
+              label="Aldea Asociada (Opcional)"
+              value={editForm.aldea_id || ''}
+              options={[
+                { label: 'Ninguna / General', value: '' },
+                ...aldeas.map((a: any) => ({ label: a.nombre_completo || a.nombre_jap, value: a.id }))
+              ]}
+              onChange={v => setEditForm({ ...editForm, aldea_id: v })}
+            />
+
+            <SelectField
+              label="Rama de Origen (Opcional si tiene Aldea)"
               value={editForm.rama_id}
-              options={ramas.map(r => ({ label: r.nombre, value: r.id }))}
+              options={[{ label: 'Ninguna (General / Aldea)', value: '' }, ...ramasFiltradas.map((r: any) => ({ label: r.nombre, value: r.id }))]}
               onChange={v => setEditForm({ ...editForm, rama_id: v, sub_especialidad_id: '' })}
             />
             <SelectField
@@ -308,7 +326,12 @@ export default function CombateList({
               <div>
                 <div className="flex items-center gap-4 mb-2 flex-wrap">
                   <h4 className="text-xl font-black text-oro uppercase italic tracking-tighter leading-none">{doc.titulo}</h4>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {doc.info_aldeas?.nombre_completo && (
+                      <span className="text-caption font-black bg-blue-500/10 border border-blue-500/20 px-3 py-1 text-blue-400 uppercase tracking-widest ninja-clip-sm">
+                        {doc.info_aldeas.nombre_completo}
+                      </span>
+                    )}
                     <span
                       className="text-caption font-black bg-oro/5 border border-oro/10 px-3 py-1 text-oro/60 uppercase tracking-widest ninja-clip-sm"
                     >

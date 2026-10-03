@@ -11,8 +11,8 @@ export const cacheDomains = {
     paths: ['/ramas', '/ramas/[slug]', '/ramas/[slug]/[grouping]', '/aldeas/[slug]', '/glosario', '/docs/[slug]'],
   },
   documentos: {
-    tags: ['master-documentos'],
-    paths: ['/sistemas', '/bienvenida', '/documentos', '/docs/[slug]', '/ramas', '/ramas/[slug]', '/ramas/[slug]/[grouping]'],
+    tags: ['master-documentos', 'master-aldeas'],
+    paths: ['/sistemas', '/bienvenida', '/documentos', '/docs/[slug]', '/ramas', '/ramas/[slug]', '/ramas/[slug]/[grouping]', '/aldeas/[slug]'],
   },
   glosario: {
     tags: ['master-glosario'],

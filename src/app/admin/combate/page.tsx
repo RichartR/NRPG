@@ -7,10 +7,11 @@ import { MasterServerService } from '@/services/supabase/master.server.service';
 export default async function AdminCombatePage() {
   const supabase = await createClient();
 
-  const [docs, ramas, subEspecialidades] = await Promise.all([
+  const [docs, ramas, subEspecialidades, aldeas] = await Promise.all([
     MasterServerService.getAdminDocumentosCombate(supabase),
     MasterServerService.getAdminRamasActivas(supabase),
-    MasterServerService.getAdminSubEspecialidadesActivas(supabase)
+    MasterServerService.getAdminSubEspecialidadesActivas(supabase),
+    MasterServerService.getAdminAldeas(supabase)
   ]);
 
   return (
@@ -36,6 +37,7 @@ export default async function AdminCombatePage() {
         initialDocs={docs}
         ramas={ramas}
         subEspecialidades={subEspecialidades}
+        aldeas={aldeas}
       />
     </div>
   );

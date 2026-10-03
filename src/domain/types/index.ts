@@ -405,9 +405,12 @@ export interface DocumentoCombate {
   descripcion?: string;
   url_drive: string;
   url_imagen?: string;
+  aldea_id?: number | null;
   rama_id?: number;
   sub_especialidad_id?: number;
+  elemento_id?: number;
   activo: boolean;
+  info_aldeas?: Partial<Aldea> | null;
   ramas_clanes?: RamaClan;
   sub_especialidades?: SubEspecialidad;
 }

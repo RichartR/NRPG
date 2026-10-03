@@ -13,7 +13,10 @@ export default async function AldeaDetailPage({ params }: { params: Promise<{ sl
   const aldea = await MasterServerService.getCachedAldeaBySlug(slug);
   if (!aldea) return notFound();
 
-  const clanes = await MasterServerService.getCachedClanesByAldeaId(aldea.id);
+  const [clanes, docsAldea] = await Promise.all([
+    MasterServerService.getCachedClanesByAldeaId(aldea.id),
+    MasterServerService.getCachedDocumentosCombateByAldeaId(aldea.id)
+  ]);
 
   return (
     <div className="min-h-screen p-4 sm:p-8 xl:p-12 flex flex-col">
@@ -83,6 +86,31 @@ export default async function AldeaDetailPage({ params }: { params: Promise<{ sl
             </div>
           )}
         </div>
+
+        {docsAldea && docsAldea.length > 0 && (
+          <div className="mb-16">
+            <div className="mb-10 ninja-card-oro p-8 sm:p-10 xl:p-12">
+              <div className="flex items-center gap-6">
+                <h2 className="ninja-title text-4xl xl:text-6xl">Documentos y Técnicas de la Aldea</h2>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 xl:gap-16">
+              {docsAldea.map((doc) => (
+                <NinjaCard
+                  key={doc.id}
+                  href={`/docs/${doc.clave}`}
+                  title={doc.titulo}
+                  titleClassName="text-2xl sm:text-3xl md:text-3xl"
+                  category="DOCUMENTO DE ALDEA"
+                  imageUrl={doc.url_imagen}
+                  description={doc.descripcion}
+                  actionText="Ver Documento"
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
