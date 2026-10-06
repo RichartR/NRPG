@@ -10,7 +10,6 @@ import CombatForm from '@/components/registros/CombatForm';
 import RegistroCard from '@/components/registros/RegistroCard';
 import { Swords, ChevronLeft, ChevronRight, Plus, Settings, ShieldAlert } from 'lucide-react';
 import { AuthService } from '@/services/supabase/auth.service';
-import { createClient } from '@/utils/supabase/client';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import AdminViewSelector from '@/components/admin/AdminViewSelector';
 import { PaginationPageInput } from '@/components/ui/PaginationPageInput';

@@ -3,11 +3,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ShoppingBag, Plus, Trash2, X, Check, Loader2, Search, AlertCircle, ChevronRight, Minus } from 'lucide-react';
-import { createClient } from '@/utils/supabase/client';
 import { AuthService } from '@/services/supabase/auth.service';
 import { MasterService } from '@/services/supabase/master.service';
 import { TiendasService } from '@/services/supabase/tiendas.service';
 import { AdminService } from '@/services/supabase/admin.service';
+import { CharacterService } from '@/services/supabase/character.service';
 import { NinjaSelect, SearchableMultiSelect } from '@/components/ui/Fields';
 import { Character, Tienda, TiendaObjeto, Glosario } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
@@ -124,45 +124,11 @@ export default function TiendaDetallePage() {
   const fetchUserCharacters = async () => {
     setCharLoading(true);
     try {
-      const supabase = createClient();
       const { data: { user } } = await AuthService.getUser();
       if (!user) return;
 
       const activeCharId = await ProfileService.getActiveCharacterId(user.id).catch(() => null);
-
-      const { data, error } = await supabase
-        .from('reg_characters')
-        .select(`
-          *,
-          personajes_tecnicas:reg_personajes_tecnicas!reg_personajes_tecnicas_personaje_id_fkey(*),
-          personajes_inventario:reg_personajes_inventario!reg_personajes_inventario_personaje_id_fkey(*),
-          personajes_ramas:reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(*)
-        `)
-        .eq('user_id', user.id)
-        .eq('activo', true)
-        .eq('eliminado_voluntario', false);
-
-      if (error) console.error('Error fetching user characters:', error);
-
-      let list: Character[] = data || [];
-
-      if (activeCharId && !list.some(c => c.id === activeCharId)) {
-        const { data: activeCharData, error: activeErr } = await supabase
-          .from('reg_characters')
-          .select(`
-            *,
-            personajes_tecnicas:reg_personajes_tecnicas!reg_personajes_tecnicas_personaje_id_fkey(*),
-            personajes_inventario:reg_personajes_inventario!reg_personajes_inventario_personaje_id_fkey(*),
-            personajes_ramas:reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(*)
-          `)
-          .eq('id', activeCharId)
-          .single();
-
-        if (!activeErr && activeCharData && activeCharData.activo !== false && !activeCharData.eliminado_voluntario) {
-          list.push(activeCharData);
-        }
-      }
-
+      const list = await CharacterService.getUserCharactersWithRelations(user.id, activeCharId);
       setCharacters(list);
 
       if (list.length > 0) {
@@ -217,12 +183,7 @@ export default function TiendaDetallePage() {
       const items = await TiendasService.getTiendaObjetos(shopId);
       setObjetos(items);
 
-      const supabase = createClient();
-      const { data: glosario } = await supabase
-        .from('info_glosario')
-        .select('*')
-        .eq('activo', true)
-        .order('nombre_es');
+      const glosario = await TiendasService.getGlosarioCatalog();
       setGlosarioActivo(glosario || []);
     } catch (err: any) {
       console.error(err);
@@ -273,46 +234,14 @@ export default function TiendaDetallePage() {
 
     setIsSavingItem(true);
     try {
-      const supabase = createClient();
-
       if (isCustomItem && tienda.es_experiencia) {
         if (!formCustomGlosario.nombre_es.trim()) {
           addToast('El nombre de la mejora es obligatorio', 'error');
           return;
         }
 
-        const { data: newGlosario, error: glosarioError } = await supabase
-          .from('info_glosario')
-          .insert([{
-            nombre_es: formCustomGlosario.nombre_es.trim(),
-            nombre_jp: formCustomGlosario.nombre_jp.trim() || null,
-            descripcion: formCustomGlosario.descripcion.trim() || null,
-            categoria_id: formCustomGlosario.categoria_id,
-            coste_exp: formCustomGlosario.coste_exp,
-            coste_ryous: formCustomGlosario.coste_ryous,
-            requisitos: formCustomGlosario.requisitos,
-            activo: false,
-            es_tienda_exp: true
-          }])
-          .select()
-          .single();
-
-        if (glosarioError) throw glosarioError;
-
-        const { error: linkError } = await supabase
-          .from('reg_tiendas_objetos')
-          .insert([{
-            tienda_id: tienda.id,
-            glosario_id: newGlosario.id,
-            coste_ryous: formCustomGlosario.coste_ryous,
-            coste_exp: formCustomGlosario.coste_exp,
-            coste_moneda_evento: 0,
-            mantener_requisitos: true
-          }]);
-
-        if (linkError) throw linkError;
+        await TiendasService.createCustomExperienceItem(tienda.id, formCustomGlosario);
         addToast('Mejora especial creada e incorporada al catálogo', 'success');
-
       } else {
         if (!selectedGlosarioId) {
           addToast('Debe seleccionar un objeto del glosario', 'error');

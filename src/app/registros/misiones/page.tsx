@@ -9,7 +9,6 @@ import MissionForm from '@/components/registros/MissionForm';
 import MissionTable from '@/components/registros/MissionTable';
 import { ScrollText, ChevronLeft, ChevronRight, Plus, Settings, ShieldAlert } from 'lucide-react';
 import { AuthService } from '@/services/supabase/auth.service';
-import { createClient } from '@/utils/supabase/client';
 import { useCharacterStore } from '@/store/useCharacterStore';
 import AdminViewSelector from '@/components/admin/AdminViewSelector';
 import { PaginationPageInput } from '@/components/ui/PaginationPageInput';

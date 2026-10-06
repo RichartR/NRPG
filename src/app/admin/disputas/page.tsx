@@ -12,6 +12,7 @@ import { createPortal } from 'react-dom';
 import RegistroCard from '@/components/registros/RegistroCard';
 import { createClient } from '@/utils/supabase/client';
 import { ProfileService } from '@/services/supabase/profile.service';
+import { AuthService } from '@/services/supabase/auth.service';
 
 export default function AdminDisputePage() {
   const [disputes, setDisputes] = useState<NotificacionAdmin[]>([]);
@@ -23,8 +24,7 @@ export default function AdminDisputePage() {
 
   const fetchDisputes = async () => {
     try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await AuthService.getUser();
       if (!user) {
         window.location.href = '/';
         return;

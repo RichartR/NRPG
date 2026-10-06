@@ -8,7 +8,8 @@ import { ShieldAlert, Search, UserCheck, ShieldOff, Calendar, AlertCircle, Arrow
 import Link from 'next/link';
 import { PaginationContainer } from '@/components/ui/PaginationContainer';
 import { PaginationPageInput } from '@/components/ui/PaginationPageInput';
-import { createClient } from '@/utils/supabase/client';
+import { AuthService } from '@/services/supabase/auth.service';
+import { AdminService } from '@/services/supabase/admin.service';
 import { searchAny } from '@/lib/utils/search';
 
 export default function AdminUsuariosPage() {
@@ -40,7 +41,7 @@ export default function AdminUsuariosPage() {
 
   const fetchUsers = async () => {
     try {
-      const { data: { user } } = await createClient().auth.getUser();
+      const { data: { user } } = await AuthService.getUser();
       if (!user) {
         window.location.href = '/';
         return;
@@ -216,14 +217,7 @@ export default function AdminUsuariosPage() {
   const handleSaveDiscordRoles = async () => {
     setLoading(true);
     try {
-      const supabase = createClient();
-      for (const role of allRoles) {
-        const { error } = await supabase
-          .from('info_roles')
-          .update({ id_rol_discord: roleDiscordIds[role.id] || null })
-          .eq('id', role.id);
-        if (error) throw error;
-      }
+      await AdminService.updateRoleDiscordIds(roleDiscordIds);
       addToast('Mapeo de roles de Discord actualizado correctamente.', 'success');
       setDiscordRolesModalOpen(false);
       fetchRoles();

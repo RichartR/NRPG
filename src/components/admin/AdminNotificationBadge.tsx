@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { AdminService } from '@/services/supabase/admin.service';
 import { ProfileService } from '@/services/supabase/profile.service';
+import { AuthService } from '@/services/supabase/auth.service';
 import { NotificacionAdmin } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
@@ -38,8 +39,7 @@ export default function AdminNotificationBadge({ isSidebar = false, userRoles = 
     } else {
       async function loadRoles() {
         try {
-          const supabase = createClient();
-          const { data: { user } } = await supabase.auth.getUser();
+          const { data: { user } } = await AuthService.getUser();
           if (user) {
             const profile = await ProfileService.getProfile(user.id);
             if (profile?.roles) setEffectiveRoles(profile.roles);

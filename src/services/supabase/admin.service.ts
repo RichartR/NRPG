@@ -787,5 +787,38 @@ export const AdminService = {
     const supabase = createClient();
     const { error } = await supabase.from('info_kugutsu_componentes').delete().eq('id', id);
     if (error) throw error;
+  },
+
+  async getDocumentosSistemasAdmin(categoria: string) {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('info_documentos_sistemas')
+      .select('*')
+      .eq('categoria', categoria)
+      .order('titulo');
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getCategoriasDocumentosAdmin(slug: string) {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('info_categorias_documentos')
+      .select('*')
+      .eq('slug', slug)
+      .order('nombre');
+    if (error) throw error;
+    return data || [];
+  },
+
+  async updateRoleDiscordIds(roleDiscordMap: Record<string, string | null>): Promise<void> {
+    const supabase = createClient();
+    for (const [roleId, discordId] of Object.entries(roleDiscordMap)) {
+      const { error } = await supabase
+        .from('info_roles')
+        .update({ id_rol_discord: discordId })
+        .eq('id', roleId);
+      if (error) throw error;
+    }
   }
 };

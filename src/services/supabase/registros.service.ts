@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client';
-import { Registro, MisionMaster } from '@/domain/types';
+import { Registro, MisionMaster, CharacterSearchResult } from '@/domain/types';
 import { searchAny } from '@/lib/utils/search';
 
 export const RegistrosService = {
@@ -98,7 +98,7 @@ export const RegistrosService = {
     return await res.json();
   },
 
-  async searchCharacters(query: string) {
+  async searchCharacters(query: string): Promise<CharacterSearchResult[]> {
     const trimmedQuery = query.trim();
     if (trimmedQuery.length < 3) return [];
 
@@ -111,8 +111,9 @@ export const RegistrosService = {
       .limit(250);
     
     if (error) throw error;
-    return (data || [])
-      .filter(character => searchAny(trimmedQuery, [character.nombre_ninja, character.hobba_name]))
+    const chars: CharacterSearchResult[] = (data as any) || [];
+    return chars
+      .filter((character) => searchAny(trimmedQuery, [character.nombre_ninja, character.hobba_name]))
       .slice(0, 5);
   },
 
@@ -124,13 +125,13 @@ export const RegistrosService = {
       .eq('id', id)
       .single();
 
-    if (error || !data?.rango) return 'D';
-    return data.rango;
+    if (error || !(data as any)?.rango) return 'D';
+    return (data as any).rango;
   },
 
   async getCharacterFreshRanks(ids: number[]): Promise<Map<number, string>> {
     const uniqueIds = [...new Set(ids)];
-    if (uniqueIds.length === 0) return new Map();
+    if (uniqueIds.length === 0) return new Map<number, string>();
 
     const supabase = createClient();
     const { data, error } = await supabase
@@ -139,7 +140,8 @@ export const RegistrosService = {
       .in('id', uniqueIds);
 
     if (error) throw error;
-    const ranks = new Map((data || []).map(character => [Number(character.id), character.rango]));
+    const chars: Array<{ id: number; rango: string }> = (data as any) || [];
+    const ranks = new Map<number, string>(chars.map((character) => [Number(character.id), character.rango]));
     if (uniqueIds.some(id => !ranks.get(id))) {
       throw new Error('No se ha podido obtener el rango de todos los participantes');
     }
@@ -170,5 +172,58 @@ export const RegistrosService = {
       throw new Error(err.error || 'Error al eliminar el registro');
     }
     return await res.json();
+  },
+
+  async getEventRegistriesByTitle(eventTitle: string): Promise<Registro[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('reg_registros')
+      .select(`
+        *,
+        autor: reg_characters!reg_registros_autor_id_fkey(nombre_ninja, url_img, profiles!user_id(username, url_avatar, url_img)),
+        participantes: reg_registros_participantes!reg_registros_participantes_registro_id_fkey(
+          *,
+          personaje: reg_characters!reg_registros_participantes_personaje_id_fkey(nombre_ninja, url_img, profiles!user_id(username, url_avatar, url_img))
+        )
+      `)
+      .eq('subtipo', 'evento_premios')
+      .contains('data', { evento_nombre: eventTitle })
+      .order('fecha', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching event registries by title:', error);
+      throw error;
+    }
+    return (data as Registro[]) || [];
+  },
+
+  async getEventRegistries(eventId?: number | string, eventTitle?: string): Promise<Registro[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('reg_registros')
+      .select(`
+        *,
+        autor: reg_characters!reg_registros_autor_id_fkey(nombre_ninja, url_img, profiles!user_id(username, url_avatar, url_img)),
+        participantes: reg_registros_participantes!reg_registros_participantes_registro_id_fkey(
+          *,
+          personaje: reg_characters!reg_registros_participantes_personaje_id_fkey(nombre_ninja, url_img, profiles!user_id(username, url_avatar, url_img))
+        )
+      `)
+      .eq('tipo', 'accion')
+      .eq('subtipo', 'evento_premios')
+      .order('fecha', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching event registries:', error);
+      throw error;
+    }
+    const list = (data as Registro[]) || [];
+    if (eventId || eventTitle) {
+      return list.filter((reg: any) =>
+        (eventId && Number(reg.data?.evento_id) === Number(eventId)) ||
+        (eventTitle && reg.data?.evento_nombre && String(reg.data.evento_nombre).trim().toLowerCase() === String(eventTitle).trim().toLowerCase())
+      );
+    }
+    return list;
   }
 };

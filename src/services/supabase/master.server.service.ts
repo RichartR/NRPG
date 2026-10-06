@@ -867,5 +867,62 @@ export const MasterServerService = {
       .order('fecha_creacion', { ascending: false });
     if (error) throw error;
     return data || [];
-  }
+  },
+
+  getCachedLatestRegistros: unstable_cache(
+    async () => {
+      const { data } = await publicClient
+        .from('reg_registros')
+        .select(`
+          id,
+          tipo,
+          subtipo,
+          fecha,
+          data,
+          autor_id,
+          autor: reg_characters!reg_registros_autor_id_fkey(nombre_ninja, url_img)
+        `)
+        .or('tipo.in.(mision,combate,compra),subtipo.eq.evento_premios,subtipo.eq.narracion,subtipo.eq.reseteo')
+        .order('fecha', { ascending: false })
+        .range(0, 19);
+      return data || [];
+    },
+    ['latest-registros'],
+    { revalidate: 3600, tags: ['latest-registros'] }
+  ),
+
+  getCachedLatestCharacters: unstable_cache(
+    async () => {
+      const { data } = await publicClient
+        .from('reg_characters')
+        .select(`
+          id,
+          nombre_ninja,
+          created_at,
+          url_img,
+          rango,
+          aldeas: info_aldeas(nombre_completo, abreviatura)
+        `)
+        .eq('activo', true)
+        .order('created_at', { ascending: false })
+        .range(0, 9);
+      return data || [];
+    },
+    ['latest-characters'],
+    { revalidate: 3600, tags: ['latest-characters'] }
+  ),
+
+  getCachedLatestNoticias: unstable_cache(
+    async () => {
+      const { data } = await publicClient
+        .from('info_noticias_index')
+        .select('id, titulo, categoria, url_imagen, created_at')
+        .eq('activo', true)
+        .order('created_at', { ascending: false })
+        .range(0, 9);
+      return data || [];
+    },
+    ['latest-noticias'],
+    { revalidate: 3600, tags: ['latest-noticias'] }
+  )
 };

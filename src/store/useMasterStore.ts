@@ -2,7 +2,6 @@
 
 import { create } from 'zustand';
 import { MasterService } from '@/services/supabase/master.service';
-import { createClient } from '@/utils/supabase/client';
 import { 
   Aldea, 
   RamaClan, 
@@ -83,7 +82,6 @@ export const useMasterStore = create<MasterState>((set, get) => ({
 
   refresh: async () => {
     set({ loading: true, error: null });
-    const supabase = createClient();
     try {
       const [
          aldeasRes, 
