@@ -41,7 +41,6 @@ import UchihaSection, { UCHIHA_SLOTS_CONFIG } from './UchihaSection';
 import { ObjetoSlotsModal } from './ObjetoSlotsModal';
 import { useState, useMemo, useEffect, useCallback, Fragment } from 'react';
 import { resolveAldeaIcono } from '@/utils/aldea-icon';
-import { createClient } from '@/utils/supabase/client';
 import { searchAny } from '@/lib/utils/search';
 
 export const SHIHAI_GLOSARIO_FALLBACK: Glosario = {
@@ -169,7 +168,6 @@ export function CharacterSheetView({
 
   useEffect(() => {
     setMounted(true);
-    const supabase = createClient();
 
     const fetchEventCoinName = async () => {
       try {
@@ -198,23 +196,8 @@ export function CharacterSheetView({
     const fetchActiveTeam = async () => {
       if (!character?.id) return;
       try {
-        const { data, error } = await supabase
-          .from('reg_equipos_ninja')
-          .select(`
-            id,
-            nombre_equipo,
-            fecha_creacion,
-            lider:lider_id(nombre_ninja),
-            integrante_1:integrante_1_id(nombre_ninja),
-            integrante_2:integrante_2_id(nombre_ninja),
-            integrante_3:integrante_3_id(nombre_ninja)
-          `)
-          .eq('activo', true)
-          .or(`lider_id.eq.${character.id},integrante_1_id.eq.${character.id},integrante_2_id.eq.${character.id},integrante_3_id.eq.${character.id}`)
-          .maybeSingle();
-
-        if (error) throw error;
-        setActiveTeam(data || null);
+        const team = await MasterService.getActiveTeamByCharacterId(character.id);
+        setActiveTeam(team);
       } catch (err) {
         console.error("Error fetching active team in CharacterSheetView:", err);
       }
@@ -2888,17 +2871,12 @@ export function CharacterSheetView({
 
                                             if (!tecData) {
                                               try {
-                                                const supabase = createClient();
-                                                const { data, error } = await supabase
-                                                  .from('info_glosario')
-                                                  .select('*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre, slug)')
-                                                  .eq('id', tid)
-                                                  .single();
-                                                if (data && !error) {
+                                                const data = await MasterService.getGlosarioById(tid);
+                                                if (data) {
                                                   tecData = data;
                                                 }
                                               } catch (err) {
-                                                console.error("Error fetching technique from supabase:", err);
+                                                console.error("Error fetching technique from master service:", err);
                                               }
                                             }
                                             return { tecnica_id: tid, info_glosario: tecData };

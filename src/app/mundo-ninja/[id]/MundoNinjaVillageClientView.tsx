@@ -8,7 +8,8 @@ import { NinjaSearchInput } from '@/components/character/NinjaSearchInput';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import { PaginationPageInput } from '@/components/ui/PaginationPageInput';
 import { PaginationContainer } from '@/components/ui/PaginationContainer';
-import { createClient } from '@/utils/supabase/client';
+import { AuthService } from '@/services/supabase/auth.service';
+import { MasterService } from '@/services/supabase/master.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { ProfileService } from '@/services/supabase/profile.service';
 import { searchAny } from '@/lib/utils/search';
@@ -191,7 +192,6 @@ export default function MundoNinjaVillageClientView({
   const [saving, setSaving] = useState(false);
 
   const addToast = useToastStore((state) => state.addToast);
-  const supabase = createClient();
 
   const fetchNPCs = async () => {
     setLoadingNPCs(true);
@@ -215,7 +215,7 @@ export default function MundoNinjaVillageClientView({
 
   useEffect(() => {
     async function fetchUserRole() {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await AuthService.getSession();
       if (session?.user) {
         const profile = await ProfileService.getProfile(session.user.id);
         const roles = profile?.roles || [];
@@ -303,21 +303,13 @@ export default function MundoNinjaVillageClientView({
 
       addToast('Equipo creado exitosamente', 'success');
 
-      const { data: updatedEquipos, error } = await supabase
-        .from('reg_equipos_ninja')
-        .select(`
-          *,
-          lider:lider_id(id, nombre_ninja, profiles:user_id(username)),
-          integrante_1:integrante_1_id(id, nombre_ninja, profiles:user_id(username)),
-          integrante_2:integrante_2_id(id, nombre_ninja, profiles:user_id(username)),
-          integrante_3:integrante_3_id(id, nombre_ninja, profiles:user_id(username))
-        `)
-        .eq('aldea_id', Number(id))
-        .eq('activo', true)
-        .order('fecha_creacion', { ascending: false });
-
-      if (!error && updatedEquipos) {
-        setEquipos(updatedEquipos);
+      try {
+        const updatedEquipos = await MasterService.getEquiposAldea(Number(id));
+        if (updatedEquipos) {
+          setEquipos(updatedEquipos);
+        }
+      } catch (err) {
+        console.error('Error fetching updated equipos:', err);
       }
 
       // Reset form

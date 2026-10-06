@@ -4,8 +4,7 @@ import CharacterSheet from "@/components/character/CharacterSheet";
 import Link from "next/link";
 import HomeUserControls from '@/components/layout/HomeUserControls';
 import QuickAccessHUD from '@/components/layout/QuickAccessHUD';
-import { unstable_cache } from 'next/cache';
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { MasterServerService } from '@/services/supabase/master.server.service';
 import {
   User,
   ScrollText,
@@ -19,67 +18,6 @@ import {
   RefreshCw,
   HeartPulse
 } from 'lucide-react';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const publicClient = createSupabaseClient(supabaseUrl, supabaseAnonKey);
-
-const getCachedRegistros = unstable_cache(
-  async () => {
-    const { data } = await publicClient
-      .from('reg_registros')
-      .select(`
-        id,
-        tipo,
-        subtipo,
-        fecha,
-        data,
-        autor_id,
-        autor: reg_characters!reg_registros_autor_id_fkey(nombre_ninja, url_img)
-      `)
-      .or("tipo.in.(mision,combate,compra),subtipo.eq.evento_premios,subtipo.eq.narracion,subtipo.eq.reseteo")
-      .order('fecha', { ascending: false })
-      .range(0, 19);
-    return data || [];
-  },
-  ['latest-registros'],
-  { revalidate: 3600, tags: ['latest-registros'] }
-);
-
-const getCachedCharacters = unstable_cache(
-  async () => {
-    const { data } = await publicClient
-      .from('reg_characters')
-      .select(`
-        id,
-        nombre_ninja,
-        created_at,
-        url_img,
-        rango,
-        aldeas: info_aldeas(nombre_completo, abreviatura)
-      `)
-      .eq('activo', true)
-      .order('created_at', { ascending: false })
-      .range(0, 9);
-    return data || [];
-  },
-  ['latest-characters'],
-  { revalidate: 3600, tags: ['latest-characters'] }
-);
-
-const getCachedNoticias = unstable_cache(
-  async () => {
-    const { data } = await publicClient
-      .from('info_noticias_index')
-      .select('id, titulo, categoria, url_imagen, created_at')
-      .eq('activo', true)
-      .order('created_at', { ascending: false })
-      .range(0, 9);
-    return data || [];
-  },
-  ['latest-noticias'],
-  { revalidate: 3600, tags: ['latest-noticias'] }
-);
 
 function formatRelativeTime(dateString: string) {
   const date = new Date(dateString);
@@ -98,9 +36,9 @@ function formatRelativeTime(dateString: string) {
 
 export default async function Home() {
   const [registros, characters, noticias] = await Promise.all([
-    getCachedRegistros(),
-    getCachedCharacters(),
-    getCachedNoticias()
+    MasterServerService.getCachedLatestRegistros(),
+    MasterServerService.getCachedLatestCharacters(),
+    MasterServerService.getCachedLatestNoticias()
   ]);
 
   // Merge and sort chronologically

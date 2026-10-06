@@ -4,7 +4,7 @@ import { RegistrosService } from '@/services/supabase/registros.service';
 import { useToastStore } from '@/components/ui/Toast';
 import { Portal } from '@/components/ui/Portal';
 import { X, Plus, Trash2, Link as LinkIcon, Sparkles, AlertCircle, ShieldCheck, UserPlus, Search } from 'lucide-react';
-import { createClient } from '@/utils/supabase/client';
+import { CharacterService } from '@/services/supabase/character.service';
 
 interface RecuperarEventoModalProps {
   isOpen: boolean;
@@ -48,13 +48,7 @@ export default function RecuperarEventoModal({
     const loadCharacters = async () => {
       setLoading(true);
       try {
-        const supabase = createClient();
-        const { data: pjs } = await supabase
-          .from('reg_characters')
-          .select('id, nombre_ninja, url_img, rango, info_aldeas(nombre_jap)')
-          .eq('activo', true)
-          .order('nombre_ninja', { ascending: true });
-
+        const pjs = await CharacterService.getActiveCharactersWithVillage();
         setAvailableCharacters(pjs || []);
 
         if (activeCharacter?.id) {

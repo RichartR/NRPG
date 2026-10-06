@@ -73,7 +73,7 @@ export const MapaService = {
     );
 
     return connections.map((conn: any) => {
-      const imgRow = imagesMap.get(conn.id);
+      const imgRow: any = imagesMap.get(conn.id);
       return {
         ...conn,
         tipo_icono: conn.tipo_icono || 'linea',

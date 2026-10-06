@@ -573,3 +573,11 @@ export interface PersonajeUchihaData {
   created_at?: string;
   updated_at?: string;
 }
+
+export interface CharacterSearchResult {
+  id: number;
+  nombre_ninja: string;
+  hobba_name?: string | null;
+  rango: string;
+}
+

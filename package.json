@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
     "fetch:aldeas-logos": "node scripts/fetch-aldea-logos.mjs",
     "sync:aldeas-iconos": "node scripts/sync-aldea-iconos.mjs"
   },
@@ -32,6 +33,7 @@
     "eslint-config-next": "16.2.6",
     "sharp": "^0.34.5",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.11"
   }
 }

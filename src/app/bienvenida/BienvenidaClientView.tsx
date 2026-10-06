@@ -6,7 +6,7 @@ import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import DocList from '@/components/admin/DocList';
 import AdminViewSelector from '@/components/admin/AdminViewSelector';
 import { useUserRoles } from '@/hooks/useUserRoles';
-import { createClient } from '@/utils/supabase/client';
+import { AdminService } from '@/services/supabase/admin.service';
 
 interface BienvenidaClientViewProps {
   initialDocs: any[];
@@ -27,13 +27,12 @@ export default function BienvenidaClientView({
 
   useEffect(() => {
     if (!isAdmin || adminDocs.length > 0) return;
-    const supabase = createClient();
     Promise.all([
-      supabase.from('info_documentos_sistemas').select('*').eq('categoria', 'bienvenida').order('titulo'),
-      supabase.from('info_categorias_documentos').select('*').eq('slug', 'bienvenida').order('nombre'),
+      AdminService.getDocumentosSistemasAdmin('bienvenida'),
+      AdminService.getCategoriasDocumentosAdmin('bienvenida'),
     ]).then(([docsResult, categoriesResult]) => {
-      if (!docsResult.error) setAdminDocs(docsResult.data || []);
-      if (!categoriesResult.error) setAdminCategories(categoriesResult.data || []);
+      setAdminDocs(docsResult || []);
+      setAdminCategories(categoriesResult || []);
     }).catch((error) => console.error('Error cargando documentos administrativos:', error));
   }, [isAdmin, adminDocs.length]);
 

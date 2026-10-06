@@ -5,7 +5,10 @@ import { X, Calendar, User, Search, RefreshCw, Gift } from 'lucide-react';
 import NinjaCard from '@/components/ui/NinjaCard';
 import { renderDiscordMarkdown } from '@/lib/discord/renderDiscordMarkdown';
 import { useScrollLock } from '@/hooks/useScrollLock';
-import { createClient } from '@/utils/supabase/client';
+import { AuthService } from '@/services/supabase/auth.service';
+import { ProfileService } from '@/services/supabase/profile.service';
+import { CharacterService } from '@/services/supabase/character.service';
+import { RegistrosService } from '@/services/supabase/registros.service';
 import RegistroCard from '@/components/registros/RegistroCard';
 import EventRewardForm from '@/components/admin/EventRewardForm';
 import { PaginationPageInput } from '@/components/ui/PaginationPageInput';
@@ -106,20 +109,11 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
   useEffect(() => {
     const fetchActiveCharacter = async () => {
       try {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await AuthService.getUser();
         if (user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('active_char_id')
-            .eq('id', user.id)
-            .single();
-          if (profile?.active_char_id) {
-            const { data: char } = await supabase
-              .from('reg_characters')
-              .select('id, nombre_ninja, url_img, rango')
-              .eq('id', profile.active_char_id)
-              .single();
+          const activeCharId = await ProfileService.getActiveCharacterId(user.id);
+          if (activeCharId) {
+            const char = await CharacterService.getCharacterById(activeCharId);
             setActiveCharacter(char);
           }
         }
@@ -134,26 +128,7 @@ export default function NewsGrid({ newsList, isAdmin }: NewsGridProps) {
     if (!activeNews || activeNews.categoria?.toLowerCase() !== 'evento') return;
     setLoadingRegistries(true);
     try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('reg_registros')
-        .select(`
-          *,
-          autor: reg_characters!reg_registros_autor_id_fkey(nombre_ninja, url_img, profiles!user_id(username, url_avatar, url_img)),
-          participantes: reg_registros_participantes!reg_registros_participantes_registro_id_fkey(
-            *,
-            personaje: reg_characters!reg_registros_participantes_personaje_id_fkey(nombre_ninja, url_img, profiles!user_id(username, url_avatar, url_img))
-          )
-        `)
-        .eq('tipo', 'accion')
-        .eq('subtipo', 'evento_premios')
-        .order('fecha', { ascending: false });
-
-      if (error) throw error;
-
-      const filtered = (data || []).filter((reg: any) =>
-        Number(reg.data?.evento_id) === Number(activeNews.id)
-      );
+      const filtered = await RegistrosService.getEventRegistries(activeNews.id, activeNews.titulo);
       setEventRegistries(filtered);
     } catch (err) {
       console.error('Error fetching event registries:', err);

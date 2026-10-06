@@ -1,7 +1,6 @@
 'use client';
 
 import { create } from 'zustand';
-import { createClient } from '@/utils/supabase/client';
 import { Character, CharacterStats } from '@/domain/types';
 import { StatsLogic } from '@/domain/character/logic';
 import { useMasterStore } from '@/store/useMasterStore';

@@ -15,7 +15,7 @@ import {
 } from '@/domain/types';
 import { useToastStore } from '@/components/ui/Toast';
 import { useConfirmStore } from '@/components/ui/ConfirmDialog';
-import { createClient } from '@/utils/supabase/client';
+import { CharacterService } from '@/services/supabase/character.service';
 import { MasterService } from '@/services/supabase/master.service';
 import { NinjaSelect } from '@/components/ui/Fields';
 import { searchIncludes } from '@/lib/utils/search';
@@ -73,7 +73,6 @@ export default function GlosarioManager() {
 
   const addToast = useToastStore(state => state.addToast);
   const { confirm: confirmAction } = useConfirmStore();
-  const supabase = createClient();
   const glosarioRequestRef = useRef(0);
 
   const ramaFilterOptions = useMemo(() => {
@@ -117,7 +116,7 @@ export default function GlosarioManager() {
         MasterService.getEntrenamientos(),
         MasterService.getGlosarios({ categoriaId: 2 })
       ]);
-      const { data: pjs } = await supabase.from('reg_characters').select('id, nombre_ninja').eq('activo', true).order('nombre_ninja');
+      const pjs = await CharacterService.getActiveCharactersSimple();
 
       setCategorias(cats);
       setSubcategorias(subs);

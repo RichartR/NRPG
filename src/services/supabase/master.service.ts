@@ -12,7 +12,7 @@ export const MasterService = {
     if (!data) return [];
 
     const mainIds = [1, 2, 3, 4, 5];
-    return data.sort((a, b) => {
+    return (data as Aldea[]).sort((a: any, b: any) => {
       const aIsMain = mainIds.includes(a.id);
       const bIsMain = mainIds.includes(b.id);
       if (aIsMain && !bIsMain) return -1;
@@ -67,13 +67,13 @@ export const MasterService = {
     
     if (error) throw error;
 
-    const estados = data || [];
+    const estados: EstadoCombate[] = (data as any) || [];
 
     // Los estados anteriores a la incorporacion de este campo tienen null.
     // El panel de administracion los presenta como disponibles en combate,
     // por lo que aqui deben seguir el mismo criterio de compatibilidad.
     return soloCombate
-      ? estados.filter(estado => estado.en_combate !== false)
+      ? estados.filter((estado: any) => estado.en_combate !== false)
       : estados;
   },
 
@@ -217,7 +217,7 @@ export const MasterService = {
     if (!data) return [];
 
     const mainIds = [1, 2, 3, 4, 5];
-    return data.sort((a, b) => {
+    return (data as Aldea[]).sort((a: any, b: any) => {
       const aIsMain = mainIds.includes(a.id);
       const bIsMain = mainIds.includes(b.id);
       if (aIsMain && !bIsMain) return -1;
@@ -295,5 +295,57 @@ export const MasterService = {
 
     if (error) throw error;
     return data || [];
+  },
+
+  async getGlosarioById(id: number): Promise<Glosario | null> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('info_glosario')
+      .select('*, info_glosario_categorias(nombre), info_glosario_subcategorias(nombre, slug)')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching glosario by id:', error);
+      return null;
+    }
+    return data;
+  },
+
+  async getGlosarioItemsByCategoria(categoriaId: number): Promise<any[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('info_glosario')
+      .select('*, info_glosario_subcategorias(*)')
+      .eq('categoria_id', categoriaId)
+      .eq('activo', true)
+      .order('nombre_es');
+
+    if (error) {
+      console.error('Error fetching glosario items by categoria:', error);
+      return [];
+    }
+    return data || [];
+  },
+
+  async getActiveTeamByCharacterId(characterId: number): Promise<any | null> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('reg_equipos_ninja')
+      .select(`
+        id,
+        nombre_equipo,
+        fecha_creacion,
+        lider:lider_id(nombre_ninja),
+        integrante_1:integrante_1_id(nombre_ninja),
+        integrante_2:integrante_2_id(nombre_ninja),
+        integrante_3:integrante_3_id(nombre_ninja)
+      `)
+      .eq('activo', true)
+      .or(`lider_id.eq.${characterId},integrante_1_id.eq.${characterId},integrante_2_id.eq.${characterId},integrante_3_id.eq.${characterId}`)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data || null;
   }
 };

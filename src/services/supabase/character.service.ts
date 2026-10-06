@@ -115,11 +115,12 @@ export const CharacterService = {
       .is('rama_clan_id', null);
 
     if (initialItems && initialItems.length > 0) {
-      const inventoryPack = initialItems
+      const itemsList: Array<{ id: number; categoria_id: number }> = initialItems as any;
+      const inventoryPack = itemsList
         .filter(i => i.categoria_id === 2) // Solo Objetos
         .map(i => ({ personaje_id: newChar.id, item_id: i.id }));
 
-      const techniquesPack = initialItems
+      const techniquesPack = itemsList
         .filter(i => i.categoria_id !== 2) // Todo lo que no sea objeto (Técnicas, Pasivas, etc)
         .map(i => ({ personaje_id: newChar.id, tecnica_id: i.id }));
 
@@ -803,5 +804,68 @@ export const CharacterService = {
       }
     }
     return null;
+  },
+
+  async getActiveCharactersSimple(): Promise<Array<{ id: number; nombre_ninja: string }>> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('reg_characters')
+      .select('id, nombre_ninja')
+      .eq('activo', true)
+      .order('nombre_ninja');
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getActiveCharactersWithVillage(): Promise<Array<{ id: number; nombre_ninja: string; url_img?: string | null; rango: string; info_aldeas?: any }>> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('reg_characters')
+      .select('id, nombre_ninja, url_img, rango, info_aldeas(nombre_jap)')
+      .eq('activo', true)
+      .order('nombre_ninja', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getUserCharactersWithRelations(userId: string, activeCharId?: number | null): Promise<Character[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('reg_characters')
+      .select(`
+        *,
+        personajes_tecnicas:reg_personajes_tecnicas!reg_personajes_tecnicas_personaje_id_fkey(*),
+        personajes_inventario:reg_personajes_inventario!reg_personajes_inventario_personaje_id_fkey(*),
+        personajes_ramas:reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(*)
+      `)
+      .eq('user_id', userId)
+      .eq('activo', true)
+      .eq('eliminado_voluntario', false);
+
+    if (error) {
+      console.error('Error fetching user characters with relations:', error);
+      throw error;
+    }
+
+    const list: Character[] = data || [];
+
+    if (activeCharId && !list.some(c => c.id === activeCharId)) {
+      const { data: activeCharData, error: activeErr } = await supabase
+        .from('reg_characters')
+        .select(`
+          *,
+          personajes_tecnicas:reg_personajes_tecnicas!reg_personajes_tecnicas_personaje_id_fkey(*),
+          personajes_inventario:reg_personajes_inventario!reg_personajes_inventario_personaje_id_fkey(*),
+          personajes_ramas:reg_personajes_ramas!reg_personajes_ramas_personaje_id_fkey(*)
+        `)
+        .eq('id', activeCharId)
+        .single();
+
+      if (!activeErr && activeCharData && activeCharData.activo !== false && !activeCharData.eliminado_voluntario) {
+        list.push(activeCharData);
+      }
+    }
+
+    return list;
   }
 };
